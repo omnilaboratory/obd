@@ -4,9 +4,11 @@ Based on the fundamental theory of Lightning network, LightningOnOmni describes 
 
 We name this new specification Omni-BOLT, in order to avoid possible conflicts with BOLT. We destrct our task into two major steps: 
 
->>the first step, we run nodes that are omni assets aware: for example, users can creat channels for USDT, which is issued on Omnilayer and BTC netowrk, then they will be able to transfer USDT more quick and more cheaper. 
+>the first step, we run nodes that are omni assets aware: for example, users can creat channels for USDT, which is issued on Omnilayer and BTC netowrk, then they will be able to transfer USDT more quick and more cheaper. 
 
->>the second step, we will try to be compatible with existing Lightning Nodes around the world, if experts working on BOLT can work together with us. 
+>the second step, we will try to be compatible with existing Lightning Nodes around the world, if experts working on BOLT can work together with us. 
+
+
 
 
 
