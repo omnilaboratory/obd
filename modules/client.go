@@ -50,7 +50,8 @@ func (c *Client) Read() {
 
 		println("receive data ", string(_order))
 		/*
-		   这里要先写入消息系统，而不是直接放入channel，此处只用来测试性能
+		   MUST write into message system as soon as get incoming messages, instead of put them into channel directly.
+		   Here we temporary use channel to test performance. 
 		*/
 		var sendBroadcast bool = true
 		var msg Message
