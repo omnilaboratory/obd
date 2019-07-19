@@ -1,7 +1,7 @@
 package modules
 
 /*
-这个结构需要改成二进制的结构，传输和加解码效率比较好，推荐用google的protoBuff
+this structure will use protoBuffer for consistent communication and better performance.
 
 type MessageBody struct {
     Sender    string `json:"sender,omitempty"`
