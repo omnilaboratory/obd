@@ -71,24 +71,24 @@ func reader(conn *websocket.Conn) {
 }
 
 type connection struct {
-	// websocket 连接器
+	// websocket connector
 	ws *websocket.Conn
 
-	// 发送信息的缓冲 channel
+	// buffer for sending message
 	send chan []byte
 }
 
 type hub struct {
-	// 注册了的连接器
+	// all connectors registered
 	connections map[*connection]bool
 
-	// 从连接器中发入的信息
+	// incoming message from connector
 	broadcast chan []byte
 
-	// 从连接器中注册请求
+	// register from connector
 	register chan *connection
 
-	// 从连接器中注销请求
+	// unregister from connector
 	unregister chan *connection
 }
 
