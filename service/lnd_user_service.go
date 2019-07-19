@@ -12,7 +12,7 @@ var User_service = UserService{}
 
 func (service *UserService) UserLogin(user *modules.User) error {
 
-	//打开数据库
+	//open database
 	db, e := modules.DB_Manager.GetDB()
 	if e != nil {
 		return e
