@@ -13,13 +13,13 @@ var Global_manager = ClientManager{
 }
 
 type GlobleParams struct {
-	Interval       int //ms,间隔多少毫秒下发一次
-	MaximumClients int //单机最多客户数
+	Interval       int //ms, intercal for boardcasting to all the connections.
+	MaximumClients int //maximum clients for one server instance.
 	PoolSize       int //go routine pool size
 }
 
 type DbManager struct {
-	Db *bolt.DB //存放区块的数据库
+	Db *bolt.DB // DB to store blocks 
 }
 
 var DB_Manager = DbManager{
