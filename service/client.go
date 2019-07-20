@@ -1,10 +1,9 @@
-package modules
+package service
 
 import (
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/websocket"
-	"lnd-server/service"
 )
 
 type Client struct {
@@ -50,8 +49,7 @@ func (c *Client) Read() {
 
 		println("receive data ", string(_order))
 		/*
-		   MUST write into message system as soon as get incoming messages, instead of put them into channel directly.
-		   Here we temporary use channel to test performance. 
+		   这里要先写入消息系统，而不是直接放入channel，此处只用来测试性能
 		*/
 		var sendBroadcast bool = true
 		var msg Message
@@ -65,14 +63,14 @@ func (c *Client) Read() {
 			json.Unmarshal([]byte(msg.Data), &data)
 			if len(data.Email) > 0 {
 				c.User = data
-				service.User_service.UserLogin(&data)
+				User_service.UserLogin(&data)
 			}
 			break
 		case -32:
 			var data OpenChannelData
 			json.Unmarshal([]byte(msg.Data), &data)
 
-			if err := service.Channel_Service.OpenChannel(&data); err == nil {
+			if err := Channel_Service.OpenChannel(&data); err == nil {
 				sendBroadcast = false
 			}
 

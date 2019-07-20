@@ -1,6 +1,7 @@
-package modules
+package service
 
 import (
+	"LightningOnOmni/config"
 	"github.com/boltdb/bolt"
 	"log"
 )
@@ -13,13 +14,13 @@ var Global_manager = ClientManager{
 }
 
 type GlobleParams struct {
-	Interval       int //ms, intercal for boardcasting to all the connections.
-	MaximumClients int //maximum clients for one server instance.
+	Interval       int //ms,间隔多少毫秒下发一次
+	MaximumClients int //单机最多客户数
 	PoolSize       int //go routine pool size
 }
 
 type DbManager struct {
-	Db *bolt.DB // DB to store blocks 
+	Db *bolt.DB //存放区块的数据库
 }
 
 var DB_Manager = DbManager{
@@ -28,7 +29,7 @@ var DB_Manager = DbManager{
 
 func (manager DbManager) GetDB() (*bolt.DB, error) {
 	if DB_Manager.Db == nil {
-		db, e := bolt.Open(DBname, 0644, nil)
+		db, e := bolt.Open(config.DBname, 0644, nil)
 		if e != nil {
 			log.Println("open db fail")
 			return nil, e

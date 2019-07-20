@@ -1,4 +1,4 @@
-package modules
+package service
 
 type Message struct {
 	Type      int    `json:"type"`

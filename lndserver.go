@@ -1,10 +1,10 @@
 package main
 
 import (
+	"LightningOnOmni/service"
 	"fmt"
 	"github.com/gorilla/websocket"
 	"github.com/satori/go.uuid"
-	"lnd-server/modules"
 	"log"
 	"net/http"
 )
@@ -16,22 +16,22 @@ func wsPage(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 	uuid_str, _ := uuid.NewV4()
-	client := &modules.Client{Id: uuid_str.String(),
+	client := &service.Client{Id: uuid_str.String(),
 		Socket:       conn,
 		Send_channel: make(chan []byte)}
 
-	modules.Global_manager.Register <- client
+	service.Global_manager.Register <- client
 	go client.Write()
 	client.Read()
 }
 
 func main() {
-	modules.Global_params.Interval = 1000
-	modules.Global_params.MaximumClients = 1024 * 1024
-	modules.Global_params.PoolSize = 4 * 1024
+	service.Global_params.Interval = 1000
+	service.Global_params.MaximumClients = 1024 * 1024
+	service.Global_params.PoolSize = 4 * 1024
 
 	fmt.Println("Starting application...")
-	go modules.Global_manager.Start()
+	go service.Global_manager.Start()
 
 	fmt.Println("Global client manager started...")
 	http.HandleFunc("/ws", wsPage)

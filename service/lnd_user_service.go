@@ -1,8 +1,8 @@
 package service
 
 import (
+	"LightningOnOmni/config"
 	"github.com/boltdb/bolt"
-	"lnd-server/modules"
 )
 
 type UserService struct {
@@ -10,17 +10,16 @@ type UserService struct {
 
 var User_service = UserService{}
 
-func (service *UserService) UserLogin(user *modules.User) error {
-
-	//open database
-	db, e := modules.DB_Manager.GetDB()
+func (service *UserService) UserLogin(user *User) error {
+	//打开数据库
+	db, e := DB_Manager.GetDB()
 	if e != nil {
 		return e
 	}
 	db.View(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte(modules.Userbucket))
+		bucket := tx.Bucket([]byte(config.Userbucket))
 		if bucket == nil {
-			b, err := tx.CreateBucket([]byte(modules.Userbucket))
+			b, err := tx.CreateBucket([]byte(config.Userbucket))
 			if err != nil {
 				return e
 			}
