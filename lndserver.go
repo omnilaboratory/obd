@@ -16,7 +16,8 @@ func wsPage(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 	uuid_str, _ := uuid.NewV4()
-	client := &service.Client{Id: uuid_str.String(),
+	client := &service.Client{
+		Id:           uuid_str.String(),
 		Socket:       conn,
 		Send_channel: make(chan []byte)}
 
@@ -37,5 +38,4 @@ func main() {
 	http.HandleFunc("/ws", wsPage)
 
 	log.Fatal(http.ListenAndServe(":60020", nil))
-
 }

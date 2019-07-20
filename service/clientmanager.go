@@ -34,7 +34,6 @@ func (client_manager *ClientManager) Start() {
 			for conn := range client_manager.Clients_map {
 				select {
 				case conn.Send_channel <- order_message:
-					break
 				default:
 					close(conn.Send_channel)
 					delete(client_manager.Clients_map, conn)

@@ -1,9 +1,7 @@
 package service
 
 import (
-	"LightningOnOmni/config"
 	"github.com/boltdb/bolt"
-	"log"
 )
 
 var Global_manager = ClientManager{
@@ -21,22 +19,6 @@ type GlobleParams struct {
 
 type DbManager struct {
 	Db *bolt.DB //存放区块的数据库
-}
-
-var DB_Manager = DbManager{
-	Db: nil,
-}
-
-func (manager DbManager) GetDB() (*bolt.DB, error) {
-	if DB_Manager.Db == nil {
-		db, e := bolt.Open(config.DBname, 0644, nil)
-		if e != nil {
-			log.Println("open db fail")
-			return nil, e
-		}
-		DB_Manager.Db = db
-	}
-	return DB_Manager.Db, nil
 }
 
 var Global_params = GlobleParams{
