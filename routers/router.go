@@ -13,7 +13,7 @@ import (
 func InitRouter() *mux.Router {
 	m := mux.NewRouter()
 	m.HandleFunc("/ws", clientConnect)
-	m.HandleFunc("/test", GetTags).Methods("GET")
+	m.HandleFunc("/test", test).Methods("GET")
 	return m
 }
 
@@ -34,7 +34,7 @@ func clientConnect(res http.ResponseWriter, req *http.Request) {
 	client.Read()
 }
 
-func GetTags(writer http.ResponseWriter, request *http.Request) {
+func test(writer http.ResponseWriter, request *http.Request) {
 	bytes, err := json.Marshal(&service.User{Id: "1", Email: "123@qq.com"})
 	if err != nil {
 		fmt.Fprintf(writer, "wrong data")

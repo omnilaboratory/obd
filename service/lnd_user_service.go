@@ -55,7 +55,7 @@ func (service *UserService) UserLogout(user *User) error {
 	}
 	err := db.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(config.Userbucket))
-		user.State = OnLine
+		user.State = Offline
 		jsonData, err := json.Marshal(user)
 		if err != nil {
 			return err

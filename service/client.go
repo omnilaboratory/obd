@@ -1,6 +1,7 @@
 package service
 
 import (
+	"LightningOnOmni/config"
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/websocket"
@@ -34,7 +35,7 @@ func (c *Client) Write() {
 				c.Socket.WriteMessage(websocket.CloseMessage, []byte{})
 				return
 			}
-			fmt.Printf("send data to client %v \n", string(_order))
+			fmt.Printf("send data: %v \n", string(_order))
 			c.Socket.WriteMessage(websocket.TextMessage, _order)
 		}
 	}
@@ -56,7 +57,7 @@ func (c *Client) Read() {
 			break
 		}
 
-		var msg Message
+		var msg config.Message
 		json.Unmarshal(dataReq, &msg)
 		var sender, recipient User
 		json.Unmarshal([]byte(msg.Sender), &sender)

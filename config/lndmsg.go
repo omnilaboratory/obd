@@ -1,4 +1,4 @@
-package service
+package config
 
 type Message struct {
 	Type      int    `json:"type"`
@@ -7,5 +7,5 @@ type Message struct {
 	Data      string `json:"data"`
 }
 
-type chainHash string
-type point string
+type ChainHash string
+type Point string

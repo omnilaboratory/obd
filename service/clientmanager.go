@@ -44,7 +44,6 @@ func (client_manager *ClientManager) Start() {
 }
 
 func (client_manager *ClientManager) Send(message []byte, myself *Client) {
-	fmt.Printf("send msg to client %s\n", string(message))
 	for conn := range client_manager.Clients_map {
 		if conn != myself {
 			conn.Send_channel <- message
