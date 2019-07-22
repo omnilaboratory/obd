@@ -2,17 +2,19 @@ package main
 
 import (
 	"LightningOnOmni/routers"
-	"LightningOnOmni/service"
-	"fmt"
 	"log"
 	"net/http"
+	"time"
 )
 
 func main() {
-	service.Global_params.Interval = 1000
-	service.Global_params.MaximumClients = 1024 * 1024
-	service.Global_params.PoolSize = 4 * 1024
-	fmt.Println("Starting application...")
-	go service.Global_manager.Start()
-	log.Fatal(http.ListenAndServe(":60020", routers.InitRouter()))
+	routersInit := routers.InitRouter()
+	server := &http.Server{
+		Addr:           ":60020",
+		Handler:        routersInit,
+		ReadTimeout:    10 * time.Second,
+		WriteTimeout:   10 * time.Second,
+		MaxHeaderBytes: 1 << 20,
+	}
+	log.Fatal(server.ListenAndServe())
 }

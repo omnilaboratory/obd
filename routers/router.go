@@ -4,25 +4,38 @@ import (
 	"LightningOnOmni/service"
 	"encoding/json"
 	"fmt"
-	"github.com/gorilla/mux"
+	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	"github.com/satori/go.uuid"
 	"net/http"
 )
 
-func InitRouter() *mux.Router {
-	m := mux.NewRouter()
-	m.HandleFunc("/ws", clientConnect)
-	m.HandleFunc("/test", test).Methods("GET")
-	return m
+func InitRouter() *gin.Engine {
+	router := gin.New()
+	router.Use(gin.Logger())
+	router.Use(gin.Recovery())
+
+	go service.Global_manager.Start()
+	router.GET("/ws", ClientConnect)
+
+	apiv1 := router.Group("/api/v1")
+	{
+		apiv1.GET("/tags", func(context *gin.Context) {
+			context.JSON(http.StatusOK, gin.H{
+				"msg": "test",
+			})
+		})
+	}
+	return router
 }
 
-func clientConnect(res http.ResponseWriter, req *http.Request) {
-	conn, error := (&websocket.Upgrader{CheckOrigin: func(r *http.Request) bool { return true }}).Upgrade(res, req, nil)
+func ClientConnect(c *gin.Context) {
+	conn, error := (&websocket.Upgrader{CheckOrigin: func(r *http.Request) bool { return true }}).Upgrade(c.Writer, c.Request, nil)
 	if error != nil {
-		http.NotFound(res, req)
+		http.NotFound(c.Writer, c.Request)
 		return
 	}
+
 	uuid_str, _ := uuid.NewV4()
 	client := &service.Client{
 		Id:           uuid_str.String(),
