@@ -16,6 +16,7 @@ const (
 
 //type = 1
 type User struct {
+	ID    string
 	Id    string    `json:"id"`
 	Email string    `json:"email"`
 	State UserState `json:"state"`
@@ -32,9 +33,9 @@ func (service *UserService) UserLogin(user *User) error {
 	if e != nil {
 		return e
 	}
+	user.State = OnLine
 	err := db.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(config.Userbucket))
-		user.State = OnLine
 		jsonData, err := json.Marshal(user)
 		if err != nil {
 			return err

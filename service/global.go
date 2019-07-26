@@ -1,7 +1,7 @@
 package service
 
 import (
-	"github.com/boltdb/bolt"
+	"github.com/asdine/storm"
 )
 
 var Global_manager = ClientManager{
@@ -18,7 +18,7 @@ type GlobleParams struct {
 }
 
 type DbManager struct {
-	Db *bolt.DB //存放区块的数据库
+	Db *storm.DB //存放区块的数据库
 }
 
 var Global_params = GlobleParams{

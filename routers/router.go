@@ -8,6 +8,8 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/satori/go.uuid"
 	"net/http"
+	"strconv"
+	"time"
 )
 
 func InitRouter() *gin.Engine {
@@ -25,8 +27,31 @@ func InitRouter() *gin.Engine {
 				"msg": "test",
 			})
 		})
+		apiv1.GET("/saveNode", func(context *gin.Context) {
+			nodeService := service.NodeService{}
+			node := service.Node{Name: "name", Date: time.Now()}
+			nodeService.Save(&node)
+
+			context.JSON(http.StatusOK, gin.H{
+				"msg": "test",
+			})
+		})
+		apiv1.GET("/getNode", getNodeData)
 	}
 	return router
+}
+
+func getNodeData(context *gin.Context) {
+	nodeService := service.NodeService{}
+	id, _ := strconv.Atoi(context.Query("id"))
+	data, _ := nodeService.Get(id)
+	bytes, _ := json.Marshal(data)
+
+	context.JSON(http.StatusOK, gin.H{
+		"msg":  "getNode",
+		"data": string(bytes),
+	})
+
 }
 
 func ClientConnect(c *gin.Context) {
