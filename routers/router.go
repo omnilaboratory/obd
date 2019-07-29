@@ -18,7 +18,7 @@ func InitRouter() *gin.Engine {
 	router.Use(gin.Recovery())
 
 	go service.Global_manager.Start()
-	router.GET("/ws", ClientConnect)
+	router.GET("/ws", wsClientConnect)
 
 	apiv1 := router.Group("/api/v1")
 	{
@@ -37,8 +37,57 @@ func InitRouter() *gin.Engine {
 			})
 		})
 		apiv1.GET("/getNode", getNodeData)
+
+		apiv1.GET("/userLogin", userLogin)
+		apiv1.GET("/userLogout", userLogout)
+		apiv1.GET("/userInfo", userInfo)
 	}
 	return router
+}
+
+func userInfo(context *gin.Context) {
+	user, e := service.User_service.UserInfo(context.Query("email"))
+	if e != nil {
+		context.JSON(http.StatusOK, gin.H{
+			"msg":  "userInfo",
+			"data": e.Error(),
+		})
+		return
+	}
+	bytes, _ := json.Marshal(user)
+	context.JSON(http.StatusOK, gin.H{
+		"msg":  "userInfo",
+		"data": string(bytes),
+	})
+}
+
+func userLogin(context *gin.Context) {
+	user := service.User{}
+	user.Email = context.Query("email")
+	service.User_service.UserLogin(&user)
+	bytes, _ := json.Marshal(user)
+	context.JSON(http.StatusOK, gin.H{
+		"msg":  "userLogin",
+		"data": string(bytes),
+	})
+}
+func userLogout(context *gin.Context) {
+	user := service.User{}
+	user.Email = context.Query("email")
+	logout := service.User_service.UserLogout(&user)
+	if logout != nil {
+		context.JSON(http.StatusOK, gin.H{
+			"msg":  "userLogout",
+			"data": logout.Error(),
+		})
+	} else {
+		bytes, _ := json.Marshal(user)
+		context.JSON(http.StatusOK, gin.H{
+			"msg":  "userLogout",
+			"data": string(bytes),
+		})
+	}
+
 }
 
 func getNodeData(context *gin.Context) {
@@ -48,13 +97,13 @@ func getNodeData(context *gin.Context) {
 	bytes, _ := json.Marshal(data)
 
 	context.JSON(http.StatusOK, gin.H{
-		"msg":  "getNode",
+		"msg":  "getNodeData",
 		"data": string(bytes),
 	})
 
 }
 
-func ClientConnect(c *gin.Context) {
+func wsClientConnect(c *gin.Context) {
 	conn, error := (&websocket.Upgrader{CheckOrigin: func(r *http.Request) bool { return true }}).Upgrade(c.Writer, c.Request, nil)
 	if error != nil {
 		http.NotFound(c.Writer, c.Request)
@@ -73,7 +122,7 @@ func ClientConnect(c *gin.Context) {
 }
 
 func test(writer http.ResponseWriter, request *http.Request) {
-	bytes, err := json.Marshal(&service.User{Id: "1", Email: "123@qq.com"})
+	bytes, err := json.Marshal(&service.User{Id: 1, Email: "123@qq.com"})
 	if err != nil {
 		fmt.Fprintf(writer, "wrong data")
 		return

@@ -19,7 +19,6 @@ func (manager DbManager) GetDB() (*storm.DB, error) {
 			return nil, e
 		}
 		DB_Manager.Db = db
-		db.Init(config.Userbucket)
 	}
 
 	DB_Manager.Db.Update(func(tx *bolt.Tx) error {

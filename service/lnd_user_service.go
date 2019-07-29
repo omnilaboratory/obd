@@ -1,10 +1,6 @@
 package service
 
-import (
-	"LightningOnOmni/config"
-	"encoding/json"
-	"github.com/boltdb/bolt"
-)
+import "errors"
 
 type UserState int
 
@@ -16,10 +12,10 @@ const (
 
 //type = 1
 type User struct {
-	ID    string
-	Id    string    `json:"id"`
-	Email string    `json:"email"`
-	State UserState `json:"state"`
+	Id       int       `storm:"id,increment" `
+	Email    string    `json:"email"`
+	Password string    `json:"password"`
+	State    UserState `json:"state"`
 }
 
 type UserService struct {
@@ -34,19 +30,14 @@ func (service *UserService) UserLogin(user *User) error {
 		return e
 	}
 	user.State = OnLine
-	err := db.Update(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte(config.Userbucket))
-		jsonData, err := json.Marshal(user)
-		if err != nil {
-			return err
-		}
-		err = bucket.Put([]byte(user.Email), []byte(jsonData))
-		if err != nil {
-			return err
-		}
-		return nil
-	})
-	return err
+	var node User
+
+	e = db.One("Email", user.Email, &node)
+	if node.Id == 0 {
+		return db.Save(user)
+	} else {
+		return db.Update(user)
+	}
 }
 func (service *UserService) UserLogout(user *User) error {
 	//打开数据库
@@ -54,18 +45,28 @@ func (service *UserService) UserLogout(user *User) error {
 	if e != nil {
 		return e
 	}
-	err := db.Update(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte(config.Userbucket))
-		user.State = Offline
-		jsonData, err := json.Marshal(user)
-		if err != nil {
-			return err
-		}
-		err = bucket.Put([]byte(user.Email), []byte(jsonData))
-		if err != nil {
-			return err
-		}
-		return nil
-	})
-	return err
+
+	var node User
+	e = db.One("Email", user.Email, &node)
+	if node.Id == 0 {
+		return errors.New("user not found")
+	}
+
+	user.State = Offline
+	return db.Update(user)
+}
+
+func (service *UserService) UserInfo(email string) (user *User, e error) {
+
+	db, e := DB_Manager.GetDB()
+	if e != nil {
+		return nil, errors.New("db is not exist")
+	}
+
+	var node User
+	e = db.One("Email", email, &node)
+	if node.Id == 0 {
+		return nil, errors.New("user not exist")
+	}
+	return &node, nil
 }
