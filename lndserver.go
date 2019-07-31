@@ -26,9 +26,9 @@ func main() {
 
 func rpcClient() *rpcclient.Client {
 	connCfg := &rpcclient.ConnConfig{
-		Host:         "62.234.188.160:18332",
-		User:         "uprets",
-		Pass:         "pass",
+		Host:         "62.234.216.108:18332",
+		User:         "omniwallet",
+		Pass:         "cB3]iL2@eZ1?cB2?",
 		HTTPPostMode: true, // Bitcoin core only supports HTTP POST mode
 		DisableTLS:   true, // Bitcoin core does not provide TLS by default
 	}
@@ -38,8 +38,17 @@ func rpcClient() *rpcclient.Client {
 	}
 	defer client.Shutdown()
 
-	client.GetNewAddress("ab")
-	result, err := client.GetInfo()
+	//var account string ="ab"
+	//btcjson.NewGetNewAddressCmd(&account);
+
+	address, err := client.GetNewAddress("")
+	if err != nil {
+		fmt.Println(err)
+	} else {
+		fmt.Println(address)
+	}
+
+	result, err := client.GetMyInfo()
 	fmt.Println(result)
 
 	// Get the current block count.
