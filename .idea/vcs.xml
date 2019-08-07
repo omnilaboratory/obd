@@ -2,5 +2,14 @@
 <project version="4">
   <component name="VcsDirectoryMappings">
     <mapping directory="" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/btcsuite/btcd" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/btcsuite/btclog" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/btcsuite/btcutil" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/btcsuite/btcwallet" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/btcsuite/fastsha256" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/btcsuite/go-socks" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/btcsuite/golangcrypto" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/btcsuite/websocket" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/rpc/btcutil" vcs="Git" />
   </component>
 </project>
