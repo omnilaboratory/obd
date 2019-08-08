@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/shopspring/decimal"
+	"github.com/tidwall/gjson"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -130,22 +132,174 @@ type RawTxInput struct {
 	Sequence int    `json:"sequence"`
 }
 
-func (client *Client) CreateRawTransaction(inputs []RawTxInput, outputs []map[string]float32, locktime int) (result string, err error) {
-	params := make([]interface{}, 0, 3)
+func (client *Client) CreateRawTransaction(inputs []map[string]interface{}, outputs map[string]float64) (result string, err error) {
+	params := make([]interface{}, 0, 2)
 	params = append(params, inputs)
 	params = append(params, outputs)
-	params = append(params, locktime)
 	return client.send("createrawtransaction", params)
+}
+
+func (client *Client) SignRawTransactionWithKey(hex string, privkeys []string, prevtxs []map[string]interface{}, sighashtype string) (result string, err error) {
+	params := make([]interface{}, 0, 4)
+	params = append(params, hex)
+	params = append(params, prevtxs)
+	params = append(params, privkeys)
+	params = append(params, sighashtype)
+	return client.send("signrawtransaction", params)
+}
+
+func (client *Client) SendRawTransaction(hex string) (result string, err error) {
+	params := make([]interface{}, 0, 1)
+	params = append(params, hex)
+	return client.send("sendrawtransaction", params)
+}
+
+func (client *Client) DecodeRawTransaction(hex string) (result string, err error) {
+	params := make([]interface{}, 0, 1)
+	params = append(params, hex)
+	return client.send("decoderawtransaction", params)
+}
+
+func (client *Client) BtcRawTransactionMultiSign(fromBitCoinAddress string, privkeys []string, toBitCoinAddress string, amount float64, mineFee float64) (txId string, err error) {
+	result, err := client.ListUnspent(fromBitCoinAddress)
+	if err != nil {
+		return "", err
+	}
+
+	array := gjson.Parse(result).Array()
+	if len(array) == 0 {
+		return "", errors.New("empty balance")
+	}
+	log.Println("listunspent", array)
+
+	fee := mineFee
+	out, _ := decimal.NewFromFloat(fee).Add(decimal.NewFromFloat(amount)).Float64()
+	var inputs []map[string]interface{}
+
+	balance := 0.0
+	scriptPubKey := ""
+
+	for _, item := range array {
+		node := make(map[string]interface{})
+		node["txid"] = item.Get("txid").String()
+		node["vout"] = item.Get("vout").Int()
+		if len(privkeys) > 0 {
+			node["redeemScript"] = item.Get("redeemScript")
+		}
+		if scriptPubKey == "" {
+			scriptPubKey = item.Get("scriptPubKey").String()
+		}
+		inputs = append(inputs, node)
+
+		balance, _ = decimal.NewFromFloat(balance).Add(decimal.NewFromFloat(item.Get("amount").Float())).Float64()
+		if balance >= out {
+			break
+		}
+	}
+	log.Println("input list ", inputs)
+
+	if len(inputs) == 0 || balance < out {
+		return "", errors.New("not enough balance")
+	}
+
+	drawback, _ := decimal.NewFromFloat(balance).Sub(decimal.NewFromFloat(out)).Float64()
+	output := make(map[string]float64)
+	output[toBitCoinAddress] = amount
+	output[fromBitCoinAddress] = drawback
+
+	hex, err := client.CreateRawTransaction(inputs, output)
+
+	if err != nil {
+		return "", err
+	}
+
+	log.Println("CreateRawTransaction", hex)
+
+	decodeHex, _ := client.DecodeRawTransaction(hex)
+	log.Println("DecodeRawTransaction", decodeHex)
+
+	for _, item := range inputs {
+		item["scriptPubKey"] = scriptPubKey
+	}
+
+	var signHex string
+	if len(privkeys) > 0 {
+		signHex, _ = client.SignRawTransactionWithKey(hex, privkeys, inputs, "ALL")
+	} else {
+		signHex, _ = client.SignRawTransactionWithKey(hex, nil, inputs, "ALL")
+	}
+
+	hex = gjson.Get(signHex, "hex").String()
+	log.Println(hex)
+	decodeHex, _ = client.DecodeRawTransaction(hex)
+	log.Println("DecodeRawTransaction", decodeHex)
+	txId, err = client.SendRawTransaction(string(hex))
+	if err != nil {
+		return "", err
+	}
+
+	return txId, nil
 }
 
 func (client *Client) GetBlockCount() (result string, err error) {
 	return client.send("getblockcount", nil)
 }
+
 func (client *Client) GetDifficulty() (result string, err error) {
 	return client.send("getdifficulty", nil)
 }
+
 func (client *Client) GetMiningInfo() (result string, err error) {
 	return client.send("getmininginfo", nil)
+}
+
+func (client *Client) GetNetworkInfo() (result string, err error) {
+	return client.send("getnetworkinfo", nil)
+}
+
+//Returns various state information of the client and protocol.
+func (client *Client) Omni_getinfo() (result string, err error) {
+	return client.send("omni_getinfo", nil)
+}
+
+//Returns the token balance for a given address and property.
+func (client *Client) Omni_getbalance(address string, propertyId int) (result string, err error) {
+	params := make([]interface{}, 0, 2)
+	params = append(params, address)
+	params = append(params, propertyId)
+	return client.send("omni_getbalance", params)
+}
+
+//Get detailed information about an Omni transaction.
+func (client *Client) Omni_gettransaction(txid string) (result string, err error) {
+	params := make([]interface{}, 0, 1)
+	params = append(params, txid)
+	return client.send("omni_gettransaction", params)
+}
+
+//List wallet transactions, optionally filtered by an address and block boundaries.
+func (client *Client) Omni_listtransactions(count int, skip int) (result string, err error) {
+	if count < 0 {
+		count = 10
+	}
+	if skip < 0 {
+		skip = 0
+	}
+	params := make([]interface{}, 0, 3)
+	params = append(params, "*")
+	params = append(params, count)
+	params = append(params, skip)
+	return client.send("omni_listtransactions", params)
+}
+
+//Create and broadcast a simple send transaction.
+func (client *Client) Omni_send(fromAddress string, toAddress string, propertyId int, amount float64) (result string, err error) {
+	params := make([]interface{}, 0, 4)
+	params = append(params, fromAddress)
+	params = append(params, toAddress)
+	params = append(params, propertyId)
+	params = append(params, amount)
+	return client.send("omni_send", params)
 }
 
 func (client *Client) send(method string, params []interface{}) (result string, err error) {
@@ -157,6 +311,7 @@ func (client *Client) send(method string, params []interface{}) (result string, 
 		}
 	}
 
+	log.Println()
 	req := &Request{
 		Jsonrpc: "1.0",
 		ID:      client.NextID(),
@@ -179,6 +334,9 @@ func (client *Client) send(method string, params []interface{}) (result string, 
 		return "", err
 	}
 
+	if httpResponse.StatusCode == 500 {
+		return "", errors.New("can not get data from server")
+	}
 	// Read the raw bytes and close the response.
 	respBytes, err := ioutil.ReadAll(httpResponse.Body)
 	httpResponse.Body.Close()
@@ -193,11 +351,10 @@ func (client *Client) send(method string, params []interface{}) (result string, 
 		err = fmt.Errorf("status code: %d, response: %q", httpResponse.StatusCode, string(respBytes))
 		return "", err
 	}
-
 	res, err := resp.result()
 	if err != nil {
 		fmt.Println(err)
 		return "", err
 	}
-	return string(res), nil
+	return gjson.Parse(string(res)).String(), nil
 }
