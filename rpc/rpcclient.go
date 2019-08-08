@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"sync/atomic"
 )
@@ -61,7 +62,6 @@ func NewClient(config *ConnConfig) *Client {
 			TLSClientConfig: nil,
 		},
 	}
-
 	config.Host = "http://" + config.Host
 	client := &Client{
 		config:     config,
@@ -70,26 +70,59 @@ func NewClient(config *ConnConfig) *Client {
 	return client
 }
 
-func (c *Client) NextID() uint64 {
-	return atomic.AddUint64(&c.id, 1)
+func (client *Client) NextID() uint64 {
+	return atomic.AddUint64(&client.id, 1)
 }
 
-func (client *Client) Send(method string, txId string) (result string, err error) {
+func (client *Client) GetTransactionById(txid string) (result string, err error) {
+	params := make([]interface{}, 0, 1)
+	params = append(params, txid)
+	return client.send("gettransaction", params)
+}
+func (client *Client) GetTxOut(txid string, num int) (result string, err error) {
+	params := make([]interface{}, 0, 2)
+	params = append(params, txid)
+	params = append(params, num)
+	return client.send("gettxout", params)
+}
+func (client *Client) CreateMultiSig(minSignNum int, keys []string) (result string, err error) {
+	params := make([]interface{}, 0, 2)
+	params = append(params, minSignNum)
+	params = append(params, keys)
+	return client.send("createmultisig", params)
+}
 
-	rawParams := make([]json.RawMessage, 0, 1)
-	marshalledParam, err := json.Marshal(txId)
-	if err == nil {
-		rawMessage := json.RawMessage(marshalledParam)
-		rawParams = append(rawParams, rawMessage)
+func (client *Client) GetBlockCount() (result string, err error) {
+	return client.send("getblockcount", nil)
+}
+func (client *Client) GetDifficulty() (result string, err error) {
+	return client.send("getdifficulty", nil)
+}
+func (client *Client) GetMiningInfo() (result string, err error) {
+	return client.send("getmininginfo", nil)
+}
+
+func (client *Client) send(method string, params []interface{}) (result string, err error) {
+
+	rawParams := make([]json.RawMessage, 0, len(params))
+	for _, item := range params {
+		marshaledParam, err := json.Marshal(item)
+		if err == nil {
+			rawParams = append(rawParams, marshaledParam)
+		}
 	}
+
 	req := &Request{
 		Jsonrpc: "1.0",
 		ID:      client.NextID(),
 		Method:  method,
 		Params:  rawParams,
 	}
+	marshaledJSON, e := json.Marshal(req)
+	if e != nil {
+		return "", e
+	}
 
-	marshaledJSON, _ := json.Marshal(req)
 	bodyReader := bytes.NewReader(marshaledJSON)
 
 	httpReq, err := http.NewRequest("POST", client.config.Host, bodyReader)
@@ -97,8 +130,10 @@ func (client *Client) Send(method string, txId string) (result string, err error
 	httpReq.SetBasicAuth(client.config.User, client.config.Pass)
 	httpResponse, err := client.httpClient.Do(httpReq)
 	if err != nil {
+		log.Println(err)
 		return "", err
 	}
+
 	// Read the raw bytes and close the response.
 	respBytes, err := ioutil.ReadAll(httpResponse.Body)
 	httpResponse.Body.Close()
