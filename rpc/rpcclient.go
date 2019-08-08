@@ -3,12 +3,23 @@ package rpc
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"sync/atomic"
 )
+
+var config *ConnConfig
+
+func init() {
+	config = &ConnConfig{
+		Host: "62.234.216.108:18332",
+		User: "omniwallet",
+		Pass: "cB3]iL2@eZ1?cB2?",
+	}
+}
 
 type ConnConfig struct {
 	// Host is the IP address and port of the RPC server you want to connect to.
@@ -55,7 +66,7 @@ type RPCError struct {
 	Message string `json:"message,omitempty"`
 }
 
-func NewClient(config *ConnConfig) *Client {
+func NewClient() *Client {
 	httpClient := http.Client{
 		Transport: &http.Transport{
 			Proxy:           nil,
@@ -92,6 +103,41 @@ func (client *Client) CreateMultiSig(minSignNum int, keys []string) (result stri
 	return client.send("createmultisig", params)
 }
 
+func (client *Client) GetNewAddress(label string) (result string, err error) {
+	params := make([]interface{}, 0, 1)
+	params = append(params, label)
+	return client.send("getnewaddress", params)
+}
+
+func (client *Client) ListUnspent(address string) (result string, err error) {
+	if len(address) < 1 {
+		return "", errors.New("address not exist")
+	}
+
+	params := make([]interface{}, 0, 3)
+	params = append(params, 0)
+	params = append(params, 9999999)
+	keys := []string{
+		address,
+	}
+	params = append(params, keys)
+	return client.send("listunspent", params)
+}
+
+type RawTxInput struct {
+	Txid     string `json:"txid"`
+	Vout     int    `json:"vout"`
+	Sequence int    `json:"sequence"`
+}
+
+func (client *Client) CreateRawTransaction(inputs []RawTxInput, outputs []map[string]float32, locktime int) (result string, err error) {
+	params := make([]interface{}, 0, 3)
+	params = append(params, inputs)
+	params = append(params, outputs)
+	params = append(params, locktime)
+	return client.send("createrawtransaction", params)
+}
+
 func (client *Client) GetBlockCount() (result string, err error) {
 	return client.send("getblockcount", nil)
 }
@@ -103,7 +149,6 @@ func (client *Client) GetMiningInfo() (result string, err error) {
 }
 
 func (client *Client) send(method string, params []interface{}) (result string, err error) {
-
 	rawParams := make([]json.RawMessage, 0, len(params))
 	for _, item := range params {
 		marshaledParam, err := json.Marshal(item)
@@ -145,15 +190,14 @@ func (client *Client) send(method string, params []interface{}) (result string, 
 	var resp rawResponse
 	err = json.Unmarshal(respBytes, &resp)
 	if err != nil {
-		err = fmt.Errorf("status code: %d, response: %q",
-			httpResponse.StatusCode, string(respBytes))
+		err = fmt.Errorf("status code: %d, response: %q", httpResponse.StatusCode, string(respBytes))
 		return "", err
 	}
+
 	res, err := resp.result()
-	var f interface{}
-	err = json.Unmarshal(res, &f)
 	if err != nil {
 		fmt.Println(err)
+		return "", err
 	}
 	return string(res), nil
 }
