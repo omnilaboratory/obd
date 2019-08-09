@@ -70,11 +70,6 @@ func (client *Client) GetNetworkInfo() (result string, err error) {
 	return client.send("getnetworkinfo", nil)
 }
 
-//Returns various state information of the client and protocol.
-func (client *Client) Omni_getinfo() (result string, err error) {
-	return client.send("omni_getinfo", nil)
-}
-
 func (client *Client) Validateaddress(address string) (ismine bool, err error) {
 	result, err := client.send("validateaddress", []interface{}{address})
 	if err != nil {

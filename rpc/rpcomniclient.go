@@ -8,22 +8,27 @@ import (
 	"log"
 )
 
+//Returns various state information of the client and protocol.
+func (client *Client) OmniGetinfo() (result string, err error) {
+	return client.send("omni_getinfo", nil)
+}
+
 //Create and broadcast a simple send transaction.
-func (client *Client) Omni_send(fromAddress string, toAddress string, propertyId int, amount float64) (result string, err error) {
+func (client *Client) OmniSend(fromAddress string, toAddress string, propertyId int, amount float64) (result string, err error) {
 	return client.send("omni_send", []interface{}{fromAddress, toAddress, propertyId, amount})
 }
 
-func (client *Client) Omni_getbalance(address string, propertyId int) (result string, err error) {
+func (client *Client) OmniGetbalance(address string, propertyId int) (result string, err error) {
 	return client.send("omni_getbalance", []interface{}{address, propertyId})
 }
 
 //Get detailed information about an Omni transaction.
-func (client *Client) Omni_gettransaction(txid string) (result string, err error) {
+func (client *Client) OmniGettransaction(txid string) (result string, err error) {
 	return client.send("omni_gettransaction", []interface{}{txid})
 }
 
 //List wallet transactions, optionally filtered by an address and block boundaries.
-func (client *Client) Omni_listtransactions(count int, skip int) (result string, err error) {
+func (client *Client) OmniListTransactions(count int, skip int) (result string, err error) {
 	if count < 0 {
 		count = 10
 	}
@@ -33,16 +38,16 @@ func (client *Client) Omni_listtransactions(count int, skip int) (result string,
 	return client.send("omni_listtransactions", []interface{}{"*", count, skip})
 }
 
-func (client *Client) omni_createpayload_simplesend(propertyId int, amount float64) (result string, err error) {
+func (client *Client) omniCreatepayloadSimplesend(propertyId int, amount float64) (result string, err error) {
 	return client.send("omni_createpayload_simplesend", []interface{}{propertyId, decimal.NewFromFloat(amount).String()})
 }
-func (client *Client) omni_createrawtx_opreturn(rawtx string, payload string) (result string, err error) {
+func (client *Client) omniCreaterawtxOpreturn(rawtx string, payload string) (result string, err error) {
 	return client.send("omni_createrawtx_opreturn", []interface{}{rawtx, payload})
 }
-func (client *Client) omni_createrawtx_change(rawtx string, prevtxs []map[string]interface{}, destination string, fee float64) (result string, err error) {
+func (client *Client) omniCreaterawtxChange(rawtx string, prevtxs []map[string]interface{}, destination string, fee float64) (result string, err error) {
 	return client.send("omni_createrawtx_change", []interface{}{rawtx, prevtxs, destination, fee})
 }
-func (client *Client) omni_createrawtx_reference(rawtx string, destination string) (result string, err error) {
+func (client *Client) omniCreaterawtxReference(rawtx string, destination string) (result string, err error) {
 	return client.send("omni_createrawtx_reference", []interface{}{rawtx, destination})
 }
 
@@ -95,7 +100,7 @@ func (client *Client) OmniRawTransaction(fromBitCoinAddress string, privkeys []s
 	}
 
 	//2.Omni_createpayload_simplesend
-	payload, err := client.omni_createpayload_simplesend(propertyId, amount)
+	payload, err := client.omniCreatepayloadSimplesend(propertyId, amount)
 	if err != nil {
 		return "", err
 	}
@@ -125,14 +130,14 @@ func (client *Client) OmniRawTransaction(fromBitCoinAddress string, privkeys []s
 	log.Println("3 createrawtransactionStr", createrawtransactionStr)
 
 	//4.Omni_createrawtx_opreturn
-	opreturn, err := client.omni_createrawtx_opreturn(createrawtransactionStr, payload)
+	opreturn, err := client.omniCreaterawtxOpreturn(createrawtransactionStr, payload)
 	if err != nil {
 		return "", err
 	}
 	log.Println("4 opreturn", opreturn)
 
 	//5. Omni_createrawtx_reference
-	referenc, err := client.omni_createrawtx_reference(opreturn, toBitCoinAddress)
+	referenc, err := client.omniCreaterawtxReference(opreturn, toBitCoinAddress)
 	if err != nil {
 		return "", err
 	}
@@ -148,7 +153,7 @@ func (client *Client) OmniRawTransaction(fromBitCoinAddress string, privkeys []s
 		node["value"] = item.Get("amount").Float()
 		prevtxs = append(prevtxs, node)
 	}
-	change, err := client.omni_createrawtx_change(referenc, prevtxs, fromBitCoinAddress, minerFee)
+	change, err := client.omniCreaterawtxChange(referenc, prevtxs, fromBitCoinAddress, minerFee)
 	if err != nil {
 		return "", err
 	}
