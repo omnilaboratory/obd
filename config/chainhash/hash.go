@@ -20,6 +20,8 @@ var ErrHashStrSize = fmt.Errorf("max hash string length is %v bytes", MaxHashStr
 // Hash is used in several of the bitcoin messages and common structures.  It typically represents the double sha256 of data.
 type Hash [HashSize]byte
 
+type ChainHash string
+
 // IsEqual returns true if target is the same as hash.
 func (hash *Hash) IsEqual(target *Hash) bool {
 	if hash == nil && target == nil {
