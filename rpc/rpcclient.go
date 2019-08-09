@@ -1,6 +1,7 @@
 package rpc
 
 import (
+	config2 "LightningOnOmni/config"
 	"bytes"
 	"encoding/json"
 	"errors"
@@ -68,17 +69,21 @@ type RPCError struct {
 	Message string `json:"message,omitempty"`
 }
 
+var client *Client
+
 func NewClient() *Client {
-	httpClient := http.Client{
-		Transport: &http.Transport{
-			Proxy:           nil,
-			TLSClientConfig: nil,
-		},
-	}
-	config.Host = "http://" + config.Host
-	client := &Client{
-		config:     config,
-		httpClient: httpClient,
+	if client == nil {
+		httpClient := http.Client{
+			Transport: &http.Transport{
+				Proxy:           nil,
+				TLSClientConfig: nil,
+			},
+		}
+		config.Host = "http://" + config.Host
+		client = &Client{
+			config:     config,
+			httpClient: httpClient,
+		}
 	}
 	return client
 }
@@ -160,7 +165,20 @@ func (client *Client) DecodeRawTransaction(hex string) (result string, err error
 	return client.send("decoderawtransaction", params)
 }
 
-func (client *Client) BtcSignRawTransaction(fromBitCoinAddress string, privkeys []string, toBitCoinAddress string, amount float64, minerFee float64) (hex string, err error) {
+// create a transaction and just signnature , not send to the network,get the hash of signature
+func (client *Client) BtcCreateAndSignRawTransaction(fromBitCoinAddress string, privkeys []string, toBitCoinAddress string, amount float64, minerFee float64, sequence *int) (hex string, err error) {
+	if len(fromBitCoinAddress) < 1 {
+		return "", errors.New("fromBitCoinAddress is empty")
+	}
+	if len(toBitCoinAddress) < 1 {
+		return "", errors.New("toBitCoinAddress is empty")
+	}
+	if amount < config2.Dust {
+		return "", errors.New("wrong amount")
+	}
+	if minerFee < config2.Dust {
+		return "", errors.New("minerFee too small")
+	}
 	result, err := client.ListUnspent(fromBitCoinAddress)
 	if err != nil {
 		return "", err
@@ -177,7 +195,6 @@ func (client *Client) BtcSignRawTransaction(fromBitCoinAddress string, privkeys 
 
 	balance := 0.0
 	scriptPubKey := ""
-
 	var inputs []map[string]interface{}
 	for _, item := range array {
 		node := make(map[string]interface{})
@@ -185,6 +202,9 @@ func (client *Client) BtcSignRawTransaction(fromBitCoinAddress string, privkeys 
 		node["vout"] = item.Get("vout").Int()
 		if item.Get("redeemScript").Exists() {
 			node["redeemScript"] = item.Get("redeemScript")
+		}
+		if sequence != nil {
+			node["sequence"] = sequence
 		}
 		if scriptPubKey == "" {
 			scriptPubKey = item.Get("scriptPubKey").String()
@@ -222,22 +242,22 @@ func (client *Client) BtcSignRawTransaction(fromBitCoinAddress string, privkeys 
 		item["scriptPubKey"] = scriptPubKey
 	}
 
-	var signHex string
 	if privkeys == nil || len(privkeys) == 0 {
 		privkeys = nil
 	}
-	signHex, _ = client.SignRawTransactionWithKey(hex, privkeys, inputs, "ALL")
+	signHex, _ := client.SignRawTransactionWithKey(hex, privkeys, inputs, "ALL")
 
 	hex = gjson.Get(signHex, "hex").String()
-	log.Println(hex)
+	log.Println("SignRawTransactionWithKey", hex)
 	decodeHex, _ = client.DecodeRawTransaction(hex)
 	log.Println("DecodeRawTransaction", decodeHex)
 
 	return hex, err
 }
 
-func (client *Client) BtcRawTransaction(fromBitCoinAddress string, privkeys []string, toBitCoinAddress string, amount float64, minerFee float64) (txId string, err error) {
-	hex, err := client.BtcSignRawTransaction(fromBitCoinAddress, privkeys, toBitCoinAddress, amount, minerFee)
+// create a transaction and signature and send to the network
+func (client *Client) BtcCreateAndSignAndSendRawTransaction(fromBitCoinAddress string, privkeys []string, toBitCoinAddress string, amount float64, minerFee float64, sequence *int) (txId string, err error) {
+	hex, err := client.BtcCreateAndSignRawTransaction(fromBitCoinAddress, privkeys, toBitCoinAddress, amount, minerFee, sequence)
 	if err != nil {
 		return "", err
 	}
@@ -271,7 +291,161 @@ func (client *Client) Omni_getinfo() (result string, err error) {
 	return client.send("omni_getinfo", nil)
 }
 
-//Returns the token balance for a given address and property.
+func (client *Client) Validateaddress(address string) (ismine bool, err error) {
+	params := make([]interface{}, 0, 1)
+	params = append(params, address)
+	result, err := client.send("validateaddress", params)
+	if err != nil {
+		return false, err
+	}
+	log.Println(result)
+	return gjson.Get(result, "ismine").Bool(), nil
+}
+func (client *Client) Importaddress(address string) (err error) {
+	params := make([]interface{}, 0, 3)
+	params = append(params, address)
+	params = append(params, nil)
+	params = append(params, false)
+	result, err := client.send("importaddress", params)
+	if err != nil {
+		return err
+	}
+	log.Println(result)
+	return nil
+}
+
+func (client *Client) OmniRawTransaction(fromBitCoinAddress string, privkeys []string, toBitCoinAddress string, propertyId int, amount float64, minerFee float64, sequence *int) (txid string, err error) {
+	if len(fromBitCoinAddress) < 1 {
+		return "", errors.New("fromBitCoinAddress is empty")
+	}
+	if len(toBitCoinAddress) < 1 {
+		return "", errors.New("toBitCoinAddress is empty")
+	}
+	if amount < config2.Dust {
+		return "", errors.New("wrong amount")
+	}
+	if minerFee < config2.Dust {
+		return "", errors.New("minerFee too small")
+	}
+
+	if ismine, _ := client.Validateaddress(fromBitCoinAddress); ismine == false {
+		client.Importaddress(fromBitCoinAddress)
+	}
+	if ismine, _ := client.Validateaddress(toBitCoinAddress); ismine == false {
+		client.Importaddress(toBitCoinAddress)
+	}
+
+	result, e := client.ListUnspent(fromBitCoinAddress)
+	if e != nil {
+		return "", e
+	}
+
+	array := gjson.Parse(result).Array()
+	if len(array) == 0 {
+		return "", errors.New("empty balance")
+	}
+	log.Println("listunspent", array)
+
+	fee := minerFee
+	dustMoney := 0.00000546
+	out, _ := decimal.NewFromFloat(fee).Add(decimal.NewFromFloat(dustMoney)).Float64()
+	balance := 0.0
+	for _, item := range array {
+		balance, _ = decimal.NewFromFloat(balance).Add(decimal.NewFromFloat(item.Get("amount").Float())).Float64()
+		if balance >= out {
+			break
+		}
+	}
+
+	log.Println("1 balance", balance)
+	if balance < out {
+		return "", errors.New("not enough balance")
+	}
+
+	//2.Omni_createpayload_simplesend
+	payload, err := client.omni_createpayload_simplesend(propertyId, amount)
+	if err != nil {
+		return "", err
+	}
+	log.Println("2 payload " + payload)
+
+	inputs := make([]map[string]interface{}, 0, len(array))
+	for _, item := range array {
+		node := make(map[string]interface{})
+		node["txid"] = item.Get("txid").String()
+		node["vout"] = item.Get("vout").Int()
+		node["confirmations"] = item.Get("confirmations").Int()
+		node["spendable"] = item.Get("spendable").Bool()
+		node["solvable"] = item.Get("solvable").Bool()
+		node["amount"] = item.Get("amount").Float()
+		node["address"] = item.Get("address").String()
+		node["account"] = item.Get("account").String()
+		node["scriptPubKey"] = item.Get("scriptPubKey").String()
+		inputs = append(inputs, node)
+	}
+
+	outputs := make(map[string]float64)
+	//3.CreateRawTransaction
+	createrawtransactionStr, err := client.CreateRawTransaction(inputs, outputs)
+	if err != nil {
+		return "", err
+	}
+	log.Println("3 createrawtransactionStr", createrawtransactionStr)
+
+	//4.Omni_createrawtx_opreturn
+	opreturn, err := client.omni_createrawtx_opreturn(createrawtransactionStr, payload)
+	if err != nil {
+		return "", err
+	}
+	log.Println("4 opreturn", opreturn)
+
+	//5. Omni_createrawtx_reference
+	referenc, err := client.omni_createrawtx_reference(opreturn, toBitCoinAddress)
+	if err != nil {
+		return "", err
+	}
+	log.Println("5 referenc", referenc)
+
+	//6.Omni_createrawtx_change
+	prevtxs := make([]map[string]interface{}, 0, len(array))
+	for _, item := range array {
+		node := make(map[string]interface{})
+		node["txid"] = item.Get("txid").String()
+		node["vout"] = item.Get("vout").Int()
+		node["scriptPubKey"] = item.Get("scriptPubKey").String()
+		node["value"] = item.Get("amount").Float()
+		prevtxs = append(prevtxs, node)
+	}
+	change, err := client.omni_createrawtx_change(referenc, prevtxs, fromBitCoinAddress, minerFee)
+	if err != nil {
+		return "", err
+	}
+	log.Println("6 change", change)
+
+	if privkeys == nil || len(privkeys) == 0 {
+		privkeys = nil
+	}
+	//7 sign
+	signHex, err := client.SignRawTransactionWithKey(change, privkeys, inputs, "ALL")
+	if err != nil {
+		return "", err
+	}
+
+	hex := gjson.Get(signHex, "hex").String()
+	log.Println("7 SignRawTransactionWithKey", hex)
+	decodeHex, _ := client.DecodeRawTransaction(hex)
+	log.Println("7 DecodeRawTransaction", decodeHex)
+
+	//8 send
+	txid, err = client.SendRawTransaction(hex)
+	if err != nil {
+		return "", err
+	}
+	log.Println("8 send", txid)
+
+	return txid, nil
+}
+
 func (client *Client) Omni_getbalance(address string, propertyId int) (result string, err error) {
 	params := make([]interface{}, 0, 2)
 	params = append(params, address)
@@ -309,6 +483,33 @@ func (client *Client) Omni_send(fromAddress string, toAddress string, propertyId
 	params = append(params, propertyId)
 	params = append(params, amount)
 	return client.send("omni_send", params)
+}
+
+func (client *Client) omni_createpayload_simplesend(propertyId int, amount float64) (result string, err error) {
+	params := make([]interface{}, 0, 2)
+	params = append(params, propertyId)
+	params = append(params, decimal.NewFromFloat(amount).String())
+	return client.send("omni_createpayload_simplesend", params)
+}
+func (client *Client) omni_createrawtx_opreturn(rawtx string, payload string) (result string, err error) {
+	params := make([]interface{}, 0, 2)
+	params = append(params, rawtx)
+	params = append(params, payload)
+	return client.send("omni_createrawtx_opreturn", params)
+}
+func (client *Client) omni_createrawtx_change(rawtx string, prevtxs []map[string]interface{}, destination string, fee float64) (result string, err error) {
+	params := make([]interface{}, 0, 4)
+	params = append(params, rawtx)
+	params = append(params, prevtxs)
+	params = append(params, destination)
+	params = append(params, fee)
+	return client.send("omni_createrawtx_change", params)
+}
+func (client *Client) omni_createrawtx_reference(rawtx string, destination string) (result string, err error) {
+	params := make([]interface{}, 0, 2)
+	params = append(params, rawtx)
+	params = append(params, destination)
+	return client.send("omni_createrawtx_reference", params)
 }
 
 func (client *Client) send(method string, params []interface{}) (result string, err error) {

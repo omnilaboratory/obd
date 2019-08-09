@@ -12,7 +12,7 @@ func TestClient_GetBlockCount(t *testing.T) {
 	//result, err := client.Omni_gettransaction("1f35a5a0d166fef6b2e24b321efa1108a01e6ea1205397bc96613fb73b902d18")
 	//result, err := client.Omni_listtransactions()
 	var keys []string
-	result, err := client.BtcSignRawTransaction("n1Grf4JGHUC2CdHHoDRYb7jbVKU2Fv8Tsn", keys, "n4bJvpVHks3Fz9wWB9f445LGV5xTS6LGpA", 0.0001, 0.00001)
+	result, err := client.BtcCreateAndSignRawTransaction("n1Grf4JGHUC2CdHHoDRYb7jbVKU2Fv8Tsn", keys, "n4bJvpVHks3Fz9wWB9f445LGV5xTS6LGpA", 0.0001, 0.00001, nil)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -30,5 +30,23 @@ func TestClient_DecodeRawTransaction(t *testing.T) {
 		return
 	}
 	fmt.Println(result)
+}
 
+func TestClient_Validateaddress(t *testing.T) {
+	client := NewClient()
+	r, err := client.Omni_getbalance(" n1Grf4JGHUC2CdHHoDRYb7jbVKU2Fv8Tsn", 121)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Println(r)
+}
+func TestClient_OmniRawTransaction(t *testing.T) {
+	client := NewClient()
+	txid, err := client.OmniRawTransaction("n1Grf4JGHUC2CdHHoDRYb7jbVKU2Fv8Tsn", nil, "n4bJvpVHks3Fz9wWB9f445LGV5xTS6LGpA", 121, 7, 0.00001, nil)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Println(txid)
 }
