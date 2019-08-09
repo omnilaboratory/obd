@@ -160,7 +160,7 @@ func (client *Client) DecodeRawTransaction(hex string) (result string, err error
 	return client.send("decoderawtransaction", params)
 }
 
-func (client *Client) BtcRawTransactionMultiSign(fromBitCoinAddress string, privkeys []string, toBitCoinAddress string, amount float64, mineFee float64) (txId string, err error) {
+func (client *Client) BtcSignRawTransaction(fromBitCoinAddress string, privkeys []string, toBitCoinAddress string, amount float64, minerFee float64) (hex string, err error) {
 	result, err := client.ListUnspent(fromBitCoinAddress)
 	if err != nil {
 		return "", err
@@ -172,18 +172,18 @@ func (client *Client) BtcRawTransactionMultiSign(fromBitCoinAddress string, priv
 	}
 	log.Println("listunspent", array)
 
-	fee := mineFee
+	fee := minerFee
 	out, _ := decimal.NewFromFloat(fee).Add(decimal.NewFromFloat(amount)).Float64()
-	var inputs []map[string]interface{}
 
 	balance := 0.0
 	scriptPubKey := ""
 
+	var inputs []map[string]interface{}
 	for _, item := range array {
 		node := make(map[string]interface{})
 		node["txid"] = item.Get("txid").String()
 		node["vout"] = item.Get("vout").Int()
-		if len(privkeys) > 0 {
+		if item.Get("redeemScript").Exists() {
 			node["redeemScript"] = item.Get("redeemScript")
 		}
 		if scriptPubKey == "" {
@@ -207,7 +207,7 @@ func (client *Client) BtcRawTransactionMultiSign(fromBitCoinAddress string, priv
 	output[toBitCoinAddress] = amount
 	output[fromBitCoinAddress] = drawback
 
-	hex, err := client.CreateRawTransaction(inputs, output)
+	hex, err = client.CreateRawTransaction(inputs, output)
 
 	if err != nil {
 		return "", err
@@ -223,17 +223,26 @@ func (client *Client) BtcRawTransactionMultiSign(fromBitCoinAddress string, priv
 	}
 
 	var signHex string
-	if len(privkeys) > 0 {
-		signHex, _ = client.SignRawTransactionWithKey(hex, privkeys, inputs, "ALL")
-	} else {
-		signHex, _ = client.SignRawTransactionWithKey(hex, nil, inputs, "ALL")
+	if privkeys == nil || len(privkeys) == 0 {
+		privkeys = nil
 	}
+	signHex, _ = client.SignRawTransactionWithKey(hex, privkeys, inputs, "ALL")
 
 	hex = gjson.Get(signHex, "hex").String()
 	log.Println(hex)
 	decodeHex, _ = client.DecodeRawTransaction(hex)
 	log.Println("DecodeRawTransaction", decodeHex)
-	txId, err = client.SendRawTransaction(string(hex))
+
+	return hex, err
+}
+
+func (client *Client) BtcRawTransaction(fromBitCoinAddress string, privkeys []string, toBitCoinAddress string, amount float64, minerFee float64) (txId string, err error) {
+	hex, err := client.BtcSignRawTransaction(fromBitCoinAddress, privkeys, toBitCoinAddress, amount, minerFee)
+	if err != nil {
+		return "", err
+	}
+
+	txId, err = client.SendRawTransaction(hex)
 	if err != nil {
 		return "", err
 	}
@@ -310,8 +319,6 @@ func (client *Client) send(method string, params []interface{}) (result string, 
 			rawParams = append(rawParams, marshaledParam)
 		}
 	}
-
-	log.Println()
 	req := &Request{
 		Jsonrpc: "1.0",
 		ID:      client.NextID(),
