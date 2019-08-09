@@ -38,7 +38,7 @@ func (client *Client) OmniListTransactions(count int, skip int) (result string, 
 	return client.send("omni_listtransactions", []interface{}{"*", count, skip})
 }
 
-func (client *Client) omniCreatepayloadSimplesend(propertyId int, amount float64) (result string, err error) {
+func (client *Client) omniCreatepayloadSimpleSend(propertyId int, amount float64) (result string, err error) {
 	return client.send("omni_createpayload_simplesend", []interface{}{propertyId, decimal.NewFromFloat(amount).String()})
 }
 func (client *Client) omniCreaterawtxOpreturn(rawtx string, payload string) (result string, err error) {
@@ -72,9 +72,9 @@ func (client *Client) OmniRawTransaction(fromBitCoinAddress string, privkeys []s
 		client.Importaddress(toBitCoinAddress)
 	}
 
-	result, e := client.ListUnspent(fromBitCoinAddress)
-	if e != nil {
-		return "", e
+	result, err := client.ListUnspent(fromBitCoinAddress)
+	if err != nil {
+		return "", err
 	}
 
 	array := gjson.Parse(result).Array()
@@ -100,7 +100,7 @@ func (client *Client) OmniRawTransaction(fromBitCoinAddress string, privkeys []s
 	}
 
 	//2.Omni_createpayload_simplesend
-	payload, err := client.omniCreatepayloadSimplesend(propertyId, amount)
+	payload, err := client.omniCreatepayloadSimpleSend(propertyId, amount)
 	if err != nil {
 		return "", err
 	}
@@ -137,11 +137,11 @@ func (client *Client) OmniRawTransaction(fromBitCoinAddress string, privkeys []s
 	log.Println("4 opreturn", opreturn)
 
 	//5. Omni_createrawtx_reference
-	referenc, err := client.omniCreaterawtxReference(opreturn, toBitCoinAddress)
+	reference, err := client.omniCreaterawtxReference(opreturn, toBitCoinAddress)
 	if err != nil {
 		return "", err
 	}
-	log.Println("5 referenc", referenc)
+	log.Println("5 reference", reference)
 
 	//6.Omni_createrawtx_change
 	prevtxs := make([]map[string]interface{}, 0, len(array))
@@ -153,7 +153,7 @@ func (client *Client) OmniRawTransaction(fromBitCoinAddress string, privkeys []s
 		node["value"] = item.Get("amount").Float()
 		prevtxs = append(prevtxs, node)
 	}
-	change, err := client.omniCreaterawtxChange(referenc, prevtxs, fromBitCoinAddress, minerFee)
+	change, err := client.omniCreaterawtxChange(reference, prevtxs, fromBitCoinAddress, minerFee)
 	if err != nil {
 		return "", err
 	}
