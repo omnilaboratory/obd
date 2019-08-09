@@ -8,6 +8,26 @@ LightningOnOmni implements the [OmniBOLT](https://github.com/LightningOnOmnilaye
 
 Omnicore 0.18 integrates the latest BTC core 0.18, which enables relative time locker used in RSM contracts and HTL contracts.
 
+# Related projects:
+
+
+
+[https://github.com/OmniLayer/omniwallet](https://github.com/OmniLayer/omniwallet)
+
+[https://github.com/OmniLayer/OmniJ](https://github.com/OmniLayer/OmniJ)
+
+[https://github.com/OmniLayer/spec](https://github.com/OmniLayer/spec)
+
+[https://github.com/LightningOnOmnilayer/Omni-BOLT-spec](https://github.com/LightningOnOmnilayer/Omni-BOLT-spec)
+
+[https://github.com/lightningnetwork/lightning-rfc](https://github.com/lightningnetwork/lightning-rfc)
+
+[https://github.com/lightningnetwork/lnd](https://github.com/lightningnetwork/lnd)
+
+[https://github.com/LightningOnOmnilayer/OmniWalletMobile](https://github.com/LightningOnOmnilayer/OmniWalletMobile)
+
+
+
 
 
  
