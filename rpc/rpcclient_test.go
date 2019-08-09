@@ -34,7 +34,8 @@ func TestClient_DecodeRawTransaction(t *testing.T) {
 
 func TestClient_Validateaddress(t *testing.T) {
 	client := NewClient()
-	r, err := client.Omni_getbalance(" n1Grf4JGHUC2CdHHoDRYb7jbVKU2Fv8Tsn", 121)
+	//r, err := client.Omni_getbalance(" n4bJvpVHks3Fz9wWB9f445LGV5xTS6LGpA", 121)
+	r, err := client.Validateaddress(" n4bJvpVHks3Fz9wWB9f445LGV5xTS6LGpA")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -49,4 +50,14 @@ func TestClient_OmniRawTransaction(t *testing.T) {
 		return
 	}
 	fmt.Println(txid)
+}
+
+func TestClient_GetTransactionById(t *testing.T) {
+	client := NewClient()
+	result, err := client.GetTransactionById("434b1d74135ec0bf01c0d086792afdcee8c9440ad0aa10dc1882a901ca2b71e4")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Println(result)
 }
