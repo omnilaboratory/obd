@@ -6,6 +6,3 @@ type Message struct {
 	Recipient string `json:"recipient"`
 	Data      string `json:"data"`
 }
-
-type ChainHash string
-type Point string
