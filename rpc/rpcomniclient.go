@@ -66,10 +66,10 @@ func (client *Client) OmniRawTransaction(fromBitCoinAddress string, privkeys []s
 	}
 
 	if ismine, _ := client.Validateaddress(fromBitCoinAddress); ismine == false {
-		client.Importaddress(fromBitCoinAddress)
+		err = client.Importaddress(fromBitCoinAddress)
 	}
 	if ismine, _ := client.Validateaddress(toBitCoinAddress); ismine == false {
-		client.Importaddress(toBitCoinAddress)
+		err = client.Importaddress(toBitCoinAddress)
 	}
 
 	result, err := client.ListUnspent(fromBitCoinAddress)
