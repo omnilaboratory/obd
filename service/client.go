@@ -2,14 +2,17 @@ package service
 
 import (
 	"LightningOnOmni/config"
+	"LightningOnOmni/config/msgtype"
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/websocket"
+	"log"
 )
 
 type SendTargetType int
 
 const (
+	SendToNone     SendTargetType = -1
 	SendToAll      SendTargetType = 0
 	SendToSomeone  SendTargetType = 1
 	SendToExceptMe SendTargetType = 2
@@ -43,6 +46,7 @@ func (c *Client) Write() {
 
 func (c *Client) Read() {
 	defer func() {
+		User_service.UserLogout(c.User)
 		Global_manager.Unregister <- c
 		c.Socket.Close()
 		fmt.Println("socket closed after reading...")
@@ -51,25 +55,28 @@ func (c *Client) Read() {
 	for {
 		_, dataReq, err := c.Socket.ReadMessage()
 		if err != nil {
-			User_service.UserLogout(c.User)
-			Global_manager.Unregister <- c
-			c.Socket.Close()
+			log.Println(err)
+
 			break
 		}
 
 		var msg config.Message
-		json.Unmarshal(dataReq, &msg)
-		var sender, recipient User
+		log.Println(string(dataReq))
+		err = json.Unmarshal(dataReq, &msg)
+		if err != nil {
+			log.Println(err)
+			continue
+		}
+		var sender, receiver User
 		json.Unmarshal([]byte(msg.Sender), &sender)
-		json.Unmarshal([]byte(msg.Recipient), &recipient)
+		json.Unmarshal([]byte(msg.Recipient), &receiver)
 
-		var sendBroadcast SendTargetType = SendToAll
+		var sendType = SendToNone
 		switch msg.Type {
-		//user login
-		case 1:
+		case msgtype.UserLogin:
 			if c.User != nil {
 				c.sendToMyself("already login")
-				sendBroadcast = SendToSomeone
+				sendType = SendToSomeone
 			} else {
 				var data User
 				json.Unmarshal([]byte(msg.Data), &data)
@@ -77,19 +84,18 @@ func (c *Client) Read() {
 					c.User = &data
 					User_service.UserLogin(&data)
 				}
-				sendBroadcast = SendToExceptMe
+				sendType = SendToExceptMe
 			}
-		//user logout
-		case 2:
+		case msgtype.UserLogout:
 			if c.User != nil {
 				c.sendToMyself("logout success")
 				c.User = nil
 			} else {
 				c.sendToMyself("please login")
 			}
-			sendBroadcast = SendToSomeone
+			sendType = SendToSomeone
 		//get openChannelReq from funder then send to fundee
-		case -32:
+		case msgtype.ChannelOpen:
 			var data OpenChannelInfo
 			json.Unmarshal([]byte(msg.Data), &data)
 			if err := Channel_Service.OpenChannel(&data); err != nil {
@@ -97,23 +103,50 @@ func (c *Client) Read() {
 			} else {
 				bytes, err := json.Marshal(data)
 				if err == nil {
-					c.sendToSomeone(recipient, string(bytes))
+					c.sendToSomeone(receiver, string(bytes))
 				}
-				sendBroadcast = SendToSomeone
+				sendType = SendToSomeone
 			}
 		//get acceptChannelReq from fundee then send to funder
-		case -33:
+		case msgtype.ChannelAccept:
 			var data AcceptChannelInfo
 			json.Unmarshal([]byte(msg.Data), &data)
 			bytes, err := json.Marshal(data)
 			if err == nil {
-				c.sendToSomeone(recipient, string(bytes))
+				c.sendToSomeone(receiver, string(bytes))
 			}
-			sendBroadcast = SendToSomeone
+			sendType = SendToSomeone
+		// create a funding tx
+		case msgtype.FundingCreated:
+			node, err := FundingService.CreateFunding(msg.Data)
+			if err != nil {
+				log.Println(err)
+			} else {
+				bytes, err := json.Marshal(node)
+				if err != nil {
+					log.Println(err)
+				} else {
+					c.sendToMyself(string(bytes))
+					sendType = SendToSomeone
+				}
+			}
+		case msgtype.FundingSigned:
+			sendType = SendToAll
+		case msgtype.CommitmentTx:
+			sendType = SendToAll
+		case msgtype.CommitmentTxSigned:
+			sendType = SendToAll
+		case msgtype.GetBalanceRequest:
+			sendType = SendToAll
+		case msgtype.GetBalanceRespond:
+			sendType = SendToAll
+		default:
+			sendType = SendToAll
+
 		}
 
 		//broadcast except me
-		if sendBroadcast == SendToExceptMe {
+		if sendType == SendToExceptMe {
 			for client := range Global_manager.Clients_map {
 				if client != c {
 					jsonMessage, _ := json.Marshal(&MessageBody{Sender: client.Id, Data: string(dataReq)})
@@ -121,7 +154,7 @@ func (c *Client) Read() {
 				}
 			}
 			//broadcast to all
-		} else if sendBroadcast == SendToAll {
+		} else if sendType == SendToAll {
 			jsonMessage, _ := json.Marshal(&MessageBody{Sender: c.Id, Data: string(dataReq)})
 			Global_manager.Broadcast <- jsonMessage
 		}

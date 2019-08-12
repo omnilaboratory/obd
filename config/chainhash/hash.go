@@ -21,7 +21,7 @@ var ErrHashStrSize = fmt.Errorf("max hash string length is %v bytes", MaxHashStr
 type Hash [HashSize]byte
 
 type ChainHash string
-type Signauture string
+type Signauture [MaxHashStringSize]byte
 
 // IsEqual returns true if target is the same as hash.
 func (hash *Hash) IsEqual(target *Hash) bool {

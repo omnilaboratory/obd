@@ -2,7 +2,7 @@ package service
 
 import (
 	"encoding/json"
-	"fmt"
+	"log"
 )
 
 type ClientManager struct {
@@ -18,16 +18,14 @@ func (client_manager *ClientManager) Start() {
 		case conn := <-client_manager.Register:
 			client_manager.Clients_map[conn] = true
 			jsonMessage, _ := json.Marshal(&MessageBody{Data: "/A new socket has connected."})
-			fmt.Println("new socket has connected.")
-
+			log.Println("new socket has connected.")
 			client_manager.Send(jsonMessage, conn)
 		case conn := <-client_manager.Unregister:
 			if _, ok := client_manager.Clients_map[conn]; ok {
 				close(conn.Send_channel)
 				delete(client_manager.Clients_map, conn)
 				jsonMessage, _ := json.Marshal(&MessageBody{Data: "/A socket has disconnected."})
-				fmt.Println("socket has disconnected.")
-
+				log.Println("socket has disconnected.")
 				client_manager.Send(jsonMessage, conn)
 			}
 		case order_message := <-client_manager.Broadcast:

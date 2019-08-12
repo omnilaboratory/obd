@@ -2,16 +2,17 @@ package service
 
 import (
 	"LightningOnOmni/config/chainhash"
+	"github.com/tidwall/gjson"
 )
 
 //type: -34 (funding_created)
 type Funding_created struct {
 	Id                   int            `storm:"id,increment" `
-	Temporary_channel_id chainhash.Hash `json:"temporary_channel_id"`
-	Funder_pubKey        chainhash.Hash `json:"funder_pub_key"`
-	Property_id          int            `json:"property_id"`
-	Max_assets           float64        `json:"max_assets"`
-	Amount_a             float64        `json:"amount_a"`
+	Temporary_channel_id chainhash.Hash `json:"temporaryChannelId"`
+	Funder_pubKey        chainhash.Hash `json:"funderPubKey"`
+	Property_id          int64          `json:"propertyId"`
+	Max_assets           float64        `json:"maxAssets"`
+	Amount_a             float64        `json:"amountA"`
 }
 
 type Funding_Service struct {
@@ -19,21 +20,22 @@ type Funding_Service struct {
 
 var FundingService Funding_Service
 
-func (service *Funding_Service) CreateFunding() error {
+func (service *Funding_Service) CreateFunding(jsonData string) (node *Funding_created, err error) {
 	db, e := DB_Manager.GetDB()
 	if e != nil {
-		return e
+		return nil, e
 	}
 	tempId, _ := Channel_Service.getTemporayChaneelId()
-	hashes, _ := chainhash.NewHashFromStr("abc")
-	node := &Funding_created{
+	hashes, _ := chainhash.NewHashFromStr(gjson.Get(jsonData, "funderPubKey").String())
+	node = &Funding_created{
 		Temporary_channel_id: *tempId,
 		Funder_pubKey:        *hashes,
-		Property_id:          31,
-		Max_assets:           1000,
-		Amount_a:             20,
+		Property_id:          gjson.Get(jsonData, "propertyId").Int(),
+		Max_assets:           gjson.Get(jsonData, "maxAssets").Float(),
+		Amount_a:             gjson.Get(jsonData, "amountA").Float(),
 	}
-	return db.Save(node)
+
+	return node, db.Save(node)
 }
 
 //type: -35 (funding_signed)

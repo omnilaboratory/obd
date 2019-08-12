@@ -24,6 +24,9 @@ type UserService struct {
 var User_service = UserService{}
 
 func (service *UserService) UserLogin(user *User) error {
+	if user != nil {
+		errors.New("user is nil")
+	}
 	//打开数据库
 	db, e := DB_Manager.GetDB()
 	if e != nil {
@@ -40,6 +43,9 @@ func (service *UserService) UserLogin(user *User) error {
 	}
 }
 func (service *UserService) UserLogout(user *User) error {
+	if user == nil {
+		return errors.New("user is nil")
+	}
 	//打开数据库
 	db, e := DB_Manager.GetDB()
 	if e != nil {
@@ -47,6 +53,7 @@ func (service *UserService) UserLogout(user *User) error {
 	}
 
 	var node User
+
 	e = db.One("Email", user.Email, &node)
 	if node.Id == 0 {
 		return errors.New("user not found")
