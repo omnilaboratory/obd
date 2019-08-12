@@ -38,24 +38,25 @@ func (service *Funding_Service) CreateFunding() error {
 
 //type: -35 (funding_signed)
 type Funding_signed struct {
+	Id int `storm:"id,increment" `
 	//the same as the temporary_channel_id in the open_channel message
-	Temporary_channel_id chainhash.ChainHash
+	Temporary_channel_id chainhash.ChainHash `json:"temporary_channel_id"`
 	//the omni address of funder Alice
-	Funder_pubKey chainhash.Hash
+	Funder_pubKey chainhash.Hash `json:"funder_pub_key"`
 	// the id of the Omni asset
-	Asset_id int
+	Property_id int `json:"property_id"`
 	//amount of the asset on Alice side
-	Amount_a float64
+	Amount_a float64 `json:"amount_a"`
 	//the omni address of fundee Bob
-	Fundee_pubKey chainhash.Hash
+	Fundee_pubKey chainhash.Hash `json:"fundee_pub_key"`
 	//amount of the asset on Bob side
-	Amount_b float64
+	Amount_b float64 `json:"amount_b"`
 	//signature of fundee Bob
-	Fundee_signature chainhash.Signauture
+	Fundee_signature chainhash.Signauture `json:"fundee_signature"`
 	//redeem script used to generate P2SH address
-	RedeemScript string
+	RedeemScript string `json:"redeem_script"`
 	//hash of redeemScript
-	P2sh_address chainhash.Hash
+	P2sh_address chainhash.Hash `json:"p_2_sh_address"`
 	//final global channel id generated
-	Channel_id chainhash.Hash
+	Channel_id chainhash.Hash `json:"channel_id"`
 }
