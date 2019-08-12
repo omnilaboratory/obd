@@ -30,6 +30,14 @@ type OpenChannelInfo struct {
 //type = -33
 type AcceptChannelInfo OpenChannelInfo
 
+//type: -38 (close_channel)
+type Close_channel struct {
+	channel_id   chainhash.Hash
+	len          uint16
+	scriptpubkey []byte
+	signature    chainhash.Signauture
+}
+
 type ChannelManager struct {
 }
 
@@ -38,23 +46,18 @@ var Channel_Service = ChannelManager{}
 // openChannel init data
 func (c *ChannelManager) OpenChannel(data *OpenChannelInfo) error {
 	data.Chain_hash = config.Init_node_chain_hash
-	c.getTemporayChaneelId(data)
-
+	tempId, _ := c.getTemporayChaneelId()
+	data.Temporary_channel_id = *tempId
 	return nil
 }
 
-func (c *ChannelManager) getTemporayChaneelId(data *OpenChannelInfo) (err error) {
-	uuid_str, err := uuid.NewV4()
+func (c *ChannelManager) getTemporayChaneelId() (tempId *chainhash.Hash, err error) {
+	uuidStr, err := uuid.NewV4()
 	if err != nil {
-		return err
+		return nil, err
 	}
 	hash := sha256.New()
-	hash.Write([]byte(uuid_str.String()))
+	hash.Write([]byte(uuidStr.String()))
 	sum := hash.Sum(nil)
-	tempId, err := chainhash.NewHash(sum)
-	if err != nil {
-		return err
-	}
-	data.Temporary_channel_id = *tempId
-	return nil
+	return chainhash.NewHash(sum)
 }

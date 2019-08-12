@@ -171,7 +171,7 @@ func (client *Client) OmniRawTransaction(fromBitCoinAddress string, privkeys []s
 	hex := gjson.Get(signHex, "hex").String()
 	log.Println("7 SignRawTransactionWithKey", hex)
 	decodeHex, _ := client.DecodeRawTransaction(hex)
-	log.Println("7 DecodeRawTransaction", decodeHex)
+	log.Println("7 DecodeSignRawTransactionWithKey", decodeHex)
 
 	//8 send
 	txid, err = client.SendRawTransaction(hex)

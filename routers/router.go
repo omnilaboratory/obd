@@ -37,12 +37,28 @@ func InitRouter() *gin.Engine {
 			})
 		})
 		apiv1.GET("/getNode", getNodeData)
+		apiv1.GET("/test", testBd)
 
 		apiv1.GET("/userLogin", userLogin)
 		apiv1.GET("/userLogout", userLogout)
 		apiv1.GET("/userInfo", userInfo)
 	}
 	return router
+}
+
+func testBd(context *gin.Context) {
+	e := service.FundingService.CreateFunding()
+	if e != nil {
+		context.JSON(http.StatusOK, gin.H{
+			"msg":  "userInfo",
+			"data": e.Error(),
+		})
+		return
+	}
+	context.JSON(http.StatusOK, gin.H{
+		"msg":  "test CreateFunding",
+		"data": string("CreateFunding"),
+	})
 }
 
 func userInfo(context *gin.Context) {
