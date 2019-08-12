@@ -1,19 +1,21 @@
 package main
 
 import (
+	"LightningOnOmni/config"
 	"LightningOnOmni/routers"
 	"log"
 	"net/http"
-	"time"
+	"strconv"
 )
 
 func main() {
 	routersInit := routers.InitRouter()
+	addr := ":" + strconv.Itoa(config.ServerPort)
 	server := &http.Server{
-		Addr:           ":60020",
+		Addr:           addr,
 		Handler:        routersInit,
-		ReadTimeout:    10 * time.Second,
-		WriteTimeout:   10 * time.Second,
+		ReadTimeout:    config.ReadTimeout,
+		WriteTimeout:   config.WriteTimeout,
 		MaxHeaderBytes: 1 << 20,
 	}
 	log.Fatal(server.ListenAndServe())
