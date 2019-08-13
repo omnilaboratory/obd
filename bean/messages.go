@@ -22,22 +22,22 @@ type User struct {
 
 //type = -32
 type OpenChannelInfo struct {
-	Chain_hash                    chainhash.ChainHash `json:"chain_hash"`
-	Temporary_channel_id          chainhash.Hash      `json:"temporary_channel_id"`
-	funding_satoshis              uint64              `json:"funding_satoshis"`
-	push_msat                     uint64              `json:"push_msat"`
-	dust_limit_satoshis           uint64              `json:"dust_limit_satoshis"`
-	max_htlc_value_in_flight_msat uint64              `json:"max_htlc_value_in_flight_msat"`
-	channel_reserve_satoshis      uint64              `json:"channel_reserve_satoshis"`
-	htlc_minimum_msat             uint64              `json:"htlc_minimum_msat"`
-	feerate_per_kw                uint32              `json:"feerate_per_kw"`
-	to_self_delay                 uint16              `json:"to_self_delay"`
-	max_accepted_htlcs            uint16              `json:"max_accepted_htlcs"`
-	funding_pubkey                chainhash.Point     `json:"funding_pubkey"`
-	revocation_basepoint          chainhash.Point     `json:"revocation_basepoint"`
-	payment_basepoint             chainhash.Point     `json:"payment_basepoint"`
-	delayed_payment_basepoint     chainhash.Point     `json:"delayed_payment_basepoint"`
-	htlc_basepoint                chainhash.Point     `json:"htlc_basepoint"`
+	ChainHash                chainhash.ChainHash `json:"chain_hash"`
+	TemporaryChannelId       chainhash.Hash      `json:"temporary_channel_id"`
+	FundingSatoshis          uint64              `json:"funding_satoshis"`
+	PushMsat                 uint64              `json:"push_msat"`
+	DustLimitSatoshis        uint64              `json:"dust_limit_satoshis"`
+	MaxHtlcValueInFlightMsat uint64              `json:"max_htlc_value_in_flight_msat"`
+	ChannelReserveSatoshis   uint64              `json:"channel_reserve_satoshis"`
+	HtlcMinimumMsat          uint64              `json:"htlc_minimum_msat"`
+	FeeRatePerKw             uint32              `json:"feerate_per_kw"`
+	ToSelfDelay              uint16              `json:"to_self_delay"`
+	MaxAcceptedHtlcs         uint16              `json:"max_accepted_htlcs"`
+	FundingPubKey            chainhash.Point     `json:"funding_pubkey"`
+	RevocationBasePoint      chainhash.Point     `json:"revocation_basepoint"`
+	PaymentBasePoint         chainhash.Point     `json:"payment_basepoint"`
+	DelayedPaymentBasePoint  chainhash.Point     `json:"delayed_payment_basepoint"`
+	HtlcBasePoint            chainhash.Point     `json:"htlc_basepoint"`
 }
 
 //type = -33

@@ -17,7 +17,7 @@ func (service *FundingManager) CreateFunding(jsonData string) (node *bean.Fundin
 	if e != nil {
 		return nil, e
 	}
-	tempId, _ := ChannelService.getTemporayChaneelId()
+	tempId, _ := ChannelService.getTemporaryChannelId()
 	hashes, _ := chainhash.NewHashFromStr(gjson.Get(jsonData, "funderPubKey").String())
 	node = &bean.Funding_created{
 		Temporary_channel_id: *tempId,

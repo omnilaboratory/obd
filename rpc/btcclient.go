@@ -24,7 +24,7 @@ func (client *Client) GetTxOut(txid string, num int) (result string, err error) 
 	return client.send("gettxout", []interface{}{txid, num})
 }
 
-func (client *Client) GetNewAddress(label string) (result string, err error) {
+func (client *Client) GetNewAddress(label string) (address string, err error) {
 	return client.send("getnewaddress", []interface{}{label})
 }
 
