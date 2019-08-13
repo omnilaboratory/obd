@@ -106,6 +106,8 @@ func (client *Client) send(method string, params []interface{}) (result string, 
 		Method:  method,
 		Params:  rawParams,
 	}
+	log.Println(req)
+
 	marshaledJSON, e := json.Marshal(req)
 	if e != nil {
 		return "", e

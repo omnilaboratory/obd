@@ -8,6 +8,10 @@ import (
 	"testing"
 )
 
+func init() {
+	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
+}
+
 func TestClient_GetBlockCount(t *testing.T) {
 
 	uuid_str, err := uuid.NewV4()

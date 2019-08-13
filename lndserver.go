@@ -8,6 +8,10 @@ import (
 	"strconv"
 )
 
+func init() {
+	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
+}
+
 func main() {
 	routersInit := routers.InitRouter()
 	addr := ":" + strconv.Itoa(config.ServerPort)
