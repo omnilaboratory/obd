@@ -1,6 +1,9 @@
 package service
 
-import "errors"
+import (
+	"LightningOnOmni/dao"
+	"errors"
+)
 
 type UserState int
 
@@ -28,7 +31,7 @@ func (service *UserService) UserLogin(user *User) error {
 		errors.New("user is nil")
 	}
 	//打开数据库
-	db, e := DB_Manager.GetDB()
+	db, e := dao.DB_Manager.GetDB()
 	if e != nil {
 		return e
 	}
@@ -47,7 +50,7 @@ func (service *UserService) UserLogout(user *User) error {
 		return errors.New("user is nil")
 	}
 	//打开数据库
-	db, e := DB_Manager.GetDB()
+	db, e := dao.DB_Manager.GetDB()
 	if e != nil {
 		return e
 	}
@@ -65,7 +68,7 @@ func (service *UserService) UserLogout(user *User) error {
 
 func (service *UserService) UserInfo(email string) (user *User, e error) {
 
-	db, e := DB_Manager.GetDB()
+	db, e := dao.DB_Manager.GetDB()
 	if e != nil {
 		return nil, errors.New("db is not exist")
 	}

@@ -47,7 +47,7 @@ func (c *Client) Write() {
 func (c *Client) Read() {
 	defer func() {
 		User_service.UserLogout(c.User)
-		Global_manager.Unregister <- c
+		GlobalWsClientManager.Unregister <- c
 		c.Socket.Close()
 		fmt.Println("socket closed after reading...")
 	}()
@@ -147,7 +147,7 @@ func (c *Client) Read() {
 
 		//broadcast except me
 		if sendType == SendToExceptMe {
-			for client := range Global_manager.Clients_map {
+			for client := range GlobalWsClientManager.Clients_map {
 				if client != c {
 					jsonMessage, _ := json.Marshal(&MessageBody{Sender: client.Id, Data: string(dataReq)})
 					client.Send_channel <- jsonMessage
@@ -156,13 +156,13 @@ func (c *Client) Read() {
 			//broadcast to all
 		} else if sendType == SendToAll {
 			jsonMessage, _ := json.Marshal(&MessageBody{Sender: c.Id, Data: string(dataReq)})
-			Global_manager.Broadcast <- jsonMessage
+			GlobalWsClientManager.Broadcast <- jsonMessage
 		}
 	}
 }
 
 func (c *Client) sendToSomeone(recipient User, data string) {
-	for client := range Global_manager.Clients_map {
+	for client := range GlobalWsClientManager.Clients_map {
 		if client.User.Email == recipient.Email {
 			jsonMessage, _ := json.Marshal(&MessageBody{Sender: c.Id, Data: data})
 			client.Send_channel <- jsonMessage

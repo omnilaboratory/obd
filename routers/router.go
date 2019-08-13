@@ -17,7 +17,7 @@ func InitRouter() *gin.Engine {
 	router.Use(gin.Logger())
 	router.Use(gin.Recovery())
 
-	go service.Global_manager.Start()
+	go service.GlobalWsClientManager.Start()
 	router.GET("/ws", wsClientConnect)
 
 	apiv1 := router.Group("/api/v1")
@@ -133,7 +133,7 @@ func wsClientConnect(c *gin.Context) {
 		Socket:       conn,
 		Send_channel: make(chan []byte)}
 
-	service.Global_manager.Register <- client
+	service.GlobalWsClientManager.Register <- client
 	go client.Write()
 	client.Read()
 }

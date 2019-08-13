@@ -1,6 +1,7 @@
 package service
 
 import (
+	"LightningOnOmni/dao"
 	"fmt"
 	"time"
 )
@@ -14,14 +15,14 @@ type NodeService struct {
 }
 
 func (service *NodeService) Save(node *Node) error {
-	db, e := DB_Manager.GetDB()
+	db, e := dao.DB_Manager.GetDB()
 	if e != nil {
 		return e
 	}
 	return db.Save(node)
 }
 func (service *NodeService) Get(id interface{}) (data Node, err error) {
-	db, e := DB_Manager.GetDB()
+	db, e := dao.DB_Manager.GetDB()
 	var node Node
 	if e != nil {
 		return node, e

@@ -12,6 +12,13 @@ type ClientManager struct {
 	Unregister  chan *Client
 }
 
+var GlobalWsClientManager = ClientManager{
+	Broadcast:   make(chan []byte),
+	Register:    make(chan *Client),
+	Unregister:  make(chan *Client),
+	Clients_map: make(map[*Client]bool),
+}
+
 func (client_manager *ClientManager) Start() {
 	for {
 		select {

@@ -2,6 +2,7 @@ package service
 
 import (
 	"LightningOnOmni/config/chainhash"
+	"LightningOnOmni/dao"
 	"github.com/tidwall/gjson"
 )
 
@@ -21,7 +22,7 @@ type Funding_Service struct {
 var FundingService Funding_Service
 
 func (service *Funding_Service) CreateFunding(jsonData string) (node *Funding_created, err error) {
-	db, e := DB_Manager.GetDB()
+	db, e := dao.DB_Manager.GetDB()
 	if e != nil {
 		return nil, e
 	}
