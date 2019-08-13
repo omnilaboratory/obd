@@ -1,7 +1,7 @@
 package rpc
 
 import (
-	"LightningOnOmni/config/chainhash"
+	"LightningOnOmni/bean/chainhash"
 	"crypto/sha256"
 	"fmt"
 	"github.com/satori/go.uuid"

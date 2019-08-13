@@ -1,8 +1,8 @@
 package service
 
 import (
+	"LightningOnOmni/bean/chainhash"
 	"LightningOnOmni/config"
-	"LightningOnOmni/config/chainhash"
 	"crypto/sha256"
 	"github.com/satori/go.uuid"
 )

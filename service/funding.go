@@ -1,7 +1,7 @@
 package service
 
 import (
-	"LightningOnOmni/config/chainhash"
+	"LightningOnOmni/bean/chainhash"
 	"LightningOnOmni/dao"
 	"github.com/tidwall/gjson"
 )

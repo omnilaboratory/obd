@@ -1,6 +1,6 @@
 package service
 
-import "LightningOnOmni/config/chainhash"
+import "LightningOnOmni/bean/chainhash"
 
 //type: -351 (commitment_tx)
 type Commitment_tx struct {
