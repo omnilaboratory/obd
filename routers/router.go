@@ -48,7 +48,7 @@ func InitRouter() *gin.Engine {
 }
 
 func testBd(context *gin.Context) {
-	node, e := service.TheFundingService.CreateFunding("")
+	node, e := service.FundingService.CreateFunding("")
 	if e != nil {
 		context.JSON(http.StatusOK, gin.H{
 			"msg":  "userInfo",
@@ -64,7 +64,7 @@ func testBd(context *gin.Context) {
 }
 
 func userInfo(context *gin.Context) {
-	user, e := service.User_service.UserInfo(context.Query("email"))
+	user, e := service.UserService.UserInfo(context.Query("email"))
 	if e != nil {
 		context.JSON(http.StatusOK, gin.H{
 			"msg":  "userInfo",
@@ -82,7 +82,7 @@ func userInfo(context *gin.Context) {
 func userLogin(context *gin.Context) {
 	user := bean.User{}
 	user.Email = context.Query("email")
-	service.User_service.UserLogin(&user)
+	service.UserService.UserLogin(&user)
 	bytes, _ := json.Marshal(user)
 	context.JSON(http.StatusOK, gin.H{
 		"msg":  "userLogin",
@@ -92,7 +92,7 @@ func userLogin(context *gin.Context) {
 func userLogout(context *gin.Context) {
 	user := bean.User{}
 	user.Email = context.Query("email")
-	logout := service.User_service.UserLogout(&user)
+	logout := service.UserService.UserLogout(&user)
 	if logout != nil {
 		context.JSON(http.StatusOK, gin.H{
 			"msg":  "userLogout",

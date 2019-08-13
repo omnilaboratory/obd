@@ -1,6 +1,6 @@
 package service
 
-type CommnitTxService struct {
+type CommnitTxManager struct {
 }
 
-var TheCommnitTxService CommnitTxService
+var CommnitTxService CommnitTxManager

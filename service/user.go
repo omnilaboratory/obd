@@ -7,12 +7,12 @@ import (
 	"errors"
 )
 
-type UserService struct {
+type UserManager struct {
 }
 
-var User_service = UserService{}
+var UserService = UserManager{}
 
-func (service *UserService) UserLogin(user *bean.User) error {
+func (service *UserManager) UserLogin(user *bean.User) error {
 	if user != nil {
 		errors.New("user is nil")
 	}
@@ -31,7 +31,7 @@ func (service *UserService) UserLogin(user *bean.User) error {
 		return db.Update(user)
 	}
 }
-func (service *UserService) UserLogout(user *bean.User) error {
+func (service *UserManager) UserLogout(user *bean.User) error {
 	if user == nil {
 		return errors.New("user is nil")
 	}
@@ -52,7 +52,7 @@ func (service *UserService) UserLogout(user *bean.User) error {
 	return db.Update(user)
 }
 
-func (service *UserService) UserInfo(email string) (user *bean.User, e error) {
+func (service *UserManager) UserInfo(email string) (user *bean.User, e error) {
 
 	db, e := dao.DB_Manager.GetDB()
 	if e != nil {

@@ -38,7 +38,7 @@ func (c *Client) Write() {
 
 func (c *Client) Read() {
 	defer func() {
-		service.User_service.UserLogout(c.User)
+		service.UserService.UserLogout(c.User)
 		GlobalWsClientManager.Unregister <- c
 		c.Socket.Close()
 		fmt.Println("socket closed after reading...")
@@ -74,7 +74,7 @@ func (c *Client) Read() {
 				json.Unmarshal([]byte(msg.Data), &data)
 				if len(data.Email) > 0 {
 					c.User = &data
-					service.User_service.UserLogin(&data)
+					service.UserService.UserLogin(&data)
 				}
 				sendType = enum.SendTargetType_SendToExceptMe
 			}
@@ -90,7 +90,7 @@ func (c *Client) Read() {
 		case enum.MsgType_ChannelOpen:
 			var data bean.OpenChannelInfo
 			json.Unmarshal([]byte(msg.Data), &data)
-			if err := service.Channel_Service.OpenChannel(&data); err != nil {
+			if err := service.ChannelService.OpenChannel(&data); err != nil {
 				fmt.Println(err)
 			} else {
 				bytes, err := json.Marshal(data)
@@ -110,7 +110,7 @@ func (c *Client) Read() {
 			sendType = enum.SendTargetType_SendToSomeone
 		// create a funding tx
 		case enum.MsgType_FundingCreated:
-			node, err := service.TheFundingService.CreateFunding(msg.Data)
+			node, err := service.FundingService.CreateFunding(msg.Data)
 			if err != nil {
 				log.Println(err)
 			} else {

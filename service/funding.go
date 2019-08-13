@@ -7,17 +7,17 @@ import (
 	"github.com/tidwall/gjson"
 )
 
-type FundingService struct {
+type FundingManager struct {
 }
 
-var TheFundingService FundingService
+var FundingService FundingManager
 
-func (service *FundingService) CreateFunding(jsonData string) (node *bean.Funding_created, err error) {
+func (service *FundingManager) CreateFunding(jsonData string) (node *bean.Funding_created, err error) {
 	db, e := dao.DB_Manager.GetDB()
 	if e != nil {
 		return nil, e
 	}
-	tempId, _ := Channel_Service.getTemporayChaneelId()
+	tempId, _ := ChannelService.getTemporayChaneelId()
 	hashes, _ := chainhash.NewHashFromStr(gjson.Get(jsonData, "funderPubKey").String())
 	node = &bean.Funding_created{
 		Temporary_channel_id: *tempId,

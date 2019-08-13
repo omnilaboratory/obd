@@ -10,7 +10,7 @@ import (
 
 type ChannelManager struct{}
 
-var Channel_Service = ChannelManager{}
+var ChannelService = ChannelManager{}
 
 // openChannel init data
 func (c *ChannelManager) OpenChannel(data *bean.OpenChannelInfo) error {
