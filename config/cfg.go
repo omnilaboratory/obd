@@ -18,6 +18,8 @@ var (
 )
 
 func init() {
+	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
+
 	Cfg, err := ini.Load("config/conf.ini")
 	if err != nil {
 		log.Println(err)
