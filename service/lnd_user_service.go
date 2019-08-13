@@ -28,7 +28,7 @@ func (service *UserService) UserLogin(user *User) error {
 	if e != nil {
 		return e
 	}
-	user.State = enum.OnLine
+	user.State = enum.UserState_OnLine
 	var node User
 
 	e = db.One("Email", user.Email, &node)
@@ -55,7 +55,7 @@ func (service *UserService) UserLogout(user *User) error {
 		return errors.New("user not found")
 	}
 
-	user.State = enum.Offline
+	user.State = enum.UserState_Offline
 	return db.Update(user)
 }
 

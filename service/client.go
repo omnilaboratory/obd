@@ -2,20 +2,11 @@ package service
 
 import (
 	"LightningOnOmni/bean"
-	"LightningOnOmni/config/msgtype"
+	"LightningOnOmni/enum"
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/websocket"
 	"log"
-)
-
-type SendTargetType int
-
-const (
-	SendToNone     SendTargetType = -1
-	SendToAll      SendTargetType = 0
-	SendToSomeone  SendTargetType = 1
-	SendToExceptMe SendTargetType = 2
 )
 
 type Client struct {
@@ -71,12 +62,12 @@ func (c *Client) Read() {
 		json.Unmarshal([]byte(msg.Sender), &sender)
 		json.Unmarshal([]byte(msg.Recipient), &receiver)
 
-		var sendType = SendToNone
+		var sendType = enum.SendTargetType_SendToNone
 		switch msg.Type {
-		case msgtype.UserLogin:
+		case enum.MsgType_UserLogin:
 			if c.User != nil {
 				c.sendToMyself("already login")
-				sendType = SendToSomeone
+				sendType = enum.SendTargetType_SendToSomeone
 			} else {
 				var data User
 				json.Unmarshal([]byte(msg.Data), &data)
@@ -84,18 +75,18 @@ func (c *Client) Read() {
 					c.User = &data
 					User_service.UserLogin(&data)
 				}
-				sendType = SendToExceptMe
+				sendType = enum.SendTargetType_SendToExceptMe
 			}
-		case msgtype.UserLogout:
+		case enum.MsgType_UserLogout:
 			if c.User != nil {
 				c.sendToMyself("logout success")
 				c.User = nil
 			} else {
 				c.sendToMyself("please login")
 			}
-			sendType = SendToSomeone
+			sendType = enum.SendTargetType_SendToSomeone
 		//get openChannelReq from funder then send to fundee
-		case msgtype.ChannelOpen:
+		case enum.MsgType_ChannelOpen:
 			var data OpenChannelInfo
 			json.Unmarshal([]byte(msg.Data), &data)
 			if err := Channel_Service.OpenChannel(&data); err != nil {
@@ -105,19 +96,19 @@ func (c *Client) Read() {
 				if err == nil {
 					c.sendToSomeone(receiver, string(bytes))
 				}
-				sendType = SendToSomeone
+				sendType = enum.SendTargetType_SendToSomeone
 			}
 		//get acceptChannelReq from fundee then send to funder
-		case msgtype.ChannelAccept:
+		case enum.MsgType_ChannelAccept:
 			var data AcceptChannelInfo
 			json.Unmarshal([]byte(msg.Data), &data)
 			bytes, err := json.Marshal(data)
 			if err == nil {
 				c.sendToSomeone(receiver, string(bytes))
 			}
-			sendType = SendToSomeone
+			sendType = enum.SendTargetType_SendToSomeone
 		// create a funding tx
-		case msgtype.FundingCreated:
+		case enum.MsgType_FundingCreated:
 			node, err := FundingService.CreateFunding(msg.Data)
 			if err != nil {
 				log.Println(err)
@@ -127,26 +118,25 @@ func (c *Client) Read() {
 					log.Println(err)
 				} else {
 					c.sendToMyself(string(bytes))
-					sendType = SendToSomeone
+					sendType = enum.SendTargetType_SendToSomeone
 				}
 			}
-		case msgtype.FundingSigned:
-			sendType = SendToAll
-		case msgtype.CommitmentTx:
-			sendType = SendToAll
-		case msgtype.CommitmentTxSigned:
-			sendType = SendToAll
-		case msgtype.GetBalanceRequest:
-			sendType = SendToAll
-		case msgtype.GetBalanceRespond:
-			sendType = SendToAll
+		case enum.MsgType_FundingSigned:
+			sendType = enum.SendTargetType_SendToAll
+		case enum.MsgType_CommitmentTx:
+			sendType = enum.SendTargetType_SendToAll
+		case enum.MsgType_CommitmentTxSigned:
+			sendType = enum.SendTargetType_SendToAll
+		case enum.MsgType_GetBalanceRequest:
+			sendType = enum.SendTargetType_SendToAll
+		case enum.MsgType_GetBalanceRespond:
+			sendType = enum.SendTargetType_SendToAll
 		default:
-			sendType = SendToAll
-
+			sendType = enum.SendTargetType_SendToAll
 		}
 
 		//broadcast except me
-		if sendType == SendToExceptMe {
+		if sendType == enum.SendTargetType_SendToExceptMe {
 			for client := range GlobalWsClientManager.Clients_map {
 				if client != c {
 					jsonMessage, _ := json.Marshal(&MessageBody{Sender: client.Id, Data: string(dataReq)})
@@ -154,7 +144,7 @@ func (c *Client) Read() {
 				}
 			}
 			//broadcast to all
-		} else if sendType == SendToAll {
+		} else if sendType == enum.SendTargetType_SendToAll {
 			jsonMessage, _ := json.Marshal(&MessageBody{Sender: c.Id, Data: string(dataReq)})
 			GlobalWsClientManager.Broadcast <- jsonMessage
 		}
