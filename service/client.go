@@ -87,7 +87,7 @@ func (c *Client) Read() {
 			sendType = enum.SendTargetType_SendToSomeone
 		//get openChannelReq from funder then send to fundee
 		case enum.MsgType_ChannelOpen:
-			var data OpenChannelInfo
+			var data bean.OpenChannelInfo
 			json.Unmarshal([]byte(msg.Data), &data)
 			if err := Channel_Service.OpenChannel(&data); err != nil {
 				fmt.Println(err)
@@ -100,7 +100,7 @@ func (c *Client) Read() {
 			}
 		//get acceptChannelReq from fundee then send to funder
 		case enum.MsgType_ChannelAccept:
-			var data AcceptChannelInfo
+			var data bean.AcceptChannelInfo
 			json.Unmarshal([]byte(msg.Data), &data)
 			bytes, err := json.Marshal(data)
 			if err == nil {
@@ -109,7 +109,7 @@ func (c *Client) Read() {
 			sendType = enum.SendTargetType_SendToSomeone
 		// create a funding tx
 		case enum.MsgType_FundingCreated:
-			node, err := FundingService.CreateFunding(msg.Data)
+			node, err := TheFundingService.CreateFunding(msg.Data)
 			if err != nil {
 				log.Println(err)
 			} else {
