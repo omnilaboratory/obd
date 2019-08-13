@@ -1,7 +1,7 @@
 package rpc
 
 import (
-	config2 "LightningOnOmni/config"
+	"LightningOnOmni/config"
 	"errors"
 	"github.com/shopspring/decimal"
 	"github.com/tidwall/gjson"
@@ -58,10 +58,10 @@ func (client *Client) OmniRawTransaction(fromBitCoinAddress string, privkeys []s
 	if len(toBitCoinAddress) < 1 {
 		return "", errors.New("toBitCoinAddress is empty")
 	}
-	if amount < config2.Dust {
+	if amount < config.Dust {
 		return "", errors.New("wrong amount")
 	}
-	if minerFee < config2.Dust {
+	if minerFee < config.Dust {
 		return "", errors.New("minerFee too small")
 	}
 

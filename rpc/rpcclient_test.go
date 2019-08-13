@@ -79,3 +79,13 @@ func TestClient_GetTransactionById(t *testing.T) {
 	}
 	fmt.Println(result)
 }
+
+func TestClient_GetMiningInfo(t *testing.T) {
+	client := NewClient()
+	result, err := client.GetNetworkInfo()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Println(result)
+}

@@ -1,6 +1,7 @@
 package rpc
 
 import (
+	"LightningOnOmni/config"
 	"bytes"
 	"encoding/json"
 	"errors"
@@ -12,14 +13,15 @@ import (
 	"sync/atomic"
 )
 
-var config *ConnConfig
+var connConfig *ConnConfig
 
 func init() {
-	config = &ConnConfig{
-		Host: "62.234.216.108:18332",
-		User: "omniwallet",
-		Pass: "cB3]iL2@eZ1?cB2?",
+	connConfig = &ConnConfig{
+		Host: config.Chainnode_Host,
+		User: config.Chainnode_User,
+		Pass: config.Chainnode_Pass,
 	}
+	log.Println(connConfig)
 }
 
 type ConnConfig struct {
@@ -77,9 +79,9 @@ func NewClient() *Client {
 				TLSClientConfig: nil,
 			},
 		}
-		config.Host = "http://" + config.Host
+		connConfig.Host = "http://" + connConfig.Host
 		client = &Client{
-			config:     config,
+			config:     connConfig,
 			httpClient: httpClient,
 		}
 	}
