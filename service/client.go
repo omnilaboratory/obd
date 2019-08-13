@@ -2,7 +2,7 @@ package service
 
 import (
 	"LightningOnOmni/bean"
-	"LightningOnOmni/enum"
+	"LightningOnOmni/bean/enum"
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/websocket"

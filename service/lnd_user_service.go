@@ -1,8 +1,8 @@
 package service
 
 import (
+	"LightningOnOmni/bean/enum"
 	"LightningOnOmni/dao"
-	"LightningOnOmni/enum"
 	"errors"
 )
 
