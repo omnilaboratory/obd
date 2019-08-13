@@ -1,12 +1,23 @@
 package bean
 
-import "LightningOnOmni/bean/chainhash"
+import (
+	"LightningOnOmni/bean/chainhash"
+	"LightningOnOmni/bean/enum"
+)
 
 type Message struct {
 	Type      int    `json:"type"`
 	Sender    string `json:"sender"`
 	Recipient string `json:"recipient"`
 	Data      string `json:"data"`
+}
+
+//type = 1
+type User struct {
+	Id       int            `storm:"id,increment" `
+	Email    string         `json:"email"`
+	Password string         `json:"password"`
+	State    enum.UserState `json:"state"`
 }
 
 //type = -32

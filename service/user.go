@@ -1,25 +1,18 @@
 package service
 
 import (
+	"LightningOnOmni/bean"
 	"LightningOnOmni/bean/enum"
 	"LightningOnOmni/dao"
 	"errors"
 )
-
-//type = 1
-type User struct {
-	Id       int            `storm:"id,increment" `
-	Email    string         `json:"email"`
-	Password string         `json:"password"`
-	State    enum.UserState `json:"state"`
-}
 
 type UserService struct {
 }
 
 var User_service = UserService{}
 
-func (service *UserService) UserLogin(user *User) error {
+func (service *UserService) UserLogin(user *bean.User) error {
 	if user != nil {
 		errors.New("user is nil")
 	}
@@ -29,7 +22,7 @@ func (service *UserService) UserLogin(user *User) error {
 		return e
 	}
 	user.State = enum.UserState_OnLine
-	var node User
+	var node bean.User
 
 	e = db.One("Email", user.Email, &node)
 	if node.Id == 0 {
@@ -38,7 +31,7 @@ func (service *UserService) UserLogin(user *User) error {
 		return db.Update(user)
 	}
 }
-func (service *UserService) UserLogout(user *User) error {
+func (service *UserService) UserLogout(user *bean.User) error {
 	if user == nil {
 		return errors.New("user is nil")
 	}
@@ -48,7 +41,7 @@ func (service *UserService) UserLogout(user *User) error {
 		return e
 	}
 
-	var node User
+	var node bean.User
 
 	e = db.One("Email", user.Email, &node)
 	if node.Id == 0 {
@@ -59,14 +52,14 @@ func (service *UserService) UserLogout(user *User) error {
 	return db.Update(user)
 }
 
-func (service *UserService) UserInfo(email string) (user *User, e error) {
+func (service *UserService) UserInfo(email string) (user *bean.User, e error) {
 
 	db, e := dao.DB_Manager.GetDB()
 	if e != nil {
 		return nil, errors.New("db is not exist")
 	}
 
-	var node User
+	var node bean.User
 	e = db.One("Email", email, &node)
 	if node.Id == 0 {
 		return nil, errors.New("user not exist")

@@ -1,6 +1,7 @@
-package service
+package routers
 
 import (
+	"LightningOnOmni/bean"
 	"encoding/json"
 	"log"
 )
@@ -24,14 +25,14 @@ func (client_manager *ClientManager) Start() {
 		select {
 		case conn := <-client_manager.Register:
 			client_manager.Clients_map[conn] = true
-			jsonMessage, _ := json.Marshal(&MessageBody{Data: "/A new socket has connected."})
+			jsonMessage, _ := json.Marshal(&bean.Message{Data: "/A new socket has connected."})
 			log.Println("new socket has connected.")
 			client_manager.Send(jsonMessage, conn)
 		case conn := <-client_manager.Unregister:
 			if _, ok := client_manager.Clients_map[conn]; ok {
 				close(conn.Send_channel)
 				delete(client_manager.Clients_map, conn)
-				jsonMessage, _ := json.Marshal(&MessageBody{Data: "/A socket has disconnected."})
+				jsonMessage, _ := json.Marshal(&bean.Message{Data: "/A socket has disconnected."})
 				log.Println("socket has disconnected.")
 				client_manager.Send(jsonMessage, conn)
 			}

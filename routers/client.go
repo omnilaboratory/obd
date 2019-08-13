@@ -1,8 +1,9 @@
-package service
+package routers
 
 import (
 	"LightningOnOmni/bean"
 	"LightningOnOmni/bean/enum"
+	"LightningOnOmni/service"
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/websocket"
@@ -11,7 +12,7 @@ import (
 
 type Client struct {
 	Id           string
-	User         *User
+	User         *bean.User
 	Socket       *websocket.Conn
 	Send_channel chan []byte
 }
@@ -37,7 +38,7 @@ func (c *Client) Write() {
 
 func (c *Client) Read() {
 	defer func() {
-		User_service.UserLogout(c.User)
+		service.User_service.UserLogout(c.User)
 		GlobalWsClientManager.Unregister <- c
 		c.Socket.Close()
 		fmt.Println("socket closed after reading...")
@@ -58,7 +59,7 @@ func (c *Client) Read() {
 			log.Println(err)
 			continue
 		}
-		var sender, receiver User
+		var sender, receiver bean.User
 		json.Unmarshal([]byte(msg.Sender), &sender)
 		json.Unmarshal([]byte(msg.Recipient), &receiver)
 
@@ -69,11 +70,11 @@ func (c *Client) Read() {
 				c.sendToMyself("already login")
 				sendType = enum.SendTargetType_SendToSomeone
 			} else {
-				var data User
+				var data bean.User
 				json.Unmarshal([]byte(msg.Data), &data)
 				if len(data.Email) > 0 {
 					c.User = &data
-					User_service.UserLogin(&data)
+					service.User_service.UserLogin(&data)
 				}
 				sendType = enum.SendTargetType_SendToExceptMe
 			}
@@ -89,7 +90,7 @@ func (c *Client) Read() {
 		case enum.MsgType_ChannelOpen:
 			var data bean.OpenChannelInfo
 			json.Unmarshal([]byte(msg.Data), &data)
-			if err := Channel_Service.OpenChannel(&data); err != nil {
+			if err := service.Channel_Service.OpenChannel(&data); err != nil {
 				fmt.Println(err)
 			} else {
 				bytes, err := json.Marshal(data)
@@ -109,7 +110,7 @@ func (c *Client) Read() {
 			sendType = enum.SendTargetType_SendToSomeone
 		// create a funding tx
 		case enum.MsgType_FundingCreated:
-			node, err := TheFundingService.CreateFunding(msg.Data)
+			node, err := service.TheFundingService.CreateFunding(msg.Data)
 			if err != nil {
 				log.Println(err)
 			} else {
@@ -139,22 +140,22 @@ func (c *Client) Read() {
 		if sendType == enum.SendTargetType_SendToExceptMe {
 			for client := range GlobalWsClientManager.Clients_map {
 				if client != c {
-					jsonMessage, _ := json.Marshal(&MessageBody{Sender: client.Id, Data: string(dataReq)})
+					jsonMessage, _ := json.Marshal(&bean.Message{Sender: client.Id, Data: string(dataReq)})
 					client.Send_channel <- jsonMessage
 				}
 			}
 			//broadcast to all
 		} else if sendType == enum.SendTargetType_SendToAll {
-			jsonMessage, _ := json.Marshal(&MessageBody{Sender: c.Id, Data: string(dataReq)})
+			jsonMessage, _ := json.Marshal(&bean.Message{Sender: c.Id, Data: string(dataReq)})
 			GlobalWsClientManager.Broadcast <- jsonMessage
 		}
 	}
 }
 
-func (c *Client) sendToSomeone(recipient User, data string) {
+func (c *Client) sendToSomeone(recipient bean.User, data string) {
 	for client := range GlobalWsClientManager.Clients_map {
 		if client.User.Email == recipient.Email {
-			jsonMessage, _ := json.Marshal(&MessageBody{Sender: c.Id, Data: data})
+			jsonMessage, _ := json.Marshal(&bean.Message{Sender: c.Id, Data: data})
 			client.Send_channel <- jsonMessage
 			break
 		}
@@ -162,6 +163,6 @@ func (c *Client) sendToSomeone(recipient User, data string) {
 }
 
 func (client *Client) sendToMyself(data string) {
-	jsonMessage, _ := json.Marshal(&MessageBody{Sender: client.Id, Data: data})
+	jsonMessage, _ := json.Marshal(&bean.Message{Sender: client.Id, Data: data})
 	client.Send_channel <- jsonMessage
 }

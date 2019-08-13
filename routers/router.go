@@ -1,6 +1,7 @@
 package routers
 
 import (
+	"LightningOnOmni/bean"
 	"LightningOnOmni/service"
 	"encoding/json"
 	"fmt"
@@ -17,7 +18,7 @@ func InitRouter() *gin.Engine {
 	router.Use(gin.Logger())
 	router.Use(gin.Recovery())
 
-	go service.GlobalWsClientManager.Start()
+	go GlobalWsClientManager.Start()
 	router.GET("/ws", wsClientConnect)
 
 	apiv1 := router.Group("/api/v1")
@@ -79,7 +80,7 @@ func userInfo(context *gin.Context) {
 }
 
 func userLogin(context *gin.Context) {
-	user := service.User{}
+	user := bean.User{}
 	user.Email = context.Query("email")
 	service.User_service.UserLogin(&user)
 	bytes, _ := json.Marshal(user)
@@ -89,7 +90,7 @@ func userLogin(context *gin.Context) {
 	})
 }
 func userLogout(context *gin.Context) {
-	user := service.User{}
+	user := bean.User{}
 	user.Email = context.Query("email")
 	logout := service.User_service.UserLogout(&user)
 	if logout != nil {
@@ -128,18 +129,18 @@ func wsClientConnect(c *gin.Context) {
 	}
 
 	uuid_str, _ := uuid.NewV4()
-	client := &service.Client{
+	client := &Client{
 		Id:           uuid_str.String(),
 		Socket:       conn,
 		Send_channel: make(chan []byte)}
 
-	service.GlobalWsClientManager.Register <- client
+	GlobalWsClientManager.Register <- client
 	go client.Write()
 	client.Read()
 }
 
 func test(writer http.ResponseWriter, request *http.Request) {
-	bytes, err := json.Marshal(&service.User{Id: 1, Email: "123@qq.com"})
+	bytes, err := json.Marshal(&bean.User{Id: 1, Email: "123@qq.com"})
 	if err != nil {
 		fmt.Fprintf(writer, "wrong data")
 		return
