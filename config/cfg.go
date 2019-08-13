@@ -32,12 +32,12 @@ func init() {
 	ReadTimeout = time.Duration(section.Key("readTimeout").MustInt(5)) * time.Second
 	WriteTimeout = time.Duration(section.Key("writeTimeout").MustInt(5)) * time.Second
 
-	chiannode, err := Cfg.GetSection("chiannode")
+	chainNode, err := Cfg.GetSection("chainNode")
 	if err != nil {
 		log.Println(err)
 		return
 	}
-	Chainnode_Host = chiannode.Key("chainnode_host").String()
-	Chainnode_User = chiannode.Key("chainnode_user").String()
-	Chainnode_Pass = chiannode.Key("chainnode_pass").String()
+	Chainnode_Host = chainNode.Key("host").String()
+	Chainnode_User = chainNode.Key("user").String()
+	Chainnode_Pass = chainNode.Key("pass").String()
 }
