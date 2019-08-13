@@ -90,13 +90,13 @@ type FundingSigned struct {
 type CommitmentTx struct {
 	Id int `storm:"id,increment" `
 	//the global channel id.
-	Channel_id chainhash.Hash `json:"channel_id"`
+	ChannelId chainhash.Hash `json:"channel_id"`
 	//the id of the Omni asset
-	Property_id int `json:"property_id"`
+	PropertyId int `json:"property_id"`
 	//amount of the payment
 	Amount float64 `json:"amount"`
 	//private key of Alice2, encrypted by Bob's public key
-	Encrpted_Alice2_private_key chainhash.Hash `json:"encrpted_alice_2_private_key"`
+	EncrptedAlice2PrivateKey chainhash.Hash `json:"encrpted_alice_2_private_key"`
 }
 
 //type: -352 (commitment_tx_signed)
@@ -104,13 +104,13 @@ type CommitmentTxSigned struct {
 	Id int `storm:"id,increment" `
 
 	//the global channel id.
-	Channel_id chainhash.Hash `json:"channel_id"`
+	ChannelId chainhash.Hash `json:"channel_id"`
 	//the id of the Omni asset.
-	Property_id int `json:"property_id"`
+	PropertyId int `json:"property_id"`
 	//amount of the payment.
 	Amount float64 `json:"amount"`
 	//signature of Bob.
-	Receiver_signature chainhash.Signauture `json:"receiver_signature"`
+	ReceiverSignature chainhash.Signauture `json:"receiver_signature"`
 }
 
 //type: -353 (get_balance_request)
@@ -118,9 +118,9 @@ type GetBalanceRequest struct {
 	Id int `storm:"id,increment" `
 
 	//the global channel id.
-	Channel_id chainhash.Hash `json:"channel_id"`
+	ChannelId chainhash.Hash `json:"channel_id"`
 	//the p2sh address generated in funding_signed message.
-	P2sh_address chainhash.Hash `json:"p_2_sh_address"`
+	P2shAddress chainhash.Hash `json:"p_2_sh_address"`
 	// the channel owner, Alice or Bob, can query the balance.
 	Who chainhash.Hash `json:"who"`
 	//the signature of Alice or Bob
