@@ -118,7 +118,6 @@ func (client *Client) send(method string, params []interface{}) (result string, 
 	httpReq.SetBasicAuth(client.config.User, client.config.Pass)
 	httpResponse, err := client.httpClient.Do(httpReq)
 	if err != nil {
-		log.Println(err)
 		return "", err
 	}
 
@@ -141,7 +140,6 @@ func (client *Client) send(method string, params []interface{}) (result string, 
 	}
 	res, err := resp.result()
 	if err != nil {
-		fmt.Println(err)
 		return "", err
 	}
 	return gjson.Parse(string(res)).String(), nil

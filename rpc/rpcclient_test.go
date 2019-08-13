@@ -3,7 +3,6 @@ package rpc
 import (
 	"LightningOnOmni/bean/chainhash"
 	"crypto/sha256"
-	"fmt"
 	"github.com/satori/go.uuid"
 	"log"
 	"testing"
@@ -32,10 +31,10 @@ func TestClient_GetBlockCount(t *testing.T) {
 	var keys []string
 	result, err := client.BtcCreateAndSignRawTransaction("n1Grf4JGHUC2CdHHoDRYb7jbVKU2Fv8Tsn", keys, "n4bJvpVHks3Fz9wWB9f445LGV5xTS6LGpA", 0.0001, 0.00001, nil)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return
 	}
-	fmt.Println(result)
+	log.Println(result)
 }
 
 func TestClient_DecodeRawTransaction(t *testing.T) {
@@ -44,10 +43,10 @@ func TestClient_DecodeRawTransaction(t *testing.T) {
 	hex := "0100000001946f7d2d3b7f61e87c20a96fd01f9c6ef50fc534588c9d5dd73d0c7241deca36010000006a47304402204107627dcece427aa8c565e76c9d18af455833fd66cbbc8fbbf96bd68f828f10022043c84bcbf09d543b18b66745611280d2bee1ed398e4aab2d5f0fcffd6d99e56b01210343c3b527ebf385b15cedfa7e9b840b32353482bfc29ddc931a155ff41db0123effffffff0210270000000000001976a914fd1dc7fb3727d29b43200480580049c3bf8a041b88ac38440100000000001976a914d8b7fc6790003813df46aacd8bdc84d1f672147b88ac00000000"
 	result, err := client.SendRawTransaction(hex)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return
 	}
-	fmt.Println(result)
+	log.Println(result)
 }
 
 func TestClient_Validateaddress(t *testing.T) {
@@ -55,37 +54,37 @@ func TestClient_Validateaddress(t *testing.T) {
 	//r, err := client.Omni_getbalance(" n4bJvpVHks3Fz9wWB9f445LGV5xTS6LGpA", 121)
 	r, err := client.Validateaddress(" n4bJvpVHks3Fz9wWB9f445LGV5xTS6LGpA")
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return
 	}
-	fmt.Println(r)
+	log.Println(r)
 }
 func TestClient_OmniRawTransaction(t *testing.T) {
 	client := NewClient()
 	txid, err := client.OmniRawTransaction("n1Grf4JGHUC2CdHHoDRYb7jbVKU2Fv8Tsn", nil, "n4bJvpVHks3Fz9wWB9f445LGV5xTS6LGpA", 121, 7, 0.00001, nil)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return
 	}
-	fmt.Println(txid)
+	log.Println(txid)
 }
 
 func TestClient_GetTransactionById(t *testing.T) {
 	client := NewClient()
 	result, err := client.GetTransactionById("434b1d74135ec0bf01c0d086792afdcee8c9440ad0aa10dc1882a901ca2b71e4")
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return
 	}
-	fmt.Println(result)
+	log.Println(result)
 }
 
 func TestClient_GetMiningInfo(t *testing.T) {
 	client := NewClient()
 	result, err := client.GetNetworkInfo()
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return
 	}
-	fmt.Println(result)
+	log.Println(result)
 }
