@@ -1,7 +1,7 @@
 package service
 
 import (
-	"LightningOnOmni/config"
+	"LightningOnOmni/bean"
 	"LightningOnOmni/config/msgtype"
 	"encoding/json"
 	"fmt"
@@ -60,7 +60,7 @@ func (c *Client) Read() {
 			break
 		}
 
-		var msg config.Message
+		var msg bean.Message
 		log.Println(string(dataReq))
 		err = json.Unmarshal(dataReq, &msg)
 		if err != nil {
