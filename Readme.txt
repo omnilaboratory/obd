@@ -1,6 +1,17 @@
 # this document is DEPRECATED
 
 
+One single node support one million long connections, require the maximum 24GB memeory. What need to to do is:
+
+Architecture:
+1. 1 million connections.
+2. Messeage queue system to decouple the incoming request and backend process modules. Planned to use Kalfka.
+3. Every minute reads from message queue, fetch out tasks and handle them.
+4. Use binay format for messages, e.g. google protoBuf.
+5. OTC Nodes scale out.
+6. OTC node automatically write into the message queue, automatically dispatch messages to all clients that connect to the node.
+7. Report for pressure tests.
+
 100万用户连接的OTC单机,最大需要配置24G内存，需要完成的是：
 
 架构上to do：
