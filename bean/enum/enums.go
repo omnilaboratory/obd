@@ -17,15 +17,23 @@ const (
 	SendTargetType_SendToExceptMe SendTargetType = 2
 )
 
+type MsgType int
+
 const (
-	MsgType_UserLogin          = 1
-	MsgType_UserLogout         = 2
-	MsgType_ChannelOpen        = -32
-	MsgType_ChannelAccept      = -33
-	MsgType_FundingCreated     = -34
-	MsgType_FundingSigned      = -35
-	MsgType_CommitmentTx       = -351
-	MsgType_CommitmentTxSigned = -352
-	MsgType_GetBalanceRequest  = -353
-	MsgType_GetBalanceRespond  = -354
+	MsgType_UserLogin     MsgType = 1
+	MsgType_UserLogout    MsgType = 2
+	MsgType_ChannelOpen   MsgType = -32
+	MsgType_ChannelAccept MsgType = -33
+
+	MsgType_FundingCreated         MsgType = -34
+	MsgType_GetFundingCreated      MsgType = -3401
+	MsgType_DelTableFundingCreated MsgType = -3402
+	MsgType_DelItemFundingCreated  MsgType = -3403
+	MsgType_CountFundingCreated    MsgType = -3404
+
+	MsgType_FundingSigned      MsgType = -35
+	MsgType_CommitmentTx       MsgType = -351
+	MsgType_CommitmentTxSigned MsgType = -352
+	MsgType_GetBalanceRequest  MsgType = -353
+	MsgType_GetBalanceRespond  MsgType = -354
 )

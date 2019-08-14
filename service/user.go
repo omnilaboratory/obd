@@ -22,13 +22,17 @@ func (service *UserManager) UserLogin(user *bean.User) error {
 		return e
 	}
 	user.State = enum.UserState_OnLine
-	var node bean.User
+	var node dao.User
 
 	e = db.One("Email", user.Email, &node)
+	node.Email = user.Email
+	node.Password = user.Password
+	node.State = user.State
+
 	if node.Id == 0 {
-		return db.Save(user)
+		return db.Save(node)
 	} else {
-		return db.Update(user)
+		return db.Update(node)
 	}
 }
 func (service *UserManager) UserLogout(user *bean.User) error {
@@ -41,25 +45,24 @@ func (service *UserManager) UserLogout(user *bean.User) error {
 		return e
 	}
 
-	var node bean.User
+	var node dao.User
 
 	e = db.One("Email", user.Email, &node)
 	if node.Id == 0 {
 		return errors.New("user not found")
 	}
-
-	user.State = enum.UserState_Offline
-	return db.Update(user)
+	node.State = enum.UserState_Offline
+	return db.Update(node)
 }
 
-func (service *UserManager) UserInfo(email string) (user *bean.User, e error) {
+func (service *UserManager) UserInfo(email string) (user *dao.User, e error) {
 
 	db, e := dao.DB_Manager.GetDB()
 	if e != nil {
 		return nil, errors.New("db is not exist")
 	}
 
-	var node bean.User
+	var node dao.User
 	e = db.One("Email", email, &node)
 	if node.Id == 0 {
 		return nil, errors.New("user not exist")

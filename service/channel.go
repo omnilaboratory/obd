@@ -31,25 +31,31 @@ func (c *ChannelManager) OpenChannel(data *bean.OpenChannelInfo) error {
 	}
 	log.Println(multiAddr)
 
+	var node = &dao.OpenChannelInfo{}
+
 	data.ChainHash = config.Init_node_chain_hash
-	tempId, _ := c.getTemporaryChannelId()
+	sum, tempId, _ := c.getTemporaryChannelId()
 	data.TemporaryChannelId = *tempId
+	node.TemporaryChannelIdStr = sum
+
+	node.OpenChannelInfo = *data
 
 	db, err := dao.DB_Manager.GetDB()
 	if err != nil {
 		log.Println(err)
 		return err
 	}
-	return db.Save(data)
+	return db.Save(node)
 }
 
-func (c *ChannelManager) getTemporaryChannelId() (tempId *chainhash.Hash, err error) {
+func (c *ChannelManager) getTemporaryChannelId() (result string, tempId *chainhash.Hash, err error) {
 	uuidStr, err := uuid.NewV4()
 	if err != nil {
-		return nil, err
+		return "", nil, err
 	}
 	hash := sha256.New()
 	hash.Write([]byte(uuidStr.String()))
 	sum := hash.Sum(nil)
-	return chainhash.NewHash(sum)
+	hashes, err := chainhash.NewHash(sum)
+	return string(sum), hashes, err
 }

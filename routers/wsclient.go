@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"github.com/gorilla/websocket"
 	"log"
+	"strconv"
 )
 
 type Client struct {
@@ -48,7 +49,6 @@ func (c *Client) Read() {
 		_, dataReq, err := c.Socket.ReadMessage()
 		if err != nil {
 			log.Println(err)
-
 			break
 		}
 
@@ -122,6 +122,65 @@ func (c *Client) Read() {
 					sendType = enum.SendTargetType_SendToSomeone
 				}
 			}
+		case enum.MsgType_GetFundingCreated:
+			id, err := strconv.Atoi(msg.Data)
+			if err != nil {
+				log.Println(err)
+				break
+			}
+			node, err := service.FundingService.GetFundingTx(id)
+			data := ""
+			if err != nil {
+				data = err.Error()
+			} else {
+				bytes, err := json.Marshal(node)
+				if err != nil {
+					data = err.Error()
+				} else {
+					data = string(bytes)
+				}
+			}
+			c.sendToMyself(data)
+			sendType = enum.SendTargetType_SendToSomeone
+		case enum.MsgType_DelTableFundingCreated:
+			err := service.FundingService.DeleteTable()
+			data := ""
+			if err != nil {
+				data = err.Error()
+			} else {
+				data = "del success"
+			}
+			c.sendToMyself(data)
+			sendType = enum.SendTargetType_SendToSomeone
+		case enum.MsgType_DelItemFundingCreated:
+			id, err := strconv.Atoi(msg.Data)
+			data := ""
+			for {
+				if err != nil {
+					data = err.Error()
+					break
+				}
+				err = service.FundingService.DeleteItem(id)
+				if err != nil {
+					data = err.Error()
+				} else {
+					data = "del success"
+				}
+				break
+			}
+			c.sendToMyself(data)
+			sendType = enum.SendTargetType_SendToSomeone
+		case enum.MsgType_CountFundingCreated:
+			data := ""
+			count, err := service.FundingService.TotalCount()
+			if err != nil {
+				data = err.Error()
+			} else {
+				data = strconv.Itoa(count)
+			}
+			c.sendToMyself(data)
+			sendType = enum.SendTargetType_SendToSomeone
+
 		case enum.MsgType_FundingSigned:
 			sendType = enum.SendTargetType_SendToAll
 		case enum.MsgType_CommitmentTx:

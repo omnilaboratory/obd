@@ -4,7 +4,6 @@ import (
 	"LightningOnOmni/bean"
 	"LightningOnOmni/service"
 	"encoding/json"
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	"github.com/satori/go.uuid"
@@ -137,13 +136,4 @@ func wsClientConnect(c *gin.Context) {
 	GlobalWsClientManager.Register <- client
 	go client.Write()
 	client.Read()
-}
-
-func test(writer http.ResponseWriter, request *http.Request) {
-	bytes, err := json.Marshal(&bean.User{Id: 1, Email: "123@qq.com"})
-	if err != nil {
-		fmt.Fprintf(writer, "wrong data")
-		return
-	}
-	fmt.Fprintf(writer, string(bytes))
 }
