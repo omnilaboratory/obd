@@ -129,9 +129,9 @@ func wsClientConnect(c *gin.Context) {
 
 	uuid_str, _ := uuid.NewV4()
 	client := &Client{
-		Id:           uuid_str.String(),
-		Socket:       conn,
-		Send_channel: make(chan []byte)}
+		Id:          uuid_str.String(),
+		Socket:      conn,
+		SendChannel: make(chan []byte)}
 
 	GlobalWsClientManager.Register <- client
 	go client.Write()

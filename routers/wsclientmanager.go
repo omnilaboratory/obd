@@ -30,7 +30,7 @@ func (client_manager *ClientManager) Start() {
 			client_manager.Send(jsonMessage, conn)
 		case conn := <-client_manager.Unregister:
 			if _, ok := client_manager.Clients_map[conn]; ok {
-				close(conn.Send_channel)
+				close(conn.SendChannel)
 				delete(client_manager.Clients_map, conn)
 				jsonMessage, _ := json.Marshal(&bean.Message{Data: "/A socket has disconnected."})
 				log.Println("socket has disconnected.")
@@ -39,9 +39,9 @@ func (client_manager *ClientManager) Start() {
 		case order_message := <-client_manager.Broadcast:
 			for conn := range client_manager.Clients_map {
 				select {
-				case conn.Send_channel <- order_message:
+				case conn.SendChannel <- order_message:
 				default:
-					close(conn.Send_channel)
+					close(conn.SendChannel)
 					delete(client_manager.Clients_map, conn)
 				}
 			}
@@ -52,7 +52,7 @@ func (client_manager *ClientManager) Start() {
 func (client_manager *ClientManager) Send(message []byte, myself *Client) {
 	for conn := range client_manager.Clients_map {
 		if conn != myself {
-			conn.Send_channel <- message
+			conn.SendChannel <- message
 		}
 	}
 }

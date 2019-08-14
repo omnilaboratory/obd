@@ -12,10 +12,10 @@ import (
 )
 
 type Client struct {
-	Id           string
-	User         *bean.User
-	Socket       *websocket.Conn
-	Send_channel chan []byte
+	Id          string
+	User        *bean.User
+	Socket      *websocket.Conn
+	SendChannel chan []byte
 }
 
 func (c *Client) Write() {
@@ -26,7 +26,7 @@ func (c *Client) Write() {
 
 	for {
 		select {
-		case _order, ok := <-c.Send_channel:
+		case _order, ok := <-c.SendChannel:
 			if !ok {
 				c.Socket.WriteMessage(websocket.CloseMessage, []byte{})
 				return
@@ -200,7 +200,7 @@ func (c *Client) Read() {
 			for client := range GlobalWsClientManager.Clients_map {
 				if client != c {
 					jsonMessage, _ := json.Marshal(&bean.Message{Sender: client.Id, Data: string(dataReq)})
-					client.Send_channel <- jsonMessage
+					client.SendChannel <- jsonMessage
 				}
 			}
 			//broadcast to all
@@ -215,7 +215,7 @@ func (c *Client) sendToSomeone(recipient bean.User, data string) {
 	for client := range GlobalWsClientManager.Clients_map {
 		if client.User.Email == recipient.Email {
 			jsonMessage, _ := json.Marshal(&bean.Message{Sender: c.Id, Data: data})
-			client.Send_channel <- jsonMessage
+			client.SendChannel <- jsonMessage
 			break
 		}
 	}
@@ -223,5 +223,5 @@ func (c *Client) sendToSomeone(recipient bean.User, data string) {
 
 func (client *Client) sendToMyself(data string) {
 	jsonMessage, _ := json.Marshal(&bean.Message{Sender: client.Id, Data: data})
-	client.Send_channel <- jsonMessage
+	client.SendChannel <- jsonMessage
 }
