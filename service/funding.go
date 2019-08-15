@@ -86,8 +86,10 @@ func (service *FundingCreateManager) DelAll() (err error) {
 func (service *FundingCreateManager) Del(id int) (err error) {
 	db, _ := dao.DB_Manager.GetDB()
 	var data = &dao.FundingCreated{}
-	db.One("Id", id, data)
-	err = db.DeleteStruct(data)
+	count, err := db.Select(q.Eq("Id", id)).Count(data)
+	if err == nil && count == 1 {
+		err = db.DeleteStruct(data)
+	}
 	return err
 }
 func (service *FundingCreateManager) TotalCount() (count int, err error) {
