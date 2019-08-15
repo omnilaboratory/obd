@@ -9,13 +9,9 @@ import (
 
 type FundingManager struct{}
 
-var FundingService FundingManager
+var FundingCreateService FundingManager
 
 func (service *FundingManager) CreateFunding(jsonData string) (node *dao.FundingCreated, err error) {
-	db, e := dao.DB_Manager.GetDB()
-	if e != nil {
-		return nil, e
-	}
 	node = &dao.FundingCreated{}
 
 	sum, tempId, _ := ChannelService.getTemporaryChannelId()
@@ -30,6 +26,8 @@ func (service *FundingManager) CreateFunding(jsonData string) (node *dao.Funding
 		AmountA:            gjson.Get(jsonData, "amountA").Float(),
 	}
 	node.FundingCreated = *data
+
+	db, _ := dao.DB_Manager.GetDB()
 	err = db.Save(node)
 	return node, err
 }
@@ -62,3 +60,6 @@ func (service *FundingManager) TotalCount() (count int, err error) {
 	var data = &dao.FundingCreated{}
 	return db.Count(data)
 }
+
+//type FundingManager struct{}
+//var FundingService FundingManager

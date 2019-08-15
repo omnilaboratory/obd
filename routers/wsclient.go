@@ -109,8 +109,8 @@ func (c *Client) Read() {
 			}
 			sendType = enum.SendTargetType_SendToSomeone
 		// create a funding tx
-		case enum.MsgType_FundingCreated:
-			node, err := service.FundingService.CreateFunding(msg.Data)
+		case enum.MsgType_FundingCreate_Edit:
+			node, err := service.FundingCreateService.CreateFunding(msg.Data)
 			if err != nil {
 				log.Println(err)
 			} else {
@@ -122,13 +122,13 @@ func (c *Client) Read() {
 					sendType = enum.SendTargetType_SendToSomeone
 				}
 			}
-		case enum.MsgType_GetFundingCreated:
+		case enum.MsgType_FundingCreate_Item:
 			id, err := strconv.Atoi(msg.Data)
 			if err != nil {
 				log.Println(err)
 				break
 			}
-			node, err := service.FundingService.GetFundingTx(id)
+			node, err := service.FundingCreateService.GetFundingTx(id)
 			data := ""
 			if err != nil {
 				data = err.Error()
@@ -142,8 +142,8 @@ func (c *Client) Read() {
 			}
 			c.sendToMyself(data)
 			sendType = enum.SendTargetType_SendToSomeone
-		case enum.MsgType_DelTableFundingCreated:
-			err := service.FundingService.DeleteTable()
+		case enum.MsgType_FundingCreate_DelAll:
+			err := service.FundingCreateService.DeleteTable()
 			data := ""
 			if err != nil {
 				data = err.Error()
@@ -152,7 +152,7 @@ func (c *Client) Read() {
 			}
 			c.sendToMyself(data)
 			sendType = enum.SendTargetType_SendToSomeone
-		case enum.MsgType_DelItemFundingCreated:
+		case enum.MsgType_FundingCreate_Del:
 			id, err := strconv.Atoi(msg.Data)
 			data := ""
 			for {
@@ -160,7 +160,7 @@ func (c *Client) Read() {
 					data = err.Error()
 					break
 				}
-				err = service.FundingService.DeleteItem(id)
+				err = service.FundingCreateService.DeleteItem(id)
 				if err != nil {
 					data = err.Error()
 				} else {
@@ -170,9 +170,9 @@ func (c *Client) Read() {
 			}
 			c.sendToMyself(data)
 			sendType = enum.SendTargetType_SendToSomeone
-		case enum.MsgType_CountFundingCreated:
+		case enum.MsgType_FundingCreate_Count:
 			data := ""
-			count, err := service.FundingService.TotalCount()
+			count, err := service.FundingCreateService.TotalCount()
 			if err != nil {
 				data = err.Error()
 			} else {
@@ -181,9 +181,18 @@ func (c *Client) Read() {
 			c.sendToMyself(data)
 			sendType = enum.SendTargetType_SendToSomeone
 
-		case enum.MsgType_FundingSigned:
+		case enum.MsgType_FundingSign_Edit:
 
 			sendType = enum.SendTargetType_SendToAll
+		case enum.MsgType_FundingSign_Item:
+			sendType = enum.SendTargetType_SendToAll
+		case enum.MsgType_FundingSign_Count:
+			sendType = enum.SendTargetType_SendToAll
+		case enum.MsgType_FundingSign_Del:
+			sendType = enum.SendTargetType_SendToAll
+		case enum.MsgType_FundingSign_DelAll:
+			sendType = enum.SendTargetType_SendToAll
+
 		case enum.MsgType_CommitmentTx:
 			sendType = enum.SendTargetType_SendToAll
 		case enum.MsgType_CommitmentTxSigned:

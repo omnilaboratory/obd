@@ -47,11 +47,11 @@ func InitRouter() *gin.Engine {
 }
 
 func testBd(context *gin.Context) {
-	node, e := service.FundingService.CreateFunding("")
-	if e != nil {
+	node, err := service.FundingCreateService.CreateFunding("")
+	if err != nil {
 		context.JSON(http.StatusOK, gin.H{
 			"msg":  "userInfo",
-			"data": e.Error(),
+			"data": err.Error(),
 		})
 		return
 	}
@@ -63,11 +63,11 @@ func testBd(context *gin.Context) {
 }
 
 func userInfo(context *gin.Context) {
-	user, e := service.UserService.UserInfo(context.Query("email"))
-	if e != nil {
+	user, err := service.UserService.UserInfo(context.Query("email"))
+	if err != nil {
 		context.JSON(http.StatusOK, gin.H{
 			"msg":  "userInfo",
-			"data": e.Error(),
+			"data": err.Error(),
 		})
 		return
 	}

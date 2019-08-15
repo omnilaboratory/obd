@@ -25,13 +25,18 @@ const (
 	MsgType_ChannelOpen   MsgType = -32
 	MsgType_ChannelAccept MsgType = -33
 
-	MsgType_FundingCreated         MsgType = -34
-	MsgType_GetFundingCreated      MsgType = -3401
-	MsgType_DelTableFundingCreated MsgType = -3402
-	MsgType_DelItemFundingCreated  MsgType = -3403
-	MsgType_CountFundingCreated    MsgType = -3404
+	MsgType_FundingCreate_Edit   MsgType = -34
+	MsgType_FundingCreate_Item   MsgType = -3401
+	MsgType_FundingCreate_Count  MsgType = -3402
+	MsgType_FundingCreate_Del    MsgType = -3403
+	MsgType_FundingCreate_DelAll MsgType = -3404
 
-	MsgType_FundingSigned      MsgType = -35
+	MsgType_FundingSign_Edit   MsgType = -35
+	MsgType_FundingSign_Item   MsgType = -3501
+	MsgType_FundingSign_Count  MsgType = -3502
+	MsgType_FundingSign_Del    MsgType = -3503
+	MsgType_FundingSign_DelAll MsgType = -3504
+
 	MsgType_CommitmentTx       MsgType = -351
 	MsgType_CommitmentTxSigned MsgType = -352
 	MsgType_GetBalanceRequest  MsgType = -353
