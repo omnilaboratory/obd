@@ -10,13 +10,24 @@ Omnicore 0.18 integrates the latest BTC core 0.18, which enables relative time l
 
 # Installation
 
+Step1: [Install OmniCore](https://github.com/OmniLayer/omnicore#installation)
+
 TBD
+
+# Current Features
+
+* Generate user OLND address. 
+* Open Poon-Dryja Channel.
+* Deposit, transfer and close.
+
 
 # Related projects:
 
 
 
 [https://github.com/OmniLayer/omniwallet](https://github.com/OmniLayer/omniwallet)
+
+[https://github.com/OmniLayer/omnicore](https://github.com/OmniLayer/omnicore)
 
 [https://github.com/OmniLayer/OmniJ](https://github.com/OmniLayer/OmniJ)
 
