@@ -182,6 +182,7 @@ func (c *Client) Read() {
 			sendType = enum.SendTargetType_SendToSomeone
 
 		case enum.MsgType_FundingSigned:
+
 			sendType = enum.SendTargetType_SendToAll
 		case enum.MsgType_CommitmentTx:
 			sendType = enum.SendTargetType_SendToAll

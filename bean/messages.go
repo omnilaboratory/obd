@@ -64,7 +64,7 @@ type FundingSigned struct {
 	//the same as the temporary_channel_id in the open_channel message
 	TemporaryChannelId chainhash.ChainHash `json:"temporary_channel_id"`
 	//the omni address of funder Alice
-	FunderPubkey chainhash.Hash `json:"funder_pub_key"`
+	FunderPubKey chainhash.Hash `json:"funder_pub_key"`
 	// the id of the Omni asset
 	PropertyId int `json:"property_id"`
 	//amount of the asset on Alice side
@@ -78,7 +78,7 @@ type FundingSigned struct {
 	//redeem script used to generate P2SH address
 	RedeemScript string `json:"redeem_script"`
 	//hash of redeemScript
-	P2shAddress chainhash.Hash `json:"p_2_sh_address"`
+	P2shAddress chainhash.Hash `json:"p2sh_address"`
 	//final global channel id generated
 	ChannelId chainhash.Hash `json:"channel_id"`
 }
