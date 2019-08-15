@@ -6,12 +6,12 @@ import (
 )
 
 func TestNewHashFromStr(t *testing.T) {
-	str := "2021222324"
+	str := "4c0e8d55056c5bd3cb4404acfcfb6e3b51127fb9131d9260892ef207c8ab4380"
+	//str := "4"
 	log.Println(len(str))
-	log.Println([]byte(str))
 	hashes, e := NewHashFromStr(str)
 	if e != nil {
 		log.Println(e)
 	}
-	log.Println(hashes)
+	log.Println(*hashes)
 }

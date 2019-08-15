@@ -4,6 +4,7 @@ import (
 	"LightningOnOmni/bean"
 	"LightningOnOmni/bean/chainhash"
 	"LightningOnOmni/dao"
+	"encoding/json"
 	"github.com/tidwall/gjson"
 )
 
@@ -61,5 +62,15 @@ func (service *FundingManager) TotalCount() (count int, err error) {
 	return db.Count(data)
 }
 
-//type FundingManager struct{}
-//var FundingService FundingManager
+type FundingSignManager struct{}
+
+var FundingSignService FundingSignManager
+
+func (service *FundingSignManager) Edit(jsonData string) (signed *dao.FundingSigned, err error) {
+	vo := &bean.FundingSigned{}
+	err = json.Unmarshal([]byte(jsonData), vo)
+	if err != nil {
+		return nil, err
+	}
+	return signed, nil
+}

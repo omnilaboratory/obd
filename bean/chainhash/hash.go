@@ -21,7 +21,15 @@ var ErrHashStrSize = fmt.Errorf("max hash string length is %v bytes", MaxHashStr
 type Hash [HashSize]byte
 
 type ChainHash string
-type Signauture [MaxHashStringSize]byte
+type Signauture []byte
+
+// String returns the Hash as the hexadecimal string of the byte-reversed hash.
+func (hash Hash) String() string {
+	for i := 0; i < HashSize/2; i++ {
+		hash[i], hash[HashSize-1-i] = hash[HashSize-1-i], hash[i]
+	}
+	return hex.EncodeToString(hash[:])
+}
 
 // IsEqual returns true if target is the same as hash.
 func (hash *Hash) IsEqual(target *Hash) bool {
@@ -45,16 +53,13 @@ func NewHash(newHash []byte) (*Hash, error) {
 	return &sh, err
 }
 
-// SetBytes sets the bytes which represent the hash.  An error is returned if
-// the number of bytes passed in is not HashSize.
+// SetBytes sets the bytes which represent the hash. An error is returned if the number of bytes passed in is not HashSize.
 func (hash *Hash) SetBytes(newHash []byte) error {
 	nhlen := len(newHash)
 	if nhlen != HashSize {
-		return fmt.Errorf("invalid hash length of %v, want %v", nhlen,
-			HashSize)
+		return fmt.Errorf("invalid hash length of %v, want %v", nhlen, HashSize)
 	}
 	copy(hash[:], newHash)
-
 	return nil
 }
 
@@ -70,16 +75,14 @@ func NewHashFromStr(hash string) (*Hash, error) {
 	return ret, nil
 }
 
-// Decode decodes the byte-reversed hexadecimal string encoding of a Hash to a
-// destination.
+// Decode decodes the byte-reversed hexadecimal string encoding of a Hash to a destination.
 func Decode(dst *Hash, src string) error {
 	// Return error if hash string is too long.
 	if len(src) > MaxHashStringSize {
 		return ErrHashStrSize
 	}
 
-	// Hex decoder expects the hash to be a multiple of two.  When not, pad
-	// with a leading zero.
+	// Hex decoder expects the hash to be a multiple of two.  When not, pad with a leading zero.
 	var srcBytes []byte
 	if len(src)%2 == 0 {
 		srcBytes = []byte(src)
@@ -96,8 +99,8 @@ func Decode(dst *Hash, src string) error {
 		return err
 	}
 
-	// Reverse copy from the temporary hash to destination.  Because the
-	// temporary was zeroed, the written result will be correctly padded.
+	// Reverse copy from the temporary hash to destination.
+	// Because the temporary was zeroed, the written result will be correctly padded.
 	for i, b := range reversedHash[:HashSize/2] {
 		dst[i], dst[HashSize-1-i] = reversedHash[HashSize-1-i], b
 	}
