@@ -114,9 +114,10 @@ func (service *FundingSignManager) Edit(jsonData string) (signed *dao.FundingSig
 	//https://www.ctolib.com/storm.html
 	err = db.Select(
 		q.Eq("FundeePubKey", vo.FundeePubKey),
-		q.And(
-			q.Eq("FunderPubKey", vo.FunderPubKey),
-		),
+		q.Eq("FunderPubKey", vo.FunderPubKey),
+		//q.And(
+		//	q.Eq("FunderPubKey", vo.FunderPubKey),
+		//),
 	).First(node)
 	node.FundingSigned = *vo
 	if err != nil {
