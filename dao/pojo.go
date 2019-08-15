@@ -24,7 +24,7 @@ type FundingCreated struct {
 	FunderPubKeyStr       string `json:"funder_pub_key_str"`
 }
 type FundingSigned struct {
-	Id int `storm:"id,increment" `
+	Id int `storm:"id,increment" json:"id"`
 	bean.FundingSigned
 }
 

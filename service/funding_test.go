@@ -6,10 +6,9 @@ import (
 )
 
 func TestFundingManager_NextTemporaryChanID(t *testing.T) {
-	tempId := FundingCreateService.NextTemporaryChanID()
-	log.Println(tempId)
-	log.Println(string(tempId[:]))
-	tempId = FundingCreateService.NextTemporaryChanID()
-	log.Println(tempId)
-	log.Println(string(tempId[:]))
+	for i := 0; i < 10; i++ {
+		tempId := FundingCreateService.NextTemporaryChanID()
+		log.Println(tempId)
+		log.Println(string(tempId[:]))
+	}
 }

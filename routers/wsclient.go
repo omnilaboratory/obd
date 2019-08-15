@@ -186,27 +186,86 @@ func (c *Client) Read() {
 			sendType = enum.SendTargetType_SendToSomeone
 
 		case enum.MsgType_FundingSign_Edit:
+			signed, err := service.FundingSignService.Edit(msg.Data)
+			data := ""
+			if err != nil {
+				data = err.Error()
+			}
 
-			sendType = enum.SendTargetType_SendToAll
+			bytes, err := json.Marshal(signed)
+			if err != nil {
+				data = err.Error()
+			}
+			if len(data) == 0 {
+				data = string(bytes)
+			}
+			c.sendToMyself(data)
+			sendType = enum.SendTargetType_SendToSomeone
 		case enum.MsgType_FundingSign_Item:
-			sendType = enum.SendTargetType_SendToAll
+			id, err := strconv.Atoi(msg.Data)
+			data := ""
+			if err != nil {
+				data = err.Error()
+			} else {
+				signed, err := service.FundingSignService.Item(id)
+				if err != nil {
+					data = err.Error()
+				} else {
+					bytes, err := json.Marshal(signed)
+					if err != nil {
+						data = err.Error()
+					} else {
+						data = string(bytes)
+					}
+				}
+			}
+			c.sendToMyself(data)
+			sendType = enum.SendTargetType_SendToSomeone
 		case enum.MsgType_FundingSign_Count:
-			sendType = enum.SendTargetType_SendToAll
+			data := ""
+			count, err := service.FundingSignService.TotalCount()
+			if err != nil {
+				data = err.Error()
+			} else {
+				data = strconv.Itoa(count)
+			}
+			c.sendToMyself(data)
+			sendType = enum.SendTargetType_SendToSomeone
+
 		case enum.MsgType_FundingSign_Del:
-			sendType = enum.SendTargetType_SendToAll
+			id, err := strconv.Atoi(msg.Data)
+			data := ""
+			if err != nil {
+				data = err.Error()
+			} else {
+				signed, err := service.FundingSignService.Del(id)
+				if err != nil {
+					data = err.Error()
+				} else {
+					bytes, err := json.Marshal(signed)
+					if err != nil {
+						data = err.Error()
+					} else {
+						data = string(bytes)
+					}
+				}
+			}
+			c.sendToMyself(data)
+			sendType = enum.SendTargetType_SendToSomeone
 		case enum.MsgType_FundingSign_DelAll:
-			sendType = enum.SendTargetType_SendToAll
+			err := service.FundingSignService.DelAll()
+			data := ""
+			if err != nil {
+				data = err.Error()
+			}
+			c.sendToMyself(data)
+			sendType = enum.SendTargetType_SendToSomeone
 
 		case enum.MsgType_CommitmentTx:
-			sendType = enum.SendTargetType_SendToAll
 		case enum.MsgType_CommitmentTxSigned:
-			sendType = enum.SendTargetType_SendToAll
 		case enum.MsgType_GetBalanceRequest:
-			sendType = enum.SendTargetType_SendToAll
 		case enum.MsgType_GetBalanceRespond:
-			sendType = enum.SendTargetType_SendToAll
 		default:
-			sendType = enum.SendTargetType_SendToAll
 		}
 
 		//broadcast except me
@@ -235,7 +294,7 @@ func (c *Client) sendToSomeone(recipient bean.User, data string) {
 	}
 }
 
-func (client *Client) sendToMyself(data string) {
-	jsonMessage, _ := json.Marshal(&bean.Message{Sender: client.Id, Data: data})
-	client.SendChannel <- jsonMessage
+func (c *Client) sendToMyself(data string) {
+	jsonMessage, _ := json.Marshal(&bean.Message{Sender: c.Id, Data: data})
+	c.SendChannel <- jsonMessage
 }
