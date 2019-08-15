@@ -47,7 +47,7 @@ func InitRouter() *gin.Engine {
 }
 
 func testBd(context *gin.Context) {
-	node, err := service.FundingCreateService.CreateFunding("")
+	node, err := service.FundingCreateService.Edit("")
 	if err != nil {
 		context.JSON(http.StatusOK, gin.H{
 			"msg":  "userInfo",

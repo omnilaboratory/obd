@@ -114,7 +114,7 @@ func (c *Client) Read() {
 			sendType = enum.SendTargetType_SendToSomeone
 		// create a funding tx
 		case enum.MsgType_FundingCreate_Edit:
-			node, err := service.FundingCreateService.CreateFunding(msg.Data)
+			node, err := service.FundingCreateService.Edit(msg.Data)
 			if err != nil {
 				log.Println(err)
 			} else {
@@ -132,7 +132,7 @@ func (c *Client) Read() {
 				log.Println(err)
 				break
 			}
-			node, err := service.FundingCreateService.GetFundingTx(id)
+			node, err := service.FundingCreateService.Item(id)
 			data := ""
 			if err != nil {
 				data = err.Error()
@@ -147,7 +147,7 @@ func (c *Client) Read() {
 			c.sendToMyself(data)
 			sendType = enum.SendTargetType_SendToSomeone
 		case enum.MsgType_FundingCreate_DelAll:
-			err := service.FundingCreateService.DeleteTable()
+			err := service.FundingCreateService.DelAll()
 			data := ""
 			if err != nil {
 				data = err.Error()
@@ -164,7 +164,7 @@ func (c *Client) Read() {
 					data = err.Error()
 					break
 				}
-				err = service.FundingCreateService.DeleteItem(id)
+				err = service.FundingCreateService.Del(id)
 				if err != nil {
 					data = err.Error()
 				} else {

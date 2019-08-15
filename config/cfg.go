@@ -12,12 +12,9 @@ var (
 	ReadTimeout  time.Duration = 5 * time.Second
 	WriteTimeout time.Duration = 10 * time.Second
 
-	Chainnode_Host string = "62.234.169.68:8332"
-	Chainnode_User string = "uprets"
-	Chainnode_Pass string = "pass"
-	//Chainnode_Host string = "62.234.216.108:18332"
-	//Chainnode_User string = "omniwallet"
-	//Chainnode_Pass string = "cB3]iL2@eZ1?cB2?"
+	Chainnode_Host string = "62.234.216.108:18332"
+	Chainnode_User string = "omniwallet"
+	Chainnode_Pass string = "cB3]iL2@eZ1?cB2?"
 )
 
 func init() {

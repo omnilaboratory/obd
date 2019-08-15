@@ -46,7 +46,7 @@ func (service *FundingCreateManager) NextTemporaryChanID() [32]byte {
 	return nextChanID
 }
 
-func (service *FundingCreateManager) CreateFunding(jsonData string) (node *dao.FundingCreated, err error) {
+func (service *FundingCreateManager) Edit(jsonData string) (node *dao.FundingCreated, err error) {
 	node = &dao.FundingCreated{}
 
 	tempId := service.NextTemporaryChanID()
@@ -67,7 +67,7 @@ func (service *FundingCreateManager) CreateFunding(jsonData string) (node *dao.F
 	return node, err
 }
 
-func (service *FundingCreateManager) GetFundingTx(id int) (node *dao.FundingCreated, err error) {
+func (service *FundingCreateManager) Item(id int) (node *dao.FundingCreated, err error) {
 	db, _ := dao.DB_Manager.GetDB()
 	var data = &dao.FundingCreated{}
 	err = db.One("Id", id, data)
@@ -77,13 +77,13 @@ func (service *FundingCreateManager) GetFundingTx(id int) (node *dao.FundingCrea
 	return data, nil
 }
 
-func (service *FundingCreateManager) DeleteTable() (err error) {
+func (service *FundingCreateManager) DelAll() (err error) {
 	//db, _ := dao.DB_Manager.GetDB()
 	//var data = &dao.FundingCreated{}
 	//return db.Drop(data)
 	return nil
 }
-func (service *FundingCreateManager) DeleteItem(id int) (err error) {
+func (service *FundingCreateManager) Del(id int) (err error) {
 	db, _ := dao.DB_Manager.GetDB()
 	var data = &dao.FundingCreated{}
 	db.One("Id", id, data)
