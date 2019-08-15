@@ -20,8 +20,12 @@ type Client struct {
 
 func (c *Client) Write() {
 	defer func() {
-		c.Socket.Close()
-		fmt.Println("socket closed after writing...")
+		e := c.Socket.Close()
+		if e != nil {
+			log.Println(e)
+		} else {
+			log.Println("socket closed after writing...")
+		}
 	}()
 
 	for {
@@ -42,7 +46,7 @@ func (c *Client) Read() {
 		service.UserService.UserLogout(c.User)
 		GlobalWsClientManager.Unregister <- c
 		c.Socket.Close()
-		fmt.Println("socket closed after reading...")
+		log.Println("socket closed after reading...")
 	}()
 
 	for {
