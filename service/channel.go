@@ -34,10 +34,9 @@ func (c *ChannelManager) OpenChannel(data *bean.OpenChannelInfo) error {
 	var node = &dao.OpenChannelInfo{}
 
 	data.ChainHash = config.Init_node_chain_hash
-	sum, tempId, _ := c.getTemporaryChannelId()
-	data.TemporaryChannelId = *tempId
-	node.TemporaryChannelIdStr = sum
-
+	tempId := FundingCreateService.NextTemporaryChanID()
+	data.TemporaryChannelId = tempId
+	node.TemporaryChannelIdStr = string(tempId[:])
 	node.OpenChannelInfo = *data
 
 	db, err := dao.DB_Manager.GetDB()
