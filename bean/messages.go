@@ -62,7 +62,7 @@ type FundingCreated struct {
 //type: -35 (funding_signed)
 type FundingSigned struct {
 	//the same as the temporary_channel_id in the open_channel message
-	TemporaryChannelId chainhash.ChainHash `json:"temporary_channel_id"`
+	TemporaryChannelId chainhash.Hash `json:"temporary_channel_id"`
 	//the omni address of funder Alice
 	FunderPubKey chainhash.Hash `json:"funder_pub_key"`
 	// the id of the Omni asset
