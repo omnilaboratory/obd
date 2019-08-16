@@ -15,6 +15,8 @@ var (
 	Chainnode_Host string = "62.234.216.108:18332"
 	Chainnode_User string = "omniwallet"
 	Chainnode_Pass string = "cB3]iL2@eZ1?cB2?"
+
+	Schedule_Delay1 time.Duration = 5 * time.Second
 )
 
 func init() {
@@ -42,4 +44,11 @@ func init() {
 	Chainnode_Host = chainNode.Key("host").String()
 	Chainnode_User = chainNode.Key("user").String()
 	Chainnode_Pass = chainNode.Key("pass").String()
+
+	schedule, err := Cfg.GetSection("schedule")
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	Schedule_Delay1 = time.Duration(schedule.Key("delay1").MustInt(5)) * time.Second
 }

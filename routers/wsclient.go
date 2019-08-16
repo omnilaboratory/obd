@@ -35,7 +35,7 @@ func (c *Client) Write() {
 				c.Socket.WriteMessage(websocket.CloseMessage, []byte{})
 				return
 			}
-			fmt.Printf("send data: %v \n", string(_order))
+			log.Printf("send data: %v \n", string(_order))
 			c.Socket.WriteMessage(websocket.TextMessage, _order)
 		}
 	}
@@ -184,7 +184,6 @@ func (c *Client) Read() {
 			}
 			c.sendToMyself(data)
 			sendType = enum.SendTargetType_SendToSomeone
-
 		case enum.MsgType_FundingSign_Edit:
 			signed, err := service.FundingSignService.Edit(msg.Data)
 			data := ""
@@ -276,8 +275,9 @@ func (c *Client) Read() {
 					client.SendChannel <- jsonMessage
 				}
 			}
-			//broadcast to all
-		} else if sendType == enum.SendTargetType_SendToAll {
+		}
+		//broadcast to all
+		if sendType == enum.SendTargetType_SendToAll {
 			jsonMessage, _ := json.Marshal(&bean.Message{Sender: c.Id, Data: string(dataReq)})
 			GlobalWsClientManager.Broadcast <- jsonMessage
 		}

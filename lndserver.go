@@ -13,6 +13,9 @@ func init() {
 }
 
 func main() {
+
+	//service.ScheduleService.StartSchudule()
+
 	routersInit := routers.InitRouter()
 	addr := ":" + strconv.Itoa(config.ServerPort)
 	server := &http.Server{
@@ -23,4 +26,5 @@ func main() {
 		MaxHeaderBytes: 1 << 20,
 	}
 	log.Fatal(server.ListenAndServe())
+
 }

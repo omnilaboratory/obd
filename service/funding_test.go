@@ -12,3 +12,7 @@ func TestFundingManager_NextTemporaryChanID(t *testing.T) {
 		log.Println(string(tempId[:]))
 	}
 }
+
+func TestFundingManager_DeleteItem(t *testing.T) {
+
+}
