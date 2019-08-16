@@ -8,8 +8,8 @@ type User struct {
 }
 
 type OpenChannelInfo struct {
+	Id int `storm:"id,increment" json:"id"`
 	bean.OpenChannelInfo
-	TemporaryChannelIdStr string `json:"temporary_channel_id_str"`
 }
 type AcceptChannelInfo struct {
 	bean.AcceptChannelInfo

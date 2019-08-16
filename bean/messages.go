@@ -32,7 +32,7 @@ type OpenChannelInfo struct {
 	FeeRatePerKw             uint32              `json:"feerate_per_kw"`
 	ToSelfDelay              uint16              `json:"to_self_delay"`
 	MaxAcceptedHtlcs         uint16              `json:"max_accepted_htlcs"`
-	FundingPubKey            chainhash.Point     `json:"funding_pubkey"`
+	FundingPubKey            string              `json:"funding_pubkey"`
 	RevocationBasePoint      chainhash.Point     `json:"revocation_basepoint"`
 	PaymentBasePoint         chainhash.Point     `json:"payment_basepoint"`
 	DelayedPaymentBasePoint  chainhash.Point     `json:"delayed_payment_basepoint"`

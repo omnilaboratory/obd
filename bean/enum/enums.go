@@ -20,9 +20,14 @@ const (
 type MsgType int
 
 const (
-	MsgType_UserLogin     MsgType = 1
-	MsgType_UserLogout    MsgType = 2
-	MsgType_ChannelOpen   MsgType = -32
+	MsgType_UserLogin                   MsgType = 1
+	MsgType_UserLogout                  MsgType = 2
+	MsgType_ChannelOpen                 MsgType = -32
+	MsgType_ChannelOpen_ItemByTempId    MsgType = -3201
+	MsgType_ChannelOpen_AllItem         MsgType = -3202
+	MsgType_ChannelOpen_Count           MsgType = -3203
+	MsgType_ChannelOpen_DelItemByTempId MsgType = -3204
+
 	MsgType_ChannelAccept MsgType = -33
 
 	MsgType_FundingCreate_Edit   MsgType = -34

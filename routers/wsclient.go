@@ -5,8 +5,8 @@ import (
 	"LightningOnOmni/bean/enum"
 	"LightningOnOmni/service"
 	"encoding/json"
-	"fmt"
 	"github.com/gorilla/websocket"
+	"github.com/tidwall/gjson"
 	"log"
 	"strconv"
 )
@@ -58,11 +58,18 @@ func (c *Client) Read() {
 
 		var msg bean.Message
 		log.Println(string(dataReq))
-		err = json.Unmarshal(dataReq, &msg)
-		if err != nil {
-			log.Println(err)
+		parse := gjson.Parse(string(dataReq))
+
+		if parse.Exists() == false {
+			log.Println("wrong json input")
 			continue
 		}
+
+		msg.Type = enum.MsgType(parse.Get("type").Int())
+		msg.Data = parse.Get("data").String()
+		msg.Sender = parse.Get("sender").String()
+		msg.Recipient = parse.Get("recipient").String()
+
 		var sender, receiver bean.User
 		json.Unmarshal([]byte(msg.Sender), &sender)
 		json.Unmarshal([]byte(msg.Recipient), &receiver)
@@ -92,17 +99,75 @@ func (c *Client) Read() {
 			sendType = enum.SendTargetType_SendToSomeone
 		//get openChannelReq from funder then send to fundee
 		case enum.MsgType_ChannelOpen:
-			var data bean.OpenChannelInfo
-			json.Unmarshal([]byte(msg.Data), &data)
-			if err := service.ChannelService.OpenChannel(&data); err != nil {
-				fmt.Println(err)
+			node, err := service.ChannelService.OpenChannel(msg.Data)
+			data := ""
+			if err != nil {
+				data = err.Error()
 			} else {
-				bytes, err := json.Marshal(data)
-				if err == nil {
-					c.sendToSomeone(receiver, string(bytes))
+				bytes, err := json.Marshal(node)
+				if err != nil {
+					data = err.Error()
+				} else {
+					data = string(bytes)
 				}
-				sendType = enum.SendTargetType_SendToSomeone
 			}
+			c.sendToMyself(data)
+			sendType = enum.SendTargetType_SendToSomeone
+		case enum.MsgType_ChannelOpen_ItemByTempId:
+			node, err := service.ChannelService.GetChannelByTemporaryChanId(msg.Data)
+			data := ""
+			if err != nil {
+				data = err.Error()
+			} else {
+				bytes, err := json.Marshal(node)
+				if err != nil {
+					data = err.Error()
+				} else {
+					data = string(bytes)
+				}
+			}
+			c.sendToMyself(data)
+			sendType = enum.SendTargetType_SendToSomeone
+		case enum.MsgType_ChannelOpen_DelItemByTempId:
+			node, err := service.ChannelService.DelChannelByTemporaryChanId(msg.Data)
+			data := ""
+			if err != nil {
+				data = err.Error()
+			} else {
+				bytes, err := json.Marshal(node)
+				if err != nil {
+					data = err.Error()
+				} else {
+					data = string(bytes)
+				}
+			}
+			c.sendToMyself(data)
+			sendType = enum.SendTargetType_SendToSomeone
+		case enum.MsgType_ChannelOpen_AllItem:
+			nodes, err := service.ChannelService.AllItem()
+			data := ""
+			if err != nil {
+				data = err.Error()
+			} else {
+				bytes, err := json.Marshal(nodes)
+				if err != nil {
+					data = err.Error()
+				} else {
+					data = string(bytes)
+				}
+			}
+			c.sendToMyself(data)
+			sendType = enum.SendTargetType_SendToSomeone
+		case enum.MsgType_ChannelOpen_Count:
+			node, err := service.ChannelService.TotalCount()
+			data := ""
+			if err != nil {
+				data = err.Error()
+			} else {
+				data = strconv.Itoa(node)
+			}
+			c.sendToMyself(data)
+			sendType = enum.SendTargetType_SendToSomeone
 		//get acceptChannelReq from fundee then send to funder
 		case enum.MsgType_ChannelAccept:
 			var data bean.AcceptChannelInfo
