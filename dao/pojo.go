@@ -21,7 +21,6 @@ type FundingCreated struct {
 	Id int `storm:"id,increment" `
 	bean.FundingCreated
 	TemporaryChannelIdStr string `json:"temporary_channel_id_str"`
-	FunderPubKeyStr       string `json:"funder_pub_key_str"`
 }
 type FundingSigned struct {
 	Id int `storm:"id,increment" json:"id"`

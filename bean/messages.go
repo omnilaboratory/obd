@@ -53,7 +53,7 @@ type CloseChannel struct {
 //type: -34 (funding_created)
 type FundingCreated struct {
 	TemporaryChannelId chainhash.Hash `json:"temporary_channel_id"`
-	FunderPubKey       chainhash.Hash `json:"funder_pub_key"`
+	FunderPubKey       string         `json:"funder_pub_key"`
 	PropertyId         int64          `json:"property_id"`
 	MaxAssets          float64        `json:"max_assets"`
 	AmountA            float64        `json:"amount_a"`

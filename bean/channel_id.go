@@ -1,13 +1,33 @@
 package bean
 
-import "encoding/binary"
+import (
+	"crypto/rand"
+	"encoding/binary"
+	"golang.org/x/crypto/salsa20"
+	"log"
+	"sync"
+)
 
 type ChannelID [32]byte
+
+func init() {
+	if _, err := rand.Read(ChannelIdService.chanIDSeed[:]); err != nil {
+		log.Println(err)
+	}
+}
+
+type ChannelIdManager struct {
+	nonceMtx    sync.RWMutex
+	chanIDNonce uint64
+	chanIDSeed  [32]byte
+}
+
+var ChannelIdService = ChannelIdManager{}
 
 // NewChanIDFromOutPoint converts a target OutPoint into a ChannelID that is usable within the network. In order to convert the OutPoint into a ChannelID,
 // we XOR the lower 2-bytes of the txid within the OutPoint with the big-endian
 // serialization of the Index of the OutPoint, truncated to 2-bytes.
-func NewChanIDFromOutPoint(op *OutPoint) ChannelID {
+func (service *ChannelIdManager) NewChanIDFromOutPoint(op *OutPoint) ChannelID {
 	// First we'll copy the txid of the outpoint into our channel ID slice.
 	var cid ChannelID
 	copy(cid[:], op.Hash[:])
@@ -25,4 +45,22 @@ func xorTxid(cid *ChannelID, outputIndex uint16) {
 	binary.BigEndian.PutUint16(buf[30:], outputIndex)
 	cid[30] = cid[30] ^ buf[30]
 	cid[31] = cid[31] ^ buf[31]
+}
+
+// NextTemporaryChanID returns the next free pending channel ID to be used to identify a particular future channel funding workflow.
+func (service *ChannelIdManager) NextTemporaryChanID() [32]byte {
+	// Obtain a fresh nonce. We do this by encoding the current nonce counter, then incrementing it by one.
+	service.nonceMtx.Lock()
+	var nonce [8]byte
+	binary.LittleEndian.PutUint64(nonce[:], service.chanIDNonce)
+	service.chanIDNonce++
+	service.nonceMtx.Unlock()
+
+	// We'll generate the next temporary channelID by "encrypting" 32-bytes of zeroes which'll extract 32 random bytes from our stream cipher.
+	var (
+		nextChanID [32]byte
+		zeroes     [32]byte
+	)
+	salsa20.XORKeyStream(nextChanID[:], zeroes[:], nonce[:], &service.chanIDSeed)
+	return nextChanID
 }

@@ -2,68 +2,44 @@ package service
 
 import (
 	"LightningOnOmni/bean"
-	"LightningOnOmni/bean/chainhash"
 	"LightningOnOmni/dao"
-	"crypto/rand"
-	"encoding/binary"
 	"encoding/json"
+	"errors"
 	"github.com/asdine/storm/q"
-	"github.com/tidwall/gjson"
-	"golang.org/x/crypto/salsa20"
-	"log"
-	"sync"
 )
 
 type FundingCreateManager struct {
-	nonceMtx    sync.RWMutex
-	chanIDNonce uint64
-	chanIDSeed  [32]byte
 }
 
 var FundingCreateService FundingCreateManager
 
-func init() {
-	if _, err := rand.Read(FundingCreateService.chanIDSeed[:]); err != nil {
-		log.Println(err)
-	}
-}
-
-// NextTemporaryChanID returns the next free pending channel ID to be used to identify a particular future channel funding workflow.
-func (service *FundingCreateManager) NextTemporaryChanID() [32]byte {
-	// Obtain a fresh nonce. We do this by encoding the current nonce counter, then incrementing it by one.
-	service.nonceMtx.Lock()
-	var nonce [8]byte
-	binary.LittleEndian.PutUint64(nonce[:], service.chanIDNonce)
-	service.chanIDNonce++
-	service.nonceMtx.Unlock()
-
-	// We'll generate the next temporary channelID by "encrypting" 32-bytes of zeroes which'll extract 32 random bytes from our stream cipher.
-	var (
-		nextChanID [32]byte
-		zeroes     [32]byte
-	)
-	salsa20.XORKeyStream(nextChanID[:], zeroes[:], nonce[:], &service.chanIDSeed)
-	return nextChanID
-}
-
 func (service *FundingCreateManager) Edit(jsonData string) (node *dao.FundingCreated, err error) {
-	node = &dao.FundingCreated{}
 
-	tempId := service.NextTemporaryChanID()
-	node.TemporaryChannelIdStr = string(tempId[:])
-	node.FunderPubKeyStr = gjson.Get(jsonData, "funderPubKey").String()
-	hashes, _ := chainhash.NewHashFromStr(node.FunderPubKeyStr)
-	data := &bean.FundingCreated{
-		TemporaryChannelId: tempId,
-		FunderPubKey:       *hashes,
-		PropertyId:         gjson.Get(jsonData, "propertyId").Int(),
-		MaxAssets:          gjson.Get(jsonData, "maxAssets").Float(),
-		AmountA:            gjson.Get(jsonData, "amountA").Float(),
+	data := &bean.FundingCreated{}
+	err = json.Unmarshal([]byte(jsonData), data)
+	if err != nil {
+		return nil, err
 	}
+
+	if len(data.TemporaryChannelId) == 0 {
+		return nil, errors.New("wrong TemporaryChannelId")
+	}
+
+	db, err := dao.DB_Manager.GetDB()
+	if err != nil {
+		return nil, err
+	}
+
+	node = &dao.FundingCreated{}
+	count, _ := db.Select(q.Eq("TemporaryChannelId", data.TemporaryChannelId)).Count(node)
+
 	node.FundingCreated = *data
 
-	db, _ := dao.DB_Manager.GetDB()
-	err = db.Save(node)
+	if count == 0 {
+		err = db.Save(node)
+	} else {
+		err = db.Update(node)
+	}
 	return node, err
 }
 
@@ -109,8 +85,7 @@ func (service *FundingSignManager) Edit(jsonData string) (signed *dao.FundingSig
 		return nil, err
 	}
 
-	vo.TemporaryChannelId = FundingCreateService.NextTemporaryChanID()
-
+	vo.TemporaryChannelId = bean.ChannelIdService.NextTemporaryChanID()
 	db, _ := dao.DB_Manager.GetDB()
 	node := &dao.FundingSigned{}
 	//https://www.ctolib.com/storm.html
