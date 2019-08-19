@@ -54,9 +54,9 @@ func (service *fundingCreateManager) Item(id int) (node *dao.FundingCreated, err
 }
 
 func (service *fundingCreateManager) DelAll() (err error) {
-	//db, _ := dao.DB_Manager.GetDB()
-	//var data = &dao.FundingCreated{}
-	//return db.Drop(data)
+	db, _ := dao.DBService.GetDB()
+	var data = &dao.FundingCreated{}
+	return db.Drop(data)
 	return nil
 }
 func (service *fundingCreateManager) Del(id int) (err error) {

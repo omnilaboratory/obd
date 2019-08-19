@@ -6,15 +6,15 @@ import (
 	"log"
 )
 
-type DbManager struct {
+type dbManager struct {
 	Db *storm.DB //db
 }
 
-var DBService = DbManager{
+var DBService = dbManager{
 	Db: nil,
 }
 
-func (manager DbManager) GetDB() (*storm.DB, error) {
+func (manager dbManager) GetDB() (*storm.DB, error) {
 	if DBService.Db == nil {
 		db, e := storm.Open(config.DBname)
 		if e != nil {
