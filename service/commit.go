@@ -63,7 +63,7 @@ func (service *commitTxManager) GetItemById(id int) (node *dao.CommitmentTx, err
 		return nil, err
 	}
 	node = &dao.CommitmentTx{}
-	err = db.Select(q.Eq("Id", id)).Find(&node)
+	err = db.Select(q.Eq("Id", id)).First(node)
 	return node, nil
 }
 

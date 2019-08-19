@@ -45,8 +45,8 @@ const (
 
 	MsgType_CommitmentTx_Edit         MsgType = -351
 	MsgType_CommitmentTx_ItemByChanId MsgType = -35101
-	MsgType_CommitmentTx_Count        MsgType = -35102
-	MsgType_CommitmentTx_Del          MsgType = -35103
+	MsgType_CommitmentTx_ItemById     MsgType = -35102
+	MsgType_CommitmentTx_Count        MsgType = -35103
 
 	MsgType_CommitmentTxSigned MsgType = -352
 	MsgType_GetBalanceRequest  MsgType = -353

@@ -340,6 +340,20 @@ func (c *Client) Read() {
 			}
 			c.sendToMyself(data)
 			sendType = enum.SendTargetType_SendToSomeone
+		case enum.MsgType_CommitmentTx_ItemById:
+			nodes, err := service.CommitTxService.GetItemById(int(gjson.Parse(msg.Data).Int()))
+			if err != nil {
+				data = err.Error()
+			} else {
+				bytes, err := json.Marshal(nodes)
+				if err != nil {
+					data = err.Error()
+				} else {
+					data = string(bytes)
+				}
+			}
+			c.sendToMyself(data)
+			sendType = enum.SendTargetType_SendToSomeone
 		case enum.MsgType_CommitmentTx_Count:
 			count, err := service.CommitTxService.TotalCount()
 			if err != nil {
