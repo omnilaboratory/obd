@@ -9,12 +9,12 @@ import (
 	"github.com/tidwall/gjson"
 )
 
-type commnitTxManager struct {
+type commitTxManager struct {
 }
 
-var CommnitTxService commnitTxManager
+var CommitTxService commitTxManager
 
-func (service *commnitTxManager) Edit(jsonData string) (node *dao.CommitmentTx, err error) {
+func (service *commitTxManager) Edit(jsonData string) (node *dao.CommitmentTx, err error) {
 	if len(jsonData) == 0 {
 		return nil, errors.New("empty json data")
 	}
@@ -36,7 +36,7 @@ func (service *commnitTxManager) Edit(jsonData string) (node *dao.CommitmentTx, 
 	return node, err
 }
 
-func (service *commnitTxManager) GetItemsByChannelId(jsonData string) (nodes []dao.CommitmentTx, err error) {
+func (service *commitTxManager) GetItemsByChannelId(jsonData string) (nodes []dao.CommitmentTx, err error) {
 	var chanId bean.ChannelID
 	array := gjson.Parse(jsonData).Array()
 	if len(array) != 32 {
@@ -57,7 +57,7 @@ func (service *commnitTxManager) GetItemsByChannelId(jsonData string) (nodes []d
 	return nodes, nil
 }
 
-func (service *commnitTxManager) GetItemById(id int) (node *dao.CommitmentTx, err error) {
+func (service *commitTxManager) GetItemById(id int) (node *dao.CommitmentTx, err error) {
 	db, err := dao.DBService.GetDB()
 	if err != nil {
 		return nil, err
@@ -67,7 +67,7 @@ func (service *commnitTxManager) GetItemById(id int) (node *dao.CommitmentTx, er
 	return node, nil
 }
 
-func (service *commnitTxManager) TotalCount() (count int, err error) {
+func (service *commitTxManager) TotalCount() (count int, err error) {
 	db, err := dao.DBService.GetDB()
 	if err != nil {
 		return 0, err
@@ -75,7 +75,7 @@ func (service *commnitTxManager) TotalCount() (count int, err error) {
 	return db.Count(&dao.CommitmentTx{})
 }
 
-func (service *commnitTxManager) Del(id int) (node *dao.CommitmentTx, err error) {
+func (service *commitTxManager) Del(id int) (node *dao.CommitmentTx, err error) {
 	db, err := dao.DBService.GetDB()
 	if err != nil {
 		return nil, err

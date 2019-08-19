@@ -313,7 +313,7 @@ func (c *Client) Read() {
 			sendType = enum.SendTargetType_SendToSomeone
 
 		case enum.MsgType_CommitmentTx_Edit:
-			node, err := service.CommnitTxService.Edit(msg.Data)
+			node, err := service.CommitTxService.Edit(msg.Data)
 			if err != nil {
 				data = err.Error()
 			} else {
@@ -327,7 +327,7 @@ func (c *Client) Read() {
 			c.sendToMyself(data)
 			sendType = enum.SendTargetType_SendToSomeone
 		case enum.MsgType_CommitmentTx_ItemByChanId:
-			nodes, err := service.CommnitTxService.GetItemsByChannelId(msg.Data)
+			nodes, err := service.CommitTxService.GetItemsByChannelId(msg.Data)
 			if err != nil {
 				data = err.Error()
 			} else {
@@ -341,7 +341,7 @@ func (c *Client) Read() {
 			c.sendToMyself(data)
 			sendType = enum.SendTargetType_SendToSomeone
 		case enum.MsgType_CommitmentTx_Count:
-			count, err := service.CommnitTxService.TotalCount()
+			count, err := service.CommitTxService.TotalCount()
 			if err != nil {
 				data = err.Error()
 			} else {
