@@ -328,7 +328,7 @@ func (c *Client) Read() {
 			sendType = enum.SendTargetType_SendToSomeone
 		case enum.MsgType_CommitmentTx_ItemByChanId:
 			nodes, count, err := service.CommitTxService.GetItemsByChannelId(msg.Data)
-			log.Println(count)
+			log.Println(*count)
 			if err != nil {
 				data = err.Error()
 			} else {
@@ -364,7 +364,60 @@ func (c *Client) Read() {
 			}
 			c.sendToMyself(data)
 			sendType = enum.SendTargetType_SendToSomeone
-		case enum.MsgType_CommitmentTxSigned:
+
+		case enum.MsgType_CommitmentTxSigned_Edit:
+			node, err := service.CommitTxSignedService.Edit(msg.Data)
+			if err != nil {
+				data = err.Error()
+			} else {
+				bytes, err := json.Marshal(node)
+				if err != nil {
+					data = err.Error()
+				} else {
+					data = string(bytes)
+				}
+			}
+			c.sendToMyself(data)
+			sendType = enum.SendTargetType_SendToSomeone
+		case enum.MsgType_CommitmentTxSigned_ItemByChanId:
+			nodes, count, err := service.CommitTxSignedService.GetItemsByChannelId(msg.Data)
+			log.Println(*count)
+			if err != nil {
+				data = err.Error()
+			} else {
+				bytes, err := json.Marshal(nodes)
+				if err != nil {
+					data = err.Error()
+				} else {
+					data = string(bytes)
+				}
+			}
+			c.sendToMyself(data)
+			sendType = enum.SendTargetType_SendToSomeone
+		case enum.MsgType_CommitmentTxSigned_ItemById:
+			nodes, err := service.CommitTxSignedService.GetItemById(int(gjson.Parse(msg.Data).Int()))
+			if err != nil {
+				data = err.Error()
+			} else {
+				bytes, err := json.Marshal(nodes)
+				if err != nil {
+					data = err.Error()
+				} else {
+					data = string(bytes)
+				}
+			}
+			c.sendToMyself(data)
+			sendType = enum.SendTargetType_SendToSomeone
+		case enum.MsgType_CommitmentTxSigned_Count:
+			count, err := service.CommitTxSignedService.TotalCount()
+			if err != nil {
+				data = err.Error()
+			} else {
+				data = strconv.Itoa(count)
+			}
+			c.sendToMyself(data)
+			sendType = enum.SendTargetType_SendToSomeone
+
 		case enum.MsgType_GetBalanceRequest:
 		case enum.MsgType_GetBalanceRespond:
 		default:

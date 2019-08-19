@@ -45,10 +45,10 @@ type AcceptChannelInfo OpenChannelInfo
 
 //type: -38 (close_channel)
 type CloseChannel struct {
-	ChannelId    ChannelID            `json:"channel_id"`
-	Len          uint16               `json:"len"`
-	ScriptPubKey []byte               `json:"script_pub_key"`
-	Signature    chainhash.Signauture `json:"signature"`
+	ChannelId    ChannelID           `json:"channel_id"`
+	Len          uint16              `json:"len"`
+	ScriptPubKey []byte              `json:"script_pub_key"`
+	Signature    chainhash.Signature `json:"signature"`
 }
 
 //type: -34 (funding_created)
@@ -75,7 +75,7 @@ type FundingSigned struct {
 	//amount of the asset on Bob side
 	AmountB float64 `json:"amount_b"`
 	//signature of fundee Bob
-	FundeeSignature chainhash.Signauture `json:"fundee_signature"`
+	FundeeSignature chainhash.Signature `json:"fundee_signature"`
 	//redeem script used to generate P2SH address
 	RedeemScript string `json:"redeem_script"`
 	//hash of redeemScript
@@ -105,7 +105,7 @@ type CommitmentTxSigned struct {
 	//amount of the payment.
 	Amount float64 `json:"amount"`
 	//signature of Bob.
-	ReceiverSignature chainhash.Signauture `json:"receiver_signature"`
+	ReceiverSignature string `json:"receiver_signature"`
 }
 
 //type: -353 (get_balance_request)
@@ -117,7 +117,7 @@ type GetBalanceRequest struct {
 	// the channel owner, Alice or Bob, can query the balance.
 	Who chainhash.Hash `json:"who"`
 	//the signature of Alice or Bob
-	Signature chainhash.Signauture `json:"signature"`
+	Signature chainhash.Signature `json:"signature"`
 }
 
 //type: -354 (get_balance_respond)
