@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/asdine/storm/q"
+	"time"
 )
 
 type fundingCreateManager struct {
@@ -36,6 +37,7 @@ func (service *fundingCreateManager) Edit(jsonData string) (node *dao.FundingCre
 	node.FundingCreated = *data
 
 	if count == 0 {
+		node.CreateAt = time.Now()
 		err = db.Save(node)
 	} else {
 		err = db.Update(node)

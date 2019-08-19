@@ -7,6 +7,7 @@ import (
 	"errors"
 	"github.com/asdine/storm/q"
 	"github.com/tidwall/gjson"
+	"time"
 )
 
 type commitTxManager struct{}
@@ -23,7 +24,7 @@ func (service *commitTxManager) Edit(jsonData string) (node *dao.CommitmentTx, e
 		return nil, err
 	}
 	if len(data.ChannelId) != 32 {
-		return nil, errors.New("wrong ChannelId")
+		return nil, errors.New("wrong channel_id")
 	}
 	node = &dao.CommitmentTx{}
 	db, err := dao.DBService.GetDB()
@@ -31,6 +32,7 @@ func (service *commitTxManager) Edit(jsonData string) (node *dao.CommitmentTx, e
 		return nil, err
 	}
 	node.CommitmentTx = *data
+	node.CreateAt = time.Now()
 	err = db.Save(node)
 	return node, err
 }
@@ -40,7 +42,7 @@ func (service *commitTxManager) GetItemsByChannelId(jsonData string) (nodes []da
 
 	array := gjson.Get(jsonData, "channel_id").Array()
 	if len(array) != 32 {
-		return nil, nil, errors.New("wrong ChannelId")
+		return nil, nil, errors.New("wrong channel_id")
 	}
 	for index, value := range array {
 		chanId[index] = byte(value.Num)
@@ -126,6 +128,7 @@ func (service *commitTxSignedManager) Edit(jsonData string) (node *dao.Commitmen
 		return nil, err
 	}
 	node.CommitmentTxSigned = *data
+	node.CreateAt = time.Now()
 	err = db.Save(node)
 	return node, err
 }
@@ -135,7 +138,7 @@ func (service *commitTxSignedManager) GetItemsByChannelId(jsonData string) (node
 	array := gjson.Get(jsonData, "channel_id").Array()
 
 	if len(array) != 32 {
-		return nil, nil, errors.New("wrong ChannelId")
+		return nil, nil, errors.New("wrong channel_id")
 	}
 	for index, value := range array {
 		chanId[index] = byte(value.Num)

@@ -11,6 +11,7 @@ import (
 	"github.com/asdine/storm/q"
 	"github.com/tidwall/gjson"
 	"log"
+	"time"
 )
 
 type channelManager struct{}
@@ -47,6 +48,7 @@ func (c *channelManager) OpenChannel(jsonData string) (node *dao.OpenChannelInfo
 	data.TemporaryChannelId = tempId
 	node = &dao.OpenChannelInfo{}
 	node.OpenChannelInfo = data
+	node.CreateAt = time.Now()
 	err = db.Save(node)
 	return node, err
 }
