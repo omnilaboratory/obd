@@ -16,18 +16,18 @@ func init() {
 	}
 }
 
-type ChannelIdManager struct {
+type channelIdManager struct {
 	nonceMtx    sync.RWMutex
 	chanIDNonce uint64
 	chanIDSeed  [32]byte
 }
 
-var ChannelIdService = ChannelIdManager{}
+var ChannelIdService = channelIdManager{}
 
 // NewChanIDFromOutPoint converts a target OutPoint into a ChannelID that is usable within the network. In order to convert the OutPoint into a ChannelID,
 // we XOR the lower 2-bytes of the txid within the OutPoint with the big-endian
 // serialization of the Index of the OutPoint, truncated to 2-bytes.
-func (service *ChannelIdManager) NewChanIDFromOutPoint(op *OutPoint) ChannelID {
+func (service *channelIdManager) NewChanIDFromOutPoint(op *OutPoint) ChannelID {
 	// First we'll copy the txid of the outpoint into our channel ID slice.
 	var cid ChannelID
 	copy(cid[:], op.Hash[:])
@@ -48,7 +48,7 @@ func xorTxid(cid *ChannelID, outputIndex uint16) {
 }
 
 // NextTemporaryChanID returns the next free pending channel ID to be used to identify a particular future channel funding workflow.
-func (service *ChannelIdManager) NextTemporaryChanID() [32]byte {
+func (service *channelIdManager) NextTemporaryChanID() [32]byte {
 	// Obtain a fresh nonce. We do this by encoding the current nonce counter, then incrementing it by one.
 	service.nonceMtx.Lock()
 	var nonce [8]byte

@@ -14,6 +14,6 @@ func TestNewChanIDFromOutPoint(t *testing.T) {
 		Index: 0,
 	}
 	log.Println(*hash)
-	point := NewChanIDFromOutPoint(op)
+	point := ChannelIdService.NewChanIDFromOutPoint(op)
 	log.Println(string(point[:]))
 }
