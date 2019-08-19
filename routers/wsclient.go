@@ -327,7 +327,8 @@ func (c *Client) Read() {
 			c.sendToMyself(data)
 			sendType = enum.SendTargetType_SendToSomeone
 		case enum.MsgType_CommitmentTx_ItemByChanId:
-			nodes, err := service.CommitTxService.GetItemsByChannelId(msg.Data)
+			nodes, count, err := service.CommitTxService.GetItemsByChannelId(msg.Data)
+			log.Println(count)
 			if err != nil {
 				data = err.Error()
 			} else {

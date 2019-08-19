@@ -36,25 +36,40 @@ func (service *commitTxManager) Edit(jsonData string) (node *dao.CommitmentTx, e
 	return node, err
 }
 
-func (service *commitTxManager) GetItemsByChannelId(jsonData string) (nodes []dao.CommitmentTx, err error) {
+func (service *commitTxManager) GetItemsByChannelId(jsonData string) (nodes []dao.CommitmentTx, count *int, err error) {
 	var chanId bean.ChannelID
-	array := gjson.Parse(jsonData).Array()
-	if len(array) != 32 {
-		return nil, errors.New("wrong ChannelId")
-	}
 
+	array := gjson.Get(jsonData, "channel_id").Array()
+	if len(array) != 32 {
+		return nil, nil, errors.New("wrong ChannelId")
+	}
 	for index, value := range array {
 		chanId[index] = byte(value.Num)
 	}
 
+	pageIndex := gjson.Get(jsonData, "page_index").Int()
+	if pageIndex <= 0 {
+		pageIndex = 1
+	}
+	pageSize := gjson.Get(jsonData, "page_size").Int()
+	if pageSize <= 0 {
+		pageSize = 10
+	}
+	skip := (pageIndex - 1) * pageSize
+
 	db, err := dao.DBService.GetDB()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	nodes = []dao.CommitmentTx{}
-	err = db.Select(q.Eq("ChannelId", chanId)).Find(&nodes)
-	return nodes, nil
+	tempCount, err := db.Select(q.Eq("ChannelId", chanId)).Count(&dao.CommitmentTx{})
+	if err != nil {
+		return nil, nil, err
+	}
+	count = &tempCount
+	err = db.Select(q.Eq("ChannelId", chanId)).Skip(int(skip)).Limit(int(pageSize)).Find(&nodes)
+	return nodes, count, err
 }
 
 func (service *commitTxManager) GetItemById(id int) (node *dao.CommitmentTx, err error) {
