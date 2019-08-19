@@ -113,7 +113,7 @@ type GetBalanceRequest struct {
 	//the global channel id.
 	ChannelId ChannelID `json:"channel_id"`
 	//the p2sh address generated in funding_signed message.
-	P2shAddress chainhash.Hash `json:"p_2_sh_address"`
+	P2shAddress string `json:"p2sh_address"`
 	// the channel owner, Alice or Bob, can query the balance.
 	Who chainhash.Hash `json:"who"`
 	//the signature of Alice or Bob
