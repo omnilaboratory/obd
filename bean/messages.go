@@ -19,6 +19,7 @@ type User struct {
 	State    enum.UserState `json:"state"`
 }
 
+//https://github.com/LightningOnOmnilayer/Omni-BOLT-spec/blob/master/OmniBOLT-03-RSMC-and-OmniLayer-Transactions.md
 //type = -32
 type OpenChannelInfo struct {
 	ChainHash                chainhash.ChainHash `json:"chain_hash"`
@@ -92,7 +93,7 @@ type CommitmentTx struct {
 	//amount of the payment
 	Amount float64 `json:"amount"`
 	//private key of Alice2, encrypted by Bob's public key
-	EncrptedAlice2PrivateKey chainhash.Hash `json:"encrpted_alice_2_private_key"`
+	EncrptedAlice2PrivateKey string `json:"encrpted_alice2_private_key"`
 }
 
 //type: -352 (commitment_tx_signed)

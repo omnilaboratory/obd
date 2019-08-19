@@ -8,12 +8,12 @@ import (
 	"github.com/asdine/storm/q"
 )
 
-type FundingCreateManager struct {
+type fundingCreateManager struct {
 }
 
-var FundingCreateService FundingCreateManager
+var FundingCreateService fundingCreateManager
 
-func (service *FundingCreateManager) Edit(jsonData string) (node *dao.FundingCreated, err error) {
+func (service *fundingCreateManager) Edit(jsonData string) (node *dao.FundingCreated, err error) {
 
 	data := &bean.FundingCreated{}
 	err = json.Unmarshal([]byte(jsonData), data)
@@ -25,7 +25,7 @@ func (service *FundingCreateManager) Edit(jsonData string) (node *dao.FundingCre
 		return nil, errors.New("wrong TemporaryChannelId")
 	}
 
-	db, err := dao.DB_Manager.GetDB()
+	db, err := dao.DBService.GetDB()
 	if err != nil {
 		return nil, err
 	}
@@ -43,8 +43,8 @@ func (service *FundingCreateManager) Edit(jsonData string) (node *dao.FundingCre
 	return node, err
 }
 
-func (service *FundingCreateManager) Item(id int) (node *dao.FundingCreated, err error) {
-	db, _ := dao.DB_Manager.GetDB()
+func (service *fundingCreateManager) Item(id int) (node *dao.FundingCreated, err error) {
+	db, _ := dao.DBService.GetDB()
 	var data = &dao.FundingCreated{}
 	err = db.One("Id", id, data)
 	if err != nil {
@@ -53,14 +53,14 @@ func (service *FundingCreateManager) Item(id int) (node *dao.FundingCreated, err
 	return data, nil
 }
 
-func (service *FundingCreateManager) DelAll() (err error) {
+func (service *fundingCreateManager) DelAll() (err error) {
 	//db, _ := dao.DB_Manager.GetDB()
 	//var data = &dao.FundingCreated{}
 	//return db.Drop(data)
 	return nil
 }
-func (service *FundingCreateManager) Del(id int) (err error) {
-	db, _ := dao.DB_Manager.GetDB()
+func (service *fundingCreateManager) Del(id int) (err error) {
+	db, _ := dao.DBService.GetDB()
 	var data = &dao.FundingCreated{}
 	count, err := db.Select(q.Eq("Id", id)).Count(data)
 	if err == nil && count == 1 {
@@ -68,17 +68,17 @@ func (service *FundingCreateManager) Del(id int) (err error) {
 	}
 	return err
 }
-func (service *FundingCreateManager) TotalCount() (count int, err error) {
-	db, _ := dao.DB_Manager.GetDB()
+func (service *fundingCreateManager) TotalCount() (count int, err error) {
+	db, _ := dao.DBService.GetDB()
 	var data = &dao.FundingCreated{}
 	return db.Count(data)
 }
 
-type FundingSignManager struct{}
+type fundingSignManager struct{}
 
-var FundingSignService FundingSignManager
+var FundingSignService fundingSignManager
 
-func (service *FundingSignManager) Edit(jsonData string) (signed *dao.FundingSigned, err error) {
+func (service *fundingSignManager) Edit(jsonData string) (signed *dao.FundingSigned, err error) {
 	vo := &bean.FundingSigned{}
 	err = json.Unmarshal([]byte(jsonData), vo)
 	if err != nil {
@@ -86,7 +86,7 @@ func (service *FundingSignManager) Edit(jsonData string) (signed *dao.FundingSig
 	}
 
 	vo.TemporaryChannelId = bean.ChannelIdService.NextTemporaryChanID()
-	db, _ := dao.DB_Manager.GetDB()
+	db, _ := dao.DBService.GetDB()
 	node := &dao.FundingSigned{}
 	//https://www.ctolib.com/storm.html
 	err = db.Select(
@@ -104,14 +104,14 @@ func (service *FundingSignManager) Edit(jsonData string) (signed *dao.FundingSig
 	}
 	return node, err
 }
-func (service *FundingSignManager) Item(id int) (signed *dao.FundingSigned, err error) {
+func (service *fundingSignManager) Item(id int) (signed *dao.FundingSigned, err error) {
 	node := &dao.FundingSigned{}
-	db, _ := dao.DB_Manager.GetDB()
+	db, _ := dao.DBService.GetDB()
 	err = db.One("Id", id, node)
 	return node, err
 }
-func (service *FundingSignManager) Del(id int) (signed *dao.FundingSigned, err error) {
-	db, _ := dao.DB_Manager.GetDB()
+func (service *fundingSignManager) Del(id int) (signed *dao.FundingSigned, err error) {
+	db, _ := dao.DBService.GetDB()
 	node := &dao.FundingSigned{}
 	err = db.One("Id", id, node)
 	if err == nil {
@@ -119,13 +119,13 @@ func (service *FundingSignManager) Del(id int) (signed *dao.FundingSigned, err e
 	}
 	return node, err
 }
-func (service *FundingSignManager) DelAll() (err error) {
-	db, _ := dao.DB_Manager.GetDB()
+func (service *fundingSignManager) DelAll() (err error) {
+	db, _ := dao.DBService.GetDB()
 	err = db.Drop(&dao.FundingSigned{})
 	return err
 }
 
-func (service *FundingSignManager) TotalCount() (count int, err error) {
-	db, _ := dao.DB_Manager.GetDB()
+func (service *fundingSignManager) TotalCount() (count int, err error) {
+	db, _ := dao.DBService.GetDB()
 	return db.Count(&dao.FundingSigned{})
 }

@@ -20,6 +20,8 @@ func InitRouter() *gin.Engine {
 	go GlobalWsClientManager.Start()
 	router.GET("/ws", wsClientConnect)
 
+	return router
+
 	apiv1 := router.Group("/api/v1")
 	{
 		apiv1.GET("/tags", func(context *gin.Context) {

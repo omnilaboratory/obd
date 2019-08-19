@@ -17,7 +17,7 @@ func (service *UserManager) UserLogin(user *bean.User) error {
 		errors.New("user is nil")
 	}
 	//打开数据库
-	db, e := dao.DB_Manager.GetDB()
+	db, e := dao.DBService.GetDB()
 	if e != nil {
 		return e
 	}
@@ -40,7 +40,7 @@ func (service *UserManager) UserLogout(user *bean.User) error {
 		return errors.New("user is nil")
 	}
 	//打开数据库
-	db, e := dao.DB_Manager.GetDB()
+	db, e := dao.DBService.GetDB()
 	if e != nil {
 		return e
 	}
@@ -57,7 +57,7 @@ func (service *UserManager) UserLogout(user *bean.User) error {
 
 func (service *UserManager) UserInfo(email string) (user *dao.User, e error) {
 
-	db, e := dao.DB_Manager.GetDB()
+	db, e := dao.DBService.GetDB()
 	if e != nil {
 		return nil, errors.New("db is not exist")
 	}

@@ -20,8 +20,9 @@ const (
 type MsgType int
 
 const (
-	MsgType_UserLogin                   MsgType = 1
-	MsgType_UserLogout                  MsgType = 2
+	MsgType_UserLogin  MsgType = 1
+	MsgType_UserLogout MsgType = 2
+
 	MsgType_ChannelOpen                 MsgType = -32
 	MsgType_ChannelOpen_ItemByTempId    MsgType = -3201
 	MsgType_ChannelOpen_AllItem         MsgType = -3202
@@ -42,7 +43,11 @@ const (
 	MsgType_FundingSign_Del    MsgType = -3503
 	MsgType_FundingSign_DelAll MsgType = -3504
 
-	MsgType_CommitmentTx       MsgType = -351
+	MsgType_CommitmentTx_Edit         MsgType = -351
+	MsgType_CommitmentTx_ItemByChanId MsgType = -35101
+	MsgType_CommitmentTx_Count        MsgType = -35102
+	MsgType_CommitmentTx_Del          MsgType = -35103
+
 	MsgType_CommitmentTxSigned MsgType = -352
 	MsgType_GetBalanceRequest  MsgType = -353
 	MsgType_GetBalanceRespond  MsgType = -354

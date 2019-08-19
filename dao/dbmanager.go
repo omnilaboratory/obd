@@ -10,18 +10,18 @@ type DbManager struct {
 	Db *storm.DB //db
 }
 
-var DB_Manager = DbManager{
+var DBService = DbManager{
 	Db: nil,
 }
 
 func (manager DbManager) GetDB() (*storm.DB, error) {
-	if DB_Manager.Db == nil {
+	if DBService.Db == nil {
 		db, e := storm.Open(config.DBname)
 		if e != nil {
 			log.Println("open db fail")
 			return nil, e
 		}
-		DB_Manager.Db = db
+		DBService.Db = db
 	}
-	return DB_Manager.Db, nil
+	return DBService.Db, nil
 }

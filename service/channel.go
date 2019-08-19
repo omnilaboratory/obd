@@ -2,21 +2,23 @@ package service
 
 import (
 	"LightningOnOmni/bean"
+	"LightningOnOmni/bean/chainhash"
 	"LightningOnOmni/config"
 	"LightningOnOmni/dao"
 	"LightningOnOmni/rpc"
 	"encoding/json"
 	"errors"
 	"github.com/asdine/storm/q"
+	"github.com/tidwall/gjson"
 	"log"
 )
 
-type ChannelManager struct{}
+type channelManager struct{}
 
-var ChannelService = ChannelManager{}
+var ChannelService = channelManager{}
 
 // openChannel init data
-func (c *ChannelManager) OpenChannel(jsonData string) (node *dao.OpenChannelInfo, err error) {
+func (c *channelManager) OpenChannel(jsonData string) (node *dao.OpenChannelInfo, err error) {
 	var data = bean.OpenChannelInfo{}
 	json.Unmarshal([]byte(jsonData), &data)
 	if len(data.FundingPubKey) != 34 {
@@ -35,7 +37,7 @@ func (c *ChannelManager) OpenChannel(jsonData string) (node *dao.OpenChannelInfo
 	}
 	log.Println(multiAddr)
 
-	db, err := dao.DB_Manager.GetDB()
+	db, err := dao.DBService.GetDB()
 	if err != nil {
 		return nil, err
 	}
@@ -50,38 +52,45 @@ func (c *ChannelManager) OpenChannel(jsonData string) (node *dao.OpenChannelInfo
 }
 
 // GetChannelByTemporaryChanId
-func (c *ChannelManager) GetChannelByTemporaryChanId(jsonData string) (node *dao.OpenChannelInfo, err error) {
-
-	var data = bean.OpenChannelInfo{}
-	json.Unmarshal([]byte(jsonData), &data)
-	if len(data.TemporaryChannelId) != 32 {
+func (c *channelManager) GetChannelByTemporaryChanId(jsonData string) (node *dao.OpenChannelInfo, err error) {
+	array := gjson.Parse(jsonData).Array()
+	if len(array) != 32 {
 		return nil, errors.New("wrong TemporaryChannelId")
 	}
 
-	db, err := dao.DB_Manager.GetDB()
+	var tempChanId chainhash.Hash
+	for index, value := range array {
+		tempChanId[index] = byte(value.Num)
+	}
+
+	db, err := dao.DBService.GetDB()
 	if err != nil {
 		return nil, err
 	}
 	node = &dao.OpenChannelInfo{}
-	err = db.Select(q.Eq("TemporaryChannelId", data.TemporaryChannelId)).First(node)
+	err = db.Select(q.Eq("TemporaryChannelId", tempChanId)).First(node)
 	return node, err
 }
 
 // DelChannelByTemporaryChanId
-func (c *ChannelManager) DelChannelByTemporaryChanId(jsonData string) (node *dao.OpenChannelInfo, err error) {
+func (c *channelManager) DelChannelByTemporaryChanId(jsonData string) (node *dao.OpenChannelInfo, err error) {
 
-	var data = bean.OpenChannelInfo{}
-	json.Unmarshal([]byte(jsonData), &data)
-	if len(data.TemporaryChannelId) != 32 {
+	array := gjson.Parse(jsonData).Array()
+	if len(array) != 32 {
 		return nil, errors.New("wrong TemporaryChannelId")
 	}
 
-	db, err := dao.DB_Manager.GetDB()
+	var tempChanId chainhash.Hash
+	for index, value := range array {
+		tempChanId[index] = byte(value.Num)
+	}
+
+	db, err := dao.DBService.GetDB()
 	if err != nil {
 		return nil, err
 	}
 	node = &dao.OpenChannelInfo{}
-	err = db.Select(q.Eq("TemporaryChannelId", data.TemporaryChannelId)).First(node)
+	err = db.Select(q.Eq("TemporaryChannelId", tempChanId)).First(node)
 	if err == nil {
 		err = db.DeleteStruct(node)
 	}
@@ -89,8 +98,8 @@ func (c *ChannelManager) DelChannelByTemporaryChanId(jsonData string) (node *dao
 }
 
 // TotalCount
-func (c *ChannelManager) AllItem() (data []dao.OpenChannelInfo, err error) {
-	db, err := dao.DB_Manager.GetDB()
+func (c *channelManager) AllItem() (data []dao.OpenChannelInfo, err error) {
+	db, err := dao.DBService.GetDB()
 	if err != nil {
 		return nil, err
 	}
@@ -100,8 +109,8 @@ func (c *ChannelManager) AllItem() (data []dao.OpenChannelInfo, err error) {
 }
 
 // TotalCount
-func (c *ChannelManager) TotalCount() (count int, err error) {
-	db, err := dao.DB_Manager.GetDB()
+func (c *channelManager) TotalCount() (count int, err error) {
+	db, err := dao.DBService.GetDB()
 	if err != nil {
 		return 0, err
 	}
