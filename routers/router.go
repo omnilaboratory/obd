@@ -55,9 +55,12 @@ func routerForRpc(conn *grpc.ClientConn, router *gin.Engine) {
 	grpcservice.SetClient(client)
 	apiRpc := router.Group("/api/rpc/btc")
 	{
-		apiRpc.GET("/newaddress/:label", grpcservice.GetNewAddress)
 		//curl http://localhost:60020/api/rpc/btc/newaddress -X POST -H "Content-Type:application/json" -d '"label":"254698748@qq.com" -v
 		//apiRpc.POST("/newaddress", grpcservice.GetNewAddress)
+
+		//curl http://localhost:60020/api/rpc/btc/newaddress/254698748@qq.com -v
+		apiRpc.GET("/newaddress/:label", grpcservice.GetNewAddress)
+
 		apiRpc.GET("/blockcount", grpcservice.GetBlockCount)
 		apiRpc.GET("/mininginfo", grpcservice.GetMiningInfo)
 	}
@@ -70,9 +73,9 @@ func wsClientConnect(c *gin.Context) {
 		return
 	}
 
-	uuid_str, _ := uuid.NewV4()
+	uuidStr, _ := uuid.NewV4()
 	client := &Client{
-		Id:          uuid_str.String(),
+		Id:          uuidStr.String(),
 		Socket:      conn,
 		SendChannel: make(chan []byte)}
 
