@@ -136,6 +136,7 @@ func (client *Client) send(method string, params []interface{}) (result string, 
 
 	var resp rawResponse
 	err = json.Unmarshal(respBytes, &resp)
+
 	if err != nil {
 		err = fmt.Errorf("status code: %d, response: %q", httpResponse.StatusCode, string(respBytes))
 		return "", err
@@ -144,5 +145,6 @@ func (client *Client) send(method string, params []interface{}) (result string, 
 	if err != nil {
 		return "", err
 	}
+	log.Println(gjson.Parse(string(res)).String())
 	return gjson.Parse(string(res)).String(), nil
 }

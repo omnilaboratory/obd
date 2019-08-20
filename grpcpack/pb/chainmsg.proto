@@ -3,7 +3,9 @@ package rpc.btc;
 
 service BtcService {
   rpc GetNewAddress (AddressRequest) returns (AddressReply) {}
+  rpc GetBlockCount (EmptyRequest) returns (BlockCountReply) {}
 }
+
 
 message AddressRequest {
   string label = 1;
@@ -11,5 +13,12 @@ message AddressRequest {
 
 message AddressReply {
   string address = 1;
+}
+
+message EmptyRequest{
+}
+
+message BlockCountReply{
+  int32 count = 1;
 }
 

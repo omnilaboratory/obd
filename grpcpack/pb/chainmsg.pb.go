@@ -24,7 +24,6 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
-// The request message containing the user's name.
 type AddressRequest struct {
 	Label                string   `protobuf:"bytes,1,opt,name=label,proto3" json:"label,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -64,7 +63,6 @@ func (m *AddressRequest) GetLabel() string {
 	return ""
 }
 
-// The response message containing the greetings
 type AddressReply struct {
 	Address              string   `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -104,25 +102,101 @@ func (m *AddressReply) GetAddress() string {
 	return ""
 }
 
+type EmptyRequest struct {
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *EmptyRequest) Reset()         { *m = EmptyRequest{} }
+func (m *EmptyRequest) String() string { return proto.CompactTextString(m) }
+func (*EmptyRequest) ProtoMessage()    {}
+func (*EmptyRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_8380b8d99192274c, []int{2}
+}
+
+func (m *EmptyRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_EmptyRequest.Unmarshal(m, b)
+}
+func (m *EmptyRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_EmptyRequest.Marshal(b, m, deterministic)
+}
+func (m *EmptyRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_EmptyRequest.Merge(m, src)
+}
+func (m *EmptyRequest) XXX_Size() int {
+	return xxx_messageInfo_EmptyRequest.Size(m)
+}
+func (m *EmptyRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_EmptyRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_EmptyRequest proto.InternalMessageInfo
+
+type BlockCountReply struct {
+	Count                int32    `protobuf:"varint,1,opt,name=count,proto3" json:"count,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *BlockCountReply) Reset()         { *m = BlockCountReply{} }
+func (m *BlockCountReply) String() string { return proto.CompactTextString(m) }
+func (*BlockCountReply) ProtoMessage()    {}
+func (*BlockCountReply) Descriptor() ([]byte, []int) {
+	return fileDescriptor_8380b8d99192274c, []int{3}
+}
+
+func (m *BlockCountReply) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_BlockCountReply.Unmarshal(m, b)
+}
+func (m *BlockCountReply) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_BlockCountReply.Marshal(b, m, deterministic)
+}
+func (m *BlockCountReply) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_BlockCountReply.Merge(m, src)
+}
+func (m *BlockCountReply) XXX_Size() int {
+	return xxx_messageInfo_BlockCountReply.Size(m)
+}
+func (m *BlockCountReply) XXX_DiscardUnknown() {
+	xxx_messageInfo_BlockCountReply.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_BlockCountReply proto.InternalMessageInfo
+
+func (m *BlockCountReply) GetCount() int32 {
+	if m != nil {
+		return m.Count
+	}
+	return 0
+}
+
 func init() {
 	proto.RegisterType((*AddressRequest)(nil), "rpc.btc.AddressRequest")
 	proto.RegisterType((*AddressReply)(nil), "rpc.btc.AddressReply")
+	proto.RegisterType((*EmptyRequest)(nil), "rpc.btc.EmptyRequest")
+	proto.RegisterType((*BlockCountReply)(nil), "rpc.btc.BlockCountReply")
 }
 
 func init() { proto.RegisterFile("chainmsg.proto", fileDescriptor_8380b8d99192274c) }
 
 var fileDescriptor_8380b8d99192274c = []byte{
-	// 153 bytes of a gzipped FileDescriptorProto
+	// 213 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0xe2, 0x4b, 0xce, 0x48, 0xcc,
 	0xcc, 0xcb, 0x2d, 0x4e, 0xd7, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17, 0x62, 0x2f, 0x2a, 0x48, 0xd6,
 	0x4b, 0x2a, 0x49, 0x56, 0x52, 0xe3, 0xe2, 0x73, 0x4c, 0x49, 0x29, 0x4a, 0x2d, 0x2e, 0x0e, 0x4a,
 	0x2d, 0x2c, 0x4d, 0x2d, 0x2e, 0x11, 0x12, 0xe1, 0x62, 0xcd, 0x49, 0x4c, 0x4a, 0xcd, 0x91, 0x60,
 	0x54, 0x60, 0xd4, 0xe0, 0x0c, 0x82, 0x70, 0x94, 0x34, 0xb8, 0x78, 0xe0, 0xea, 0x0a, 0x72, 0x2a,
-	0x85, 0x24, 0xb8, 0xd8, 0x13, 0x21, 0x7c, 0xa8, 0x3a, 0x18, 0xd7, 0xc8, 0x9f, 0x8b, 0xcb, 0xa9,
-	0x24, 0x39, 0x38, 0xb5, 0xa8, 0x2c, 0x33, 0x39, 0x55, 0xc8, 0x91, 0x8b, 0xd7, 0x3d, 0xb5, 0xc4,
-	0x2f, 0xb5, 0x1c, 0xaa, 0x5b, 0x48, 0x5c, 0x0f, 0x6a, 0xb5, 0x1e, 0xaa, 0xbd, 0x52, 0xa2, 0x98,
-	0x12, 0x05, 0x39, 0x95, 0x4a, 0x0c, 0x49, 0x6c, 0x60, 0x27, 0x1b, 0x03, 0x02, 0x00, 0x00, 0xff,
-	0xff, 0xea, 0xa1, 0x35, 0x1c, 0xc4, 0x00, 0x00, 0x00,
+	0x85, 0x24, 0xb8, 0xd8, 0x13, 0x21, 0x7c, 0xa8, 0x3a, 0x18, 0x57, 0x89, 0x8f, 0x8b, 0xc7, 0x35,
+	0xb7, 0xa0, 0xa4, 0x12, 0x6a, 0x9e, 0x92, 0x3a, 0x17, 0xbf, 0x53, 0x4e, 0x7e, 0x72, 0xb6, 0x73,
+	0x7e, 0x69, 0x5e, 0x09, 0x44, 0xb3, 0x08, 0x17, 0x6b, 0x32, 0x88, 0x07, 0xd6, 0xca, 0x1a, 0x04,
+	0xe1, 0x18, 0x4d, 0x66, 0xe4, 0xe2, 0x72, 0x2a, 0x49, 0x0e, 0x4e, 0x2d, 0x2a, 0xcb, 0x4c, 0x4e,
+	0x15, 0x72, 0xe4, 0xe2, 0x75, 0x4f, 0x2d, 0xf1, 0x4b, 0x2d, 0x87, 0xda, 0x2b, 0x24, 0xae, 0x07,
+	0x75, 0xb4, 0x1e, 0xaa, 0x8b, 0xa5, 0x44, 0x31, 0x25, 0x0a, 0x72, 0x2a, 0x95, 0x18, 0x84, 0x9c,
+	0xc0, 0x46, 0x20, 0x6c, 0x17, 0x42, 0xa8, 0x44, 0x76, 0xa2, 0x94, 0x04, 0x5c, 0x18, 0xcd, 0xa5,
+	0x4a, 0x0c, 0x49, 0x6c, 0xe0, 0x00, 0x33, 0x06, 0x04, 0x00, 0x00, 0xff, 0xff, 0x61, 0x8b, 0x4b,
+	0xcd, 0x42, 0x01, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -138,6 +212,7 @@ const _ = grpc.SupportPackageIsVersion4
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type BtcServiceClient interface {
 	GetNewAddress(ctx context.Context, in *AddressRequest, opts ...grpc.CallOption) (*AddressReply, error)
+	GetBlockCount(ctx context.Context, in *EmptyRequest, opts ...grpc.CallOption) (*BlockCountReply, error)
 }
 
 type btcServiceClient struct {
@@ -157,9 +232,19 @@ func (c *btcServiceClient) GetNewAddress(ctx context.Context, in *AddressRequest
 	return out, nil
 }
 
+func (c *btcServiceClient) GetBlockCount(ctx context.Context, in *EmptyRequest, opts ...grpc.CallOption) (*BlockCountReply, error) {
+	out := new(BlockCountReply)
+	err := c.cc.Invoke(ctx, "/rpc.btc.BtcService/GetBlockCount", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // BtcServiceServer is the server API for BtcService service.
 type BtcServiceServer interface {
 	GetNewAddress(context.Context, *AddressRequest) (*AddressReply, error)
+	GetBlockCount(context.Context, *EmptyRequest) (*BlockCountReply, error)
 }
 
 // UnimplementedBtcServiceServer can be embedded to have forward compatible implementations.
@@ -168,6 +253,9 @@ type UnimplementedBtcServiceServer struct {
 
 func (*UnimplementedBtcServiceServer) GetNewAddress(ctx context.Context, req *AddressRequest) (*AddressReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetNewAddress not implemented")
+}
+func (*UnimplementedBtcServiceServer) GetBlockCount(ctx context.Context, req *EmptyRequest) (*BlockCountReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetBlockCount not implemented")
 }
 
 func RegisterBtcServiceServer(s *grpc.Server, srv BtcServiceServer) {
@@ -192,6 +280,24 @@ func _BtcService_GetNewAddress_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
+func _BtcService_GetBlockCount_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(EmptyRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BtcServiceServer).GetBlockCount(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/rpc.btc.BtcService/GetBlockCount",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BtcServiceServer).GetBlockCount(ctx, req.(*EmptyRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _BtcService_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "rpc.btc.BtcService",
 	HandlerType: (*BtcServiceServer)(nil),
@@ -199,6 +305,10 @@ var _BtcService_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetNewAddress",
 			Handler:    _BtcService_GetNewAddress_Handler,
+		},
+		{
+			MethodName: "GetBlockCount",
+			Handler:    _BtcService_GetBlockCount_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -53,11 +53,25 @@ func routerForRpc(conn *grpc.ClientConn, router *gin.Engine) {
 	client := pb.NewBtcServiceClient(conn)
 	apiRpc := router.Group("/api/rpc")
 	{
-		apiRpc.GET("/btc/newaddress/:name", func(c *gin.Context) {
-			name := c.Param("name")
+		apiRpc.GET("/btc/newaddress/:label", func(c *gin.Context) {
+			label := c.Param("label")
 			// Contact the server and print out its response.
-			req := &pb.AddressRequest{Label: name}
+			req := &pb.AddressRequest{Label: label}
 			res, err := client.GetNewAddress(c, req)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{
+					"error": err.Error(),
+				})
+				return
+			}
+			jsonStr, _ := json.Marshal(res)
+			c.JSON(http.StatusOK, gin.H{
+				"result": string(jsonStr),
+			})
+		})
+		apiRpc.GET("/btc/blockcount", func(c *gin.Context) {
+			// Contact the server and print out its response.
+			res, err := client.GetBlockCount(c, &pb.EmptyRequest{})
 			if err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{
 					"error": err.Error(),
