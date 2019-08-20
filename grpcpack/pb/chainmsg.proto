@@ -1,28 +1,40 @@
+//protoc --go_out=plugins=grpc:. chainmsg.proto
 syntax = "proto3";
 package rpc.btc;
 
 service BtcService {
-  rpc GetNewAddress (AddressRequest) returns (AddressReply) {}
-  rpc GetBlockCount (EmptyRequest) returns (BlockCountReply) {}
-  rpc GetMiningInfo (EmptyRequest) returns (MiningInfoReply) {}
+    rpc GetNewAddress (AddressRequest) returns (AddressReply) {
+    }
+    rpc GetBlockCount (EmptyRequest) returns (BlockCountReply) {
+    }
+    rpc GetMiningInfo (EmptyRequest) returns (MiningInfoReply) {
+    }
 }
 
 
 message AddressRequest {
-  string label = 1;
+    string label = 1;
 }
 
 message AddressReply {
-  string address = 1;
+    string address = 1;
 }
 
-message EmptyRequest{
+message EmptyRequest {
 }
 
-message BlockCountReply{
-  int32 count = 1;
+message BlockCountReply {
+    int32 count = 1;
 }
-message MiningInfoReply{
-  string data = 1;
+message MiningInfoReply {
+    int64 blocks = 1;
+    int64 currentblocksize = 2;
+    int64 currentblockweight = 3;
+    int64 currentblocktx = 4;
+    float difficulty = 5;
+    float networkhashps = 6;
+    int32 pooledtx = 7;
+    bool testnet = 8;
+    string chain = 9;
 }
 

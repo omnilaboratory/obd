@@ -3,13 +3,24 @@ package grpcpack
 import (
 	pb "LightningOnOmni/grpcpack/pb"
 	"LightningOnOmni/rpc"
+	"encoding/json"
 	"github.com/gin-gonic/gin"
-	"github.com/tidwall/gjson"
+	"github.com/golang/protobuf/jsonpb"
 	"golang.org/x/net/context"
 	"log"
 	"net/http"
 	"strconv"
 )
+
+var pbMarshaler jsonpb.Marshaler
+
+func init() {
+	pbMarshaler = jsonpb.Marshaler{
+		EmitDefaults: false,
+		OrigName:     true,
+		EnumsAsInts:  true,
+	}
+}
 
 type grpcService struct {
 	client pb.BtcServiceClient
@@ -51,7 +62,9 @@ func (s *btcRpcManager) GetMiningInfo(ctx context.Context, in *pb.EmptyRequest) 
 	if err != nil {
 		log.Println(err)
 	}
-	return &pb.MiningInfoReply{Data: result}, nil
+	reply = &pb.MiningInfoReply{}
+	err = json.Unmarshal([]byte(result), reply)
+	return reply, err
 }
 
 func (s *grpcService) GetNewAddress(c *gin.Context) {
@@ -84,7 +97,6 @@ func (s *grpcService) GetBlockCount(c *gin.Context) {
 	})
 }
 func (s *grpcService) GetMiningInfo(c *gin.Context) {
-	// Contact the server and print out its response.
 	res, err := s.client.GetMiningInfo(c, &pb.EmptyRequest{})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -92,18 +104,18 @@ func (s *grpcService) GetMiningInfo(c *gin.Context) {
 		})
 		return
 	}
-	parse := gjson.Parse(res.Data)
-	var node = make(map[string]interface{})
-	node["blocks"] = parse.Get("blocks").Num
-	node["currentblocksize"] = parse.Get("currentblocksize").Num
-	node["currentblockweight"] = parse.Get("currentblockweight").Num
-	node["currentblocktx"] = parse.Get("currentblocktx").Num
-	node["difficulty"] = parse.Get("difficulty").Float()
-	node["networkhashps"] = parse.Get("networkhashps").Float()
-	node["pooledtx"] = parse.Get("pooledtx").Int()
-	node["testnet"] = parse.Get("testnet").Bool()
-	node["chain"] = parse.Get("chain").String()
+	//parse := gjson.Parse(res.Data)
+	//var node = make(map[string]interface{})
+	//node["blocks"] = parse.Get("blocks").Num
+	//node["currentblocksize"] = parse.Get("currentblocksize").Num
+	//node["currentblockweight"] = parse.Get("currentblockweight").Num
+	//node["currentblocktx"] = parse.Get("currentblocktx").Num
+	//node["difficulty"] = parse.Get("difficulty").Float()
+	//node["networkhashps"] = parse.Get("networkhashps").Float()
+	//node["pooledtx"] = parse.Get("pooledtx").Int()
+	//node["testnet"] = parse.Get("testnet").Bool()
+	//node["chain"] = parse.Get("chain").String()
 	c.JSON(http.StatusOK, gin.H{
-		"result": node,
+		"result": res,
 	})
 }
