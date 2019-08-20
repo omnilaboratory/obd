@@ -3,7 +3,7 @@ package routers
 import (
 	pb "LightningOnOmni/grpcpack/pb"
 	"LightningOnOmni/service"
-	"fmt"
+	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	"github.com/satori/go.uuid"
@@ -50,22 +50,23 @@ func InitRouter(conn *grpc.ClientConn) *gin.Engine {
 }
 
 func routerForRpc(conn *grpc.ClientConn, router *gin.Engine) {
-	client := pb.NewGreeterClient(conn)
+	client := pb.NewBtcServiceClient(conn)
 	apiRpc := router.Group("/api/rpc")
 	{
-		apiRpc.GET("/rest/n/:name", func(c *gin.Context) {
+		apiRpc.GET("/btc/newaddress/:name", func(c *gin.Context) {
 			name := c.Param("name")
 			// Contact the server and print out its response.
-			req := &pb.HelloRequest{Name: name, Age: "age"}
-			res, err := client.SayHello(c, req)
+			req := &pb.AddressRequest{Label: name}
+			res, err := client.GetNewAddress(c, req)
 			if err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{
 					"error": err.Error(),
 				})
 				return
 			}
+			jsonStr, _ := json.Marshal(res)
 			c.JSON(http.StatusOK, gin.H{
-				"result": fmt.Sprint(res.Message),
+				"result": string(jsonStr),
 			})
 		})
 	}

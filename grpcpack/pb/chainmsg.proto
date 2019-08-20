@@ -18,22 +18,20 @@ syntax = "proto3";
 //option java_package = "io.grpc.examples.helloworld";
 //option java_outer_classname = "HelloWorldProto";
 
-package helloworld;
+package rpc.btc;
 
-// The greeting service definition.
-service Greeter {
-  // Sends a greeting
-  rpc SayHello (HelloRequest) returns (HelloReply) {}
+service BtcService {
+  rpc GetNewAddress (AddressRequest) returns (AddressReply) {}
 }
 
+
 // The request message containing the user's name.
-message HelloRequest {
-  string name = 1;
-  int32 age =2;
+message AddressRequest {
+  string label = 1;
 }
 
 // The response message containing the greetings
-message HelloReply {
-  string message = 1;
-  int32 age =2;
+message AddressReply {
+  string address = 1;
 }
+

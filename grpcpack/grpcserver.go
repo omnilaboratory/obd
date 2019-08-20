@@ -2,20 +2,23 @@ package grpcpack
 
 import (
 	pb "LightningOnOmni/grpcpack/pb"
+	"LightningOnOmni/rpc"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 	"log"
 	"net"
-	"strconv"
 )
 
-// server is used to implement helloworld.GreeterServer.
-type helloManager struct{}
+type btcRpcManager struct{}
 
-// SayHello implements helloworld.GreeterServer
-func (s *helloManager) SayHello(ctx context.Context, in *pb.HelloRequest) (*pb.HelloReply, error) {
-	return &pb.HelloReply{Message: "Hello " + in.Name + " age " + strconv.Itoa(int(in.Age))}, nil
+func (s *btcRpcManager) GetNewAddress(ctx context.Context, in *pb.AddressRequest) (reply *pb.AddressReply, err error) {
+	client := rpc.NewClient()
+	result, err := client.GetNewAddress(in.GetLabel())
+	if err != nil {
+		log.Println(err)
+	}
+	return &pb.AddressReply{Address: result}, nil
 }
 
 func Server() {
@@ -24,7 +27,7 @@ func Server() {
 		log.Println("failed to listen: %v", err)
 	}
 	s := grpc.NewServer()
-	pb.RegisterGreeterServer(s, &helloManager{})
+	pb.RegisterBtcServiceServer(s, &btcRpcManager{})
 
 	// Register reflection service on gRPC server.
 	reflection.Register(s)
