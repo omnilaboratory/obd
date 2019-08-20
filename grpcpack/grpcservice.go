@@ -3,7 +3,6 @@ package grpcpack
 import (
 	pb "LightningOnOmni/grpcpack/pb"
 	"LightningOnOmni/rpc"
-	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"github.com/tidwall/gjson"
 	"golang.org/x/net/context"
@@ -66,9 +65,8 @@ func (s *grpcService) GetNewAddress(c *gin.Context) {
 		})
 		return
 	}
-	jsonStr, _ := json.Marshal(res)
 	c.JSON(http.StatusOK, gin.H{
-		"result": string(jsonStr),
+		"result": res,
 	})
 }
 
@@ -81,9 +79,8 @@ func (s *grpcService) GetBlockCount(c *gin.Context) {
 		})
 		return
 	}
-	jsonStr, _ := json.Marshal(res)
 	c.JSON(http.StatusOK, gin.H{
-		"result": string(jsonStr),
+		"result": res,
 	})
 }
 func (s *grpcService) GetMiningInfo(c *gin.Context) {
@@ -106,8 +103,7 @@ func (s *grpcService) GetMiningInfo(c *gin.Context) {
 	node["pooledtx"] = parse.Get("pooledtx").Int()
 	node["testnet"] = parse.Get("testnet").Bool()
 	node["chain"] = parse.Get("chain").String()
-	jsonStr, _ := json.Marshal(node)
 	c.JSON(http.StatusOK, gin.H{
-		"result": string(jsonStr),
+		"result": node,
 	})
 }

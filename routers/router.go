@@ -55,7 +55,8 @@ func routerForRpc(conn *grpc.ClientConn, router *gin.Engine) {
 	grpcservice.SetClient(client)
 	apiRpc := router.Group("/api/rpc/btc")
 	{
-		apiRpc.POST("/newaddress", grpcservice.GetNewAddress)
+		apiRpc.GET("/newaddress/:label", grpcservice.GetNewAddress)
+		//apiRpc.POST("/newaddress", grpcservice.GetNewAddress)
 		apiRpc.GET("/blockcount", grpcservice.GetBlockCount)
 		apiRpc.GET("/mininginfo", grpcservice.GetMiningInfo)
 	}
