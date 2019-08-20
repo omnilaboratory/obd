@@ -56,7 +56,7 @@ func routerForRpc(conn *grpc.ClientConn, router *gin.Engine) {
 		apiRpc.GET("/rest/n/:name", func(c *gin.Context) {
 			name := c.Param("name")
 			// Contact the server and print out its response.
-			req := &pb.HelloRequest{Name: name}
+			req := &pb.HelloRequest{Name: name, Age: "age"}
 			res, err := client.SayHello(c, req)
 			if err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{
