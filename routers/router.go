@@ -57,6 +57,7 @@ func routerForRpc(conn *grpc.ClientConn, router *gin.Engine) {
 	{
 		apiRpc.POST("/newaddress", grpcservice.GetNewAddress)
 		apiRpc.GET("/blockcount", grpcservice.GetBlockCount)
+		apiRpc.GET("/mininginfo", grpcservice.GetMiningInfo)
 	}
 }
 
