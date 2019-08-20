@@ -2,7 +2,9 @@ package main
 
 import (
 	"LightningOnOmni/config"
+	"LightningOnOmni/grpcpack"
 	"LightningOnOmni/routers"
+	"google.golang.org/grpc"
 	"log"
 	"net/http"
 	"strconv"
@@ -13,10 +15,17 @@ func init() {
 }
 
 func main() {
-
 	//service.ScheduleService.StartSchudule()
 
-	routersInit := routers.InitRouter()
+	go grpcpack.Server()
+
+	conn, err := grpc.Dial("localhost:50051", grpc.WithInsecure())
+	if err != nil {
+		log.Println("did not connect: %v", err)
+	}
+	defer conn.Close()
+
+	routersInit := routers.InitRouter(conn)
 	addr := ":" + strconv.Itoa(config.ServerPort)
 	server := &http.Server{
 		Addr:           addr,

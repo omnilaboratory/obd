@@ -1,26 +1,24 @@
 package routers
 
 import (
-	"LightningOnOmni/bean"
+	pb "LightningOnOmni/grpcpack/pb"
 	"LightningOnOmni/service"
-	"encoding/json"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	"github.com/satori/go.uuid"
+	"google.golang.org/grpc"
 	"net/http"
-	"strconv"
 	"time"
 )
 
-func InitRouter() *gin.Engine {
+func InitRouter(conn *grpc.ClientConn) *gin.Engine {
 	router := gin.New()
 	router.Use(gin.Logger())
 	router.Use(gin.Recovery())
 
 	go GlobalWsClientManager.Start()
 	router.GET("/ws", wsClientConnect)
-
-	return router
 
 	apiv1 := router.Group("/api/v1")
 	{
@@ -38,88 +36,39 @@ func InitRouter() *gin.Engine {
 				"msg": "test",
 			})
 		})
-		apiv1.GET("/getNode", getNodeData)
-		apiv1.GET("/test", testBd)
+		apiv1.GET("/getNode", service.HttpService.GetNodeData)
+		apiv1.GET("/test", service.HttpService.TestBd)
 
-		apiv1.GET("/userLogin", userLogin)
-		apiv1.GET("/userLogout", userLogout)
-		apiv1.GET("/userInfo", userInfo)
+		apiv1.GET("/userLogin", service.HttpService.UserLogin)
+		apiv1.GET("/userLogout", service.HttpService.UserLogout)
+		apiv1.GET("/userInfo", service.HttpService.UserInfo)
 	}
+
+	//test grpc
+	routerForRpc(conn, router)
 	return router
 }
 
-func testBd(context *gin.Context) {
-	node, err := service.FundingCreateService.Edit("")
-	if err != nil {
-		context.JSON(http.StatusOK, gin.H{
-			"msg":  "userInfo",
-			"data": err.Error(),
-		})
-		return
-	}
-	bytes, _ := json.Marshal(node)
-	context.JSON(http.StatusOK, gin.H{
-		"msg":  "test CreateFunding",
-		"data": string(bytes),
-	})
-}
-
-func userInfo(context *gin.Context) {
-	user, err := service.UserService.UserInfo(context.Query("email"))
-	if err != nil {
-		context.JSON(http.StatusOK, gin.H{
-			"msg":  "userInfo",
-			"data": err.Error(),
-		})
-		return
-	}
-	bytes, _ := json.Marshal(user)
-	context.JSON(http.StatusOK, gin.H{
-		"msg":  "userInfo",
-		"data": string(bytes),
-	})
-}
-
-func userLogin(context *gin.Context) {
-	user := bean.User{}
-	user.Email = context.Query("email")
-	service.UserService.UserLogin(&user)
-	bytes, _ := json.Marshal(user)
-	context.JSON(http.StatusOK, gin.H{
-		"msg":  "userLogin",
-		"data": string(bytes),
-	})
-}
-func userLogout(context *gin.Context) {
-	user := bean.User{}
-	user.Email = context.Query("email")
-	logout := service.UserService.UserLogout(&user)
-	if logout != nil {
-		context.JSON(http.StatusOK, gin.H{
-			"msg":  "userLogout",
-			"data": logout.Error(),
-		})
-	} else {
-		bytes, _ := json.Marshal(user)
-		context.JSON(http.StatusOK, gin.H{
-			"msg":  "userLogout",
-			"data": string(bytes),
+func routerForRpc(conn *grpc.ClientConn, router *gin.Engine) {
+	client := pb.NewGreeterClient(conn)
+	apiRpc := router.Group("/api/rpc")
+	{
+		apiRpc.GET("/rest/n/:name", func(c *gin.Context) {
+			name := c.Param("name")
+			// Contact the server and print out its response.
+			req := &pb.HelloRequest{Name: name}
+			res, err := client.SayHello(c, req)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{
+					"error": err.Error(),
+				})
+				return
+			}
+			c.JSON(http.StatusOK, gin.H{
+				"result": fmt.Sprint(res.Message),
+			})
 		})
 	}
-
-}
-
-func getNodeData(context *gin.Context) {
-	nodeService := service.NodeService{}
-	id, _ := strconv.Atoi(context.Query("id"))
-	data, _ := nodeService.Get(id)
-	bytes, _ := json.Marshal(data)
-
-	context.JSON(http.StatusOK, gin.H{
-		"msg":  "getNodeData",
-		"data": string(bytes),
-	})
-
 }
 
 func wsClientConnect(c *gin.Context) {
