@@ -20,6 +20,8 @@ func InitRouter(conn *grpc.ClientConn) *gin.Engine {
 	go GlobalWsClientManager.Start()
 	router.GET("/ws", wsClientConnect)
 
+	routerForRpc(conn, router)
+
 	apiv1 := router.Group("/api/v1")
 	{
 		apiv1.GET("/tags", func(context *gin.Context) {
@@ -45,25 +47,27 @@ func InitRouter(conn *grpc.ClientConn) *gin.Engine {
 	}
 
 	//test grpc
-	routerForRpc(conn, router)
+
 	return router
 }
 
 func routerForRpc(conn *grpc.ClientConn, router *gin.Engine) {
+
 	client := pb.NewBtcServiceClient(conn)
-	var grpcservice = grpcpack.GetGrpcService()
-	grpcservice.SetClient(client)
+	var grpcService = grpcpack.GetGrpcService()
+	grpcService.SetClient(client)
+
 	apiRpc := router.Group("/api/rpc/btc")
 	{
 		//curl -H "Content-Type:application/x-www-form-urlencoded" -d "label=admin" -X POST http://localhost:60020/api/rpc/btc/getnewaddress
 		//curl http://localhost:60020/api/rpc/btc/getnewaddress -H "content-type: application/json"  -d "{\"label\":{\"test\":\"abc\"}}"
-		apiRpc.POST("/getnewaddress", grpcservice.GetNewAddress)
+		apiRpc.POST("/getnewaddress", grpcService.GetNewAddress)
 
 		//curl http://localhost:60020/api/rpc/btc/getnewaddress/254698748@qq.com -v
 		//apiRpc.GET("/getnewaddress/:label", grpcservice.GetNewAddress)
 
-		apiRpc.GET("/getblockcount", grpcservice.GetBlockCount)
-		apiRpc.GET("/getmininginfo", grpcservice.GetMiningInfo)
+		apiRpc.GET("/getblockcount", grpcService.GetBlockCount)
+		apiRpc.GET("/getmininginfo", grpcService.GetMiningInfo)
 	}
 }
 
