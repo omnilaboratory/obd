@@ -29,12 +29,16 @@ func (s *grpcService) SetClient(client pb.BtcServiceClient) {
 	s.client = client
 }
 
+type test struct {
+	Label string `json:"label"`
+}
+
 func (s *grpcService) GetNewAddress(c *gin.Context) {
 	//json
 	bytes, _ := c.GetRawData()
 	log.Println(string(bytes))
 	parse := gjson.Parse(string(bytes))
-	log.Println(parse.Array()[0].Get("label"))
+	log.Println(parse.Get("label").Get("test"))
 	//log.Println(parse.Get("label").String())
 
 	return
