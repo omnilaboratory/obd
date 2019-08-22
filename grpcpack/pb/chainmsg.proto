@@ -3,15 +3,16 @@ syntax = "proto3";
 package rpc.btc;
 
 service BtcService {
-    rpc GetNewAddress (AddressRequest) returns (AddressReply) {
-    }
-    rpc GetBlockCount (EmptyRequest) returns (BlockCountReply) {
-    }
-    rpc GetMiningInfo (EmptyRequest) returns (MiningInfoReply) {
-    }
+    rpc GetNewAddress (AddressRequest) returns (AddressReply) {}
+    rpc CreateMultiSig (CreateMultiSigRequest) returns (AddressReply) {}
+    rpc GetBlockCount (EmptyRequest) returns (BlockCountReply) {}
+    rpc GetMiningInfo (EmptyRequest) returns (MiningInfoReply) {}
 }
 
-
+message CreateMultiSigRequest{
+    int32 minSignNum=1;
+    repeated string keys=2;
+}
 message AddressRequest {
     string label = 1;
 }

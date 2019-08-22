@@ -38,12 +38,7 @@ func (s *grpcService) GetNewAddress(c *gin.Context) {
 	bytes, _ := c.GetRawData()
 	log.Println(string(bytes))
 	parse := gjson.Parse(string(bytes))
-	log.Println(parse.Get("label").Get("test"))
-	//log.Println(parse.Get("label").String())
-	//form
-	label := c.PostForm("label")
-	// Contact the server and print out its response.
-	req := &pb.AddressRequest{Label: label}
+	req := &pb.AddressRequest{Label: parse.Get("label").String()}
 	res, err := s.client.GetNewAddress(c, req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -120,6 +115,41 @@ func (s *BtcRpcManager) GetMiningInfo(ctx context.Context, in *pb.EmptyRequest) 
 		log.Println(err)
 	}
 	reply = &pb.MiningInfoReply{}
+	err = json.Unmarshal([]byte(result), reply)
+	return reply, err
+}
+
+func (s *grpcService) CreateMultiSig(c *gin.Context) {
+	//json
+	bytes, _ := c.GetRawData()
+	log.Println(string(bytes))
+	parse := gjson.Parse(string(bytes))
+	array := parse.Get("keys").Array()
+	var keys = make([]string, len(array))
+	for index, item := range array {
+		keys[index] = item.String()
+	}
+	// Contact the server and print out its response.
+	req := &pb.CreateMultiSigRequest{MinSignNum: int32(parse.Get("minSignNum").Int()), Keys: keys}
+	res, err := s.client.CreateMultiSig(c, req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"result": res,
+	})
+}
+
+func (s *BtcRpcManager) CreateMultiSig(ctx context.Context, in *pb.CreateMultiSigRequest) (reply *pb.AddressReply, err error) {
+	client := rpc.NewClient()
+	result, err := client.CreateMultiSig(int(in.MinSignNum), in.Keys)
+	if err != nil {
+		log.Println(err)
+	}
+	reply = &pb.AddressReply{}
 	err = json.Unmarshal([]byte(result), reply)
 	return reply, err
 }

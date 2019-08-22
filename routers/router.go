@@ -7,7 +7,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	"github.com/satori/go.uuid"
+	"github.com/tidwall/gjson"
 	"google.golang.org/grpc"
+	"log"
 	"net/http"
 	"time"
 )
@@ -58,9 +60,14 @@ func routerForRpc(conn *grpc.ClientConn, router *gin.Engine) {
 
 	apiRpc := router.Group("/api/rpc/btc")
 	{
+
+		//curl -X POST -H "Content-Type:application / json" -d "{\"id\":1,\"method\":\"Test.Greet\",\"params\":[{\"name\" :\"world\"}]}" http://localhost:60020/api/rpc/btc/
+		apiRpc.Any("/", handlerRpcReq)
+
 		//curl -H "Content-Type:application/x-www-form-urlencoded" -d "label=admin" -X POST http://localhost:60020/api/rpc/btc/getnewaddress
 		//curl http://localhost:60020/api/rpc/btc/getnewaddress -H "content-type: application/json"  -d "{\"label\":{\"test\":\"abc\"}}"
 		apiRpc.POST("/getnewaddress", grpcService.GetNewAddress)
+		apiRpc.POST("/createmultisig", grpcService.CreateMultiSig)
 
 		//curl http://localhost:60020/api/rpc/btc/getnewaddress/254698748@qq.com -v
 		//apiRpc.GET("/getnewaddress/:label", grpcservice.GetNewAddress)
@@ -68,6 +75,16 @@ func routerForRpc(conn *grpc.ClientConn, router *gin.Engine) {
 		apiRpc.GET("/getblockcount", grpcService.GetBlockCount)
 		apiRpc.GET("/getmininginfo", grpcService.GetMiningInfo)
 	}
+}
+
+func handlerRpcReq(c *gin.Context) {
+	bytes, _ := c.GetRawData()
+	log.Println(string(bytes))
+	parse := gjson.Parse(string(bytes))
+	log.Println(parse)
+	c.JSON(http.StatusOK, gin.H{
+		"result": parse.Raw,
+	})
 }
 
 func wsClientConnect(c *gin.Context) {
