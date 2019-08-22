@@ -18,13 +18,8 @@ func main() {
 	//service.ScheduleService.StartSchudule()
 
 	go grpcpack.Server()
-
-	conn, err := grpc.Dial("localhost:50051", grpc.WithInsecure())
-	if err != nil {
-		log.Println("did not connect: %v", err)
-	}
+	conn := startupGRPCClient()
 	defer conn.Close()
-
 	routersInit := routers.InitRouter(conn)
 	addr := ":" + strconv.Itoa(config.ServerPort)
 	server := &http.Server{
@@ -36,4 +31,12 @@ func main() {
 	}
 	log.Fatal(server.ListenAndServe())
 
+}
+
+func startupGRPCClient() *grpc.ClientConn {
+	conn, err := grpc.Dial("localhost:"+strconv.Itoa(config.GrpcPort), grpc.WithInsecure())
+	if err != nil {
+		log.Println("did not connect: %v", err)
+	}
+	return conn
 }

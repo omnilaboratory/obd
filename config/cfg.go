@@ -9,6 +9,7 @@ import (
 var (
 	Cfg          *ini.File
 	ServerPort   int           = 60020
+	GrpcPort     int           = 60021
 	ReadTimeout  time.Duration = 5 * time.Second
 	WriteTimeout time.Duration = 10 * time.Second
 
@@ -34,6 +35,7 @@ func init() {
 		return
 	}
 	ServerPort = section.Key("port").MustInt(60020)
+	GrpcPort = section.Key("grpcPort").MustInt(60021)
 	ReadTimeout = time.Duration(section.Key("readTimeout").MustInt(5)) * time.Second
 	WriteTimeout = time.Duration(section.Key("writeTimeout").MustInt(5)) * time.Second
 
