@@ -54,6 +54,7 @@ func InitRouter(conn *grpc.ClientConn) *gin.Engine {
 func routerForRpc(conn *grpc.ClientConn, router *gin.Engine) {
 
 	client := pb.NewBtcServiceClient(conn)
+
 	var grpcService = grpcpack.GetGrpcService()
 	grpcService.SetClient(client)
 
