@@ -46,8 +46,6 @@ func InitRouter(conn *grpc.ClientConn) *gin.Engine {
 		apiv1.GET("/userInfo", service.HttpService.UserInfo)
 	}
 
-	//test grpc
-
 	return router
 }
 
