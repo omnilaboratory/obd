@@ -40,8 +40,6 @@ func (s *grpcService) GetNewAddress(c *gin.Context) {
 	parse := gjson.Parse(string(bytes))
 	log.Println(parse.Get("label").Get("test"))
 	//log.Println(parse.Get("label").String())
-
-	return
 	//form
 	label := c.PostForm("label")
 	// Contact the server and print out its response.

@@ -13,7 +13,7 @@ type BtcRpcManager struct{}
 func Server() {
 	lis, err := net.Listen("tcp", ":50051")
 	if err != nil {
-		log.Println("failed to listen: %v", err)
+		log.Println(err)
 	}
 	s := grpc.NewServer()
 	pb.RegisterBtcServiceServer(s, &BtcRpcManager{})
@@ -21,6 +21,6 @@ func Server() {
 	// Register reflection service on gRPC server.
 	reflection.Register(s)
 	if err := s.Serve(lis); err != nil {
-		log.Println("failed to serve: %v", err)
+		log.Println(err)
 	}
 }
