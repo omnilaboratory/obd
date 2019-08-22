@@ -10,13 +10,25 @@ Omnicore 0.18 integrates the latest BTC core 0.18, which enables relative time l
 
 # Installation
 
-Step1: [Install OmniCore](https://github.com/OmniLayer/omnicore#installation)
+## step 1 fetch the source code:
+on your terminal:
+
+'git clone https://github.com/LightningOnOmnilayer/LightningOnOmni.git'
+
+or if you already set up your local git repo, you just need to fetch the latest version: 
+
+'git pull origin master'
+
+## Step 2: 
+### option 1: [Install OmniCore](https://github.com/OmniLayer/omnicore#installation) on your local machine. Omnicore requires a full BTC core node, which may take days to synchronize the whole BTC database to your local device. After finish synchronization, you can run omni/BTC commands for experiments, such as constructing raw transactions, generating new addresses  
+
+### option 2: use our remote OmniCore node
 
 TBD
 
 # Current Features
 
-* Generate user OLND address. 
+* Generate user OLND address.  
 * Open Poon-Dryja Channel.
 * Deposit, close.
 * Commitment Transaction within a channel.
