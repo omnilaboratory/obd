@@ -18,7 +18,8 @@ TBD
 
 * Generate user OLND address. 
 * Open Poon-Dryja Channel.
-* Deposit, transfer and close.
+* Deposit, close.
+* Commitment Transaction within a channel.
 
 
 # Related projects:
