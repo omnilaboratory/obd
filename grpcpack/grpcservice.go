@@ -5,22 +5,12 @@ import (
 	"LightningOnOmni/rpc"
 	"encoding/json"
 	"github.com/gin-gonic/gin"
-	"github.com/golang/protobuf/jsonpb"
+	"github.com/tidwall/gjson"
 	"golang.org/x/net/context"
 	"log"
 	"net/http"
 	"strconv"
 )
-
-var pbMarshaler jsonpb.Marshaler
-
-func init() {
-	pbMarshaler = jsonpb.Marshaler{
-		EmitDefaults: false,
-		OrigName:     true,
-		EnumsAsInts:  true,
-	}
-}
 
 type grpcService struct {
 	client pb.BtcServiceClient
@@ -39,36 +29,17 @@ func (s *grpcService) SetClient(client pb.BtcServiceClient) {
 	s.client = client
 }
 
-func (s *btcRpcManager) GetNewAddress(ctx context.Context, in *pb.AddressRequest) (reply *pb.AddressReply, err error) {
-	client := rpc.NewClient()
-	result, err := client.GetNewAddress(in.GetLabel())
-	if err != nil {
-		log.Println(err)
-	}
-	return &pb.AddressReply{Address: result}, nil
-}
-func (s *btcRpcManager) GetBlockCount(ctx context.Context, in *pb.EmptyRequest) (reply *pb.BlockCountReply, err error) {
-	client := rpc.NewClient()
-	result, err := client.GetBlockCount()
-	if err != nil {
-		log.Println(err)
-	}
-	count, err := strconv.Atoi(result)
-	return &pb.BlockCountReply{Count: int32(count)}, nil
-}
-func (s *btcRpcManager) GetMiningInfo(ctx context.Context, in *pb.EmptyRequest) (reply *pb.MiningInfoReply, err error) {
-	client := rpc.NewClient()
-	result, err := client.GetMiningInfo()
-	if err != nil {
-		log.Println(err)
-	}
-	reply = &pb.MiningInfoReply{}
-	err = json.Unmarshal([]byte(result), reply)
-	return reply, err
-}
-
 func (s *grpcService) GetNewAddress(c *gin.Context) {
-	label := c.Param("label")
+	//json
+	bytes, _ := c.GetRawData()
+	log.Println(string(bytes))
+	parse := gjson.Parse(string(bytes))
+	log.Println(parse.Array()[0].Get("label"))
+	//log.Println(parse.Get("label").String())
+
+	return
+	//form
+	label := c.PostForm("label")
 	// Contact the server and print out its response.
 	req := &pb.AddressRequest{Label: label}
 	res, err := s.client.GetNewAddress(c, req)
@@ -81,6 +52,15 @@ func (s *grpcService) GetNewAddress(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"result": res,
 	})
+}
+
+func (s *BtcRpcManager) GetNewAddress(ctx context.Context, in *pb.AddressRequest) (reply *pb.AddressReply, err error) {
+	client := rpc.NewClient()
+	result, err := client.GetNewAddress(in.GetLabel())
+	if err != nil {
+		log.Println(err)
+	}
+	return &pb.AddressReply{Address: result}, nil
 }
 
 func (s *grpcService) GetBlockCount(c *gin.Context) {
@@ -96,6 +76,17 @@ func (s *grpcService) GetBlockCount(c *gin.Context) {
 		"result": res,
 	})
 }
+
+func (s *BtcRpcManager) GetBlockCount(ctx context.Context, in *pb.EmptyRequest) (reply *pb.BlockCountReply, err error) {
+	client := rpc.NewClient()
+	result, err := client.GetBlockCount()
+	if err != nil {
+		log.Println(err)
+	}
+	count, err := strconv.Atoi(result)
+	return &pb.BlockCountReply{Count: int32(count)}, nil
+}
+
 func (s *grpcService) GetMiningInfo(c *gin.Context) {
 	res, err := s.client.GetMiningInfo(c, &pb.EmptyRequest{})
 	if err != nil {
@@ -118,4 +109,15 @@ func (s *grpcService) GetMiningInfo(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"result": res,
 	})
+}
+
+func (s *BtcRpcManager) GetMiningInfo(ctx context.Context, in *pb.EmptyRequest) (reply *pb.MiningInfoReply, err error) {
+	client := rpc.NewClient()
+	result, err := client.GetMiningInfo()
+	if err != nil {
+		log.Println(err)
+	}
+	reply = &pb.MiningInfoReply{}
+	err = json.Unmarshal([]byte(result), reply)
+	return reply, err
 }

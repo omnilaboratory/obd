@@ -122,13 +122,14 @@ func (client *Client) send(method string, params []interface{}) (result string, 
 	if err != nil {
 		return "", err
 	}
+	defer httpResponse.Body.Close()
 
 	if httpResponse.StatusCode == 500 {
 		return "", errors.New("can not get data from server")
 	}
 	// Read the raw bytes and close the response.
 	respBytes, err := ioutil.ReadAll(httpResponse.Body)
-	httpResponse.Body.Close()
+
 	if err != nil {
 		err = fmt.Errorf("error reading json reply: %v", err)
 		return "", err

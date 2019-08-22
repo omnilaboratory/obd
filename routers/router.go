@@ -55,11 +55,13 @@ func routerForRpc(conn *grpc.ClientConn, router *gin.Engine) {
 	grpcservice.SetClient(client)
 	apiRpc := router.Group("/api/rpc/btc")
 	{
-		//curl http://localhost:60020/api/rpc/btc/getnewaddress -X POST -H "Content-Type:application/json" -d '"label":"254698748@qq.com" -v
-		//apiRpc.POST("/getnewaddress", grpcservice.GetNewAddress)
+		//curl -H "content-type: application/json" -X POST -d "[{\"label\":\"abc\"}]" http://localhost:60020/api/rpc/btc/getnewaddress
+		//curl http://localhost:60020/api/rpc/btc/getnewaddress -d "[{\"label\":\"abc\"}]"
+		//curl -H "Content-Type:application/x-www-form-urlencoded" -d "label=admin" -X POST http://localhost:60020/api/rpc/btc/getnewaddress
+		apiRpc.POST("/getnewaddress", grpcservice.GetNewAddress)
 
 		//curl http://localhost:60020/api/rpc/btc/getnewaddress/254698748@qq.com -v
-		apiRpc.GET("/getnewaddress/:label", grpcservice.GetNewAddress)
+		//apiRpc.GET("/getnewaddress/:label", grpcservice.GetNewAddress)
 
 		apiRpc.GET("/getblockcount", grpcservice.GetBlockCount)
 		apiRpc.GET("/getmininginfo", grpcservice.GetMiningInfo)

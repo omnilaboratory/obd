@@ -8,7 +8,7 @@ import (
 	"net"
 )
 
-type btcRpcManager struct{}
+type BtcRpcManager struct{}
 
 func Server() {
 	lis, err := net.Listen("tcp", ":50051")
@@ -16,7 +16,7 @@ func Server() {
 		log.Println("failed to listen: %v", err)
 	}
 	s := grpc.NewServer()
-	pb.RegisterBtcServiceServer(s, &btcRpcManager{})
+	pb.RegisterBtcServiceServer(s, &BtcRpcManager{})
 
 	// Register reflection service on gRPC server.
 	reflection.Register(s)
