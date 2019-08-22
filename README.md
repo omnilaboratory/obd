@@ -65,7 +65,10 @@ $ git clone https://github.com/grpc/grpc-go grpc
 
 Wait till all data downloaded.
 
-
+```
+go build olndserver.go
+```
+which generates the executable binary file. 
 
 ## Step 4: Test channel operations using Websocket
 
