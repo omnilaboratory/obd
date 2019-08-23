@@ -23,6 +23,10 @@ const (
 	MsgType_UserLogin  MsgType = 1
 	MsgType_UserLogout MsgType = 2
 
+	MsgType_Core_GetNewAddress  MsgType = 1001
+	MsgType_Core_GetMiningInfo  MsgType = 1002
+	MsgType_Core_GetNetworkInfo MsgType = 1003
+
 	MsgType_ChannelOpen                 MsgType = -32
 	MsgType_ChannelOpen_ItemByTempId    MsgType = -3201
 	MsgType_ChannelOpen_AllItem         MsgType = -3202
@@ -31,17 +35,17 @@ const (
 
 	MsgType_ChannelAccept MsgType = -33
 
-	MsgType_FundingCreate_Edit   MsgType = -34
-	MsgType_FundingCreate_Item   MsgType = -3401
-	MsgType_FundingCreate_Count  MsgType = -3402
-	MsgType_FundingCreate_Del    MsgType = -3403
-	MsgType_FundingCreate_DelAll MsgType = -3404
+	MsgType_FundingCreate_Edit     MsgType = -34
+	MsgType_FundingCreate_ItemById MsgType = -3401
+	MsgType_FundingCreate_Count    MsgType = -3402
+	MsgType_FundingCreate_DelById  MsgType = -3403
+	MsgType_FundingCreate_DelAll   MsgType = -3404
 
-	MsgType_FundingSign_Edit   MsgType = -35
-	MsgType_FundingSign_Item   MsgType = -3501
-	MsgType_FundingSign_Count  MsgType = -3502
-	MsgType_FundingSign_Del    MsgType = -3503
-	MsgType_FundingSign_DelAll MsgType = -3504
+	MsgType_FundingSign_Edit     MsgType = -35
+	MsgType_FundingSign_ItemById MsgType = -3501
+	MsgType_FundingSign_Count    MsgType = -3502
+	MsgType_FundingSign_DelById  MsgType = -3503
+	MsgType_FundingSign_DelAll   MsgType = -3504
 
 	MsgType_CommitmentTx_Edit         MsgType = -351
 	MsgType_CommitmentTx_ItemByChanId MsgType = -35101

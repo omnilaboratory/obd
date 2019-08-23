@@ -2,7 +2,6 @@ package main
 
 import (
 	"LightningOnOmni/config"
-	"LightningOnOmni/grpcpack"
 	"LightningOnOmni/routers"
 	"google.golang.org/grpc"
 	"log"
@@ -15,12 +14,17 @@ func init() {
 }
 
 func main() {
-	//service.ScheduleService.StartSchudule()
-	go grpcpack.Server()
-	conn := startupGRPCClient()
-	defer conn.Close()
 
-	routersInit := routers.InitRouter(conn)
+	// Timer
+	//service.ScheduleService.StartSchudule()
+
+	// grpc
+	//go grpcpack.Server()
+	//conn := startupGRPCClient()
+	//defer conn.Close()
+	//routersInit := routers.InitRouter(conn)
+
+	routersInit := routers.InitRouter(nil)
 	addr := ":" + strconv.Itoa(config.ServerPort)
 	server := &http.Server{
 		Addr:           addr,

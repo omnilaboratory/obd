@@ -4,7 +4,6 @@ import (
 	"LightningOnOmni/config"
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/tidwall/gjson"
 	"io/ioutil"
@@ -124,14 +123,14 @@ func (client *Client) send(method string, params []interface{}) (result string, 
 	}
 	defer httpResponse.Body.Close()
 
-	if httpResponse.StatusCode == 500 {
-		return "", errors.New("can not get data from server")
+	if httpResponse.StatusCode != 200 {
+		err = fmt.Errorf("status code: %d, response: %q", httpResponse.StatusCode, httpResponse.Status)
+		return "", err
 	}
+
 	// Read the raw bytes and close the response.
 	respBytes, err := ioutil.ReadAll(httpResponse.Body)
-
 	if err != nil {
-		err = fmt.Errorf("error reading json reply: %v", err)
 		return "", err
 	}
 
@@ -139,7 +138,12 @@ func (client *Client) send(method string, params []interface{}) (result string, 
 	err = json.Unmarshal(respBytes, &resp)
 
 	if err != nil {
-		err = fmt.Errorf("status code: %d, response: %q", httpResponse.StatusCode, string(respBytes))
+		err = fmt.Errorf("error reading json reply: %v", err)
+		return "", err
+	}
+
+	if err != nil {
+		err = fmt.Errorf("status code: %d, response: %q", httpResponse.StatusCode, err.Error())
 		return "", err
 	}
 	res, err := resp.result()

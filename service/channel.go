@@ -22,11 +22,18 @@ var ChannelService = channelManager{}
 func (c *channelManager) OpenChannel(jsonData string) (node *dao.OpenChannelInfo, err error) {
 	var data = bean.OpenChannelInfo{}
 	json.Unmarshal([]byte(jsonData), &data)
+	client := rpc.NewClient()
 	if len(data.FundingPubKey) != 34 {
 		return nil, errors.New("wrong FundingPubKey")
 	}
+	isMine, err := client.Validateaddress(data.FundingPubKey)
+	if err != nil {
+		return nil, err
+	}
+	if isMine == false {
+		return nil, errors.New("invalid fundingPubKey")
+	}
 
-	client := rpc.NewClient()
 	address, err := client.GetNewAddress("serverBob")
 	if err != nil {
 		return nil, err
@@ -37,6 +44,8 @@ func (c *channelManager) OpenChannel(jsonData string) (node *dao.OpenChannelInfo
 		return nil, err
 	}
 	log.Println(multiAddr)
+	data.ChannelPubKey = gjson.Get(multiAddr, "address").String()
+	data.RedeemScript = gjson.Get(multiAddr, "redeemScript").String()
 
 	db, err := dao.DBService.GetDB()
 	if err != nil {
@@ -106,7 +115,9 @@ func (c *channelManager) AllItem() (data []dao.OpenChannelInfo, err error) {
 		return nil, err
 	}
 	data = []dao.OpenChannelInfo{}
-	err = db.All(&data)
+	//err = db.All(&data)
+	//db.Select().OrderBy("CreateAt").Reverse().Find(&data)
+	db.Select().OrderBy("CreateAt").Find(&data)
 	return data, err
 }
 
