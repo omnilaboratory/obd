@@ -9,7 +9,7 @@ LightningOnOmni implements the [OmniBOLT](https://github.com/LightningOnOmnilaye
 Omnicore 0.18 integrates the latest BTC core 0.18, which enables relative time locker used in RSM contracts and HTL contracts.
 
 # Installation
-The following installation works for Ubuntu 14.04.4 LTS.
+The following installation works for Ubuntu 14.04.4 LTS, golang 1.10 or later.
 
 ## step 1: fetch the source code
 
@@ -89,11 +89,22 @@ Wait till all data downloaded.
 ```
 go build olndserver.go
 ```
-which generates the executable binary file. 
+which generates the executable binary file `olndserver` under the source code directory. 
 
 ## Step 4: Test channel operations using Websocket
+```
+$ ./olndserver
+```
+you will see in the terminal
+```
+2019/08/23 23:05:15 rpcclient.go:23: &{62.234.216.108:18332 omniwallet cB3]iL2@eZ1?cB2?}
+[GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
+ - using env:	export GIN_MODE=release
+ - using code:	gin.SetMode(gin.ReleaseMode)
 
-
+[GIN-debug] GET    /ws                       --> LightningOnOmni/routers.wsClientConnect (3 handlers)
+```
+Then the service is running.
 
 TBD
 
