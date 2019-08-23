@@ -22,11 +22,18 @@ var ChannelService = channelManager{}
 func (c *channelManager) OpenChannel(jsonData string) (node *dao.OpenChannelInfo, err error) {
 	var data = bean.OpenChannelInfo{}
 	json.Unmarshal([]byte(jsonData), &data)
+	client := rpc.NewClient()
 	if len(data.FundingPubKey) != 34 {
 		return nil, errors.New("wrong FundingPubKey")
 	}
+	ismine, err := client.Validateaddress(data.FundingPubKey)
+	if err != nil {
+		return nil, err
+	}
+	if ismine == false {
+		return nil, errors.New("invalid fundingPubKey")
+	}
 
-	client := rpc.NewClient()
 	address, err := client.GetNewAddress("serverBob")
 	if err != nil {
 		return nil, err

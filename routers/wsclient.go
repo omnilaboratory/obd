@@ -187,7 +187,7 @@ func (c *Client) Read() {
 					sendType = enum.SendTargetType_SendToSomeone
 				}
 			}
-		case enum.MsgType_FundingCreate_Item:
+		case enum.MsgType_FundingCreate_ItemById:
 			id, err := strconv.Atoi(msg.Data)
 			if err != nil {
 				log.Println(err)
@@ -215,7 +215,7 @@ func (c *Client) Read() {
 			}
 			c.sendToMyself(data)
 			sendType = enum.SendTargetType_SendToSomeone
-		case enum.MsgType_FundingCreate_Del:
+		case enum.MsgType_FundingCreate_DelById:
 			id, err := strconv.Atoi(msg.Data)
 			for {
 				if err != nil {
@@ -256,7 +256,7 @@ func (c *Client) Read() {
 			}
 			c.sendToMyself(data)
 			sendType = enum.SendTargetType_SendToSomeone
-		case enum.MsgType_FundingSign_Item:
+		case enum.MsgType_FundingSign_ItemById:
 			id, err := strconv.Atoi(msg.Data)
 			if err != nil {
 				data = err.Error()
@@ -285,7 +285,7 @@ func (c *Client) Read() {
 			c.sendToMyself(data)
 			sendType = enum.SendTargetType_SendToSomeone
 
-		case enum.MsgType_FundingSign_Del:
+		case enum.MsgType_FundingSign_DelById:
 			id, err := strconv.Atoi(msg.Data)
 			if err != nil {
 				data = err.Error()
