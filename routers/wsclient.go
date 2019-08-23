@@ -77,10 +77,11 @@ func (c *Client) Read() {
 
 		var sendType = enum.SendTargetType_SendToNone
 		data := ""
+		status := false
 		switch msg.Type {
 		case enum.MsgType_UserLogin:
 			if c.User != nil {
-				c.sendToMyself(msg.Type, "already login")
+				c.sendToMyself(msg.Type, true, "already login")
 				sendType = enum.SendTargetType_SendToSomeone
 			} else {
 				var data bean.User
@@ -93,10 +94,10 @@ func (c *Client) Read() {
 			}
 		case enum.MsgType_UserLogout:
 			if c.User != nil {
-				c.sendToMyself(msg.Type, "logout success")
+				c.sendToMyself(msg.Type, true, "logout success")
 				c.User = nil
 			} else {
-				c.sendToMyself(msg.Type, "please login")
+				c.sendToMyself(msg.Type, true, "please login")
 			}
 			sendType = enum.SendTargetType_SendToSomeone
 
@@ -108,8 +109,9 @@ func (c *Client) Read() {
 				data = err.Error()
 			} else {
 				data = address
+				status = true
 			}
-			c.sendToMyself(msg.Type, data)
+			c.sendToMyself(msg.Type, status, data)
 			sendType = enum.SendTargetType_SendToSomeone
 		case enum.MsgType_Core_GetMiningInfo:
 			client := rpc.NewClient()
@@ -118,8 +120,9 @@ func (c *Client) Read() {
 				data = err.Error()
 			} else {
 				data = result
+				status = true
 			}
-			c.sendToMyself(msg.Type, data)
+			c.sendToMyself(msg.Type, status, data)
 			sendType = enum.SendTargetType_SendToSomeone
 		case enum.MsgType_Core_GetNetworkInfo:
 			client := rpc.NewClient()
@@ -128,8 +131,9 @@ func (c *Client) Read() {
 				data = err.Error()
 			} else {
 				data = result
+				status = true
 			}
-			c.sendToMyself(msg.Type, data)
+			c.sendToMyself(msg.Type, status, data)
 			sendType = enum.SendTargetType_SendToSomeone
 		//get openChannelReq from funder then send to fundee
 		case enum.MsgType_ChannelOpen:
@@ -142,9 +146,10 @@ func (c *Client) Read() {
 					data = err.Error()
 				} else {
 					data = string(bytes)
+					status = true
 				}
 			}
-			c.sendToMyself(msg.Type, data)
+			c.sendToMyself(msg.Type, status, data)
 			sendType = enum.SendTargetType_SendToSomeone
 		case enum.MsgType_ChannelOpen_ItemByTempId:
 			node, err := service.ChannelService.GetChannelByTemporaryChanId(msg.Data)
@@ -156,9 +161,10 @@ func (c *Client) Read() {
 					data = err.Error()
 				} else {
 					data = string(bytes)
+					status = true
 				}
 			}
-			c.sendToMyself(msg.Type, data)
+			c.sendToMyself(msg.Type, status, data)
 			sendType = enum.SendTargetType_SendToSomeone
 		case enum.MsgType_ChannelOpen_DelItemByTempId:
 			node, err := service.ChannelService.DelChannelByTemporaryChanId(msg.Data)
@@ -170,9 +176,10 @@ func (c *Client) Read() {
 					data = err.Error()
 				} else {
 					data = string(bytes)
+					status = true
 				}
 			}
-			c.sendToMyself(msg.Type, data)
+			c.sendToMyself(msg.Type, status, data)
 			sendType = enum.SendTargetType_SendToSomeone
 		case enum.MsgType_ChannelOpen_AllItem:
 			nodes, err := service.ChannelService.AllItem()
@@ -184,9 +191,10 @@ func (c *Client) Read() {
 					data = err.Error()
 				} else {
 					data = string(bytes)
+					status = true
 				}
 			}
-			c.sendToMyself(msg.Type, data)
+			c.sendToMyself(msg.Type, status, data)
 			sendType = enum.SendTargetType_SendToSomeone
 		case enum.MsgType_ChannelOpen_Count:
 			node, err := service.ChannelService.TotalCount()
@@ -194,32 +202,39 @@ func (c *Client) Read() {
 				data = err.Error()
 			} else {
 				data = strconv.Itoa(node)
+				status = true
 			}
-			c.sendToMyself(msg.Type, data)
+			c.sendToMyself(msg.Type, status, data)
 			sendType = enum.SendTargetType_SendToSomeone
 		//get acceptChannelReq from fundee then send to funder
 		case enum.MsgType_ChannelAccept:
-			var data bean.AcceptChannelInfo
-			json.Unmarshal([]byte(msg.Data), &data)
-			bytes, err := json.Marshal(data)
-			if err == nil {
-				c.sendToSomeone(msg.Type, receiver, string(bytes))
+			var vo bean.AcceptChannelInfo
+			json.Unmarshal([]byte(msg.Data), &vo)
+			bytes, err := json.Marshal(vo)
+			if err != nil {
+				data = err.Error()
+			} else {
+				data = string(bytes)
+				status = true
 			}
+			c.sendToSomeone(msg.Type, status, receiver, data)
 			sendType = enum.SendTargetType_SendToSomeone
 		// create a funding tx
 		case enum.MsgType_FundingCreate_Edit:
 			node, err := service.FundingCreateService.Edit(msg.Data)
 			if err != nil {
-				log.Println(err)
+				data = err.Error()
 			} else {
 				bytes, err := json.Marshal(node)
 				if err != nil {
-					log.Println(err)
+					data = err.Error()
 				} else {
-					c.sendToMyself(msg.Type, string(bytes))
-					sendType = enum.SendTargetType_SendToSomeone
+					data = string(bytes)
+					status = true
 				}
 			}
+			c.sendToMyself(msg.Type, status, data)
+			sendType = enum.SendTargetType_SendToSomeone
 		case enum.MsgType_FundingCreate_ItemById:
 			id, err := strconv.Atoi(msg.Data)
 			if err != nil {
@@ -235,9 +250,10 @@ func (c *Client) Read() {
 					data = err.Error()
 				} else {
 					data = string(bytes)
+					status = true
 				}
 			}
-			c.sendToMyself(msg.Type, data)
+			c.sendToMyself(msg.Type, status, data)
 			sendType = enum.SendTargetType_SendToSomeone
 		case enum.MsgType_FundingCreate_DelAll:
 			err := service.FundingCreateService.DelAll()
@@ -245,8 +261,9 @@ func (c *Client) Read() {
 				data = err.Error()
 			} else {
 				data = "del success"
+				status = true
 			}
-			c.sendToMyself(msg.Type, data)
+			c.sendToMyself(msg.Type, status, data)
 			sendType = enum.SendTargetType_SendToSomeone
 		case enum.MsgType_FundingCreate_DelById:
 			id, err := strconv.Atoi(msg.Data)
@@ -260,10 +277,11 @@ func (c *Client) Read() {
 					data = err.Error()
 				} else {
 					data = "del success"
+					status = true
 				}
 				break
 			}
-			c.sendToMyself(msg.Type, data)
+			c.sendToMyself(msg.Type, status, data)
 			sendType = enum.SendTargetType_SendToSomeone
 		case enum.MsgType_FundingCreate_Count:
 			count, err := service.FundingCreateService.TotalCount()
@@ -271,8 +289,9 @@ func (c *Client) Read() {
 				data = err.Error()
 			} else {
 				data = strconv.Itoa(count)
+				status = true
 			}
-			c.sendToMyself(msg.Type, data)
+			c.sendToMyself(msg.Type, status, data)
 			sendType = enum.SendTargetType_SendToSomeone
 		case enum.MsgType_FundingSign_Edit:
 			signed, err := service.FundingSignService.Edit(msg.Data)
@@ -286,8 +305,9 @@ func (c *Client) Read() {
 			}
 			if len(data) == 0 {
 				data = string(bytes)
+				status = true
 			}
-			c.sendToMyself(msg.Type, data)
+			c.sendToMyself(msg.Type, status, data)
 			sendType = enum.SendTargetType_SendToSomeone
 		case enum.MsgType_FundingSign_ItemById:
 			id, err := strconv.Atoi(msg.Data)
@@ -303,10 +323,11 @@ func (c *Client) Read() {
 						data = err.Error()
 					} else {
 						data = string(bytes)
+						status = true
 					}
 				}
 			}
-			c.sendToMyself(msg.Type, data)
+			c.sendToMyself(msg.Type, status, data)
 			sendType = enum.SendTargetType_SendToSomeone
 		case enum.MsgType_FundingSign_Count:
 			count, err := service.FundingSignService.TotalCount()
@@ -314,8 +335,9 @@ func (c *Client) Read() {
 				data = err.Error()
 			} else {
 				data = strconv.Itoa(count)
+				status = true
 			}
-			c.sendToMyself(msg.Type, data)
+			c.sendToMyself(msg.Type, status, data)
 			sendType = enum.SendTargetType_SendToSomeone
 
 		case enum.MsgType_FundingSign_DelById:
@@ -332,17 +354,21 @@ func (c *Client) Read() {
 						data = err.Error()
 					} else {
 						data = string(bytes)
+						status = true
 					}
 				}
 			}
-			c.sendToMyself(msg.Type, data)
+			c.sendToMyself(msg.Type, status, data)
 			sendType = enum.SendTargetType_SendToSomeone
 		case enum.MsgType_FundingSign_DelAll:
 			err = service.FundingSignService.DelAll()
 			if err != nil {
 				data = err.Error()
+			} else {
+				data = "del success"
+				status = true
 			}
-			c.sendToMyself(msg.Type, data)
+			c.sendToMyself(msg.Type, status, data)
 			sendType = enum.SendTargetType_SendToSomeone
 
 		case enum.MsgType_CommitmentTx_Edit:
@@ -355,9 +381,10 @@ func (c *Client) Read() {
 					data = err.Error()
 				} else {
 					data = string(bytes)
+					status = true
 				}
 			}
-			c.sendToMyself(msg.Type, data)
+			c.sendToMyself(msg.Type, status, data)
 			sendType = enum.SendTargetType_SendToSomeone
 		case enum.MsgType_CommitmentTx_ItemByChanId:
 			nodes, count, err := service.CommitTxService.GetItemsByChannelId(msg.Data)
@@ -370,9 +397,10 @@ func (c *Client) Read() {
 					data = err.Error()
 				} else {
 					data = string(bytes)
+					status = true
 				}
 			}
-			c.sendToMyself(msg.Type, data)
+			c.sendToMyself(msg.Type, status, data)
 			sendType = enum.SendTargetType_SendToSomeone
 		case enum.MsgType_CommitmentTx_ItemById:
 			nodes, err := service.CommitTxService.GetItemById(int(gjson.Parse(msg.Data).Int()))
@@ -384,9 +412,10 @@ func (c *Client) Read() {
 					data = err.Error()
 				} else {
 					data = string(bytes)
+					status = true
 				}
 			}
-			c.sendToMyself(msg.Type, data)
+			c.sendToMyself(msg.Type, status, data)
 			sendType = enum.SendTargetType_SendToSomeone
 		case enum.MsgType_CommitmentTx_Count:
 			count, err := service.CommitTxService.TotalCount()
@@ -394,8 +423,9 @@ func (c *Client) Read() {
 				data = err.Error()
 			} else {
 				data = strconv.Itoa(count)
+				status = true
 			}
-			c.sendToMyself(msg.Type, data)
+			c.sendToMyself(msg.Type, status, data)
 			sendType = enum.SendTargetType_SendToSomeone
 
 		case enum.MsgType_CommitmentTxSigned_Edit:
@@ -408,9 +438,10 @@ func (c *Client) Read() {
 					data = err.Error()
 				} else {
 					data = string(bytes)
+					status = true
 				}
 			}
-			c.sendToMyself(msg.Type, data)
+			c.sendToMyself(msg.Type, status, data)
 			sendType = enum.SendTargetType_SendToSomeone
 		case enum.MsgType_CommitmentTxSigned_ItemByChanId:
 			nodes, count, err := service.CommitTxSignedService.GetItemsByChannelId(msg.Data)
@@ -423,9 +454,10 @@ func (c *Client) Read() {
 					data = err.Error()
 				} else {
 					data = string(bytes)
+					status = true
 				}
 			}
-			c.sendToMyself(msg.Type, data)
+			c.sendToMyself(msg.Type, status, data)
 			sendType = enum.SendTargetType_SendToSomeone
 		case enum.MsgType_CommitmentTxSigned_ItemById:
 			nodes, err := service.CommitTxSignedService.GetItemById(int(gjson.Parse(msg.Data).Int()))
@@ -437,9 +469,10 @@ func (c *Client) Read() {
 					data = err.Error()
 				} else {
 					data = string(bytes)
+					status = true
 				}
 			}
-			c.sendToMyself(msg.Type, data)
+			c.sendToMyself(msg.Type, status, data)
 			sendType = enum.SendTargetType_SendToSomeone
 		case enum.MsgType_CommitmentTxSigned_Count:
 			count, err := service.CommitTxSignedService.TotalCount()
@@ -447,8 +480,9 @@ func (c *Client) Read() {
 				data = err.Error()
 			} else {
 				data = strconv.Itoa(count)
+				status = true
 			}
-			c.sendToMyself(msg.Type, data)
+			c.sendToMyself(msg.Type, status, data)
 			sendType = enum.SendTargetType_SendToSomeone
 
 		case enum.MsgType_GetBalanceRequest:
@@ -473,17 +507,17 @@ func (c *Client) Read() {
 	}
 }
 
-func (c *Client) sendToSomeone(msgType enum.MsgType, recipient bean.User, data string) {
+func (c *Client) sendToSomeone(msgType enum.MsgType, status bool, recipient bean.User, data string) {
 	for client := range GlobalWsClientManager.Clients_map {
 		if client.User.Email == recipient.Email {
-			jsonMessage, _ := json.Marshal(&bean.Message{Type: msgType, Sender: c.Id, Data: data})
+			jsonMessage, _ := json.Marshal(&bean.Message{Type: msgType, Status: status, Sender: c.Id, Data: data})
 			client.SendChannel <- jsonMessage
 			break
 		}
 	}
 }
 
-func (c *Client) sendToMyself(msgType enum.MsgType, data string) {
-	jsonMessage, _ := json.Marshal(&bean.Message{Type: msgType, Sender: c.Id, Data: data})
+func (c *Client) sendToMyself(msgType enum.MsgType, status bool, data string) {
+	jsonMessage, _ := json.Marshal(&bean.Message{Type: msgType, Status: status, Sender: c.Id, Data: data})
 	c.SendChannel <- jsonMessage
 }

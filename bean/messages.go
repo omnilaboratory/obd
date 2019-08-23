@@ -7,6 +7,7 @@ import (
 
 type Message struct {
 	Type      enum.MsgType `json:"type"`
+	Status    bool         `json:"status"`
 	Sender    string       `json:"sender"`
 	Recipient string       `json:"recipient"`
 	Data      string       `json:"data"`
