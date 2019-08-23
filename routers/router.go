@@ -22,6 +22,8 @@ func InitRouter(conn *grpc.ClientConn) *gin.Engine {
 	go GlobalWsClientManager.Start()
 	router.GET("/ws", wsClientConnect)
 
+	return router
+
 	routerForRpc(conn, router)
 
 	apiv1 := router.Group("/api/v1")
@@ -53,6 +55,9 @@ func InitRouter(conn *grpc.ClientConn) *gin.Engine {
 
 func routerForRpc(conn *grpc.ClientConn, router *gin.Engine) {
 
+	if conn == nil {
+		return
+	}
 	client := pb.NewBtcServiceClient(conn)
 
 	var grpcService = grpcpack.GetGrpcService()

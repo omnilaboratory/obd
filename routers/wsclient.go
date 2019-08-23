@@ -3,6 +3,7 @@ package routers
 import (
 	"LightningOnOmni/bean"
 	"LightningOnOmni/bean/enum"
+	"LightningOnOmni/rpc"
 	"LightningOnOmni/service"
 	"encoding/json"
 	"github.com/gorilla/websocket"
@@ -79,7 +80,7 @@ func (c *Client) Read() {
 		switch msg.Type {
 		case enum.MsgType_UserLogin:
 			if c.User != nil {
-				c.sendToMyself("already login")
+				c.sendToMyself(msg.Type, "already login")
 				sendType = enum.SendTargetType_SendToSomeone
 			} else {
 				var data bean.User
@@ -92,11 +93,43 @@ func (c *Client) Read() {
 			}
 		case enum.MsgType_UserLogout:
 			if c.User != nil {
-				c.sendToMyself("logout success")
+				c.sendToMyself(msg.Type, "logout success")
 				c.User = nil
 			} else {
-				c.sendToMyself("please login")
+				c.sendToMyself(msg.Type, "please login")
 			}
+			sendType = enum.SendTargetType_SendToSomeone
+
+		case enum.MsgType_Core_GetNewAddress:
+			var label = msg.Data
+			client := rpc.NewClient()
+			address, err := client.GetNewAddress(label)
+			if err != nil {
+				data = err.Error()
+			} else {
+				data = address
+			}
+			c.sendToMyself(msg.Type, data)
+			sendType = enum.SendTargetType_SendToSomeone
+		case enum.MsgType_Core_GetMiningInfo:
+			client := rpc.NewClient()
+			result, err := client.GetMiningInfo()
+			if err != nil {
+				data = err.Error()
+			} else {
+				data = result
+			}
+			c.sendToMyself(msg.Type, data)
+			sendType = enum.SendTargetType_SendToSomeone
+		case enum.MsgType_Core_GetNetworkInfo:
+			client := rpc.NewClient()
+			result, err := client.GetNetworkInfo()
+			if err != nil {
+				data = err.Error()
+			} else {
+				data = result
+			}
+			c.sendToMyself(msg.Type, data)
 			sendType = enum.SendTargetType_SendToSomeone
 		//get openChannelReq from funder then send to fundee
 		case enum.MsgType_ChannelOpen:
@@ -111,7 +144,7 @@ func (c *Client) Read() {
 					data = string(bytes)
 				}
 			}
-			c.sendToMyself(data)
+			c.sendToMyself(msg.Type, data)
 			sendType = enum.SendTargetType_SendToSomeone
 		case enum.MsgType_ChannelOpen_ItemByTempId:
 			node, err := service.ChannelService.GetChannelByTemporaryChanId(msg.Data)
@@ -125,7 +158,7 @@ func (c *Client) Read() {
 					data = string(bytes)
 				}
 			}
-			c.sendToMyself(data)
+			c.sendToMyself(msg.Type, data)
 			sendType = enum.SendTargetType_SendToSomeone
 		case enum.MsgType_ChannelOpen_DelItemByTempId:
 			node, err := service.ChannelService.DelChannelByTemporaryChanId(msg.Data)
@@ -139,7 +172,7 @@ func (c *Client) Read() {
 					data = string(bytes)
 				}
 			}
-			c.sendToMyself(data)
+			c.sendToMyself(msg.Type, data)
 			sendType = enum.SendTargetType_SendToSomeone
 		case enum.MsgType_ChannelOpen_AllItem:
 			nodes, err := service.ChannelService.AllItem()
@@ -153,7 +186,7 @@ func (c *Client) Read() {
 					data = string(bytes)
 				}
 			}
-			c.sendToMyself(data)
+			c.sendToMyself(msg.Type, data)
 			sendType = enum.SendTargetType_SendToSomeone
 		case enum.MsgType_ChannelOpen_Count:
 			node, err := service.ChannelService.TotalCount()
@@ -162,7 +195,7 @@ func (c *Client) Read() {
 			} else {
 				data = strconv.Itoa(node)
 			}
-			c.sendToMyself(data)
+			c.sendToMyself(msg.Type, data)
 			sendType = enum.SendTargetType_SendToSomeone
 		//get acceptChannelReq from fundee then send to funder
 		case enum.MsgType_ChannelAccept:
@@ -170,7 +203,7 @@ func (c *Client) Read() {
 			json.Unmarshal([]byte(msg.Data), &data)
 			bytes, err := json.Marshal(data)
 			if err == nil {
-				c.sendToSomeone(receiver, string(bytes))
+				c.sendToSomeone(msg.Type, receiver, string(bytes))
 			}
 			sendType = enum.SendTargetType_SendToSomeone
 		// create a funding tx
@@ -183,7 +216,7 @@ func (c *Client) Read() {
 				if err != nil {
 					log.Println(err)
 				} else {
-					c.sendToMyself(string(bytes))
+					c.sendToMyself(msg.Type, string(bytes))
 					sendType = enum.SendTargetType_SendToSomeone
 				}
 			}
@@ -204,7 +237,7 @@ func (c *Client) Read() {
 					data = string(bytes)
 				}
 			}
-			c.sendToMyself(data)
+			c.sendToMyself(msg.Type, data)
 			sendType = enum.SendTargetType_SendToSomeone
 		case enum.MsgType_FundingCreate_DelAll:
 			err := service.FundingCreateService.DelAll()
@@ -213,7 +246,7 @@ func (c *Client) Read() {
 			} else {
 				data = "del success"
 			}
-			c.sendToMyself(data)
+			c.sendToMyself(msg.Type, data)
 			sendType = enum.SendTargetType_SendToSomeone
 		case enum.MsgType_FundingCreate_DelById:
 			id, err := strconv.Atoi(msg.Data)
@@ -230,7 +263,7 @@ func (c *Client) Read() {
 				}
 				break
 			}
-			c.sendToMyself(data)
+			c.sendToMyself(msg.Type, data)
 			sendType = enum.SendTargetType_SendToSomeone
 		case enum.MsgType_FundingCreate_Count:
 			count, err := service.FundingCreateService.TotalCount()
@@ -239,7 +272,7 @@ func (c *Client) Read() {
 			} else {
 				data = strconv.Itoa(count)
 			}
-			c.sendToMyself(data)
+			c.sendToMyself(msg.Type, data)
 			sendType = enum.SendTargetType_SendToSomeone
 		case enum.MsgType_FundingSign_Edit:
 			signed, err := service.FundingSignService.Edit(msg.Data)
@@ -254,7 +287,7 @@ func (c *Client) Read() {
 			if len(data) == 0 {
 				data = string(bytes)
 			}
-			c.sendToMyself(data)
+			c.sendToMyself(msg.Type, data)
 			sendType = enum.SendTargetType_SendToSomeone
 		case enum.MsgType_FundingSign_ItemById:
 			id, err := strconv.Atoi(msg.Data)
@@ -273,7 +306,7 @@ func (c *Client) Read() {
 					}
 				}
 			}
-			c.sendToMyself(data)
+			c.sendToMyself(msg.Type, data)
 			sendType = enum.SendTargetType_SendToSomeone
 		case enum.MsgType_FundingSign_Count:
 			count, err := service.FundingSignService.TotalCount()
@@ -282,7 +315,7 @@ func (c *Client) Read() {
 			} else {
 				data = strconv.Itoa(count)
 			}
-			c.sendToMyself(data)
+			c.sendToMyself(msg.Type, data)
 			sendType = enum.SendTargetType_SendToSomeone
 
 		case enum.MsgType_FundingSign_DelById:
@@ -302,14 +335,14 @@ func (c *Client) Read() {
 					}
 				}
 			}
-			c.sendToMyself(data)
+			c.sendToMyself(msg.Type, data)
 			sendType = enum.SendTargetType_SendToSomeone
 		case enum.MsgType_FundingSign_DelAll:
 			err = service.FundingSignService.DelAll()
 			if err != nil {
 				data = err.Error()
 			}
-			c.sendToMyself(data)
+			c.sendToMyself(msg.Type, data)
 			sendType = enum.SendTargetType_SendToSomeone
 
 		case enum.MsgType_CommitmentTx_Edit:
@@ -324,7 +357,7 @@ func (c *Client) Read() {
 					data = string(bytes)
 				}
 			}
-			c.sendToMyself(data)
+			c.sendToMyself(msg.Type, data)
 			sendType = enum.SendTargetType_SendToSomeone
 		case enum.MsgType_CommitmentTx_ItemByChanId:
 			nodes, count, err := service.CommitTxService.GetItemsByChannelId(msg.Data)
@@ -339,7 +372,7 @@ func (c *Client) Read() {
 					data = string(bytes)
 				}
 			}
-			c.sendToMyself(data)
+			c.sendToMyself(msg.Type, data)
 			sendType = enum.SendTargetType_SendToSomeone
 		case enum.MsgType_CommitmentTx_ItemById:
 			nodes, err := service.CommitTxService.GetItemById(int(gjson.Parse(msg.Data).Int()))
@@ -353,7 +386,7 @@ func (c *Client) Read() {
 					data = string(bytes)
 				}
 			}
-			c.sendToMyself(data)
+			c.sendToMyself(msg.Type, data)
 			sendType = enum.SendTargetType_SendToSomeone
 		case enum.MsgType_CommitmentTx_Count:
 			count, err := service.CommitTxService.TotalCount()
@@ -362,7 +395,7 @@ func (c *Client) Read() {
 			} else {
 				data = strconv.Itoa(count)
 			}
-			c.sendToMyself(data)
+			c.sendToMyself(msg.Type, data)
 			sendType = enum.SendTargetType_SendToSomeone
 
 		case enum.MsgType_CommitmentTxSigned_Edit:
@@ -377,7 +410,7 @@ func (c *Client) Read() {
 					data = string(bytes)
 				}
 			}
-			c.sendToMyself(data)
+			c.sendToMyself(msg.Type, data)
 			sendType = enum.SendTargetType_SendToSomeone
 		case enum.MsgType_CommitmentTxSigned_ItemByChanId:
 			nodes, count, err := service.CommitTxSignedService.GetItemsByChannelId(msg.Data)
@@ -392,7 +425,7 @@ func (c *Client) Read() {
 					data = string(bytes)
 				}
 			}
-			c.sendToMyself(data)
+			c.sendToMyself(msg.Type, data)
 			sendType = enum.SendTargetType_SendToSomeone
 		case enum.MsgType_CommitmentTxSigned_ItemById:
 			nodes, err := service.CommitTxSignedService.GetItemById(int(gjson.Parse(msg.Data).Int()))
@@ -406,7 +439,7 @@ func (c *Client) Read() {
 					data = string(bytes)
 				}
 			}
-			c.sendToMyself(data)
+			c.sendToMyself(msg.Type, data)
 			sendType = enum.SendTargetType_SendToSomeone
 		case enum.MsgType_CommitmentTxSigned_Count:
 			count, err := service.CommitTxSignedService.TotalCount()
@@ -415,7 +448,7 @@ func (c *Client) Read() {
 			} else {
 				data = strconv.Itoa(count)
 			}
-			c.sendToMyself(data)
+			c.sendToMyself(msg.Type, data)
 			sendType = enum.SendTargetType_SendToSomeone
 
 		case enum.MsgType_GetBalanceRequest:
@@ -427,30 +460,30 @@ func (c *Client) Read() {
 		if sendType == enum.SendTargetType_SendToExceptMe {
 			for client := range GlobalWsClientManager.Clients_map {
 				if client != c {
-					jsonMessage, _ := json.Marshal(&bean.Message{Sender: client.Id, Data: string(dataReq)})
+					jsonMessage, _ := json.Marshal(&bean.Message{Type: msg.Type, Sender: client.Id, Data: string(dataReq)})
 					client.SendChannel <- jsonMessage
 				}
 			}
 		}
 		//broadcast to all
 		if sendType == enum.SendTargetType_SendToAll {
-			jsonMessage, _ := json.Marshal(&bean.Message{Sender: c.Id, Data: string(dataReq)})
+			jsonMessage, _ := json.Marshal(&bean.Message{Type: msg.Type, Sender: c.Id, Data: string(dataReq)})
 			GlobalWsClientManager.Broadcast <- jsonMessage
 		}
 	}
 }
 
-func (c *Client) sendToSomeone(recipient bean.User, data string) {
+func (c *Client) sendToSomeone(msgType enum.MsgType, recipient bean.User, data string) {
 	for client := range GlobalWsClientManager.Clients_map {
 		if client.User.Email == recipient.Email {
-			jsonMessage, _ := json.Marshal(&bean.Message{Sender: c.Id, Data: data})
+			jsonMessage, _ := json.Marshal(&bean.Message{Type: msgType, Sender: c.Id, Data: data})
 			client.SendChannel <- jsonMessage
 			break
 		}
 	}
 }
 
-func (c *Client) sendToMyself(data string) {
-	jsonMessage, _ := json.Marshal(&bean.Message{Sender: c.Id, Data: data})
+func (c *Client) sendToMyself(msgType enum.MsgType, data string) {
+	jsonMessage, _ := json.Marshal(&bean.Message{Type: msgType, Sender: c.Id, Data: data})
 	c.SendChannel <- jsonMessage
 }

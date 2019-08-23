@@ -23,6 +23,10 @@ const (
 	MsgType_UserLogin  MsgType = 1
 	MsgType_UserLogout MsgType = 2
 
+	MsgType_Core_GetNewAddress  MsgType = 1001
+	MsgType_Core_GetMiningInfo  MsgType = 1002
+	MsgType_Core_GetNetworkInfo MsgType = 1003
+
 	MsgType_ChannelOpen                 MsgType = -32
 	MsgType_ChannelOpen_ItemByTempId    MsgType = -3201
 	MsgType_ChannelOpen_AllItem         MsgType = -3202
