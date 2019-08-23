@@ -115,7 +115,9 @@ func (c *channelManager) AllItem() (data []dao.OpenChannelInfo, err error) {
 		return nil, err
 	}
 	data = []dao.OpenChannelInfo{}
-	err = db.All(&data)
+	//err = db.All(&data)
+	//db.Select().OrderBy("CreateAt").Reverse().Find(&data)
+	db.Select().OrderBy("CreateAt").Find(&data)
 	return data, err
 }
 
