@@ -494,14 +494,14 @@ func (c *Client) Read() {
 		if sendType == enum.SendTargetType_SendToExceptMe {
 			for client := range GlobalWsClientManager.Clients_map {
 				if client != c {
-					jsonMessage, _ := json.Marshal(&bean.Message{Type: msg.Type, Sender: client.Id, Data: string(dataReq)})
+					jsonMessage := getReplyObj(string(dataReq), msg.Type, status, c)
 					client.SendChannel <- jsonMessage
 				}
 			}
 		}
 		//broadcast to all
 		if sendType == enum.SendTargetType_SendToAll {
-			jsonMessage, _ := json.Marshal(&bean.Message{Type: msg.Type, Sender: c.Id, Data: string(dataReq)})
+			jsonMessage := getReplyObj(string(dataReq), msg.Type, status, c)
 			GlobalWsClientManager.Broadcast <- jsonMessage
 		}
 	}
@@ -510,14 +510,31 @@ func (c *Client) Read() {
 func (c *Client) sendToSomeone(msgType enum.MsgType, status bool, recipient bean.User, data string) {
 	for client := range GlobalWsClientManager.Clients_map {
 		if client.User.Email == recipient.Email {
-			jsonMessage, _ := json.Marshal(&bean.Message{Type: msgType, Status: status, Sender: c.Id, Data: data})
+			jsonMessage := getReplyObj(data, msgType, status, c)
 			client.SendChannel <- jsonMessage
 			break
 		}
 	}
 }
 
+func getReplyObj(data string, msgType enum.MsgType, status bool, client *Client) []byte {
+	var jsonMessage []byte
+	parse := gjson.Parse(data)
+	if parse.Exists() {
+		jsonMessage, _ = json.Marshal(&bean.ReplyMessage{Type: msgType, Status: status, Sender: client.Id, Result: parse.Value()})
+	} else {
+		jsonMessage, _ = json.Marshal(&bean.ReplyMessage{Type: msgType, Status: status, Sender: client.Id, Result: data})
+	}
+	return jsonMessage
+}
+
 func (c *Client) sendToMyself(msgType enum.MsgType, status bool, data string) {
-	jsonMessage, _ := json.Marshal(&bean.Message{Type: msgType, Status: status, Sender: c.Id, Data: data})
+	parse := gjson.Parse(data)
+	var jsonMessage []byte
+	if parse.Exists() {
+		jsonMessage, _ = json.Marshal(&bean.ReplyMessage{Type: msgType, Status: status, Sender: c.Id, Result: parse.Value()})
+	} else {
+		jsonMessage, _ = json.Marshal(&bean.ReplyMessage{Type: msgType, Status: status, Sender: c.Id, Result: data})
+	}
 	c.SendChannel <- jsonMessage
 }
