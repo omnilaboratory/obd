@@ -57,7 +57,7 @@ func (c *Client) Read() {
 			break
 		}
 
-		var msg bean.Message
+		var msg bean.RequestMessage
 		log.Println(string(dataReq))
 		parse := gjson.Parse(string(dataReq))
 

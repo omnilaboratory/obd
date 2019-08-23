@@ -5,7 +5,7 @@ import (
 	"LightningOnOmni/bean/enum"
 )
 
-type Message struct {
+type RequestMessage struct {
 	Type      enum.MsgType `json:"type"`
 	Sender    string       `json:"sender"`
 	Recipient string       `json:"recipient"`
