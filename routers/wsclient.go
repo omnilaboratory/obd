@@ -529,12 +529,6 @@ func getReplyObj(data string, msgType enum.MsgType, status bool, client *Client)
 }
 
 func (c *Client) sendToMyself(msgType enum.MsgType, status bool, data string) {
-	parse := gjson.Parse(data)
-	var jsonMessage []byte
-	if parse.Exists() {
-		jsonMessage, _ = json.Marshal(&bean.ReplyMessage{Type: msgType, Status: status, Sender: c.Id, Result: parse.Value()})
-	} else {
-		jsonMessage, _ = json.Marshal(&bean.ReplyMessage{Type: msgType, Status: status, Sender: c.Id, Result: data})
-	}
+	jsonMessage := getReplyObj(data, msgType, status, c)
 	c.SendChannel <- jsonMessage
 }
