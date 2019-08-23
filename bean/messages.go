@@ -40,6 +40,8 @@ type OpenChannelInfo struct {
 	ToSelfDelay              uint16              `json:"to_self_delay"`
 	MaxAcceptedHtlcs         uint16              `json:"max_accepted_htlcs"`
 	FundingPubKey            string              `json:"funding_pubkey"`
+	ChannelPubKey            string              `json:"channel_pubkey"`
+	RedeemScript             string              `json:"redeem_script"`
 	RevocationBasePoint      chainhash.Point     `json:"revocation_basepoint"`
 	PaymentBasePoint         chainhash.Point     `json:"payment_basepoint"`
 	DelayedPaymentBasePoint  chainhash.Point     `json:"delayed_payment_basepoint"`

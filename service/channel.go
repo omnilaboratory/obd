@@ -26,11 +26,11 @@ func (c *channelManager) OpenChannel(jsonData string) (node *dao.OpenChannelInfo
 	if len(data.FundingPubKey) != 34 {
 		return nil, errors.New("wrong FundingPubKey")
 	}
-	ismine, err := client.Validateaddress(data.FundingPubKey)
+	isMine, err := client.Validateaddress(data.FundingPubKey)
 	if err != nil {
 		return nil, err
 	}
-	if ismine == false {
+	if isMine == false {
 		return nil, errors.New("invalid fundingPubKey")
 	}
 
@@ -44,6 +44,8 @@ func (c *channelManager) OpenChannel(jsonData string) (node *dao.OpenChannelInfo
 		return nil, err
 	}
 	log.Println(multiAddr)
+	data.ChannelPubKey = gjson.Get(multiAddr, "address").String()
+	data.RedeemScript = gjson.Get(multiAddr, "redeemScript").String()
 
 	db, err := dao.DBService.GetDB()
 	if err != nil {
