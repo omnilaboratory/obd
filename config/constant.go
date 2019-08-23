@@ -7,6 +7,6 @@ const (
 
 //database
 const (
-	DBname     = "olndserver.db"
+	DBname     = "obdserver.db"
 	Userbucket = "user"
 )
