@@ -87,9 +87,15 @@ $ git clone https://github.com/golang/text.git
 Wait till all data downloaded.
 
 ```
-go build olndserver.go
+$ go build olndserver.go
 ```
 which generates the executable binary file `olndserver` under the source code directory. 
+
+if you want to generate exe file for windows platform, use this:
+```
+$ CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build olndserver.go
+```
+you will see an olndserver.exe file generated under the same directory.
 
 ## Step 4: Test channel operations using Websocket
 ```
@@ -104,7 +110,9 @@ you will see in the terminal
 
 [GIN-debug] GET    /ws                       --> LightningOnOmni/routers.wsClientConnect (3 handlers)
 ```
-Then the service is running.
+Then the service is running. We are going to use WebSocket online testing tools to test our lightning commands.
+
+
 
 TBD
 
