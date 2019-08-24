@@ -1,6 +1,6 @@
-# LightningOnOmni 
+# LightningOnOmni | OmniBOLT Daemon
 
-LightningOnOmni implements the [OmniBOLT](https://github.com/LightningOnOmnilayer/Omni-BOLT-spec) specification, which enables Lightning network to be Omnilayer assets aware. 
+LightningOnOmni implements the [OmniBOLT](https://github.com/LightningOnOmnilayer/Omni-BOLT-spec) specification, which enables Lightning network to be Omnilayer assets aware. Compile the source code and run the binary executable file, we will have an OmniBOLT deamon(OBD) providing all services for lightning network.   
 
 # Dependency
 
@@ -9,7 +9,7 @@ LightningOnOmni implements the [OmniBOLT](https://github.com/LightningOnOmnilaye
 Omnicore 0.18 integrates the latest BTC core 0.18, which enables relative time locker used in RSM contracts and HTL contracts.
 
 # Installation
-The following installation works for Ubuntu 14.04.4 LTS, golang 1.10 or later.
+The following instruction works for Ubuntu 14.04.4 LTS, golang 1.10 or later.
 
 ## step 1: fetch the source code
 
@@ -55,7 +55,7 @@ user=your user name
 pass=your password
 ```
 
-## Step 3: Run omni-lightning node
+## Step 3: Compile and Run omni-lightning node
 If you fail to install gRPC by `go get google.golang.org/grpc` and other gRPC related packages used in this project,try this:
 ```
 $ mkdir -p $GOPATH/src/google.golang.org/
@@ -87,21 +87,21 @@ $ git clone https://github.com/golang/text.git
 Wait till all data downloaded.
 
 ```
-$ go build olndserver.go
+$ go build obdserver.go
 ```
-which generates the executable binary file `olndserver` under the source code directory. 
+which generates the executable binary file `obdserver` under the source code directory. 
 
 if you want to generate exe file for windows platform, use this:
 ```
-$ CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build olndserver.go
+$ CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build obdserver.go
 ```
-you will see an olndserver.exe file generated under the same directory.
+you will see an obdserver.exe file generated under the same directory.
 
-## Step 4: Test channel operations using Websocket
+Run:
 ```
-$ ./olndserver
+$ ./obdserver
 ```
-you will see in the terminal
+The terminal displays:
 ```
 2019/08/23 23:05:15 rpcclient.go:23: &{62.234.216.108:18332 omniwallet cB3]iL2@eZ1?cB2?}
 [GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
@@ -113,12 +113,38 @@ you will see in the terminal
 Then the service is running. We are going to use WebSocket online testing tools to test our lightning commands.
 
 
+## Step 4: Test channel operations using Websocket
+Since OmniBOLT deamon(OBD) exposes WebSocket services, we use online WS testing tool to do experiments. Go to:
+```
+https://www.websocket.org/echo.html
+```
+Make sure your browser supports WebSocket, as displayed in this screenshot.
+
+<p align="center">
+  <img width="500" alt="Screenshot of Websocket online testing site" src="https://github.com/LightningOnOmnilayer/Omni-BOLT-spec/blob/master/imgs/WebSocketTestSite.png">
+</p>
+
+Then input `ws://127.0.0.1:60020/ws`, press `Connect`, on the right text pannel, displays `CONNECTED`, then we are ready to send messeages to OBD node.
+
+The first message is get new Omni address for a channel. input the following request into the Message box, and press `SEND`:
+```
+{"type":1001"data":"email"}
+```
+
+In the right side text pannel, displays the response message from OBD:
+```
+RECEIVED: {"type":1001,"status":true,"sender":"59dfb5e2-f1dc-46c6-8ff3-dfc9f2f1ea82","result":"mzCihFnTFyZUo76QMKovoWWJAPkBqDi63J"}
+```
+
+It works.
+
+## Step 5: how to add new service to OBD
 
 TBD
 
 # Current Features
 
-* Generate user OLND address.  
+* Generate user OBD(OmniBOLT Daemon) address.  
 * Open Poon-Dryja Channel.
 * Deposit, close.
 * Commitment Transaction within a channel.
