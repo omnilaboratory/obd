@@ -34,7 +34,7 @@ origin	https://github.com/LightningOnOmnilayer/LightningOnOmni.git (push)
 ```
 
 ## Step 2: 
-### option 1: Remote Omnicore node 
+#### option 1: Remote Omnicore node 
 Use our remote OmniCore node. Go to `\config\conf.ini`, you will see:
 ```
 [chainNode]
@@ -46,10 +46,10 @@ This is a tesing full node for our community to run/call/test omni commands remo
 
 The other option uses local omnicore full node:  
 
-### option 2: Local Omnicore node 
+#### option 2: Local Omnicore node 
 [Install OmniCore](https://github.com/OmniLayer/omnicore#installation) on your local machine. Omnicore requires a full BTC core node, which may take days to synchronize the whole BTC database to your local device. After finishing synchronization, you can run omni/BTC commands for experiments, such as constructing raw transactions or generating new addresses.
 
-Then edit the configure file: `\config\conf.ini`
+Edit the configure file: `\config\conf.ini`
 ```
 [chainNode]
 host=127.0.0.1:port
@@ -57,7 +57,7 @@ user=your user name
 pass=your password
 ```
 
-## Step 3: Compile and Run omni-lightning node
+## Step 3: Compile and Run OmniBOLT Daemon
 If you fail to install gRPC by `go get google.golang.org/grpc` and other gRPC related packages used in this project,try this:
 ```
 $ mkdir -p $GOPATH/src/google.golang.org/
@@ -112,7 +112,7 @@ The terminal displays:
 
 [GIN-debug] GET    /ws                       --> LightningOnOmni/routers.wsClientConnect (3 handlers)
 ```
-Then the daemon is running. We are going to use WebSocket online testing tools to test our lightning commands.
+Which tells us the daemon is running. We are going to use WebSocket online testing tools to test our lightning commands.
 
 
 ## Step 4: Test channel operations using Websocket testing tool.
