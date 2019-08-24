@@ -113,7 +113,7 @@ The terminal displays:
 Then the daemon is running. We are going to use WebSocket online testing tools to test our lightning commands.
 
 
-## Step 4: Test channel operations using Websocket
+## Step 4: Test channel operations using Websocket testing tool.
 Since OmniBOLT deamon(OBD) exposes WebSocket services, we use online WS testing tool to do experiments. Go to:
 ```
 https://www.websocket.org/echo.html
