@@ -130,7 +130,7 @@ Input `ws://127.0.0.1:60020/ws`, press `Connect`. If on the right text pannel, d
 
 The first message is to get new Omni address for a channel. input the following request into the Message box, and press `SEND`:
 ```
-{"type":1001"data":"email"}
+{"type":1001", data":"email"}
 ```
 
 In the right side text pannel, displays the response message from OBD:
@@ -142,7 +142,7 @@ It works.
 
 ## Step 5: Channel Operations
 
-[type -32 openchannel](https://github.com/LightningOnOmnilayer/Omni-BOLT-spec/blob/master/OmniBOLT-02-peer-protocol.md#the-open_channel-message)
+[type: -32 openchannel](https://github.com/LightningOnOmnilayer/Omni-BOLT-spec/blob/master/OmniBOLT-02-peer-protocol.md#the-open_channel-message)
 
 reqest:
 ```
@@ -172,10 +172,20 @@ Response:
               \"payment_basepoint\":\"\",
               \"delayed_payment_basepoint\":\"\",
               \"htlc_basepoint\":\"\",
-              \"create_at\":\"2019-08-23T09:22:16.0104522+08:00\
-    "}"
+              \"create_at\":\"2019-08-23T09:22:16.0104522+08:00\"
+    }"
 } 
 ```
+
+[type: -33 ChannelAccept](https://github.com/LightningOnOmnilayer/Omni-BOLT-spec/blob/master/OmniBOLT-02-peer-protocol.md#the-accept_channel-message)
+reqest:
+```
+{
+  "type":-33,
+  "data":[229,183,118,180,41,204,14,173,33,18,101,64,250,6,244,29,115,151,105,108,147,205,77,16,175,249,148,105,117,192,181,34]
+}
+```
+
 
 # Current Features
 
