@@ -42,10 +42,12 @@ host=62.234.216.108:18332
 user=omniwallet
 pass=cB3]iL2@eZ1?cB2?
 ```
-This is our tesing full node for community to run/call omni commands remotely. The omni-lightning node invocates Omni RPC commands from this node.
+This is a tesing full node for our community to run/call/test omni commands remotely. The OmniBOLT daemon invocates Omni RPC commands from this node, if you use this configuration. It is the most conveniente way to get started.
+
+The other option uses local omnicore full node:  
 
 ### option 2: Local Omnicore node 
-[Install OmniCore](https://github.com/OmniLayer/omnicore#installation) on your local machine. Omnicore requires a full BTC core node, which may take days to synchronize the whole BTC database to your local device. After finish synchronization, you can run omni/BTC commands for experiments, such as constructing raw transactions, generating new addresses.
+[Install OmniCore](https://github.com/OmniLayer/omnicore#installation) on your local machine. Omnicore requires a full BTC core node, which may take days to synchronize the whole BTC database to your local device. After finishing synchronization, you can run omni/BTC commands for experiments, such as constructing raw transactions or generating new addresses.
 
 Then edit the configure file: `\config\conf.ini`
 ```
