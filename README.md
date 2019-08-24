@@ -110,7 +110,7 @@ The terminal displays:
 
 [GIN-debug] GET    /ws                       --> LightningOnOmni/routers.wsClientConnect (3 handlers)
 ```
-Then the service is running. We are going to use WebSocket online testing tools to test our lightning commands.
+Then the daemon is running. We are going to use WebSocket online testing tools to test our lightning commands.
 
 
 ## Step 4: Test channel operations using Websocket
@@ -124,9 +124,9 @@ Make sure your browser supports WebSocket, as displayed in this screenshot.
   <img width="500" alt="Screenshot of Websocket online testing site" src="https://github.com/LightningOnOmnilayer/Omni-BOLT-spec/blob/master/imgs/WebSocketTestSite.png">
 </p>
 
-Then input `ws://127.0.0.1:60020/ws`, press `Connect`, on the right text pannel, displays `CONNECTED`, then we are ready to send messeages to OBD node.
+Input `ws://127.0.0.1:60020/ws`, press `Connect`. If on the right text pannel, displays `CONNECTED`, then we are ready to send messeages to OBD.
 
-The first message is get new Omni address for a channel. input the following request into the Message box, and press `SEND`:
+The first message is to get new Omni address for a channel. input the following request into the Message box, and press `SEND`:
 ```
 {"type":1001"data":"email"}
 ```
@@ -150,9 +150,7 @@ TBD
 * Commitment Transaction within a channel.
 
 
-# Related projects:
-
-
+# Related projects: 
 
 [https://github.com/OmniLayer/omniwallet](https://github.com/OmniLayer/omniwallet)
 
