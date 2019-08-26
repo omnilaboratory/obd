@@ -3,6 +3,7 @@ package routers
 import (
 	"LightningOnOmni/bean"
 	"LightningOnOmni/bean/enum"
+	"LightningOnOmni/rpc"
 	"LightningOnOmni/service"
 	"encoding/json"
 	"errors"
@@ -69,72 +70,108 @@ func (c *Client) Read() {
 
 		msg.Type = enum.MsgType(parse.Get("type").Int())
 		msg.Data = parse.Get("data").String()
-		msg.Sender = parse.Get("sender").String()
-		msg.Recipient = parse.Get("recipient").String()
+		msg.SenderPeerId = parse.Get("sender_peer_id").String()
+		msg.RecipientPeerId = parse.Get("recipient_peer_id").String()
+		msg.PubKey = parse.Get("pub_key").String()
+		msg.Signature = parse.Get("signature").String()
 
-		var sender, receiver bean.User
-		json.Unmarshal([]byte(msg.Sender), &sender)
-		json.Unmarshal([]byte(msg.Recipient), &receiver)
+		// check the Recipient is online
+		if &msg.RecipientPeerId != nil && len(msg.RecipientPeerId) > 0 {
+			_, err := c.findUser(&msg.RecipientPeerId)
+			if err != nil {
+				c.sendToMyself(msg.Type, true, "can not find recipient ")
+				continue
+			}
+		}
+
+		// check the data whether is right signature
+		if &msg.PubKey != nil && len(msg.PubKey) > 0 && &msg.Signature != nil && len(msg.Signature) > 0 {
+			client := rpc.NewClient()
+			result, err := client.VerifyMessage(msg.PubKey, msg.Signature, msg.Data)
+			if err != nil {
+				c.sendToMyself(msg.Type, false, err.Error())
+				continue
+			}
+			if gjson.Parse(result).Bool() == false {
+				c.sendToMyself(msg.Type, false, "error signature")
+				continue
+			}
+		}
 
 		var sendType = enum.SendTargetType_SendToNone
-		data := ""
 		status := false
+		var dataOut []byte
+		var flag = true
 		if msg.Type < 1000 && msg.Type >= 0 {
-			sendType, dataReq, status = c.userModule(msg, sendType, dataReq, &data, status, receiver, err)
+			sendType, dataOut, status = c.userModule(msg)
+			flag = false
 		}
+
 		if msg.Type > 1000 {
-			sendType, dataReq, status = c.omniCoreModule(msg, sendType, dataReq, &data, status, receiver, err)
+			sendType, dataOut, status = c.omniCoreModule(msg)
+			flag = false
+		}
+
+		if flag {
+			if c.User == nil {
+				c.sendToMyself(msg.Type, false, "please login")
+				continue
+			}
 		}
 
 		typeStr := strconv.Itoa(int(msg.Type))
 		//-32 -3201 -3202 -3203 -3204
 		if strings.HasPrefix(typeStr, "-32") {
-			sendType, dataReq, status, data = c.channelModule(msg, sendType, dataReq, status, receiver, err)
+			sendType, dataOut, status = c.channelModule(msg)
 		}
 		//-33 -3301 -3302 -3303 -3304
 		if strings.HasPrefix(typeStr, "-33") {
-			sendType, dataReq, status, data = c.channelModule(msg, sendType, dataReq, status, receiver, err)
+			sendType, dataOut, status = c.channelModule(msg)
 		}
 		//-34 -3401 -3402 -3403 -3404
 		if strings.HasPrefix(typeStr, "-34") {
-			sendType, dataReq, status, data = c.fundCreateModule(msg, sendType, dataReq, status, receiver, err)
+			sendType, dataOut, status = c.fundCreateModule(msg)
 		}
 
 		if strings.HasPrefix(typeStr, "-35") {
 			//-351 -35101 -35102 -35103 -35104
 			if strings.HasPrefix(typeStr, "-351") {
-				sendType, dataReq, status, data = c.commitmentTxModule(msg, sendType, dataReq, status, receiver, err)
+				sendType, dataOut, status = c.commitmentTxModule(msg)
 			} else
 			//-352 -35201 -35202 -35203 -35204
 			if strings.HasPrefix(typeStr, "-352") {
-				sendType, dataReq, status, data = c.commitmentTxSignModule(msg, sendType, dataReq, status, receiver, err)
+				sendType, dataOut, status = c.commitmentTxSignModule(msg)
 			} else
 			//-353 -35301 -35302 -35303 -35304
 			if strings.HasPrefix(typeStr, "-353") {
-				sendType, dataReq, status, data = c.otherModule(msg, sendType, dataReq, status, receiver, err)
+				sendType, dataOut, status = c.otherModule(msg)
 			} else
 			//-354 -35401 -35402 -35403 -35404
 			if strings.HasPrefix(typeStr, "-354") {
-				sendType, dataReq, status, data = c.otherModule(msg, sendType, dataReq, status, receiver, err)
+				sendType, dataOut, status = c.otherModule(msg)
 			} else
 			//-35 -3501 -3502 -3503 -3504
 			{
-				sendType, dataReq, status, data = c.fundSignModule(msg, sendType, dataReq, status, receiver, err)
+				sendType, dataOut, status = c.fundSignModule(msg)
 			}
+		}
+
+		if len(dataOut) == 0 {
+			dataOut = dataReq
 		}
 
 		//broadcast except me
 		if sendType == enum.SendTargetType_SendToExceptMe {
 			for client := range GlobalWsClientManager.Clients_map {
 				if client != c {
-					jsonMessage := getReplyObj(string(dataReq), msg.Type, status, c)
+					jsonMessage := getReplyObj(string(dataOut), msg.Type, status, c)
 					client.SendChannel <- jsonMessage
 				}
 			}
 		}
 		//broadcast to all
 		if sendType == enum.SendTargetType_SendToAll {
-			jsonMessage := getReplyObj(string(dataReq), msg.Type, status, c)
+			jsonMessage := getReplyObj(string(dataOut), msg.Type, status, c)
 			GlobalWsClientManager.Broadcast <- jsonMessage
 		}
 	}
@@ -142,13 +179,24 @@ func (c *Client) Read() {
 
 func getReplyObj(data string, msgType enum.MsgType, status bool, client *Client) []byte {
 	var jsonMessage []byte
+
+	clientId := client.Id
+	if client.User != nil {
+		clientId = client.User.PeerId
+	}
+
 	node := make(map[string]interface{})
-	err := json.Unmarshal([]byte(data), node)
+	err := json.Unmarshal([]byte(data), &node)
 	if err == nil {
 		parse := gjson.Parse(data)
-		jsonMessage, _ = json.Marshal(&bean.ReplyMessage{Type: msgType, Status: status, Sender: client.Id, Result: parse.Value()})
+		jsonMessage, _ = json.Marshal(&bean.ReplyMessage{Type: msgType, Status: status, Sender: clientId, Result: parse.Value()})
 	} else {
-		jsonMessage, _ = json.Marshal(&bean.ReplyMessage{Type: msgType, Status: status, Sender: client.Id, Result: data})
+		if strings.Contains(err.Error(), " array into Go value of type map") {
+			parse := gjson.Parse(data)
+			jsonMessage, _ = json.Marshal(&bean.ReplyMessage{Type: msgType, Status: status, Sender: clientId, Result: parse.Value()})
+		} else {
+			jsonMessage, _ = json.Marshal(&bean.ReplyMessage{Type: msgType, Status: status, Sender: clientId, Result: data})
+		}
 	}
 	return jsonMessage
 }
@@ -158,10 +206,10 @@ func (c *Client) sendToMyself(msgType enum.MsgType, status bool, data string) {
 	c.SendChannel <- jsonMessage
 }
 
-func (c *Client) sendToSomeone(msgType enum.MsgType, status bool, recipient *bean.User, data string) error {
-	if recipient != nil {
+func (c *Client) sendToSomeone(msgType enum.MsgType, status bool, recipientPeerId string, data string) error {
+	if &recipientPeerId != nil {
 		for client := range GlobalWsClientManager.Clients_map {
-			if client.User.PeerId == recipient.PeerId {
+			if client.User.PeerId == recipientPeerId {
 				jsonMessage := getReplyObj(data, msgType, status, c)
 				client.SendChannel <- jsonMessage
 				return nil
@@ -169,4 +217,14 @@ func (c *Client) sendToSomeone(msgType enum.MsgType, status bool, recipient *bea
 		}
 	}
 	return errors.New("recipient not exist")
+}
+func (c *Client) findUser(peerId *string) (client *Client, err error) {
+	if peerId != nil {
+		for client := range GlobalWsClientManager.Clients_map {
+			if client.User.PeerId == *peerId && GlobalWsClientManager.Clients_map[client] {
+				return client, nil
+			}
+		}
+	}
+	return nil, errors.New("recipient not exist")
 }

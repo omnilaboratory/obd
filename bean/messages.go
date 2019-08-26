@@ -6,10 +6,12 @@ import (
 )
 
 type RequestMessage struct {
-	Type      enum.MsgType `json:"type"`
-	Sender    string       `json:"sender"`
-	Recipient string       `json:"recipient"`
-	Data      string       `json:"data"`
+	Type            enum.MsgType `json:"type"`
+	SenderPeerId    string       `json:"sender_peer_id"`
+	RecipientPeerId string       `json:"recipient_peer_id"`
+	Data            string       `json:"data"`
+	PubKey          string       `json:"pub_key"`
+	Signature       string       `json:"signature"`
 }
 type ReplyMessage struct {
 	Type   enum.MsgType `json:"type"`

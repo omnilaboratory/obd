@@ -15,9 +15,9 @@ type OpenChannelInfo struct {
 	FunderPeerId string `json:"funder_peer_id"`
 	FundeePeerId string `json:"fundee_peer_id"`
 	bean.OpenChannelInfo
-	FunderPubKey  string    `json:"funder_pubkey"`
-	FundeePubKey  string    `json:"fundee_pubkey"`
-	ChannelPubKey string    `json:"channel_pubkey"`
+	FunderPubKey  string    `json:"funder_pub_key"`
+	FundeePubKey  string    `json:"fundee_pub_key"`
+	ChannelPubKey string    `json:"channel_pub_key"`
 	RedeemScript  string    `json:"redeem_script"`
 	CreateAt      time.Time `json:"create_at"`
 	AcceptAt      time.Time `json:"accept_at"`

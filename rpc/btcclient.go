@@ -77,6 +77,9 @@ func (client *Client) SignMessageWithPrivKey(privkey string, message string) (re
 func (client *Client) VerifyMessage(address string, signature string, message string) (result string, err error) {
 	return client.send("verifymessage", []interface{}{address, signature, message})
 }
+func (client *Client) DecodeScript(hexString string) (result string, err error) {
+	return client.send("decodescript", []interface{}{hexString})
+}
 
 func (client *Client) Validateaddress(address string) (ismine bool, err error) {
 	result, err := client.send("validateaddress", []interface{}{address})

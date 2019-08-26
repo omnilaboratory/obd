@@ -110,7 +110,7 @@ func TestClient_SignMessage(t *testing.T) {
 	address := "mn4ja6fttFsyRLTxegeAftopBB8Twr6iTa"
 	privKey := "cTAJCTpGNTGNfEhjez6JZBSB2wjgtuJepLdo2tpD4iy1X4Zw7q9c"
 	//cTAJCTpGNTGNfEhjez6JZBSB2wjgtuJepLdo2tpD4iy1X4Zw7q9c
-	msg := "my message"
+	msg := "{\n\"peer_id\":\"254698748@qq.com\"\n}"
 	signature, err := client.SignMessageWithPrivKey(privKey, msg)
 	if err != nil {
 		log.Println(err)
@@ -118,8 +118,15 @@ func TestClient_SignMessage(t *testing.T) {
 	}
 	log.Println(signature)
 
-	// IL6m2O7o+qw2TTD4NCohdlgCSCra5noDqmlj+PXYpv2HAFlM+kpFF3GBGKmkXcd4OnQgBzDfojDvOslCqq5vqNE=
-	result, err := client.VerifyMessage(address, signature, "my message")
+	// ILXbebexMFhhrc7CwoMNHgag6XcO7Du1YD5vcSleq5WZFcFCz6x1Fk07CN3I1bm0AJRpfzk7PGk8ZxSAoC1KtBg=
+	result, err := client.VerifyMessage(address, signature, msg)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	log.Println(result)
+
+	result, err = client.DecodeScript(signature)
 	if err != nil {
 		log.Println(err)
 		return

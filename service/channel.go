@@ -43,8 +43,9 @@ func (c *channelManager) OpenChannel(jsonData string, funderId string) (data *be
 	}
 	node := &dao.OpenChannelInfo{}
 	node.OpenChannelInfo = *data
-	node.FundeePeerId = funderId
+	node.FunderPeerId = funderId
 	node.FunderPubKey = data.FundingPubKey
+	node.CreateAt = time.Now()
 
 	db.Save(node)
 	return data, err
@@ -52,7 +53,10 @@ func (c *channelManager) OpenChannel(jsonData string, funderId string) (data *be
 
 func (c *channelManager) AcceptChannel(jsonData string, fundeeId string) (node *dao.OpenChannelInfo, err error) {
 	data := &bean.OpenChannelInfo{}
-	json.Unmarshal([]byte(jsonData), &data)
+	err = json.Unmarshal([]byte(jsonData), &data)
+	if err != nil {
+		return nil, err
+	}
 	if len(data.FundingPubKey) != 34 {
 		return nil, errors.New("wrong FundingPubKey")
 	}
@@ -136,15 +140,15 @@ func (c *channelManager) DelChannelByTemporaryChanId(jsonData string) (node *dao
 	return node, err
 }
 
-// TotalCount
-func (c *channelManager) AllItem() (data []dao.OpenChannelInfo, err error) {
+// AllItem
+func (c *channelManager) AllItem(peerId string) (data []dao.OpenChannelInfo, err error) {
 	db, err := dao.DBService.GetDB()
 	if err != nil {
 		return nil, err
 	}
-	data = []dao.OpenChannelInfo{}
-	db.Select().OrderBy("CreateAt").Find(&data)
-	return data, err
+	infos := []dao.OpenChannelInfo{}
+	err = db.Select(q.Or(q.Eq("FundeePeerId", peerId), q.Eq("FunderPeerId", peerId))).OrderBy("CreateAt").Find(&infos)
+	return infos, err
 }
 
 // TotalCount
