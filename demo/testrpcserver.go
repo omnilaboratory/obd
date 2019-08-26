@@ -1,7 +1,7 @@
 package main
 
 import (
-	"LightningOnOmni/tool/beans"
+	"LightningOnOmni/demo/beans"
 	"log"
 	"net"
 	"net/rpc"

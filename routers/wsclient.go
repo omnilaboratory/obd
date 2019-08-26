@@ -5,6 +5,7 @@ import (
 	"LightningOnOmni/bean/enum"
 	"LightningOnOmni/rpc"
 	"LightningOnOmni/service"
+	"LightningOnOmni/tool"
 	"encoding/json"
 	"errors"
 	"github.com/gorilla/websocket"
@@ -76,16 +77,16 @@ func (c *Client) Read() {
 		msg.Signature = parse.Get("signature").String()
 
 		// check the Recipient is online
-		if &msg.RecipientPeerId != nil && len(msg.RecipientPeerId) > 0 {
+		if tool.CheckIsString(&msg.RecipientPeerId) {
 			_, err := c.findUser(&msg.RecipientPeerId)
 			if err != nil {
-				c.sendToMyself(msg.Type, true, "can not find recipient ")
+				c.sendToMyself(msg.Type, true, "can not find target user")
 				continue
 			}
 		}
 
 		// check the data whether is right signature
-		if &msg.PubKey != nil && len(msg.PubKey) > 0 && &msg.Signature != nil && len(msg.Signature) > 0 {
+		if tool.CheckIsString(&msg.PubKey) && tool.CheckIsString(&msg.Signature) {
 			client := rpc.NewClient()
 			result, err := client.VerifyMessage(msg.PubKey, msg.Signature, msg.Data)
 			if err != nil {
@@ -209,7 +210,7 @@ func (c *Client) sendToMyself(msgType enum.MsgType, status bool, data string) {
 func (c *Client) sendToSomeone(msgType enum.MsgType, status bool, recipientPeerId string, data string) error {
 	if &recipientPeerId != nil {
 		for client := range GlobalWsClientManager.Clients_map {
-			if client.User.PeerId == recipientPeerId {
+			if client.User != nil && client.User.PeerId == recipientPeerId {
 				jsonMessage := getReplyObj(data, msgType, status, c)
 				client.SendChannel <- jsonMessage
 				return nil
@@ -219,12 +220,12 @@ func (c *Client) sendToSomeone(msgType enum.MsgType, status bool, recipientPeerI
 	return errors.New("recipient not exist")
 }
 func (c *Client) findUser(peerId *string) (client *Client, err error) {
-	if peerId != nil {
+	if tool.CheckIsString(peerId) {
 		for client := range GlobalWsClientManager.Clients_map {
-			if client.User.PeerId == *peerId && GlobalWsClientManager.Clients_map[client] {
+			if client.User != nil && client.User.PeerId == *peerId && GlobalWsClientManager.Clients_map[client] {
 				return client, nil
 			}
 		}
 	}
-	return nil, errors.New("recipient not exist")
+	return nil, errors.New("user not exist")
 }
