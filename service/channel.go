@@ -10,7 +10,6 @@ import (
 	"errors"
 	"github.com/asdine/storm/q"
 	"github.com/tidwall/gjson"
-	"log"
 	"time"
 )
 
@@ -19,13 +18,13 @@ type channelManager struct{}
 var ChannelService = channelManager{}
 
 // openChannel init data
-func (c *channelManager) OpenChannel(jsonData string) (node *dao.OpenChannelInfo, err error) {
-	var data = bean.OpenChannelInfo{}
+func (c *channelManager) OpenChannel(jsonData string, funderId string) (data *bean.OpenChannelInfo, err error) {
+	data = &bean.OpenChannelInfo{}
 	json.Unmarshal([]byte(jsonData), &data)
-	client := rpc.NewClient()
 	if len(data.FundingPubKey) != 34 {
 		return nil, errors.New("wrong FundingPubKey")
 	}
+	client := rpc.NewClient()
 	isMine, err := client.Validateaddress(data.FundingPubKey)
 	if err != nil {
 		return nil, err
@@ -34,31 +33,60 @@ func (c *channelManager) OpenChannel(jsonData string) (node *dao.OpenChannelInfo
 		return nil, errors.New("invalid fundingPubKey")
 	}
 
-	address, err := client.GetNewAddress("serverBob")
-	if err != nil {
-		return nil, err
-	}
-
-	multiAddr, err := client.CreateMultiSig(2, []string{string(data.FundingPubKey), address})
-	if err != nil {
-		return nil, err
-	}
-	log.Println(multiAddr)
-	data.ChannelPubKey = gjson.Get(multiAddr, "address").String()
-	data.RedeemScript = gjson.Get(multiAddr, "redeemScript").String()
+	data.ChainHash = config.Init_node_chain_hash
+	tempId := bean.ChannelIdService.NextTemporaryChanID()
+	data.TemporaryChannelId = tempId
 
 	db, err := dao.DBService.GetDB()
 	if err != nil {
 		return nil, err
 	}
+	node := &dao.OpenChannelInfo{}
+	node.OpenChannelInfo = *data
+	node.FundeePeerId = funderId
+	node.FunderPubKey = data.FundingPubKey
 
-	data.ChainHash = config.Init_node_chain_hash
-	tempId := bean.ChannelIdService.NextTemporaryChanID()
-	data.TemporaryChannelId = tempId
+	db.Save(node)
+	return data, err
+}
+
+func (c *channelManager) AcceptChannel(jsonData string, fundeeId string) (node *dao.OpenChannelInfo, err error) {
+	data := &bean.OpenChannelInfo{}
+	json.Unmarshal([]byte(jsonData), &data)
+	if len(data.FundingPubKey) != 34 {
+		return nil, errors.New("wrong FundingPubKey")
+	}
+
+	if len(data.TemporaryChannelId) != 32 {
+		return nil, errors.New("wrong TemporaryChannelId")
+	}
+
+	client := rpc.NewClient()
+	isMine, err := client.Validateaddress(data.FundingPubKey)
+	if err != nil {
+		return nil, err
+	}
+	if isMine == false {
+		return nil, errors.New("invalid fundingPubKey")
+	}
+
+	db, err := dao.DBService.GetDB()
+	if err != nil {
+		return nil, err
+	}
 	node = &dao.OpenChannelInfo{}
-	node.OpenChannelInfo = data
-	node.CreateAt = time.Now()
-	err = db.Save(node)
+	db.Select(q.Eq("TemporaryChannelId", data.TemporaryChannelId)).First(node)
+	if &node.Id == nil {
+		return nil, errors.New("invalid TemporaryChannelId")
+	}
+	node.FundeePubKey = data.FundingPubKey
+	node.FundeePeerId = fundeeId
+
+	multiSig, err := client.CreateMultiSig(2, []string{node.FunderPubKey, node.FundeePubKey})
+	node.ChannelPubKey = gjson.Get(multiSig, "address").String()
+	node.RedeemScript = gjson.Get(multiSig, "redeemScript").String()
+	node.AcceptAt = time.Now()
+	err = db.Update(node)
 	return node, err
 }
 

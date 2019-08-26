@@ -70,6 +70,14 @@ func (client *Client) GetNetworkInfo() (result string, err error) {
 	return client.send("getnetworkinfo", nil)
 }
 
+func (client *Client) SignMessageWithPrivKey(privkey string, message string) (result string, err error) {
+	return client.send("signmessagewithprivkey", []interface{}{privkey, message})
+}
+
+func (client *Client) VerifyMessage(address string, signature string, message string) (result string, err error) {
+	return client.send("verifymessage", []interface{}{address, signature, message})
+}
+
 func (client *Client) Validateaddress(address string) (ismine bool, err error) {
 	result, err := client.send("validateaddress", []interface{}{address})
 	if err != nil {

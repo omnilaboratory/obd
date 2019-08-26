@@ -46,7 +46,7 @@ func (s httpService) UserInfo(context *gin.Context) {
 
 func (s httpService) UserLogin(context *gin.Context) {
 	user := bean.User{}
-	user.Email = context.Query("email")
+	user.PeerId = context.Query("email")
 	UserService.UserLogin(&user)
 	bytes, _ := json.Marshal(user)
 	context.JSON(http.StatusOK, gin.H{
@@ -56,7 +56,7 @@ func (s httpService) UserLogin(context *gin.Context) {
 }
 func (s httpService) UserLogout(context *gin.Context) {
 	user := bean.User{}
-	user.Email = context.Query("email")
+	user.PeerId = context.Query("email")
 	logout := UserService.UserLogout(&user)
 	if logout != nil {
 		context.JSON(http.StatusOK, gin.H{

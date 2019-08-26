@@ -24,8 +24,8 @@ func (service *UserManager) UserLogin(user *bean.User) error {
 	user.State = enum.UserState_OnLine
 	var node dao.User
 
-	e = db.One("Email", user.Email, &node)
-	node.Email = user.Email
+	e = db.One("PeerId", user.PeerId, &node)
+	node.PeerId = user.PeerId
 	node.Password = user.Password
 	node.State = user.State
 
@@ -47,7 +47,7 @@ func (service *UserManager) UserLogout(user *bean.User) error {
 
 	var node dao.User
 
-	e = db.One("Email", user.Email, &node)
+	e = db.One("PeerId", user.PeerId, &node)
 	if node.Id == 0 {
 		return errors.New("user not found")
 	}
@@ -63,7 +63,7 @@ func (service *UserManager) UserInfo(email string) (user *dao.User, e error) {
 	}
 
 	var node dao.User
-	e = db.One("Email", email, &node)
+	e = db.One("PeerId", email, &node)
 	if node.Id == 0 {
 		return nil, errors.New("user not exist")
 	}

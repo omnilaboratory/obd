@@ -11,9 +11,16 @@ type User struct {
 }
 
 type OpenChannelInfo struct {
-	Id int `storm:"id,increment" json:"id"`
+	Id           int    `storm:"id,increment" json:"id"`
+	FunderPeerId string `json:"funder_peer_id"`
+	FundeePeerId string `json:"fundee_peer_id"`
 	bean.OpenChannelInfo
-	CreateAt time.Time `json:"create_at"`
+	FunderPubKey  string    `json:"funder_pubkey"`
+	FundeePubKey  string    `json:"fundee_pubkey"`
+	ChannelPubKey string    `json:"channel_pubkey"`
+	RedeemScript  string    `json:"redeem_script"`
+	CreateAt      time.Time `json:"create_at"`
+	AcceptAt      time.Time `json:"accept_at"`
 }
 type AcceptChannelInfo struct {
 	Id int `storm:"id,increment" json:"id"`

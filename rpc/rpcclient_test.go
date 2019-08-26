@@ -92,3 +92,37 @@ func TestClient_GetMiningInfo(t *testing.T) {
 	}
 	log.Println(result)
 }
+func TestClient_SignMessage(t *testing.T) {
+	client := NewClient()
+	//address, err := client.GetNewAddress("label")
+	//if err != nil {
+	//	log.Println(err)
+	//	return
+	//}
+	//log.Println(address)
+	////mn4ja6fttFsyRLTxegeAftopBB8Twr6iTa
+	//privKey, err := client.dumpPrivKey(address)
+	//if err != nil {
+	//	log.Println(err)
+	//	return
+	//}
+	//log.Println(privKey)
+	address := "mn4ja6fttFsyRLTxegeAftopBB8Twr6iTa"
+	privKey := "cTAJCTpGNTGNfEhjez6JZBSB2wjgtuJepLdo2tpD4iy1X4Zw7q9c"
+	//cTAJCTpGNTGNfEhjez6JZBSB2wjgtuJepLdo2tpD4iy1X4Zw7q9c
+	msg := "my message"
+	signature, err := client.SignMessageWithPrivKey(privKey, msg)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	log.Println(signature)
+
+	// IL6m2O7o+qw2TTD4NCohdlgCSCra5noDqmlj+PXYpv2HAFlM+kpFF3GBGKmkXcd4OnQgBzDfojDvOslCqq5vqNE=
+	result, err := client.VerifyMessage(address, signature, "my message")
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	log.Println(result)
+}

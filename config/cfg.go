@@ -16,7 +16,7 @@ var (
 	//0.18 omnicore
 	//Chainnode_Host string = "62.234.216.108:18332"
 	//0.13 omnicore
-	Chainnode_Host string = "62.234.216.108:18334"
+	Chainnode_Host string = "62.234.216.108:18434"
 	Chainnode_User string = "omniwallet"
 	Chainnode_Pass string = "cB3]iL2@eZ1?cB2?"
 
