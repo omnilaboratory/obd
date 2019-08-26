@@ -169,7 +169,7 @@ func (c *channelManager) AllItem(peerId string) (data []dao.OpenChannelInfo, err
 		return nil, err
 	}
 	infos := []dao.OpenChannelInfo{}
-	err = db.Select(q.Or(q.Eq("FundeePeerId", peerId), q.Eq("FunderPeerId", peerId))).OrderBy("CreateAt").Find(&infos)
+	err = db.Select(q.Or(q.Eq("FundeePeerId", peerId), q.Eq("FunderPeerId", peerId))).OrderBy("CreateAt").Reverse().Find(&infos)
 	return infos, err
 }
 
