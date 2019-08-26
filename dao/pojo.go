@@ -10,17 +10,26 @@ type User struct {
 	bean.User
 }
 
+type OpenChannelState int
+
+const (
+	OpenChannelState_Create OpenChannelState = 10
+	OpenChannelState_Accept OpenChannelState = 20
+	OpenChannelState_Defuse OpenChannelState = 30
+)
+
 type OpenChannelInfo struct {
-	Id           int    `storm:"id,increment" json:"id"`
-	FunderPeerId string `json:"funder_peer_id"`
-	FundeePeerId string `json:"fundee_peer_id"`
+	Id int `storm:"id,increment" json:"id"`
 	bean.OpenChannelInfo
-	FunderPubKey  string    `json:"funder_pub_key"`
-	FundeePubKey  string    `json:"fundee_pub_key"`
-	ChannelPubKey string    `json:"channel_pub_key"`
-	RedeemScript  string    `json:"redeem_script"`
-	CreateAt      time.Time `json:"create_at"`
-	AcceptAt      time.Time `json:"accept_at"`
+	FunderPeerId  string           `json:"funder_peer_id"`
+	FundeePeerId  string           `json:"fundee_peer_id"`
+	FunderPubKey  string           `json:"funder_pub_key"`
+	FundeePubKey  string           `json:"fundee_pub_key"`
+	ChannelPubKey string           `json:"channel_pub_key"`
+	RedeemScript  string           `json:"redeem_script"`
+	CurrState     OpenChannelState `json:"curr_state"`
+	CreateAt      time.Time        `json:"create_at"`
+	AcceptAt      time.Time        `json:"accept_at"`
 }
 type AcceptChannelInfo struct {
 	Id int `storm:"id,increment" json:"id"`

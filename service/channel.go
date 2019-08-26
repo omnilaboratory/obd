@@ -45,6 +45,7 @@ func (c *channelManager) OpenChannel(jsonData string, funderId string) (data *be
 	node.OpenChannelInfo = *data
 	node.FunderPeerId = funderId
 	node.FunderPubKey = data.FundingPubKey
+	node.CurrState = dao.OpenChannelState_Create
 	node.CreateAt = time.Now()
 
 	db.Save(node)
@@ -90,6 +91,7 @@ func (c *channelManager) AcceptChannel(jsonData string, fundeeId string) (node *
 	node.ChannelPubKey = gjson.Get(multiSig, "address").String()
 	node.RedeemScript = gjson.Get(multiSig, "redeemScript").String()
 	node.AcceptAt = time.Now()
+	node.CurrState = dao.OpenChannelState_Accept
 	err = db.Update(node)
 	return node, err
 }
