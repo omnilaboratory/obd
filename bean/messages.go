@@ -49,7 +49,10 @@ type OpenChannelInfo struct {
 }
 
 //type = -33
-type AcceptChannelInfo OpenChannelInfo
+type AcceptChannelInfo struct {
+	OpenChannelInfo
+	Attitude bool `json:"attitude"`
+}
 
 //type: -38 (close_channel)
 type CloseChannel struct {

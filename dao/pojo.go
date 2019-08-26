@@ -31,11 +31,7 @@ type OpenChannelInfo struct {
 	CreateAt      time.Time        `json:"create_at"`
 	AcceptAt      time.Time        `json:"accept_at"`
 }
-type AcceptChannelInfo struct {
-	Id int `storm:"id,increment" json:"id"`
-	bean.AcceptChannelInfo
-	CreateAt time.Time `json:"create_at"`
-}
+
 type CloseChannel struct {
 	Id int `storm:"id,increment" json:"id"`
 	bean.CloseChannel

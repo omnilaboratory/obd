@@ -10,6 +10,7 @@ import (
 	"errors"
 	"github.com/asdine/storm/q"
 	"github.com/tidwall/gjson"
+	"strconv"
 	"time"
 )
 
@@ -53,13 +54,11 @@ func (c *channelManager) OpenChannel(jsonData string, funderId string) (data *be
 }
 
 func (c *channelManager) AcceptChannel(jsonData string, fundeeId string) (node *dao.OpenChannelInfo, err error) {
-	data := &bean.OpenChannelInfo{}
+	data := &bean.AcceptChannelInfo{}
 	err = json.Unmarshal([]byte(jsonData), &data)
+
 	if err != nil {
 		return nil, err
-	}
-	if len(data.FundingPubKey) != 34 {
-		return nil, errors.New("wrong FundingPubKey")
 	}
 
 	if len(data.TemporaryChannelId) != 32 {
@@ -67,32 +66,53 @@ func (c *channelManager) AcceptChannel(jsonData string, fundeeId string) (node *
 	}
 
 	client := rpc.NewClient()
-	isMine, err := client.Validateaddress(data.FundingPubKey)
-	if err != nil {
-		return nil, err
-	}
-	if isMine == false {
-		return nil, errors.New("invalid fundingPubKey")
-	}
 
 	db, err := dao.DBService.GetDB()
 	if err != nil {
 		return nil, err
 	}
+
+	if data.Attitude {
+		if len(data.FundingPubKey) != 34 {
+			return nil, errors.New("wrong FundingPubKey")
+		}
+		isMine, err := client.Validateaddress(data.FundingPubKey)
+		if err != nil {
+			return nil, err
+		}
+		if isMine == false {
+			return nil, errors.New("invalid fundingPubKey")
+		}
+	}
+
 	node = &dao.OpenChannelInfo{}
 	db.Select(q.Eq("TemporaryChannelId", data.TemporaryChannelId)).First(node)
+
 	if &node.Id == nil {
 		return nil, errors.New("invalid TemporaryChannelId")
 	}
-	node.FundeePubKey = data.FundingPubKey
-	node.FundeePeerId = fundeeId
+	if node.CurrState != dao.OpenChannelState_Create {
+		return nil, errors.New("invalid ChannelState " + strconv.Itoa(int(node.CurrState)))
+	}
 
-	multiSig, err := client.CreateMultiSig(2, []string{node.FunderPubKey, node.FundeePubKey})
-	node.ChannelPubKey = gjson.Get(multiSig, "address").String()
-	node.RedeemScript = gjson.Get(multiSig, "redeemScript").String()
+	if data.Attitude {
+		node.FundeePubKey = data.FundingPubKey
+		node.FundeePeerId = fundeeId
+		multiSig, err := client.CreateMultiSig(2, []string{node.FunderPubKey, node.FundeePubKey})
+		if err != nil {
+			return nil, err
+		}
+		node.ChannelPubKey = gjson.Get(multiSig, "address").String()
+		node.RedeemScript = gjson.Get(multiSig, "redeemScript").String()
+	}
 	node.AcceptAt = time.Now()
-	node.CurrState = dao.OpenChannelState_Accept
+	if data.Attitude {
+		node.CurrState = dao.OpenChannelState_Accept
+	} else {
+		node.CurrState = dao.OpenChannelState_Defuse
+	}
 	err = db.Update(node)
+
 	return node, err
 }
 

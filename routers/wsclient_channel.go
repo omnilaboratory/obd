@@ -4,6 +4,7 @@ import (
 	"LightningOnOmni/bean"
 	"LightningOnOmni/bean/enum"
 	"LightningOnOmni/service"
+	"LightningOnOmni/tool"
 	"encoding/json"
 	"strconv"
 )
@@ -16,19 +17,23 @@ func (c *Client) channelModule(msg bean.RequestMessage) (enum.SendTargetType, []
 	switch msg.Type {
 	//get openChannelReq from funder then send to fundee
 	case enum.MsgType_ChannelOpen:
-		if &msg.RecipientPeerId == nil {
+		if tool.CheckIsString(&msg.RecipientPeerId) == false {
 			data = "no target fundee"
 		} else {
-			node, err := service.ChannelService.OpenChannel(msg.Data, c.User.PeerId)
-			if err != nil {
-				data = err.Error()
+			if msg.RecipientPeerId == c.User.PeerId {
+				data = "can not open channel to yourself"
 			} else {
-				bytes, err := json.Marshal(node)
+				node, err := service.ChannelService.OpenChannel(msg.Data, c.User.PeerId)
 				if err != nil {
 					data = err.Error()
 				} else {
-					data = string(bytes)
-					status = true
+					bytes, err := json.Marshal(node)
+					if err != nil {
+						data = err.Error()
+					} else {
+						data = string(bytes)
+						status = true
+					}
 				}
 			}
 		}
