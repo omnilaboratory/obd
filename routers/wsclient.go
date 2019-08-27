@@ -36,20 +36,20 @@ func (c *Client) Write() {
 		select {
 		case _order, ok := <-c.SendChannel:
 			if !ok {
-				c.Socket.WriteMessage(websocket.CloseMessage, []byte{})
+				_ = c.Socket.WriteMessage(websocket.CloseMessage, []byte{})
 				return
 			}
 			log.Printf("send data: %v \n", string(_order))
-			c.Socket.WriteMessage(websocket.TextMessage, _order)
+			_ = c.Socket.WriteMessage(websocket.TextMessage, _order)
 		}
 	}
 }
 
 func (c *Client) Read() {
 	defer func() {
-		service.UserService.UserLogout(c.User)
+		_ = service.UserService.UserLogout(c.User)
 		GlobalWsClientManager.Unregister <- c
-		c.Socket.Close()
+		_ = c.Socket.Close()
 		log.Println("socket closed after reading...")
 	}()
 
