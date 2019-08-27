@@ -19,11 +19,11 @@ type channelManager struct{}
 var ChannelService = channelManager{}
 
 // openChannel init data
-func (c *channelManager) OpenChannel(jsonData string, funderId string) (data *bean.OpenChannelInfo, err error) {
+func (c *channelManager) OpenChannel(msg bean.RequestMessage, funderId string) (data *bean.OpenChannelInfo, err error) {
 	data = &bean.OpenChannelInfo{}
-	json.Unmarshal([]byte(jsonData), &data)
+	json.Unmarshal([]byte(msg.Data), &data)
 	if len(data.FundingPubKey) != 34 {
-		return nil, errors.New("wrong FundingPubKey")
+		return nil, errors.New("wrong fundingPubKey")
 	}
 	client := rpc.NewClient()
 	isMine, err := client.Validateaddress(data.FundingPubKey)
@@ -45,6 +45,7 @@ func (c *channelManager) OpenChannel(jsonData string, funderId string) (data *be
 	node := &dao.ChannelInfo{}
 	node.OpenChannelInfo = *data
 	node.FunderPeerId = funderId
+	node.FundeePeerId = msg.RecipientPeerId
 	node.FunderPubKey = data.FundingPubKey
 	node.CurrState = dao.ChannelState_Create
 	node.CreateAt = time.Now()
@@ -170,6 +171,7 @@ func (c *channelManager) AllItem(peerId string) (data []dao.ChannelInfo, err err
 	}
 	infos := []dao.ChannelInfo{}
 	err = db.Select(q.Or(q.Eq("FundeePeerId", peerId), q.Eq("FunderPeerId", peerId))).OrderBy("CreateAt").Reverse().Find(&infos)
+	//err = db.All(&infos)
 	return infos, err
 }
 

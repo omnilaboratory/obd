@@ -194,11 +194,10 @@ func (client *Client) BtcCreateAndSignAndSendRawTransaction(fromBitCoinAddress s
 	if err != nil {
 		return "", err
 	}
-
 	txId, err = client.SendRawTransaction(hex)
 	if err != nil {
 		return "", err
 	}
-
+	log.Println("SendRawTransaction", txId)
 	return txId, nil
 }

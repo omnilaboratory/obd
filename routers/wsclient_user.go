@@ -10,7 +10,7 @@ import (
 func (c *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, []byte, bool) {
 	status := false
 	var sendType = enum.SendTargetType_SendToNone
-	var dataOut []byte
+	var data string
 
 	switch msg.Type {
 	case enum.MsgType_UserLogin:
@@ -24,7 +24,7 @@ func (c *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, []byt
 			if len(user.PeerId) > 0 {
 				c.User = &user
 				service.UserService.UserLogin(&user)
-				dataOut = []byte((c.User.PeerId + " login"))
+				data = c.User.PeerId + " login"
 				sendType = enum.SendTargetType_SendToAll
 				status = true
 			} else {
@@ -34,7 +34,7 @@ func (c *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, []byt
 		}
 	case enum.MsgType_UserLogout:
 		if c.User != nil {
-			dataOut = []byte(c.User.PeerId + " logout")
+			data = c.User.PeerId + " logout"
 			c.User = nil
 			sendType = enum.SendTargetType_SendToAll
 			status = true
@@ -43,5 +43,5 @@ func (c *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, []byt
 			sendType = enum.SendTargetType_SendToSomeone
 		}
 	}
-	return sendType, dataOut, status
+	return sendType, []byte(data), status
 }

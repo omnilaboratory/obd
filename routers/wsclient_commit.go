@@ -13,7 +13,6 @@ import (
 func (c *Client) commitmentTxModule(msg bean.RequestMessage) (enum.SendTargetType, []byte, bool) {
 	status := false
 	var sendType = enum.SendTargetType_SendToNone
-	var dataOut []byte
 	data := ""
 	switch msg.Type {
 	case enum.MsgType_CommitmentTx_Edit:
@@ -73,13 +72,11 @@ func (c *Client) commitmentTxModule(msg bean.RequestMessage) (enum.SendTargetTyp
 		c.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	}
-	dataOut = []byte(data)
-	return sendType, dataOut, status
+	return sendType, []byte(data), status
 }
 func (c *Client) commitmentTxSignModule(msg bean.RequestMessage) (enum.SendTargetType, []byte, bool) {
 	status := false
 	var sendType = enum.SendTargetType_SendToNone
-	var dataOut []byte
 	data := ""
 
 	switch msg.Type {
@@ -141,14 +138,12 @@ func (c *Client) commitmentTxSignModule(msg bean.RequestMessage) (enum.SendTarge
 		sendType = enum.SendTargetType_SendToSomeone
 	}
 
-	dataOut = []byte(data)
-	return sendType, dataOut, status
+	return sendType, []byte(data), status
 }
 
 func (c *Client) otherModule(msg bean.RequestMessage) (enum.SendTargetType, []byte, bool) {
 	status := false
 	var sendType = enum.SendTargetType_SendToNone
-	var dataOut []byte
 	data := ""
 	switch msg.Type {
 	case enum.MsgType_GetBalanceRequest:
@@ -156,7 +151,5 @@ func (c *Client) otherModule(msg bean.RequestMessage) (enum.SendTargetType, []by
 	default:
 	}
 
-	dataOut = []byte(data)
-
-	return sendType, dataOut, status
+	return sendType, []byte(data), status
 }

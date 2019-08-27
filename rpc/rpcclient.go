@@ -99,13 +99,13 @@ func (client *Client) send(method string, params []interface{}) (result string, 
 			rawParams = append(rawParams, marshaledParam)
 		}
 	}
+	log.Println("request to Rpc server:", method, params)
 	req := &Request{
 		Jsonrpc: "1.0",
 		ID:      client.NextID(),
 		Method:  method,
 		Params:  rawParams,
 	}
-	log.Println(req)
 
 	marshaledJSON, e := json.Marshal(req)
 	if e != nil {
@@ -150,6 +150,6 @@ func (client *Client) send(method string, params []interface{}) (result string, 
 	if err != nil {
 		return "", err
 	}
-	log.Println(gjson.Parse(string(res)).String())
+	//log.Println(gjson.Parse(string(res)).String())
 	return gjson.Parse(string(res)).String(), nil
 }

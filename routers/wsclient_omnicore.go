@@ -11,7 +11,6 @@ import (
 func (c *Client) omniCoreModule(msg bean.RequestMessage) (enum.SendTargetType, []byte, bool) {
 	status := false
 	var sendType = enum.SendTargetType_SendToNone
-	var dataOut []byte
 	data := ""
 	client := rpc.NewClient()
 	switch msg.Type {
@@ -95,6 +94,5 @@ func (c *Client) omniCoreModule(msg bean.RequestMessage) (enum.SendTargetType, [
 		c.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	}
-	dataOut = []byte(data)
-	return sendType, dataOut, status
+	return sendType, []byte(data), status
 }

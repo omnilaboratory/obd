@@ -2,6 +2,7 @@ package dao
 
 import (
 	"LightningOnOmni/bean"
+	"LightningOnOmni/bean/chainhash"
 	"time"
 )
 
@@ -19,30 +20,53 @@ const (
 )
 
 type ChannelInfo struct {
-	Id int `storm:"id,increment" json:"id"`
 	bean.OpenChannelInfo
-	FunderPeerId  string       `json:"funder_peer_id"`
-	FundeePeerId  string       `json:"fundee_peer_id"`
-	FunderPubKey  string       `json:"funder_pub_key"`
-	FundeePubKey  string       `json:"fundee_pub_key"`
-	ChannelPubKey string       `json:"channel_pub_key"`
-	RedeemScript  string       `json:"redeem_script"`
-	CurrState     ChannelState `json:"curr_state"`
-	CreateAt      time.Time    `json:"create_at"`
-	AcceptAt      time.Time    `json:"accept_at"`
+	Id            int            `storm:"id,increment" json:"id"`
+	FunderPeerId  string         `json:"funder_peer_id"`
+	FundeePeerId  string         `json:"fundee_peer_id"`
+	FunderPubKey  string         `json:"funder_pub_key"`
+	FundeePubKey  string         `json:"fundee_pub_key"`
+	ChannelPubKey string         `json:"channel_pub_key"`
+	RedeemScript  string         `json:"redeem_script"`
+	ChannelID     bean.ChannelID `json:"channel_id"`
+	CurrState     ChannelState   `json:"curr_state"`
+	CreateAt      time.Time      `json:"create_at"`
+	AcceptAt      time.Time      `json:"accept_at"`
 }
 
 type CloseChannel struct {
-	Id int `storm:"id,increment" json:"id"`
 	bean.CloseChannel
+	Id       int       `storm:"id,increment" json:"id"`
 	CreateAt time.Time `json:"create_at"`
 }
-type FundingCreated struct {
-	Id int `storm:"id,increment" `
-	bean.FundingCreated
-	TemporaryChannelIdStr string    `json:"temporary_channel_id_str"`
-	CreateAt              time.Time `json:"create_at"`
+
+type FundingTransactionState int
+
+const (
+	FundingTransaction_Create      FundingTransactionState = 10
+	FundingTransactionState_Accept FundingTransactionState = 20
+	FundingTransactionState_Defuse FundingTransactionState = 30
+)
+
+type FundingTransaction struct {
+	Id                 int                     `storm:"id,increment" `
+	FunderPeerId       string                  `json:"funder_peer_id"`
+	FundeePeerId       string                  `json:"fundee_peer_id"`
+	TemporaryChannelId chainhash.Hash          `json:"temporary_channel_id"`
+	ChannelID          bean.ChannelID          `json:"channel_id"`
+	PropertyId         int64                   `json:"property_id"`
+	FunderPubKey       string                  `json:"funder_pub_key"`
+	AmountA            float64                 `json:"amount_a"`
+	FunderSignature    chainhash.Signature     `json:"funder_signature"`
+	FundeePubKey       string                  `json:"fundee_pub_key"`
+	AmountB            float64                 `json:"amount_b"`
+	FundeeSignature    chainhash.Signature     `json:"fundee_signature"`
+	CreateAt           time.Time               `json:"create_at"`
+	FundeeSignAt       time.Time               `json:"fundee_sign_at"`
+	TxId               string                  `json:"tx_id"`
+	CurrState          FundingTransactionState `json:"curr_state"`
 }
+
 type FundingSigned struct {
 	Id int `storm:"id,increment" json:"id"`
 	bean.FundingSigned

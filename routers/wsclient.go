@@ -131,7 +131,12 @@ func (c *Client) Read() {
 		}
 		//-34 -3401 -3402 -3403 -3404
 		if strings.HasPrefix(typeStr, "-34") {
-			sendType, dataOut, status = c.fundCreateModule(msg)
+			sendType, dataOut, status = c.fundingTransactionModule(msg)
+		}
+
+		//-35
+		if msg.Type == enum.MsgType_FundingSign_Edit {
+			sendType, dataOut, status = c.fundingSignModule(msg)
 		}
 
 		if strings.HasPrefix(typeStr, "-35") {
@@ -150,10 +155,6 @@ func (c *Client) Read() {
 			//-354 -35401 -35402 -35403 -35404
 			if strings.HasPrefix(typeStr, "-354") {
 				sendType, dataOut, status = c.otherModule(msg)
-			} else
-			//-35 -3501 -3502 -3503 -3504
-			{
-				sendType, dataOut, status = c.fundSignModule(msg)
 			}
 		}
 

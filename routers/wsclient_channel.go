@@ -12,7 +12,6 @@ import (
 func (c *Client) channelModule(msg bean.RequestMessage) (enum.SendTargetType, []byte, bool) {
 	status := false
 	var sendType = enum.SendTargetType_SendToNone
-	var dataOut []byte
 	data := ""
 	switch msg.Type {
 	//get openChannelReq from funder then send to fundee
@@ -23,7 +22,7 @@ func (c *Client) channelModule(msg bean.RequestMessage) (enum.SendTargetType, []
 			if msg.RecipientPeerId == c.User.PeerId {
 				data = "can not open channel to yourself"
 			} else {
-				node, err := service.ChannelService.OpenChannel(msg.Data, c.User.PeerId)
+				node, err := service.ChannelService.OpenChannel(msg, c.User.PeerId)
 				if err != nil {
 					data = err.Error()
 				} else {
@@ -119,6 +118,5 @@ func (c *Client) channelModule(msg bean.RequestMessage) (enum.SendTargetType, []
 			sendType = enum.SendTargetType_SendToSomeone
 		}
 	}
-	dataOut = []byte(data)
-	return sendType, dataOut, status
+	return sendType, []byte(data), status
 }
