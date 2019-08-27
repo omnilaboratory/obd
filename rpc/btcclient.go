@@ -12,7 +12,7 @@ func (client *Client) CreateMultiSig(minSignNum int, keys []string) (result stri
 	return client.send("createmultisig", []interface{}{minSignNum, keys})
 }
 
-func (client *Client) dumpPrivKey(address string) (result string, err error) {
+func (client *Client) DumpPrivKey(address string) (result string, err error) {
 	return client.send("dumpprivkey", []interface{}{address})
 }
 
