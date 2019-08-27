@@ -42,18 +42,18 @@ func (c *channelManager) OpenChannel(jsonData string, funderId string) (data *be
 	if err != nil {
 		return nil, err
 	}
-	node := &dao.OpenChannelInfo{}
+	node := &dao.ChannelInfo{}
 	node.OpenChannelInfo = *data
 	node.FunderPeerId = funderId
 	node.FunderPubKey = data.FundingPubKey
-	node.CurrState = dao.OpenChannelState_Create
+	node.CurrState = dao.ChannelState_Create
 	node.CreateAt = time.Now()
 
 	db.Save(node)
 	return data, err
 }
 
-func (c *channelManager) AcceptChannel(jsonData string, fundeeId string) (node *dao.OpenChannelInfo, err error) {
+func (c *channelManager) AcceptChannel(jsonData string, fundeeId string) (node *dao.ChannelInfo, err error) {
 	data := &bean.AcceptChannelInfo{}
 	err = json.Unmarshal([]byte(jsonData), &data)
 
@@ -85,13 +85,13 @@ func (c *channelManager) AcceptChannel(jsonData string, fundeeId string) (node *
 		}
 	}
 
-	node = &dao.OpenChannelInfo{}
+	node = &dao.ChannelInfo{}
 	db.Select(q.Eq("TemporaryChannelId", data.TemporaryChannelId)).First(node)
 
 	if &node.Id == nil {
 		return nil, errors.New("invalid TemporaryChannelId")
 	}
-	if node.CurrState != dao.OpenChannelState_Create {
+	if node.CurrState != dao.ChannelState_Create {
 		return nil, errors.New("invalid ChannelState " + strconv.Itoa(int(node.CurrState)))
 	}
 
@@ -107,9 +107,9 @@ func (c *channelManager) AcceptChannel(jsonData string, fundeeId string) (node *
 	}
 	node.AcceptAt = time.Now()
 	if data.Attitude {
-		node.CurrState = dao.OpenChannelState_Accept
+		node.CurrState = dao.ChannelState_Accept
 	} else {
-		node.CurrState = dao.OpenChannelState_Defuse
+		node.CurrState = dao.ChannelState_Defuse
 	}
 	err = db.Update(node)
 
@@ -117,7 +117,7 @@ func (c *channelManager) AcceptChannel(jsonData string, fundeeId string) (node *
 }
 
 // GetChannelByTemporaryChanId
-func (c *channelManager) GetChannelByTemporaryChanId(jsonData string) (node *dao.OpenChannelInfo, err error) {
+func (c *channelManager) GetChannelByTemporaryChanId(jsonData string) (node *dao.ChannelInfo, err error) {
 	array := gjson.Parse(jsonData).Array()
 	if len(array) != 32 {
 		return nil, errors.New("wrong TemporaryChannelId")
@@ -132,13 +132,13 @@ func (c *channelManager) GetChannelByTemporaryChanId(jsonData string) (node *dao
 	if err != nil {
 		return nil, err
 	}
-	node = &dao.OpenChannelInfo{}
+	node = &dao.ChannelInfo{}
 	err = db.Select(q.Eq("TemporaryChannelId", tempChanId)).First(node)
 	return node, err
 }
 
 // DelChannelByTemporaryChanId
-func (c *channelManager) DelChannelByTemporaryChanId(jsonData string) (node *dao.OpenChannelInfo, err error) {
+func (c *channelManager) DelChannelByTemporaryChanId(jsonData string) (node *dao.ChannelInfo, err error) {
 
 	array := gjson.Parse(jsonData).Array()
 	if len(array) != 32 {
@@ -154,7 +154,7 @@ func (c *channelManager) DelChannelByTemporaryChanId(jsonData string) (node *dao
 	if err != nil {
 		return nil, err
 	}
-	node = &dao.OpenChannelInfo{}
+	node = &dao.ChannelInfo{}
 	err = db.Select(q.Eq("TemporaryChannelId", tempChanId)).First(node)
 	if err == nil {
 		err = db.DeleteStruct(node)
@@ -163,12 +163,12 @@ func (c *channelManager) DelChannelByTemporaryChanId(jsonData string) (node *dao
 }
 
 // AllItem
-func (c *channelManager) AllItem(peerId string) (data []dao.OpenChannelInfo, err error) {
+func (c *channelManager) AllItem(peerId string) (data []dao.ChannelInfo, err error) {
 	db, err := dao.DBService.GetDB()
 	if err != nil {
 		return nil, err
 	}
-	infos := []dao.OpenChannelInfo{}
+	infos := []dao.ChannelInfo{}
 	err = db.Select(q.Or(q.Eq("FundeePeerId", peerId), q.Eq("FunderPeerId", peerId))).OrderBy("CreateAt").Reverse().Find(&infos)
 	return infos, err
 }
@@ -179,5 +179,5 @@ func (c *channelManager) TotalCount() (count int, err error) {
 	if err != nil {
 		return 0, err
 	}
-	return db.Count(&dao.OpenChannelInfo{})
+	return db.Count(&dao.ChannelInfo{})
 }
