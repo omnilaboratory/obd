@@ -2,32 +2,21 @@ package service
 
 import (
 	"LightningOnOmni/bean"
+	"LightningOnOmni/bean/chainhash"
 	"LightningOnOmni/dao"
 	"encoding/json"
 	"errors"
-	"github.com/asdine/storm"
 	"github.com/asdine/storm/q"
 	"github.com/tidwall/gjson"
-	"log"
 	"time"
 )
-
-var db *storm.DB
-
-func init() {
-	var err error
-	db, err = dao.DBService.GetDB()
-	if err != nil {
-		log.Println(err)
-	}
-}
 
 type fundingTransactionManager struct{}
 
 var FundingTransactionService fundingTransactionManager
 
 //funder request to fund to the multiAddr (channel)
-func (service *fundingTransactionManager) CreateFundingTx(jsonData string) (node *dao.FundingTransaction, err error) {
+func (service *fundingTransactionManager) CreateFundingTx(jsonData string, user *bean.User) (node *dao.FundingTransaction, err error) {
 	data := &bean.FundingCreated{}
 	err = json.Unmarshal([]byte(jsonData), data)
 	if err != nil {
@@ -42,23 +31,41 @@ func (service *fundingTransactionManager) CreateFundingTx(jsonData string) (node
 	count, _ := db.Select(q.Eq("TemporaryChannelId", data.TemporaryChannelId)).Count(node)
 	if count == 0 {
 		channelInfo := &dao.ChannelInfo{}
-		err = db.Select(q.Eq("TemporaryChannelId", data.TemporaryChannelId)).First(channelInfo)
+		err = db.Select(q.Eq("TemporaryChannelId", data.TemporaryChannelId), q.Or(q.Eq("PeerIdA", user.PeerId), q.Eq("PeerIdB", user.PeerId))).First(channelInfo)
 		if err != nil {
 			return nil, err
 		}
+
 		node.TemporaryChannelId = data.TemporaryChannelId
 		node.PropertyId = data.PropertyId
-		node.FunderPeerId = channelInfo.FunderPeerId
-		node.FundeePeerId = channelInfo.FundeePeerId
-		node.FunderPubKey = channelInfo.FunderPubKey
-		node.FundeePubKey = channelInfo.FundeePubKey
-		if data.FundingPubKey == node.FunderPubKey {
-			node.AmountA = data.Amount
-		} else {
-			node.AmountB = data.Amount
+
+		node.PeerIdA = channelInfo.PeerIdA
+		node.PeerIdB = channelInfo.PeerIdB
+		node.ChannelPubKey = channelInfo.ChannelPubKey
+		node.RedeemScript = channelInfo.RedeemScript
+
+		if user.PeerId == channelInfo.PeerIdA {
+			if data.FunderPubKey != channelInfo.PubKeyA {
+				return nil, errors.New("invalid FunderPubKey")
+			}
 		}
-		node.CreateAt = time.Now()
+		if user.PeerId == channelInfo.PeerIdB {
+			if data.FunderPubKey != channelInfo.PubKeyB {
+				return nil, errors.New("invalid FunderPubKey")
+			}
+		}
+
+		if data.FunderPubKey == channelInfo.PubKeyA {
+			node.FunderPubKey = channelInfo.PubKeyA
+			node.FundeePubKey = channelInfo.PubKeyB
+		} else {
+			node.FunderPubKey = channelInfo.PubKeyB
+			node.FundeePubKey = channelInfo.PubKeyA
+		}
+		node.AmountA = data.AmountA
+
 		node.CurrState = dao.FundingTransaction_Create
+		node.CreateAt = time.Now()
 		err = db.Save(node)
 	} else {
 		node = nil
@@ -67,9 +74,42 @@ func (service *fundingTransactionManager) CreateFundingTx(jsonData string) (node
 	return node, err
 }
 
+func (service *fundingTransactionManager) FundingTransactionSign(jsonData string) (signed *dao.FundingTransaction, err error) {
+	data := &bean.FundingSigned{}
+	err = json.Unmarshal([]byte(jsonData), data)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(data.TemporaryChannelId) == 0 {
+		return nil, errors.New("wrong TemporaryChannelId")
+	}
+
+	var node = &dao.FundingTransaction{}
+	//https://www.ctolib.com/storm.html
+	err = db.One("TemporaryChannelId", data.TemporaryChannelId, node)
+	if err != nil {
+		return nil, err
+	}
+	if data.Attitude {
+		node.AmountB = data.AmountB
+		node.CurrState = dao.FundingTransactionState_Accept
+	} else {
+		node.CurrState = dao.FundingTransactionState_Defuse
+	}
+	node.FundeeSignAt = time.Now()
+
+	err = db.Update(node)
+	return node, err
+}
+
 func (service *fundingTransactionManager) ItemByTempId(jsonData string) (node *dao.FundingTransaction, err error) {
 	var data = &dao.FundingTransaction{}
-	err = db.One("TemporaryChannelId", gjson.Parse(jsonData), data)
+	var tempChanId chainhash.Hash
+	for index, item := range gjson.Parse(jsonData).Array() {
+		tempChanId[index] = byte(item.Int())
+	}
+	err = db.One("TemporaryChannelId", tempChanId, data)
 	if err != nil {
 		return nil, err
 	}
@@ -77,7 +117,7 @@ func (service *fundingTransactionManager) ItemByTempId(jsonData string) (node *d
 }
 func (service *fundingTransactionManager) AllItem(peerId string) (node []dao.FundingTransaction, err error) {
 	var data = []dao.FundingTransaction{}
-	err = db.Select(q.Or(q.Eq("FundeePeerId", peerId), q.Eq("FunderPeerId", peerId))).OrderBy("CreateAt").Reverse().Find(&data)
+	err = db.Select(q.Or(q.Eq("PeerIdB", peerId), q.Eq("PeerIdA", peerId))).OrderBy("CreateAt").Reverse().Find(&data)
 	if err != nil {
 		return nil, err
 	}
@@ -96,7 +136,6 @@ func (service *fundingTransactionManager) ItemById(id int) (node *dao.FundingTra
 func (service *fundingTransactionManager) DelAll() (err error) {
 	var data = &dao.FundingTransaction{}
 	return db.Drop(data)
-	return nil
 }
 
 func (service *fundingTransactionManager) Del(id int) (err error) {
@@ -107,33 +146,6 @@ func (service *fundingTransactionManager) Del(id int) (err error) {
 	}
 	return err
 }
-func (service *fundingTransactionManager) TotalCount() (count int, err error) {
-	var data = &dao.FundingTransaction{}
-	return db.Count(data)
-}
-
-func (service *fundingTransactionManager) FundingTransactionSign(jsonData string) (signed *dao.FundingSigned, err error) {
-	vo := &bean.FundingSigned{}
-	err = json.Unmarshal([]byte(jsonData), vo)
-	if err != nil {
-		return nil, err
-	}
-
-	vo.TemporaryChannelId = bean.ChannelIdService.NextTemporaryChanID()
-	node := &dao.FundingSigned{}
-	//https://www.ctolib.com/storm.html
-	err = db.Select(
-		q.Eq("FundeePubKey", vo.FundeePubKey),
-		q.Eq("FunderPubKey", vo.FunderPubKey),
-		//q.And(
-		//	q.Eq("FunderPubKey", vo.FunderPubKey),
-		//),
-	).First(node)
-	node.FundingSigned = *vo
-	if err != nil {
-		err = db.Save(node)
-	} else {
-		err = db.Update(node)
-	}
-	return node, err
+func (service *fundingTransactionManager) TotalCount(peerId string) (count int, err error) {
+	return db.Select(q.Or(q.Eq("PeerIdA", peerId), q.Eq("PeerIdB", peerId))).Count(&dao.FundingTransaction{})
 }

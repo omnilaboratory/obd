@@ -65,10 +65,10 @@ type CloseChannel struct {
 //type: -34 (funding_created)
 type FundingCreated struct {
 	TemporaryChannelId chainhash.Hash `json:"temporary_channel_id"`
-	FundingPubKey      string         `json:"funding_pub_key"`
+	FunderPubKey       string         `json:"funder_pub_key"`
 	PropertyId         int64          `json:"property_id"`
 	MaxAssets          float64        `json:"max_assets"`
-	Amount             float64        `json:"amount"`
+	AmountA            float64        `json:"amount_a"`
 }
 
 //type: -35 (funding_signed)
@@ -93,6 +93,7 @@ type FundingSigned struct {
 	P2shAddress string `json:"p2sh_address"`
 	//final global channel id generated
 	ChannelId ChannelID `json:"channel_id"`
+	Attitude  bool      `json:"attitude"`
 }
 
 //type: -351 (commitment_tx)

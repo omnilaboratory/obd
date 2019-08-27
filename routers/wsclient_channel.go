@@ -84,7 +84,7 @@ func (c *Client) channelModule(msg bean.RequestMessage) (enum.SendTargetType, []
 		c.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_ChannelOpen_Count:
-		node, err := service.ChannelService.TotalCount()
+		node, err := service.ChannelService.TotalCount(c.User.PeerId)
 		if err != nil {
 			data = err.Error()
 		} else {
@@ -112,7 +112,7 @@ func (c *Client) channelModule(msg bean.RequestMessage) (enum.SendTargetType, []
 				}
 			}
 			if node != nil {
-				c.sendToSomeone(msg.Type, status, node.FunderPeerId, data)
+				c.sendToSomeone(msg.Type, status, node.PeerIdA, data)
 			}
 			c.sendToMyself(msg.Type, status, data)
 			sendType = enum.SendTargetType_SendToSomeone

@@ -15,7 +15,7 @@ func (c *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.SendTar
 	data := ""
 	switch msg.Type {
 	case enum.MsgType_FundingCreate_Create:
-		node, err := service.FundingTransactionService.CreateFundingTx(msg.Data)
+		node, err := service.FundingTransactionService.CreateFundingTx(msg.Data, c.User)
 		if err != nil {
 			data = err.Error()
 		} else {
@@ -26,6 +26,13 @@ func (c *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.SendTar
 				data = string(bytes)
 				status = true
 			}
+		}
+		if node != nil {
+			peerId := node.PeerIdA
+			if peerId == c.User.PeerId {
+				peerId = node.PeerIdB
+			}
+			c.sendToSomeone(msg.Type, status, peerId, data)
 		}
 		c.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
@@ -98,7 +105,7 @@ func (c *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.SendTar
 		c.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_FundingCreate_Count:
-		count, err := service.FundingTransactionService.TotalCount()
+		count, err := service.FundingTransactionService.TotalCount(c.User.PeerId)
 		if err != nil {
 			data = err.Error()
 		} else {

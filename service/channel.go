@@ -5,7 +5,6 @@ import (
 	"LightningOnOmni/bean/chainhash"
 	"LightningOnOmni/config"
 	"LightningOnOmni/dao"
-	"LightningOnOmni/rpc"
 	"encoding/json"
 	"errors"
 	"github.com/asdine/storm/q"
@@ -19,14 +18,14 @@ type channelManager struct{}
 var ChannelService = channelManager{}
 
 // openChannel init data
-func (c *channelManager) OpenChannel(msg bean.RequestMessage, funderId string) (data *bean.OpenChannelInfo, err error) {
+func (c *channelManager) OpenChannel(msg bean.RequestMessage, peerIdA string) (data *bean.OpenChannelInfo, err error) {
 	data = &bean.OpenChannelInfo{}
 	json.Unmarshal([]byte(msg.Data), &data)
 	if len(data.FundingPubKey) != 34 {
 		return nil, errors.New("wrong fundingPubKey")
 	}
-	client := rpc.NewClient()
-	isMine, err := client.Validateaddress(data.FundingPubKey)
+
+	isMine, err := rpcClient.Validateaddress(data.FundingPubKey)
 	if err != nil {
 		return nil, err
 	}
@@ -38,15 +37,11 @@ func (c *channelManager) OpenChannel(msg bean.RequestMessage, funderId string) (
 	tempId := bean.ChannelIdService.NextTemporaryChanID()
 	data.TemporaryChannelId = tempId
 
-	db, err := dao.DBService.GetDB()
-	if err != nil {
-		return nil, err
-	}
 	node := &dao.ChannelInfo{}
 	node.OpenChannelInfo = *data
-	node.FunderPeerId = funderId
-	node.FundeePeerId = msg.RecipientPeerId
-	node.FunderPubKey = data.FundingPubKey
+	node.PeerIdA = peerIdA
+	node.PeerIdB = msg.RecipientPeerId
+	node.PubKeyA = data.FundingPubKey
 	node.CurrState = dao.ChannelState_Create
 	node.CreateAt = time.Now()
 
@@ -54,7 +49,7 @@ func (c *channelManager) OpenChannel(msg bean.RequestMessage, funderId string) (
 	return data, err
 }
 
-func (c *channelManager) AcceptChannel(jsonData string, fundeeId string) (node *dao.ChannelInfo, err error) {
+func (c *channelManager) AcceptChannel(jsonData string, peerIdB string) (node *dao.ChannelInfo, err error) {
 	data := &bean.AcceptChannelInfo{}
 	err = json.Unmarshal([]byte(jsonData), &data)
 
@@ -66,18 +61,11 @@ func (c *channelManager) AcceptChannel(jsonData string, fundeeId string) (node *
 		return nil, errors.New("wrong TemporaryChannelId")
 	}
 
-	client := rpc.NewClient()
-
-	db, err := dao.DBService.GetDB()
-	if err != nil {
-		return nil, err
-	}
-
 	if data.Attitude {
 		if len(data.FundingPubKey) != 34 {
-			return nil, errors.New("wrong FundingPubKey")
+			return nil, errors.New("wrong PubKeyB")
 		}
-		isMine, err := client.Validateaddress(data.FundingPubKey)
+		isMine, err := rpcClient.Validateaddress(data.FundingPubKey)
 		if err != nil {
 			return nil, err
 		}
@@ -97,9 +85,8 @@ func (c *channelManager) AcceptChannel(jsonData string, fundeeId string) (node *
 	}
 
 	if data.Attitude {
-		node.FundeePubKey = data.FundingPubKey
-		node.FundeePeerId = fundeeId
-		multiSig, err := client.CreateMultiSig(2, []string{node.FunderPubKey, node.FundeePubKey})
+		node.PubKeyB = data.FundingPubKey
+		multiSig, err := rpcClient.CreateMultiSig(2, []string{node.PubKeyA, node.PubKeyB})
 		if err != nil {
 			return nil, err
 		}
@@ -128,11 +115,6 @@ func (c *channelManager) GetChannelByTemporaryChanId(jsonData string) (node *dao
 	for index, value := range array {
 		tempChanId[index] = byte(value.Num)
 	}
-
-	db, err := dao.DBService.GetDB()
-	if err != nil {
-		return nil, err
-	}
 	node = &dao.ChannelInfo{}
 	err = db.Select(q.Eq("TemporaryChannelId", tempChanId)).First(node)
 	return node, err
@@ -150,11 +132,6 @@ func (c *channelManager) DelChannelByTemporaryChanId(jsonData string) (node *dao
 	for index, value := range array {
 		tempChanId[index] = byte(value.Num)
 	}
-
-	db, err := dao.DBService.GetDB()
-	if err != nil {
-		return nil, err
-	}
 	node = &dao.ChannelInfo{}
 	err = db.Select(q.Eq("TemporaryChannelId", tempChanId)).First(node)
 	if err == nil {
@@ -165,21 +142,12 @@ func (c *channelManager) DelChannelByTemporaryChanId(jsonData string) (node *dao
 
 // AllItem
 func (c *channelManager) AllItem(peerId string) (data []dao.ChannelInfo, err error) {
-	db, err := dao.DBService.GetDB()
-	if err != nil {
-		return nil, err
-	}
-	infos := []dao.ChannelInfo{}
-	err = db.Select(q.Or(q.Eq("FundeePeerId", peerId), q.Eq("FunderPeerId", peerId))).OrderBy("CreateAt").Reverse().Find(&infos)
-	//err = db.All(&infos)
+	var infos []dao.ChannelInfo
+	err = db.Select(q.Or(q.Eq("PeerIdA", peerId), q.Eq("PeerIdB", peerId))).OrderBy("CreateAt").Reverse().Find(&infos)
 	return infos, err
 }
 
 // TotalCount
-func (c *channelManager) TotalCount() (count int, err error) {
-	db, err := dao.DBService.GetDB()
-	if err != nil {
-		return 0, err
-	}
-	return db.Count(&dao.ChannelInfo{})
+func (c *channelManager) TotalCount(peerId string) (count int, err error) {
+	return db.Select(q.Or(q.Eq("PeerIdA", peerId), q.Eq("PeerIdB", peerId))).Count(&dao.ChannelInfo{})
 }

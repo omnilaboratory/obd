@@ -61,7 +61,7 @@ func (c *Client) Read() {
 		}
 
 		var msg bean.RequestMessage
-		log.Println(string(dataReq))
+		log.Println("request data: ", string(dataReq))
 		parse := gjson.Parse(string(dataReq))
 
 		if parse.Exists() == false {

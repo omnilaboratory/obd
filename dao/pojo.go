@@ -22,10 +22,10 @@ const (
 type ChannelInfo struct {
 	bean.OpenChannelInfo
 	Id            int            `storm:"id,increment" json:"id"`
-	FunderPeerId  string         `json:"funder_peer_id"`
-	FundeePeerId  string         `json:"fundee_peer_id"`
-	FunderPubKey  string         `json:"funder_pub_key"`
-	FundeePubKey  string         `json:"fundee_pub_key"`
+	PeerIdA       string         `json:"peer_id_a"`
+	PeerIdB       string         `json:"peer_id_b"`
+	PubKeyA       string         `json:"pub_key_a"`
+	PubKeyB       string         `json:"pub_key_b"`
 	ChannelPubKey string         `json:"channel_pub_key"`
 	RedeemScript  string         `json:"redeem_script"`
 	ChannelID     bean.ChannelID `json:"channel_id"`
@@ -50,8 +50,8 @@ const (
 
 type FundingTransaction struct {
 	Id                 int                     `storm:"id,increment" `
-	FunderPeerId       string                  `json:"funder_peer_id"`
-	FundeePeerId       string                  `json:"fundee_peer_id"`
+	PeerIdA            string                  `json:"peer_id_a"`
+	PeerIdB            string                  `json:"peer_id_b"`
 	TemporaryChannelId chainhash.Hash          `json:"temporary_channel_id"`
 	ChannelID          bean.ChannelID          `json:"channel_id"`
 	PropertyId         int64                   `json:"property_id"`
@@ -61,16 +61,12 @@ type FundingTransaction struct {
 	FundeePubKey       string                  `json:"fundee_pub_key"`
 	AmountB            float64                 `json:"amount_b"`
 	FundeeSignature    chainhash.Signature     `json:"fundee_signature"`
+	RedeemScript       string                  `json:"redeem_script"`
+	ChannelPubKey      string                  `json:"channel_pub_key"`
 	CreateAt           time.Time               `json:"create_at"`
 	FundeeSignAt       time.Time               `json:"fundee_sign_at"`
 	TxId               string                  `json:"tx_id"`
 	CurrState          FundingTransactionState `json:"curr_state"`
-}
-
-type FundingSigned struct {
-	Id int `storm:"id,increment" json:"id"`
-	bean.FundingSigned
-	CreateAt time.Time `json:"create_at"`
 }
 
 type CommitmentTx struct {
