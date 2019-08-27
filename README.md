@@ -138,6 +138,8 @@ In the right side text pannel, displays the response message from OBD:
 RECEIVED: {"type":1001,"status":true,"sender":"59dfb5e2-f1dc-46c6-8ff3-dfc9f2f1ea82","result":"mzCihFnTFyZUo76QMKovoWWJAPkBqDi63J"}
 ```
 
+To test "open_channel", open two browser, one for Alice, and one for Bob. Alice send [messege in above](https://github.com/lightningnetwork/lightning-rfc/blob/master/02-peer-protocol.md#the-funding_created-message), and Bob reply with APPROAVAL:
+
 <p align="center">
   <img width="600" alt="create channel" src="https://github.com/LightningOnOmnilayer/Omni-BOLT-spec/blob/master/imgs/CreateChannel.png">
 </p>
