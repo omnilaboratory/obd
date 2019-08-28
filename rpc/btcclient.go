@@ -117,6 +117,11 @@ type TransactionOutputItem struct {
 	ToBitCoinAddress string
 	Amount           float64
 }
+type TransactionInputItem struct {
+	Txid   string
+	Vout   uint32
+	Amount float64
+}
 
 // create a transaction and just signnature , not send to the network,get the hash of signature
 func (client *Client) BtcCreateAndSignRawTransaction(fromBitCoinAddress string, privkeys []string, outputItems []TransactionOutputItem, minerFee float64, sequence *int) (txid string, hex string, err error) {
@@ -212,6 +217,101 @@ func (client *Client) BtcCreateAndSignRawTransaction(fromBitCoinAddress string, 
 		privkeys = nil
 	}
 	signHex, _ := client.SignRawTransactionWithKey(hex, privkeys, inputs, "ALL")
+	log.Println("SignRawTransactionWithKey", signHex)
+
+	hex = gjson.Get(signHex, "hex").String()
+	log.Println("SignRawTransactionWithKey", hex)
+	decodeHex, _ = client.DecodeRawTransaction(hex)
+	txid = gjson.Get(decodeHex, "txid").String()
+	log.Println("DecodeRawTransaction", decodeHex)
+	return txid, hex, err
+}
+
+func (client *Client) BtcCreateAndSignRawTransactionFromUnsendTx(fromBitCoinAddress string, privkeys []string, inputItems []TransactionInputItem, outputItems []TransactionOutputItem, minerFee float64, sequence *int) (txid string, hex string, err error) {
+	if len(fromBitCoinAddress) < 1 {
+		return "", "", errors.New("fromBitCoinAddress is empty")
+	}
+	if len(outputItems) < 1 {
+		return "", "", errors.New("toBitCoinAddress is empty")
+	}
+
+	outAmount := decimal.NewFromFloat(0)
+	for _, item := range outputItems {
+		outAmount = outAmount.Add(decimal.NewFromFloat(item.Amount))
+	}
+
+	if outAmount.LessThan(decimal.NewFromFloat(config.Dust)) {
+		return "", "", errors.New("wrong outAmount")
+	}
+
+	if minerFee <= 0 {
+		minerFee = 0.00003
+	}
+
+	if minerFee < config.Dust {
+		return "", "", errors.New("minerFee too small")
+	}
+
+	balance := 0.0
+	//scriptPubKey := ""
+	var inputs []map[string]interface{}
+	for _, item := range inputItems {
+		node := make(map[string]interface{})
+		node["txid"] = item.Txid
+		node["vout"] = item.Vout
+		if sequence != nil {
+			node["sequence"] = sequence
+		}
+		balance, _ = decimal.NewFromFloat(balance).Add(decimal.NewFromFloat(item.Amount)).Float64()
+		inputs = append(inputs, node)
+	}
+	//not enough money
+	if outAmount.LessThan(decimal.NewFromFloat(balance)) {
+		outAmount = decimal.NewFromFloat(balance)
+	}
+
+	//not enough money for minerFee
+	if outAmount.Equal(decimal.NewFromFloat(balance)) {
+		outAmount = outAmount.Sub(decimal.NewFromFloat(minerFee))
+	}
+
+	out, _ := decimal.NewFromFloat(minerFee).Add(outAmount).Float64()
+	log.Println("input list ", inputs)
+
+	if len(inputs) == 0 || balance < out {
+		return "", "", errors.New("not enough balance")
+	}
+	drawback, _ := decimal.NewFromFloat(balance).Sub(decimal.NewFromFloat(out)).Float64()
+	output := make(map[string]float64)
+	for _, item := range outputItems {
+		output[item.ToBitCoinAddress] = item.Amount
+	}
+	if drawback > 0 {
+		output[fromBitCoinAddress] = drawback
+	}
+
+	hex, err = client.CreateRawTransaction(inputs, output)
+
+	if err != nil {
+		return "", "", err
+	}
+
+	log.Println("CreateRawTransaction", hex)
+
+	decodeHex, _ := client.DecodeRawTransaction(hex)
+	log.Println("DecodeRawTransaction", decodeHex)
+
+	//for _, item := range inputs {
+	//	item["scriptPubKey"] = scriptPubKey
+	//}
+
+	if privkeys == nil || len(privkeys) == 0 {
+		privkeys = nil
+	}
+	signHex, err := client.SignRawTransactionWithKey(hex, privkeys, nil, "ALL")
+	if err != nil {
+		return "", "", err
+	}
 	log.Println("SignRawTransactionWithKey", signHex)
 
 	hex = gjson.Get(signHex, "hex").String()

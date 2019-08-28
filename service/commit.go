@@ -68,7 +68,7 @@ func (service *commitTxManager) GetItemsByChannelId(jsonData string) (nodes []da
 		return nil, nil, err
 	}
 	count = &tempCount
-	err = db.Select(q.Eq("ChannelId", chanId)).Skip(int(skip)).Limit(int(pageSize)).Find(&nodes)
+	err = db.Select(q.Eq("ChannelId", chanId)).OrderBy("CreateAt").Reverse().Skip(int(skip)).Limit(int(pageSize)).Find(&nodes)
 	return nodes, count, err
 }
 

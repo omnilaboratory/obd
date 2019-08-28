@@ -173,11 +173,18 @@ func (service *fundingTransactionManager) FundingTransactionSign(jsonData string
 		if err != nil {
 			return nil, err
 		}
+
+		fundingTransaction := &dao.FundingTransaction{}
+		_ = db.Select(q.Eq("ChannelId", data.ChannelId)).First(fundingTransaction)
+
 		// create C1a tx
-		txid, hex, err := rpcClient.BtcCreateAndSignRawTransaction(
+		txid, hex, err := rpcClient.BtcCreateAndSignRawTransactionFromUnsendTx(
 			channelInfo.ChannelPubKey,
 			[]string{
 				data.FundeeSignature,
+			},
+			[]rpc.TransactionInputItem{
+				{fundingTransaction.FundingTxid, fundingTransaction.FundingOutputIndex, fundingTransaction.AmountA},
 			},
 			[]rpc.TransactionOutputItem{
 				{commitmentTxInfo.MultiAddress, commitmentTxInfo.AmountM},
