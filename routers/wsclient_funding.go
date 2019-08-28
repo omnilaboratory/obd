@@ -15,24 +15,47 @@ func (c *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.SendTar
 	data := ""
 	switch msg.Type {
 	case enum.MsgType_FundingCreate_Create:
-		node, err := service.FundingTransactionService.CreateFundingTx(msg.Data, c.User)
+		//check target whether is online
+		fundingInfo := &bean.FundingCreated{}
+		err := json.Unmarshal([]byte(msg.Data), fundingInfo)
 		if err != nil {
 			data = err.Error()
 		} else {
-			bytes, err := json.Marshal(node)
+			node, err := service.ChannelService.GetChannelByTemporaryChanIdArray(fundingInfo.TemporaryChannelId)
+			if node != nil {
+				peerId := node.PeerIdA
+				if peerId == c.User.PeerId {
+					peerId = node.PeerIdB
+				}
+				_, err := c.FindUser(&peerId)
+				if err != nil {
+					data = err.Error()
+				}
+			} else {
+				data = err.Error()
+			}
+		}
+
+		if data == "" {
+			node, err := service.FundingTransactionService.CreateFundingTx(msg.Data, c.User)
 			if err != nil {
 				data = err.Error()
 			} else {
-				data = string(bytes)
-				status = true
+				bytes, err := json.Marshal(node)
+				if err != nil {
+					data = err.Error()
+				} else {
+					data = string(bytes)
+					status = true
+				}
 			}
-		}
-		if node != nil {
-			peerId := node.PeerIdA
-			if peerId == c.User.PeerId {
-				peerId = node.PeerIdB
+			if node != nil {
+				peerId := node.PeerIdA
+				if peerId == c.User.PeerId {
+					peerId = node.PeerIdB
+				}
+				c.sendToSomeone(msg.Type, status, peerId, data)
 			}
-			c.sendToSomeone(msg.Type, status, peerId, data)
 		}
 		c.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone

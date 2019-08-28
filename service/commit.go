@@ -14,7 +14,7 @@ type commitTxManager struct{}
 
 var CommitTxService commitTxManager
 
-func (service *commitTxManager) Edit(jsonData string) (node *dao.CommitmentTx, err error) {
+func (service *commitTxManager) Edit(jsonData string) (node *dao.CommitmentTxInfo, err error) {
 	if len(jsonData) == 0 {
 		return nil, errors.New("empty json data")
 	}
@@ -26,18 +26,17 @@ func (service *commitTxManager) Edit(jsonData string) (node *dao.CommitmentTx, e
 	if len(data.ChannelId) != 32 {
 		return nil, errors.New("wrong channel_id")
 	}
-	node = &dao.CommitmentTx{}
+	node = &dao.CommitmentTxInfo{}
 	db, err := dao.DBService.GetDB()
 	if err != nil {
 		return nil, err
 	}
-	node.CommitmentTx = *data
 	node.CreateAt = time.Now()
 	err = db.Save(node)
 	return node, err
 }
 
-func (service *commitTxManager) GetItemsByChannelId(jsonData string) (nodes []dao.CommitmentTx, count *int, err error) {
+func (service *commitTxManager) GetItemsByChannelId(jsonData string) (nodes []dao.CommitmentTxInfo, count *int, err error) {
 	var chanId bean.ChannelID
 
 	array := gjson.Get(jsonData, "channel_id").Array()
@@ -63,8 +62,8 @@ func (service *commitTxManager) GetItemsByChannelId(jsonData string) (nodes []da
 		return nil, nil, err
 	}
 
-	nodes = []dao.CommitmentTx{}
-	tempCount, err := db.Select(q.Eq("ChannelId", chanId)).Count(&dao.CommitmentTx{})
+	nodes = []dao.CommitmentTxInfo{}
+	tempCount, err := db.Select(q.Eq("ChannelId", chanId)).Count(&dao.CommitmentTxInfo{})
 	if err != nil {
 		return nil, nil, err
 	}
@@ -73,12 +72,12 @@ func (service *commitTxManager) GetItemsByChannelId(jsonData string) (nodes []da
 	return nodes, count, err
 }
 
-func (service *commitTxManager) GetItemById(id int) (node *dao.CommitmentTx, err error) {
+func (service *commitTxManager) GetItemById(id int) (node *dao.CommitmentTxInfo, err error) {
 	db, err := dao.DBService.GetDB()
 	if err != nil {
 		return nil, err
 	}
-	node = &dao.CommitmentTx{}
+	node = &dao.CommitmentTxInfo{}
 	err = db.Select(q.Eq("Id", id)).First(node)
 	return node, nil
 }
@@ -88,16 +87,16 @@ func (service *commitTxManager) TotalCount() (count int, err error) {
 	if err != nil {
 		return 0, err
 	}
-	return db.Count(&dao.CommitmentTx{})
+	return db.Count(&dao.CommitmentTxInfo{})
 }
 
-func (service *commitTxManager) Del(id int) (node *dao.CommitmentTx, err error) {
+func (service *commitTxManager) Del(id int) (node *dao.CommitmentTxInfo, err error) {
 	db, err := dao.DBService.GetDB()
 	if err != nil {
 		return nil, err
 	}
 
-	node = &dao.CommitmentTx{}
+	node = &dao.CommitmentTxInfo{}
 	err = db.One("Id", id, node)
 	if err != nil {
 		return nil, err
@@ -110,7 +109,7 @@ type commitTxSignedManager struct{}
 
 var CommitTxSignedService commitTxSignedManager
 
-func (service *commitTxSignedManager) Edit(jsonData string) (node *dao.CommitmentTxSigned, err error) {
+func (service *commitTxSignedManager) Edit(jsonData string) (node *dao.CommitmentTxInfo, err error) {
 	if len(jsonData) == 0 {
 		return nil, errors.New("empty json data")
 	}
@@ -122,18 +121,17 @@ func (service *commitTxSignedManager) Edit(jsonData string) (node *dao.Commitmen
 	if len(data.ChannelId) != 32 {
 		return nil, errors.New("wrong ChannelId")
 	}
-	node = &dao.CommitmentTxSigned{}
+	node = &dao.CommitmentTxInfo{}
 	db, err := dao.DBService.GetDB()
 	if err != nil {
 		return nil, err
 	}
-	node.CommitmentTxSigned = *data
 	node.CreateAt = time.Now()
 	err = db.Save(node)
 	return node, err
 }
 
-func (service *commitTxSignedManager) GetItemsByChannelId(jsonData string) (nodes []dao.CommitmentTxSigned, count *int, err error) {
+func (service *commitTxSignedManager) GetItemsByChannelId(jsonData string) (nodes []dao.CommitmentTxInfo, count *int, err error) {
 	var chanId bean.ChannelID
 	array := gjson.Get(jsonData, "channel_id").Array()
 
@@ -159,8 +157,8 @@ func (service *commitTxSignedManager) GetItemsByChannelId(jsonData string) (node
 		return nil, nil, err
 	}
 
-	nodes = []dao.CommitmentTxSigned{}
-	tempCount, err := db.Select(q.Eq("ChannelId", chanId)).Count(&dao.CommitmentTx{})
+	nodes = []dao.CommitmentTxInfo{}
+	tempCount, err := db.Select(q.Eq("ChannelId", chanId)).Count(&dao.CommitmentTxInfo{})
 	if err != nil {
 		return nil, nil, err
 	}
@@ -169,12 +167,12 @@ func (service *commitTxSignedManager) GetItemsByChannelId(jsonData string) (node
 	return nodes, count, err
 }
 
-func (service *commitTxSignedManager) GetItemById(id int) (node *dao.CommitmentTxSigned, err error) {
+func (service *commitTxSignedManager) GetItemById(id int) (node *dao.CommitmentTxInfo, err error) {
 	db, err := dao.DBService.GetDB()
 	if err != nil {
 		return nil, err
 	}
-	node = &dao.CommitmentTxSigned{}
+	node = &dao.CommitmentTxInfo{}
 	err = db.Select(q.Eq("Id", id)).First(node)
 	return node, nil
 }
@@ -184,5 +182,5 @@ func (service *commitTxSignedManager) TotalCount() (count int, err error) {
 	if err != nil {
 		return 0, err
 	}
-	return db.Count(&dao.CommitmentTxSigned{})
+	return db.Count(&dao.CommitmentTxInfo{})
 }

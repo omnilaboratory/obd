@@ -5,6 +5,7 @@ import (
 	"LightningOnOmni/bean/enum"
 	"LightningOnOmni/rpc"
 	"LightningOnOmni/tool"
+	"encoding/json"
 	"github.com/tidwall/gjson"
 )
 
@@ -93,6 +94,61 @@ func (c *Client) omniCoreModule(msg bean.RequestMessage) (enum.SendTargetType, [
 		}
 		c.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
+	case enum.MsgType_Core_ListUnspent:
+		address := gjson.Get(msg.Data, "address").String()
+		if tool.CheckIsString(&address) {
+			ok, err := client.ListUnspent(address)
+			if err != nil {
+				data = err.Error()
+			} else {
+				data = ok
+				status = true
+			}
+		} else {
+			data = "error address"
+		}
+		c.sendToMyself(msg.Type, status, data)
+		sendType = enum.SendTargetType_SendToSomeone
+	case enum.MsgType_Core_BalanceByAddress:
+		address := gjson.Get(msg.Data, "address").String()
+		if tool.CheckIsString(&address) {
+			balance, err := client.GetBalanceByAddress(address)
+			if err != nil {
+				data = err.Error()
+			} else {
+				data = balance.String()
+				status = true
+			}
+		} else {
+			data = "error address"
+		}
+		c.sendToMyself(msg.Type, status, data)
+		sendType = enum.SendTargetType_SendToSomeone
+	case enum.MsgType_Core_BtcCreateAndSignRawTransaction:
+		fromBitCoinAddress := gjson.Get(msg.Data, "fromBitCoinAddress").String()
+		toBitCoinAddress := gjson.Get(msg.Data, "toBitCoinAddress").String()
+		amount := gjson.Get(msg.Data, "amount").Float()
+		minerFee := gjson.Get(msg.Data, "minerFee").Float()
+		if tool.CheckIsString(&fromBitCoinAddress) &&
+			tool.CheckIsString(&toBitCoinAddress) {
+			txid, hex, err := client.BtcCreateAndSignRawTransaction(fromBitCoinAddress, nil, []rpc.TransactionOutputItem{{toBitCoinAddress, amount}}, minerFee, nil)
+			node := make(map[string]interface{})
+			node["txid"] = txid
+			node["hex"] = hex
+
+			if err != nil {
+				data = err.Error()
+			} else {
+				bytes, _ := json.Marshal(node)
+				data = string(bytes)
+				status = true
+			}
+		} else {
+			data = "error address"
+		}
+		c.sendToMyself(msg.Type, status, data)
+		sendType = enum.SendTargetType_SendToSomeone
+
 	}
 	return sendType, []byte(data), status
 }

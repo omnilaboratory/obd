@@ -2,10 +2,12 @@ package rpc
 
 import (
 	"LightningOnOmni/config"
+	"LightningOnOmni/tool"
 	"errors"
 	"github.com/shopspring/decimal"
 	"github.com/tidwall/gjson"
 	"log"
+	"math"
 )
 
 func (client *Client) CreateMultiSig(minSignNum int, keys []string) (result string, err error) {
@@ -29,13 +31,26 @@ func (client *Client) GetNewAddress(label string) (address string, err error) {
 }
 
 func (client *Client) ListUnspent(address string) (result string, err error) {
-	if len(address) < 1 {
+	if tool.CheckIsString(&address) == false {
 		return "", errors.New("address not exist")
 	}
 	keys := []string{
 		address,
 	}
-	return client.send("listunspent", []interface{}{0, 999999, keys})
+	return client.send("listunspent", []interface{}{0, math.MaxInt32, keys})
+}
+func (client *Client) GetBalanceByAddress(address string) (balance decimal.Decimal, err error) {
+	result, err := client.ListUnspent(address)
+	balance = decimal.NewFromFloat(0)
+	if err != nil {
+		return balance, err
+	}
+	array := gjson.Parse(result).Array()
+	for _, item := range array {
+		amount := item.Get("amount").Float()
+		balance = balance.Add(decimal.NewFromFloat(amount))
+	}
+	return balance, nil
 }
 
 func (client *Client) CreateRawTransaction(inputs []map[string]interface{}, outputs map[string]float64) (result string, err error) {
@@ -98,33 +113,49 @@ func (client *Client) Importaddress(address string) (err error) {
 	return nil
 }
 
+type TransactionOutputItem struct {
+	ToBitCoinAddress string
+	Amount           float64
+}
+
 // create a transaction and just signnature , not send to the network,get the hash of signature
-func (client *Client) BtcCreateAndSignRawTransaction(fromBitCoinAddress string, privkeys []string, toBitCoinAddress string, amount float64, minerFee float64, sequence *int) (hex string, err error) {
+func (client *Client) BtcCreateAndSignRawTransaction(fromBitCoinAddress string, privkeys []string, outputItems []TransactionOutputItem, minerFee float64, sequence *int) (txid string, hex string, err error) {
 	if len(fromBitCoinAddress) < 1 {
-		return "", errors.New("fromBitCoinAddress is empty")
+		return "", "", errors.New("fromBitCoinAddress is empty")
 	}
-	if len(toBitCoinAddress) < 1 {
-		return "", errors.New("toBitCoinAddress is empty")
+	if len(outputItems) < 1 {
+		return "", "", errors.New("toBitCoinAddress is empty")
 	}
-	if amount < config.Dust {
-		return "", errors.New("wrong amount")
+
+	amount := decimal.NewFromFloat(0)
+	for _, item := range outputItems {
+		amount = amount.Add(decimal.NewFromFloat(item.Amount))
 	}
+
+	if amount.LessThan(decimal.NewFromFloat(config.Dust)) {
+		return "", "", errors.New("wrong amount")
+	}
+
+	if minerFee <= 0 {
+		minerFee = 0.00003
+	}
+
 	if minerFee < config.Dust {
-		return "", errors.New("minerFee too small")
+		return "", "", errors.New("minerFee too small")
 	}
 	result, err := client.ListUnspent(fromBitCoinAddress)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	array := gjson.Parse(result).Array()
 	if len(array) == 0 {
-		return "", errors.New("empty balance")
+		return "", "", errors.New("empty balance")
 	}
 	log.Println("listunspent", array)
 
 	fee := minerFee
-	out, _ := decimal.NewFromFloat(fee).Add(decimal.NewFromFloat(amount)).Float64()
+	out, _ := decimal.NewFromFloat(fee).Add(amount).Float64()
 
 	balance := 0.0
 	scriptPubKey := ""
@@ -152,18 +183,20 @@ func (client *Client) BtcCreateAndSignRawTransaction(fromBitCoinAddress string, 
 	log.Println("input list ", inputs)
 
 	if len(inputs) == 0 || balance < out {
-		return "", errors.New("not enough balance")
+		return "", "", errors.New("not enough balance")
 	}
 
 	drawback, _ := decimal.NewFromFloat(balance).Sub(decimal.NewFromFloat(out)).Float64()
 	output := make(map[string]float64)
-	output[toBitCoinAddress] = amount
+	for _, item := range outputItems {
+		output[item.ToBitCoinAddress] = item.Amount
+	}
 	output[fromBitCoinAddress] = drawback
 
 	hex, err = client.CreateRawTransaction(inputs, output)
 
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	log.Println("CreateRawTransaction", hex)
@@ -179,18 +212,19 @@ func (client *Client) BtcCreateAndSignRawTransaction(fromBitCoinAddress string, 
 		privkeys = nil
 	}
 	signHex, _ := client.SignRawTransactionWithKey(hex, privkeys, inputs, "ALL")
+	log.Println("SignRawTransactionWithKey", signHex)
 
 	hex = gjson.Get(signHex, "hex").String()
 	log.Println("SignRawTransactionWithKey", hex)
 	decodeHex, _ = client.DecodeRawTransaction(hex)
+	txid = gjson.Get(decodeHex, "txid").String()
 	log.Println("DecodeRawTransaction", decodeHex)
-
-	return hex, err
+	return txid, hex, err
 }
 
 // create a transaction and signature and send to the network
-func (client *Client) BtcCreateAndSignAndSendRawTransaction(fromBitCoinAddress string, privkeys []string, toBitCoinAddress string, amount float64, minerFee float64, sequence *int) (txId string, err error) {
-	hex, err := client.BtcCreateAndSignRawTransaction(fromBitCoinAddress, privkeys, toBitCoinAddress, amount, minerFee, sequence)
+func (client *Client) BtcCreateAndSignAndSendRawTransaction(fromBitCoinAddress string, privkeys []string, outputItems []TransactionOutputItem, minerFee float64, sequence *int) (txId string, err error) {
+	_, hex, err := client.BtcCreateAndSignRawTransaction(fromBitCoinAddress, privkeys, outputItems, minerFee, sequence)
 	if err != nil {
 		return "", err
 	}

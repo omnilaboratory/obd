@@ -78,7 +78,7 @@ func (c *Client) Read() {
 
 		// check the Recipient is online
 		if tool.CheckIsString(&msg.RecipientPeerId) {
-			_, err := c.findUser(&msg.RecipientPeerId)
+			_, err := c.FindUser(&msg.RecipientPeerId)
 			if err != nil {
 				c.sendToMyself(msg.Type, true, "can not find target user")
 				continue
@@ -218,9 +218,9 @@ func (c *Client) sendToSomeone(msgType enum.MsgType, status bool, recipientPeerI
 			}
 		}
 	}
-	return errors.New("recipient not exist")
+	return errors.New("recipient not exist or online")
 }
-func (c *Client) findUser(peerId *string) (client *Client, err error) {
+func (c *Client) FindUser(peerId *string) (client *Client, err error) {
 	if tool.CheckIsString(peerId) {
 		for client := range GlobalWsClientManager.Clients_map {
 			if client.User != nil && client.User.PeerId == *peerId && GlobalWsClientManager.Clients_map[client] {
@@ -228,5 +228,5 @@ func (c *Client) findUser(peerId *string) (client *Client, err error) {
 			}
 		}
 	}
-	return nil, errors.New("user not exist")
+	return nil, errors.New("user not exist or online")
 }

@@ -115,8 +115,13 @@ func (c *channelManager) GetChannelByTemporaryChanId(jsonData string) (node *dao
 	for index, value := range array {
 		tempChanId[index] = byte(value.Num)
 	}
+	return c.GetChannelByTemporaryChanIdArray(tempChanId)
+}
+
+// GetChannelByTemporaryChanIdArray
+func (c *channelManager) GetChannelByTemporaryChanIdArray(chanId chainhash.Hash) (node *dao.ChannelInfo, err error) {
 	node = &dao.ChannelInfo{}
-	err = db.Select(q.Eq("TemporaryChannelId", tempChanId)).First(node)
+	err = db.Select(q.Eq("TemporaryChannelId", chanId)).First(node)
 	return node, err
 }
 

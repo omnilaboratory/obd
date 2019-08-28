@@ -66,15 +66,17 @@ type CloseChannel struct {
 type FundingCreated struct {
 	TemporaryChannelId chainhash.Hash `json:"temporary_channel_id"`
 	FunderPubKey       string         `json:"funder_pub_key"`
+	FunderPubKey2      string         `json:"funder_pub_key2"`
 	PropertyId         int64          `json:"property_id"`
 	MaxAssets          float64        `json:"max_assets"`
 	AmountA            float64        `json:"amount_a"`
+	FundingTxid        string         `json:"funding_txid"`
+	FundingOutputIndex uint32         `json:"funding_output_index"`
 }
 
 //type: -35 (funding_signed)
 type FundingSigned struct {
-	//the same as the temporary_channel_id in the open_channel message
-	TemporaryChannelId chainhash.Hash `json:"temporary_channel_id"`
+	ChannelId ChannelID `json:"channel_id"`
 	//the omni address of funder Alice
 	FunderPubKey string `json:"funder_pub_key"`
 	// the id of the Omni asset
@@ -86,14 +88,13 @@ type FundingSigned struct {
 	//amount of the asset on Bob side
 	AmountB float64 `json:"amount_b"`
 	//signature of fundee Bob
-	FundeeSignature chainhash.Signature `json:"fundee_signature"`
+	FundeeSignature string `json:"fundee_signature"`
 	//redeem script used to generate P2SH address
 	RedeemScript string `json:"redeem_script"`
 	//hash of redeemScript
 	P2shAddress string `json:"p2sh_address"`
 	//final global channel id generated
-	ChannelId ChannelID `json:"channel_id"`
-	Attitude  bool      `json:"attitude"`
+	Attitude bool `json:"attitude"`
 }
 
 //type: -351 (commitment_tx)
