@@ -162,8 +162,8 @@ func (service *fundingTransactionManager) FundingTransactionSign(jsonData string
 		return nil, errors.New("wrong ChannelId")
 	}
 
-	var node = &dao.FundingTransaction{}
-	err = db.One("ChannelId", data.ChannelId, node)
+	var fundingTransaction = &dao.FundingTransaction{}
+	err = db.One("ChannelId", data.ChannelId, fundingTransaction)
 	if err != nil {
 		return nil, err
 	}
@@ -171,14 +171,14 @@ func (service *fundingTransactionManager) FundingTransactionSign(jsonData string
 		if len(data.FundeeSignature) == 0 {
 			return nil, errors.New("wrong FundeeSignature")
 		}
-		node.AmountB = data.AmountB
+		fundingTransaction.AmountB = data.AmountB
 		// temp storage private key of bob use to create C1
-		node.FundeeSignature = data.FundeeSignature
-		node.CurrState = dao.FundingTransactionState_Accept
+		fundingTransaction.FundeeSignature = data.FundeeSignature
+		fundingTransaction.CurrState = dao.FundingTransactionState_Accept
 	} else {
-		node.CurrState = dao.FundingTransactionState_Defuse
+		fundingTransaction.CurrState = dao.FundingTransactionState_Defuse
 	}
-	node.FundeeSignAt = time.Now()
+	fundingTransaction.FundeeSignAt = time.Now()
 
 	tx, _ := db.Begin(true)
 	defer tx.Rollback()
@@ -250,9 +250,9 @@ func (service *fundingTransactionManager) FundingTransactionSign(jsonData string
 		rdTransaction.CurrState = dao.TxInfoState_OtherSign
 		_ = tx.Save(rdTransaction)
 	}
-	err = tx.Update(node)
+	err = tx.Update(fundingTransaction)
 	tx.Commit()
-	return node, err
+	return fundingTransaction, err
 }
 
 func (service *fundingTransactionManager) ItemByTempId(jsonData string) (node *dao.FundingTransaction, err error) {
