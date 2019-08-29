@@ -93,20 +93,16 @@ type FundingSigned struct {
 	RedeemScript string `json:"redeem_script"`
 	//hash of redeemScript
 	P2shAddress string `json:"p2sh_address"`
-	//final global channel id generated
-	Attitude bool `json:"attitude"`
+	Attitude    bool   `json:"attitude"`
 }
 
 //type: -351 (commitment_tx)
 type CommitmentTx struct {
-	//the global channel id.
-	ChannelId ChannelID `json:"channel_id"`
-	//the id of the Omni asset
-	PropertyId int `json:"property_id"`
-	//amount of the payment
-	Amount float64 `json:"amount"`
-	//private key of Alice2, encrypted by Bob's public key
-	EncrptedAlice2PrivateKey string `json:"encrpted_alice2_private_key"`
+	ChannelId                ChannelID `json:"channel_id"`  //the global channel id.
+	PropertyId               int       `json:"property_id"` //the id of the Omni asset
+	Amount                   float64   `json:"amount"`      //amount of the payment
+	TempPubKey               string    `json:"temp_pub_key"`
+	EncrptedAlice2PrivateKey string    `json:"encrpted_alice2_private_key"` //private key of Alice2, encrypted by Bob's public key
 }
 
 //type: -352 (commitment_tx_signed)
@@ -119,6 +115,7 @@ type CommitmentTxSigned struct {
 	Amount float64 `json:"amount"`
 	//signature of Bob.
 	ReceiverSignature string `json:"receiver_signature"`
+	Attitude          bool   `json:"attitude"`
 }
 
 //type: -353 (get_balance_request)

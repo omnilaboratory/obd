@@ -2,7 +2,7 @@ package main
 
 import (
 	"LightningOnOmni/config"
-	"LightningOnOmni/routers"
+	"LightningOnOmni/lightclient"
 	"google.golang.org/grpc"
 	"log"
 	"net/http"
@@ -26,7 +26,7 @@ func main() {
 	//defer conn.Close()
 	//routersInit := routers.InitRouter(conn)
 
-	routersInit := routers.InitRouter(nil)
+	routersInit := lightclient.InitRouter(nil)
 	addr := ":" + strconv.Itoa(config.ServerPort)
 	server := &http.Server{
 		Addr:           addr,

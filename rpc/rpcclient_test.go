@@ -33,7 +33,7 @@ func TestClient_GetBlockCount(t *testing.T) {
 	//result, err := client.Omni_gettransaction("1f35a5a0d166fef6b2e24b321efa1108a01e6ea1205397bc96613fb73b902d18")
 	//result, err := client.Omni_listtransactions()
 	var keys []string
-	_, result, err := client.BtcCreateAndSignRawTransaction("n1Grf4JGHUC2CdHHoDRYb7jbVKU2Fv8Tsn", keys, []TransactionOutputItem{{ToBitCoinAddress: "n4bJvpVHks3Fz9wWB9f445LGV5xTS6LGpA", Amount: 0.0001}}, 0.00001, nil)
+	_, result, err := client.BtcCreateAndSignRawTransaction("n1Grf4JGHUC2CdHHoDRYb7jbVKU2Fv8Tsn", keys, []TransactionOutputItem{{ToBitCoinAddress: "n4bJvpVHks3Fz9wWB9f445LGV5xTS6LGpA", Amount: 0.0001}}, 0.00001, 0)
 	if err != nil {
 		log.Println(err)
 		return
@@ -85,7 +85,7 @@ func TestClient_GetTransactionById(t *testing.T) {
 
 func TestClient_GetMiningInfo(t *testing.T) {
 	client := NewClient()
-	result, err := client.GetBlockCount()
+	result, err := client.GetNetworkInfo()
 	if err != nil {
 		log.Println(err)
 		return

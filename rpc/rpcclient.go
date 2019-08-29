@@ -99,9 +99,10 @@ func (client *Client) send(method string, params []interface{}) (result string, 
 			rawParams = append(rawParams, marshaledParam)
 		}
 	}
+	//method = "./omnicore-cli -conf=/root/.bitcoin/omnicore18data/bitcoin.conf "+method
 	log.Println("request to Rpc server:", method, params)
 	req := &Request{
-		Jsonrpc: "1.0",
+		Jsonrpc: "2.0",
 		ID:      client.NextID(),
 		Method:  method,
 		Params:  rawParams,

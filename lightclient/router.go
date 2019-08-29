@@ -1,4 +1,4 @@
-package routers
+package lightclient
 
 import (
 	"LightningOnOmni/grpcpack"

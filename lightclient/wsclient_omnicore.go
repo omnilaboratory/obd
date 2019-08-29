@@ -1,4 +1,4 @@
-package routers
+package lightclient
 
 import (
 	"LightningOnOmni/bean"
@@ -131,7 +131,7 @@ func (c *Client) omniCoreModule(msg bean.RequestMessage) (enum.SendTargetType, [
 		minerFee := gjson.Get(msg.Data, "minerFee").Float()
 		if tool.CheckIsString(&fromBitCoinAddress) &&
 			tool.CheckIsString(&toBitCoinAddress) {
-			txid, hex, err := client.BtcCreateAndSignRawTransaction(fromBitCoinAddress, nil, []rpc.TransactionOutputItem{{toBitCoinAddress, amount}}, minerFee, nil)
+			txid, hex, err := client.BtcCreateAndSignRawTransaction(fromBitCoinAddress, nil, []rpc.TransactionOutputItem{{toBitCoinAddress, amount}}, minerFee, 0)
 			node := make(map[string]interface{})
 			node["txid"] = txid
 			node["hex"] = hex

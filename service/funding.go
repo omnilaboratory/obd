@@ -96,61 +96,6 @@ func (service *fundingTransactionManager) CreateFundingTx(jsonData string, user 
 	return fundingTransaction, err
 }
 
-func createCommitmentATx(channelInfo *dao.ChannelInfo, fundingTransaction *dao.FundingTransaction, user *bean.User) (*dao.CommitmentTxInfo, error) {
-	commitmentTxInfo := &dao.CommitmentTxInfo{}
-	commitmentTxInfo.PeerIdA = channelInfo.PeerIdA
-	commitmentTxInfo.PeerIdB = channelInfo.PeerIdB
-	commitmentTxInfo.ChannelId = channelInfo.ChannelId
-	commitmentTxInfo.PropertyId = fundingTransaction.PropertyId
-	commitmentTxInfo.CreateSide = 0
-
-	//input
-	commitmentTxInfo.InputTxid = fundingTransaction.FundingTxid
-	commitmentTxInfo.InputVout = fundingTransaction.FundingOutputIndex
-	commitmentTxInfo.InputAmount = fundingTransaction.AmountA + fundingTransaction.AmountB
-
-	//output
-	commitmentTxInfo.PubKeyA2 = fundingTransaction.FunderPubKey2ForCommitment
-	commitmentTxInfo.PubKeyB = channelInfo.PubKeyB
-	multiAddr, err := rpcClient.CreateMultiSig(2, []string{commitmentTxInfo.PubKeyA2, commitmentTxInfo.PubKeyB})
-	if err != nil {
-		return nil, err
-	}
-	commitmentTxInfo.MultiAddress = gjson.Get(multiAddr, "address").String()
-	commitmentTxInfo.RedeemScript = gjson.Get(multiAddr, "redeemScript").String()
-	commitmentTxInfo.AmountM = fundingTransaction.AmountA
-	commitmentTxInfo.AmountB = fundingTransaction.AmountB
-
-	commitmentTxInfo.CreateBy = user.PeerId
-	commitmentTxInfo.CreateAt = time.Now()
-	commitmentTxInfo.LastEditTime = time.Now()
-
-	return commitmentTxInfo, nil
-}
-func createRDaTx(channelInfo *dao.ChannelInfo, commitmentTxInfo *dao.CommitmentTxInfo, user *bean.User) (*dao.RevocableDeliveryTransaction, error) {
-	rda := &dao.RevocableDeliveryTransaction{}
-	rda.PeerIdA = channelInfo.PeerIdA
-	rda.PeerIdB = channelInfo.PeerIdB
-	rda.ChannelId = channelInfo.ChannelId
-	rda.PropertyId = commitmentTxInfo.PropertyId
-	rda.CreateSide = 0
-
-	//input
-	rda.InputTxid = commitmentTxInfo.Txid
-	rda.InputVout = 0
-	rda.InputAmount = commitmentTxInfo.AmountM
-	//output
-	rda.PubKeyA = channelInfo.PubKeyA
-	rda.Sequnence = 1000
-	rda.Amount = commitmentTxInfo.AmountM
-
-	rda.CreateBy = user.PeerId
-	rda.CreateAt = time.Now()
-	rda.LastEditTime = time.Now()
-
-	return rda, nil
-}
-
 func (service *fundingTransactionManager) FundingTransactionSign(jsonData string, user *bean.User) (signed *dao.FundingTransaction, err error) {
 	data := &bean.FundingSigned{}
 	err = json.Unmarshal([]byte(jsonData), data)
@@ -191,7 +136,10 @@ func (service *fundingTransactionManager) FundingTransactionSign(jsonData string
 		}
 
 		fundingTransaction := &dao.FundingTransaction{}
-		_ = db.Select(q.Eq("ChannelId", data.ChannelId)).First(fundingTransaction)
+		err = tx.Select(q.Eq("ChannelId", data.ChannelId)).First(fundingTransaction)
+		if err != nil {
+			return nil, err
+		}
 
 		// create C1a tx
 		commitmentTxInfo, err := createCommitmentATx(channelInfo, fundingTransaction, user)
@@ -212,7 +160,7 @@ func (service *fundingTransactionManager) FundingTransactionSign(jsonData string
 				{commitmentTxInfo.PubKeyB, commitmentTxInfo.AmountB},
 			},
 			0,
-			nil)
+			0)
 		if err != nil {
 			return nil, err
 		}
@@ -240,7 +188,7 @@ func (service *fundingTransactionManager) FundingTransactionSign(jsonData string
 				{rdTransaction.PubKeyA, rdTransaction.Amount},
 			},
 			0,
-			&rdTransaction.Sequnence)
+			rdTransaction.Sequnence)
 		if err != nil {
 			return nil, err
 		}

@@ -1,4 +1,4 @@
-package routers
+package lightclient
 
 import (
 	"LightningOnOmni/bean"
@@ -16,7 +16,7 @@ func (c *Client) commitmentTxModule(msg bean.RequestMessage) (enum.SendTargetTyp
 	data := ""
 	switch msg.Type {
 	case enum.MsgType_CommitmentTx_Edit:
-		node, err := service.CommitmentTxService.Edit(msg.Data)
+		node, targetUser, err := service.CommitmentTxService.CreateNewCommitmentTxRequest(msg.Data, c.User)
 		if err != nil {
 			data = err.Error()
 		} else {
@@ -27,6 +27,9 @@ func (c *Client) commitmentTxModule(msg bean.RequestMessage) (enum.SendTargetTyp
 				data = string(bytes)
 				status = true
 			}
+		}
+		if targetUser != nil && status {
+			c.sendToSomeone(msg.Type, status, *targetUser, data)
 		}
 		c.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
@@ -126,7 +129,7 @@ func (c *Client) commitmentTxSignModule(msg bean.RequestMessage) (enum.SendTarge
 
 	switch msg.Type {
 	case enum.MsgType_CommitmentTxSigned_Edit:
-		node, err := service.CommitTxSignedService.Edit(msg.Data)
+		node, _, err := service.CommitTxSignedService.CommitmentTxSign(msg.Data, c.User)
 		if err != nil {
 			data = err.Error()
 		} else {

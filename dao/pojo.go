@@ -149,6 +149,7 @@ type BreachRemedyTransaction struct {
 	TxHexFirstSign string         `json:"tx_hex_first_sign"` // first alice2 sign
 	TxHexEndSign   string         `json:"tx_hex_end_sign"`   // end bob sign
 	Txid           string         `json:"txid"`
+	CurrState      TxInfoState    `json:"curr_state"`
 	CreateBy       string         `json:"create_by"`
 	CreateAt       time.Time      `json:"create_at"`
 	FirstSignAt    time.Time      `json:"first_sign_at"`
