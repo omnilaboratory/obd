@@ -16,7 +16,7 @@ func (c *Client) commitmentTxModule(msg bean.RequestMessage) (enum.SendTargetTyp
 	data := ""
 	switch msg.Type {
 	case enum.MsgType_CommitmentTx_Edit:
-		node, err := service.CommitTxService.Edit(msg.Data)
+		node, err := service.CommitmentTxService.Edit(msg.Data)
 		if err != nil {
 			data = err.Error()
 		} else {
@@ -31,7 +31,7 @@ func (c *Client) commitmentTxModule(msg bean.RequestMessage) (enum.SendTargetTyp
 		c.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_CommitmentTx_ItemByChanId:
-		nodes, count, err := service.CommitTxService.GetItemsByChannelId(msg.Data)
+		nodes, count, err := service.CommitmentTxService.GetItemsByChannelId(msg.Data)
 		log.Println(*count)
 		if err != nil {
 			data = err.Error()
@@ -47,7 +47,7 @@ func (c *Client) commitmentTxModule(msg bean.RequestMessage) (enum.SendTargetTyp
 		c.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_CommitmentTx_ItemById:
-		nodes, err := service.CommitTxService.GetItemById(int(gjson.Parse(msg.Data).Int()))
+		nodes, err := service.CommitmentTxService.GetItemById(int(gjson.Parse(msg.Data).Int()))
 		if err != nil {
 			data = err.Error()
 		} else {
@@ -62,7 +62,32 @@ func (c *Client) commitmentTxModule(msg bean.RequestMessage) (enum.SendTargetTyp
 		c.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_CommitmentTx_Count:
-		count, err := service.CommitTxService.TotalCount()
+		count, err := service.CommitmentTxService.TotalCount()
+		if err != nil {
+			data = err.Error()
+		} else {
+			data = strconv.Itoa(count)
+			status = true
+		}
+		c.sendToMyself(msg.Type, status, data)
+		sendType = enum.SendTargetType_SendToSomeone
+	case enum.MsgType_CommitmentTx_NewestRDByChanId:
+		node, err := service.CommitmentTxService.GetNewestRDTxByChannelId(msg.Data, c.User)
+		if err != nil {
+			data = err.Error()
+		} else {
+			bytes, err := json.Marshal(node)
+			if err != nil {
+				data = err.Error()
+			} else {
+				data = string(bytes)
+				status = true
+			}
+		}
+		c.sendToMyself(msg.Type, status, data)
+		sendType = enum.SendTargetType_SendToSomeone
+	case enum.MsgType_CommitmentTx_NewestBRByChanId:
+		count, err := service.CommitmentTxService.TotalCount()
 		if err != nil {
 			data = err.Error()
 		} else {

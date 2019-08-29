@@ -163,7 +163,6 @@ func (client *Client) BtcCreateAndSignRawTransaction(fromBitCoinAddress string, 
 	out, _ := decimal.NewFromFloat(fee).Add(amount).Float64()
 
 	balance := 0.0
-	scriptPubKey := ""
 	var inputs []map[string]interface{}
 	for _, item := range array {
 		node := make(map[string]interface{})
@@ -174,9 +173,6 @@ func (client *Client) BtcCreateAndSignRawTransaction(fromBitCoinAddress string, 
 		}
 		if sequence != nil {
 			node["sequence"] = sequence
-		}
-		if scriptPubKey == "" {
-			scriptPubKey = item.Get("scriptPubKey").String()
 		}
 		inputs = append(inputs, node)
 
@@ -194,7 +190,9 @@ func (client *Client) BtcCreateAndSignRawTransaction(fromBitCoinAddress string, 
 	drawback, _ := decimal.NewFromFloat(balance).Sub(decimal.NewFromFloat(out)).Float64()
 	output := make(map[string]float64)
 	for _, item := range outputItems {
-		output[item.ToBitCoinAddress] = item.Amount
+		if item.Amount > 0 {
+			output[item.ToBitCoinAddress] = item.Amount
+		}
 	}
 	output[fromBitCoinAddress] = drawback
 
@@ -207,23 +205,22 @@ func (client *Client) BtcCreateAndSignRawTransaction(fromBitCoinAddress string, 
 	log.Println("CreateRawTransaction", hex)
 
 	decodeHex, _ := client.DecodeRawTransaction(hex)
-	log.Println("DecodeRawTransaction", decodeHex)
-
-	for _, item := range inputs {
-		item["scriptPubKey"] = scriptPubKey
-	}
+	log.Println("CreateRawTransaction DecodeRawTransaction", decodeHex)
 
 	if privkeys == nil || len(privkeys) == 0 {
 		privkeys = nil
 	}
-	signHex, _ := client.SignRawTransactionWithKey(hex, privkeys, inputs, "ALL")
+	signHex, err := client.SignRawTransactionWithKey(hex, privkeys, nil, "ALL")
+	if err != nil {
+		return "", "", err
+	}
 	log.Println("SignRawTransactionWithKey", signHex)
 
 	hex = gjson.Get(signHex, "hex").String()
 	log.Println("SignRawTransactionWithKey", hex)
 	decodeHex, _ = client.DecodeRawTransaction(hex)
 	txid = gjson.Get(decodeHex, "txid").String()
-	log.Println("DecodeRawTransaction", decodeHex)
+	log.Println("SignRawTransactionWithKey DecodeRawTransaction", decodeHex)
 	return txid, hex, err
 }
 
@@ -253,7 +250,6 @@ func (client *Client) BtcCreateAndSignRawTransactionFromUnsendTx(fromBitCoinAddr
 	}
 
 	balance := 0.0
-	//scriptPubKey := ""
 	var inputs []map[string]interface{}
 	for _, item := range inputItems {
 		node := make(map[string]interface{})
@@ -284,7 +280,9 @@ func (client *Client) BtcCreateAndSignRawTransactionFromUnsendTx(fromBitCoinAddr
 	drawback, _ := decimal.NewFromFloat(balance).Sub(decimal.NewFromFloat(out)).Float64()
 	output := make(map[string]float64)
 	for _, item := range outputItems {
-		output[item.ToBitCoinAddress] = item.Amount
+		if item.Amount > 0 {
+			output[item.ToBitCoinAddress] = item.Amount
+		}
 	}
 	if drawback > 0 {
 		output[fromBitCoinAddress] = drawback
@@ -299,11 +297,7 @@ func (client *Client) BtcCreateAndSignRawTransactionFromUnsendTx(fromBitCoinAddr
 	log.Println("CreateRawTransaction", hex)
 
 	decodeHex, _ := client.DecodeRawTransaction(hex)
-	log.Println("DecodeRawTransaction", decodeHex)
-
-	//for _, item := range inputs {
-	//	item["scriptPubKey"] = scriptPubKey
-	//}
+	log.Println("CreateRawTransaction DecodeRawTransaction", decodeHex)
 
 	if privkeys == nil || len(privkeys) == 0 {
 		privkeys = nil
@@ -318,7 +312,7 @@ func (client *Client) BtcCreateAndSignRawTransactionFromUnsendTx(fromBitCoinAddr
 	log.Println("SignRawTransactionWithKey", hex)
 	decodeHex, _ = client.DecodeRawTransaction(hex)
 	txid = gjson.Get(decodeHex, "txid").String()
-	log.Println("DecodeRawTransaction", decodeHex)
+	log.Println("SignRawTransactionWithKey DecodeRawTransaction", decodeHex)
 	return txid, hex, err
 }
 

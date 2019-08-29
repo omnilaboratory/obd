@@ -12,7 +12,7 @@ import (
 
 type commitTxManager struct{}
 
-var CommitTxService commitTxManager
+var CommitmentTxService commitTxManager
 
 func (service *commitTxManager) Edit(jsonData string) (node *dao.CommitmentTxInfo, err error) {
 	if len(jsonData) == 0 {
@@ -33,6 +33,20 @@ func (service *commitTxManager) Edit(jsonData string) (node *dao.CommitmentTxInf
 	}
 	node.CreateAt = time.Now()
 	err = db.Save(node)
+	return node, err
+}
+
+func (service *commitTxManager) GetNewestRDTxByChannelId(jsonData string, user *bean.User) (node *dao.RevocableDeliveryTransaction, err error) {
+	var chanId bean.ChannelID
+	array := gjson.Get(jsonData, "channel_id").Array()
+	if len(array) != 32 {
+		return nil, errors.New("wrong channel_id")
+	}
+	for index, value := range array {
+		chanId[index] = byte(value.Num)
+	}
+	node = &dao.RevocableDeliveryTransaction{}
+	err = db.Select(q.Eq("ChannelId", chanId), q.Or(q.Eq("PeerIdA", user.PeerId), q.Eq("PeerIdB", user.PeerId))).OrderBy("CreateAt").Reverse().First(node)
 	return node, err
 }
 

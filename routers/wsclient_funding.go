@@ -148,7 +148,7 @@ func (c *Client) fundingSignModule(msg bean.RequestMessage) (enum.SendTargetType
 	//get openChannelReq from funder then send to fundee
 	// create a funding tx
 	case enum.MsgType_FundingSign_Edit:
-		signed, err := service.FundingTransactionService.FundingTransactionSign(msg.Data)
+		signed, err := service.FundingTransactionService.FundingTransactionSign(msg.Data, c.User)
 		if err != nil {
 			data = err.Error()
 		}

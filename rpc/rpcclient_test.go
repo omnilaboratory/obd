@@ -85,7 +85,7 @@ func TestClient_GetTransactionById(t *testing.T) {
 
 func TestClient_GetMiningInfo(t *testing.T) {
 	client := NewClient()
-	result, err := client.GetNetworkInfo()
+	result, err := client.GetBlockCount()
 	if err != nil {
 		log.Println(err)
 		return

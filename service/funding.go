@@ -18,7 +18,7 @@ type fundingTransactionManager struct{}
 var FundingTransactionService fundingTransactionManager
 
 //funder request to fund to the multiAddr (channel)
-func (service *fundingTransactionManager) CreateFundingTx(jsonData string, user *bean.User) (node *dao.FundingTransaction, err error) {
+func (service *fundingTransactionManager) CreateFundingTx(jsonData string, user *bean.User) (fundingTransaction *dao.FundingTransaction, err error) {
 	data := &bean.FundingCreated{}
 	err = json.Unmarshal([]byte(jsonData), data)
 	if err != nil {
@@ -29,8 +29,8 @@ func (service *fundingTransactionManager) CreateFundingTx(jsonData string, user 
 		return nil, errors.New("wrong TemporaryChannelId")
 	}
 
-	node = &dao.FundingTransaction{}
-	count, _ := db.Select(q.Eq("TemporaryChannelId", data.TemporaryChannelId)).Count(node)
+	fundingTransaction = &dao.FundingTransaction{}
+	count, _ := db.Select(q.Eq("TemporaryChannelId", data.TemporaryChannelId)).Count(fundingTransaction)
 	if count == 0 {
 		if tool.CheckIsString(&data.FundingTxid) == false {
 			return nil, errors.New("wrong FundingTxid")
@@ -41,13 +41,13 @@ func (service *fundingTransactionManager) CreateFundingTx(jsonData string, user 
 		if err != nil {
 			return nil, err
 		}
-		node.TemporaryChannelId = data.TemporaryChannelId
-		node.PropertyId = data.PropertyId
-		node.PeerIdA = channelInfo.PeerIdA
-		node.PeerIdB = channelInfo.PeerIdB
+		fundingTransaction.TemporaryChannelId = data.TemporaryChannelId
+		fundingTransaction.PropertyId = data.PropertyId
+		fundingTransaction.PeerIdA = channelInfo.PeerIdA
+		fundingTransaction.PeerIdB = channelInfo.PeerIdB
 
-		node.ChannelPubKey = channelInfo.ChannelPubKey
-		node.RedeemScript = channelInfo.RedeemScript
+		fundingTransaction.ChannelPubKey = channelInfo.ChannelPubKey
+		fundingTransaction.RedeemScript = channelInfo.RedeemScript
 
 		if user.PeerId == channelInfo.PeerIdA {
 			if data.FunderPubKey != channelInfo.PubKeyA {
@@ -61,75 +61,97 @@ func (service *fundingTransactionManager) CreateFundingTx(jsonData string, user 
 		}
 
 		if data.FunderPubKey == channelInfo.PubKeyA {
-			node.FunderPubKey = channelInfo.PubKeyA
-			node.FundeePubKey = channelInfo.PubKeyB
+			fundingTransaction.FunderPubKey = channelInfo.PubKeyA
+			fundingTransaction.FundeePubKey = channelInfo.PubKeyB
 		} else {
-			node.FunderPubKey = channelInfo.PubKeyB
-			node.FundeePubKey = channelInfo.PubKeyA
+			fundingTransaction.FunderPubKey = channelInfo.PubKeyB
+			fundingTransaction.FundeePubKey = channelInfo.PubKeyA
 		}
-		node.AmountA = data.AmountA
-		node.FundingTxid = data.FundingTxid
-		node.FundingOutputIndex = data.FundingOutputIndex
+		fundingTransaction.AmountA = data.AmountA
+		fundingTransaction.FundingTxid = data.FundingTxid
+		fundingTransaction.FundingOutputIndex = data.FundingOutputIndex
+		fundingTransaction.FunderPubKey2ForCommitment = data.FunderPubKey2
 
-		hash, _ := chainhash.NewHashFromStr(node.FundingTxid)
+		hash, _ := chainhash.NewHashFromStr(fundingTransaction.FundingTxid)
 		op := &bean.OutPoint{
 			Hash:  *hash,
-			Index: node.FundingOutputIndex,
+			Index: fundingTransaction.FundingOutputIndex,
 		}
-		node.ChannelId = bean.ChannelIdService.NewChanIDFromOutPoint(op)
-		channelInfo.ChannelId = node.ChannelId
-
-		commitmentTxInfo, err := createCommitmentTx(channelInfo, data.PropertyId, data.AmountA, data.FunderPubKey2, user.PeerId)
-		if err != nil {
-			return nil, err
-		}
+		fundingTransaction.ChannelId = bean.ChannelIdService.NewChanIDFromOutPoint(op)
+		channelInfo.ChannelId = fundingTransaction.ChannelId
 
 		tx, _ := db.Begin(true)
 		defer tx.Rollback()
 
 		err = tx.Update(channelInfo)
-		node.CurrState = dao.FundingTransactionState_Create
-		node.CreateAt = time.Now()
-		err = tx.Save(node)
-		err = tx.Save(commitmentTxInfo)
+		fundingTransaction.CurrState = dao.FundingTransactionState_Create
+		fundingTransaction.CreateBy = user.PeerId
+		fundingTransaction.CreateAt = time.Now()
+		err = tx.Save(fundingTransaction)
 		tx.Commit()
 	} else {
-		_ = db.Select(q.Eq("TemporaryChannelId", data.TemporaryChannelId)).First(node)
+		_ = db.Select(q.Eq("TemporaryChannelId", data.TemporaryChannelId)).First(fundingTransaction)
 		err = nil
 	}
-	return node, err
+	return fundingTransaction, err
 }
 
-func createCommitmentTx(channelInfo *dao.ChannelInfo, propertyId int64, amountA float64, alice2 string, funderPeerId string) (*dao.CommitmentTxInfo, error) {
-	node := &dao.CommitmentTxInfo{}
-	node.PeerIdA = channelInfo.PeerIdA
-	node.PeerIdB = channelInfo.PeerIdB
-	node.ChannelId = channelInfo.ChannelId
-	node.PropertyId = propertyId
+func createCommitmentATx(channelInfo *dao.ChannelInfo, fundingTransaction *dao.FundingTransaction, user *bean.User) (*dao.CommitmentTxInfo, error) {
+	commitmentTxInfo := &dao.CommitmentTxInfo{}
+	commitmentTxInfo.PeerIdA = channelInfo.PeerIdA
+	commitmentTxInfo.PeerIdB = channelInfo.PeerIdB
+	commitmentTxInfo.ChannelId = channelInfo.ChannelId
+	commitmentTxInfo.PropertyId = fundingTransaction.PropertyId
+	commitmentTxInfo.CreateSide = 0
 
-	node.AmountM = amountA
-	node.PubKeyA = alice2
-	var addressB = channelInfo.PubKeyA
-	if channelInfo.PeerIdA == funderPeerId {
-		addressB = channelInfo.PubKeyB
-	}
-	node.PubKeyB = addressB
+	//input
+	commitmentTxInfo.InputTxid = fundingTransaction.FundingTxid
+	commitmentTxInfo.InputVout = fundingTransaction.FundingOutputIndex
+	commitmentTxInfo.InputAmount = fundingTransaction.AmountA + fundingTransaction.AmountB
 
-	multiAddr, err := rpcClient.CreateMultiSig(2, []string{alice2, addressB})
+	//output
+	commitmentTxInfo.PubKeyA2 = fundingTransaction.FunderPubKey2ForCommitment
+	commitmentTxInfo.PubKeyB = channelInfo.PubKeyB
+	multiAddr, err := rpcClient.CreateMultiSig(2, []string{commitmentTxInfo.PubKeyA2, commitmentTxInfo.PubKeyB})
 	if err != nil {
 		return nil, err
 	}
-	node.MultiAddress = gjson.Get(multiAddr, "address").String()
-	node.RedeemScript = gjson.Get(multiAddr, "redeemScript").String()
+	commitmentTxInfo.MultiAddress = gjson.Get(multiAddr, "address").String()
+	commitmentTxInfo.RedeemScript = gjson.Get(multiAddr, "redeemScript").String()
+	commitmentTxInfo.AmountM = fundingTransaction.AmountA
+	commitmentTxInfo.AmountB = fundingTransaction.AmountB
 
-	node.CurrState = dao.CommitmentTxInfoState_Create
-	node.CreateAt = time.Now()
-	node.LastEditTime = time.Now()
+	commitmentTxInfo.CreateBy = user.PeerId
+	commitmentTxInfo.CreateAt = time.Now()
+	commitmentTxInfo.LastEditTime = time.Now()
 
-	return node, nil
+	return commitmentTxInfo, nil
+}
+func createRDaTx(channelInfo *dao.ChannelInfo, commitmentTxInfo *dao.CommitmentTxInfo, user *bean.User) (*dao.RevocableDeliveryTransaction, error) {
+	rda := &dao.RevocableDeliveryTransaction{}
+	rda.PeerIdA = channelInfo.PeerIdA
+	rda.PeerIdB = channelInfo.PeerIdB
+	rda.ChannelId = channelInfo.ChannelId
+	rda.PropertyId = commitmentTxInfo.PropertyId
+	rda.CreateSide = 0
+
+	//input
+	rda.InputTxid = commitmentTxInfo.Txid
+	rda.InputVout = 0
+	rda.InputAmount = commitmentTxInfo.AmountM
+	//output
+	rda.PubKeyA = channelInfo.PubKeyA
+	rda.Sequnence = 1000
+	rda.Amount = commitmentTxInfo.AmountM
+
+	rda.CreateBy = user.PeerId
+	rda.CreateAt = time.Now()
+	rda.LastEditTime = time.Now()
+
+	return rda, nil
 }
 
-func (service *fundingTransactionManager) FundingTransactionSign(jsonData string) (signed *dao.FundingTransaction, err error) {
+func (service *fundingTransactionManager) FundingTransactionSign(jsonData string, user *bean.User) (signed *dao.FundingTransaction, err error) {
 	data := &bean.FundingSigned{}
 	err = json.Unmarshal([]byte(jsonData), data)
 	if err != nil {
@@ -168,34 +190,65 @@ func (service *fundingTransactionManager) FundingTransactionSign(jsonData string
 			return nil, err
 		}
 
-		commitmentTxInfo := &dao.CommitmentTxInfo{}
-		err := tx.Select(q.Eq("ChannelId", data.ChannelId)).OrderBy("CreateAt").Reverse().First(commitmentTxInfo)
-		if err != nil {
-			return nil, err
-		}
-
 		fundingTransaction := &dao.FundingTransaction{}
 		_ = db.Select(q.Eq("ChannelId", data.ChannelId)).First(fundingTransaction)
 
 		// create C1a tx
+		commitmentTxInfo, err := createCommitmentATx(channelInfo, fundingTransaction, user)
+		if err != nil {
+			return nil, err
+		}
+
 		txid, hex, err := rpcClient.BtcCreateAndSignRawTransactionFromUnsendTx(
 			channelInfo.ChannelPubKey,
 			[]string{
 				data.FundeeSignature,
 			},
 			[]rpc.TransactionInputItem{
-				{fundingTransaction.FundingTxid, fundingTransaction.FundingOutputIndex, fundingTransaction.AmountA},
+				{commitmentTxInfo.InputTxid, commitmentTxInfo.InputVout, commitmentTxInfo.InputAmount},
 			},
 			[]rpc.TransactionOutputItem{
 				{commitmentTxInfo.MultiAddress, commitmentTxInfo.AmountM},
+				{commitmentTxInfo.PubKeyB, commitmentTxInfo.AmountB},
 			},
 			0,
 			nil)
+		if err != nil {
+			return nil, err
+		}
 		commitmentTxInfo.Txid = txid
 		commitmentTxInfo.TxHexFirstSign = hex
 		commitmentTxInfo.FirstSignAt = time.Now()
-		_ = tx.Update(commitmentTxInfo)
+		commitmentTxInfo.CurrState = dao.TxInfoState_OtherSign
+		_ = tx.Save(commitmentTxInfo)
 
+		// create RDa tx
+		rdTransaction, err := createRDaTx(channelInfo, commitmentTxInfo, user)
+		if err != nil {
+			return nil, err
+		}
+
+		txid, hex, err = rpcClient.BtcCreateAndSignRawTransactionFromUnsendTx(
+			commitmentTxInfo.MultiAddress,
+			[]string{
+				data.FundeeSignature,
+			},
+			[]rpc.TransactionInputItem{
+				{rdTransaction.InputTxid, rdTransaction.InputVout, rdTransaction.InputAmount},
+			},
+			[]rpc.TransactionOutputItem{
+				{rdTransaction.PubKeyA, rdTransaction.Amount},
+			},
+			0,
+			&rdTransaction.Sequnence)
+		if err != nil {
+			return nil, err
+		}
+		rdTransaction.Txid = txid
+		rdTransaction.TxHexFirstSign = hex
+		rdTransaction.FirstSignAt = time.Now()
+		rdTransaction.CurrState = dao.TxInfoState_OtherSign
+		_ = tx.Save(rdTransaction)
 	}
 	err = tx.Update(node)
 	tx.Commit()
