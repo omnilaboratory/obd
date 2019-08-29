@@ -50,12 +50,13 @@ const (
 
 	MsgType_FundingSign_Edit MsgType = -35
 
-	MsgType_CommitmentTx_Edit             MsgType = -351
-	MsgType_CommitmentTx_ItemByChanId     MsgType = -35101
-	MsgType_CommitmentTx_ItemById         MsgType = -35102
-	MsgType_CommitmentTx_Count            MsgType = -35103
-	MsgType_CommitmentTx_NewestRDByChanId MsgType = -35104
-	MsgType_CommitmentTx_NewestBRByChanId MsgType = -35105
+	MsgType_CommitmentTx_Edit                       MsgType = -351
+	MsgType_CommitmentTx_ItemByChanId               MsgType = -35101
+	MsgType_CommitmentTx_ItemById                   MsgType = -35102
+	MsgType_CommitmentTx_Count                      MsgType = -35103
+	MsgType_CommitmentTx_NewestCommitmentTxByChanId MsgType = -35104
+	MsgType_CommitmentTx_NewestRDByChanId           MsgType = -35105
+	MsgType_CommitmentTx_NewestBRByChanId           MsgType = -35106
 
 	MsgType_CommitmentTxSigned_Edit         MsgType = -352
 	MsgType_CommitmentTxSigned_ItemByChanId MsgType = -35201

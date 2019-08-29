@@ -71,6 +71,21 @@ func (c *Client) commitmentTxModule(msg bean.RequestMessage) (enum.SendTargetTyp
 		}
 		c.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
+	case enum.MsgType_CommitmentTx_NewestCommitmentTxByChanId:
+		node, err := service.CommitmentTxService.GetNewestCommitmentTxByChannelId(msg.Data, c.User)
+		if err != nil {
+			data = err.Error()
+		} else {
+			bytes, err := json.Marshal(node)
+			if err != nil {
+				data = err.Error()
+			} else {
+				data = string(bytes)
+				status = true
+			}
+		}
+		c.sendToMyself(msg.Type, status, data)
+		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_CommitmentTx_NewestRDByChanId:
 		node, err := service.CommitmentTxService.GetNewestRDTxByChannelId(msg.Data, c.User)
 		if err != nil {
@@ -87,12 +102,17 @@ func (c *Client) commitmentTxModule(msg bean.RequestMessage) (enum.SendTargetTyp
 		c.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_CommitmentTx_NewestBRByChanId:
-		count, err := service.CommitmentTxService.TotalCount()
+		node, err := service.CommitmentTxService.GetNewestBRTxByChannelId(msg.Data, c.User)
 		if err != nil {
 			data = err.Error()
 		} else {
-			data = strconv.Itoa(count)
-			status = true
+			bytes, err := json.Marshal(node)
+			if err != nil {
+				data = err.Error()
+			} else {
+				data = string(bytes)
+				status = true
+			}
 		}
 		c.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone

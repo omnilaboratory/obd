@@ -35,6 +35,19 @@ func (service *commitTxManager) Edit(jsonData string) (node *dao.CommitmentTxInf
 	err = db.Save(node)
 	return node, err
 }
+func (service *commitTxManager) GetNewestCommitmentTxByChannelId(jsonData string, user *bean.User) (node *dao.CommitmentTxInfo, err error) {
+	var chanId bean.ChannelID
+	array := gjson.Get(jsonData, "channel_id").Array()
+	if len(array) != 32 {
+		return nil, errors.New("wrong channel_id")
+	}
+	for index, value := range array {
+		chanId[index] = byte(value.Num)
+	}
+	node = &dao.CommitmentTxInfo{}
+	err = db.Select(q.Eq("ChannelId", chanId), q.Or(q.Eq("PeerIdA", user.PeerId), q.Eq("PeerIdB", user.PeerId))).OrderBy("CreateAt").Reverse().First(node)
+	return node, err
+}
 
 func (service *commitTxManager) GetNewestRDTxByChannelId(jsonData string, user *bean.User) (node *dao.RevocableDeliveryTransaction, err error) {
 	var chanId bean.ChannelID
@@ -46,6 +59,19 @@ func (service *commitTxManager) GetNewestRDTxByChannelId(jsonData string, user *
 		chanId[index] = byte(value.Num)
 	}
 	node = &dao.RevocableDeliveryTransaction{}
+	err = db.Select(q.Eq("ChannelId", chanId), q.Or(q.Eq("PeerIdA", user.PeerId), q.Eq("PeerIdB", user.PeerId))).OrderBy("CreateAt").Reverse().First(node)
+	return node, err
+}
+func (service *commitTxManager) GetNewestBRTxByChannelId(jsonData string, user *bean.User) (node *dao.BreachRemedyTransaction, err error) {
+	var chanId bean.ChannelID
+	array := gjson.Get(jsonData, "channel_id").Array()
+	if len(array) != 32 {
+		return nil, errors.New("wrong channel_id")
+	}
+	for index, value := range array {
+		chanId[index] = byte(value.Num)
+	}
+	node = &dao.BreachRemedyTransaction{}
 	err = db.Select(q.Eq("ChannelId", chanId), q.Or(q.Eq("PeerIdA", user.PeerId), q.Eq("PeerIdB", user.PeerId))).OrderBy("CreateAt").Reverse().First(node)
 	return node, err
 }
