@@ -35,17 +35,13 @@ func (client *Client) GetNewAddress(label string) (address string, err error) {
 }
 
 func (client *Client) ListUnspent(address string) (result string, err error) {
-	importAddress(address)
 	if tool.CheckIsString(&address) == false {
 		return "", errors.New("address not exist")
 	}
-	keys := []string{
-		address,
-	}
-	return client.send("listunspent", []interface{}{0, math.MaxInt32, keys})
+	importAddress(address)
+	return client.send("listunspent", []interface{}{0, math.MaxInt32, []string{address}})
 }
 func (client *Client) GetBalanceByAddress(address string) (balance decimal.Decimal, err error) {
-	importAddress(address)
 	result, err := client.ListUnspent(address)
 	balance = decimal.NewFromFloat(0)
 	if err != nil {
@@ -103,7 +99,7 @@ func (client *Client) DecodeScript(hexString string) (result string, err error) 
 	return client.send("decodescript", []interface{}{hexString})
 }
 
-func (client *Client) ValidateAddress(address string) (ismine bool, err error) {
+func (client *Client) ValidateAddress(address string) (isvalid bool, err error) {
 	importAddress(address)
 	result, err := client.send("validateaddress", []interface{}{address})
 	if err != nil {
@@ -114,7 +110,7 @@ func (client *Client) ValidateAddress(address string) (ismine bool, err error) {
 }
 
 func importAddress(address string) {
-	client.send("importaddress", []interface{}{address, "", false})
+	//client.send("importaddress", []interface{}{address, "", false})
 }
 
 func (client *Client) Importaddress(address string) (err error) {

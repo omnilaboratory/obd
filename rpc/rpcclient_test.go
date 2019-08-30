@@ -86,12 +86,6 @@ func TestClient_GetTransactionById(t *testing.T) {
 
 func TestClient_GetMiningInfo(t *testing.T) {
 
-	var mapTest = make(map[string]string)
-	mapTest["a"] = "a"
-	mapTest["b"] = "b"
-	mapTest["c"] = "c"
-	delete(mapTest, "a")
-
 	client := NewClient()
 	result, err := client.OmniGetinfo()
 	if err != nil {
@@ -99,6 +93,33 @@ func TestClient_GetMiningInfo(t *testing.T) {
 		return
 	}
 	log.Println(result)
+
+	address, err := client.GetNewAddress("")
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	log.Println(address)
+
+	isvalid, err := client.ValidateAddress("n1Grf4JGHUC2CdHHoDRYb7jbVKU2Fv8Tsn")
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	log.Println(isvalid)
+	isvalid, err = client.ValidateAddress("n1Grf4JGHUC2CdHHoDRYb7jbVKU2Fv8Tsn")
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	log.Println(isvalid)
+
+	isvilid, err := client.CreateMultiSig(2, []string{"0343c3b527ebf385b15cedfa7e9b840b32353482bfc29ddc931a155ff41db0123e", "0343c3b527ebf385b15cedfa7e9b840b32353482bfc29ddc931a155ff41db0123e"})
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	log.Println(isvilid)
 }
 func TestClient_SignMessage(t *testing.T) {
 	client := NewClient()
