@@ -141,8 +141,13 @@ func (service *fundingTransactionManager) FundingTransactionSign(jsonData string
 			return nil, err
 		}
 
+		var outputBean = commitmentOutputBean{}
+		outputBean.TempAddress = fundingTransaction.FunderPubKey2ForCommitment
+		outputBean.ToAddressB = channelInfo.PubKeyB
+		outputBean.AmountM = fundingTransaction.AmountA
+		outputBean.AmountB = fundingTransaction.AmountB
 		// create C1a tx
-		commitmentTxInfo, err := createCommitmentATx(channelInfo, fundingTransaction, user)
+		commitmentTxInfo, err := createCommitmentATx(0, channelInfo, fundingTransaction, outputBean, user)
 		if err != nil {
 			return nil, err
 		}
@@ -171,7 +176,7 @@ func (service *fundingTransactionManager) FundingTransactionSign(jsonData string
 		_ = tx.Save(commitmentTxInfo)
 
 		// create RDa tx
-		rdTransaction, err := createRDaTx(channelInfo, commitmentTxInfo, user)
+		rdTransaction, err := createRDaTx(0, channelInfo, commitmentTxInfo, channelInfo.PubKeyA, user)
 		if err != nil {
 			return nil, err
 		}

@@ -56,7 +56,7 @@ func TestClient_DecodeRawTransaction(t *testing.T) {
 func TestClient_Validateaddress(t *testing.T) {
 	client := NewClient()
 	//r, err := client.Omni_getbalance(" n4bJvpVHks3Fz9wWB9f445LGV5xTS6LGpA", 121)
-	r, err := client.Validateaddress(" n4bJvpVHks3Fz9wWB9f445LGV5xTS6LGpA")
+	r, err := client.ValidateAddress(" n4bJvpVHks3Fz9wWB9f445LGV5xTS6LGpA")
 	if err != nil {
 		log.Println(err)
 		return
@@ -75,7 +75,8 @@ func TestClient_OmniRawTransaction(t *testing.T) {
 
 func TestClient_GetTransactionById(t *testing.T) {
 	client := NewClient()
-	result, err := client.GetTransactionById("434b1d74135ec0bf01c0d086792afdcee8c9440ad0aa10dc1882a901ca2b71e4")
+	//result, err := client.GetTransactionById("434b1d74135ec0bf01c0d086792afdcee8c9440ad0aa10dc1882a901ca2b71e4")
+	result, err := client.CreateMultiSig(2, []string{"mvzP1iEEJRZgJoZoCbBPDzwv3ZULPauug3", "mzs5iXkCzmygs2q1bqQBKcsTm5HvGEpjyK"})
 	if err != nil {
 		log.Println(err)
 		return
@@ -84,8 +85,15 @@ func TestClient_GetTransactionById(t *testing.T) {
 }
 
 func TestClient_GetMiningInfo(t *testing.T) {
+
+	var mapTest = make(map[string]string)
+	mapTest["a"] = "a"
+	mapTest["b"] = "b"
+	mapTest["c"] = "c"
+	delete(mapTest, "a")
+
 	client := NewClient()
-	result, err := client.GetNetworkInfo()
+	result, err := client.OmniGetinfo()
 	if err != nil {
 		log.Println(err)
 		return

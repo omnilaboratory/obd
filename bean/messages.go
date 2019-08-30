@@ -101,21 +101,21 @@ type CommitmentTx struct {
 	ChannelId                ChannelID `json:"channel_id"`  //the global channel id.
 	PropertyId               int       `json:"property_id"` //the id of the Omni asset
 	Amount                   float64   `json:"amount"`      //amount of the payment
-	TempPubKey               string    `json:"temp_pub_key"`
-	EncrptedAlice2PrivateKey string    `json:"encrpted_alice2_private_key"` //private key of Alice2, encrypted by Bob's public key
+	CurrTempPubKey           string    `json:"curr_temp_pub_key"`
+	LastTempPrivateKey       string    `json:"last_temp_private_key"`
+	ChannelAddressPrivateKey string    `json:"channel_address_private_key"`
 }
 
 //type: -352 (commitment_tx_signed)
 type CommitmentTxSigned struct {
-	//the global channel id.
-	ChannelId ChannelID `json:"channel_id"`
-	//the id of the Omni asset.
-	PropertyId int `json:"property_id"`
-	//amount of the payment.
-	Amount float64 `json:"amount"`
-	//signature of Bob.
-	ReceiverSignature string `json:"receiver_signature"`
-	Attitude          bool   `json:"attitude"`
+	ChannelId                 ChannelID `json:"channel_id"`
+	PropertyId                int       `json:"property_id"`
+	Amount                    float64   `json:"amount"`
+	CurrTempPubKeyFromStarter string    `json:"curr_temp_pub_key_from_starter"` //private key of Alice2, encrypted by Bob's public key
+	CurrTempPubKey            string    `json:"curr_temp_pub_key"`
+	LastTempPrivateKey        string    `json:"last_temp_private_key"`
+	ChannelAddressPrivateKey  string    `json:"channel_address_private_key"`
+	Attitude                  bool      `json:"attitude"`
 }
 
 //type: -353 (get_balance_request)

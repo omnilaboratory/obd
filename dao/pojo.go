@@ -78,39 +78,42 @@ type TxInfoState int
 const (
 	TxInfoState_OtherSign  TxInfoState = 10
 	TxInfoState_MyselfSign TxInfoState = 20
+	TxInfoState_Abord      TxInfoState = 30
 )
 
 //CommitmentTransaction
 type CommitmentTxInfo struct {
-	Id             int            `storm:"id,increment" json:"id" `
-	PeerIdA        string         `json:"peer_id_a"`
-	PeerIdB        string         `json:"peer_id_b"`
-	ChannelId      bean.ChannelID `json:"channel_id"`
-	PropertyId     int64          `json:"property_id"`
-	CreateSide     int            `json:"create_side"`   // 0 alice 1 bob
-	InputTxid      string         `json:"input_txid"`    //input txid  from channeladdr: alice&bob multtaddr, so need  sign of alice2 and bob
-	InputVout      uint32         `json:"input_vout"`    // input vout
-	InputAmount    float64        `json:"input_amount"`  //input amount
-	PubKeyA2       string         `json:"pub_key_a2"`    //output alice2
-	PubKeyB        string         `json:"pub_key_b"`     //output bob
-	MultiAddress   string         `json:"multi_address"` //output alice2&bob multiaddr
-	RedeemScript   string         `json:"redeem_script"`
-	AmountM        float64        `json:"amount_m"` // amount to multiaddr
-	AmountB        float64        `json:"amount_b"` //amount to bob
-	TxHexFirstSign string         `json:"tx_hex_first_sign"`
-	TxHexEndSign   string         `json:"tx_hex_end_sign"`
-	Txid           string         `json:"txid"`
-	CurrState      TxInfoState    `json:"curr_state"`
-	CreateBy       string         `json:"create_by"`
-	CreateAt       time.Time      `json:"create_at"`
-	FirstSignAt    time.Time      `json:"first_sign_at"`
-	EndSignAt      time.Time      `json:"end_sign_at"`
-	LastEditTime   time.Time      `json:"last_edit_time"`
+	Id                 int            `storm:"id,increment" json:"id" `
+	LastCommitmentTxId int            `json:"last_commitment_tx_id"`
+	PeerIdA            string         `json:"peer_id_a"`
+	PeerIdB            string         `json:"peer_id_b"`
+	ChannelId          bean.ChannelID `json:"channel_id"`
+	PropertyId         int64          `json:"property_id"`
+	CreateSide         int            `json:"create_side"`   // 0 alice 1 bob
+	InputTxid          string         `json:"input_txid"`    //input txid  from channeladdr: alice&bob multtaddr, so need  sign of alice2 and bob
+	InputVout          uint32         `json:"input_vout"`    // input vout
+	InputAmount        float64        `json:"input_amount"`  //input amount
+	PubKey2            string         `json:"pub_key2"`      //output alice2
+	PubKeyB            string         `json:"pub_key_b"`     //output bob
+	MultiAddress       string         `json:"multi_address"` //output alice2&bob multiaddr
+	RedeemScript       string         `json:"redeem_script"`
+	AmountM            float64        `json:"amount_m"` // amount to multiaddr
+	AmountB            float64        `json:"amount_b"` //amount to bob
+	TxHexFirstSign     string         `json:"tx_hex_first_sign"`
+	TxHexEndSign       string         `json:"tx_hex_end_sign"`
+	Txid               string         `json:"txid"`
+	CurrState          TxInfoState    `json:"curr_state"`
+	CreateBy           string         `json:"create_by"`
+	CreateAt           time.Time      `json:"create_at"`
+	FirstSignAt        time.Time      `json:"first_sign_at"`
+	EndSignAt          time.Time      `json:"end_sign_at"`
+	LastEditTime       time.Time      `json:"last_edit_time"`
 }
 
 // close channel , alice or bob wait 1000 sequence to drawback the balance
 type RevocableDeliveryTransaction struct {
 	Id             int            `storm:"id,increment" json:"id" `
+	CommitmentTxId int            `json:"commitment_tx_id"`
 	PeerIdA        string         `json:"peer_id_a"`
 	PeerIdB        string         `json:"peer_id_b"`
 	ChannelId      bean.ChannelID `json:"channel_id"`
@@ -136,6 +139,7 @@ type RevocableDeliveryTransaction struct {
 // to punish alice do not admit the newest commitment tx
 type BreachRemedyTransaction struct {
 	Id             int            `storm:"id,increment" json:"id" `
+	CommitmentTxId int            `json:"commitment_tx_id"` // parent commitmentTx id
 	PeerIdA        string         `json:"peer_id_a"`
 	PeerIdB        string         `json:"peer_id_b"`
 	ChannelId      bean.ChannelID `json:"channel_id"`

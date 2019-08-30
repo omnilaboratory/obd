@@ -65,10 +65,10 @@ func (client *Client) OmniRawTransaction(fromBitCoinAddress string, privkeys []s
 		return "", errors.New("minerFee too small")
 	}
 
-	if ismine, _ := client.Validateaddress(fromBitCoinAddress); ismine == false {
+	if ismine, _ := client.ValidateAddress(fromBitCoinAddress); ismine == false {
 		err = client.Importaddress(fromBitCoinAddress)
 	}
-	if ismine, _ := client.Validateaddress(toBitCoinAddress); ismine == false {
+	if ismine, _ := client.ValidateAddress(toBitCoinAddress); ismine == false {
 		err = client.Importaddress(toBitCoinAddress)
 	}
 

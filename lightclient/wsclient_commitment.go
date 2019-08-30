@@ -129,7 +129,7 @@ func (c *Client) commitmentTxSignModule(msg bean.RequestMessage) (enum.SendTarge
 
 	switch msg.Type {
 	case enum.MsgType_CommitmentTxSigned_Edit:
-		node, _, err := service.CommitTxSignedService.CommitmentTxSign(msg.Data, c.User)
+		node, _, _, err := service.CommitTxSignedService.CommitmentTxSign(msg.Data, c.User)
 		if err != nil {
 			data = err.Error()
 		} else {

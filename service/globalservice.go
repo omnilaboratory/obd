@@ -13,6 +13,16 @@ import (
 var db *storm.DB
 var rpcClient *rpc.Client
 
+//for store the privateKey of -351
+var tempAddrPrivateKeyMap = make(map[string]string)
+
+type commitmentOutputBean struct {
+	TempAddress string
+	AmountM     float64
+	ToAddressB  string
+	AmountB     float64
+}
+
 func init() {
 	var err error
 	db, err = dao.DBService.GetDB()
@@ -22,13 +32,13 @@ func init() {
 	rpcClient = rpc.NewClient()
 }
 
-func createCommitmentATx(channelInfo *dao.ChannelInfo, fundingTransaction *dao.FundingTransaction, user *bean.User) (*dao.CommitmentTxInfo, error) {
+func createCommitmentATx(createSide int, channelInfo *dao.ChannelInfo, fundingTransaction *dao.FundingTransaction, outputBean commitmentOutputBean, user *bean.User) (*dao.CommitmentTxInfo, error) {
 	commitmentTxInfo := &dao.CommitmentTxInfo{}
 	commitmentTxInfo.PeerIdA = channelInfo.PeerIdA
 	commitmentTxInfo.PeerIdB = channelInfo.PeerIdB
 	commitmentTxInfo.ChannelId = channelInfo.ChannelId
 	commitmentTxInfo.PropertyId = fundingTransaction.PropertyId
-	commitmentTxInfo.CreateSide = 0
+	commitmentTxInfo.CreateSide = createSide
 
 	//input
 	commitmentTxInfo.InputTxid = fundingTransaction.FundingTxid
@@ -36,16 +46,16 @@ func createCommitmentATx(channelInfo *dao.ChannelInfo, fundingTransaction *dao.F
 	commitmentTxInfo.InputAmount = fundingTransaction.AmountA + fundingTransaction.AmountB
 
 	//output
-	commitmentTxInfo.PubKeyA2 = fundingTransaction.FunderPubKey2ForCommitment
-	commitmentTxInfo.PubKeyB = channelInfo.PubKeyB
-	multiAddr, err := rpcClient.CreateMultiSig(2, []string{commitmentTxInfo.PubKeyA2, commitmentTxInfo.PubKeyB})
+	commitmentTxInfo.PubKey2 = outputBean.TempAddress
+	commitmentTxInfo.PubKeyB = outputBean.ToAddressB
+	multiAddr, err := rpcClient.CreateMultiSig(2, []string{commitmentTxInfo.PubKey2, commitmentTxInfo.PubKeyB})
 	if err != nil {
 		return nil, err
 	}
 	commitmentTxInfo.MultiAddress = gjson.Get(multiAddr, "address").String()
 	commitmentTxInfo.RedeemScript = gjson.Get(multiAddr, "redeemScript").String()
-	commitmentTxInfo.AmountM = fundingTransaction.AmountA
-	commitmentTxInfo.AmountB = fundingTransaction.AmountB
+	commitmentTxInfo.AmountM = outputBean.AmountM
+	commitmentTxInfo.AmountB = outputBean.AmountB
 
 	commitmentTxInfo.CreateBy = user.PeerId
 	commitmentTxInfo.CreateAt = time.Now()
@@ -53,20 +63,22 @@ func createCommitmentATx(channelInfo *dao.ChannelInfo, fundingTransaction *dao.F
 
 	return commitmentTxInfo, nil
 }
-func createRDaTx(channelInfo *dao.ChannelInfo, commitmentTxInfo *dao.CommitmentTxInfo, user *bean.User) (*dao.RevocableDeliveryTransaction, error) {
+func createRDaTx(createSide int, channelInfo *dao.ChannelInfo, commitmentTxInfo *dao.CommitmentTxInfo, toAddress string, user *bean.User) (*dao.RevocableDeliveryTransaction, error) {
 	rda := &dao.RevocableDeliveryTransaction{}
+
+	rda.CommitmentTxId = commitmentTxInfo.Id
 	rda.PeerIdA = channelInfo.PeerIdA
 	rda.PeerIdB = channelInfo.PeerIdB
 	rda.ChannelId = channelInfo.ChannelId
 	rda.PropertyId = commitmentTxInfo.PropertyId
-	rda.CreateSide = 0
+	rda.CreateSide = createSide
 
 	//input
 	rda.InputTxid = commitmentTxInfo.Txid
 	rda.InputVout = 0
 	rda.InputAmount = commitmentTxInfo.AmountM
 	//output
-	rda.PubKeyA = channelInfo.PubKeyA
+	rda.PubKeyA = toAddress
 	rda.Sequnence = 1000
 	rda.Amount = commitmentTxInfo.AmountM
 
@@ -76,13 +88,15 @@ func createRDaTx(channelInfo *dao.ChannelInfo, commitmentTxInfo *dao.CommitmentT
 
 	return rda, nil
 }
-func createBRaTx(channelInfo *dao.ChannelInfo, commitmentTxInfo *dao.CommitmentTxInfo, user *bean.User) (*dao.BreachRemedyTransaction, error) {
+func createBRTx(createSide int, channelInfo *dao.ChannelInfo, commitmentTxInfo *dao.CommitmentTxInfo, user *bean.User) (*dao.BreachRemedyTransaction, error) {
 	breachRemedyTransaction := &dao.BreachRemedyTransaction{}
+
+	breachRemedyTransaction.CommitmentTxId = commitmentTxInfo.Id
 	breachRemedyTransaction.PeerIdA = channelInfo.PeerIdA
 	breachRemedyTransaction.PeerIdB = channelInfo.PeerIdB
 	breachRemedyTransaction.ChannelId = channelInfo.ChannelId
 	breachRemedyTransaction.PropertyId = commitmentTxInfo.PropertyId
-	breachRemedyTransaction.CreateSide = 0
+	breachRemedyTransaction.CreateSide = createSide
 
 	//input
 	breachRemedyTransaction.InputTxid = commitmentTxInfo.Txid

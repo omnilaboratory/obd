@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"strings"
 	"sync/atomic"
 )
 
@@ -104,7 +105,7 @@ func (client *Client) send(method string, params []interface{}) (result string, 
 	req := &Request{
 		Jsonrpc: "2.0",
 		ID:      client.NextID(),
-		Method:  method,
+		Method:  strings.Trim(method, " "),
 		Params:  rawParams,
 	}
 

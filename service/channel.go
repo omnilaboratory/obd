@@ -25,7 +25,7 @@ func (c *channelManager) OpenChannel(msg bean.RequestMessage, peerIdA string) (d
 		return nil, errors.New("wrong fundingPubKey")
 	}
 
-	isMine, err := rpcClient.Validateaddress(data.FundingPubKey)
+	isMine, err := rpcClient.ValidateAddress(data.FundingPubKey)
 	if err != nil {
 		return nil, err
 	}
@@ -65,7 +65,7 @@ func (c *channelManager) AcceptChannel(jsonData string, peerIdB string) (node *d
 		if len(data.FundingPubKey) != 34 {
 			return nil, errors.New("wrong PubKeyB")
 		}
-		isMine, err := rpcClient.Validateaddress(data.FundingPubKey)
+		isMine, err := rpcClient.ValidateAddress(data.FundingPubKey)
 		if err != nil {
 			return nil, err
 		}
@@ -86,6 +86,7 @@ func (c *channelManager) AcceptChannel(jsonData string, peerIdB string) (node *d
 
 	if data.Attitude {
 		node.PubKeyB = data.FundingPubKey
+
 		multiSig, err := rpcClient.CreateMultiSig(2, []string{node.PubKeyA, node.PubKeyB})
 		if err != nil {
 			return nil, err
