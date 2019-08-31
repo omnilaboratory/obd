@@ -16,7 +16,7 @@ var ScheduleService = ScheduleManager{
 }
 var ticker = &time.Ticker{}
 
-func (service *ScheduleManager) StartSchudule() {
+func (service *ScheduleManager) StartSchedule() {
 	go func() {
 		ticker = time.NewTicker(service.delay)
 		defer ticker.Stop()
