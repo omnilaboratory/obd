@@ -2,6 +2,15 @@
 
 LightningOnOmni implements the [OmniBOLT](https://github.com/LightningOnOmnilayer/Omni-BOLT-spec) specification, which enables Lightning network to be Omnilayer assets aware. Compile the source code and run the binary executable file, we will have an OmniBOLT deamon(OBD) providing all services for lightning network.   
 
+
+# Table of Contents
+
+ * [Dependency](https://github.com/LightningOnOmnilayer/LightningOnOmni#dependency)
+ * [Installation](https://github.com/LightningOnOmnilayer/LightningOnOmni#installation)
+ * [How to Contribute](https://github.com/LightningOnOmnilayer/LightningOnOmni#how-to-contribute)
+ * [Current Features](https://github.com/LightningOnOmnilayer/LightningOnOmni#current-features)
+ * [Related Projects](https://github.com/LightningOnOmnilayer/LightningOnOmni#related-projects)
+
 # Dependency
 
 [Omnicore 0.18](https://github.com/OmniLayer/omnicore/tree/develop), which is currently in develop branch, and will be to finalize the release soon. 
@@ -190,6 +199,20 @@ To test "open_channel" in light client mode, open two browsers, one for Alice, a
 
 
 # How to Contribute
+OmniBOLT Daemon is MIT licensed open source software. Hopefully you can get started by doing the above steps, but Lightning network is not that easy to develop. Anyone is welcome to join this journey, and please be nice to each other, don't bring any illegal/private stuff, abuse or racial into our community.   
+
+Please submit issues to this repo or help us with those open ones.
+
+Guidelines:
+
+  * read the [OmniBOLT](https://github.com/LightningOnOmnilayer/Omni-BOLT-spec) spec. If you have any question over there, raise issues in that repo.
+  * ask questions or talk about things in Issues.
+  * make branches and raise pull-request, even if working on the main repository.
+  * dont copy/past any code from somewhere else in contribution, because we have limited resource to compare source codes to avoid legal issues. What we can do is to read your code, run tests of your newly developed modules and read your comments in your branch to see if it is soving a real problem. 
+  * better running go fmt before pushing any code.
+  * add test to any package.
+  * write/contribute light client testing tools, such as a HTML page supporting WebSocket, so that new programmers can have an intuitive experience to get started. That helps. We will release our tools for testing,  
+ 
 
 
 # Current Features
