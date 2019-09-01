@@ -3,9 +3,10 @@ package rpc
 import (
 	"LightningOnOmni/bean/chainhash"
 	"crypto/sha256"
-	"github.com/satori/go.uuid"
 	"log"
 	"testing"
+
+	uuid "github.com/satori/go.uuid"
 )
 
 func init() {

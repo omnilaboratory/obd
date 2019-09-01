@@ -7,18 +7,19 @@ import (
 	"LightningOnOmni/tool"
 	"encoding/json"
 	"errors"
+	"log"
+	"time"
+
 	"github.com/asdine/storm"
 	"github.com/asdine/storm/q"
 	"github.com/tidwall/gjson"
-	"log"
-	"time"
 )
 
-type commitTxManager struct{}
+type commitmentTxManager struct{}
 
-var CommitmentTxService commitTxManager
+var CommitmentTxService commitmentTxManager
 
-func (service *commitTxManager) CreateNewCommitmentTxRequest(jsonData string, creator *bean.User) (data *bean.CommitmentTx, targetUser *string, err error) {
+func (service *commitmentTxManager) CreateNewCommitmentTxRequest(jsonData string, creator *bean.User) (data *bean.CommitmentTx, targetUser *string, err error) {
 	if tool.CheckIsString(&jsonData) == false {
 		return nil, nil, errors.New("empty json data")
 	}
@@ -46,13 +47,13 @@ func (service *commitTxManager) CreateNewCommitmentTxRequest(jsonData string, cr
 		isAliceCreateTransfer = false
 	}
 
-	var createSide = 0
+	var creatorSide = 0
 	if isAliceCreateTransfer == false {
-		createSide = 1
+		creatorSide = 1
 	}
 
 	commitmentTxInfo := &dao.CommitmentTxInfo{}
-	err = db.Select(q.Eq("ChannelId", data.ChannelId), q.Eq("CurrState", dao.TxInfoState_OtherSign), q.Eq("CreateSide", createSide), q.Or(q.Eq("PeerIdA", creator.PeerId), q.Eq("PeerIdB", creator.PeerId))).OrderBy("CreateAt").Reverse().First(commitmentTxInfo)
+	err = db.Select(q.Eq("ChannelId", data.ChannelId), q.Eq("CurrState", dao.TxInfoState_OtherSign), q.Eq("CreateSide", creatorSide), q.Or(q.Eq("PeerIdA", creator.PeerId), q.Eq("PeerIdB", creator.PeerId))).OrderBy("CreateAt").Reverse().First(commitmentTxInfo)
 	if err != nil {
 		return nil, nil, errors.New("not find the commitmentTxInfo")
 	}
@@ -82,7 +83,7 @@ func (service *commitTxManager) CreateNewCommitmentTxRequest(jsonData string, cr
 
 	return data, targetUser, err
 }
-func (service *commitTxManager) GetNewestCommitmentTxByChannelId(jsonData string, user *bean.User) (node *dao.CommitmentTxInfo, err error) {
+func (service *commitmentTxManager) GetNewestCommitmentTxByChannelId(jsonData string, user *bean.User) (node *dao.CommitmentTxInfo, err error) {
 	var chanId bean.ChannelID
 	array := gjson.Get(jsonData, "channel_id").Array()
 	if len(array) != 32 {
@@ -96,7 +97,7 @@ func (service *commitTxManager) GetNewestCommitmentTxByChannelId(jsonData string
 	return node, err
 }
 
-func (service *commitTxManager) GetNewestRDTxByChannelId(jsonData string, user *bean.User) (node *dao.RevocableDeliveryTransaction, err error) {
+func (service *commitmentTxManager) GetNewestRDTxByChannelId(jsonData string, user *bean.User) (node *dao.RevocableDeliveryTransaction, err error) {
 	var chanId bean.ChannelID
 	array := gjson.Get(jsonData, "channel_id").Array()
 	if len(array) != 32 {
@@ -109,7 +110,7 @@ func (service *commitTxManager) GetNewestRDTxByChannelId(jsonData string, user *
 	err = db.Select(q.Eq("ChannelId", chanId), q.Or(q.Eq("PeerIdA", user.PeerId), q.Eq("PeerIdB", user.PeerId))).OrderBy("CreateAt").Reverse().First(node)
 	return node, err
 }
-func (service *commitTxManager) GetNewestBRTxByChannelId(jsonData string, user *bean.User) (node *dao.BreachRemedyTransaction, err error) {
+func (service *commitmentTxManager) GetNewestBRTxByChannelId(jsonData string, user *bean.User) (node *dao.BreachRemedyTransaction, err error) {
 	var chanId bean.ChannelID
 	array := gjson.Get(jsonData, "channel_id").Array()
 	if len(array) != 32 {
@@ -123,7 +124,7 @@ func (service *commitTxManager) GetNewestBRTxByChannelId(jsonData string, user *
 	return node, err
 }
 
-func (service *commitTxManager) GetItemsByChannelId(jsonData string) (nodes []dao.CommitmentTxInfo, count *int, err error) {
+func (service *commitmentTxManager) GetItemsByChannelId(jsonData string) (nodes []dao.CommitmentTxInfo, count *int, err error) {
 	var chanId bean.ChannelID
 
 	array := gjson.Get(jsonData, "channel_id").Array()
@@ -159,7 +160,7 @@ func (service *commitTxManager) GetItemsByChannelId(jsonData string) (nodes []da
 	return nodes, count, err
 }
 
-func (service *commitTxManager) GetItemById(id int) (node *dao.CommitmentTxInfo, err error) {
+func (service *commitmentTxManager) GetItemById(id int) (node *dao.CommitmentTxInfo, err error) {
 	db, err := dao.DBService.GetDB()
 	if err != nil {
 		return nil, err
@@ -169,7 +170,7 @@ func (service *commitTxManager) GetItemById(id int) (node *dao.CommitmentTxInfo,
 	return node, nil
 }
 
-func (service *commitTxManager) TotalCount() (count int, err error) {
+func (service *commitmentTxManager) TotalCount() (count int, err error) {
 	db, err := dao.DBService.GetDB()
 	if err != nil {
 		return 0, err
@@ -177,7 +178,7 @@ func (service *commitTxManager) TotalCount() (count int, err error) {
 	return db.Count(&dao.CommitmentTxInfo{})
 }
 
-func (service *commitTxManager) Del(id int) (node *dao.CommitmentTxInfo, err error) {
+func (service *commitmentTxManager) Del(id int) (node *dao.CommitmentTxInfo, err error) {
 	db, err := dao.DBService.GetDB()
 	if err != nil {
 		return nil, err
@@ -217,18 +218,21 @@ func (service *commitTxSignedManager) CommitmentTxSign(jsonData string, signer *
 	}
 
 	//确定是谁发起的转账发起方 谁是签名收款方 默认是alice发起转账，bob是签收方，如果签收方是alice 那么就是bob发起的转账请求
+	//Make sure who creates the transaction, who will sign the transaction.
+	//The default creator is Alice, and Bob is the signer.
+	//While if ALice is the signer, then Bob creates the transaction.
 	var isAliceCreateTransfer = true
 	if signer.PeerId == channelInfo.PeerIdA {
 		isAliceCreateTransfer = false
 	}
 
-	createSide := 0
+	creatorSide := 0
 	targetUser := channelInfo.PeerIdA
 	if isAliceCreateTransfer == false {
-		createSide = 1
+		creatorSide = 1
 		targetUser = channelInfo.PeerIdB
 	}
-	log.Println(createSide)
+	log.Println(creatorSide)
 
 	if data.Attitude == false {
 		return nil, nil, &targetUser, errors.New("signer disagree transaction")
@@ -241,17 +245,18 @@ func (service *commitTxSignedManager) CommitmentTxSign(jsonData string, signer *
 		tempAddrPrivateKeyMap[channelInfo.PubKeyA] = data.ChannelAddressPrivateKey
 	}
 
-	//启动事务
+	//launch database transaction, if anything goes wrong, roll back.
 	tx, _ := db.Begin(true)
 	defer tx.Rollback()
 
-	// 得到充值交易
+	// get the funding transaction
 	var fundingTransaction = &dao.FundingTransaction{}
 	err = tx.One("ChannelId", data.ChannelId, fundingTransaction)
 	if err != nil {
 		return nil, nil, &targetUser, err
 	}
 	//获取alice 处于10的  c
+	//obtain Alice's transaction
 	commitmentATxInfo, err := createAliceSideTxs(tx, data, channelInfo, fundingTransaction, signer)
 	if err != nil {
 		return nil, nil, nil, err
@@ -266,20 +271,20 @@ func (service *commitTxSignedManager) CommitmentTxSign(jsonData string, signer *
 }
 
 func createAliceSideTxs(tx storm.Node, data *bean.CommitmentTxSigned, channelInfo *dao.ChannelInfo, fundingTransaction *dao.FundingTransaction, signer *bean.User) (*dao.CommitmentTxInfo, error) {
-	var createSide = 0
+	var creatorSide = 0
 	var isAliceCreateTransfer = true
 	if signer.PeerId == channelInfo.PeerIdA {
 		isAliceCreateTransfer = false
 	}
 
 	var lastCommitmentATx = &dao.CommitmentTxInfo{}
-	err := tx.Select(q.Eq("ChannelId", data.ChannelId), q.Eq("CreateSide", createSide), q.Eq("CurrState", dao.TxInfoState_OtherSign), q.Or(q.Eq("PeerIdA", signer.PeerId), q.Eq("PeerIdB", signer.PeerId))).OrderBy("CreateAt").Reverse().First(lastCommitmentATx)
+	err := tx.Select(q.Eq("ChannelId", data.ChannelId), q.Eq("CreateSide", creatorSide), q.Eq("CurrState", dao.TxInfoState_OtherSign), q.Or(q.Eq("PeerIdA", signer.PeerId), q.Eq("PeerIdB", signer.PeerId))).OrderBy("CreateAt").Reverse().First(lastCommitmentATx)
 	if err != nil {
 		return nil, err
 	}
 
 	// create BR1a tx
-	breachRemedyTransaction, err := createBRTx(createSide, channelInfo, lastCommitmentATx, signer)
+	breachRemedyTransaction, err := createBRTx(creatorSide, channelInfo, lastCommitmentATx, signer)
 	if err != nil {
 		return nil, err
 	}
@@ -312,7 +317,7 @@ func createAliceSideTxs(tx storm.Node, data *bean.CommitmentTxSigned, channelInf
 	err = tx.Save(breachRemedyTransaction)
 
 	lastRDTransaction := &dao.RevocableDeliveryTransaction{}
-	err = tx.Select(q.Eq("ChannelId", data.ChannelId), q.Eq("CreateSide", createSide), q.Eq("CommitmentTxId", lastCommitmentATx.Id), q.Eq("CurrState", dao.TxInfoState_OtherSign), q.Or(q.Eq("PeerIdA", signer.PeerId), q.Eq("PeerIdB", signer.PeerId))).OrderBy("CreateAt").Reverse().First(lastRDTransaction)
+	err = tx.Select(q.Eq("ChannelId", data.ChannelId), q.Eq("CreateSide", creatorSide), q.Eq("CommitmentTxId", lastCommitmentATx.Id), q.Eq("CurrState", dao.TxInfoState_OtherSign), q.Or(q.Eq("PeerIdA", signer.PeerId), q.Eq("PeerIdB", signer.PeerId))).OrderBy("CreateAt").Reverse().First(lastRDTransaction)
 	if err != nil {
 		return nil, err
 	}
@@ -337,7 +342,7 @@ func createAliceSideTxs(tx storm.Node, data *bean.CommitmentTxSigned, channelInf
 	outputBean.ToAddressB = channelInfo.PubKeyB
 
 	// create C2a tx
-	commitmentTxInfo, err := createCommitmentATx(createSide, channelInfo, fundingTransaction, outputBean, signer)
+	commitmentTxInfo, err := createCommitmentATx(creatorSide, channelInfo, fundingTransaction, outputBean, signer)
 	if err != nil {
 		return nil, err
 	}
@@ -375,7 +380,7 @@ func createAliceSideTxs(tx storm.Node, data *bean.CommitmentTxSigned, channelInf
 	}
 
 	// create RD2a tx
-	rdTransaction, err := createRDaTx(createSide, channelInfo, commitmentTxInfo, channelInfo.PubKeyA, signer)
+	rdTransaction, err := createRDaTx(creatorSide, channelInfo, commitmentTxInfo, channelInfo.PubKeyA, signer)
 	if err != nil {
 		return nil, err
 	}
@@ -406,23 +411,24 @@ func createAliceSideTxs(tx storm.Node, data *bean.CommitmentTxSigned, channelInf
 }
 
 func createBobSideTxs(tx storm.Node, data *bean.CommitmentTxSigned, channelInfo *dao.ChannelInfo, fundingTransaction *dao.FundingTransaction, signer *bean.User) (*dao.CommitmentTxInfo, error) {
-	var createSide = 1
+	var creatorSide = 1
 	var isAliceCreateTransfer = true
 	if signer.PeerId == channelInfo.PeerIdA {
 		isAliceCreateTransfer = false
 	}
 
 	var lastCommitmentATx = &dao.CommitmentTxInfo{}
-	err := tx.Select(q.Eq("ChannelId", data.ChannelId), q.Eq("CreateSide", createSide), q.Eq("CurrState", dao.TxInfoState_OtherSign), q.Or(q.Eq("PeerIdA", signer.PeerId), q.Eq("PeerIdB", signer.PeerId))).OrderBy("CreateAt").Reverse().First(lastCommitmentATx)
+	err := tx.Select(q.Eq("ChannelId", data.ChannelId), q.Eq("CreateSide", creatorSide), q.Eq("CurrState", dao.TxInfoState_OtherSign), q.Or(q.Eq("PeerIdA", signer.PeerId), q.Eq("PeerIdB", signer.PeerId))).OrderBy("CreateAt").Reverse().First(lastCommitmentATx)
 	if err != nil {
 		lastCommitmentATx = nil
 	}
 
-	//如果是单通道充值，bob第一次没有c rd
+	//In unilataral funding mode, only Alice is required to fund the channel.
+	//So during funding procedure, on Bob side, he has no commitment transaction and revockable delivery transaction.
 	if lastCommitmentATx != nil {
 
 		// create BRa tx
-		breachRemedyTransaction, err := createBRTx(createSide, channelInfo, lastCommitmentATx, signer)
+		breachRemedyTransaction, err := createBRTx(creatorSide, channelInfo, lastCommitmentATx, signer)
 		if err != nil {
 			return nil, err
 		}
@@ -453,7 +459,7 @@ func createBobSideTxs(tx storm.Node, data *bean.CommitmentTxSigned, channelInfo 
 		err = tx.Save(breachRemedyTransaction)
 
 		lastRDTransaction := &dao.RevocableDeliveryTransaction{}
-		err = tx.Select(q.Eq("ChannelId", data.ChannelId), q.Eq("CreateSide", createSide), q.Eq("CommitmentTxId", lastCommitmentATx.Id), q.Eq("CurrState", dao.TxInfoState_OtherSign), q.Or(q.Eq("PeerIdA", signer.PeerId), q.Eq("PeerIdB", signer.PeerId))).OrderBy("CreateAt").Reverse().First(lastRDTransaction)
+		err = tx.Select(q.Eq("ChannelId", data.ChannelId), q.Eq("CreateSide", creatorSide), q.Eq("CommitmentTxId", lastCommitmentATx.Id), q.Eq("CurrState", dao.TxInfoState_OtherSign), q.Or(q.Eq("PeerIdA", signer.PeerId), q.Eq("PeerIdB", signer.PeerId))).OrderBy("CreateAt").Reverse().First(lastRDTransaction)
 		if err != nil {
 			return nil, err
 		}
@@ -486,7 +492,7 @@ func createBobSideTxs(tx storm.Node, data *bean.CommitmentTxSigned, channelInfo 
 	outputBean.ToAddressB = channelInfo.PubKeyA
 
 	// create C2b tx
-	commitmentTxInfo, err := createCommitmentATx(createSide, channelInfo, fundingTransaction, outputBean, signer)
+	commitmentTxInfo, err := createCommitmentATx(creatorSide, channelInfo, fundingTransaction, outputBean, signer)
 	if err != nil {
 		return nil, err
 	}
@@ -524,7 +530,7 @@ func createBobSideTxs(tx storm.Node, data *bean.CommitmentTxSigned, channelInfo 
 	}
 
 	// create RDb tx
-	rdTransaction, err := createRDaTx(createSide, channelInfo, commitmentTxInfo, channelInfo.PubKeyB, signer)
+	rdTransaction, err := createRDaTx(creatorSide, channelInfo, commitmentTxInfo, channelInfo.PubKeyB, signer)
 	if err != nil {
 		return nil, err
 	}

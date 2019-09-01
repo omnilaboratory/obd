@@ -5,9 +5,10 @@ import (
 	"LightningOnOmni/bean/enum"
 	"LightningOnOmni/service"
 	"encoding/json"
-	"github.com/tidwall/gjson"
 	"log"
 	"strconv"
+
+	"github.com/tidwall/gjson"
 )
 
 func (c *Client) commitmentTxModule(msg bean.RequestMessage) (enum.SendTargetType, []byte, bool) {

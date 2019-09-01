@@ -5,12 +5,13 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/tidwall/gjson"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"strings"
 	"sync/atomic"
+
+	"github.com/tidwall/gjson"
 )
 
 var connConfig *ConnConfig
@@ -25,11 +26,11 @@ func init() {
 }
 
 type ConnConfig struct {
-	// Host is the IP address and port of the RPC server you want to connect to.
+	// Host is the IP address and port of the remote omnicore server you want to connect to.
 	Host string
-	// User is the username to use to authenticate to the RPC server.
+	// User is the username used in authentification by the remote RPC server.
 	User string
-	// Pass is the passphrase to use to authenticate to the RPC server.
+	// Pass is the passphrase used in authentification.
 	Pass string
 }
 

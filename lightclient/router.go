@@ -4,14 +4,15 @@ import (
 	"LightningOnOmni/grpcpack"
 	pb "LightningOnOmni/grpcpack/pb"
 	"LightningOnOmni/service"
-	"github.com/gin-gonic/gin"
-	"github.com/gorilla/websocket"
-	"github.com/satori/go.uuid"
-	"github.com/tidwall/gjson"
-	"google.golang.org/grpc"
 	"log"
 	"net/http"
 	"time"
+
+	"github.com/gin-gonic/gin"
+	"github.com/gorilla/websocket"
+	uuid "github.com/satori/go.uuid"
+	"github.com/tidwall/gjson"
+	"google.golang.org/grpc"
 )
 
 func InitRouter(conn *grpc.ClientConn) *gin.Engine {
