@@ -138,27 +138,15 @@ In the right side text pannel, displays the response message from OBD:
 RECEIVED: {"type":1001,"status":true,"sender":"59dfb5e2-f1dc-46c6-8ff3-dfc9f2f1ea82","result":"mzCihFnTFyZUo76QMKovoWWJAPkBqDi63J"}
 ```
 
-To test "open_channel", open two browser, one for Alice, and one for Bob. Alice send [messege in above](https://github.com/lightningnetwork/lightning-rfc/blob/master/02-peer-protocol.md#the-funding_created-message), and Bob reply with APPROAVAL:
-
-<p align="center">
-  <img width="600" alt="create channel" src="https://github.com/LightningOnOmnilayer/Omni-BOLT-spec/blob/master/imgs/CreateChannel.png">
-</p>
-
-
-It works.
+It works
 
 ## Step 5: Channel Operations
 
+For example:
+
 [type: -32 openchannel](https://github.com/LightningOnOmnilayer/Omni-BOLT-spec/blob/master/OmniBOLT-02-peer-protocol.md#the-open_channel-message)
 
-reqest:
-```
-{
- 	"type":-32,
- 	"data":{"funding_pubkey":"mytMnuKDS1eW3d1yb3zTtPJbArwHLTPvZ8"}
-}
-```
-Response:
+Alice:
 ```
  {"type":0,
     "sender":"44ff0d17-13d0-4741-9f8d-e59b17011965",
@@ -175,7 +163,8 @@ Response:
               \"feerate_per_kw\":0,
               \"to_self_delay\":0,
               \"max_accepted_htlcs\":0,
-              \"funding_pubkey\":\"n1Grf4JGHUC2CdHHoDRYb7jbVKU2Fv8Tsn\",\"revocation_basepoint\":\"\",
+              \"funding_pubkey\":\"n1Grf4JGHUC2CdHHoDRYb7jbVKU2Fv8Tsn\",
+              \"revocation_basepoint\":\"\",
               \"payment_basepoint\":\"\",
               \"delayed_payment_basepoint\":\"\",
               \"htlc_basepoint\":\"\",
@@ -185,13 +174,22 @@ Response:
 ```
 
 [type: -33 ChannelAccept](https://github.com/LightningOnOmnilayer/Omni-BOLT-spec/blob/master/OmniBOLT-02-peer-protocol.md#the-accept_channel-message)
-reqest:
+Bob:
 ```
 {
   "type":-33,
   "data":[229,183,118,180,41,204,14,173,33,18,101,64,250,6,244,29,115,151,105,108,147,205,77,16,175,249,148,105,117,192,181,34]
 }
 ```
+
+To test "open_channel" in light client mode, open two browsers, one for Alice, and one for Bob. Alice sends [open_channel](https://github.com/LightningOnOmnilayer/Omni-BOLT-spec/blob/master/OmniBOLT-02-peer-protocol.md#the-open_channel-message) to Bob, and Bob replies with APPROAVAL:
+
+<p align="center">
+  <img width="600" alt="create channel" src="https://github.com/LightningOnOmnilayer/Omni-BOLT-spec/blob/master/imgs/CreateChannel.png">
+</p>
+
+
+# How to Contribute
 
 
 # Current Features
