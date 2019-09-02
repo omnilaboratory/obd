@@ -76,7 +76,7 @@ func (c *Client) commitmentTxModule(msg bean.RequestMessage) (enum.SendTargetTyp
 		c.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_CommitmentTx_NewestCommitmentTxByChanId:
-		node, err := service.CommitmentTxService.GetNewestCommitmentTxByChannelId(msg.Data, c.User)
+		node, err := service.CommitmentTxService.GetLatestCommitmentTxByChannelId(msg.Data, c.User)
 		if err != nil {
 			data = err.Error()
 		} else {
@@ -91,7 +91,7 @@ func (c *Client) commitmentTxModule(msg bean.RequestMessage) (enum.SendTargetTyp
 		c.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_CommitmentTx_NewestRDByChanId:
-		node, err := service.CommitmentTxService.GetNewestRDTxByChannelId(msg.Data, c.User)
+		node, err := service.CommitmentTxService.GetLatestRDTxByChannelId(msg.Data, c.User)
 		if err != nil {
 			data = err.Error()
 		} else {
@@ -106,7 +106,7 @@ func (c *Client) commitmentTxModule(msg bean.RequestMessage) (enum.SendTargetTyp
 		c.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_CommitmentTx_NewestBRByChanId:
-		node, err := service.CommitmentTxService.GetNewestBRTxByChannelId(msg.Data, c.User)
+		node, err := service.CommitmentTxService.GetLatestBRTxByChannelId(msg.Data, c.User)
 		if err != nil {
 			data = err.Error()
 		} else {

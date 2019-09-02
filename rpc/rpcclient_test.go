@@ -108,14 +108,14 @@ func TestClient_GetMiningInfo(t *testing.T) {
 		return
 	}
 	log.Println(isvalid)
-	isvalid, err = client.ValidateAddress("n1Grf4JGHUC2CdHHoDRYb7jbVKU2Fv8Tsn")
+	isvalid, err = client.ValidateAddress("n4bJvpVHks3Fz9wWB9f445LGV5xTS6LGpA")
 	if err != nil {
 		log.Println(err)
 		return
 	}
 	log.Println(isvalid)
 
-	isvilid, err := client.CreateMultiSig(2, []string{"0343c3b527ebf385b15cedfa7e9b840b32353482bfc29ddc931a155ff41db0123e", "0343c3b527ebf385b15cedfa7e9b840b32353482bfc29ddc931a155ff41db0123e"})
+	isvilid, err := client.CreateMultiSig(2, []string{"0343c3b527ebf385b15cedfa7e9b840b32353482bfc29ddc931a155ff41db0123e", "0303391b3681f48f5f181bbfbdea741b9a2fdac0e8d99def43b6faed78bb8a4e28"})
 	if err != nil {
 		log.Println(err)
 		return
