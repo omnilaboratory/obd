@@ -7,11 +7,12 @@ import (
 	"LightningOnOmni/tool"
 	"encoding/json"
 	"errors"
+	"log"
+	"time"
+
 	"github.com/asdine/storm"
 	"github.com/asdine/storm/q"
 	"github.com/tidwall/gjson"
-	"log"
-	"time"
 )
 
 type commitmentTxManager struct{}
@@ -70,7 +71,7 @@ func (service *commitmentTxManager) CreateNewCommitmentTxRequest(jsonData string
 		return nil, nil, errors.New("not enough payment amount")
 	}
 
-	// if alice transfer to bob, alice is creator
+	// if alice transfer to bob, alice is the creator
 	if isAliceCreateTransfer {
 		tempAddrPrivateKeyMap[channelInfo.PubKeyA] = data.ChannelAddressPrivateKey
 	} else {
@@ -217,6 +218,9 @@ func (service *commitmentTxSignedManager) CommitmentTxSign(jsonData string, sign
 	}
 
 	//确定是谁发起的转账发起方 谁是签名收款方 默认是alice发起转账，bob是签收方，如果签收方是alice 那么就是bob发起的转账请求
+	//Make sure who creates the transaction, who will sign the transaction.
+	//The default creator is Alice, and Bob is the signer.
+	//While if ALice is the signer, then Bob creates the transaction.
 	var isAliceCreateTransfer = true
 	if signer.PeerId == channelInfo.PeerIdA {
 		isAliceCreateTransfer = false
@@ -234,24 +238,25 @@ func (service *commitmentTxSignedManager) CommitmentTxSign(jsonData string, sign
 		return nil, nil, &targetUser, errors.New("signer disagree transaction")
 	}
 
-	// if alice transfer to bob,bob is signer
+	// if alice transfer to bob,bob is the signer
 	if isAliceCreateTransfer {
 		tempAddrPrivateKeyMap[channelInfo.PubKeyB] = data.ChannelAddressPrivateKey // data.ChannelAddressPrivateKey from signer
 	} else {
 		tempAddrPrivateKeyMap[channelInfo.PubKeyA] = data.ChannelAddressPrivateKey
 	}
 
-	//启动事务
+	//launch database transaction, if anything goes wrong, roll back.
 	tx, _ := db.Begin(true)
 	defer tx.Rollback()
 
-	// 得到充值交易
+	// get the funding transaction
 	var fundingTransaction = &dao.FundingTransaction{}
 	err = tx.One("ChannelId", data.ChannelId, fundingTransaction)
 	if err != nil {
 		return nil, nil, &targetUser, err
 	}
 	//获取alice 处于10的  c
+	//obtain Alice's transaction
 	commitmentATxInfo, err := createAliceSideTxs(tx, data, channelInfo, fundingTransaction, signer)
 	if err != nil {
 		return nil, nil, nil, err
@@ -418,7 +423,8 @@ func createBobSideTxs(tx storm.Node, data *bean.CommitmentTxSigned, channelInfo 
 		lastCommitmentATx = nil
 	}
 
-	//如果是单通道充值，bob第一次没有c rd
+	//In unilataral funding mode, only Alice is required to fund the channel.
+	//So during funding procedure, on Bob side, he has no commitment transaction and revockable delivery transaction.
 	if lastCommitmentATx != nil {
 
 		// create BRa tx
@@ -467,7 +473,7 @@ func createBobSideTxs(tx storm.Node, data *bean.CommitmentTxSigned, channelInfo 
 	var outputBean = commitmentOutputBean{}
 	if isAliceCreateTransfer {
 		outputBean.TempAddress = data.CurrTempPubKey
-		//default alice transter to bob,then bob add money
+		//by default, alice transters money to bob,then bob's balance increases.
 		outputBean.AmountM = fundingTransaction.AmountA + data.Amount
 		outputBean.AmountB = fundingTransaction.AmountB - data.Amount
 		if lastCommitmentATx != nil {
