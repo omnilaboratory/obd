@@ -192,11 +192,11 @@ func (service *commitmentTxManager) Del(id int) (node *dao.CommitmentTxInfo, err
 	return node, err
 }
 
-type commitTxSignedManager struct{}
+type commitmentTxSignedManager struct{}
 
-var CommitTxSignedService commitTxSignedManager
+var CommitmentTxSignedService commitmentTxSignedManager
 
-func (service *commitTxSignedManager) CommitmentTxSign(jsonData string, signer *bean.User) (*dao.CommitmentTxInfo, *dao.CommitmentTxInfo, *string, error) {
+func (service *commitmentTxSignedManager) CommitmentTxSign(jsonData string, signer *bean.User) (*dao.CommitmentTxInfo, *dao.CommitmentTxInfo, *string, error) {
 	if tool.CheckIsString(&jsonData) == false {
 		return nil, nil, nil, errors.New("empty json data")
 	}
@@ -554,7 +554,7 @@ func createBobSideTxs(tx storm.Node, data *bean.CommitmentTxSigned, channelInfo 
 	return commitmentTxInfo, err
 }
 
-func (service *commitTxSignedManager) GetItemsByChannelId(jsonData string) (nodes []dao.CommitmentTxInfo, count *int, err error) {
+func (service *commitmentTxSignedManager) GetItemsByChannelId(jsonData string) (nodes []dao.CommitmentTxInfo, count *int, err error) {
 	var chanId bean.ChannelID
 	array := gjson.Get(jsonData, "channel_id").Array()
 
@@ -590,7 +590,7 @@ func (service *commitTxSignedManager) GetItemsByChannelId(jsonData string) (node
 	return nodes, count, err
 }
 
-func (service *commitTxSignedManager) GetItemById(id int) (node *dao.CommitmentTxInfo, err error) {
+func (service *commitmentTxSignedManager) GetItemById(id int) (node *dao.CommitmentTxInfo, err error) {
 	db, err := dao.DBService.GetDB()
 	if err != nil {
 		return nil, err
@@ -600,7 +600,7 @@ func (service *commitTxSignedManager) GetItemById(id int) (node *dao.CommitmentT
 	return node, nil
 }
 
-func (service *commitTxSignedManager) TotalCount() (count int, err error) {
+func (service *commitmentTxSignedManager) TotalCount() (count int, err error) {
 	db, err := dao.DBService.GetDB()
 	if err != nil {
 		return 0, err

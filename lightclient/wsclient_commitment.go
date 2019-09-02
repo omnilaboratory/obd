@@ -130,7 +130,7 @@ func (c *Client) commitmentTxSignModule(msg bean.RequestMessage) (enum.SendTarge
 
 	switch msg.Type {
 	case enum.MsgType_CommitmentTxSigned_Edit:
-		node, _, _, err := service.CommitTxSignedService.CommitmentTxSign(msg.Data, c.User)
+		node, _, _, err := service.CommitmentTxSignedService.CommitmentTxSign(msg.Data, c.User)
 		if err != nil {
 			data = err.Error()
 		} else {
@@ -145,7 +145,7 @@ func (c *Client) commitmentTxSignModule(msg bean.RequestMessage) (enum.SendTarge
 		c.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_CommitmentTxSigned_ItemByChanId:
-		nodes, count, err := service.CommitTxSignedService.GetItemsByChannelId(msg.Data)
+		nodes, count, err := service.CommitmentTxSignedService.GetItemsByChannelId(msg.Data)
 		log.Println(*count)
 		if err != nil {
 			data = err.Error()
@@ -161,7 +161,7 @@ func (c *Client) commitmentTxSignModule(msg bean.RequestMessage) (enum.SendTarge
 		c.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_CommitmentTxSigned_ItemById:
-		nodes, err := service.CommitTxSignedService.GetItemById(int(gjson.Parse(msg.Data).Int()))
+		nodes, err := service.CommitmentTxSignedService.GetItemById(int(gjson.Parse(msg.Data).Int()))
 		if err != nil {
 			data = err.Error()
 		} else {
@@ -176,7 +176,7 @@ func (c *Client) commitmentTxSignModule(msg bean.RequestMessage) (enum.SendTarge
 		c.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_CommitmentTxSigned_Count:
-		count, err := service.CommitTxSignedService.TotalCount()
+		count, err := service.CommitmentTxSignedService.TotalCount()
 		if err != nil {
 			data = err.Error()
 		} else {
