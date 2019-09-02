@@ -9,7 +9,7 @@ import (
 	"strconv"
 )
 
-func (c *Client) channelModule(msg bean.RequestMessage) (enum.SendTargetType, []byte, bool) {
+func (client *Client) channelModule(msg bean.RequestMessage) (enum.SendTargetType, []byte, bool) {
 	status := false
 	var sendType = enum.SendTargetType_SendToNone
 	data := ""
@@ -19,10 +19,10 @@ func (c *Client) channelModule(msg bean.RequestMessage) (enum.SendTargetType, []
 		if tool.CheckIsString(&msg.RecipientPeerId) == false {
 			data = "no target fundee"
 		} else {
-			if msg.RecipientPeerId == c.User.PeerId {
+			if msg.RecipientPeerId == client.User.PeerId {
 				data = "can not open channel to yourself"
 			} else {
-				node, err := service.ChannelService.OpenChannel(msg, c.User.PeerId)
+				node, err := service.ChannelService.OpenChannel(msg, client.User.PeerId)
 				if err != nil {
 					data = err.Error()
 				} else {
@@ -36,7 +36,7 @@ func (c *Client) channelModule(msg bean.RequestMessage) (enum.SendTargetType, []
 				}
 			}
 		}
-		c.sendToSomeone(msg.Type, status, msg.RecipientPeerId, data)
+		client.sendToSomeone(msg.Type, status, msg.RecipientPeerId, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_ChannelOpen_ItemByTempId:
 		node, err := service.ChannelService.GetChannelByTemporaryChanId(msg.Data)
@@ -51,7 +51,7 @@ func (c *Client) channelModule(msg bean.RequestMessage) (enum.SendTargetType, []
 				status = true
 			}
 		}
-		c.sendToMyself(msg.Type, status, data)
+		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_ChannelOpen_DelItemByTempId:
 		node, err := service.ChannelService.DelChannelByTemporaryChanId(msg.Data)
@@ -66,10 +66,10 @@ func (c *Client) channelModule(msg bean.RequestMessage) (enum.SendTargetType, []
 				status = true
 			}
 		}
-		c.sendToMyself(msg.Type, status, data)
+		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_ChannelOpen_AllItem:
-		nodes, err := service.ChannelService.AllItem(c.User.PeerId)
+		nodes, err := service.ChannelService.AllItem(client.User.PeerId)
 		if err != nil {
 			data = err.Error()
 		} else {
@@ -81,25 +81,25 @@ func (c *Client) channelModule(msg bean.RequestMessage) (enum.SendTargetType, []
 				status = true
 			}
 		}
-		c.sendToMyself(msg.Type, status, data)
+		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_ChannelOpen_Count:
-		node, err := service.ChannelService.TotalCount(c.User.PeerId)
+		node, err := service.ChannelService.TotalCount(client.User.PeerId)
 		if err != nil {
 			data = err.Error()
 		} else {
 			data = strconv.Itoa(node)
 			status = true
 		}
-		c.sendToMyself(msg.Type, status, data)
+		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	//get acceptChannelReq from fundee then send to funder
 	case enum.MsgType_ChannelAccept:
-		if c.User == nil {
-			c.sendToMyself(msg.Type, true, "please login first")
+		if client.User == nil {
+			client.sendToMyself(msg.Type, true, "please login first")
 			sendType = enum.SendTargetType_SendToSomeone
 		} else {
-			node, err := service.ChannelService.AcceptChannel(msg.Data, c.User.PeerId)
+			node, err := service.ChannelService.AcceptChannel(msg.Data, client.User.PeerId)
 			if err != nil {
 				data = err.Error()
 			} else {
@@ -112,9 +112,9 @@ func (c *Client) channelModule(msg bean.RequestMessage) (enum.SendTargetType, []
 				}
 			}
 			if node != nil {
-				c.sendToSomeone(msg.Type, status, node.PeerIdA, data)
+				client.sendToSomeone(msg.Type, status, node.PeerIdA, data)
 			}
-			c.sendToMyself(msg.Type, status, data)
+			client.sendToMyself(msg.Type, status, data)
 			sendType = enum.SendTargetType_SendToSomeone
 		}
 	}

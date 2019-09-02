@@ -9,7 +9,7 @@ import (
 	"strconv"
 )
 
-func (c *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.SendTargetType, []byte, bool) {
+func (client *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.SendTargetType, []byte, bool) {
 	status := false
 	var sendType = enum.SendTargetType_SendToNone
 	data := ""
@@ -24,10 +24,10 @@ func (c *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.SendTar
 			node, err := service.ChannelService.GetChannelByTemporaryChanIdArray(fundingInfo.TemporaryChannelId)
 			if node != nil {
 				peerId := node.PeerIdA
-				if peerId == c.User.PeerId {
+				if peerId == client.User.PeerId {
 					peerId = node.PeerIdB
 				}
-				_, err := c.FindUser(&peerId)
+				_, err := client.FindUser(&peerId)
 				if err != nil {
 					data = err.Error()
 				}
@@ -37,7 +37,7 @@ func (c *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.SendTar
 		}
 
 		if data == "" {
-			node, err := service.FundingTransactionService.CreateFundingTx(msg.Data, c.User)
+			node, err := service.FundingTransactionService.CreateFundingTx(msg.Data, client.User)
 			if err != nil {
 				data = err.Error()
 			} else {
@@ -51,13 +51,13 @@ func (c *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.SendTar
 			}
 			if node != nil {
 				peerId := node.PeerIdA
-				if peerId == c.User.PeerId {
+				if peerId == client.User.PeerId {
 					peerId = node.PeerIdB
 				}
-				c.sendToSomeone(msg.Type, status, peerId, data)
+				client.sendToSomeone(msg.Type, status, peerId, data)
 			}
 		}
-		c.sendToMyself(msg.Type, status, data)
+		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_FundingCreate_ItemByTempId:
 		node, err := service.FundingTransactionService.ItemByTempId(msg.Data)
@@ -72,7 +72,7 @@ func (c *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.SendTar
 				status = true
 			}
 		}
-		c.sendToMyself(msg.Type, status, data)
+		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_FundingCreate_ItemById:
 		id, err := strconv.Atoi(msg.Data)
@@ -92,10 +92,10 @@ func (c *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.SendTar
 				status = true
 			}
 		}
-		c.sendToMyself(msg.Type, status, data)
+		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_FundingCreate_ALlItem:
-		node, err := service.FundingTransactionService.AllItem(c.User.PeerId)
+		node, err := service.FundingTransactionService.AllItem(client.User.PeerId)
 		if err != nil {
 			data = err.Error()
 		} else {
@@ -107,7 +107,7 @@ func (c *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.SendTar
 				status = true
 			}
 		}
-		c.sendToMyself(msg.Type, status, data)
+		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_FundingCreate_DelById:
 		id, err := strconv.Atoi(msg.Data)
@@ -125,22 +125,22 @@ func (c *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.SendTar
 			}
 			break
 		}
-		c.sendToMyself(msg.Type, status, data)
+		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_FundingCreate_Count:
-		count, err := service.FundingTransactionService.TotalCount(c.User.PeerId)
+		count, err := service.FundingTransactionService.TotalCount(client.User.PeerId)
 		if err != nil {
 			data = err.Error()
 		} else {
 			data = strconv.Itoa(count)
 			status = true
 		}
-		c.sendToMyself(msg.Type, status, data)
+		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	}
 	return sendType, []byte(data), status
 }
-func (c *Client) fundingSignModule(msg bean.RequestMessage) (enum.SendTargetType, []byte, bool) {
+func (client *Client) fundingSignModule(msg bean.RequestMessage) (enum.SendTargetType, []byte, bool) {
 	status := false
 	var sendType = enum.SendTargetType_SendToNone
 	data := ""
@@ -148,7 +148,7 @@ func (c *Client) fundingSignModule(msg bean.RequestMessage) (enum.SendTargetType
 	//get openChannelReq from funder then send to fundee
 	// create a funding tx
 	case enum.MsgType_FundingSign_Edit:
-		signed, err := service.FundingTransactionService.FundingTransactionSign(msg.Data, c.User)
+		signed, err := service.FundingTransactionService.FundingTransactionSign(msg.Data, client.User)
 		if err != nil {
 			data = err.Error()
 		}
@@ -161,7 +161,7 @@ func (c *Client) fundingSignModule(msg bean.RequestMessage) (enum.SendTargetType
 			data = string(bytes)
 			status = true
 		}
-		c.sendToMyself(msg.Type, status, data)
+		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	}
 	return sendType, []byte(data), status

@@ -23,9 +23,9 @@ type Client struct {
 	SendChannel chan []byte
 }
 
-func (c *Client) Write() {
+func (client *Client) Write() {
 	defer func() {
-		e := c.Socket.Close()
+		e := client.Socket.Close()
 		if e != nil {
 			log.Println(e)
 		} else {
@@ -35,27 +35,27 @@ func (c *Client) Write() {
 
 	for {
 		select {
-		case _order, ok := <-c.SendChannel:
+		case _order, ok := <-client.SendChannel:
 			if !ok {
-				_ = c.Socket.WriteMessage(websocket.CloseMessage, []byte{})
+				_ = client.Socket.WriteMessage(websocket.CloseMessage, []byte{})
 				return
 			}
 			log.Printf("send data: %v \n", string(_order))
-			_ = c.Socket.WriteMessage(websocket.TextMessage, _order)
+			_ = client.Socket.WriteMessage(websocket.TextMessage, _order)
 		}
 	}
 }
 
-func (c *Client) Read() {
+func (client *Client) Read() {
 	defer func() {
-		_ = service.UserService.UserLogout(c.User)
-		GlobalWsClientManager.Unregister <- c
-		_ = c.Socket.Close()
+		_ = service.UserService.UserLogout(client.User)
+		GlobalWsClientManager.Disconnected <- client
+		_ = client.Socket.Close()
 		log.Println("socket closed after reading...")
 	}()
 
 	for {
-		_, dataReq, err := c.Socket.ReadMessage()
+		_, dataReq, err := client.Socket.ReadMessage()
 		if err != nil {
 			log.Println(err)
 			break
@@ -79,9 +79,9 @@ func (c *Client) Read() {
 
 		// check the Recipient is online
 		if tool.CheckIsString(&msg.RecipientPeerId) {
-			_, err := c.FindUser(&msg.RecipientPeerId)
+			_, err := client.FindUser(&msg.RecipientPeerId)
 			if err != nil {
-				c.sendToMyself(msg.Type, true, "can not find target user")
+				client.sendToMyself(msg.Type, true, "can not find target user")
 				continue
 			}
 		}
@@ -91,11 +91,11 @@ func (c *Client) Read() {
 			client := rpc.NewClient()
 			result, err := client.VerifyMessage(msg.PubKey, msg.Signature, msg.Data)
 			if err != nil {
-				c.sendToMyself(msg.Type, false, err.Error())
+				client.sendToMyself(msg.Type, false, err.Error())
 				continue
 			}
 			if gjson.Parse(result).Bool() == false {
-				c.sendToMyself(msg.Type, false, "error signature")
+				client.sendToMyself(msg.Type, false, "error signature")
 				continue
 			}
 		}
@@ -105,18 +105,18 @@ func (c *Client) Read() {
 		var dataOut []byte
 		var flag = true
 		if msg.Type < 1000 && msg.Type >= 0 {
-			sendType, dataOut, status = c.userModule(msg)
+			sendType, dataOut, status = client.userModule(msg)
 			flag = false
 		}
 
 		if msg.Type > 1000 {
-			sendType, dataOut, status = c.omniCoreModule(msg)
+			sendType, dataOut, status = client.omniCoreModule(msg)
 			flag = false
 		}
 
 		if flag {
-			if c.User == nil {
-				c.sendToMyself(msg.Type, false, "please login")
+			if client.User == nil {
+				client.sendToMyself(msg.Type, false, "please login")
 				continue
 			}
 		}
@@ -124,38 +124,38 @@ func (c *Client) Read() {
 		typeStr := strconv.Itoa(int(msg.Type))
 		//-32 -3201 -3202 -3203 -3204
 		if strings.HasPrefix(typeStr, "-32") {
-			sendType, dataOut, status = c.channelModule(msg)
+			sendType, dataOut, status = client.channelModule(msg)
 		}
 		//-33 -3301 -3302 -3303 -3304
 		if strings.HasPrefix(typeStr, "-33") {
-			sendType, dataOut, status = c.channelModule(msg)
+			sendType, dataOut, status = client.channelModule(msg)
 		}
 		//-34 -3401 -3402 -3403 -3404
 		if strings.HasPrefix(typeStr, "-34") {
-			sendType, dataOut, status = c.fundingTransactionModule(msg)
+			sendType, dataOut, status = client.fundingTransactionModule(msg)
 		}
 
 		//-35
 		if msg.Type == enum.MsgType_FundingSign_Edit {
-			sendType, dataOut, status = c.fundingSignModule(msg)
+			sendType, dataOut, status = client.fundingSignModule(msg)
 		}
 
 		if strings.HasPrefix(typeStr, "-35") {
 			//-351 -35101 -35102 -35103 -35104
 			if strings.HasPrefix(typeStr, "-351") {
-				sendType, dataOut, status = c.commitmentTxModule(msg)
+				sendType, dataOut, status = client.commitmentTxModule(msg)
 			} else
 			//-352 -35201 -35202 -35203 -35204
 			if strings.HasPrefix(typeStr, "-352") {
-				sendType, dataOut, status = c.commitmentTxSignModule(msg)
+				sendType, dataOut, status = client.commitmentTxSignModule(msg)
 			} else
 			//-353 -35301 -35302 -35303 -35304
 			if strings.HasPrefix(typeStr, "-353") {
-				sendType, dataOut, status = c.otherModule(msg)
+				sendType, dataOut, status = client.otherModule(msg)
 			} else
 			//-354 -35401 -35402 -35403 -35404
 			if strings.HasPrefix(typeStr, "-354") {
-				sendType, dataOut, status = c.otherModule(msg)
+				sendType, dataOut, status = client.otherModule(msg)
 			}
 		}
 
@@ -166,15 +166,15 @@ func (c *Client) Read() {
 		//broadcast except me
 		if sendType == enum.SendTargetType_SendToExceptMe {
 			for client := range GlobalWsClientManager.Clients_map {
-				if client != c {
-					jsonMessage := getReplyObj(string(dataOut), msg.Type, status, c)
+				if client != client {
+					jsonMessage := getReplyObj(string(dataOut), msg.Type, status, client)
 					client.SendChannel <- jsonMessage
 				}
 			}
 		}
 		//broadcast to all
 		if sendType == enum.SendTargetType_SendToAll {
-			jsonMessage := getReplyObj(string(dataOut), msg.Type, status, c)
+			jsonMessage := getReplyObj(string(dataOut), msg.Type, status, client)
 			GlobalWsClientManager.Broadcast <- jsonMessage
 		}
 	}
@@ -204,16 +204,16 @@ func getReplyObj(data string, msgType enum.MsgType, status bool, client *Client)
 	return jsonMessage
 }
 
-func (c *Client) sendToMyself(msgType enum.MsgType, status bool, data string) {
-	jsonMessage := getReplyObj(data, msgType, status, c)
-	c.SendChannel <- jsonMessage
+func (client *Client) sendToMyself(msgType enum.MsgType, status bool, data string) {
+	jsonMessage := getReplyObj(data, msgType, status, client)
+	client.SendChannel <- jsonMessage
 }
 
-func (c *Client) sendToSomeone(msgType enum.MsgType, status bool, recipientPeerId string, data string) error {
+func (client *Client) sendToSomeone(msgType enum.MsgType, status bool, recipientPeerId string, data string) error {
 	if &recipientPeerId != nil {
 		for client := range GlobalWsClientManager.Clients_map {
 			if client.User != nil && client.User.PeerId == recipientPeerId {
-				jsonMessage := getReplyObj(data, msgType, status, c)
+				jsonMessage := getReplyObj(data, msgType, status, client)
 				client.SendChannel <- jsonMessage
 				return nil
 			}
@@ -221,7 +221,7 @@ func (c *Client) sendToSomeone(msgType enum.MsgType, status bool, recipientPeerI
 	}
 	return errors.New("recipient not exist or online")
 }
-func (c *Client) FindUser(peerId *string) (client *Client, err error) {
+func (client *Client) FindUser(peerId *string) (client *Client, err error) {
 	if tool.CheckIsString(peerId) {
 		for client := range GlobalWsClientManager.Clients_map {
 			if client.User != nil && client.User.PeerId == *peerId && GlobalWsClientManager.Clients_map[client] {

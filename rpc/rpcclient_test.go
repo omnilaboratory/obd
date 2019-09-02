@@ -95,6 +95,7 @@ func TestClient_GetMiningInfo(t *testing.T) {
 	}
 	log.Println(result)
 
+	return
 	address, err := client.GetNewAddress("")
 	if err != nil {
 		log.Println(err)

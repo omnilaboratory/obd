@@ -11,13 +11,13 @@ import (
 	"github.com/tidwall/gjson"
 )
 
-func (c *Client) commitmentTxModule(msg bean.RequestMessage) (enum.SendTargetType, []byte, bool) {
+func (client *Client) commitmentTxModule(msg bean.RequestMessage) (enum.SendTargetType, []byte, bool) {
 	status := false
 	var sendType = enum.SendTargetType_SendToNone
 	data := ""
 	switch msg.Type {
 	case enum.MsgType_CommitmentTx_Edit:
-		node, targetUser, err := service.CommitmentTxService.CreateNewCommitmentTxRequest(msg.Data, c.User)
+		node, targetUser, err := service.CommitmentTxService.CreateNewCommitmentTxRequest(msg.Data, client.User)
 		if err != nil {
 			data = err.Error()
 		} else {
@@ -30,9 +30,9 @@ func (c *Client) commitmentTxModule(msg bean.RequestMessage) (enum.SendTargetTyp
 			}
 		}
 		if targetUser != nil && status {
-			c.sendToSomeone(msg.Type, status, *targetUser, data)
+			client.sendToSomeone(msg.Type, status, *targetUser, data)
 		}
-		c.sendToMyself(msg.Type, status, data)
+		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_CommitmentTx_ItemByChanId:
 		nodes, count, err := service.CommitmentTxService.GetItemsByChannelId(msg.Data)
@@ -48,7 +48,7 @@ func (c *Client) commitmentTxModule(msg bean.RequestMessage) (enum.SendTargetTyp
 				status = true
 			}
 		}
-		c.sendToMyself(msg.Type, status, data)
+		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_CommitmentTx_ItemById:
 		nodes, err := service.CommitmentTxService.GetItemById(int(gjson.Parse(msg.Data).Int()))
@@ -63,7 +63,7 @@ func (c *Client) commitmentTxModule(msg bean.RequestMessage) (enum.SendTargetTyp
 				status = true
 			}
 		}
-		c.sendToMyself(msg.Type, status, data)
+		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_CommitmentTx_Count:
 		count, err := service.CommitmentTxService.TotalCount()
@@ -73,10 +73,10 @@ func (c *Client) commitmentTxModule(msg bean.RequestMessage) (enum.SendTargetTyp
 			data = strconv.Itoa(count)
 			status = true
 		}
-		c.sendToMyself(msg.Type, status, data)
+		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_CommitmentTx_NewestCommitmentTxByChanId:
-		node, err := service.CommitmentTxService.GetLatestCommitmentTxByChannelId(msg.Data, c.User)
+		node, err := service.CommitmentTxService.GetLatestCommitmentTxByChannelId(msg.Data, client.User)
 		if err != nil {
 			data = err.Error()
 		} else {
@@ -88,10 +88,10 @@ func (c *Client) commitmentTxModule(msg bean.RequestMessage) (enum.SendTargetTyp
 				status = true
 			}
 		}
-		c.sendToMyself(msg.Type, status, data)
+		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_CommitmentTx_NewestRDByChanId:
-		node, err := service.CommitmentTxService.GetLatestRDTxByChannelId(msg.Data, c.User)
+		node, err := service.CommitmentTxService.GetLatestRDTxByChannelId(msg.Data, client.User)
 		if err != nil {
 			data = err.Error()
 		} else {
@@ -103,10 +103,10 @@ func (c *Client) commitmentTxModule(msg bean.RequestMessage) (enum.SendTargetTyp
 				status = true
 			}
 		}
-		c.sendToMyself(msg.Type, status, data)
+		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_CommitmentTx_NewestBRByChanId:
-		node, err := service.CommitmentTxService.GetLatestBRTxByChannelId(msg.Data, c.User)
+		node, err := service.CommitmentTxService.GetLatestBRTxByChannelId(msg.Data, client.User)
 		if err != nil {
 			data = err.Error()
 		} else {
@@ -118,19 +118,19 @@ func (c *Client) commitmentTxModule(msg bean.RequestMessage) (enum.SendTargetTyp
 				status = true
 			}
 		}
-		c.sendToMyself(msg.Type, status, data)
+		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	}
 	return sendType, []byte(data), status
 }
-func (c *Client) commitmentTxSignModule(msg bean.RequestMessage) (enum.SendTargetType, []byte, bool) {
+func (client *Client) commitmentTxSignModule(msg bean.RequestMessage) (enum.SendTargetType, []byte, bool) {
 	status := false
 	var sendType = enum.SendTargetType_SendToNone
 	data := ""
 
 	switch msg.Type {
 	case enum.MsgType_CommitmentTxSigned_Edit:
-		node, _, _, err := service.CommitmentTxSignedService.CommitmentTxSign(msg.Data, c.User)
+		node, _, _, err := service.CommitmentTxSignedService.CommitmentTxSign(msg.Data, client.User)
 		if err != nil {
 			data = err.Error()
 		} else {
@@ -142,7 +142,7 @@ func (c *Client) commitmentTxSignModule(msg bean.RequestMessage) (enum.SendTarge
 				status = true
 			}
 		}
-		c.sendToMyself(msg.Type, status, data)
+		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_CommitmentTxSigned_ItemByChanId:
 		nodes, count, err := service.CommitmentTxSignedService.GetItemsByChannelId(msg.Data)
@@ -158,7 +158,7 @@ func (c *Client) commitmentTxSignModule(msg bean.RequestMessage) (enum.SendTarge
 				status = true
 			}
 		}
-		c.sendToMyself(msg.Type, status, data)
+		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_CommitmentTxSigned_ItemById:
 		nodes, err := service.CommitmentTxSignedService.GetItemById(int(gjson.Parse(msg.Data).Int()))
@@ -173,7 +173,7 @@ func (c *Client) commitmentTxSignModule(msg bean.RequestMessage) (enum.SendTarge
 				status = true
 			}
 		}
-		c.sendToMyself(msg.Type, status, data)
+		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_CommitmentTxSigned_Count:
 		count, err := service.CommitmentTxSignedService.TotalCount()
@@ -183,14 +183,14 @@ func (c *Client) commitmentTxSignModule(msg bean.RequestMessage) (enum.SendTarge
 			data = strconv.Itoa(count)
 			status = true
 		}
-		c.sendToMyself(msg.Type, status, data)
+		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	}
 
 	return sendType, []byte(data), status
 }
 
-func (c *Client) otherModule(msg bean.RequestMessage) (enum.SendTargetType, []byte, bool) {
+func (client *Client) otherModule(msg bean.RequestMessage) (enum.SendTargetType, []byte, bool) {
 	status := false
 	var sendType = enum.SendTargetType_SendToNone
 	data := ""

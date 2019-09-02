@@ -47,13 +47,13 @@ func (service *commitmentTxManager) CreateNewCommitmentTxRequest(jsonData string
 		isAliceCreateTransfer = false
 	}
 
-	var createSide = 0
+	var creatorSide = 0
 	if isAliceCreateTransfer == false {
-		createSide = 1
+		creatorSide = 1
 	}
 
 	commitmentTxInfo := &dao.CommitmentTxInfo{}
-	err = db.Select(q.Eq("ChannelId", data.ChannelId), q.Eq("CurrState", dao.TxInfoState_OtherSign), q.Eq("CreateSide", createSide), q.Or(q.Eq("PeerIdA", creator.PeerId), q.Eq("PeerIdB", creator.PeerId))).OrderBy("CreateAt").Reverse().First(commitmentTxInfo)
+	err = db.Select(q.Eq("ChannelId", data.ChannelId), q.Eq("CurrState", dao.TxInfoState_OtherSign), q.Eq("CreatorSide", creatorSide), q.Or(q.Eq("PeerIdA", creator.PeerId), q.Eq("PeerIdB", creator.PeerId))).OrderBy("CreateAt").Reverse().First(commitmentTxInfo)
 	if err != nil {
 		return nil, nil, errors.New("not find the commitmentTxInfo")
 	}
@@ -278,7 +278,7 @@ func createAliceSideTxs(tx storm.Node, data *bean.CommitmentTxSigned, channelInf
 	}
 
 	var lastCommitmentATx = &dao.CommitmentTxInfo{}
-	err := tx.Select(q.Eq("ChannelId", data.ChannelId), q.Eq("CreateSide", creatorSide), q.Eq("CurrState", dao.TxInfoState_OtherSign), q.Or(q.Eq("PeerIdA", signer.PeerId), q.Eq("PeerIdB", signer.PeerId))).OrderBy("CreateAt").Reverse().First(lastCommitmentATx)
+	err := tx.Select(q.Eq("ChannelId", data.ChannelId), q.Eq("CreatorSide", creatorSide), q.Eq("CurrState", dao.TxInfoState_OtherSign), q.Or(q.Eq("PeerIdA", signer.PeerId), q.Eq("PeerIdB", signer.PeerId))).OrderBy("CreateAt").Reverse().First(lastCommitmentATx)
 	if err != nil {
 		return nil, err
 	}
@@ -317,15 +317,21 @@ func createAliceSideTxs(tx storm.Node, data *bean.CommitmentTxSigned, channelInf
 	err = tx.Save(breachRemedyTransaction)
 
 	lastRDTransaction := &dao.RevocableDeliveryTransaction{}
-	err = tx.Select(q.Eq("ChannelId", data.ChannelId), q.Eq("CreateSide", creatorSide), q.Eq("CommitmentTxId", lastCommitmentATx.Id), q.Eq("CurrState", dao.TxInfoState_OtherSign), q.Or(q.Eq("PeerIdA", signer.PeerId), q.Eq("PeerIdB", signer.PeerId))).OrderBy("CreateAt").Reverse().First(lastRDTransaction)
+	err = tx.Select(q.Eq("ChannelId", data.ChannelId), q.Eq("CreatorSide", creatorSide), q.Eq("CommitmentTxId", lastCommitmentATx.Id), q.Eq("CurrState", dao.TxInfoState_OtherSign), q.Or(q.Eq("PeerIdA", signer.PeerId), q.Eq("PeerIdB", signer.PeerId))).OrderBy("CreateAt").Reverse().First(lastRDTransaction)
 	if err != nil {
 		return nil, err
 	}
 
 	lastCommitmentATx.CurrState = dao.TxInfoState_Abord
 	lastRDTransaction.CurrState = dao.TxInfoState_Abord
-	tx.Update(lastCommitmentATx)
-	tx.Update(lastRDTransaction)
+	err = tx.Update(lastCommitmentATx)
+	if err != nil {
+		return nil, err
+	}
+	err = tx.Update(lastRDTransaction)
+	if err != nil {
+		return nil, err
+	}
 
 	var outputBean = commitmentOutputBean{}
 	if isAliceCreateTransfer {
@@ -411,14 +417,14 @@ func createAliceSideTxs(tx storm.Node, data *bean.CommitmentTxSigned, channelInf
 }
 
 func createBobSideTxs(tx storm.Node, data *bean.CommitmentTxSigned, channelInfo *dao.ChannelInfo, fundingTransaction *dao.FundingTransaction, signer *bean.User) (*dao.CommitmentTxInfo, error) {
-	var createSide = 1
+	var creatorSide = 1
 	var isAliceCreateTransfer = true
 	if signer.PeerId == channelInfo.PeerIdA {
 		isAliceCreateTransfer = false
 	}
 
 	var lastCommitmentATx = &dao.CommitmentTxInfo{}
-	err := tx.Select(q.Eq("ChannelId", data.ChannelId), q.Eq("CreateSide", createSide), q.Eq("CurrState", dao.TxInfoState_OtherSign), q.Or(q.Eq("PeerIdA", signer.PeerId), q.Eq("PeerIdB", signer.PeerId))).OrderBy("CreateAt").Reverse().First(lastCommitmentATx)
+	err := tx.Select(q.Eq("ChannelId", data.ChannelId), q.Eq("CreatorSide", creatorSide), q.Eq("CurrState", dao.TxInfoState_OtherSign), q.Or(q.Eq("PeerIdA", signer.PeerId), q.Eq("PeerIdB", signer.PeerId))).OrderBy("CreateAt").Reverse().First(lastCommitmentATx)
 	if err != nil {
 		lastCommitmentATx = nil
 	}
@@ -428,7 +434,7 @@ func createBobSideTxs(tx storm.Node, data *bean.CommitmentTxSigned, channelInfo 
 	if lastCommitmentATx != nil {
 
 		// create BRa tx
-		breachRemedyTransaction, err := createBRTx(createSide, channelInfo, lastCommitmentATx, signer)
+		breachRemedyTransaction, err := createBRTx(creatorSide, channelInfo, lastCommitmentATx, signer)
 		if err != nil {
 			return nil, err
 		}
@@ -459,7 +465,7 @@ func createBobSideTxs(tx storm.Node, data *bean.CommitmentTxSigned, channelInfo 
 		err = tx.Save(breachRemedyTransaction)
 
 		lastRDTransaction := &dao.RevocableDeliveryTransaction{}
-		err = tx.Select(q.Eq("ChannelId", data.ChannelId), q.Eq("CreateSide", createSide), q.Eq("CommitmentTxId", lastCommitmentATx.Id), q.Eq("CurrState", dao.TxInfoState_OtherSign), q.Or(q.Eq("PeerIdA", signer.PeerId), q.Eq("PeerIdB", signer.PeerId))).OrderBy("CreateAt").Reverse().First(lastRDTransaction)
+		err = tx.Select(q.Eq("ChannelId", data.ChannelId), q.Eq("CreatorSide", creatorSide), q.Eq("CommitmentTxId", lastCommitmentATx.Id), q.Eq("CurrState", dao.TxInfoState_OtherSign), q.Or(q.Eq("PeerIdA", signer.PeerId), q.Eq("PeerIdB", signer.PeerId))).OrderBy("CreateAt").Reverse().First(lastRDTransaction)
 		if err != nil {
 			return nil, err
 		}
@@ -492,7 +498,7 @@ func createBobSideTxs(tx storm.Node, data *bean.CommitmentTxSigned, channelInfo 
 	outputBean.ToAddressB = channelInfo.PubKeyA
 
 	// create C2b tx
-	commitmentTxInfo, err := createCommitmentATx(createSide, channelInfo, fundingTransaction, outputBean, signer)
+	commitmentTxInfo, err := createCommitmentATx(creatorSide, channelInfo, fundingTransaction, outputBean, signer)
 	if err != nil {
 		return nil, err
 	}
@@ -530,7 +536,7 @@ func createBobSideTxs(tx storm.Node, data *bean.CommitmentTxSigned, channelInfo 
 	}
 
 	// create RDb tx
-	rdTransaction, err := createRDaTx(createSide, channelInfo, commitmentTxInfo, channelInfo.PubKeyB, signer)
+	rdTransaction, err := createRDaTx(creatorSide, channelInfo, commitmentTxInfo, channelInfo.PubKeyB, signer)
 	if err != nil {
 		return nil, err
 	}

@@ -89,7 +89,7 @@ type CommitmentTxInfo struct {
 	PeerIdB            string         `json:"peer_id_b"`
 	ChannelId          bean.ChannelID `json:"channel_id"`
 	PropertyId         int64          `json:"property_id"`
-	CreateSide         int            `json:"create_side"`   // 0 alice 1 bob
+	CreatorSide        int            `json:"creator_side"`  // 0 alice 1 bob
 	InputTxid          string         `json:"input_txid"`    //input txid  from channeladdr: alice&bob multtaddr, so need  sign of alice2 and bob
 	InputVout          uint32         `json:"input_vout"`    // input vout
 	InputAmount        float64        `json:"input_amount"`  //input amount
@@ -118,7 +118,7 @@ type RevocableDeliveryTransaction struct {
 	PeerIdB        string         `json:"peer_id_b"`
 	ChannelId      bean.ChannelID `json:"channel_id"`
 	PropertyId     int64          `json:"property_id"`
-	CreateSide     int            `json:"create_side"`  // 0 alice 1 bob
+	CreatorSide    int            `json:"creator_side"` // 0 alice 1 bob
 	InputTxid      string         `json:"input_txid"`   //input txid  from commitTx alice2&bob multtaddr, so need  sign of alice2 and bob
 	InputVout      uint32         `json:"input_vout"`   // input vout
 	InputAmount    float64        `json:"input_amount"` //input amount
@@ -144,8 +144,8 @@ type BreachRemedyTransaction struct {
 	PeerIdB        string         `json:"peer_id_b"`
 	ChannelId      bean.ChannelID `json:"channel_id"`
 	PropertyId     int64          `json:"property_id"`
-	CreateSide     int            `json:"create_side"`       // 0 alice 1 bob
-	InputTxid      string         `json:"input_txid"`        //input txid  from commitTx alice2&bob multtaddr, so need  sign of alice2 and bob
+	CreatorSide    int            `json:"creator_side"`      // 0 alice 1 bob
+	InputTxid      string         `json:"input_txid"`        //input txid  from commitTx alice2&bob multtAddr, so need  sign of alice2 and bob
 	InputVout      uint32         `json:"input_vout"`        // input vout
 	InputAmount    float64        `json:"input_amount"`      //input amount
 	PubKeyB        string         `json:"pub_key_b"`         //output bob

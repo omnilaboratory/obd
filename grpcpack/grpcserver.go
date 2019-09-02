@@ -20,7 +20,7 @@ func Server() {
 	s := grpc.NewServer()
 	pb.RegisterBtcServiceServer(s, &BtcRpcManager{})
 
-	// Register reflection service on gRPC server.
+	// Connected reflection service on gRPC server.
 	reflection.Register(s)
 	if err := s.Serve(lis); err != nil {
 		log.Println(err)

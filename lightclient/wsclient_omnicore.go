@@ -10,7 +10,7 @@ import (
 	"github.com/tidwall/gjson"
 )
 
-func (c *Client) omniCoreModule(msg bean.RequestMessage) (enum.SendTargetType, []byte, bool) {
+func (client *Client) omniCoreModule(msg bean.RequestMessage) (enum.SendTargetType, []byte, bool) {
 	status := false
 	var sendType = enum.SendTargetType_SendToNone
 	data := ""
@@ -25,7 +25,7 @@ func (c *Client) omniCoreModule(msg bean.RequestMessage) (enum.SendTargetType, [
 			data = address
 			status = true
 		}
-		c.sendToMyself(msg.Type, status, data)
+		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_Core_GetMiningInfo:
 		result, err := client.GetMiningInfo()
@@ -35,7 +35,7 @@ func (c *Client) omniCoreModule(msg bean.RequestMessage) (enum.SendTargetType, [
 			data = result
 			status = true
 		}
-		c.sendToMyself(msg.Type, status, data)
+		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_Core_GetNetworkInfo:
 		result, err := client.GetNetworkInfo()
@@ -45,7 +45,7 @@ func (c *Client) omniCoreModule(msg bean.RequestMessage) (enum.SendTargetType, [
 			data = result
 			status = true
 		}
-		c.sendToMyself(msg.Type, status, data)
+		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_Core_SignMessageWithPrivKey:
 		privkey := gjson.Get(msg.Data, "privkey").String()
@@ -61,7 +61,7 @@ func (c *Client) omniCoreModule(msg bean.RequestMessage) (enum.SendTargetType, [
 		} else {
 			data = "error data"
 		}
-		c.sendToMyself(msg.Type, status, data)
+		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_Core_VerifyMessage:
 		address := gjson.Get(msg.Data, "address").String()
@@ -78,7 +78,7 @@ func (c *Client) omniCoreModule(msg bean.RequestMessage) (enum.SendTargetType, [
 		} else {
 			data = "error data"
 		}
-		c.sendToMyself(msg.Type, status, data)
+		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_Core_DumpPrivKey:
 		address := gjson.Get(msg.Data, "address").String()
@@ -93,7 +93,7 @@ func (c *Client) omniCoreModule(msg bean.RequestMessage) (enum.SendTargetType, [
 		} else {
 			data = "error address"
 		}
-		c.sendToMyself(msg.Type, status, data)
+		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_Core_ListUnspent:
 		address := gjson.Get(msg.Data, "address").String()
@@ -108,7 +108,7 @@ func (c *Client) omniCoreModule(msg bean.RequestMessage) (enum.SendTargetType, [
 		} else {
 			data = "error address"
 		}
-		c.sendToMyself(msg.Type, status, data)
+		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_Core_BalanceByAddress:
 		address := gjson.Get(msg.Data, "address").String()
@@ -123,7 +123,7 @@ func (c *Client) omniCoreModule(msg bean.RequestMessage) (enum.SendTargetType, [
 		} else {
 			data = "error address"
 		}
-		c.sendToMyself(msg.Type, status, data)
+		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_Core_BtcCreateAndSignRawTransaction:
 		fromBitCoinAddress := gjson.Get(msg.Data, "fromBitCoinAddress").String()
@@ -147,7 +147,7 @@ func (c *Client) omniCoreModule(msg bean.RequestMessage) (enum.SendTargetType, [
 		} else {
 			data = "error address"
 		}
-		c.sendToMyself(msg.Type, status, data)
+		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 
 	}

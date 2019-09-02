@@ -107,7 +107,7 @@ func wsClientConnect(c *gin.Context) {
 		Socket:      conn,
 		SendChannel: make(chan []byte)}
 
-	GlobalWsClientManager.Register <- client
+	GlobalWsClientManager.Connected <- client
 	go client.Write()
 	client.Read()
 }
