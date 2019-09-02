@@ -7,42 +7,42 @@ import (
 )
 
 type ClientManager struct {
-	Clients_map  map[*Client]bool
 	Broadcast    chan []byte
 	Connected    chan *Client
 	Disconnected chan *Client
+	ClientsMap   map[*Client]bool
 }
 
 var GlobalWsClientManager = ClientManager{
 	Broadcast:    make(chan []byte),
 	Connected:    make(chan *Client),
 	Disconnected: make(chan *Client),
-	Clients_map:  make(map[*Client]bool),
+	ClientsMap:   make(map[*Client]bool),
 }
 
 func (clientManager *ClientManager) Start() {
 	for {
 		select {
 		case conn := <-clientManager.Connected:
-			clientManager.Clients_map[conn] = true
+			clientManager.ClientsMap[conn] = true
 			jsonMessage, _ := json.Marshal(&bean.RequestMessage{Data: "A new socket has connected."})
 			log.Println("new socket has connected.")
 			clientManager.Send(jsonMessage, conn)
 		case conn := <-clientManager.Disconnected:
-			if _, ok := clientManager.Clients_map[conn]; ok {
+			if _, ok := clientManager.ClientsMap[conn]; ok {
 				close(conn.SendChannel)
-				delete(clientManager.Clients_map, conn)
+				delete(clientManager.ClientsMap, conn)
 				jsonMessage, _ := json.Marshal(&bean.RequestMessage{Data: "A socket has disconnected."})
 				log.Println("socket has disconnected.")
 				clientManager.Send(jsonMessage, conn)
 			}
 		case order_message := <-clientManager.Broadcast:
-			for conn := range clientManager.Clients_map {
+			for conn := range clientManager.ClientsMap {
 				select {
 				case conn.SendChannel <- order_message:
 				default:
 					close(conn.SendChannel)
-					delete(clientManager.Clients_map, conn)
+					delete(clientManager.ClientsMap, conn)
 				}
 			}
 		}
@@ -50,7 +50,7 @@ func (clientManager *ClientManager) Start() {
 }
 
 func (clientManager *ClientManager) Send(message []byte, myself *Client) {
-	for conn := range clientManager.Clients_map {
+	for conn := range clientManager.ClientsMap {
 		if conn != myself {
 			conn.SendChannel <- message
 		}

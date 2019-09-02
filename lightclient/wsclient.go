@@ -40,7 +40,7 @@ func (client *Client) Write() {
 				_ = client.Socket.WriteMessage(websocket.CloseMessage, []byte{})
 				return
 			}
-			log.Printf("send data: %v \n", string(_order))
+			log.Println("send data", string(_order))
 			_ = client.Socket.WriteMessage(websocket.TextMessage, _order)
 		}
 	}
@@ -88,8 +88,8 @@ func (client *Client) Read() {
 
 		// check the data whether is right signature
 		if tool.CheckIsString(&msg.PubKey) && tool.CheckIsString(&msg.Signature) {
-			client := rpc.NewClient()
-			result, err := client.VerifyMessage(msg.PubKey, msg.Signature, msg.Data)
+			rpcClient := rpc.NewClient()
+			result, err := rpcClient.VerifyMessage(msg.PubKey, msg.Signature, msg.Data)
 			if err != nil {
 				client.sendToMyself(msg.Type, false, err.Error())
 				continue
@@ -165,7 +165,7 @@ func (client *Client) Read() {
 
 		//broadcast except me
 		if sendType == enum.SendTargetType_SendToExceptMe {
-			for client := range GlobalWsClientManager.Clients_map {
+			for client := range GlobalWsClientManager.ClientsMap {
 				if client != client {
 					jsonMessage := getReplyObj(string(dataOut), msg.Type, status, client)
 					client.SendChannel <- jsonMessage
@@ -211,7 +211,7 @@ func (client *Client) sendToMyself(msgType enum.MsgType, status bool, data strin
 
 func (client *Client) sendToSomeone(msgType enum.MsgType, status bool, recipientPeerId string, data string) error {
 	if &recipientPeerId != nil {
-		for client := range GlobalWsClientManager.Clients_map {
+		for client := range GlobalWsClientManager.ClientsMap {
 			if client.User != nil && client.User.PeerId == recipientPeerId {
 				jsonMessage := getReplyObj(data, msgType, status, client)
 				client.SendChannel <- jsonMessage
@@ -221,10 +221,10 @@ func (client *Client) sendToSomeone(msgType enum.MsgType, status bool, recipient
 	}
 	return errors.New("recipient not exist or online")
 }
-func (client *Client) FindUser(peerId *string) (client *Client, err error) {
+func (client *Client) FindUser(peerId *string) (*Client, error) {
 	if tool.CheckIsString(peerId) {
-		for client := range GlobalWsClientManager.Clients_map {
-			if client.User != nil && client.User.PeerId == *peerId && GlobalWsClientManager.Clients_map[client] {
+		for client := range GlobalWsClientManager.ClientsMap {
+			if client.User != nil && client.User.PeerId == *peerId && GlobalWsClientManager.ClientsMap[client] {
 				return client, nil
 			}
 		}
