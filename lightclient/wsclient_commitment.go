@@ -34,7 +34,7 @@ func (client *Client) commitmentTxModule(msg bean.RequestMessage) (enum.SendTarg
 		}
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
-	case enum.MsgType_CommitmentTx_ItemByChanId:
+	case enum.MsgType_CommitmentTx_ItemsByChanId:
 		nodes, count, err := service.CommitmentTxService.GetItemsByChannelId(msg.Data)
 		log.Println(*count)
 		if err != nil {
@@ -129,20 +129,28 @@ func (client *Client) commitmentTxSignModule(msg bean.RequestMessage) (enum.Send
 	data := ""
 
 	switch msg.Type {
-	case enum.MsgType_CommitmentTxSigned_Edit:
-		node, _, _, err := service.CommitmentTxSignedService.CommitmentTxSign(msg.Data, client.User)
+	case enum.MsgType_CommitmentTxSigned_Sign:
+		ca, cb, _, err := service.CommitmentTxSignedService.CommitmentTxSign(msg.Data, client.User)
 		if err != nil {
 			data = err.Error()
 		} else {
-			bytes, err := json.Marshal(node)
+			bytes, err := json.Marshal(ca)
 			if err != nil {
 				data = err.Error()
 			} else {
 				data = string(bytes)
 				status = true
+				client.sendToSomeone(msg.Type, status, ca.PeerIdA, data)
+			}
+			bytes, err = json.Marshal(cb)
+			if err != nil {
+				data = err.Error()
+			} else {
+				data = string(bytes)
+				status = true
+				client.sendToSomeone(msg.Type, status, ca.PeerIdB, data)
 			}
 		}
-		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_CommitmentTxSigned_ItemByChanId:
 		nodes, count, err := service.CommitmentTxSignedService.GetItemsByChannelId(msg.Data)
