@@ -89,15 +89,18 @@ func (service *commitmentTxManager) CreateNewCommitmentTxRequest(jsonData string
 	data.LastTempPrivateKey = ""
 
 	// store the request data for -354
-	bytes, err := json.Marshal(data)
-	if err == nil {
-		var tempInfo = &dao.CommitmentTxRequestInfo{}
+	var tempInfo = &dao.CommitmentTxRequestInfo{}
+	_ = db.Select(q.Eq("ChannelId", data.ChannelId), q.Eq("UserId", creator.PeerId), q.Eq("IsEnable", true)).First(tempInfo)
+	tempInfo.CommitmentTx = *data
+	if tempInfo.Id == 0 {
 		tempInfo.ChannelId = data.ChannelId
 		tempInfo.UserId = creator.PeerId
-		tempInfo.Data = string(bytes)
+		tempInfo.CreateAt = time.Now()
+		tempInfo.IsEnable = true
 		db.Save(tempInfo)
+	} else {
+		db.Update(tempInfo)
 	}
-
 	return data, targetUser, err
 }
 func (service *commitmentTxManager) GetLatestCommitmentTxByChannelId(jsonData string, user *bean.User) (node *dao.CommitmentTxInfo, err error) {
@@ -244,6 +247,15 @@ func (service *commitmentTxSignedManager) CommitmentTxSign(jsonData string, sign
 	} else {
 		targetUser = channelInfo.PeerIdB
 	}
+
+	var dataFromCreator = &dao.CommitmentTxRequestInfo{}
+	err = db.Select(q.Eq("ChannelId", data.ChannelId), q.Eq("UserId", targetUser), q.Eq("IsEnable", true)).First(dataFromCreator)
+	if err != nil {
+		return nil, nil, &targetUser, err
+	}
+	data.CurrTempPubKeyFromStarter = dataFromCreator.CurrTempPubKey
+	data.Amount = dataFromCreator.Amount
+	data.PropertyId = dataFromCreator.PropertyId
 
 	if data.Attitude == false {
 		return nil, nil, &targetUser, errors.New("signer disagree transaction")

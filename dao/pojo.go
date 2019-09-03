@@ -87,7 +87,9 @@ type CommitmentTxRequestInfo struct {
 	Id        int `storm:"id,increment" json:"id" `
 	ChannelId bean.ChannelID
 	UserId    string
-	Data      string
+	bean.CommitmentTx
+	CreateAt time.Time
+	IsEnable bool
 }
 
 //CommitmentTransaction
