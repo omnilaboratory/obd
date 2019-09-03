@@ -37,7 +37,7 @@ func (client *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.Se
 		}
 
 		if data == "" {
-			node, err := service.FundingTransactionService.CreateFundingTx(msg.Data, client.User)
+			node, err := service.FundingTransactionService.CreateFundingTxRequest(msg.Data, client.User)
 			if err != nil {
 				data = err.Error()
 			} else {

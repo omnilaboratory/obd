@@ -7,7 +7,6 @@ import (
 	"LightningOnOmni/tool"
 	"encoding/json"
 	"errors"
-	"log"
 	"time"
 
 	"github.com/asdine/storm"
@@ -221,25 +220,19 @@ func (service *commitmentTxSignedManager) CommitmentTxSign(jsonData string, sign
 	//Make sure who creates the transaction, who will sign the transaction.
 	//The default creator is Alice, and Bob is the signer.
 	//While if ALice is the signer, then Bob creates the transaction.
-	var isAliceCreateTransfer = true
-	if signer.PeerId == channelInfo.PeerIdA {
-		isAliceCreateTransfer = false
-	}
-
-	creatorSide := 0
 	targetUser := channelInfo.PeerIdA
-	if isAliceCreateTransfer == false {
-		creatorSide = 1
+	if signer.PeerId == channelInfo.PeerIdB {
+		targetUser = channelInfo.PeerIdA
+	} else {
 		targetUser = channelInfo.PeerIdB
 	}
-	log.Println(creatorSide)
 
 	if data.Attitude == false {
 		return nil, nil, &targetUser, errors.New("signer disagree transaction")
 	}
 
 	// if alice transfer to bob,bob is the signer
-	if isAliceCreateTransfer {
+	if signer.PeerId == channelInfo.PeerIdB {
 		tempAddrPrivateKeyMap[channelInfo.PubKeyB] = data.ChannelAddressPrivateKey // data.ChannelAddressPrivateKey from signer
 	} else {
 		tempAddrPrivateKeyMap[channelInfo.PubKeyA] = data.ChannelAddressPrivateKey
@@ -255,8 +248,6 @@ func (service *commitmentTxSignedManager) CommitmentTxSign(jsonData string, sign
 	if err != nil {
 		return nil, nil, &targetUser, err
 	}
-	//获取alice 处于10的  c
-	//obtain Alice's transaction
 	commitmentATxInfo, err := createAliceSideTxs(tx, data, channelInfo, fundingTransaction, signer)
 	if err != nil {
 		return nil, nil, nil, err
@@ -280,57 +271,59 @@ func createAliceSideTxs(tx storm.Node, data *bean.CommitmentTxSigned, channelInf
 	var lastCommitmentATx = &dao.CommitmentTxInfo{}
 	err := tx.Select(q.Eq("ChannelId", data.ChannelId), q.Eq("CreatorSide", creatorSide), q.Eq("CurrState", dao.TxInfoState_OtherSign), q.Or(q.Eq("PeerIdA", signer.PeerId), q.Eq("PeerIdB", signer.PeerId))).OrderBy("CreateAt").Reverse().First(lastCommitmentATx)
 	if err != nil {
-		return nil, err
+		lastCommitmentATx = nil
 	}
 
-	// create BR1a tx
-	breachRemedyTransaction, err := createBRTx(creatorSide, channelInfo, lastCommitmentATx, signer)
-	if err != nil {
-		return nil, err
-	}
+	if lastCommitmentATx != nil {
+		// create BR1a tx
+		breachRemedyTransaction, err := createBRTx(creatorSide, channelInfo, lastCommitmentATx, signer)
+		if err != nil {
+			return nil, err
+		}
 
-	var brPrivKeys = make([]string, 0)
-	var brPrivKey = tempAddrPrivateKeyMap[lastCommitmentATx.PubKey2]
-	if tool.CheckIsString(&brPrivKey) {
-		brPrivKeys = append(brPrivKeys, brPrivKey)
-	}
-	delete(tempAddrPrivateKeyMap, lastCommitmentATx.PubKey2)
+		var brPrivKeys = make([]string, 0)
+		var brPrivKey = tempAddrPrivateKeyMap[lastCommitmentATx.PubKey2]
+		if tool.CheckIsString(&brPrivKey) {
+			brPrivKeys = append(brPrivKeys, brPrivKey)
+		}
+		delete(tempAddrPrivateKeyMap, lastCommitmentATx.PubKey2)
 
-	txid, hex, err := rpcClient.BtcCreateAndSignRawTransactionFromUnsendTx(
-		lastCommitmentATx.MultiAddress,
-		brPrivKeys,
-		[]rpc.TransactionInputItem{
-			{breachRemedyTransaction.InputTxid, breachRemedyTransaction.InputVout, breachRemedyTransaction.InputAmount},
-		},
-		[]rpc.TransactionOutputItem{
-			{breachRemedyTransaction.PubKeyB, breachRemedyTransaction.Amount},
-		},
-		0,
-		0)
-	if err != nil {
-		return nil, err
-	}
-	breachRemedyTransaction.Txid = txid
-	breachRemedyTransaction.TxHexFirstSign = hex
-	breachRemedyTransaction.FirstSignAt = time.Now()
-	breachRemedyTransaction.CurrState = dao.TxInfoState_OtherSign
-	err = tx.Save(breachRemedyTransaction)
+		txid, hex, err := rpcClient.BtcCreateAndSignRawTransactionFromUnsendTx(
+			lastCommitmentATx.MultiAddress,
+			brPrivKeys,
+			[]rpc.TransactionInputItem{
+				{breachRemedyTransaction.InputTxid, breachRemedyTransaction.InputVout, breachRemedyTransaction.InputAmount},
+			},
+			[]rpc.TransactionOutputItem{
+				{breachRemedyTransaction.PubKeyB, breachRemedyTransaction.Amount},
+			},
+			0,
+			0)
+		if err != nil {
+			return nil, err
+		}
+		breachRemedyTransaction.Txid = txid
+		breachRemedyTransaction.TxHexFirstSign = hex
+		breachRemedyTransaction.FirstSignAt = time.Now()
+		breachRemedyTransaction.CurrState = dao.TxInfoState_OtherSign
+		err = tx.Save(breachRemedyTransaction)
 
-	lastRDTransaction := &dao.RevocableDeliveryTransaction{}
-	err = tx.Select(q.Eq("ChannelId", data.ChannelId), q.Eq("CreatorSide", creatorSide), q.Eq("CommitmentTxId", lastCommitmentATx.Id), q.Eq("CurrState", dao.TxInfoState_OtherSign), q.Or(q.Eq("PeerIdA", signer.PeerId), q.Eq("PeerIdB", signer.PeerId))).OrderBy("CreateAt").Reverse().First(lastRDTransaction)
-	if err != nil {
-		return nil, err
-	}
+		lastRDTransaction := &dao.RevocableDeliveryTransaction{}
+		err = tx.Select(q.Eq("ChannelId", data.ChannelId), q.Eq("CreatorSide", creatorSide), q.Eq("CommitmentTxId", lastCommitmentATx.Id), q.Eq("CurrState", dao.TxInfoState_OtherSign), q.Or(q.Eq("PeerIdA", signer.PeerId), q.Eq("PeerIdB", signer.PeerId))).OrderBy("CreateAt").Reverse().First(lastRDTransaction)
+		if err != nil {
+			return nil, err
+		}
 
-	lastCommitmentATx.CurrState = dao.TxInfoState_Abord
-	lastRDTransaction.CurrState = dao.TxInfoState_Abord
-	err = tx.Update(lastCommitmentATx)
-	if err != nil {
-		return nil, err
-	}
-	err = tx.Update(lastRDTransaction)
-	if err != nil {
-		return nil, err
+		lastCommitmentATx.CurrState = dao.TxInfoState_Abord
+		lastRDTransaction.CurrState = dao.TxInfoState_Abord
+		err = tx.Update(lastCommitmentATx)
+		if err != nil {
+			return nil, err
+		}
+		err = tx.Update(lastRDTransaction)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	var outputBean = commitmentOutputBean{}
@@ -360,7 +353,7 @@ func createAliceSideTxs(tx storm.Node, data *bean.CommitmentTxSigned, channelInf
 	}
 	delete(tempAddrPrivateKeyMap, channelInfo.PubKeyB)
 
-	txid, hex, err = rpcClient.BtcCreateAndSignRawTransactionFromUnsendTx(
+	txid, hex, err := rpcClient.BtcCreateAndSignRawTransactionFromUnsendTx(
 		channelInfo.ChannelPubKey,
 		privkeys,
 		[]rpc.TransactionInputItem{
@@ -472,8 +465,14 @@ func createBobSideTxs(tx storm.Node, data *bean.CommitmentTxSigned, channelInfo 
 
 		lastCommitmentATx.CurrState = dao.TxInfoState_Abord
 		lastRDTransaction.CurrState = dao.TxInfoState_Abord
-		tx.Update(lastCommitmentATx)
-		tx.Update(lastRDTransaction)
+		err = tx.Update(lastCommitmentATx)
+		if err != nil {
+			return nil, err
+		}
+		err = tx.Update(lastRDTransaction)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	var outputBean = commitmentOutputBean{}

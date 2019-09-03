@@ -324,6 +324,19 @@ func (client *Client) BtcCreateAndSignRawTransactionFromUnsendTx(fromBitCoinAddr
 	log.Println("SignRawTransactionWithKey DecodeRawTransaction", decodeHex)
 	return txid, hex, err
 }
+func (client *Client) BtcSignAndSendRawTransaction(hex string, privKey string) (string, error) {
+	signHex, err := client.SignRawTransactionWithKey(hex, []string{privKey}, nil, "ALL")
+	if err != nil {
+		return "", err
+	}
+	hex = gjson.Get(signHex, "hex").String()
+	txId, err := client.SendRawTransaction(hex)
+	if err != nil {
+		return "", err
+	}
+	log.Println("SendRawTransaction", txId)
+	return txId, nil
+}
 
 // create a transaction and signature and send to the network
 func (client *Client) BtcCreateAndSignAndSendRawTransaction(fromBitCoinAddress string, privkeys []string, outputItems []TransactionOutputItem, minerFee float64, sequence int) (txId string, err error) {

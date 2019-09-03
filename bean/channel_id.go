@@ -64,3 +64,12 @@ func (service *channelIdManager) NextTemporaryChanID() [32]byte {
 	salsa20.XORKeyStream(nextChanID[:], zeroes[:], nonce[:], &service.chanIDSeed)
 	return nextChanID
 }
+
+func (service *channelIdManager) IsEmpty(channelId ChannelID) bool {
+	for _, item := range channelId {
+		if item != 0 {
+			return false
+		}
+	}
+	return true
+}

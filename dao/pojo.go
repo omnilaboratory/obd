@@ -14,9 +14,11 @@ type User struct {
 type ChannelState int
 
 const (
-	ChannelState_Create ChannelState = 10
-	ChannelState_Accept ChannelState = 20
-	ChannelState_Defuse ChannelState = 30
+	ChannelState_Create        ChannelState = 10
+	ChannelState_Accept        ChannelState = 20
+	ChannelState_Close         ChannelState = 21
+	ChannelState_Defuse        ChannelState = 30
+	ChannelState_FundingDefuse ChannelState = 31
 )
 
 type ChannelInfo struct {
@@ -60,7 +62,7 @@ type FundingTransaction struct {
 	FunderPubKey2ForCommitment string                  `json:"funder_pub_key_2_for_commitment"`
 	FundingTxid                string                  `json:"funding_txid"`
 	FundingOutputIndex         uint32                  `json:"funding_output_index"`
-	FunderSignature            chainhash.Signature     `json:"funder_signature"`
+	FunderSignature            string                  `json:"funder_signature"`
 	FundeePubKey               string                  `json:"fundee_pub_key"`
 	AmountB                    float64                 `json:"amount_b"`
 	FundeeSignature            string                  `json:"fundee_signature"`

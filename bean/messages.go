@@ -70,6 +70,7 @@ type FundingCreated struct {
 	PropertyId         int64          `json:"property_id"`
 	MaxAssets          float64        `json:"max_assets"`
 	AmountA            float64        `json:"amount_a"`
+	FundingTxHex       string         `json:"funding_tx_hex"`
 	FundingTxid        string         `json:"funding_txid"`
 	FundingOutputIndex uint32         `json:"funding_output_index"`
 }
