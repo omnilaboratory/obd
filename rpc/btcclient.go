@@ -233,7 +233,7 @@ func (client *Client) BtcCreateAndSignRawTransaction(fromBitCoinAddress string, 
 	return txid, hex, err
 }
 
-func (client *Client) BtcCreateAndSignRawTransactionFromUnsendTx(fromBitCoinAddress string, privkeys []string, inputItems []TransactionInputItem, outputItems []TransactionOutputItem, minerFee float64, sequence int) (txid string, hex string, err error) {
+func (client *Client) BtcCreateAndSignRawTransactionForUnsendTx(fromBitCoinAddress string, privkeys []string, inputItems []TransactionInputItem, outputItems []TransactionOutputItem, minerFee float64, sequence int) (txid string, hex string, err error) {
 	if len(fromBitCoinAddress) < 1 {
 		return "", "", errors.New("fromBitCoinAddress is empty")
 	}

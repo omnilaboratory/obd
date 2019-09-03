@@ -151,7 +151,7 @@ func (service *fundingTransactionManager) FundingTransactionSign(jsonData string
 	}
 
 	if data.Attitude {
-		if len(data.FundeeSignature) == 0 {
+		if tool.CheckIsString(&data.FundeeSignature) == false {
 			return nil, errors.New("wrong FundeeSignature")
 		}
 
@@ -160,8 +160,6 @@ func (service *fundingTransactionManager) FundingTransactionSign(jsonData string
 		} else {
 			fundingTransaction.AmountA = data.AmountB
 		}
-		// temp storage private key of bob use to create C1
-		fundingTransaction.FundeeSignature = data.FundeeSignature
 		fundingTransaction.CurrState = dao.FundingTransactionState_Accept
 	} else {
 		fundingTransaction.CurrState = dao.FundingTransactionState_Defuse
@@ -195,7 +193,7 @@ func (service *fundingTransactionManager) FundingTransactionSign(jsonData string
 			return nil, err
 		}
 
-		txid, hex, err := rpcClient.BtcCreateAndSignRawTransactionFromUnsendTx(
+		txid, hex, err := rpcClient.BtcCreateAndSignRawTransactionForUnsendTx(
 			channelInfo.ChannelPubKey,
 			[]string{
 				data.FundeeSignature,
@@ -227,7 +225,7 @@ func (service *fundingTransactionManager) FundingTransactionSign(jsonData string
 			return nil, err
 		}
 
-		txid, hex, err = rpcClient.BtcCreateAndSignRawTransactionFromUnsendTx(
+		txid, hex, err = rpcClient.BtcCreateAndSignRawTransactionForUnsendTx(
 			commitmentTxInfo.MultiAddress,
 			[]string{
 				data.FundeeSignature,

@@ -27,8 +27,12 @@ func (service *commitmentTxManager) CreateNewCommitmentTxRequest(jsonData string
 	if err != nil {
 		return nil, nil, err
 	}
-	if len(data.ChannelId) != 32 {
+	if bean.ChannelIdService.IsEmpty(data.ChannelId) {
 		return nil, nil, errors.New("wrong channel_id")
+	}
+
+	if tool.CheckIsString(&data.ChannelAddressPrivateKey) == false {
+		return nil, nil, errors.New("wrong ChannelAddressPrivateKey")
 	}
 
 	if data.Amount <= 0 {
@@ -36,7 +40,7 @@ func (service *commitmentTxManager) CreateNewCommitmentTxRequest(jsonData string
 	}
 
 	channelInfo := &dao.ChannelInfo{}
-	err = db.Select(q.Eq("ChannelId", data.ChannelId)).First(channelInfo)
+	err = db.Select(q.Eq("ChannelId", data.ChannelId), q.Eq("CurrState", dao.ChannelState_Accept)).First(channelInfo)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -51,12 +55,12 @@ func (service *commitmentTxManager) CreateNewCommitmentTxRequest(jsonData string
 		creatorSide = 1
 	}
 
-	commitmentTxInfo := &dao.CommitmentTxInfo{}
-	err = db.Select(q.Eq("ChannelId", data.ChannelId), q.Eq("CurrState", dao.TxInfoState_OtherSign), q.Eq("CreatorSide", creatorSide), q.Or(q.Eq("PeerIdA", creator.PeerId), q.Eq("PeerIdB", creator.PeerId))).OrderBy("CreateAt").Reverse().First(commitmentTxInfo)
+	lastCommitmentTxInfo := &dao.CommitmentTxInfo{}
+	err = db.Select(q.Eq("ChannelId", data.ChannelId), q.Eq("CurrState", dao.TxInfoState_OtherSign), q.Eq("CreatorSide", creatorSide), q.Or(q.Eq("PeerIdA", creator.PeerId), q.Eq("PeerIdB", creator.PeerId))).OrderBy("CreateAt").Reverse().First(lastCommitmentTxInfo)
 	if err != nil {
-		return nil, nil, errors.New("not find the commitmentTxInfo")
+		return nil, nil, errors.New("not find the lastCommitmentTxInfo")
 	}
-	balance := commitmentTxInfo.AmountM
+	balance := lastCommitmentTxInfo.AmountM
 	if balance < 0 {
 		return nil, nil, errors.New("not enough balance")
 	}
@@ -70,6 +74,10 @@ func (service *commitmentTxManager) CreateNewCommitmentTxRequest(jsonData string
 		return nil, nil, errors.New("not enough payment amount")
 	}
 
+	if tool.CheckIsString(&data.LastTempPrivateKey) == false {
+		return nil, nil, errors.New("wrong LastTempPrivateKey")
+	}
+
 	// if alice transfer to bob, alice is the creator
 	if isAliceCreateTransfer {
 		tempAddrPrivateKeyMap[channelInfo.PubKeyA] = data.ChannelAddressPrivateKey
@@ -77,7 +85,7 @@ func (service *commitmentTxManager) CreateNewCommitmentTxRequest(jsonData string
 		tempAddrPrivateKeyMap[channelInfo.PubKeyB] = data.ChannelAddressPrivateKey
 	}
 	//store the privateKey of last temp addr
-	tempAddrPrivateKeyMap[commitmentTxInfo.PubKey2] = data.LastTempPrivateKey
+	tempAddrPrivateKeyMap[lastCommitmentTxInfo.PubKey2] = data.LastTempPrivateKey
 	data.LastTempPrivateKey = ""
 
 	return data, targetUser, err
@@ -288,7 +296,7 @@ func createAliceSideTxs(tx storm.Node, data *bean.CommitmentTxSigned, channelInf
 		}
 		delete(tempAddrPrivateKeyMap, lastCommitmentATx.PubKey2)
 
-		txid, hex, err := rpcClient.BtcCreateAndSignRawTransactionFromUnsendTx(
+		txid, hex, err := rpcClient.BtcCreateAndSignRawTransactionForUnsendTx(
 			lastCommitmentATx.MultiAddress,
 			brPrivKeys,
 			[]rpc.TransactionInputItem{
@@ -353,7 +361,7 @@ func createAliceSideTxs(tx storm.Node, data *bean.CommitmentTxSigned, channelInf
 	}
 	delete(tempAddrPrivateKeyMap, channelInfo.PubKeyB)
 
-	txid, hex, err := rpcClient.BtcCreateAndSignRawTransactionFromUnsendTx(
+	txid, hex, err := rpcClient.BtcCreateAndSignRawTransactionForUnsendTx(
 		channelInfo.ChannelPubKey,
 		privkeys,
 		[]rpc.TransactionInputItem{
@@ -384,7 +392,7 @@ func createAliceSideTxs(tx storm.Node, data *bean.CommitmentTxSigned, channelInf
 		return nil, err
 	}
 
-	txid, hex, err = rpcClient.BtcCreateAndSignRawTransactionFromUnsendTx(
+	txid, hex, err = rpcClient.BtcCreateAndSignRawTransactionForUnsendTx(
 		commitmentTxInfo.MultiAddress,
 		privkeys,
 		[]rpc.TransactionInputItem{
@@ -437,7 +445,7 @@ func createBobSideTxs(tx storm.Node, data *bean.CommitmentTxSigned, channelInfo 
 			brPrivKeys = append(brPrivKeys, data.LastTempPrivateKey)
 		}
 
-		txid, hex, err := rpcClient.BtcCreateAndSignRawTransactionFromUnsendTx(
+		txid, hex, err := rpcClient.BtcCreateAndSignRawTransactionForUnsendTx(
 			lastCommitmentATx.MultiAddress,
 			brPrivKeys,
 			[]rpc.TransactionInputItem{
@@ -509,7 +517,7 @@ func createBobSideTxs(tx storm.Node, data *bean.CommitmentTxSigned, channelInfo 
 	}
 	delete(tempAddrPrivateKeyMap, channelInfo.PubKeyA)
 
-	txid, hex, err := rpcClient.BtcCreateAndSignRawTransactionFromUnsendTx(
+	txid, hex, err := rpcClient.BtcCreateAndSignRawTransactionForUnsendTx(
 		channelInfo.ChannelPubKey,
 		privkeys,
 		[]rpc.TransactionInputItem{
@@ -540,7 +548,7 @@ func createBobSideTxs(tx storm.Node, data *bean.CommitmentTxSigned, channelInfo 
 		return nil, err
 	}
 
-	txid, hex, err = rpcClient.BtcCreateAndSignRawTransactionFromUnsendTx(
+	txid, hex, err = rpcClient.BtcCreateAndSignRawTransactionForUnsendTx(
 		commitmentTxInfo.MultiAddress,
 		privkeys,
 		[]rpc.TransactionInputItem{

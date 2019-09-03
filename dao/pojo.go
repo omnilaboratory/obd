@@ -92,15 +92,15 @@ type CommitmentTxInfo struct {
 	ChannelId          bean.ChannelID `json:"channel_id"`
 	PropertyId         int64          `json:"property_id"`
 	CreatorSide        int            `json:"creator_side"`  // 0 alice 1 bob
-	InputTxid          string         `json:"input_txid"`    //input txid  from channeladdr: alice&bob multtaddr, so need  sign of alice2 and bob
+	InputTxid          string         `json:"input_txid"`    //input txid  from channelAddr: alice&bob multiAddr, so need  sign of alice and bob
 	InputVout          uint32         `json:"input_vout"`    // input vout
 	InputAmount        float64        `json:"input_amount"`  //input amount
-	PubKey2            string         `json:"pub_key2"`      //output alice2
+	PubKey2            string         `json:"pub_key2"`      //output alice2 or bob2
 	PubKeyB            string         `json:"pub_key_b"`     //output bob
-	MultiAddress       string         `json:"multi_address"` //output alice2&bob multiaddr
+	MultiAddress       string         `json:"multi_address"` //output alice2&bob  or alice&bob2  multiAddr
 	RedeemScript       string         `json:"redeem_script"`
-	AmountM            float64        `json:"amount_m"` // amount to multiaddr
-	AmountB            float64        `json:"amount_b"` //amount to bob
+	AmountM            float64        `json:"amount_m"` // amount to multiAddr
+	AmountB            float64        `json:"amount_b"` //amount to bob(if Cna) or alice(if Cnb)
 	TxHexFirstSign     string         `json:"tx_hex_first_sign"`
 	TxHexEndSign       string         `json:"tx_hex_end_sign"`
 	Txid               string         `json:"txid"`
