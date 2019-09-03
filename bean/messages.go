@@ -109,14 +109,11 @@ type CommitmentTx struct {
 
 //type: -352 (commitment_tx_signed)
 type CommitmentTxSigned struct {
-	ChannelId                 ChannelID `json:"channel_id"`
-	PropertyId                int       `json:"property_id"`
-	Amount                    float64   `json:"amount"`
-	CurrTempPubKeyFromStarter string    `json:"curr_temp_pub_key_from_starter"` //private key of Alice2, encrypted by Bob's public key
-	CurrTempPubKey            string    `json:"curr_temp_pub_key"`
-	LastTempPrivateKey        string    `json:"last_temp_private_key"`
-	ChannelAddressPrivateKey  string    `json:"channel_address_private_key"`
-	Attitude                  bool      `json:"attitude"`
+	ChannelId                ChannelID `json:"channel_id"`
+	CurrTempPubKey           string    `json:"curr_temp_pub_key"`           // bob3 or alice3
+	LastTempPrivateKey       string    `json:"last_temp_private_key"`       // bob2's private key
+	ChannelAddressPrivateKey string    `json:"channel_address_private_key"` // bob private key
+	Attitude                 bool      `json:"attitude"`                    // true agree false disagree
 }
 
 //type: -353 (get_balance_request)

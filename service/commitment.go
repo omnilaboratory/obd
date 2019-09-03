@@ -7,6 +7,7 @@ import (
 	"LightningOnOmni/tool"
 	"encoding/json"
 	"errors"
+	"github.com/shopspring/decimal"
 	"time"
 
 	"github.com/asdine/storm"
@@ -87,6 +88,7 @@ func (service *commitmentTxManager) CreateNewCommitmentTxRequest(jsonData string
 	//store the privateKey of last temp addr
 	tempAddrPrivateKeyMap[lastCommitmentTxInfo.PubKey2] = data.LastTempPrivateKey
 	data.LastTempPrivateKey = ""
+	data.ChannelAddressPrivateKey = ""
 
 	// store the request data for -354
 	var tempInfo = &dao.CommitmentTxRequestInfo{}
@@ -232,7 +234,7 @@ func (service *commitmentTxSignedManager) CommitmentTxSign(jsonData string, sign
 	}
 
 	channelInfo := &dao.ChannelInfo{}
-	err = db.Select(q.Eq("ChannelId", data.ChannelId)).First(channelInfo)
+	err = db.Select(q.Eq("ChannelId", data.ChannelId), q.Eq("CurrState", dao.ChannelState_Accept)).First(channelInfo)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -249,13 +251,10 @@ func (service *commitmentTxSignedManager) CommitmentTxSign(jsonData string, sign
 	}
 
 	var dataFromCreator = &dao.CommitmentTxRequestInfo{}
-	err = db.Select(q.Eq("ChannelId", data.ChannelId), q.Eq("UserId", targetUser), q.Eq("IsEnable", true)).First(dataFromCreator)
+	err = db.Select(q.Eq("ChannelId", data.ChannelId), q.Eq("UserId", targetUser), q.Eq("IsEnable", true)).OrderBy("CreateAt").Reverse().First(dataFromCreator)
 	if err != nil {
 		return nil, nil, &targetUser, err
 	}
-	data.CurrTempPubKeyFromStarter = dataFromCreator.CurrTempPubKey
-	data.Amount = dataFromCreator.Amount
-	data.PropertyId = dataFromCreator.PropertyId
 
 	if data.Attitude == false {
 		return nil, nil, &targetUser, errors.New("signer disagree transaction")
@@ -274,15 +273,15 @@ func (service *commitmentTxSignedManager) CommitmentTxSign(jsonData string, sign
 
 	// get the funding transaction
 	var fundingTransaction = &dao.FundingTransaction{}
-	err = tx.One("ChannelId", data.ChannelId, fundingTransaction)
+	err = tx.Select(q.Eq("ChannelId", data.ChannelId), q.Eq("CurrState", dao.FundingTransactionState_Accept)).OrderBy("CreateAt").Reverse().First(fundingTransaction)
 	if err != nil {
 		return nil, nil, &targetUser, err
 	}
-	commitmentATxInfo, err := createAliceSideTxs(tx, data, channelInfo, fundingTransaction, signer)
+	commitmentATxInfo, err := createAliceSideTxs(tx, data, *dataFromCreator, channelInfo, fundingTransaction, signer)
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	commitmentBTxInfo, err := createBobSideTxs(tx, data, channelInfo, fundingTransaction, signer)
+	commitmentBTxInfo, err := createBobSideTxs(tx, data, *dataFromCreator, channelInfo, fundingTransaction, signer)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -291,7 +290,7 @@ func (service *commitmentTxSignedManager) CommitmentTxSign(jsonData string, sign
 	return commitmentATxInfo, commitmentBTxInfo, &targetUser, err
 }
 
-func createAliceSideTxs(tx storm.Node, data *bean.CommitmentTxSigned, channelInfo *dao.ChannelInfo, fundingTransaction *dao.FundingTransaction, signer *bean.User) (*dao.CommitmentTxInfo, error) {
+func createAliceSideTxs(tx storm.Node, data *bean.CommitmentTxSigned, dataFromCreator dao.CommitmentTxRequestInfo, channelInfo *dao.ChannelInfo, fundingTransaction *dao.FundingTransaction, signer *bean.User) (*dao.CommitmentTxInfo, error) {
 	var creatorSide = 0
 	var isAliceCreateTransfer = true
 	if signer.PeerId == channelInfo.PeerIdA {
@@ -358,15 +357,15 @@ func createAliceSideTxs(tx storm.Node, data *bean.CommitmentTxSigned, channelInf
 
 	var outputBean = commitmentOutputBean{}
 	if isAliceCreateTransfer {
-		outputBean.TempAddress = data.CurrTempPubKeyFromStarter
+		outputBean.TempAddress = dataFromCreator.CurrTempPubKey
 		//default alice transfer to bob ,then alice minus money
-		outputBean.AmountM = lastCommitmentATx.AmountM - data.Amount
-		outputBean.AmountB = lastCommitmentATx.AmountB + data.Amount
+		outputBean.AmountM, _ = decimal.NewFromFloat(lastCommitmentATx.AmountM).Sub(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
+		outputBean.AmountB, _ = decimal.NewFromFloat(lastCommitmentATx.AmountB).Add(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
 	} else {
 		outputBean.TempAddress = data.CurrTempPubKey
 		// if bob transfer to alice,then alice add money
-		outputBean.AmountM = lastCommitmentATx.AmountM + data.Amount
-		outputBean.AmountB = lastCommitmentATx.AmountB - data.Amount
+		outputBean.AmountM, _ = decimal.NewFromFloat(lastCommitmentATx.AmountM).Add(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
+		outputBean.AmountB, _ = decimal.NewFromFloat(lastCommitmentATx.AmountM).Sub(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
 	}
 	outputBean.ToAddressB = channelInfo.PubKeyB
 
@@ -439,7 +438,7 @@ func createAliceSideTxs(tx storm.Node, data *bean.CommitmentTxSigned, channelInf
 	return commitmentTxInfo, err
 }
 
-func createBobSideTxs(tx storm.Node, data *bean.CommitmentTxSigned, channelInfo *dao.ChannelInfo, fundingTransaction *dao.FundingTransaction, signer *bean.User) (*dao.CommitmentTxInfo, error) {
+func createBobSideTxs(tx storm.Node, data *bean.CommitmentTxSigned, dataFromCreator dao.CommitmentTxRequestInfo, channelInfo *dao.ChannelInfo, fundingTransaction *dao.FundingTransaction, signer *bean.User) (*dao.CommitmentTxInfo, error) {
 	var creatorSide = 1
 	var isAliceCreateTransfer = true
 	if signer.PeerId == channelInfo.PeerIdA {
@@ -509,19 +508,19 @@ func createBobSideTxs(tx storm.Node, data *bean.CommitmentTxSigned, channelInfo 
 	if isAliceCreateTransfer {
 		outputBean.TempAddress = data.CurrTempPubKey
 		//by default, alice transters money to bob,then bob's balance increases.
-		outputBean.AmountM = fundingTransaction.AmountA + data.Amount
-		outputBean.AmountB = fundingTransaction.AmountB - data.Amount
+		outputBean.AmountM = fundingTransaction.AmountA + dataFromCreator.Amount
+		outputBean.AmountB = fundingTransaction.AmountB - dataFromCreator.Amount
 		if lastCommitmentATx != nil {
-			outputBean.AmountM = lastCommitmentATx.AmountM + data.Amount
-			outputBean.AmountB = lastCommitmentATx.AmountB - data.Amount
+			outputBean.AmountM = lastCommitmentATx.AmountM + dataFromCreator.Amount
+			outputBean.AmountB = lastCommitmentATx.AmountB - dataFromCreator.Amount
 		}
 	} else {
-		outputBean.TempAddress = data.CurrTempPubKeyFromStarter
-		outputBean.AmountM = fundingTransaction.AmountA - data.Amount
-		outputBean.AmountB = fundingTransaction.AmountB + data.Amount
+		outputBean.TempAddress = dataFromCreator.CurrTempPubKey
+		outputBean.AmountM = fundingTransaction.AmountA - dataFromCreator.Amount
+		outputBean.AmountB = fundingTransaction.AmountB + dataFromCreator.Amount
 		if lastCommitmentATx != nil {
-			outputBean.AmountM = lastCommitmentATx.AmountM - data.Amount
-			outputBean.AmountB = lastCommitmentATx.AmountB + data.Amount
+			outputBean.AmountM = lastCommitmentATx.AmountM - dataFromCreator.Amount
+			outputBean.AmountB = lastCommitmentATx.AmountB + dataFromCreator.Amount
 		}
 	}
 	outputBean.ToAddressB = channelInfo.PubKeyA
