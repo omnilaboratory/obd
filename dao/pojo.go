@@ -83,6 +83,13 @@ const (
 	TxInfoState_Abord      TxInfoState = 30
 )
 
+type CommitmentTxRequestInfo struct {
+	Id        int `storm:"id,increment" json:"id" `
+	ChannelId bean.ChannelID
+	UserId    string
+	Data      string
+}
+
 //CommitmentTransaction
 type CommitmentTxInfo struct {
 	Id                 int            `storm:"id,increment" json:"id" `

@@ -88,6 +88,16 @@ func (service *commitmentTxManager) CreateNewCommitmentTxRequest(jsonData string
 	tempAddrPrivateKeyMap[lastCommitmentTxInfo.PubKey2] = data.LastTempPrivateKey
 	data.LastTempPrivateKey = ""
 
+	// store the request data for -354
+	bytes, err := json.Marshal(data)
+	if err == nil {
+		var tempInfo = &dao.CommitmentTxRequestInfo{}
+		tempInfo.ChannelId = data.ChannelId
+		tempInfo.UserId = creator.PeerId
+		tempInfo.Data = string(bytes)
+		db.Save(tempInfo)
+	}
+
 	return data, targetUser, err
 }
 func (service *commitmentTxManager) GetLatestCommitmentTxByChannelId(jsonData string, user *bean.User) (node *dao.CommitmentTxInfo, err error) {
