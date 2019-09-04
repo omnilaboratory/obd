@@ -188,7 +188,7 @@ func (service *fundingTransactionManager) FundingTransactionSign(jsonData string
 		}
 
 		// create C1a tx
-		commitmentTxInfo, err := createCommitmentATx(creatorSide, channelInfo, fundingTransaction, outputBean, signer)
+		commitmentTxInfo, err := createCommitmentTx(creatorSide, channelInfo, fundingTransaction, outputBean, signer)
 		if err != nil {
 			return nil, err
 		}
@@ -220,7 +220,7 @@ func (service *fundingTransactionManager) FundingTransactionSign(jsonData string
 		}
 
 		// create RDa tx
-		rdTransaction, err := createRDaTx(creatorSide, channelInfo, commitmentTxInfo, channelInfo.PubKeyA, signer)
+		rdTransaction, err := createRDTx(creatorSide, channelInfo, commitmentTxInfo, channelInfo.PubKeyA, signer)
 		if err != nil {
 			return nil, err
 		}

@@ -438,7 +438,7 @@ func createAliceSideTxs(tx storm.Node, data *bean.CommitmentTxSigned, dataFromCr
 	outputBean.ToAddressB = channelInfo.PubKeyB
 
 	// create C2a tx
-	commitmentTxInfo, err := createCommitmentATx(creatorSide, channelInfo, fundingTransaction, outputBean, signer)
+	commitmentTxInfo, err := createCommitmentTx(creatorSide, channelInfo, fundingTransaction, outputBean, signer)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -479,7 +479,7 @@ func createAliceSideTxs(tx storm.Node, data *bean.CommitmentTxSigned, dataFromCr
 	}
 
 	// create RD2a tx
-	rdTransaction, err := createRDaTx(creatorSide, channelInfo, commitmentTxInfo, channelInfo.PubKeyA, signer)
+	rdTransaction, err := createRDTx(creatorSide, channelInfo, commitmentTxInfo, channelInfo.PubKeyA, signer)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -605,7 +605,7 @@ func createBobSideTxs(tx storm.Node, data *bean.CommitmentTxSigned, dataFromCrea
 	}
 	outputBean.ToAddressB = channelInfo.PubKeyA
 
-	commitmentTxInfo, err := createCommitmentATx(creatorSide, channelInfo, fundingTransaction, outputBean, signer)
+	commitmentTxInfo, err := createCommitmentTx(creatorSide, channelInfo, fundingTransaction, outputBean, signer)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -648,7 +648,7 @@ func createBobSideTxs(tx storm.Node, data *bean.CommitmentTxSigned, dataFromCrea
 	}
 
 	// create RDb tx
-	rdTransaction, err := createRDaTx(creatorSide, channelInfo, commitmentTxInfo, channelInfo.PubKeyB, signer)
+	rdTransaction, err := createRDTx(creatorSide, channelInfo, commitmentTxInfo, channelInfo.PubKeyB, signer)
 	if err != nil {
 		log.Println(err)
 		return nil, err
