@@ -97,6 +97,7 @@ func createBRTx(creatorSide int, channelInfo *dao.ChannelInfo, commitmentTxInfo 
 	breachRemedyTransaction.PeerIdB = channelInfo.PeerIdB
 	breachRemedyTransaction.ChannelId = channelInfo.ChannelId
 	breachRemedyTransaction.PropertyId = commitmentTxInfo.PropertyId
+	breachRemedyTransaction.PropertyId = commitmentTxInfo.PropertyId
 	breachRemedyTransaction.CreatorSide = creatorSide
 
 	//input
@@ -104,7 +105,11 @@ func createBRTx(creatorSide int, channelInfo *dao.ChannelInfo, commitmentTxInfo 
 	breachRemedyTransaction.InputVout = 0
 	breachRemedyTransaction.InputAmount = commitmentTxInfo.AmountM
 	//output
-	breachRemedyTransaction.PubKeyB = channelInfo.PubKeyB
+	if creatorSide == 0 {
+		breachRemedyTransaction.PubKeyB = channelInfo.PubKeyB
+	} else {
+		breachRemedyTransaction.PubKeyB = channelInfo.PubKeyA
+	}
 	breachRemedyTransaction.Amount = commitmentTxInfo.AmountM
 
 	breachRemedyTransaction.CreateBy = user.PeerId

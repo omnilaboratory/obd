@@ -10,11 +10,19 @@ import (
 	"math"
 )
 
+//https://bitcoin.org/en/developer-reference#addmultisigaddress
 func (client *Client) CreateMultiSig(minSignNum int, keys []string) (result string, err error) {
 	for _, item := range keys {
 		importAddress(item)
 	}
 	return client.send("createmultisig", []interface{}{minSignNum, keys})
+}
+
+func (client *Client) AddMultiSigAddress(minSignNum int, keys []string) (result string, err error) {
+	for _, item := range keys {
+		importAddress(item)
+	}
+	return client.send("addmultisigaddress", []interface{}{minSignNum, keys})
 }
 
 func (client *Client) DumpPrivKey(address string) (result string, err error) {
@@ -110,10 +118,10 @@ func (client *Client) ValidateAddress(address string) (isvalid bool, err error) 
 }
 
 func importAddress(address string) {
-	//client.send("importaddress", []interface{}{address, "", false})
+	client.send("importaddress", []interface{}{address, "", false})
 }
 
-func (client *Client) Importaddress(address string) (err error) {
+func (client *Client) ImportAddress(address string) (err error) {
 	result, err := client.send("importaddress", []interface{}{address, nil, false})
 	if err != nil {
 		return err
