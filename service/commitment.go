@@ -351,7 +351,11 @@ func (service *commitmentTxSignedManager) CommitmentTxSign(jsonData string, sign
 		log.Println(err)
 		return nil, nil, nil, err
 	}
-	tx.Commit()
+	err = tx.Commit()
+	if err != nil {
+		log.Println(err)
+		return nil, nil, nil, err
+	}
 
 	return commitmentATxInfo, commitmentBTxInfo, &targetUser, err
 }

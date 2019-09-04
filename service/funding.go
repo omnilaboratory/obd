@@ -23,10 +23,12 @@ func (service *fundingTransactionManager) CreateFundingTxRequest(jsonData string
 	reqData := &bean.FundingCreated{}
 	err = json.Unmarshal([]byte(jsonData), reqData)
 	if err != nil {
+		log.Println(err)
 		return nil, err
 	}
 
 	if len(reqData.TemporaryChannelId) == 0 {
+		log.Println("wrong TemporaryChannelId")
 		return nil, errors.New("wrong TemporaryChannelId")
 	}
 
@@ -34,17 +36,24 @@ func (service *fundingTransactionManager) CreateFundingTxRequest(jsonData string
 	count, _ := db.Select(q.Eq("TemporaryChannelId", reqData.TemporaryChannelId)).Count(fundingTransaction)
 	if count == 0 {
 		if tool.CheckIsString(&reqData.FundingTxid) == false {
+			log.Println("wrong FundingTxid")
 			return nil, errors.New("wrong FundingTxid")
+		}
+
+		if tool.CheckIsString(&reqData.FundingTxHex) == false {
+			log.Println("wrong FundingTxHex")
+			return nil, errors.New("wrong FundingTxHex")
 		}
 
 		channelInfo := &dao.ChannelInfo{}
 		err = db.Select(q.Eq("TemporaryChannelId", reqData.TemporaryChannelId), q.Eq("CurrState", dao.ChannelState_Accept), q.Or(q.Eq("PeerIdA", user.PeerId), q.Eq("PeerIdB", user.PeerId))).OrderBy("CreateAt").Reverse().First(channelInfo)
 		if err != nil {
+			log.Println(err)
 			return nil, err
 		}
 
 		if bean.ChannelIdService.IsEmpty(channelInfo.ChannelId) == false {
-			return nil, errors.New("Channel is used, can not funding again")
+			return nil, errors.New("channel is used, can not funding again")
 		}
 
 		hash, _ := chainhash.NewHashFromStr(reqData.FundingTxid)
@@ -57,7 +66,7 @@ func (service *fundingTransactionManager) CreateFundingTxRequest(jsonData string
 
 		count, err = db.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Or(q.Eq("CurrState", dao.ChannelState_Accept), q.Eq("CurrState", dao.ChannelState_Close))).Count(channelInfo)
 		if err != nil || count != 0 {
-			return nil, errors.New("FundingTxid and FundingOutputIndex have been used")
+			return nil, errors.New("fundingTxid and FundingOutputIndex have been used")
 		}
 
 		fundingTransaction.TemporaryChannelId = reqData.TemporaryChannelId
@@ -94,11 +103,16 @@ func (service *fundingTransactionManager) CreateFundingTxRequest(jsonData string
 		fundingTransaction.FundingOutputIndex = reqData.FundingOutputIndex
 		fundingTransaction.FunderPubKey2ForCommitment = reqData.FunderPubKey2
 
-		tx, _ := db.Begin(true)
+		tx, err := db.Begin(true)
+		if err != nil {
+			log.Println(err)
+			return nil, err
+		}
 		defer tx.Rollback()
 
 		err = tx.Update(channelInfo)
 		if err != nil {
+			log.Println(err)
 			return nil, err
 		}
 		fundingTransaction.CurrState = dao.FundingTransactionState_Create
@@ -106,16 +120,21 @@ func (service *fundingTransactionManager) CreateFundingTxRequest(jsonData string
 		fundingTransaction.CreateAt = time.Now()
 		err = tx.Save(fundingTransaction)
 		if err != nil {
+			log.Println(err)
 			return nil, err
 		}
-		tx.Commit()
+		err = tx.Commit()
+		if err != nil {
+			log.Println(err)
+			return nil, err
+		}
 	} else {
 		err = db.Select(q.Eq("TemporaryChannelId", reqData.TemporaryChannelId)).First(fundingTransaction)
 	}
 	return fundingTransaction, err
 }
 
-func (service *fundingTransactionManager) FundingTransactionSign(jsonData string, signer *bean.User) (signed *dao.FundingTransaction, err error) {
+func (service *fundingTransactionManager) FundingTxSign(jsonData string, signer *bean.User) (signed *dao.FundingTransaction, err error) {
 	data := &bean.FundingSigned{}
 	err = json.Unmarshal([]byte(jsonData), data)
 	if err != nil {
@@ -147,6 +166,7 @@ func (service *fundingTransactionManager) FundingTransactionSign(jsonData string
 	var fundingTransaction = &dao.FundingTransaction{}
 	err = db.One("ChannelId", data.ChannelId, fundingTransaction)
 	if err != nil {
+		log.Println(err)
 		return nil, err
 	}
 
@@ -169,6 +189,7 @@ func (service *fundingTransactionManager) FundingTransactionSign(jsonData string
 
 	tx, err := db.Begin(true)
 	if err != nil {
+		log.Println(err)
 		return nil, err
 	}
 	defer tx.Rollback()
@@ -190,6 +211,7 @@ func (service *fundingTransactionManager) FundingTransactionSign(jsonData string
 		// create C1a tx
 		commitmentTxInfo, err := createCommitmentTx(creatorSide, channelInfo, fundingTransaction, outputBean, signer)
 		if err != nil {
+			log.Println(err)
 			return nil, err
 		}
 
@@ -208,6 +230,7 @@ func (service *fundingTransactionManager) FundingTransactionSign(jsonData string
 			0,
 			0)
 		if err != nil {
+			log.Println(err)
 			return nil, err
 		}
 		commitmentTxInfo.Txid = txid
@@ -216,12 +239,14 @@ func (service *fundingTransactionManager) FundingTransactionSign(jsonData string
 		commitmentTxInfo.CurrState = dao.TxInfoState_OtherSign
 		err = tx.Save(commitmentTxInfo)
 		if err != nil {
+			log.Println(err)
 			return nil, err
 		}
 
 		// create RDa tx
 		rdTransaction, err := createRDTx(creatorSide, channelInfo, commitmentTxInfo, channelInfo.PubKeyA, signer)
 		if err != nil {
+			log.Println(err)
 			return nil, err
 		}
 
@@ -239,6 +264,7 @@ func (service *fundingTransactionManager) FundingTransactionSign(jsonData string
 			0,
 			rdTransaction.Sequnence)
 		if err != nil {
+			log.Println(err)
 			return nil, err
 		}
 		rdTransaction.Txid = txid
@@ -252,6 +278,7 @@ func (service *fundingTransactionManager) FundingTransactionSign(jsonData string
 	}
 	err = tx.Update(fundingTransaction)
 	if err != nil {
+		log.Println(err)
 		return nil, err
 	}
 
@@ -259,6 +286,7 @@ func (service *fundingTransactionManager) FundingTransactionSign(jsonData string
 		// if agree,send the fundingtx to chain network
 		_, err := rpcClient.SendRawTransaction(fundingTransaction.FunderSignature)
 		if err != nil {
+			log.Println(err)
 			return nil, err
 		}
 	}
@@ -266,10 +294,15 @@ func (service *fundingTransactionManager) FundingTransactionSign(jsonData string
 	if data.Attitude == false {
 		err = tx.Update(channelInfo)
 		if err != nil {
+			log.Println(err)
 			return nil, err
 		}
 	}
-	tx.Commit()
+	err = tx.Commit()
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
 
 	return fundingTransaction, err
 }

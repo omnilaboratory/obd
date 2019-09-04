@@ -235,18 +235,30 @@ func (c *channelManager) CloseChannel(jsonData string, user *bean.User) (interfa
 	lastCommitmentTx.CurrState = dao.TxInfoState_MyselfSign
 	lastCommitmentTx.TxHexEndSign = chex
 	lastCommitmentTx.EndSignAt = time.Now()
-	tx.Update(lastCommitmentTx)
+	err = tx.Update(lastCommitmentTx)
+	if err != nil {
+		return nil, err
+	}
 
 	lastRevocableDeliveryTx.CurrState = dao.TxInfoState_MyselfSign
 	lastRevocableDeliveryTx.TxHexEndSign = rdhex
 	lastRevocableDeliveryTx.EndSignAt = time.Now()
-	tx.Update(lastRevocableDeliveryTx)
+	err = tx.Update(lastRevocableDeliveryTx)
+	if err != nil {
+		return nil, err
+	}
 
 	channelInfo.CurrState = dao.ChannelState_Close
 	channelInfo.CloseAt = time.Now()
-	tx.Update(channelInfo)
+	err = tx.Update(channelInfo)
+	if err != nil {
+		return nil, err
+	}
 
-	tx.Commit()
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
 
 	return channelInfo, nil
 }
