@@ -67,4 +67,7 @@ const (
 
 	MsgType_GetBalanceRequest MsgType = -353
 	MsgType_GetBalanceRespond MsgType = -354
+
+	MsgType_CloseChannelRequest MsgType = -38
+	MsgType_CloseChannelSign    MsgType = -39
 )

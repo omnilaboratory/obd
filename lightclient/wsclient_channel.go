@@ -132,6 +132,12 @@ func (client *Client) channelModule(msg bean.RequestMessage) (enum.SendTargetTyp
 		}
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
+	case enum.MsgType_CloseChannelRequest:
+		client.sendToMyself(msg.Type, status, data)
+		sendType = enum.SendTargetType_SendToSomeone
+	case enum.MsgType_CloseChannelSign:
+		client.sendToMyself(msg.Type, status, data)
+		sendType = enum.SendTargetType_SendToSomeone
 	}
 	return sendType, []byte(data), status
 }
