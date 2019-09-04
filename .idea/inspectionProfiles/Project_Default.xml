@@ -14,6 +14,7 @@
         <method importPath="strings" receiver="*Builder" name="WriteRune" />
         <method importPath="math/rand" receiver="*Rand" name="Read" />
         <method importPath="google.golang.org/grpc" receiver="*ClientConn" name="Close" />
+        <method importPath="github.com/asdine/storm" receiver="Node" name="Rollback" />
       </methods>
     </inspection_tool>
   </profile>

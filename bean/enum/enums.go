@@ -38,6 +38,7 @@ const (
 	MsgType_ChannelOpen_AllItem         MsgType = -3202
 	MsgType_ChannelOpen_Count           MsgType = -3203
 	MsgType_ChannelOpen_DelItemByTempId MsgType = -3204
+	MsgType_ForceCloseChannel           MsgType = -3205
 
 	MsgType_ChannelAccept MsgType = -33
 
@@ -57,6 +58,7 @@ const (
 	MsgType_CommitmentTx_LatestCommitmentTxByChanId MsgType = -35104
 	MsgType_CommitmentTx_LatestRDByChanId           MsgType = -35105
 	MsgType_CommitmentTx_LatestBRByChanId           MsgType = -35106
+	MsgType_SendBreachRemedyTransaction             MsgType = -35107
 
 	MsgType_CommitmentTxSigned_Sign         MsgType = -352
 	MsgType_CommitmentTxSigned_ItemByChanId MsgType = -35201
@@ -65,7 +67,4 @@ const (
 
 	MsgType_GetBalanceRequest MsgType = -353
 	MsgType_GetBalanceRespond MsgType = -354
-
-	MsgType_CloseChannel                MsgType = -38
-	MsgType_SendBreachRemedyTransaction MsgType = -39
 )
