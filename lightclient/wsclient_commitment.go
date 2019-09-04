@@ -35,7 +35,7 @@ func (client *Client) commitmentTxModule(msg bean.RequestMessage) (enum.SendTarg
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_CommitmentTx_ItemsByChanId:
-		nodes, count, err := service.CommitmentTxService.GetItemsByChannelId(msg.Data)
+		nodes, count, err := service.CommitmentTxService.GetItemsByChannelId(msg.Data, client.User)
 		log.Println(*count)
 		if err != nil {
 			data = err.Error()

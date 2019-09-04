@@ -173,9 +173,9 @@ func (service *commitmentTxManager) GetLatestBRTxByChannelId(jsonData string, us
 		return nil, err
 	}
 
-	var creatorSide = 0
+	var creatorSide = 1
 	if user.PeerId == channelInfo.PeerIdB {
-		creatorSide = 1
+		creatorSide = 0
 	}
 
 	node = &dao.BreachRemedyTransaction{}
@@ -183,7 +183,7 @@ func (service *commitmentTxManager) GetLatestBRTxByChannelId(jsonData string, us
 	return node, err
 }
 
-func (service *commitmentTxManager) GetItemsByChannelId(jsonData string) (nodes []dao.CommitmentTxInfo, count *int, err error) {
+func (service *commitmentTxManager) GetItemsByChannelId(jsonData string, user *bean.User) (nodes []dao.CommitmentTxInfo, count *int, err error) {
 	var chanId bean.ChannelID
 
 	array := gjson.Get(jsonData, "channel_id").Array()
@@ -192,6 +192,17 @@ func (service *commitmentTxManager) GetItemsByChannelId(jsonData string) (nodes 
 	}
 	for index, value := range array {
 		chanId[index] = byte(value.Num)
+	}
+
+	channelInfo := &dao.ChannelInfo{}
+	err = db.Select(q.Eq("ChannelId", chanId), q.Eq("CurrState", dao.ChannelState_Accept)).First(channelInfo)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var creatorSide = 0
+	if user.PeerId == channelInfo.PeerIdB {
+		creatorSide = 1
 	}
 
 	pageIndex := gjson.Get(jsonData, "page_index").Int()
@@ -215,7 +226,7 @@ func (service *commitmentTxManager) GetItemsByChannelId(jsonData string) (nodes 
 		return nil, nil, err
 	}
 	count = &tempCount
-	err = db.Select(q.Eq("ChannelId", chanId)).OrderBy("CreateAt").Reverse().Skip(int(skip)).Limit(int(pageSize)).Find(&nodes)
+	err = db.Select(q.Eq("ChannelId", chanId), q.Eq("CreatorSide", creatorSide)).OrderBy("CreateAt").Reverse().Skip(int(skip)).Limit(int(pageSize)).Find(&nodes)
 	return nodes, count, err
 }
 
