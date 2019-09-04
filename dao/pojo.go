@@ -14,11 +14,11 @@ type User struct {
 type ChannelState int
 
 const (
-	ChannelState_Create        ChannelState = 10
-	ChannelState_Accept        ChannelState = 20
-	ChannelState_Close         ChannelState = 21
-	ChannelState_Defuse        ChannelState = 30
-	ChannelState_FundingDefuse ChannelState = 31
+	ChannelState_Create            ChannelState = 10
+	ChannelState_Accept            ChannelState = 20
+	ChannelState_Close             ChannelState = 21
+	ChannelState_OpenChannelDefuse ChannelState = 30
+	ChannelState_FundingDefuse     ChannelState = 31
 )
 
 type ChannelInfo struct {
@@ -26,14 +26,15 @@ type ChannelInfo struct {
 	Id            int            `storm:"id,increment" json:"id"`
 	PeerIdA       string         `json:"peer_id_a"`
 	PeerIdB       string         `json:"peer_id_b"`
+	ChannelId     bean.ChannelID `json:"channel_id"`
 	PubKeyA       string         `json:"pub_key_a"`
 	PubKeyB       string         `json:"pub_key_b"`
 	ChannelPubKey string         `json:"channel_pub_key"`
 	RedeemScript  string         `json:"redeem_script"`
-	ChannelId     bean.ChannelID `json:"channel_id"`
 	CurrState     ChannelState   `json:"curr_state"`
 	CreateAt      time.Time      `json:"create_at"`
 	AcceptAt      time.Time      `json:"accept_at"`
+	CloseAt       time.Time      `json:"close_at"`
 }
 
 type CloseChannel struct {

@@ -10,7 +10,7 @@ import (
 	"math"
 )
 
-//https://bitcoin.org/en/developer-reference#addmultisigaddress
+//https://bitcoin.org/en/developer-reference#bitcoin-core-apis
 func (client *Client) CreateMultiSig(minSignNum int, keys []string) (result string, err error) {
 	for _, item := range keys {
 		importAddress(item)
@@ -332,18 +332,18 @@ func (client *Client) BtcCreateAndSignRawTransactionForUnsendTx(fromBitCoinAddre
 	log.Println("SignRawTransactionWithKey DecodeRawTransaction", decodeHex)
 	return txid, hex, err
 }
-func (client *Client) BtcSignAndSendRawTransaction(hex string, privKey string) (string, error) {
+func (client *Client) BtcSignAndSendRawTransaction(hex string, privKey string) (string, string, error) {
 	signHex, err := client.SignRawTransactionWithKey(hex, []string{privKey}, nil, "ALL")
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	hex = gjson.Get(signHex, "hex").String()
 	txId, err := client.SendRawTransaction(hex)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	log.Println("SendRawTransaction", txId)
-	return txId, nil
+	return txId, hex, nil
 }
 
 // create a transaction and signature and send to the network

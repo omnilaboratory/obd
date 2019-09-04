@@ -56,10 +56,15 @@ type AcceptChannelInfo struct {
 
 //type: -38 (close_channel)
 type CloseChannel struct {
-	ChannelId    ChannelID           `json:"channel_id"`
-	Len          uint16              `json:"len"`
-	ScriptPubKey []byte              `json:"script_pub_key"`
-	Signature    chainhash.Signature `json:"signature"`
+	ChannelId                ChannelID `json:"channel_id"`
+	ChannelAddressPrivateKey string    `json:"channel_address_private_key"` // openChannel address
+	LastTempPrivateKey       string    `json:"channel_address_private_key"`
+}
+
+//type: -39 (SendBreachRemedyTransaction)
+type SendBreachRemedyTransaction struct {
+	ChannelId                ChannelID `json:"channel_id"`
+	ChannelAddressPrivateKey string    `json:"channel_address_private_key"` // openChannel address
 }
 
 //type: -34 (funding_created)

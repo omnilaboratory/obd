@@ -65,4 +65,7 @@ const (
 
 	MsgType_GetBalanceRequest MsgType = -353
 	MsgType_GetBalanceRespond MsgType = -354
+
+	MsgType_CloseChannel                MsgType = -38
+	MsgType_SendBreachRemedyTransaction MsgType = -39
 )
