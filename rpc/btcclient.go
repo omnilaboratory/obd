@@ -116,6 +116,15 @@ func (client *Client) ValidateAddress(address string) (isvalid bool, err error) 
 	log.Println(result)
 	return gjson.Get(result, "isvalid").Bool(), nil
 }
+func (client *Client) GetAddressInfo(address string) (ismine bool, err error) {
+	importAddress(address)
+	result, err := client.send("getaddressinfo", []interface{}{address})
+	if err != nil {
+		return false, err
+	}
+	log.Println(result)
+	return gjson.Get(result, "ismine").Bool(), nil
+}
 
 func importAddress(address string) {
 	client.send("importaddress", []interface{}{address, "", false})

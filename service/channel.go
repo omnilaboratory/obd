@@ -11,7 +11,6 @@ import (
 	"github.com/asdine/storm/q"
 	"github.com/tidwall/gjson"
 	"log"
-	"strconv"
 	"time"
 )
 
@@ -19,9 +18,8 @@ type channelManager struct{}
 
 var ChannelService = channelManager{}
 
-// OpenChannel init data
-func (c *channelManager) OpenChannel(msg bean.RequestMessage, peerIdA string) (data *bean.OpenChannelInfo, err error) {
-
+// AliceOpenChannel init ChannelInfo
+func (c *channelManager) AliceOpenChannel(msg bean.RequestMessage, peerIdA string) (data *bean.OpenChannelInfo, err error) {
 	if tool.CheckIsString(&msg.Data) == false {
 		return nil, errors.New("empty inputData")
 	}
@@ -29,89 +27,89 @@ func (c *channelManager) OpenChannel(msg bean.RequestMessage, peerIdA string) (d
 	data = &bean.OpenChannelInfo{}
 	json.Unmarshal([]byte(msg.Data), &data)
 
-	if len(data.FundingPubKey) != 34 {
+	if tool.CheckIsString(&data.FundingPubKey) == false {
 		return nil, errors.New("wrong fundingPubKey")
 	}
 
 	//TODO need to validate pubKey
-	isMine, err := rpcClient.ValidateAddress(data.FundingPubKey)
-	if err != nil {
-		return nil, err
-	}
-	if isMine == false {
-		return nil, errors.New("invalid fundingPubKey")
-	}
+	//isMine, err := rpcClient.ValidateAddress(data.FundingPubKey)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//if isMine == false {
+	//	return nil, errors.New("invalid fundingPubKey")
+	//}
 
 	data.ChainHash = config.Init_node_chain_hash
-	tempId := bean.ChannelIdService.NextTemporaryChanID()
-	data.TemporaryChannelId = tempId
+	data.TemporaryChannelId = bean.ChannelIdService.NextTemporaryChanID()
 
-	node := &dao.ChannelInfo{}
-	node.OpenChannelInfo = *data
-	node.PeerIdA = peerIdA
-	node.PeerIdB = msg.RecipientPeerId
-	node.PubKeyA = data.FundingPubKey
-	node.CurrState = dao.ChannelState_Create
-	node.CreateAt = time.Now()
+	channelInfo := &dao.ChannelInfo{}
+	channelInfo.OpenChannelInfo = *data
+	channelInfo.PeerIdA = peerIdA
+	channelInfo.PeerIdB = msg.RecipientPeerId
+	channelInfo.PubKeyA = data.FundingPubKey
+	channelInfo.CurrState = dao.ChannelState_Create
+	channelInfo.CreateAt = time.Now()
+	channelInfo.CreateBy = peerIdA
 
-	db.Save(node)
+	db.Save(channelInfo)
 	return data, err
 }
 
-func (c *channelManager) AcceptChannel(jsonData string, peerIdB string) (node *dao.ChannelInfo, err error) {
-	data := &bean.AcceptChannelInfo{}
-	err = json.Unmarshal([]byte(jsonData), &data)
+func (c *channelManager) BobAcceptChannel(jsonData string, peerIdB string) (channelInfo *dao.ChannelInfo, err error) {
+	reqData := &bean.AcceptChannelInfo{}
+	err = json.Unmarshal([]byte(jsonData), &reqData)
 
 	if err != nil {
 		return nil, err
 	}
 
-	if len(data.TemporaryChannelId) != 32 {
+	if len(reqData.TemporaryChannelId) != 32 {
 		return nil, errors.New("wrong TemporaryChannelId")
 	}
 
-	if data.Attitude {
-		if len(data.FundingPubKey) != 34 {
+	if reqData.Attitude {
+		if tool.CheckIsString(&reqData.FundingPubKey) == false {
 			return nil, errors.New("wrong PubKeyB")
 		}
-		isMine, err := rpcClient.ValidateAddress(data.FundingPubKey)
+		//isMine, err := rpcClient.ValidateAddress(reqData.FundingPubKey)
+		//if err != nil {
+		//	return nil, err
+		//}
+		//if isMine == false {
+		//	return nil, errors.New("invalid fundingPubKey")
+		//}
+	}
+
+	channelInfo = &dao.ChannelInfo{}
+	err = db.Select(q.Eq("TemporaryChannelId", reqData.TemporaryChannelId), q.Eq("CurrState", dao.ChannelState_Create)).First(channelInfo)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	if reqData.Attitude {
+		channelInfo.PubKeyB = reqData.FundingPubKey
+		multiSig, err := rpcClient.CreateMultiSig(2, []string{channelInfo.PubKeyA, channelInfo.PubKeyB})
 		if err != nil {
+			log.Println(err)
 			return nil, err
 		}
-		if isMine == false {
-			return nil, errors.New("invalid fundingPubKey")
-		}
+		channelInfo.ChannelPubKey = gjson.Get(multiSig, "address").String()
+		channelInfo.RedeemScript = gjson.Get(multiSig, "redeemScript").String()
 	}
-
-	node = &dao.ChannelInfo{}
-	db.Select(q.Eq("TemporaryChannelId", data.TemporaryChannelId)).First(node)
-
-	if &node.Id == nil {
-		return nil, errors.New("invalid TemporaryChannelId")
-	}
-	if node.CurrState != dao.ChannelState_Create {
-		return nil, errors.New("invalid ChannelState " + strconv.Itoa(int(node.CurrState)))
-	}
-
-	if data.Attitude {
-		node.PubKeyB = data.FundingPubKey
-
-		multiSig, err := rpcClient.CreateMultiSig(2, []string{node.PubKeyA, node.PubKeyB})
-		if err != nil {
-			return nil, err
-		}
-		node.ChannelPubKey = gjson.Get(multiSig, "address").String()
-		node.RedeemScript = gjson.Get(multiSig, "redeemScript").String()
-	}
-	node.AcceptAt = time.Now()
-	if data.Attitude {
-		node.CurrState = dao.ChannelState_Accept
+	if reqData.Attitude {
+		channelInfo.CurrState = dao.ChannelState_Accept
 	} else {
-		node.CurrState = dao.ChannelState_OpenChannelDefuse
+		channelInfo.CurrState = dao.ChannelState_OpenChannelDefuse
 	}
-	err = db.Update(node)
-
-	return node, err
+	channelInfo.AcceptAt = time.Now()
+	err = db.Update(channelInfo)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	return channelInfo, err
 }
 
 // GetChannelByTemporaryChanId

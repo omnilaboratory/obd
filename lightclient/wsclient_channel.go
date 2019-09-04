@@ -22,7 +22,7 @@ func (client *Client) channelModule(msg bean.RequestMessage) (enum.SendTargetTyp
 			if msg.RecipientPeerId == client.User.PeerId {
 				data = "can not open channel to yourself"
 			} else {
-				node, err := service.ChannelService.OpenChannel(msg, client.User.PeerId)
+				node, err := service.ChannelService.AliceOpenChannel(msg, client.User.PeerId)
 				if err != nil {
 					data = err.Error()
 				} else {
@@ -99,7 +99,7 @@ func (client *Client) channelModule(msg bean.RequestMessage) (enum.SendTargetTyp
 			client.sendToMyself(msg.Type, true, "please login first")
 			sendType = enum.SendTargetType_SendToSomeone
 		} else {
-			node, err := service.ChannelService.AcceptChannel(msg.Data, client.User.PeerId)
+			node, err := service.ChannelService.BobAcceptChannel(msg.Data, client.User.PeerId)
 			if err != nil {
 				data = err.Error()
 			} else {

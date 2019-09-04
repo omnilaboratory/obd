@@ -32,6 +32,7 @@ type ChannelInfo struct {
 	ChannelPubKey string         `json:"channel_pub_key"`
 	RedeemScript  string         `json:"redeem_script"`
 	CurrState     ChannelState   `json:"curr_state"`
+	CreateBy      string         `json:"create_by"`
 	CreateAt      time.Time      `json:"create_at"`
 	AcceptAt      time.Time      `json:"accept_at"`
 	CloseAt       time.Time      `json:"close_at"`
