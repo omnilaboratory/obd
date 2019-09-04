@@ -93,7 +93,7 @@ type CommitmentTxRequestInfo struct {
 }
 
 //CommitmentTransaction
-type CommitmentTxInfo struct {
+type CommitmentTransaction struct {
 	Id                 int            `storm:"id,increment" json:"id" `
 	LastCommitmentTxId int            `json:"last_commitment_tx_id"`
 	PeerIdA            string         `json:"peer_id_a"`
@@ -147,7 +147,7 @@ type RevocableDeliveryTransaction struct {
 	LastEditTime   time.Time      `json:"last_edit_time"`
 }
 
-// to punish alice do not admit the newest commitment tx
+// to punish alice do not admit the latest commitment tx
 type BreachRemedyTransaction struct {
 	Id             int            `storm:"id,increment" json:"id" `
 	CommitmentTxId int            `json:"commitment_tx_id"` // parent commitmentTx id

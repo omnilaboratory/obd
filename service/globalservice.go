@@ -33,8 +33,8 @@ func init() {
 	rpcClient = rpc.NewClient()
 }
 
-func createCommitmentATx(creatorSide int, channelInfo *dao.ChannelInfo, fundingTransaction *dao.FundingTransaction, outputBean commitmentOutputBean, user *bean.User) (*dao.CommitmentTxInfo, error) {
-	commitmentTxInfo := &dao.CommitmentTxInfo{}
+func createCommitmentATx(creatorSide int, channelInfo *dao.ChannelInfo, fundingTransaction *dao.FundingTransaction, outputBean commitmentOutputBean, user *bean.User) (*dao.CommitmentTransaction, error) {
+	commitmentTxInfo := &dao.CommitmentTransaction{}
 	commitmentTxInfo.PeerIdA = channelInfo.PeerIdA
 	commitmentTxInfo.PeerIdB = channelInfo.PeerIdB
 	commitmentTxInfo.ChannelId = channelInfo.ChannelId
@@ -64,7 +64,7 @@ func createCommitmentATx(creatorSide int, channelInfo *dao.ChannelInfo, fundingT
 
 	return commitmentTxInfo, nil
 }
-func createRDaTx(creatorSide int, channelInfo *dao.ChannelInfo, commitmentTxInfo *dao.CommitmentTxInfo, toAddress string, user *bean.User) (*dao.RevocableDeliveryTransaction, error) {
+func createRDaTx(creatorSide int, channelInfo *dao.ChannelInfo, commitmentTxInfo *dao.CommitmentTransaction, toAddress string, user *bean.User) (*dao.RevocableDeliveryTransaction, error) {
 	rda := &dao.RevocableDeliveryTransaction{}
 
 	rda.CommitmentTxId = commitmentTxInfo.Id
@@ -89,7 +89,7 @@ func createRDaTx(creatorSide int, channelInfo *dao.ChannelInfo, commitmentTxInfo
 
 	return rda, nil
 }
-func createBRTx(creatorSide int, channelInfo *dao.ChannelInfo, commitmentTxInfo *dao.CommitmentTxInfo, user *bean.User) (*dao.BreachRemedyTransaction, error) {
+func createBRTx(creatorSide int, channelInfo *dao.ChannelInfo, commitmentTxInfo *dao.CommitmentTransaction, user *bean.User) (*dao.BreachRemedyTransaction, error) {
 	breachRemedyTransaction := &dao.BreachRemedyTransaction{}
 
 	breachRemedyTransaction.CommitmentTxId = commitmentTxInfo.Id

@@ -57,7 +57,7 @@ func (service *commitmentTxManager) CreateNewCommitmentTxRequest(jsonData string
 		creatorSide = 1
 	}
 
-	lastCommitmentTxInfo := &dao.CommitmentTxInfo{}
+	lastCommitmentTxInfo := &dao.CommitmentTransaction{}
 	err = db.Select(q.Eq("ChannelId", data.ChannelId), q.Eq("CurrState", dao.TxInfoState_OtherSign), q.Eq("CreatorSide", creatorSide), q.Or(q.Eq("PeerIdA", creator.PeerId), q.Eq("PeerIdB", creator.PeerId))).OrderBy("CreateAt").Reverse().First(lastCommitmentTxInfo)
 	if err != nil {
 		return nil, nil, errors.New("not find the lastCommitmentTxInfo")
@@ -106,7 +106,7 @@ func (service *commitmentTxManager) CreateNewCommitmentTxRequest(jsonData string
 	}
 	return data, targetUser, err
 }
-func (service *commitmentTxManager) GetLatestCommitmentTxByChannelId(jsonData string, user *bean.User) (node *dao.CommitmentTxInfo, err error) {
+func (service *commitmentTxManager) GetLatestCommitmentTxByChannelId(jsonData string, user *bean.User) (node *dao.CommitmentTransaction, err error) {
 	var chanId bean.ChannelID
 	array := gjson.Get(jsonData, "channel_id").Array()
 	if len(array) != 32 {
@@ -127,7 +127,7 @@ func (service *commitmentTxManager) GetLatestCommitmentTxByChannelId(jsonData st
 		creatorSide = 1
 	}
 
-	node = &dao.CommitmentTxInfo{}
+	node = &dao.CommitmentTransaction{}
 	err = db.Select(q.Eq("ChannelId", chanId), q.Eq("CreatorSide", creatorSide), q.Or(q.Eq("PeerIdA", user.PeerId), q.Eq("PeerIdB", user.PeerId))).OrderBy("CreateAt").Reverse().First(node)
 	return node, err
 }
@@ -183,7 +183,7 @@ func (service *commitmentTxManager) GetLatestBRTxByChannelId(jsonData string, us
 	return node, err
 }
 
-func (service *commitmentTxManager) GetItemsByChannelId(jsonData string, user *bean.User) (nodes []dao.CommitmentTxInfo, count *int, err error) {
+func (service *commitmentTxManager) GetItemsByChannelId(jsonData string, user *bean.User) (nodes []dao.CommitmentTransaction, count *int, err error) {
 	var chanId bean.ChannelID
 
 	array := gjson.Get(jsonData, "channel_id").Array()
@@ -220,8 +220,8 @@ func (service *commitmentTxManager) GetItemsByChannelId(jsonData string, user *b
 		return nil, nil, err
 	}
 
-	nodes = []dao.CommitmentTxInfo{}
-	tempCount, err := db.Select(q.Eq("ChannelId", chanId)).Count(&dao.CommitmentTxInfo{})
+	nodes = []dao.CommitmentTransaction{}
+	tempCount, err := db.Select(q.Eq("ChannelId", chanId)).Count(&dao.CommitmentTransaction{})
 	if err != nil {
 		return nil, nil, err
 	}
@@ -230,12 +230,12 @@ func (service *commitmentTxManager) GetItemsByChannelId(jsonData string, user *b
 	return nodes, count, err
 }
 
-func (service *commitmentTxManager) GetItemById(id int) (node *dao.CommitmentTxInfo, err error) {
+func (service *commitmentTxManager) GetItemById(id int) (node *dao.CommitmentTransaction, err error) {
 	db, err := dao.DBService.GetDB()
 	if err != nil {
 		return nil, err
 	}
-	node = &dao.CommitmentTxInfo{}
+	node = &dao.CommitmentTransaction{}
 	err = db.Select(q.Eq("Id", id)).First(node)
 	return node, nil
 }
@@ -245,16 +245,16 @@ func (service *commitmentTxManager) TotalCount() (count int, err error) {
 	if err != nil {
 		return 0, err
 	}
-	return db.Count(&dao.CommitmentTxInfo{})
+	return db.Count(&dao.CommitmentTransaction{})
 }
 
-func (service *commitmentTxManager) Del(id int) (node *dao.CommitmentTxInfo, err error) {
+func (service *commitmentTxManager) Del(id int) (node *dao.CommitmentTransaction, err error) {
 	db, err := dao.DBService.GetDB()
 	if err != nil {
 		return nil, err
 	}
 
-	node = &dao.CommitmentTxInfo{}
+	node = &dao.CommitmentTransaction{}
 	err = db.One("Id", id, node)
 	if err != nil {
 		return nil, err
@@ -267,7 +267,7 @@ type commitmentTxSignedManager struct{}
 
 var CommitmentTxSignedService commitmentTxSignedManager
 
-func (service *commitmentTxSignedManager) CommitmentTxSign(jsonData string, signer *bean.User) (*dao.CommitmentTxInfo, *dao.CommitmentTxInfo, *string, error) {
+func (service *commitmentTxSignedManager) CommitmentTxSign(jsonData string, signer *bean.User) (*dao.CommitmentTransaction, *dao.CommitmentTransaction, *string, error) {
 	if tool.CheckIsString(&jsonData) == false {
 		log.Println("empty json data")
 		return nil, nil, nil, errors.New("empty json data")
@@ -353,14 +353,14 @@ func (service *commitmentTxSignedManager) CommitmentTxSign(jsonData string, sign
 	return commitmentATxInfo, commitmentBTxInfo, &targetUser, err
 }
 
-func createAliceSideTxs(tx storm.Node, data *bean.CommitmentTxSigned, dataFromCreator dao.CommitmentTxRequestInfo, channelInfo *dao.ChannelInfo, fundingTransaction *dao.FundingTransaction, signer *bean.User) (*dao.CommitmentTxInfo, error) {
+func createAliceSideTxs(tx storm.Node, data *bean.CommitmentTxSigned, dataFromCreator dao.CommitmentTxRequestInfo, channelInfo *dao.ChannelInfo, fundingTransaction *dao.FundingTransaction, signer *bean.User) (*dao.CommitmentTransaction, error) {
 	var creatorSide = 0
 	var isAliceCreateTransfer = true
 	if signer.PeerId == channelInfo.PeerIdA {
 		isAliceCreateTransfer = false
 	}
 
-	var lastCommitmentATx = &dao.CommitmentTxInfo{}
+	var lastCommitmentATx = &dao.CommitmentTransaction{}
 	err := tx.Select(q.Eq("ChannelId", data.ChannelId), q.Eq("CreatorSide", creatorSide), q.Eq("CurrState", dao.TxInfoState_OtherSign), q.Or(q.Eq("PeerIdA", signer.PeerId), q.Eq("PeerIdB", signer.PeerId))).OrderBy("CreateAt").Reverse().First(lastCommitmentATx)
 	if err != nil {
 		lastCommitmentATx = nil
@@ -512,14 +512,14 @@ func createAliceSideTxs(tx storm.Node, data *bean.CommitmentTxSigned, dataFromCr
 	return commitmentTxInfo, err
 }
 
-func createBobSideTxs(tx storm.Node, data *bean.CommitmentTxSigned, dataFromCreator dao.CommitmentTxRequestInfo, channelInfo *dao.ChannelInfo, fundingTransaction *dao.FundingTransaction, signer *bean.User) (*dao.CommitmentTxInfo, error) {
+func createBobSideTxs(tx storm.Node, data *bean.CommitmentTxSigned, dataFromCreator dao.CommitmentTxRequestInfo, channelInfo *dao.ChannelInfo, fundingTransaction *dao.FundingTransaction, signer *bean.User) (*dao.CommitmentTransaction, error) {
 	var creatorSide = 1
 	var isAliceCreateTransfer = true
 	if signer.PeerId == channelInfo.PeerIdA {
 		isAliceCreateTransfer = false
 	}
 
-	var lastCommitmentBTx = &dao.CommitmentTxInfo{}
+	var lastCommitmentBTx = &dao.CommitmentTransaction{}
 	err := tx.Select(q.Eq("ChannelId", data.ChannelId), q.Eq("CreatorSide", creatorSide), q.Eq("CurrState", dao.TxInfoState_OtherSign), q.Or(q.Eq("PeerIdA", signer.PeerId), q.Eq("PeerIdB", signer.PeerId))).OrderBy("CreateAt").Reverse().First(lastCommitmentBTx)
 	if err != nil {
 		lastCommitmentBTx = nil
@@ -681,7 +681,7 @@ func createBobSideTxs(tx storm.Node, data *bean.CommitmentTxSigned, dataFromCrea
 	return commitmentTxInfo, err
 }
 
-func (service *commitmentTxSignedManager) GetItemsByChannelId(jsonData string) (nodes []dao.CommitmentTxInfo, count *int, err error) {
+func (service *commitmentTxSignedManager) GetItemsByChannelId(jsonData string) (nodes []dao.CommitmentTransaction, count *int, err error) {
 	var chanId bean.ChannelID
 	array := gjson.Get(jsonData, "channel_id").Array()
 
@@ -708,8 +708,8 @@ func (service *commitmentTxSignedManager) GetItemsByChannelId(jsonData string) (
 		return nil, nil, err
 	}
 
-	nodes = []dao.CommitmentTxInfo{}
-	tempCount, err := db.Select(q.Eq("ChannelId", chanId)).Count(&dao.CommitmentTxInfo{})
+	nodes = []dao.CommitmentTransaction{}
+	tempCount, err := db.Select(q.Eq("ChannelId", chanId)).Count(&dao.CommitmentTransaction{})
 	if err != nil {
 		log.Println(err)
 		return nil, nil, err
@@ -719,13 +719,13 @@ func (service *commitmentTxSignedManager) GetItemsByChannelId(jsonData string) (
 	return nodes, count, err
 }
 
-func (service *commitmentTxSignedManager) GetItemById(id int) (node *dao.CommitmentTxInfo, err error) {
+func (service *commitmentTxSignedManager) GetItemById(id int) (node *dao.CommitmentTransaction, err error) {
 	db, err := dao.DBService.GetDB()
 	if err != nil {
 		log.Println(err)
 		return nil, err
 	}
-	node = &dao.CommitmentTxInfo{}
+	node = &dao.CommitmentTransaction{}
 	err = db.Select(q.Eq("Id", id)).First(node)
 	return node, nil
 }
@@ -736,5 +736,5 @@ func (service *commitmentTxSignedManager) TotalCount() (count int, err error) {
 		log.Println(err)
 		return 0, err
 	}
-	return db.Count(&dao.CommitmentTxInfo{})
+	return db.Count(&dao.CommitmentTransaction{})
 }
