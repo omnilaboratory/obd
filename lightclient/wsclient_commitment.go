@@ -207,7 +207,20 @@ func (client *Client) otherModule(msg bean.RequestMessage) (enum.SendTargetType,
 	data := ""
 	switch msg.Type {
 	case enum.MsgType_GetBalanceRequest:
-	case enum.MsgType_GetBalanceRespond:
+		node, err := service.CommitmentTxService.GetLatestCommitmentTxByChannelId(msg.Data, client.User)
+		if err != nil {
+			data = err.Error()
+		} else {
+			bytes, err := json.Marshal(node)
+			if err != nil {
+				data = err.Error()
+			} else {
+				data = string(bytes)
+				status = true
+			}
+		}
+		client.sendToMyself(enum.MsgType_GetBalanceRespond, status, data)
+		sendType = enum.SendTargetType_SendToSomeone
 	default:
 	}
 

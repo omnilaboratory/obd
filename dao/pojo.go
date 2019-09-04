@@ -171,15 +171,3 @@ type BreachRemedyTransaction struct {
 	EndSignAt      time.Time      `json:"end_sign_at"`
 	LastEditTime   time.Time      `json:"last_edit_time"`
 }
-
-type GetBalanceRequest struct {
-	Id int `storm:"id,increment" `
-	bean.GetBalanceRequest
-	CreateAt time.Time `json:"create_at"`
-}
-
-type GetBalanceRespond struct {
-	Id int `storm:"id,increment" `
-	bean.GetBalanceRespond
-	CreateAt time.Time `json:"create_at"`
-}

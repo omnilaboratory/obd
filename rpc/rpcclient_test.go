@@ -124,6 +124,11 @@ func TestClient_GetMiningInfo(t *testing.T) {
 	log.Println(isvilid)
 }
 
+func TestClient_ValidateAddress(t *testing.T) {
+	client := NewClient()
+	client.ValidateAddress("n4bJvpVHks3Fz9wWB9f445LGV5xTS6LGpA")
+}
+
 func TestClient_AddMultiSigAddress(t *testing.T) {
 	client := NewClient()
 	result, err := client.AddMultiSigAddress(2, []string{"myjgni5hmXbRo9KsStMRK5gVbXeRZs5LLi", "n4bJvpVHks3Fz9wWB9f445LGV5xTS6LGpA"})

@@ -107,17 +107,21 @@ func (service *commitmentTxManager) CreateNewCommitmentTxRequest(jsonData string
 	return data, targetUser, err
 }
 func (service *commitmentTxManager) GetLatestCommitmentTxByChannelId(jsonData string, user *bean.User) (node *dao.CommitmentTransaction, err error) {
-	var chanId bean.ChannelID
-	array := gjson.Get(jsonData, "channel_id").Array()
-	if len(array) != 32 {
-		return nil, errors.New("wrong channel_id")
+	if tool.CheckIsString(&jsonData) == false {
+		return nil, errors.New("empty jsonData")
 	}
-	for index, value := range array {
-		chanId[index] = byte(value.Num)
+	var reqData = &bean.GetBalanceRequest{}
+	err = json.Unmarshal([]byte(jsonData), reqData)
+	if err != nil {
+		return nil, err
+	}
+
+	if bean.ChannelIdService.IsEmpty(reqData.ChannelId) {
+		return nil, errors.New("wrong channelId")
 	}
 
 	channelInfo := &dao.ChannelInfo{}
-	err = db.Select(q.Eq("ChannelId", chanId), q.Eq("CurrState", dao.ChannelState_Accept)).First(channelInfo)
+	err = db.Select(q.Eq("ChannelId", reqData.ChannelId), q.Eq("CurrState", dao.ChannelState_Accept)).First(channelInfo)
 	if err != nil {
 		return nil, err
 	}
@@ -126,9 +130,8 @@ func (service *commitmentTxManager) GetLatestCommitmentTxByChannelId(jsonData st
 	if user.PeerId == channelInfo.PeerIdB {
 		creatorSide = 1
 	}
-
 	node = &dao.CommitmentTransaction{}
-	err = db.Select(q.Eq("ChannelId", chanId), q.Eq("CreatorSide", creatorSide), q.Or(q.Eq("PeerIdA", user.PeerId), q.Eq("PeerIdB", user.PeerId))).OrderBy("CreateAt").Reverse().First(node)
+	err = db.Select(q.Eq("ChannelId", reqData.ChannelId), q.Eq("CreatorSide", creatorSide), q.Or(q.Eq("PeerIdA", user.PeerId), q.Eq("PeerIdB", user.PeerId))).OrderBy("CreateAt").Reverse().First(node)
 	return node, err
 }
 
