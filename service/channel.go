@@ -95,8 +95,8 @@ func (c *channelManager) BobAcceptChannel(jsonData string, peerIdB string) (chan
 			log.Println(err)
 			return nil, err
 		}
-		channelInfo.ChannelPubKey = gjson.Get(multiSig, "address").String()
-		channelInfo.RedeemScript = gjson.Get(multiSig, "redeemScript").String()
+		channelInfo.ChannelAddress = gjson.Get(multiSig, "address").String()
+		channelInfo.ChannelAddressRedeemScript = gjson.Get(multiSig, "redeemScript").String()
 	}
 	if reqData.Attitude {
 		channelInfo.CurrState = dao.ChannelState_Accept
@@ -165,8 +165,8 @@ func (c *channelManager) TotalCount(peerId string) (count int, err error) {
 	return db.Select(q.Or(q.Eq("PeerIdA", peerId), q.Eq("PeerIdB", peerId))).Count(&dao.ChannelInfo{})
 }
 
-//CloseChannel
-func (c *channelManager) CloseChannel(jsonData string, user *bean.User) (interface{}, error) {
+//ForceCloseChannel
+func (c *channelManager) ForceCloseChannel(jsonData string, user *bean.User) (interface{}, error) {
 	if tool.CheckIsString(&jsonData) == false {
 		return nil, errors.New("empty inputData")
 	}
@@ -196,13 +196,8 @@ func (c *channelManager) CloseChannel(jsonData string, user *bean.User) (interfa
 		return nil, err
 	}
 
-	creatorSide := 0
-	if user.PeerId == channelInfo.PeerIdB {
-		creatorSide = 1
-	}
-
 	lastCommitmentTx := &dao.CommitmentTransaction{}
-	err = db.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("CreatorSide", creatorSide)).OrderBy("CreateAt").Reverse().First(lastCommitmentTx)
+	err = db.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("Owner", user.PeerId)).OrderBy("CreateAt").Reverse().First(lastCommitmentTx)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -216,7 +211,7 @@ func (c *channelManager) CloseChannel(jsonData string, user *bean.User) (interfa
 	log.Println(commitmentTxid)
 
 	lastRevocableDeliveryTx := &dao.RevocableDeliveryTransaction{}
-	err = db.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("CreatorSide", creatorSide)).OrderBy("CreateAt").Reverse().First(lastRevocableDeliveryTx)
+	err = db.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("Owner", user.PeerId)).OrderBy("CreateAt").Reverse().First(lastRevocableDeliveryTx)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -290,13 +285,8 @@ func (c *channelManager) SendBreachRemedyTransaction(jsonData string, user *bean
 		return nil, err
 	}
 
-	creatorSide := 1
-	if user.PeerId == channelInfo.PeerIdB {
-		creatorSide = 0
-	}
-
 	lastBRTx := &dao.BreachRemedyTransaction{}
-	err = db.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("CurrState", dao.TxInfoState_OtherSign), q.Eq("CreatorSide", creatorSide)).OrderBy("CreateAt").Reverse().First(lastBRTx)
+	err = db.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("CurrState", dao.TxInfoState_OtherSign), q.Eq("Owner", user.PeerId)).OrderBy("CreateAt").Reverse().First(lastBRTx)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -338,21 +328,19 @@ func (c *channelManager) RequestCloseChannel(jsonData string, user *bean.User) (
 		return nil, nil, err
 	}
 
-	creatorSide := 0
 	targetUser := channelInfo.PeerIdB
 	if user.PeerId == channelInfo.PeerIdB {
-		creatorSide = 1
 		targetUser = channelInfo.PeerIdA
 	}
 
 	lastCommitmentTx := &dao.CommitmentTransaction{}
-	err = db.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("CreatorSide", creatorSide)).OrderBy("CreateAt").Reverse().First(lastCommitmentTx)
+	err = db.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("Owner", user.PeerId)).OrderBy("CreateAt").Reverse().First(lastCommitmentTx)
 	if err != nil {
 		log.Println(err)
 		return nil, nil, err
 	}
 
-	if creatorSide == 0 {
+	if user.PeerId == channelInfo.PeerIdA {
 		tempAddrPrivateKeyMap[channelInfo.PubKeyA] = reqData.ChannelAddressPrivateKey
 	} else {
 		tempAddrPrivateKeyMap[channelInfo.PubKeyB] = reqData.ChannelAddressPrivateKey
@@ -382,10 +370,8 @@ func (c *channelManager) CloseChannelSign(jsonData string, user *bean.User) (int
 		return nil, nil, err
 	}
 
-	creatorSide := 0
 	targetUser := channelInfo.PeerIdA
 	if user.PeerId == channelInfo.PeerIdA {
-		creatorSide = 1
 		targetUser = channelInfo.PeerIdB
 	}
 
@@ -395,7 +381,7 @@ func (c *channelManager) CloseChannelSign(jsonData string, user *bean.User) (int
 	}
 
 	lastCommitmentTx := &dao.CommitmentTransaction{}
-	err = db.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("CreatorSide", creatorSide)).OrderBy("CreateAt").Reverse().First(lastCommitmentTx)
+	err = db.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("Owner", user.PeerId)).OrderBy("CreateAt").Reverse().First(lastCommitmentTx)
 	if err != nil {
 		log.Println(err)
 		return nil, nil, err
@@ -403,7 +389,7 @@ func (c *channelManager) CloseChannelSign(jsonData string, user *bean.User) (int
 
 	var channelAddressPrivateKey = ""
 	var lastTempPrivateKey = ""
-	if creatorSide == 0 {
+	if user.PeerId == channelInfo.PeerIdB {
 		channelAddressPrivateKey = tempAddrPrivateKeyMap[channelInfo.PubKeyA]
 	} else {
 		channelAddressPrivateKey = tempAddrPrivateKeyMap[channelInfo.PubKeyB]
@@ -423,7 +409,7 @@ func (c *channelManager) CloseChannelSign(jsonData string, user *bean.User) (int
 	log.Println(commitmentTxid)
 
 	lastRevocableDeliveryTx := &dao.RevocableDeliveryTransaction{}
-	err = db.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("CreatorSide", creatorSide)).OrderBy("CreateAt").Reverse().First(lastRevocableDeliveryTx)
+	err = db.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("Owner", user.PeerId)).OrderBy("CreateAt").Reverse().First(lastRevocableDeliveryTx)
 	if err != nil {
 		log.Println(err)
 		return nil, nil, err

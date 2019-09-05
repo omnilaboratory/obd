@@ -20,6 +20,7 @@ const (
 type MsgType int
 
 const (
+	MsgType_Error      MsgType = 0
 	MsgType_UserLogin  MsgType = 1
 	MsgType_UserLogout MsgType = 2
 
@@ -49,7 +50,7 @@ const (
 	MsgType_FundingCreate_Count        MsgType = -3404
 	MsgType_FundingCreate_DelById      MsgType = -3405
 
-	MsgType_FundingSign_Edit MsgType = -35
+	MsgType_FundingSign_Sign MsgType = -35
 
 	MsgType_CommitmentTx_Create                     MsgType = -351
 	MsgType_CommitmentTx_ItemsByChanId              MsgType = -35101

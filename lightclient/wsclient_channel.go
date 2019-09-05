@@ -94,7 +94,7 @@ func (client *Client) channelModule(msg bean.RequestMessage) (enum.SendTargetTyp
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_ForceCloseChannel:
-		node, err := service.ChannelService.CloseChannel(msg.Data, client.User)
+		node, err := service.ChannelService.ForceCloseChannel(msg.Data, client.User)
 		if err != nil {
 			data = err.Error()
 		} else {

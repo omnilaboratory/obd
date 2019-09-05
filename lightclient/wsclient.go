@@ -67,6 +67,7 @@ func (client *Client) Read() {
 
 		if parse.Exists() == false {
 			log.Println("wrong json input")
+			client.sendToMyself(enum.MsgType_Error, false, string(dataReq))
 			continue
 		}
 
@@ -136,7 +137,7 @@ func (client *Client) Read() {
 		}
 
 		//-35
-		if msg.Type == enum.MsgType_FundingSign_Edit {
+		if msg.Type == enum.MsgType_FundingSign_Sign {
 			sendType, dataOut, status = client.fundingSignModule(msg)
 		}
 

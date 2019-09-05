@@ -33,13 +33,13 @@ func init() {
 	rpcClient = rpc.NewClient()
 }
 
-func createCommitmentTx(creatorSide int, channelInfo *dao.ChannelInfo, fundingTransaction *dao.FundingTransaction, outputBean commitmentOutputBean, user *bean.User) (*dao.CommitmentTransaction, error) {
+func createCommitmentTx(owner string, channelInfo *dao.ChannelInfo, fundingTransaction *dao.FundingTransaction, outputBean commitmentOutputBean, user *bean.User) (*dao.CommitmentTransaction, error) {
 	commitmentTxInfo := &dao.CommitmentTransaction{}
 	commitmentTxInfo.PeerIdA = channelInfo.PeerIdA
 	commitmentTxInfo.PeerIdB = channelInfo.PeerIdB
 	commitmentTxInfo.ChannelId = channelInfo.ChannelId
 	commitmentTxInfo.PropertyId = fundingTransaction.PropertyId
-	commitmentTxInfo.CreatorSide = creatorSide
+	commitmentTxInfo.Owner = owner
 
 	//input
 	commitmentTxInfo.InputTxid = fundingTransaction.FundingTxid
@@ -64,7 +64,7 @@ func createCommitmentTx(creatorSide int, channelInfo *dao.ChannelInfo, fundingTr
 
 	return commitmentTxInfo, nil
 }
-func createRDTx(creatorSide int, channelInfo *dao.ChannelInfo, commitmentTxInfo *dao.CommitmentTransaction, toAddress string, user *bean.User) (*dao.RevocableDeliveryTransaction, error) {
+func createRDTx(owner string, channelInfo *dao.ChannelInfo, commitmentTxInfo *dao.CommitmentTransaction, toAddress string, user *bean.User) (*dao.RevocableDeliveryTransaction, error) {
 	rda := &dao.RevocableDeliveryTransaction{}
 
 	rda.CommitmentTxId = commitmentTxInfo.Id
@@ -72,15 +72,15 @@ func createRDTx(creatorSide int, channelInfo *dao.ChannelInfo, commitmentTxInfo 
 	rda.PeerIdB = channelInfo.PeerIdB
 	rda.ChannelId = channelInfo.ChannelId
 	rda.PropertyId = commitmentTxInfo.PropertyId
-	rda.CreatorSide = creatorSide
+	rda.Owner = owner
 
 	//input
 	rda.InputTxid = commitmentTxInfo.Txid
 	rda.InputVout = 0
 	rda.InputAmount = commitmentTxInfo.AmountM
 	//output
-	rda.PubKeyA = toAddress
-	rda.Sequnence = 1000
+	rda.OutputAddress = toAddress
+	rda.Sequence = 1000
 	rda.Amount = commitmentTxInfo.AmountM
 
 	rda.CreateBy = user.PeerId
@@ -89,26 +89,24 @@ func createRDTx(creatorSide int, channelInfo *dao.ChannelInfo, commitmentTxInfo 
 
 	return rda, nil
 }
-func createBRTx(creatorSide int, channelInfo *dao.ChannelInfo, commitmentTxInfo *dao.CommitmentTransaction, user *bean.User) (*dao.BreachRemedyTransaction, error) {
+func createBRTx(owner string, channelInfo *dao.ChannelInfo, commitmentTxInfo *dao.CommitmentTransaction, user *bean.User) (*dao.BreachRemedyTransaction, error) {
 	breachRemedyTransaction := &dao.BreachRemedyTransaction{}
-
 	breachRemedyTransaction.CommitmentTxId = commitmentTxInfo.Id
 	breachRemedyTransaction.PeerIdA = channelInfo.PeerIdA
 	breachRemedyTransaction.PeerIdB = channelInfo.PeerIdB
 	breachRemedyTransaction.ChannelId = channelInfo.ChannelId
 	breachRemedyTransaction.PropertyId = commitmentTxInfo.PropertyId
-	breachRemedyTransaction.PropertyId = commitmentTxInfo.PropertyId
-	breachRemedyTransaction.CreatorSide = creatorSide
+	breachRemedyTransaction.Owner = owner
 
 	//input
 	breachRemedyTransaction.InputTxid = commitmentTxInfo.Txid
 	breachRemedyTransaction.InputVout = 0
 	breachRemedyTransaction.InputAmount = commitmentTxInfo.AmountM
 	//output
-	if creatorSide == 0 {
-		breachRemedyTransaction.PubKeyB = channelInfo.PubKeyB
-	} else {
+	if owner == channelInfo.PeerIdA {
 		breachRemedyTransaction.PubKeyB = channelInfo.PubKeyA
+	} else {
+		breachRemedyTransaction.PubKeyB = channelInfo.PubKeyB
 	}
 	breachRemedyTransaction.Amount = commitmentTxInfo.AmountM
 

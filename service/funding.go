@@ -35,14 +35,19 @@ func (service *fundingTransactionManager) CreateFundingTxRequest(jsonData string
 	fundingTransaction = &dao.FundingTransaction{}
 	count, _ := db.Select(q.Eq("TemporaryChannelId", reqData.TemporaryChannelId)).Count(fundingTransaction)
 	if count == 0 {
-		if tool.CheckIsString(&reqData.FundingTxid) == false {
-			log.Println("wrong FundingTxid")
-			return nil, errors.New("wrong FundingTxid")
-		}
-
 		if tool.CheckIsString(&reqData.FundingTxHex) == false {
 			log.Println("wrong FundingTxHex")
 			return nil, errors.New("wrong FundingTxHex")
+		}
+		if tool.CheckIsString(&reqData.FunderPubKey2) == false {
+			log.Println("wrong FunderPubKey2")
+			return nil, errors.New("wrong FunderPubKey2")
+		}
+
+		fundingTxHexDecode, err := rpcClient.DecodeRawTransaction(reqData.FundingTxHex)
+		if err != nil {
+			log.Println("wrong FundingTxHex", err)
+			return nil, errors.New("wrong FundingTxHex: " + err.Error())
 		}
 
 		channelInfo := &dao.ChannelInfo{}
@@ -54,6 +59,65 @@ func (service *fundingTransactionManager) CreateFundingTxRequest(jsonData string
 
 		if bean.ChannelIdService.IsEmpty(channelInfo.ChannelId) == false {
 			return nil, errors.New("channel is used, can not funding again")
+		}
+
+		jsonFundingTxHexDecode := gjson.Parse(fundingTxHexDecode)
+		reqData.FundingTxid = jsonFundingTxHexDecode.Get("txid").String()
+
+		//vin
+		if jsonFundingTxHexDecode.Get("vin").IsArray() == false {
+			log.Println("wrong Tx input vin")
+			return nil, errors.New("wrong Tx input vin")
+		}
+		inTxid := jsonFundingTxHexDecode.Get("vin").Array()[0].Get("txid").String()
+		inputTx, err := rpcClient.GetTransactionById(inTxid)
+		if err != nil {
+			log.Println("wrong input", err)
+			return nil, errors.New("wrong input: " + err.Error())
+		}
+		jsonInputTxDecode := gjson.Parse(inputTx)
+		funderAddress := channelInfo.PubKeyA
+		if user.PeerId == channelInfo.PeerIdB {
+			funderAddress = channelInfo.PubKeyB
+		}
+		flag := false
+		if jsonInputTxDecode.Get("details").IsArray() {
+			for _, item := range jsonInputTxDecode.Get("details").Array() {
+				if item.Get("category").String() == "send" && item.Get("address").String() == funderAddress {
+					flag = true
+					break
+				}
+			}
+		}
+
+		if flag == false {
+			log.Println("wrong vin", jsonFundingTxHexDecode.Get("vin").String())
+			return nil, errors.New("wrong vin: " + jsonFundingTxHexDecode.Get("vin").String())
+		}
+
+		//vout
+		flag = false
+		if jsonFundingTxHexDecode.Get("vout").IsArray() == false {
+			log.Println("wrong Tx vout")
+			return nil, errors.New("wrong Tx vout")
+		}
+		for _, item := range jsonFundingTxHexDecode.Get("vout").Array() {
+			addresses := item.Get("scriptPubKey").Get("addresses").Array()
+			for _, subItem := range addresses {
+				if subItem.String() == channelInfo.ChannelAddress {
+					reqData.AmountA = item.Get("value").Float()
+					reqData.FundingOutputIndex = uint32(item.Get("n").Int())
+					flag = true
+					break
+				}
+			}
+			if flag {
+				break
+			}
+		}
+		if flag == false {
+			log.Println("wrong vout", jsonFundingTxHexDecode.Get("vout").String())
+			return nil, errors.New("wrong vout: " + jsonFundingTxHexDecode.Get("vout").String())
 		}
 
 		hash, _ := chainhash.NewHashFromStr(reqData.FundingTxid)
@@ -69,36 +133,18 @@ func (service *fundingTransactionManager) CreateFundingTxRequest(jsonData string
 			return nil, errors.New("fundingTxid and FundingOutputIndex have been used")
 		}
 
-		fundingTransaction.TemporaryChannelId = reqData.TemporaryChannelId
+		fundingTransaction.ChannelInfoId = channelInfo.Id
 		fundingTransaction.PropertyId = reqData.PropertyId
 		fundingTransaction.PeerIdA = channelInfo.PeerIdA
 		fundingTransaction.PeerIdB = channelInfo.PeerIdB
 
-		fundingTransaction.ChannelPubKey = channelInfo.ChannelPubKey
-		fundingTransaction.RedeemScript = channelInfo.RedeemScript
-
-		if user.PeerId == channelInfo.PeerIdA {
-			if reqData.FunderPubKey != channelInfo.PubKeyA {
-				return nil, errors.New("invalid FunderPubKey")
-			}
-		}
-		if user.PeerId == channelInfo.PeerIdB {
-			if reqData.FunderPubKey != channelInfo.PubKeyB {
-				return nil, errors.New("invalid FunderPubKey")
-			}
-		}
-
 		// if alice launch funding
 		if user.PeerId == channelInfo.PeerIdA {
-			fundingTransaction.FunderPubKey = channelInfo.PubKeyA
-			fundingTransaction.FundeePubKey = channelInfo.PubKeyB
 			fundingTransaction.AmountA = reqData.AmountA
 		} else { // if bob launch funding
-			fundingTransaction.FunderPubKey = channelInfo.PubKeyB
-			fundingTransaction.FundeePubKey = channelInfo.PubKeyA
 			fundingTransaction.AmountB = reqData.AmountA
 		}
-		fundingTransaction.FunderSignature = reqData.FundingTxHex
+		fundingTransaction.FundingTxHex = reqData.FundingTxHex
 		fundingTransaction.FundingTxid = reqData.FundingTxid
 		fundingTransaction.FundingOutputIndex = reqData.FundingOutputIndex
 		fundingTransaction.FunderPubKey2ForCommitment = reqData.FunderPubKey2
@@ -135,50 +181,45 @@ func (service *fundingTransactionManager) CreateFundingTxRequest(jsonData string
 }
 
 func (service *fundingTransactionManager) FundingTxSign(jsonData string, signer *bean.User) (signed *dao.FundingTransaction, err error) {
-	data := &bean.FundingSigned{}
-	err = json.Unmarshal([]byte(jsonData), data)
+	reqData := &bean.FundingSigned{}
+	err = json.Unmarshal([]byte(jsonData), reqData)
 	if err != nil {
 		return nil, err
 	}
 
-	if bean.ChannelIdService.IsEmpty(data.ChannelId) {
+	if bean.ChannelIdService.IsEmpty(reqData.ChannelId) {
 		return nil, errors.New("wrong ChannelId")
 	}
 
 	channelInfo := &dao.ChannelInfo{}
-	err = db.Select(q.Eq("ChannelId", data.ChannelId), q.Eq("CurrState", dao.ChannelState_Accept)).First(channelInfo)
+	err = db.Select(q.Eq("ChannelId", reqData.ChannelId), q.Eq("CurrState", dao.ChannelState_Accept)).First(channelInfo)
 	if err != nil {
 		log.Println("channel not find")
 		return nil, err
 	}
 
-	var creatorSide = 0
-	var isAliceFunder = true
-	// if alice launch the funding,signer is bob
-	if signer.PeerId == channelInfo.PeerIdB {
-		isAliceFunder = true
-		creatorSide = 0
-	} else {
-		isAliceFunder = false
-		creatorSide = 1
+	// default if alice launch the funding,signer is bob
+	var owner = channelInfo.PeerIdA
+	if signer.PeerId == channelInfo.PeerIdA {
+		owner = channelInfo.PeerIdB
 	}
 
 	var fundingTransaction = &dao.FundingTransaction{}
-	err = db.One("ChannelId", data.ChannelId, fundingTransaction)
+	err = db.Select(q.Eq("ChannelId", reqData.ChannelId), q.Eq("CurrState", dao.FundingTransactionState_Create)).First(fundingTransaction)
 	if err != nil {
 		log.Println(err)
 		return nil, err
 	}
 
-	if data.Attitude {
-		if tool.CheckIsString(&data.FundeeSignature) == false {
+	if reqData.Attitude {
+		if tool.CheckIsString(&reqData.FundeeSignature) == false {
 			return nil, errors.New("wrong FundeeSignature")
 		}
 
-		if isAliceFunder {
-			fundingTransaction.AmountB = data.AmountB
+		if owner == channelInfo.PeerIdA {
+			fundingTransaction.AmountB = reqData.AmountB
 		} else {
-			fundingTransaction.AmountA = data.AmountB
+			fundingTransaction.AmountA = reqData.AmountB
 		}
 		fundingTransaction.CurrState = dao.FundingTransactionState_Accept
 	} else {
@@ -194,11 +235,11 @@ func (service *fundingTransactionManager) FundingTxSign(jsonData string, signer 
 	}
 	defer tx.Rollback()
 
-	if data.Attitude {
-
+	if reqData.Attitude {
+		// create C1 tx
 		var outputBean = commitmentOutputBean{}
 		outputBean.TempAddress = fundingTransaction.FunderPubKey2ForCommitment
-		if isAliceFunder {
+		if owner == channelInfo.PeerIdA {
 			outputBean.ToAddressB = channelInfo.PubKeyB
 			outputBean.AmountM = fundingTransaction.AmountA
 			outputBean.AmountB = fundingTransaction.AmountB
@@ -208,17 +249,16 @@ func (service *fundingTransactionManager) FundingTxSign(jsonData string, signer 
 			outputBean.AmountB = fundingTransaction.AmountA
 		}
 
-		// create C1a tx
-		commitmentTxInfo, err := createCommitmentTx(creatorSide, channelInfo, fundingTransaction, outputBean, signer)
+		commitmentTxInfo, err := createCommitmentTx(owner, channelInfo, fundingTransaction, outputBean, signer)
 		if err != nil {
 			log.Println(err)
 			return nil, err
 		}
 
 		txid, hex, err := rpcClient.BtcCreateAndSignRawTransactionForUnsendTx(
-			channelInfo.ChannelPubKey,
+			channelInfo.ChannelAddress,
 			[]string{
-				data.FundeeSignature,
+				reqData.FundeeSignature,
 			},
 			[]rpc.TransactionInputItem{
 				{commitmentTxInfo.InputTxid, commitmentTxInfo.InputVout, commitmentTxInfo.InputAmount},
@@ -243,8 +283,12 @@ func (service *fundingTransactionManager) FundingTxSign(jsonData string, signer 
 			return nil, err
 		}
 
-		// create RDa tx
-		rdTransaction, err := createRDTx(creatorSide, channelInfo, commitmentTxInfo, channelInfo.PubKeyA, signer)
+		// create RD tx
+		outputAddress := channelInfo.PubKeyA
+		if owner == channelInfo.PeerIdB {
+			outputAddress = channelInfo.PubKeyB
+		}
+		rdTransaction, err := createRDTx(owner, channelInfo, commitmentTxInfo, outputAddress, signer)
 		if err != nil {
 			log.Println(err)
 			return nil, err
@@ -253,16 +297,16 @@ func (service *fundingTransactionManager) FundingTxSign(jsonData string, signer 
 		txid, hex, err = rpcClient.BtcCreateAndSignRawTransactionForUnsendTx(
 			commitmentTxInfo.MultiAddress,
 			[]string{
-				data.FundeeSignature,
+				reqData.FundeeSignature,
 			},
 			[]rpc.TransactionInputItem{
 				{rdTransaction.InputTxid, rdTransaction.InputVout, rdTransaction.InputAmount},
 			},
 			[]rpc.TransactionOutputItem{
-				{rdTransaction.PubKeyA, rdTransaction.Amount},
+				{rdTransaction.OutputAddress, rdTransaction.Amount},
 			},
 			0,
-			rdTransaction.Sequnence)
+			rdTransaction.Sequence)
 		if err != nil {
 			log.Println(err)
 			return nil, err
@@ -276,28 +320,31 @@ func (service *fundingTransactionManager) FundingTxSign(jsonData string, signer 
 			return nil, err
 		}
 	}
-	err = tx.Update(fundingTransaction)
-	if err != nil {
-		log.Println(err)
-		return nil, err
-	}
 
-	if data.Attitude {
+	if reqData.Attitude {
 		// if agree,send the fundingtx to chain network
-		_, err := rpcClient.SendRawTransaction(fundingTransaction.FunderSignature)
+		txid, err := rpcClient.SendRawTransaction(fundingTransaction.FundingTxHex)
 		if err != nil {
 			log.Println(err)
-			return nil, err
+			//return nil, err
 		}
+		fundingTransaction.TxId = txid
 	}
 
-	if data.Attitude == false {
+	if reqData.Attitude == false {
 		err = tx.Update(channelInfo)
 		if err != nil {
 			log.Println(err)
 			return nil, err
 		}
 	}
+
+	err = tx.Update(fundingTransaction)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
 	err = tx.Commit()
 	if err != nil {
 		log.Println(err)
