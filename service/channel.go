@@ -319,3 +319,154 @@ func (c *channelManager) SendBreachRemedyTransaction(jsonData string, user *bean
 	}
 	return lastBRTx, nil
 }
+
+func (c *channelManager) RequestCloseChannel(jsonData string, user *bean.User) (interface{}, *string, error) {
+	if tool.CheckIsString(&jsonData) == false {
+		return nil, nil, errors.New("empty inputData")
+	}
+	reqData := &bean.CloseChannel{}
+	err := json.Unmarshal([]byte(jsonData), reqData)
+	if err != nil {
+		log.Println(err)
+		return nil, nil, err
+	}
+
+	channelInfo := &dao.ChannelInfo{}
+	err = db.Select(q.Eq("ChannelId", reqData.ChannelId), q.Eq("CurrState", dao.ChannelState_Accept)).First(channelInfo)
+	if err != nil {
+		log.Println(err)
+		return nil, nil, err
+	}
+
+	creatorSide := 0
+	targetUser := channelInfo.PeerIdB
+	if user.PeerId == channelInfo.PeerIdB {
+		creatorSide = 1
+		targetUser = channelInfo.PeerIdA
+	}
+
+	lastCommitmentTx := &dao.CommitmentTransaction{}
+	err = db.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("CreatorSide", creatorSide)).OrderBy("CreateAt").Reverse().First(lastCommitmentTx)
+	if err != nil {
+		log.Println(err)
+		return nil, nil, err
+	}
+
+	if creatorSide == 0 {
+		tempAddrPrivateKeyMap[channelInfo.PubKeyA] = reqData.ChannelAddressPrivateKey
+	} else {
+		tempAddrPrivateKeyMap[channelInfo.PubKeyB] = reqData.ChannelAddressPrivateKey
+	}
+	tempAddrPrivateKeyMap[lastCommitmentTx.PubKey2] = reqData.LastTempPrivateKey
+	reqData.ChannelAddressPrivateKey = ""
+	reqData.LastTempPrivateKey = ""
+	return reqData, &targetUser, nil
+}
+
+func (c *channelManager) CloseChannelSign(jsonData string, user *bean.User) (interface{}, *string, error) {
+
+	if tool.CheckIsString(&jsonData) == false {
+		return nil, nil, errors.New("empty inputData")
+	}
+	reqData := &bean.CloseChannelSign{}
+	err := json.Unmarshal([]byte(jsonData), reqData)
+	if err != nil {
+		log.Println(err)
+		return nil, nil, err
+	}
+
+	channelInfo := &dao.ChannelInfo{}
+	err = db.Select(q.Eq("ChannelId", reqData.ChannelId), q.Eq("CurrState", dao.ChannelState_Accept)).First(channelInfo)
+	if err != nil {
+		log.Println(err)
+		return nil, nil, err
+	}
+
+	creatorSide := 0
+	targetUser := channelInfo.PeerIdA
+	if user.PeerId == channelInfo.PeerIdA {
+		creatorSide = 1
+		targetUser = channelInfo.PeerIdB
+	}
+
+	if reqData.Attitude == false {
+		log.Println("disagree close channel")
+		return nil, &targetUser, errors.New("disagree close channel")
+	}
+
+	lastCommitmentTx := &dao.CommitmentTransaction{}
+	err = db.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("CreatorSide", creatorSide)).OrderBy("CreateAt").Reverse().First(lastCommitmentTx)
+	if err != nil {
+		log.Println(err)
+		return nil, nil, err
+	}
+
+	var channelAddressPrivateKey = ""
+	var lastTempPrivateKey = ""
+	if creatorSide == 0 {
+		channelAddressPrivateKey = tempAddrPrivateKeyMap[channelInfo.PubKeyA]
+	} else {
+		channelAddressPrivateKey = tempAddrPrivateKeyMap[channelInfo.PubKeyB]
+	}
+	lastTempPrivateKey = tempAddrPrivateKeyMap[lastCommitmentTx.PubKey2]
+
+	if tool.CheckIsString(&channelAddressPrivateKey) == false || tool.CheckIsString(&lastTempPrivateKey) == false {
+		log.Println("error private key, can't signature the transaction")
+		return nil, &targetUser, errors.New("error private key, can't signature the transaction")
+	}
+
+	commitmentTxid, chex, err := rpcClient.BtcSignAndSendRawTransaction(lastCommitmentTx.TxHexFirstSign, channelAddressPrivateKey)
+	if err != nil {
+		log.Println(err)
+		return nil, nil, err
+	}
+	log.Println(commitmentTxid)
+
+	lastRevocableDeliveryTx := &dao.RevocableDeliveryTransaction{}
+	err = db.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("CreatorSide", creatorSide)).OrderBy("CreateAt").Reverse().First(lastRevocableDeliveryTx)
+	if err != nil {
+		log.Println(err)
+		return nil, nil, err
+	}
+
+	revocableDeliveryTxid, rdhex, err := rpcClient.BtcSignAndSendRawTransaction(lastCommitmentTx.TxHexFirstSign, lastTempPrivateKey)
+	if err != nil {
+		log.Println(err)
+		return nil, nil, err
+	}
+	log.Println(revocableDeliveryTxid)
+
+	tx, err := db.Begin(true)
+	defer tx.Rollback()
+
+	lastCommitmentTx.CurrState = dao.TxInfoState_MyselfSign
+	lastCommitmentTx.TxHexEndSign = chex
+	lastCommitmentTx.EndSignAt = time.Now()
+	err = tx.Update(lastCommitmentTx)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	lastRevocableDeliveryTx.CurrState = dao.TxInfoState_MyselfSign
+	lastRevocableDeliveryTx.TxHexEndSign = rdhex
+	lastRevocableDeliveryTx.EndSignAt = time.Now()
+	err = tx.Update(lastRevocableDeliveryTx)
+	if err != nil {
+		return nil, nil, err
+	}
+	//TODO add to timer
+
+	channelInfo.CurrState = dao.ChannelState_Close
+	channelInfo.CloseAt = time.Now()
+	err = tx.Update(channelInfo)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return nil, &targetUser, nil
+}

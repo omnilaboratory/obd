@@ -61,7 +61,13 @@ type CloseChannel struct {
 	LastTempPrivateKey       string    `json:"channel_address_private_key"`
 }
 
-//type: -39 (SendBreachRemedyTransaction)
+//type: -39 (close_channel_sign)
+type CloseChannelSign struct {
+	ChannelId ChannelID `json:"channel_id"`
+	Attitude  bool      `json:"attitude"` // true agree false disagree
+}
+
+//type: -35107 (SendBreachRemedyTransaction)
 type SendBreachRemedyTransaction struct {
 	ChannelId                ChannelID `json:"channel_id"`
 	ChannelAddressPrivateKey string    `json:"channel_address_private_key"` // openChannel address

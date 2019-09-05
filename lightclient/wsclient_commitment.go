@@ -136,7 +136,6 @@ func (client *Client) commitmentTxModule(msg bean.RequestMessage) (enum.SendTarg
 		}
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
-
 	}
 	return sendType, []byte(data), status
 }
