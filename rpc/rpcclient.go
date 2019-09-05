@@ -18,9 +18,9 @@ var connConfig *ConnConfig
 
 func init() {
 	connConfig = &ConnConfig{
-		Host: config.Chainnode_Host,
-		User: config.Chainnode_User,
-		Pass: config.Chainnode_Pass,
+		Host: config.ChainNode_Host,
+		User: config.ChainNode_User,
+		Pass: config.ChainNode_Pass,
 	}
 	log.Println(connConfig)
 }

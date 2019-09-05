@@ -15,11 +15,11 @@ var (
 	WriteTimeout time.Duration = 10 * time.Second
 
 	//0.13 omnicore
-	Chainnode_Host string = "62.234.216.108:18332"
+	ChainNode_Host string = "62.234.216.108:18332"
 	//0.18 omnicore
-	//Chainnode_Host string = "62.234.216.108:18334"
-	Chainnode_User string = "omniwallet"
-	Chainnode_Pass string = "cB3]iL2@eZ1?cB2?"
+	//ChainNode_Host string = "62.234.216.108:18334"
+	ChainNode_User string = "omniwallet"
+	ChainNode_Pass string = "cB3]iL2@eZ1?cB2?"
 
 	Schedule_Delay1 time.Duration = 5 * time.Second
 )
@@ -47,9 +47,9 @@ func init() {
 		log.Println(err)
 		return
 	}
-	Chainnode_Host = chainNode.Key("host").String()
-	Chainnode_User = chainNode.Key("user").String()
-	Chainnode_Pass = chainNode.Key("pass").String()
+	ChainNode_Host = chainNode.Key("host").String()
+	ChainNode_User = chainNode.Key("user").String()
+	ChainNode_Pass = chainNode.Key("pass").String()
 
 	schedule, err := Cfg.GetSection("schedule")
 	if err != nil {
