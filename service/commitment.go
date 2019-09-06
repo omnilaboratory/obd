@@ -79,7 +79,7 @@ func (service *commitmentTxManager) CreateNewCommitmentTxRequest(jsonData string
 		tempAddrPrivateKeyMap[channelInfo.PubKeyB] = data.ChannelAddressPrivateKey
 	}
 	//store the privateKey of last temp addr
-	tempAddrPrivateKeyMap[lastCommitmentTxInfo.PubKey2] = data.LastTempPrivateKey
+	tempAddrPrivateKeyMap[lastCommitmentTxInfo.TempPubKey] = data.LastTempPrivateKey
 	data.LastTempPrivateKey = ""
 	data.ChannelAddressPrivateKey = ""
 
@@ -361,20 +361,20 @@ func createAliceSideTxs(tx storm.Node, data *bean.CommitmentTxSigned, dataFromCr
 		}
 
 		var brPrivKeys = make([]string, 0)
-		var brPrivKey = tempAddrPrivateKeyMap[lastCommitmentATx.PubKey2]
+		var brPrivKey = tempAddrPrivateKeyMap[lastCommitmentATx.TempPubKey]
 		if tool.CheckIsString(&brPrivKey) {
 			brPrivKeys = append(brPrivKeys, brPrivKey)
 		}
-		delete(tempAddrPrivateKeyMap, lastCommitmentATx.PubKey2)
+		delete(tempAddrPrivateKeyMap, lastCommitmentATx.TempPubKey)
 
-		txid, hex, err := rpcClient.BtcCreateAndSignRawTransactionForUnsendTx(
+		txid, hex, err := rpcClient.BtcCreateAndSignRawTransactionForUnsendInputTx(
 			lastCommitmentATx.MultiAddress,
 			brPrivKeys,
 			[]rpc.TransactionInputItem{
 				{breachRemedyTransaction.InputTxid, breachRemedyTransaction.InputVout, breachRemedyTransaction.InputAmount},
 			},
 			[]rpc.TransactionOutputItem{
-				{breachRemedyTransaction.PubKeyB, breachRemedyTransaction.Amount},
+				{channelInfo.AddressB, breachRemedyTransaction.Amount},
 			},
 			0,
 			0)
@@ -409,10 +409,10 @@ func createAliceSideTxs(tx storm.Node, data *bean.CommitmentTxSigned, dataFromCr
 		}
 	}
 
-	// create Ca tx
+	// create Cna tx
 	var outputBean = commitmentOutputBean{}
 	if isAliceCreateTransfer {
-		outputBean.TempAddress = dataFromCreator.CurrTempPubKey
+		outputBean.TempPubKey = dataFromCreator.CurrTempPubKey
 		//default alice transfer to bob ,then alice minus money
 		outputBean.AmountM, _ = decimal.NewFromFloat(fundingTransaction.AmountA).Sub(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
 		outputBean.AmountB, _ = decimal.NewFromFloat(fundingTransaction.AmountB).Add(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
@@ -421,7 +421,7 @@ func createAliceSideTxs(tx storm.Node, data *bean.CommitmentTxSigned, dataFromCr
 			outputBean.AmountB, _ = decimal.NewFromFloat(lastCommitmentATx.AmountB).Add(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
 		}
 	} else {
-		outputBean.TempAddress = data.CurrTempPubKey
+		outputBean.TempPubKey = data.CurrTempPubKey
 		// if bob transfer to alice,then alice add money
 		outputBean.AmountM, _ = decimal.NewFromFloat(fundingTransaction.AmountA).Add(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
 		outputBean.AmountB, _ = decimal.NewFromFloat(fundingTransaction.AmountB).Sub(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
@@ -430,7 +430,8 @@ func createAliceSideTxs(tx storm.Node, data *bean.CommitmentTxSigned, dataFromCr
 			outputBean.AmountB, _ = decimal.NewFromFloat(lastCommitmentATx.AmountB).Sub(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
 		}
 	}
-	outputBean.ToAddressB = channelInfo.PubKeyB
+	outputBean.ToAddress = channelInfo.AddressB
+	outputBean.ToPubKey = channelInfo.PubKeyB
 
 	commitmentTxInfo, err := createCommitmentTx(owner, channelInfo, fundingTransaction, outputBean, signer)
 	if err != nil {
@@ -445,7 +446,7 @@ func createAliceSideTxs(tx storm.Node, data *bean.CommitmentTxSigned, dataFromCr
 	}
 	delete(tempAddrPrivateKeyMap, channelInfo.PubKeyB)
 
-	txid, hex, err := rpcClient.BtcCreateAndSignRawTransactionForUnsendTx(
+	txid, hex, err := rpcClient.BtcCreateAndSignRawTransactionForUnsendInputTx(
 		channelInfo.ChannelAddress,
 		privkeys,
 		[]rpc.TransactionInputItem{
@@ -453,7 +454,7 @@ func createAliceSideTxs(tx storm.Node, data *bean.CommitmentTxSigned, dataFromCr
 		},
 		[]rpc.TransactionOutputItem{
 			{commitmentTxInfo.MultiAddress, commitmentTxInfo.AmountM},
-			{commitmentTxInfo.PubKeyB, commitmentTxInfo.AmountB},
+			{outputBean.ToAddress, commitmentTxInfo.AmountB},
 		},
 		0,
 		0)
@@ -473,13 +474,13 @@ func createAliceSideTxs(tx storm.Node, data *bean.CommitmentTxSigned, dataFromCr
 	}
 
 	// create RDna tx
-	rdTransaction, err := createRDTx(owner, channelInfo, commitmentTxInfo, channelInfo.PubKeyA, signer)
+	rdTransaction, err := createRDTx(owner, channelInfo, commitmentTxInfo, channelInfo.AddressA, signer)
 	if err != nil {
 		log.Println(err)
 		return nil, err
 	}
 
-	txid, hex, err = rpcClient.BtcCreateAndSignRawTransactionForUnsendTx(
+	txid, hex, err = rpcClient.BtcCreateAndSignRawTransactionForUnsendInputTx(
 		commitmentTxInfo.MultiAddress,
 		privkeys,
 		[]rpc.TransactionInputItem{
@@ -535,14 +536,14 @@ func createBobSideTxs(tx storm.Node, data *bean.CommitmentTxSigned, dataFromCrea
 			brPrivKeys = append(brPrivKeys, data.LastTempPrivateKey)
 		}
 
-		txid, hex, err := rpcClient.BtcCreateAndSignRawTransactionForUnsendTx(
+		txid, hex, err := rpcClient.BtcCreateAndSignRawTransactionForUnsendInputTx(
 			lastCommitmentBTx.MultiAddress,
 			brPrivKeys,
 			[]rpc.TransactionInputItem{
 				{breachRemedyTransaction.InputTxid, breachRemedyTransaction.InputVout, breachRemedyTransaction.InputAmount},
 			},
 			[]rpc.TransactionOutputItem{
-				{breachRemedyTransaction.PubKeyB, breachRemedyTransaction.Amount},
+				{channelInfo.AddressB, breachRemedyTransaction.Amount},
 			},
 			0,
 			0)
@@ -580,7 +581,7 @@ func createBobSideTxs(tx storm.Node, data *bean.CommitmentTxSigned, dataFromCrea
 	// create Cnb tx
 	var outputBean = commitmentOutputBean{}
 	if isAliceCreateTransfer {
-		outputBean.TempAddress = data.CurrTempPubKey
+		outputBean.TempPubKey = data.CurrTempPubKey
 		//by default, alice transters money to bob,then bob's balance increases.
 		outputBean.AmountM, _ = decimal.NewFromFloat(fundingTransaction.AmountB).Add(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
 		outputBean.AmountB, _ = decimal.NewFromFloat(fundingTransaction.AmountA).Sub(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
@@ -589,7 +590,7 @@ func createBobSideTxs(tx storm.Node, data *bean.CommitmentTxSigned, dataFromCrea
 			outputBean.AmountB, _ = decimal.NewFromFloat(lastCommitmentBTx.AmountB).Sub(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
 		}
 	} else {
-		outputBean.TempAddress = dataFromCreator.CurrTempPubKey
+		outputBean.TempPubKey = dataFromCreator.CurrTempPubKey
 		outputBean.AmountM, _ = decimal.NewFromFloat(fundingTransaction.AmountA).Sub(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
 		outputBean.AmountB, _ = decimal.NewFromFloat(fundingTransaction.AmountB).Add(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
 		if lastCommitmentBTx != nil {
@@ -597,7 +598,8 @@ func createBobSideTxs(tx storm.Node, data *bean.CommitmentTxSigned, dataFromCrea
 			outputBean.AmountB, _ = decimal.NewFromFloat(lastCommitmentBTx.AmountB).Add(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
 		}
 	}
-	outputBean.ToAddressB = channelInfo.PubKeyA
+	outputBean.ToAddress = channelInfo.AddressA
+	outputBean.ToPubKey = channelInfo.PubKeyA
 
 	commitmentTxInfo, err := createCommitmentTx(owner, channelInfo, fundingTransaction, outputBean, signer)
 	if err != nil {
@@ -612,7 +614,7 @@ func createBobSideTxs(tx storm.Node, data *bean.CommitmentTxSigned, dataFromCrea
 	}
 	delete(tempAddrPrivateKeyMap, channelInfo.PubKeyA)
 
-	txid, hex, err := rpcClient.BtcCreateAndSignRawTransactionForUnsendTx(
+	txid, hex, err := rpcClient.BtcCreateAndSignRawTransactionForUnsendInputTx(
 		channelInfo.ChannelAddress,
 		privkeys,
 		[]rpc.TransactionInputItem{
@@ -620,7 +622,7 @@ func createBobSideTxs(tx storm.Node, data *bean.CommitmentTxSigned, dataFromCrea
 		},
 		[]rpc.TransactionOutputItem{
 			{commitmentTxInfo.MultiAddress, commitmentTxInfo.AmountM},
-			{commitmentTxInfo.PubKeyB, commitmentTxInfo.AmountB},
+			{outputBean.ToAddress, commitmentTxInfo.AmountB},
 		},
 		0,
 		0)
@@ -642,13 +644,13 @@ func createBobSideTxs(tx storm.Node, data *bean.CommitmentTxSigned, dataFromCrea
 	}
 
 	// create RDb tx
-	rdTransaction, err := createRDTx(owner, channelInfo, commitmentTxInfo, channelInfo.PubKeyB, signer)
+	rdTransaction, err := createRDTx(owner, channelInfo, commitmentTxInfo, channelInfo.AddressB, signer)
 	if err != nil {
 		log.Println(err)
 		return nil, err
 	}
 
-	txid, hex, err = rpcClient.BtcCreateAndSignRawTransactionForUnsendTx(
+	txid, hex, err = rpcClient.BtcCreateAndSignRawTransactionForUnsendInputTx(
 		commitmentTxInfo.MultiAddress,
 		privkeys,
 		[]rpc.TransactionInputItem{

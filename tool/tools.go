@@ -1,6 +1,8 @@
 package tool
 
-import "strings"
+import (
+	"strings"
+)
 
 func CheckIsString(str *string) bool {
 	if str == nil {
@@ -10,4 +12,8 @@ func CheckIsString(str *string) bool {
 		return false
 	}
 	return true
+}
+
+func GetMinerFee() float64 {
+	return 0.00002
 }

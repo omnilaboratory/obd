@@ -30,6 +30,9 @@ func (c *channelManager) AliceOpenChannel(msg bean.RequestMessage, peerIdA strin
 	if tool.CheckIsString(&data.FundingPubKey) == false {
 		return nil, errors.New("wrong fundingPubKey")
 	}
+	if tool.CheckIsString(&data.FundingAddress) == false {
+		return nil, errors.New("wrong FundingAddress")
+	}
 
 	//TODO need to validate pubKey
 	//isMine, err := rpcClient.ValidateAddress(data.FundingPubKey)
@@ -48,6 +51,7 @@ func (c *channelManager) AliceOpenChannel(msg bean.RequestMessage, peerIdA strin
 	channelInfo.PeerIdA = peerIdA
 	channelInfo.PeerIdB = msg.RecipientPeerId
 	channelInfo.PubKeyA = data.FundingPubKey
+	channelInfo.AddressA = data.FundingAddress
 	channelInfo.CurrState = dao.ChannelState_Create
 	channelInfo.CreateAt = time.Now()
 	channelInfo.CreateBy = peerIdA
@@ -70,15 +74,18 @@ func (c *channelManager) BobAcceptChannel(jsonData string, peerIdB string) (chan
 
 	if reqData.Attitude {
 		if tool.CheckIsString(&reqData.FundingPubKey) == false {
-			return nil, errors.New("wrong PubKeyB")
+			return nil, errors.New("wrong FundingPubKey")
 		}
-		//isMine, err := rpcClient.ValidateAddress(reqData.FundingPubKey)
-		//if err != nil {
-		//	return nil, err
-		//}
-		//if isMine == false {
-		//	return nil, errors.New("invalid fundingPubKey")
-		//}
+		if tool.CheckIsString(&reqData.FundingAddress) == false {
+			return nil, errors.New("wrong FundingAddress")
+		}
+		isvalid, err := rpcClient.ValidateAddress(reqData.FundingAddress)
+		if err != nil {
+			return nil, err
+		}
+		if isvalid == false {
+			return nil, errors.New("invalid FundingAddress")
+		}
 	}
 
 	channelInfo = &dao.ChannelInfo{}
@@ -90,6 +97,7 @@ func (c *channelManager) BobAcceptChannel(jsonData string, peerIdB string) (chan
 
 	if reqData.Attitude {
 		channelInfo.PubKeyB = reqData.FundingPubKey
+		channelInfo.AddressB = reqData.FundingAddress
 		multiSig, err := rpcClient.CreateMultiSig(2, []string{channelInfo.PubKeyA, channelInfo.PubKeyB})
 		if err != nil {
 			log.Println(err)
@@ -203,6 +211,8 @@ func (c *channelManager) ForceCloseChannel(jsonData string, user *bean.User) (in
 		return nil, err
 	}
 
+	result, _ := rpcClient.DecodeRawTransaction(lastCommitmentTx.TxHexFirstSign)
+	log.Println(result)
 	commitmentTxid, chex, err := rpcClient.BtcSignAndSendRawTransaction(lastCommitmentTx.TxHexFirstSign, reqData.ChannelAddressPrivateKey)
 	if err != nil {
 		log.Println(err)
@@ -347,7 +357,7 @@ func (c *channelManager) RequestCloseChannel(jsonData string, user *bean.User) (
 	} else {
 		tempAddrPrivateKeyMap[channelInfo.PubKeyB] = reqData.ChannelAddressPrivateKey
 	}
-	tempAddrPrivateKeyMap[lastCommitmentTx.PubKey2] = reqData.LastTempPrivateKey
+	tempAddrPrivateKeyMap[lastCommitmentTx.TempPubKey] = reqData.LastTempPrivateKey
 	reqData.ChannelAddressPrivateKey = ""
 	reqData.LastTempPrivateKey = ""
 	return reqData, &targetUser, nil
@@ -396,7 +406,7 @@ func (c *channelManager) CloseChannelSign(jsonData string, user *bean.User) (int
 	} else {
 		channelAddressPrivateKey = tempAddrPrivateKeyMap[channelInfo.PubKeyB]
 	}
-	lastTempPrivateKey = tempAddrPrivateKeyMap[lastCommitmentTx.PubKey2]
+	lastTempPrivateKey = tempAddrPrivateKeyMap[lastCommitmentTx.TempPubKey]
 
 	if tool.CheckIsString(&channelAddressPrivateKey) == false || tool.CheckIsString(&lastTempPrivateKey) == false {
 		log.Println("error private key, can't signature the transaction")

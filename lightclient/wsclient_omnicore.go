@@ -127,12 +127,17 @@ func (client *Client) omniCoreModule(msg bean.RequestMessage) (enum.SendTargetTy
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_Core_BtcCreateAndSignRawTransaction:
 		fromBitCoinAddress := gjson.Get(msg.Data, "fromBitCoinAddress").String()
+		fromBitCoinAddressPrivKey := gjson.Get(msg.Data, "fromBitCoinAddressPrivKey").String()
 		toBitCoinAddress := gjson.Get(msg.Data, "toBitCoinAddress").String()
 		amount := gjson.Get(msg.Data, "amount").Float()
 		minerFee := gjson.Get(msg.Data, "minerFee").Float()
+		privKeys := make([]string, 0)
+		if tool.CheckIsString(&fromBitCoinAddressPrivKey) {
+			privKeys = append(privKeys, fromBitCoinAddressPrivKey)
+		}
 		if tool.CheckIsString(&fromBitCoinAddress) &&
 			tool.CheckIsString(&toBitCoinAddress) {
-			txid, hex, err := rpcClient.BtcCreateAndSignRawTransaction(fromBitCoinAddress, nil, []rpc.TransactionOutputItem{{toBitCoinAddress, amount}}, minerFee, 0)
+			txid, hex, err := rpcClient.BtcCreateAndSignRawTransaction(fromBitCoinAddress, privKeys, []rpc.TransactionOutputItem{{toBitCoinAddress, amount}}, minerFee, 0)
 			node := make(map[string]interface{})
 			node["txid"] = txid
 			node["hex"] = hex

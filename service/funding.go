@@ -76,15 +76,29 @@ func (service *fundingTransactionManager) CreateFundingTxRequest(jsonData string
 			return nil, errors.New("wrong input: " + err.Error())
 		}
 		jsonInputTxDecode := gjson.Parse(inputTx)
-		funderAddress := channelInfo.PubKeyA
-		if user.PeerId == channelInfo.PeerIdB {
-			funderAddress = channelInfo.PubKeyB
-		}
+
 		flag := false
-		if jsonInputTxDecode.Get("details").IsArray() {
-			for _, item := range jsonInputTxDecode.Get("details").Array() {
-				if item.Get("category").String() == "send" && item.Get("address").String() == funderAddress {
-					flag = true
+		inputHexDecode, err := rpcClient.DecodeRawTransaction(jsonInputTxDecode.Get("hex").String())
+		if err != nil {
+			log.Println("wrong input", err)
+			return nil, errors.New("wrong input: " + err.Error())
+		}
+
+		funderAddress := channelInfo.AddressA
+		if user.PeerId == channelInfo.PeerIdB {
+			funderAddress = channelInfo.AddressB
+		}
+		jsonInputHexDecode := gjson.Parse(inputHexDecode)
+		if jsonInputHexDecode.Get("vout").IsArray() {
+			for _, item := range jsonInputHexDecode.Get("vout").Array() {
+				addresses := item.Get("scriptPubKey").Get("addresses").Array()
+				for _, subItem := range addresses {
+					if subItem.String() == funderAddress {
+						flag = true
+						break
+					}
+				}
+				if flag {
 					break
 				}
 			}
@@ -238,13 +252,15 @@ func (service *fundingTransactionManager) FundingTxSign(jsonData string, signer 
 	if reqData.Attitude {
 		// create C1 tx
 		var outputBean = commitmentOutputBean{}
-		outputBean.TempAddress = fundingTransaction.FunderPubKey2ForCommitment
+		outputBean.TempPubKey = fundingTransaction.FunderPubKey2ForCommitment
 		if owner == channelInfo.PeerIdA {
-			outputBean.ToAddressB = channelInfo.PubKeyB
+			outputBean.ToPubKey = channelInfo.PubKeyB
+			outputBean.ToAddress = channelInfo.AddressB
 			outputBean.AmountM = fundingTransaction.AmountA
 			outputBean.AmountB = fundingTransaction.AmountB
 		} else {
-			outputBean.ToAddressB = channelInfo.PubKeyA
+			outputBean.ToPubKey = channelInfo.PubKeyA
+			outputBean.ToAddress = channelInfo.AddressA
 			outputBean.AmountM = fundingTransaction.AmountB
 			outputBean.AmountB = fundingTransaction.AmountA
 		}
@@ -255,7 +271,7 @@ func (service *fundingTransactionManager) FundingTxSign(jsonData string, signer 
 			return nil, err
 		}
 
-		txid, hex, err := rpcClient.BtcCreateAndSignRawTransactionForUnsendTx(
+		txid, hex, err := rpcClient.BtcCreateAndSignRawTransactionForUnsendInputTx(
 			channelInfo.ChannelAddress,
 			[]string{
 				reqData.FundeeSignature,
@@ -265,7 +281,7 @@ func (service *fundingTransactionManager) FundingTxSign(jsonData string, signer 
 			},
 			[]rpc.TransactionOutputItem{
 				{commitmentTxInfo.MultiAddress, commitmentTxInfo.AmountM},
-				{commitmentTxInfo.PubKeyB, commitmentTxInfo.AmountB},
+				{outputBean.ToAddress, commitmentTxInfo.AmountB},
 			},
 			0,
 			0)
@@ -284,9 +300,9 @@ func (service *fundingTransactionManager) FundingTxSign(jsonData string, signer 
 		}
 
 		// create RD tx
-		outputAddress := channelInfo.PubKeyA
+		outputAddress := channelInfo.AddressA
 		if owner == channelInfo.PeerIdB {
-			outputAddress = channelInfo.PubKeyB
+			outputAddress = channelInfo.AddressB
 		}
 		rdTransaction, err := createRDTx(owner, channelInfo, commitmentTxInfo, outputAddress, signer)
 		if err != nil {
@@ -294,7 +310,7 @@ func (service *fundingTransactionManager) FundingTxSign(jsonData string, signer 
 			return nil, err
 		}
 
-		txid, hex, err = rpcClient.BtcCreateAndSignRawTransactionForUnsendTx(
+		txid, hex, err = rpcClient.BtcCreateAndSignRawTransactionForUnsendInputTx(
 			commitmentTxInfo.MultiAddress,
 			[]string{
 				reqData.FundeeSignature,

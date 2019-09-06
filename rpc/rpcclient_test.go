@@ -126,7 +126,13 @@ func TestClient_GetMiningInfo(t *testing.T) {
 
 func TestClient_ValidateAddress(t *testing.T) {
 	client := NewClient()
-	client.ValidateAddress("n4bJvpVHks3Fz9wWB9f445LGV5xTS6LGpA")
+	//address, _ := client.GetNewAddress("")
+	//log.Println(address)
+	client.ValidateAddress("miHrdGesQkvysFAbSkb7NYCAdfHPEY17YE")
+	//result, _ := client.DumpPrivKey("mpnHbpARXjUBcf6vib7E3jjD6Zv4CrvYuW")
+	//log.Println(result)
+	//balance, _ := client.GetBalanceByAddress("mpnHbpARXjUBcf6vib7E3jjD6Zv4CrvYuW")
+	//log.Println(balance)
 }
 
 func TestClient_AddMultiSigAddress(t *testing.T) {

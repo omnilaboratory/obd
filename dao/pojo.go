@@ -101,8 +101,7 @@ type CommitmentTransaction struct {
 	InputTxid          string         `json:"input_txid"`    //input txid  from channelAddr: alice&bob multiAddr, so need  sign of alice and bob
 	InputVout          uint32         `json:"input_vout"`    // input vout
 	InputAmount        float64        `json:"input_amount"`  //input amount
-	PubKey2            string         `json:"pub_key2"`      //output alice2 or bob2
-	PubKeyB            string         `json:"pub_key_b"`     //output bob
+	TempPubKey         string         `json:"temp_pub_key"`  //output alice2 or bob2
 	MultiAddress       string         `json:"multi_address"` //output alice2&bob  or alice&bob2  multiAddr
 	RedeemScript       string         `json:"redeem_script"`
 	AmountM            float64        `json:"amount_m"` // amount to multiAddr
@@ -156,7 +155,6 @@ type BreachRemedyTransaction struct {
 	InputTxid      string         `json:"input_txid"`        //input txid  from commitTx alice2&bob multtAddr, so need  sign of alice2 and bob
 	InputVout      uint32         `json:"input_vout"`        // input vout
 	InputAmount    float64        `json:"input_amount"`      //input amount
-	PubKeyB        string         `json:"pub_key_b"`         //output bob
 	Amount         float64        `json:"amount"`            // output boob amount
 	TxHexFirstSign string         `json:"tx_hex_first_sign"` // first alice2 sign
 	TxHexEndSign   string         `json:"tx_hex_end_sign"`   // end bob sign

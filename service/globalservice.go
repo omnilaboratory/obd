@@ -18,10 +18,11 @@ var rpcClient *rpc.Client
 var tempAddrPrivateKeyMap = make(map[string]string)
 
 type commitmentOutputBean struct {
-	TempAddress string
-	AmountM     float64
-	ToAddressB  string
-	AmountB     float64
+	TempPubKey string
+	AmountM    float64
+	ToPubKey   string
+	ToAddress  string
+	AmountB    float64
 }
 
 func init() {
@@ -47,9 +48,8 @@ func createCommitmentTx(owner string, channelInfo *dao.ChannelInfo, fundingTrans
 	commitmentTxInfo.InputAmount = fundingTransaction.AmountA + fundingTransaction.AmountB
 
 	//output
-	commitmentTxInfo.PubKey2 = outputBean.TempAddress
-	commitmentTxInfo.PubKeyB = outputBean.ToAddressB
-	multiAddr, err := rpcClient.CreateMultiSig(2, []string{commitmentTxInfo.PubKey2, commitmentTxInfo.PubKeyB})
+	commitmentTxInfo.TempPubKey = outputBean.TempPubKey
+	multiAddr, err := rpcClient.CreateMultiSig(2, []string{commitmentTxInfo.TempPubKey, outputBean.ToPubKey})
 	if err != nil {
 		return nil, err
 	}
@@ -103,11 +103,6 @@ func createBRTx(owner string, channelInfo *dao.ChannelInfo, commitmentTxInfo *da
 	breachRemedyTransaction.InputVout = 0
 	breachRemedyTransaction.InputAmount = commitmentTxInfo.AmountM
 	//output
-	if owner == channelInfo.PeerIdA {
-		breachRemedyTransaction.PubKeyB = channelInfo.PubKeyA
-	} else {
-		breachRemedyTransaction.PubKeyB = channelInfo.PubKeyB
-	}
 	breachRemedyTransaction.Amount = commitmentTxInfo.AmountM
 
 	breachRemedyTransaction.CreateBy = user.PeerId

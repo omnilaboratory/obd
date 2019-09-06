@@ -8,6 +8,7 @@ import (
 	"github.com/tidwall/gjson"
 	"log"
 	"math"
+	"strconv"
 )
 
 //https://bitcoin.org/en/developer-reference#bitcoin-core-apis
@@ -158,22 +159,23 @@ func (client *Client) BtcCreateAndSignRawTransaction(fromBitCoinAddress string, 
 		return "", "", errors.New("toBitCoinAddress is empty")
 	}
 
-	amount := decimal.NewFromFloat(0)
-	for _, item := range outputItems {
-		amount = amount.Add(decimal.NewFromFloat(item.Amount))
-	}
-
-	if amount.LessThan(decimal.NewFromFloat(config.Dust)) {
-		return "", "", errors.New("wrong amount")
-	}
-
 	if minerFee <= 0 {
 		minerFee = 0.00003
+	}
+
+	outTotalAmount := decimal.NewFromFloat(0)
+	for _, item := range outputItems {
+		outTotalAmount = outTotalAmount.Add(decimal.NewFromFloat(item.Amount))
+	}
+
+	if outTotalAmount.LessThan(decimal.NewFromFloat(config.Dust)) {
+		return "", "", errors.New("wrong outTotalAmount")
 	}
 
 	if minerFee < config.Dust {
 		return "", "", errors.New("minerFee too small")
 	}
+
 	result, err := client.ListUnspent(fromBitCoinAddress)
 	if err != nil {
 		return "", "", err
@@ -185,8 +187,7 @@ func (client *Client) BtcCreateAndSignRawTransaction(fromBitCoinAddress string, 
 	}
 	log.Println("listunspent", array)
 
-	fee := minerFee
-	out, _ := decimal.NewFromFloat(fee).Add(amount).Float64()
+	out, _ := decimal.NewFromFloat(minerFee).Add(outTotalAmount).Float64()
 
 	balance := 0.0
 	var inputs []map[string]interface{}
@@ -250,12 +251,16 @@ func (client *Client) BtcCreateAndSignRawTransaction(fromBitCoinAddress string, 
 	return txid, hex, err
 }
 
-func (client *Client) BtcCreateAndSignRawTransactionForUnsendTx(fromBitCoinAddress string, privkeys []string, inputItems []TransactionInputItem, outputItems []TransactionOutputItem, minerFee float64, sequence int) (txid string, hex string, err error) {
+func (client *Client) BtcCreateAndSignRawTransactionForUnsendInputTx(fromBitCoinAddress string, privkeys []string, inputItems []TransactionInputItem, outputItems []TransactionOutputItem, minerFee float64, sequence int) (txid string, hex string, err error) {
 	if len(fromBitCoinAddress) < 1 {
 		return "", "", errors.New("fromBitCoinAddress is empty")
 	}
 	if len(outputItems) < 1 {
 		return "", "", errors.New("toBitCoinAddress is empty")
+	}
+
+	if minerFee <= 0 {
+		minerFee = 0.00003
 	}
 
 	outAmount := decimal.NewFromFloat(0)
@@ -267,12 +272,25 @@ func (client *Client) BtcCreateAndSignRawTransactionForUnsendTx(fromBitCoinAddre
 		return "", "", errors.New("wrong outAmount")
 	}
 
-	if minerFee <= 0 {
-		minerFee = 0.00003
-	}
-
 	if minerFee < config.Dust {
 		return "", "", errors.New("minerFee too small")
+	}
+
+	var outTotalCount = 0
+	for _, item := range outputItems {
+		if item.Amount > 0 {
+			outTotalCount++
+		}
+	}
+
+	subMinerFee := 0.0
+	if outTotalCount > 0 {
+		count, _ := decimal.NewFromString(strconv.Itoa(outTotalCount))
+		subMinerFee, _ = decimal.NewFromFloat(minerFee).DivRound(count, 8).Float64()
+	}
+	minerFee = 0
+	for i := 0; i < outTotalCount; i++ {
+		minerFee, _ = decimal.NewFromFloat(minerFee).Add(decimal.NewFromFloat(subMinerFee)).Float64()
 	}
 
 	balance := 0.0
@@ -288,8 +306,8 @@ func (client *Client) BtcCreateAndSignRawTransactionForUnsendTx(fromBitCoinAddre
 		inputs = append(inputs, node)
 	}
 	//not enough money
-	if outAmount.LessThan(decimal.NewFromFloat(balance)) {
-		outAmount = decimal.NewFromFloat(balance)
+	if outAmount.GreaterThan(decimal.NewFromFloat(balance)) {
+		return "", "", errors.New("not enough balance")
 	}
 
 	//not enough money for minerFee
@@ -305,9 +323,10 @@ func (client *Client) BtcCreateAndSignRawTransactionForUnsendTx(fromBitCoinAddre
 	}
 	drawback, _ := decimal.NewFromFloat(balance).Sub(decimal.NewFromFloat(out)).Float64()
 	output := make(map[string]float64)
+
 	for _, item := range outputItems {
 		if item.Amount > 0 {
-			output[item.ToBitCoinAddress] = item.Amount
+			output[item.ToBitCoinAddress], _ = decimal.NewFromFloat(item.Amount).Sub(decimal.NewFromFloat(subMinerFee)).Float64()
 		}
 	}
 	if drawback > 0 {
