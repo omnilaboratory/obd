@@ -288,12 +288,14 @@ func (c *channelManager) SendBreachRemedyTransaction(jsonData string, user *bean
 	lastBRTx := &dao.BreachRemedyTransaction{}
 	err = db.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("CurrState", dao.TxInfoState_OtherSign), q.Eq("Owner", user.PeerId)).OrderBy("CreateAt").Reverse().First(lastBRTx)
 	if err != nil {
+		err = errors.New("not found the latest br")
 		log.Println(err)
 		return nil, err
 	}
 
 	brtxid, brhex, err := rpcClient.BtcSignAndSendRawTransaction(lastBRTx.TxHexFirstSign, reqData.ChannelAddressPrivateKey)
 	if err != nil {
+		err = errors.New("BtcSignAndSendRawTransaction: " + err.Error())
 		log.Println(err)
 		return nil, err
 	}
