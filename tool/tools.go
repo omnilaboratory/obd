@@ -1,6 +1,8 @@
 package tool
 
 import (
+	"crypto/sha256"
+	"fmt"
 	"strings"
 )
 
@@ -12,6 +14,12 @@ func CheckIsString(str *string) bool {
 		return false
 	}
 	return true
+}
+
+func SignMsg(msg []byte) string {
+	hash := sha256.New()
+	hash.Write(msg)
+	return fmt.Sprintf("%x", hash.Sum(nil))
 }
 
 func GetMinerFee() float64 {

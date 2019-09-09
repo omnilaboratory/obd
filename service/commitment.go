@@ -9,6 +9,7 @@ import (
 	"errors"
 	"github.com/shopspring/decimal"
 	"log"
+	"sync"
 	"time"
 
 	"github.com/asdine/storm"
@@ -16,7 +17,9 @@ import (
 	"github.com/tidwall/gjson"
 )
 
-type commitmentTxManager struct{}
+type commitmentTxManager struct {
+	operationFlag sync.Mutex
+}
 
 var CommitmentTxService commitmentTxManager
 
@@ -82,6 +85,7 @@ func (service *commitmentTxManager) CreateNewCommitmentTxRequest(jsonData string
 	tempAddrPrivateKeyMap[lastCommitmentTxInfo.TempPubKey] = data.LastTempPrivateKey
 	data.LastTempPrivateKey = ""
 	data.ChannelAddressPrivateKey = ""
+	data.RequestCommitmentHash = lastCommitmentTxInfo.CurrHash
 
 	// store the request data for -354
 	var tempInfo = &dao.CommitmentTxRequestInfo{}
@@ -92,9 +96,13 @@ func (service *commitmentTxManager) CreateNewCommitmentTxRequest(jsonData string
 		tempInfo.UserId = creator.PeerId
 		tempInfo.CreateAt = time.Now()
 		tempInfo.IsEnable = true
-		db.Save(tempInfo)
+		err = db.Save(tempInfo)
 	} else {
-		db.Update(tempInfo)
+		err = db.Update(tempInfo)
+	}
+	if err != nil {
+		log.Println(err)
+		return nil, nil, err
 	}
 	return data, targetUser, err
 }
@@ -240,7 +248,9 @@ func (service *commitmentTxManager) Del(id int) (node *dao.CommitmentTransaction
 	return node, err
 }
 
-type commitmentTxSignedManager struct{}
+type commitmentTxSignedManager struct {
+	operationFlag sync.Mutex
+}
 
 var CommitmentTxSignedService commitmentTxSignedManager
 
@@ -256,9 +266,17 @@ func (service *commitmentTxSignedManager) CommitmentTxSign(jsonData string, sign
 		log.Println(err)
 		return nil, nil, nil, err
 	}
-	if bean.ChannelIdService.IsEmpty(data.ChannelId) {
+
+	if tool.CheckIsString(&data.RequestCommitmentHash) == false {
+		err = errors.New("wrong RequestCommitmentHash")
 		log.Println(err)
-		return nil, nil, nil, errors.New("wrong ChannelId")
+		return nil, nil, nil, err
+	}
+
+	if bean.ChannelIdService.IsEmpty(data.ChannelId) {
+		err = errors.New("wrong ChannelId")
+		log.Println(err)
+		return nil, nil, nil, err
 	}
 
 	channelInfo := &dao.ChannelInfo{}
@@ -279,6 +297,13 @@ func (service *commitmentTxSignedManager) CommitmentTxSign(jsonData string, sign
 		targetUser = channelInfo.PeerIdB
 	}
 
+	if data.Attitude == false {
+		return nil, nil, &targetUser, errors.New("signer disagree transaction")
+	}
+
+	service.operationFlag.Lock()
+	defer service.operationFlag.Unlock()
+
 	var dataFromCreator = &dao.CommitmentTxRequestInfo{}
 	err = db.Select(q.Eq("ChannelId", data.ChannelId), q.Eq("UserId", targetUser), q.Eq("IsEnable", true)).OrderBy("CreateAt").Reverse().First(dataFromCreator)
 	if err != nil {
@@ -286,8 +311,29 @@ func (service *commitmentTxSignedManager) CommitmentTxSign(jsonData string, sign
 		return nil, nil, &targetUser, err
 	}
 
-	if data.Attitude == false {
-		return nil, nil, &targetUser, errors.New("signer disagree transaction")
+	if dataFromCreator.RequestCommitmentHash != data.RequestCommitmentHash {
+		err = errors.New("error RequestCommitmentHash")
+		log.Println(err)
+		return nil, nil, nil, err
+	}
+
+	var requestCommitmentATx = &dao.CommitmentTransaction{}
+	err = db.Select(q.Eq("ChannelId", data.ChannelId), q.Eq("CurrHash", data.RequestCommitmentHash), q.Eq("Owner", targetUser), q.Eq("CurrState", dao.TxInfoState_OtherSign)).OrderBy("CreateAt").Reverse().First(requestCommitmentATx)
+	if err != nil {
+		err = errors.New("not found the requested commitment tx")
+		log.Println(err)
+		return nil, nil, nil, err
+	}
+
+	dealCount, err := db.Select(q.Eq("ChannelId", data.ChannelId), q.Eq("LastHash", data.RequestCommitmentHash), q.Eq("Owner", targetUser)).Count(&dao.CommitmentTransaction{})
+	if err != nil {
+		log.Println(err)
+		return nil, nil, &targetUser, err
+	}
+	if dealCount > 0 {
+		err = errors.New("the request commitment tx is invalid")
+		log.Println(err)
+		return nil, nil, nil, err
 	}
 
 	// if alice transfer to bob,bob is the signer
@@ -338,7 +384,7 @@ func (service *commitmentTxSignedManager) CommitmentTxSign(jsonData string, sign
 	return commitmentATxInfo, commitmentBTxInfo, &targetUser, err
 }
 
-func createAliceSideTxs(tx storm.Node, data *bean.CommitmentTxSigned, dataFromCreator dao.CommitmentTxRequestInfo, channelInfo *dao.ChannelInfo, fundingTransaction *dao.FundingTransaction, signer *bean.User) (*dao.CommitmentTransaction, error) {
+func createAliceSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFromCreator dao.CommitmentTxRequestInfo, channelInfo *dao.ChannelInfo, fundingTransaction *dao.FundingTransaction, signer *bean.User) (*dao.CommitmentTransaction, error) {
 	owner := channelInfo.PeerIdA
 
 	var isAliceCreateTransfer = true
@@ -347,7 +393,7 @@ func createAliceSideTxs(tx storm.Node, data *bean.CommitmentTxSigned, dataFromCr
 	}
 
 	var lastCommitmentATx = &dao.CommitmentTransaction{}
-	err := tx.Select(q.Eq("ChannelId", data.ChannelId), q.Eq("Owner", owner), q.Eq("CurrState", dao.TxInfoState_OtherSign)).OrderBy("CreateAt").Reverse().First(lastCommitmentATx)
+	err := tx.Select(q.Eq("ChannelId", signData.ChannelId), q.Eq("Owner", owner), q.Eq("CurrState", dao.TxInfoState_OtherSign)).OrderBy("CreateAt").Reverse().First(lastCommitmentATx)
 	if err != nil {
 		lastCommitmentATx = nil
 	}
@@ -389,7 +435,7 @@ func createAliceSideTxs(tx storm.Node, data *bean.CommitmentTxSigned, dataFromCr
 		err = tx.Save(breachRemedyTransaction)
 
 		lastRDTransaction := &dao.RevocableDeliveryTransaction{}
-		err = tx.Select(q.Eq("ChannelId", data.ChannelId), q.Eq("Owner", owner), q.Eq("CommitmentTxId", lastCommitmentATx.Id), q.Eq("CurrState", dao.TxInfoState_OtherSign)).OrderBy("CreateAt").Reverse().First(lastRDTransaction)
+		err = tx.Select(q.Eq("ChannelId", signData.ChannelId), q.Eq("Owner", owner), q.Eq("CommitmentTxId", lastCommitmentATx.Id), q.Eq("CurrState", dao.TxInfoState_OtherSign)).OrderBy("CreateAt").Reverse().First(lastRDTransaction)
 		if err != nil {
 			log.Println(err)
 			return nil, err
@@ -421,7 +467,7 @@ func createAliceSideTxs(tx storm.Node, data *bean.CommitmentTxSigned, dataFromCr
 			outputBean.AmountB, _ = decimal.NewFromFloat(lastCommitmentATx.AmountB).Add(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
 		}
 	} else {
-		outputBean.TempPubKey = data.CurrTempPubKey
+		outputBean.TempPubKey = signData.CurrTempPubKey
 		// if bob transfer to alice,then alice add money
 		outputBean.AmountM, _ = decimal.NewFromFloat(fundingTransaction.AmountA).Add(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
 		outputBean.AmountB, _ = decimal.NewFromFloat(fundingTransaction.AmountB).Sub(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
@@ -467,7 +513,21 @@ func createAliceSideTxs(tx storm.Node, data *bean.CommitmentTxSigned, dataFromCr
 	commitmentTxInfo.TxHexFirstSign = hex
 	commitmentTxInfo.FirstSignAt = time.Now()
 	commitmentTxInfo.CurrState = dao.TxInfoState_OtherSign
+	commitmentTxInfo.LastHash = ""
+	commitmentTxInfo.CurrHash = ""
+	if lastCommitmentATx != nil {
+		commitmentTxInfo.LastHash = lastCommitmentATx.CurrHash
+	}
 	err = tx.Save(commitmentTxInfo)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	bytes, err := json.Marshal(commitmentTxInfo)
+	msgHash := tool.SignMsg(bytes)
+	commitmentTxInfo.CurrHash = msgHash
+	err = tx.Update(commitmentTxInfo)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -637,7 +697,21 @@ func createBobSideTxs(tx storm.Node, data *bean.CommitmentTxSigned, dataFromCrea
 	commitmentTxInfo.TxHexFirstSign = hex
 	commitmentTxInfo.FirstSignAt = time.Now()
 	commitmentTxInfo.CurrState = dao.TxInfoState_OtherSign
+	commitmentTxInfo.CurrHash = ""
+	commitmentTxInfo.LastHash = ""
+	if lastCommitmentBTx != nil {
+		commitmentTxInfo.LastHash = lastCommitmentBTx.CurrHash
+	}
 	err = tx.Save(commitmentTxInfo)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	bytes, err := json.Marshal(commitmentTxInfo)
+	msgHash := tool.SignMsg(bytes)
+	commitmentTxInfo.CurrHash = msgHash
+	err = tx.Update(commitmentTxInfo)
 	if err != nil {
 		log.Println(err)
 		return nil, err

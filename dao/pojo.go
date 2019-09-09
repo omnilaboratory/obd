@@ -94,6 +94,8 @@ type CommitmentTxRequestInfo struct {
 type CommitmentTransaction struct {
 	Id                 int            `storm:"id,increment" json:"id" `
 	LastCommitmentTxId int            `json:"last_commitment_tx_id"`
+	LastHash           string         `json:"last_hash"`
+	CurrHash           string         `json:"curr_hash"`
 	PeerIdA            string         `json:"peer_id_a"`
 	PeerIdB            string         `json:"peer_id_b"`
 	ChannelId          bean.ChannelID `json:"channel_id"`

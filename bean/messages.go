@@ -111,7 +111,8 @@ type FundingSigned struct {
 
 //type: -351 (commitment_tx)
 type CommitmentTx struct {
-	ChannelId                ChannelID `json:"channel_id"`  //the global channel id.
+	ChannelId                ChannelID `json:"channel_id"` //the global channel id.
+	RequestCommitmentHash    string    `json:"request_commitment_hash"`
 	PropertyId               int       `json:"property_id"` //the id of the Omni asset
 	Amount                   float64   `json:"amount"`      //amount of the payment
 	CurrTempPubKey           string    `json:"curr_temp_pub_key"`
@@ -122,6 +123,7 @@ type CommitmentTx struct {
 //type: -352 (commitment_tx_signed)
 type CommitmentTxSigned struct {
 	ChannelId                ChannelID `json:"channel_id"`
+	RequestCommitmentHash    string    `json:"request_commitment_hash"`
 	CurrTempPubKey           string    `json:"curr_temp_pub_key"`           // bob3 or alice3
 	LastTempPrivateKey       string    `json:"last_temp_private_key"`       // bob2's private key
 	ChannelAddressPrivateKey string    `json:"channel_address_private_key"` // bob private key

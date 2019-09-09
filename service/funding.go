@@ -293,7 +293,18 @@ func (service *fundingTransactionManager) FundingTxSign(jsonData string, signer 
 		commitmentTxInfo.TxHexFirstSign = hex
 		commitmentTxInfo.FirstSignAt = time.Now()
 		commitmentTxInfo.CurrState = dao.TxInfoState_OtherSign
+		commitmentTxInfo.LastHash = ""
+		commitmentTxInfo.CurrHash = ""
 		err = tx.Save(commitmentTxInfo)
+		if err != nil {
+			log.Println(err)
+			return nil, err
+		}
+
+		bytes, err := json.Marshal(commitmentTxInfo)
+		msgHash := tool.SignMsg(bytes)
+		commitmentTxInfo.CurrHash = msgHash
+		err = tx.Update(commitmentTxInfo)
 		if err != nil {
 			log.Println(err)
 			return nil, err
