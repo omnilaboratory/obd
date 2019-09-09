@@ -55,6 +55,12 @@ func createCommitmentTx(owner string, channelInfo *dao.ChannelInfo, fundingTrans
 	}
 	commitmentTxInfo.MultiAddress = gjson.Get(multiAddr, "address").String()
 	commitmentTxInfo.RedeemScript = gjson.Get(multiAddr, "redeemScript").String()
+	json, err := rpcClient.GetAddressInfo(commitmentTxInfo.MultiAddress)
+	if err != nil {
+		return nil, err
+	}
+	commitmentTxInfo.ScriptPubKey = gjson.Get(json, "scriptPubKey").String()
+
 	commitmentTxInfo.AmountM = outputBean.AmountM
 	commitmentTxInfo.AmountB = outputBean.AmountB
 

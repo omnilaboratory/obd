@@ -417,13 +417,17 @@ func createAliceSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFr
 			lastCommitmentATx.MultiAddress,
 			brPrivKeys,
 			[]rpc.TransactionInputItem{
-				{breachRemedyTransaction.InputTxid, breachRemedyTransaction.InputVout, breachRemedyTransaction.InputAmount},
+				{breachRemedyTransaction.InputTxid,
+					lastCommitmentATx.ScriptPubKey,
+					breachRemedyTransaction.InputVout,
+					breachRemedyTransaction.InputAmount},
 			},
 			[]rpc.TransactionOutputItem{
 				{channelInfo.AddressB, breachRemedyTransaction.Amount},
 			},
 			0,
-			0)
+			0,
+			&lastCommitmentATx.RedeemScript)
 		if err != nil {
 			log.Println(err)
 			return nil, err
@@ -496,14 +500,18 @@ func createAliceSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFr
 		channelInfo.ChannelAddress,
 		privkeys,
 		[]rpc.TransactionInputItem{
-			{commitmentTxInfo.InputTxid, commitmentTxInfo.InputVout, commitmentTxInfo.InputAmount},
+			{commitmentTxInfo.InputTxid,
+				channelInfo.ChannelAddressScriptPubKey,
+				commitmentTxInfo.InputVout,
+				commitmentTxInfo.InputAmount},
 		},
 		[]rpc.TransactionOutputItem{
 			{commitmentTxInfo.MultiAddress, commitmentTxInfo.AmountM},
 			{outputBean.ToAddress, commitmentTxInfo.AmountB},
 		},
 		0,
-		0)
+		0,
+		&channelInfo.ChannelAddressRedeemScript)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -544,13 +552,17 @@ func createAliceSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFr
 		commitmentTxInfo.MultiAddress,
 		privkeys,
 		[]rpc.TransactionInputItem{
-			{rdTransaction.InputTxid, rdTransaction.InputVout, rdTransaction.InputAmount},
+			{rdTransaction.InputTxid,
+				commitmentTxInfo.ScriptPubKey,
+				rdTransaction.InputVout,
+				rdTransaction.InputAmount},
 		},
 		[]rpc.TransactionOutputItem{
 			{rdTransaction.OutputAddress, rdTransaction.Amount},
 		},
 		0,
-		rdTransaction.Sequence)
+		rdTransaction.Sequence,
+		&commitmentTxInfo.RedeemScript)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -600,13 +612,17 @@ func createBobSideTxs(tx storm.Node, data *bean.CommitmentTxSigned, dataFromCrea
 			lastCommitmentBTx.MultiAddress,
 			brPrivKeys,
 			[]rpc.TransactionInputItem{
-				{breachRemedyTransaction.InputTxid, breachRemedyTransaction.InputVout, breachRemedyTransaction.InputAmount},
+				{breachRemedyTransaction.InputTxid,
+					lastCommitmentBTx.ScriptPubKey,
+					breachRemedyTransaction.InputVout,
+					breachRemedyTransaction.InputAmount},
 			},
 			[]rpc.TransactionOutputItem{
 				{channelInfo.AddressB, breachRemedyTransaction.Amount},
 			},
 			0,
-			0)
+			0,
+			&lastCommitmentBTx.RedeemScript)
 		if err != nil {
 			log.Println(err)
 			return nil, err
@@ -642,7 +658,7 @@ func createBobSideTxs(tx storm.Node, data *bean.CommitmentTxSigned, dataFromCrea
 	var outputBean = commitmentOutputBean{}
 	if isAliceCreateTransfer {
 		outputBean.TempPubKey = data.CurrTempPubKey
-		//by default, alice transters money to bob,then bob's balance increases.
+		//by default, alice transfers money to bob,then bob's balance increases.
 		outputBean.AmountM, _ = decimal.NewFromFloat(fundingTransaction.AmountB).Add(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
 		outputBean.AmountB, _ = decimal.NewFromFloat(fundingTransaction.AmountA).Sub(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
 		if lastCommitmentBTx != nil {
@@ -678,14 +694,18 @@ func createBobSideTxs(tx storm.Node, data *bean.CommitmentTxSigned, dataFromCrea
 		channelInfo.ChannelAddress,
 		privkeys,
 		[]rpc.TransactionInputItem{
-			{commitmentTxInfo.InputTxid, commitmentTxInfo.InputVout, commitmentTxInfo.InputAmount},
+			{commitmentTxInfo.InputTxid,
+				channelInfo.ChannelAddressScriptPubKey,
+				commitmentTxInfo.InputVout,
+				commitmentTxInfo.InputAmount},
 		},
 		[]rpc.TransactionOutputItem{
 			{commitmentTxInfo.MultiAddress, commitmentTxInfo.AmountM},
 			{outputBean.ToAddress, commitmentTxInfo.AmountB},
 		},
 		0,
-		0)
+		0,
+		&channelInfo.ChannelAddressRedeemScript)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -728,13 +748,17 @@ func createBobSideTxs(tx storm.Node, data *bean.CommitmentTxSigned, dataFromCrea
 		commitmentTxInfo.MultiAddress,
 		privkeys,
 		[]rpc.TransactionInputItem{
-			{rdTransaction.InputTxid, rdTransaction.InputVout, rdTransaction.InputAmount},
+			{rdTransaction.InputTxid,
+				commitmentTxInfo.ScriptPubKey,
+				rdTransaction.InputVout,
+				rdTransaction.InputAmount},
 		},
 		[]rpc.TransactionOutputItem{
 			{rdTransaction.OutputAddress, rdTransaction.Amount},
 		},
 		0,
-		rdTransaction.Sequence)
+		rdTransaction.Sequence,
+		&commitmentTxInfo.RedeemScript)
 	if err != nil {
 		log.Println(err)
 		return nil, err

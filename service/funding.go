@@ -277,14 +277,19 @@ func (service *fundingTransactionManager) FundingTxSign(jsonData string, signer 
 				reqData.FundeeSignature,
 			},
 			[]rpc.TransactionInputItem{
-				{commitmentTxInfo.InputTxid, commitmentTxInfo.InputVout, commitmentTxInfo.InputAmount},
+				{
+					commitmentTxInfo.InputTxid,
+					channelInfo.ChannelAddressScriptPubKey,
+					commitmentTxInfo.InputVout,
+					commitmentTxInfo.InputAmount},
 			},
 			[]rpc.TransactionOutputItem{
 				{commitmentTxInfo.MultiAddress, commitmentTxInfo.AmountM},
 				{outputBean.ToAddress, commitmentTxInfo.AmountB},
 			},
 			0,
-			0)
+			0,
+			&channelInfo.ChannelAddressRedeemScript)
 		if err != nil {
 			log.Println(err)
 			return nil, err
@@ -327,13 +332,17 @@ func (service *fundingTransactionManager) FundingTxSign(jsonData string, signer 
 				reqData.FundeeSignature,
 			},
 			[]rpc.TransactionInputItem{
-				{rdTransaction.InputTxid, rdTransaction.InputVout, rdTransaction.InputAmount},
+				{rdTransaction.InputTxid,
+					commitmentTxInfo.ScriptPubKey,
+					rdTransaction.InputVout,
+					rdTransaction.InputAmount},
 			},
 			[]rpc.TransactionOutputItem{
 				{rdTransaction.OutputAddress, rdTransaction.Amount},
 			},
 			0,
-			rdTransaction.Sequence)
+			rdTransaction.Sequence,
+			&commitmentTxInfo.RedeemScript)
 		if err != nil {
 			log.Println(err)
 			return nil, err
@@ -350,12 +359,13 @@ func (service *fundingTransactionManager) FundingTxSign(jsonData string, signer 
 
 	if reqData.Attitude {
 		// if agree,send the fundingtx to chain network
-		txid, err := rpcClient.SendRawTransaction(fundingTransaction.FundingTxHex)
+		//txid, err := rpcClient.SendRawTransaction(fundingTransaction.FundingTxHex)
 		if err != nil {
 			log.Println(err)
 			//return nil, err
 		}
-		fundingTransaction.TxId = txid
+		//fundingTransaction.TxId = txid
+
 	}
 
 	if reqData.Attitude == false {

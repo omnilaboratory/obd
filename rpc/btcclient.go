@@ -69,7 +69,7 @@ func (client *Client) CreateRawTransaction(inputs []map[string]interface{}, outp
 }
 
 func (client *Client) SignRawTransactionWithKey(hex string, privkeys []string, prevtxs []map[string]interface{}, sighashtype string) (result string, err error) {
-	return client.send("signrawtransaction", []interface{}{hex, prevtxs, privkeys, sighashtype})
+	return client.send("signrawtransactionwithkey", []interface{}{hex, privkeys, prevtxs, sighashtype})
 }
 
 func (client *Client) SendRawTransaction(hex string) (result string, err error) {
@@ -117,14 +117,13 @@ func (client *Client) ValidateAddress(address string) (isvalid bool, err error) 
 	log.Println(result)
 	return gjson.Get(result, "isvalid").Bool(), nil
 }
-func (client *Client) GetAddressInfo(address string) (ismine bool, err error) {
+func (client *Client) GetAddressInfo(address string) (json string, err error) {
 	importAddress(address)
 	result, err := client.send("getaddressinfo", []interface{}{address})
 	if err != nil {
-		return false, err
+		return "", err
 	}
-	log.Println(result)
-	return gjson.Get(result, "ismine").Bool(), nil
+	return result, nil
 }
 
 func importAddress(address string) {
@@ -145,9 +144,10 @@ type TransactionOutputItem struct {
 	Amount           float64
 }
 type TransactionInputItem struct {
-	Txid   string
-	Vout   uint32
-	Amount float64
+	Txid         string
+	ScriptPubKey string
+	Vout         uint32
+	Amount       float64
 }
 
 // create a transaction and just signnature , not send to the network,get the hash of signature
@@ -201,6 +201,7 @@ func (client *Client) BtcCreateAndSignRawTransaction(fromBitCoinAddress string, 
 		if sequence > 0 {
 			node["sequence"] = sequence
 		}
+		node["scriptPubKey"] = item.Get("scriptPubKey").String()
 		inputs = append(inputs, node)
 
 		balance, _ = decimal.NewFromFloat(balance).Add(decimal.NewFromFloat(item.Get("amount").Float())).Float64()
@@ -251,7 +252,7 @@ func (client *Client) BtcCreateAndSignRawTransaction(fromBitCoinAddress string, 
 	return txid, hex, err
 }
 
-func (client *Client) BtcCreateAndSignRawTransactionForUnsendInputTx(fromBitCoinAddress string, privkeys []string, inputItems []TransactionInputItem, outputItems []TransactionOutputItem, minerFee float64, sequence int) (txid string, hex string, err error) {
+func (client *Client) BtcCreateAndSignRawTransactionForUnsendInputTx(fromBitCoinAddress string, privkeys []string, inputItems []TransactionInputItem, outputItems []TransactionOutputItem, minerFee float64, sequence int, redeemScript *string) (txid string, hex string, err error) {
 	if len(fromBitCoinAddress) < 1 {
 		return "", "", errors.New("fromBitCoinAddress is empty")
 	}
@@ -302,6 +303,10 @@ func (client *Client) BtcCreateAndSignRawTransactionForUnsendInputTx(fromBitCoin
 		if sequence > 0 {
 			node["sequence"] = sequence
 		}
+		if tool.CheckIsString(redeemScript) {
+			node["redeemScript"] = *redeemScript
+		}
+		node["scriptPubKey"] = item.ScriptPubKey
 		balance, _ = decimal.NewFromFloat(balance).Add(decimal.NewFromFloat(item.Amount)).Float64()
 		inputs = append(inputs, node)
 	}
@@ -347,7 +352,7 @@ func (client *Client) BtcCreateAndSignRawTransactionForUnsendInputTx(fromBitCoin
 	if privkeys == nil || len(privkeys) == 0 {
 		privkeys = nil
 	}
-	signHex, err := client.SignRawTransactionWithKey(hex, privkeys, nil, "ALL")
+	signHex, err := client.SignRawTransactionWithKey(hex, privkeys, inputs, "ALL")
 	if err != nil {
 		return "", "", err
 	}
@@ -366,9 +371,12 @@ func (client *Client) BtcSignAndSendRawTransaction(hex string, privKey string) (
 		return "", "", err
 	}
 	hex = gjson.Get(signHex, "hex").String()
-	txId, err := client.SendRawTransaction(hex)
+	decodeHex, err := client.DecodeRawTransaction(hex)
+	txId := gjson.Get(decodeHex, "txid").String()
+	log.Println("SignRawTransactionWithKey DecodeRawTransaction", decodeHex)
+	//txId, err = client.SendRawTransaction(hex)
 	if err != nil {
-		return "", "", err
+		return "", hex, err
 	}
 	log.Println("SendRawTransaction", txId)
 	return txId, hex, nil

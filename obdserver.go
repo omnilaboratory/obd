@@ -25,7 +25,6 @@ func main() {
 	//conn := startupGRPCClient()
 	//defer conn.Close()
 	//routersInit := routers.InitRouter(conn)
-
 	routersInit := lightclient.InitRouter(nil)
 	addr := ":" + strconv.Itoa(config.ServerPort)
 	server := &http.Server{
@@ -36,7 +35,6 @@ func main() {
 		MaxHeaderBytes: 1 << 20,
 	}
 	log.Fatal(server.ListenAndServe())
-
 }
 
 func startupGRPCClient() *grpc.ClientConn {

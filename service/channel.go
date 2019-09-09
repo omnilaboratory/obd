@@ -105,6 +105,13 @@ func (c *channelManager) BobAcceptChannel(jsonData string, peerIdB string) (chan
 		}
 		channelInfo.ChannelAddress = gjson.Get(multiSig, "address").String()
 		channelInfo.ChannelAddressRedeemScript = gjson.Get(multiSig, "redeemScript").String()
+
+		addrInfoStr, err := rpcClient.GetAddressInfo(channelInfo.ChannelAddress)
+		if err != nil {
+			log.Println(err)
+			return nil, err
+		}
+		channelInfo.ChannelAddressScriptPubKey = gjson.Parse(addrInfoStr).Get("scriptPubKey").String()
 	}
 	if reqData.Attitude {
 		channelInfo.CurrState = dao.ChannelState_Accept
@@ -219,6 +226,7 @@ func (c *channelManager) ForceCloseChannel(jsonData string, user *bean.User) (in
 		return nil, err
 	}
 	log.Println(commitmentTxid)
+	//
 
 	lastRevocableDeliveryTx := &dao.RevocableDeliveryTransaction{}
 	err = db.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("Owner", user.PeerId)).OrderBy("CreateAt").Reverse().First(lastRevocableDeliveryTx)
@@ -227,10 +235,9 @@ func (c *channelManager) ForceCloseChannel(jsonData string, user *bean.User) (in
 		return nil, err
 	}
 
-	revocableDeliveryTxid, rdhex, err := rpcClient.BtcSignAndSendRawTransaction(lastCommitmentTx.TxHexFirstSign, reqData.LastTempPrivateKey)
+	revocableDeliveryTxid, rdhex, err := rpcClient.BtcSignAndSendRawTransaction(lastRevocableDeliveryTx.TxHexFirstSign, reqData.LastTempPrivateKey)
 	if err != nil {
 		log.Println(err)
-		return nil, err
 	}
 	log.Println(revocableDeliveryTxid)
 
@@ -427,10 +434,9 @@ func (c *channelManager) CloseChannelSign(jsonData string, user *bean.User) (int
 		return nil, nil, err
 	}
 
-	revocableDeliveryTxid, rdhex, err := rpcClient.BtcSignAndSendRawTransaction(lastCommitmentTx.TxHexFirstSign, lastTempPrivateKey)
+	revocableDeliveryTxid, rdhex, err := rpcClient.BtcSignAndSendRawTransaction(lastRevocableDeliveryTx.TxHexFirstSign, lastTempPrivateKey)
 	if err != nil {
 		log.Println(err)
-		return nil, nil, err
 	}
 	log.Println(revocableDeliveryTxid)
 

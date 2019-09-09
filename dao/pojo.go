@@ -32,6 +32,7 @@ type ChannelInfo struct {
 	AddressB                   string         `json:"address_b"`
 	ChannelAddress             string         `json:"channel_address"`
 	ChannelAddressRedeemScript string         `json:"channel_address_redeem_script"`
+	ChannelAddressScriptPubKey string         `json:"channel_address_script_pub_key"`
 	CurrState                  ChannelState   `json:"curr_state"`
 	CreateBy                   string         `json:"create_by"`
 	CreateAt                   time.Time      `json:"create_at"`
@@ -106,6 +107,7 @@ type CommitmentTransaction struct {
 	TempPubKey         string         `json:"temp_pub_key"`  //output alice2 or bob2
 	MultiAddress       string         `json:"multi_address"` //output alice2&bob  or alice&bob2  multiAddr
 	RedeemScript       string         `json:"redeem_script"`
+	ScriptPubKey       string         `json:"script_pub_key"`
 	AmountM            float64        `json:"amount_m"` // amount to multiAddr
 	AmountB            float64        `json:"amount_b"` //amount to bob(if Cna) or alice(if Cnb)
 	TxHexFirstSign     string         `json:"tx_hex_first_sign"`

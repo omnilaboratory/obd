@@ -15,9 +15,9 @@ var (
 	WriteTimeout time.Duration = 10 * time.Second
 
 	//0.13 omnicore
-	ChainNode_Host string = "62.234.216.108:18332"
+	//ChainNode_Host string = "62.234.216.108:18332"
 	//0.18 omnicore
-	//ChainNode_Host string = "62.234.216.108:18334"
+	ChainNode_Host string = "62.234.216.108:18334"
 	ChainNode_User string = "omniwallet"
 	ChainNode_Pass string = "cB3]iL2@eZ1?cB2?"
 

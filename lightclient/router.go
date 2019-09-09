@@ -16,7 +16,7 @@ import (
 )
 
 func InitRouter(conn *grpc.ClientConn) *gin.Engine {
-	gin.SetMode(gin.ReleaseMode)
+	gin.SetMode(gin.DebugMode)
 	router := gin.New()
 	router.Use(gin.Logger())
 	router.Use(gin.Recovery())
