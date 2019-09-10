@@ -574,7 +574,8 @@ func createAliceSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFr
 			{outputBean.ToAddress, commitmentTxInfo.AmountB},
 		},
 		0,
-		0)
+		0,
+		&channelInfo.ChannelAddressRedeemScript)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -772,7 +773,8 @@ func createBobSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFrom
 			{outputBean.ToAddress, commitmentTxInfo.AmountB},
 		},
 		0,
-		0)
+		0,
+		&channelInfo.ChannelAddressRedeemScript)
 	if err != nil {
 		log.Println(err)
 		return nil, err

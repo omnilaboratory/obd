@@ -352,15 +352,6 @@ func (c *channelManager) RequestCloseChannel(jsonData string, user *bean.User) (
 		log.Println(err)
 		return nil, nil, err
 	}
-
-	if user.PeerId == channelInfo.PeerIdA {
-		tempAddrPrivateKeyMap[channelInfo.PubKeyA] = reqData.ChannelAddressPrivateKey
-	} else {
-		tempAddrPrivateKeyMap[channelInfo.PubKeyB] = reqData.ChannelAddressPrivateKey
-	}
-	tempAddrPrivateKeyMap[lastCommitmentTx.TempAddressPubKey] = reqData.LastTempPrivateKey
-	reqData.ChannelAddressPrivateKey = ""
-	reqData.LastTempPrivateKey = ""
 	return reqData, &targetUser, nil
 }
 
@@ -394,7 +385,7 @@ func (c *channelManager) CloseChannelSign(jsonData string, user *bean.User) (int
 	}
 
 	lastCommitmentTx := &dao.CommitmentTransaction{}
-	err = db.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("Owner", user.PeerId)).OrderBy("CreateAt").Reverse().First(lastCommitmentTx)
+	err = db.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("Owner", targetUser)).OrderBy("CreateAt").Reverse().First(lastCommitmentTx)
 	if err != nil {
 		log.Println(err)
 		return nil, nil, err

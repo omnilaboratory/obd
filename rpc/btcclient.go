@@ -151,7 +151,7 @@ type TransactionInputItem struct {
 }
 
 // create a transaction and just signnature , not send to the network,get the hash of signature
-func (client *Client) BtcCreateAndSignRawTransaction(fromBitCoinAddress string, privkeys []string, outputItems []TransactionOutputItem, minerFee float64, sequence int) (txid string, hex string, err error) {
+func (client *Client) BtcCreateAndSignRawTransaction(fromBitCoinAddress string, privkeys []string, outputItems []TransactionOutputItem, minerFee float64, sequence int, redeemScript *string) (txid string, hex string, err error) {
 	if len(fromBitCoinAddress) < 1 {
 		return "", "", errors.New("fromBitCoinAddress is empty")
 	}
@@ -196,8 +196,12 @@ func (client *Client) BtcCreateAndSignRawTransaction(fromBitCoinAddress string, 
 		node := make(map[string]interface{})
 		node["txid"] = item.Get("txid").String()
 		node["vout"] = item.Get("vout").Int()
-		if item.Get("redeemScript").Exists() {
-			node["redeemScript"] = item.Get("redeemScript")
+		if redeemScript != nil {
+			node["redeemScript"] = *redeemScript
+		} else {
+			if item.Get("redeemScript").Exists() {
+				node["redeemScript"] = item.Get("redeemScript")
+			}
 		}
 		if sequence > 0 {
 			node["sequence"] = sequence
@@ -231,14 +235,16 @@ func (client *Client) BtcCreateAndSignRawTransaction(fromBitCoinAddress string, 
 		}
 	}
 
-	drawback, _ := decimal.NewFromFloat(balance).Sub(decimal.NewFromFloat(out)).Float64()
+	drawback, _ := decimal.NewFromFloat(balance).Sub(decimal.NewFromFloat(minerFeeAndOut)).Float64()
 	output := make(map[string]float64)
 	for _, item := range outputItems {
 		if item.Amount > 0 {
 			output[item.ToBitCoinAddress], _ = decimal.NewFromFloat(item.Amount).Sub(decimal.NewFromFloat(subMinerFee)).Float64()
 		}
 	}
-	output[fromBitCoinAddress] = drawback
+	if drawback > 0 {
+		output[fromBitCoinAddress] = drawback
+	}
 
 	hex, err = client.CreateRawTransaction(inputs, output)
 
@@ -400,7 +406,7 @@ func (client *Client) BtcSignAndSendRawTransaction(hex string, privKey string) (
 
 // create a transaction and signature and send to the network
 func (client *Client) BtcCreateAndSignAndSendRawTransaction(fromBitCoinAddress string, privkeys []string, outputItems []TransactionOutputItem, minerFee float64, sequence int) (txId string, err error) {
-	_, hex, err := client.BtcCreateAndSignRawTransaction(fromBitCoinAddress, privkeys, outputItems, minerFee, sequence)
+	_, hex, err := client.BtcCreateAndSignRawTransaction(fromBitCoinAddress, privkeys, outputItems, minerFee, sequence, nil)
 	if err != nil {
 		return "", err
 	}

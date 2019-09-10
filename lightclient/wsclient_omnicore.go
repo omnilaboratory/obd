@@ -137,7 +137,7 @@ func (client *Client) omniCoreModule(msg bean.RequestMessage) (enum.SendTargetTy
 		}
 		if tool.CheckIsString(&fromBitCoinAddress) &&
 			tool.CheckIsString(&toBitCoinAddress) {
-			txid, hex, err := rpcClient.BtcCreateAndSignRawTransaction(fromBitCoinAddress, privKeys, []rpc.TransactionOutputItem{{toBitCoinAddress, amount}}, minerFee, 0)
+			txid, hex, err := rpcClient.BtcCreateAndSignRawTransaction(fromBitCoinAddress, privKeys, []rpc.TransactionOutputItem{{toBitCoinAddress, amount}}, minerFee, 0, nil)
 			node := make(map[string]interface{})
 			node["txid"] = txid
 			node["hex"] = hex

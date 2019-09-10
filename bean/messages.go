@@ -57,9 +57,7 @@ type AcceptChannelInfo struct {
 
 //type: -38 (close_channel)
 type CloseChannel struct {
-	ChannelId                ChannelID `json:"channel_id"`
-	ChannelAddressPrivateKey string    `json:"channel_address_private_key"` // openChannel address
-	LastTempPrivateKey       string    `json:"last_temp_private_key"`
+	ChannelId ChannelID `json:"channel_id"`
 }
 
 //type: -39 (close_channel_sign)

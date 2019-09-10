@@ -140,6 +140,10 @@ func (client *Client) Read() {
 		if msg.Type == enum.MsgType_FundingSign_Sign {
 			sendType, dataOut, status = client.fundingSignModule(msg)
 		}
+		//-38
+		if msg.Type == enum.MsgType_CloseChannelRequest || msg.Type == enum.MsgType_CloseChannelSign {
+			sendType, dataOut, status = client.channelModule(msg)
+		}
 
 		if strings.HasPrefix(typeStr, "-35") {
 			//-351 -35101 -35102 -35103 -35104
