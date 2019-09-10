@@ -62,7 +62,7 @@ func (r rawResponse) result() (result []byte, err error) {
 }
 
 func (r *RPCError) Error() string {
-	return r.Error()
+	return fmt.Sprintf("Code: %d,Msg: %s", r.Code, r.Message)
 }
 
 type RPCError struct {
@@ -104,7 +104,7 @@ func (client *Client) send(method string, params []interface{}) (result string, 
 	//method = "./omnicore-cli -conf=/root/.bitcoin/omnicore18data/bitcoin.conf "+method
 	log.Println("request to Rpc server:", method, params)
 	req := &Request{
-		Jsonrpc: "2.0",
+		Jsonrpc: "1.0",
 		ID:      client.NextID(),
 		Method:  strings.Trim(method, " "),
 		Params:  rawParams,
@@ -126,11 +126,6 @@ func (client *Client) send(method string, params []interface{}) (result string, 
 	}
 	defer httpResponse.Body.Close()
 
-	if httpResponse.StatusCode != 200 {
-		err = fmt.Errorf("status code: %d, response: %q", httpResponse.StatusCode, httpResponse.Status)
-		return "", err
-	}
-
 	// Read the raw bytes and close the response.
 	respBytes, err := ioutil.ReadAll(httpResponse.Body)
 	if err != nil {
@@ -149,10 +144,13 @@ func (client *Client) send(method string, params []interface{}) (result string, 
 		err = fmt.Errorf("status code: %d, response: %q", httpResponse.StatusCode, err.Error())
 		return "", err
 	}
+
 	res, err := resp.result()
-	if err != nil {
+	if httpResponse.StatusCode != 200 || err != nil {
+		if err == nil {
+			err = fmt.Errorf("status code: %d, response: %q", httpResponse.StatusCode, httpResponse.Status)
+		}
 		return "", err
 	}
-	//log.Println(gjson.Parse(string(res)).String())
 	return gjson.Parse(string(res)).String(), nil
 }

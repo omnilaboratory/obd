@@ -11,6 +11,7 @@ import (
 	"github.com/asdine/storm/q"
 	"github.com/tidwall/gjson"
 	"log"
+	"strings"
 	"time"
 )
 
@@ -225,7 +226,10 @@ func (c *channelManager) ForceCloseChannel(jsonData string, user *bean.User) (in
 	err = db.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("Owner", user.PeerId)).OrderBy("CreateAt").Reverse().First(lastRevocableDeliveryTx)
 	if err != nil {
 		log.Println(err)
-		return nil, err
+		msg := err.Error()
+		if strings.Contains(msg, "non-BIP68-final (code 64)") == false {
+			return nil, err
+		}
 	}
 
 	revocableDeliveryTxid, err := rpcClient.SendRawTransaction(lastRevocableDeliveryTx.TransactionSignHex)
@@ -250,6 +254,7 @@ func (c *channelManager) ForceCloseChannel(jsonData string, user *bean.User) (in
 	if err != nil {
 		return nil, err
 	}
+	//TODO add to timer
 
 	channelInfo.CurrState = dao.ChannelState_Close
 	channelInfo.CloseAt = time.Now()
@@ -413,7 +418,12 @@ func (c *channelManager) CloseChannelSign(jsonData string, user *bean.User) (int
 	revocableDeliveryTxid, err := rpcClient.SendRawTransaction(lastRevocableDeliveryTx.TransactionSignHex)
 	if err != nil {
 		log.Println(err)
+		msg := err.Error()
+		if strings.Contains(msg, "non-BIP68-final (code 64)") == false {
+			return nil, nil, err
+		}
 	}
+
 	log.Println(revocableDeliveryTxid)
 
 	tx, err := db.Begin(true)

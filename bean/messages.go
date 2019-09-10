@@ -114,21 +114,21 @@ type CommitmentTx struct {
 	RequestCommitmentHash     string    `json:"request_commitment_hash"`
 	PropertyId                int       `json:"property_id"` //the id of the Omni asset
 	Amount                    float64   `json:"amount"`      //amount of the payment
+	ChannelAddressPrivateKey  string    `json:"channel_address_private_key"`
+	LastTempAddressPrivateKey string    `json:"last_temp_address_private_key"`
 	CurrTempAddressPubKey     string    `json:"curr_temp_address_pub_key"`
 	CurrTempAddressPrivateKey string    `json:"curr_temp_address_private_key"`
-	LastTempAddressPrivateKey string    `json:"last_temp_address_private_key"`
-	ChannelAddressPrivateKey  string    `json:"channel_address_private_key"`
 }
 
 //type: -352 (commitment_tx_signed)
 type CommitmentTxSigned struct {
 	ChannelId                 ChannelID `json:"channel_id"`
 	RequestCommitmentHash     string    `json:"request_commitment_hash"`
-	CurrTempAddressPubKey     string    `json:"curr_temp_address_pub_key"` // bob3 or alice3
-	CurrTempAddressPrivateKey string    `json:"curr_temp_address_private_key"`
-	LastTempAddressPrivateKey string    `json:"last_temp_address_private_key"` // bob2's private key
 	ChannelAddressPrivateKey  string    `json:"channel_address_private_key"`   // bob private key
-	Attitude                  bool      `json:"attitude"`                      // true agree false disagree
+	LastTempAddressPrivateKey string    `json:"last_temp_address_private_key"` // bob2's private key
+	CurrTempAddressPubKey     string    `json:"curr_temp_address_pub_key"`     // bob3 or alice3
+	CurrTempAddressPrivateKey string    `json:"curr_temp_address_private_key"`
+	Attitude                  bool      `json:"attitude"` // true agree false disagree
 }
 
 //type: -353 (get_balance_request)

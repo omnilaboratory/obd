@@ -299,7 +299,6 @@ func (service *commitmentTxSignedManager) CommitmentTxSign(jsonData string, sign
 		return nil, nil, nil, err
 	}
 
-	//确定是谁发起的转账发起方 谁是签名收款方 默认是alice发起转账，bob是签收方，如果签收方是alice 那么就是bob发起的转账请求
 	//Make sure who creates the transaction, who will sign the transaction.
 	//The default creator is Alice, and Bob is the signer.
 	//While if ALice is the signer, then Bob creates the transaction.
@@ -401,21 +400,21 @@ func (service *commitmentTxSignedManager) CommitmentTxSign(jsonData string, sign
 
 	// for c rd
 	creatorCurrTempAddressPrivateKey := tempAddrPrivateKeyMap[requestCommitmentTx.TempAddressPubKey]
-	defer delete(tempAddrPrivateKeyMap, requestCommitmentTx.TempAddressPubKey)
 	if tool.CheckIsString(&creatorCurrTempAddressPrivateKey) == false {
 		err = errors.New("fail to get the starer's curr temp address private key")
 		log.Println(err)
 		return nil, nil, nil, err
 	}
+	defer delete(tempAddrPrivateKeyMap, requestCommitmentTx.TempAddressPubKey)
 
 	//for br
 	creatorLastTempAddressPrivateKey := tempAddrPrivateKeyMap[dataFromCreator.CurrTempAddressPubKey]
-	defer delete(tempAddrPrivateKeyMap, dataFromCreator.CurrTempAddressPubKey)
 	if tool.CheckIsString(&creatorLastTempAddressPrivateKey) == false {
 		err = errors.New("fail to get the starer's last temp address  private key")
 		log.Println(err)
 		return nil, nil, nil, err
 	}
+	defer delete(tempAddrPrivateKeyMap, dataFromCreator.CurrTempAddressPubKey)
 
 	//launch database transaction, if anything goes wrong, roll back.
 	tx, err := db.Begin(true)
