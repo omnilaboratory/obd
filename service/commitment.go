@@ -40,6 +40,18 @@ func (service *commitmentTxManager) CreateNewCommitmentTxRequest(jsonData string
 		return nil, nil, errors.New("wrong ChannelAddressPrivateKey")
 	}
 
+	if tool.CheckIsString(&data.LastTempAddressPrivateKey) == false {
+		return nil, nil, errors.New("wrong LastTempAddressPrivateKey")
+	}
+
+	if tool.CheckIsString(&data.CurrTempAddressPubKey) == false {
+		return nil, nil, errors.New("wrong CurrTempAddressPubKey")
+	}
+
+	if tool.CheckIsString(&data.CurrTempAddressPrivateKey) == false {
+		return nil, nil, errors.New("wrong CurrTempAddressPrivateKey")
+	}
+
 	if data.Amount <= 0 {
 		return nil, nil, errors.New("wrong payment amount")
 	}
@@ -71,27 +83,28 @@ func (service *commitmentTxManager) CreateNewCommitmentTxRequest(jsonData string
 		return nil, nil, errors.New("not enough payment amount")
 	}
 
-	if tool.CheckIsString(&data.LastTempPrivateKey) == false {
-		return nil, nil, errors.New("wrong LastTempPrivateKey")
-	}
-
+	//store the privateKey of last temp addr
 	// if alice transfer to bob, alice is the creator
 	if isAliceCreateTransfer {
 		tempAddrPrivateKeyMap[channelInfo.PubKeyA] = data.ChannelAddressPrivateKey
 	} else {
 		tempAddrPrivateKeyMap[channelInfo.PubKeyB] = data.ChannelAddressPrivateKey
 	}
-	//store the privateKey of last temp addr
-	tempAddrPrivateKeyMap[lastCommitmentTxInfo.TempPubKey] = data.LastTempPrivateKey
-	data.LastTempPrivateKey = ""
+
+	tempAddrPrivateKeyMap[lastCommitmentTxInfo.TempAddressPubKey] = data.LastTempAddressPrivateKey
+	tempAddrPrivateKeyMap[data.CurrTempAddressPubKey] = data.CurrTempAddressPrivateKey
 	data.ChannelAddressPrivateKey = ""
+	data.LastTempAddressPrivateKey = ""
+	data.CurrTempAddressPrivateKey = ""
+
 	data.RequestCommitmentHash = lastCommitmentTxInfo.CurrHash
 
-	// store the request data for -354
+	// store the request data for -352
 	var tempInfo = &dao.CommitmentTxRequestInfo{}
 	_ = db.Select(q.Eq("ChannelId", data.ChannelId), q.Eq("UserId", creator.PeerId), q.Eq("IsEnable", true)).First(tempInfo)
 	tempInfo.CommitmentTx = *data
 	if tempInfo.Id == 0 {
+		tempInfo.LastTempAddressPubKey = lastCommitmentTxInfo.TempAddressPubKey
 		tempInfo.ChannelId = data.ChannelId
 		tempInfo.UserId = creator.PeerId
 		tempInfo.CreateAt = time.Now()
@@ -317,8 +330,8 @@ func (service *commitmentTxSignedManager) CommitmentTxSign(jsonData string, sign
 		return nil, nil, nil, err
 	}
 
-	var requestCommitmentATx = &dao.CommitmentTransaction{}
-	err = db.Select(q.Eq("ChannelId", data.ChannelId), q.Eq("CurrHash", data.RequestCommitmentHash), q.Eq("Owner", targetUser), q.Eq("CurrState", dao.TxInfoState_OtherSign)).OrderBy("CreateAt").Reverse().First(requestCommitmentATx)
+	var requestCommitmentTx = &dao.CommitmentTransaction{}
+	err = db.Select(q.Eq("ChannelId", data.ChannelId), q.Eq("CurrHash", data.RequestCommitmentHash), q.Eq("Owner", targetUser), q.Eq("CurrState", dao.TxInfoState_OtherSign)).OrderBy("CreateAt").Reverse().First(requestCommitmentTx)
 	if err != nil {
 		err = errors.New("not found the requested commitment tx")
 		log.Println(err)
@@ -336,11 +349,72 @@ func (service *commitmentTxSignedManager) CommitmentTxSign(jsonData string, sign
 		return nil, nil, nil, err
 	}
 
-	// if alice transfer to bob,bob is the signer
+	//for c rd br
+	if tool.CheckIsString(&data.ChannelAddressPrivateKey) == false {
+		err = errors.New("fail to get the signer's channel address private key")
+		log.Println(err)
+		return nil, nil, nil, err
+	}
 	if signer.PeerId == channelInfo.PeerIdB {
-		tempAddrPrivateKeyMap[channelInfo.PubKeyB] = data.ChannelAddressPrivateKey // data.ChannelAddressPrivateKey from signer
+		tempAddrPrivateKeyMap[channelInfo.PubKeyB] = data.ChannelAddressPrivateKey
+		defer delete(tempAddrPrivateKeyMap, channelInfo.PubKeyB)
 	} else {
 		tempAddrPrivateKeyMap[channelInfo.PubKeyA] = data.ChannelAddressPrivateKey
+		defer delete(tempAddrPrivateKeyMap, channelInfo.PubKeyA)
+	}
+
+	//for c rd
+	if tool.CheckIsString(&data.CurrTempAddressPubKey) == false {
+		err = errors.New("fail to get the signer's curr temp address pub key")
+		log.Println(err)
+		return nil, nil, nil, err
+	}
+	//for c rd
+	if tool.CheckIsString(&data.CurrTempAddressPrivateKey) == false {
+		err = errors.New("fail to get the signer's curr temp address private key")
+		log.Println(err)
+		return nil, nil, nil, err
+	}
+
+	//for Br
+	if tool.CheckIsString(&data.LastTempAddressPrivateKey) == false {
+		err = errors.New("fail to get the signer's last temp address private key")
+		log.Println(err)
+		return nil, nil, nil, err
+	}
+
+	//check the starter's private key
+	// for c rd br
+	creatorChannelAddressPrivateKey := ""
+	if signer.PeerId == channelInfo.PeerIdB {
+		creatorChannelAddressPrivateKey = tempAddrPrivateKeyMap[channelInfo.PubKeyA]
+		defer delete(tempAddrPrivateKeyMap, channelInfo.PubKeyA)
+	} else {
+		creatorChannelAddressPrivateKey = tempAddrPrivateKeyMap[channelInfo.PubKeyB]
+		defer delete(tempAddrPrivateKeyMap, channelInfo.PubKeyB)
+	}
+	if tool.CheckIsString(&creatorChannelAddressPrivateKey) == false {
+		err = errors.New("fail to get the starer's channel private key")
+		log.Println(err)
+		return nil, nil, nil, err
+	}
+
+	// for c rd
+	creatorCurrTempAddressPrivateKey := tempAddrPrivateKeyMap[requestCommitmentTx.TempAddressPubKey]
+	defer delete(tempAddrPrivateKeyMap, requestCommitmentTx.TempAddressPubKey)
+	if tool.CheckIsString(&creatorCurrTempAddressPrivateKey) == false {
+		err = errors.New("fail to get the starer's curr temp address private key")
+		log.Println(err)
+		return nil, nil, nil, err
+	}
+
+	//for br
+	creatorLastTempAddressPrivateKey := tempAddrPrivateKeyMap[dataFromCreator.CurrTempAddressPubKey]
+	defer delete(tempAddrPrivateKeyMap, dataFromCreator.CurrTempAddressPubKey)
+	if tool.CheckIsString(&creatorLastTempAddressPrivateKey) == false {
+		err = errors.New("fail to get the starer's last temp address  private key")
+		log.Println(err)
+		return nil, nil, nil, err
 	}
 
 	//launch database transaction, if anything goes wrong, roll back.
@@ -406,16 +480,24 @@ func createAliceSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFr
 			return nil, err
 		}
 
-		var brPrivKeys = make([]string, 0)
-		var brPrivKey = tempAddrPrivateKeyMap[lastCommitmentATx.TempPubKey]
-		if tool.CheckIsString(&brPrivKey) {
-			brPrivKeys = append(brPrivKeys, brPrivKey)
+		lastTempAddressPrivateKey := ""
+		if isAliceCreateTransfer {
+			lastTempAddressPrivateKey = tempAddrPrivateKeyMap[dataFromCreator.LastTempAddressPubKey]
+		} else {
+			lastTempAddressPrivateKey = signData.LastTempAddressPrivateKey
 		}
-		delete(tempAddrPrivateKeyMap, lastCommitmentATx.TempPubKey)
+		if tool.CheckIsString(&lastTempAddressPrivateKey) == false {
+			err = errors.New("fail to get the lastTempAddressPrivateKey")
+			log.Println(err)
+			return nil, err
+		}
 
 		txid, hex, err := rpcClient.BtcCreateAndSignRawTransactionForUnsendInputTx(
 			lastCommitmentATx.MultiAddress,
-			brPrivKeys,
+			[]string{
+				lastTempAddressPrivateKey,
+				tempAddrPrivateKeyMap[channelInfo.PubKeyB],
+			},
 			[]rpc.TransactionInputItem{
 				{breachRemedyTransaction.InputTxid,
 					lastCommitmentATx.ScriptPubKey,
@@ -433,8 +515,8 @@ func createAliceSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFr
 			return nil, err
 		}
 		breachRemedyTransaction.Txid = txid
-		breachRemedyTransaction.TxHexFirstSign = hex
-		breachRemedyTransaction.FirstSignAt = time.Now()
+		breachRemedyTransaction.TransactionSignHex = hex
+		breachRemedyTransaction.SignAt = time.Now()
 		breachRemedyTransaction.CurrState = dao.TxInfoState_OtherSign
 		err = tx.Save(breachRemedyTransaction)
 
@@ -462,7 +544,7 @@ func createAliceSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFr
 	// create Cna tx
 	var outputBean = commitmentOutputBean{}
 	if isAliceCreateTransfer {
-		outputBean.TempPubKey = dataFromCreator.CurrTempPubKey
+		outputBean.TempPubKey = dataFromCreator.CurrTempAddressPubKey
 		//default alice transfer to bob ,then alice minus money
 		outputBean.AmountM, _ = decimal.NewFromFloat(fundingTransaction.AmountA).Sub(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
 		outputBean.AmountB, _ = decimal.NewFromFloat(fundingTransaction.AmountB).Add(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
@@ -471,7 +553,7 @@ func createAliceSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFr
 			outputBean.AmountB, _ = decimal.NewFromFloat(lastCommitmentATx.AmountB).Add(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
 		}
 	} else {
-		outputBean.TempPubKey = signData.CurrTempPubKey
+		outputBean.TempPubKey = signData.CurrTempAddressPubKey
 		// if bob transfer to alice,then alice add money
 		outputBean.AmountM, _ = decimal.NewFromFloat(fundingTransaction.AmountA).Add(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
 		outputBean.AmountB, _ = decimal.NewFromFloat(fundingTransaction.AmountB).Sub(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
@@ -489,16 +571,12 @@ func createAliceSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFr
 		return nil, err
 	}
 
-	var privkeys = make([]string, 0)
-	var privKey = tempAddrPrivateKeyMap[channelInfo.PubKeyB] //bob sign first
-	if tool.CheckIsString(&privKey) {
-		privkeys = append(privkeys, privKey)
-	}
-	delete(tempAddrPrivateKeyMap, channelInfo.PubKeyB)
-
 	txid, hex, err := rpcClient.BtcCreateAndSignRawTransactionForUnsendInputTx(
 		channelInfo.ChannelAddress,
-		privkeys,
+		[]string{
+			tempAddrPrivateKeyMap[channelInfo.PubKeyA],
+			tempAddrPrivateKeyMap[channelInfo.PubKeyB],
+		},
 		[]rpc.TransactionInputItem{
 			{commitmentTxInfo.InputTxid,
 				channelInfo.ChannelAddressScriptPubKey,
@@ -518,8 +596,8 @@ func createAliceSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFr
 	}
 	commitmentTxInfo.LastCommitmentTxId = lastCommitmentATx.Id
 	commitmentTxInfo.Txid = txid
-	commitmentTxInfo.TxHexFirstSign = hex
-	commitmentTxInfo.FirstSignAt = time.Now()
+	commitmentTxInfo.TransactionSignHex = hex
+	commitmentTxInfo.SignAt = time.Now()
 	commitmentTxInfo.CurrState = dao.TxInfoState_OtherSign
 	commitmentTxInfo.LastHash = ""
 	commitmentTxInfo.CurrHash = ""
@@ -548,9 +626,19 @@ func createAliceSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFr
 		return nil, err
 	}
 
+	currTempAddressPrivateKey := ""
+	if isAliceCreateTransfer {
+		currTempAddressPrivateKey = tempAddrPrivateKeyMap[dataFromCreator.CurrTempAddressPubKey]
+	} else {
+		currTempAddressPrivateKey = signData.CurrTempAddressPrivateKey
+	}
+
 	txid, hex, err = rpcClient.BtcCreateAndSignRawTransactionForUnsendInputTx(
 		commitmentTxInfo.MultiAddress,
-		privkeys,
+		[]string{
+			currTempAddressPrivateKey,
+			tempAddrPrivateKeyMap[channelInfo.PubKeyB],
+		},
 		[]rpc.TransactionInputItem{
 			{rdTransaction.InputTxid,
 				commitmentTxInfo.ScriptPubKey,
@@ -568,8 +656,8 @@ func createAliceSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFr
 		return nil, err
 	}
 	rdTransaction.Txid = txid
-	rdTransaction.TxHexFirstSign = hex
-	rdTransaction.FirstSignAt = time.Now()
+	rdTransaction.TransactionSignHex = hex
+	rdTransaction.SignAt = time.Now()
 	rdTransaction.CurrState = dao.TxInfoState_OtherSign
 	err = tx.Save(rdTransaction)
 	if err != nil {
@@ -579,7 +667,7 @@ func createAliceSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFr
 	return commitmentTxInfo, err
 }
 
-func createBobSideTxs(tx storm.Node, data *bean.CommitmentTxSigned, dataFromCreator dao.CommitmentTxRequestInfo, channelInfo *dao.ChannelInfo, fundingTransaction *dao.FundingTransaction, signer *bean.User) (*dao.CommitmentTransaction, error) {
+func createBobSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFromCreator dao.CommitmentTxRequestInfo, channelInfo *dao.ChannelInfo, fundingTransaction *dao.FundingTransaction, signer *bean.User) (*dao.CommitmentTransaction, error) {
 	owner := channelInfo.PeerIdB
 	var isAliceCreateTransfer = true
 	if signer.PeerId == channelInfo.PeerIdA {
@@ -587,7 +675,7 @@ func createBobSideTxs(tx storm.Node, data *bean.CommitmentTxSigned, dataFromCrea
 	}
 
 	var lastCommitmentBTx = &dao.CommitmentTransaction{}
-	err := tx.Select(q.Eq("ChannelId", data.ChannelId), q.Eq("Owner", owner), q.Eq("CurrState", dao.TxInfoState_OtherSign), q.Or(q.Eq("PeerIdA", signer.PeerId), q.Eq("PeerIdB", signer.PeerId))).OrderBy("CreateAt").Reverse().First(lastCommitmentBTx)
+	err := tx.Select(q.Eq("ChannelId", signData.ChannelId), q.Eq("Owner", owner), q.Eq("CurrState", dao.TxInfoState_OtherSign), q.Or(q.Eq("PeerIdA", signer.PeerId), q.Eq("PeerIdB", signer.PeerId))).OrderBy("CreateAt").Reverse().First(lastCommitmentBTx)
 	if err != nil {
 		lastCommitmentBTx = nil
 	}
@@ -603,14 +691,19 @@ func createBobSideTxs(tx storm.Node, data *bean.CommitmentTxSigned, dataFromCrea
 			return nil, err
 		}
 
-		var brPrivKeys = make([]string, 0)
-		if tool.CheckIsString(&data.LastTempPrivateKey) {
-			brPrivKeys = append(brPrivKeys, data.LastTempPrivateKey)
+		lastTempAddressPrivateKey := ""
+		if isAliceCreateTransfer {
+			lastTempAddressPrivateKey = signData.LastTempAddressPrivateKey
+		} else {
+			lastTempAddressPrivateKey = tempAddrPrivateKeyMap[dataFromCreator.LastTempAddressPubKey]
 		}
 
 		txid, hex, err := rpcClient.BtcCreateAndSignRawTransactionForUnsendInputTx(
 			lastCommitmentBTx.MultiAddress,
-			brPrivKeys,
+			[]string{
+				lastTempAddressPrivateKey,
+				tempAddrPrivateKeyMap[channelInfo.PubKeyA],
+			},
 			[]rpc.TransactionInputItem{
 				{breachRemedyTransaction.InputTxid,
 					lastCommitmentBTx.ScriptPubKey,
@@ -618,7 +711,7 @@ func createBobSideTxs(tx storm.Node, data *bean.CommitmentTxSigned, dataFromCrea
 					breachRemedyTransaction.InputAmount},
 			},
 			[]rpc.TransactionOutputItem{
-				{channelInfo.AddressB, breachRemedyTransaction.Amount},
+				{channelInfo.AddressA, breachRemedyTransaction.Amount},
 			},
 			0,
 			0,
@@ -628,13 +721,13 @@ func createBobSideTxs(tx storm.Node, data *bean.CommitmentTxSigned, dataFromCrea
 			return nil, err
 		}
 		breachRemedyTransaction.Txid = txid
-		breachRemedyTransaction.TxHexFirstSign = hex
-		breachRemedyTransaction.FirstSignAt = time.Now()
+		breachRemedyTransaction.TransactionSignHex = hex
+		breachRemedyTransaction.SignAt = time.Now()
 		breachRemedyTransaction.CurrState = dao.TxInfoState_OtherSign
 		err = tx.Save(breachRemedyTransaction)
 
 		lastRDTransaction := &dao.RevocableDeliveryTransaction{}
-		err = tx.Select(q.Eq("ChannelId", data.ChannelId), q.Eq("Owner", owner), q.Eq("CommitmentTxId", lastCommitmentBTx.Id), q.Eq("CurrState", dao.TxInfoState_OtherSign)).OrderBy("CreateAt").Reverse().First(lastRDTransaction)
+		err = tx.Select(q.Eq("ChannelId", signData.ChannelId), q.Eq("Owner", owner), q.Eq("CommitmentTxId", lastCommitmentBTx.Id), q.Eq("CurrState", dao.TxInfoState_OtherSign)).OrderBy("CreateAt").Reverse().First(lastRDTransaction)
 		if err != nil {
 			log.Println(err)
 			return nil, err
@@ -657,7 +750,7 @@ func createBobSideTxs(tx storm.Node, data *bean.CommitmentTxSigned, dataFromCrea
 	// create Cnb tx
 	var outputBean = commitmentOutputBean{}
 	if isAliceCreateTransfer {
-		outputBean.TempPubKey = data.CurrTempPubKey
+		outputBean.TempPubKey = signData.CurrTempAddressPubKey
 		//by default, alice transfers money to bob,then bob's balance increases.
 		outputBean.AmountM, _ = decimal.NewFromFloat(fundingTransaction.AmountB).Add(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
 		outputBean.AmountB, _ = decimal.NewFromFloat(fundingTransaction.AmountA).Sub(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
@@ -666,7 +759,7 @@ func createBobSideTxs(tx storm.Node, data *bean.CommitmentTxSigned, dataFromCrea
 			outputBean.AmountB, _ = decimal.NewFromFloat(lastCommitmentBTx.AmountB).Sub(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
 		}
 	} else {
-		outputBean.TempPubKey = dataFromCreator.CurrTempPubKey
+		outputBean.TempPubKey = dataFromCreator.CurrTempAddressPubKey
 		outputBean.AmountM, _ = decimal.NewFromFloat(fundingTransaction.AmountA).Sub(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
 		outputBean.AmountB, _ = decimal.NewFromFloat(fundingTransaction.AmountB).Add(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
 		if lastCommitmentBTx != nil {
@@ -683,16 +776,12 @@ func createBobSideTxs(tx storm.Node, data *bean.CommitmentTxSigned, dataFromCrea
 		return nil, err
 	}
 
-	var privkeys = make([]string, 0)
-	var privKey = tempAddrPrivateKeyMap[channelInfo.PubKeyA]
-	if tool.CheckIsString(&privKey) {
-		privkeys = append(privkeys, privKey)
-	}
-	delete(tempAddrPrivateKeyMap, channelInfo.PubKeyA)
-
 	txid, hex, err := rpcClient.BtcCreateAndSignRawTransactionForUnsendInputTx(
 		channelInfo.ChannelAddress,
-		privkeys,
+		[]string{
+			tempAddrPrivateKeyMap[channelInfo.PubKeyA],
+			tempAddrPrivateKeyMap[channelInfo.PubKeyB],
+		},
 		[]rpc.TransactionInputItem{
 			{commitmentTxInfo.InputTxid,
 				channelInfo.ChannelAddressScriptPubKey,
@@ -714,8 +803,8 @@ func createBobSideTxs(tx storm.Node, data *bean.CommitmentTxSigned, dataFromCrea
 		commitmentTxInfo.LastCommitmentTxId = lastCommitmentBTx.Id
 	}
 	commitmentTxInfo.Txid = txid
-	commitmentTxInfo.TxHexFirstSign = hex
-	commitmentTxInfo.FirstSignAt = time.Now()
+	commitmentTxInfo.TransactionSignHex = hex
+	commitmentTxInfo.SignAt = time.Now()
 	commitmentTxInfo.CurrState = dao.TxInfoState_OtherSign
 	commitmentTxInfo.CurrHash = ""
 	commitmentTxInfo.LastHash = ""
@@ -744,9 +833,19 @@ func createBobSideTxs(tx storm.Node, data *bean.CommitmentTxSigned, dataFromCrea
 		return nil, err
 	}
 
+	currTempAddressPrivateKey := ""
+	if isAliceCreateTransfer {
+		currTempAddressPrivateKey = signData.CurrTempAddressPrivateKey
+	} else {
+		currTempAddressPrivateKey = tempAddrPrivateKeyMap[dataFromCreator.CurrTempAddressPubKey]
+	}
+
 	txid, hex, err = rpcClient.BtcCreateAndSignRawTransactionForUnsendInputTx(
 		commitmentTxInfo.MultiAddress,
-		privkeys,
+		[]string{
+			tempAddrPrivateKeyMap[channelInfo.PubKeyA],
+			currTempAddressPrivateKey,
+		},
 		[]rpc.TransactionInputItem{
 			{rdTransaction.InputTxid,
 				commitmentTxInfo.ScriptPubKey,
@@ -764,8 +863,8 @@ func createBobSideTxs(tx storm.Node, data *bean.CommitmentTxSigned, dataFromCrea
 		return nil, err
 	}
 	rdTransaction.Txid = txid
-	rdTransaction.TxHexFirstSign = hex
-	rdTransaction.FirstSignAt = time.Now()
+	rdTransaction.TransactionSignHex = hex
+	rdTransaction.SignAt = time.Now()
 	rdTransaction.CurrState = dao.TxInfoState_OtherSign
 	err = tx.Save(rdTransaction)
 	if err != nil {

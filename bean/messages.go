@@ -76,15 +76,14 @@ type SendBreachRemedyTransaction struct {
 
 //type: -34 (funding_created)
 type FundingCreated struct {
-	TemporaryChannelId chainhash.Hash `json:"temporary_channel_id"`
-	FunderPubKey       string         `json:"funder_pub_key"`
-	FunderPubKey2      string         `json:"funder_pub_key2"`
-	PropertyId         int64          `json:"property_id"`
-	MaxAssets          float64        `json:"max_assets"`
-	AmountA            float64        `json:"amount_a"`
-	FundingTxHex       string         `json:"funding_tx_hex"`
-	FundingTxid        string         `json:"funding_txid"`
-	FundingOutputIndex uint32         `json:"funding_output_index"`
+	TemporaryChannelId       chainhash.Hash `json:"temporary_channel_id"`
+	PropertyId               int64          `json:"property_id"`
+	MaxAssets                float64        `json:"max_assets"`
+	AmountA                  float64        `json:"amount_a"`
+	FundingTxHex             string         `json:"funding_tx_hex"`
+	TempAddressPubKey        string         `json:"temp_address_pub_key"`
+	TempAddressPrivateKey    string         `json:"temp_address_private_key"`
+	ChannelAddressPrivateKey string         `json:"channel_address_private_key"`
 }
 
 //type: -35 (funding_signed)
@@ -101,7 +100,7 @@ type FundingSigned struct {
 	//amount of the asset on Bob side
 	AmountB float64 `json:"amount_b"`
 	//signature of fundee Bob
-	FundeeSignature string `json:"fundee_signature"`
+	FundeeChannelAddressPrivateKey string `json:"fundee_channel_address_private_key"`
 	//redeem script used to generate P2SH address
 	RedeemScript string `json:"redeem_script"`
 	//hash of redeemScript
@@ -111,23 +110,25 @@ type FundingSigned struct {
 
 //type: -351 (commitment_tx)
 type CommitmentTx struct {
-	ChannelId                ChannelID `json:"channel_id"` //the global channel id.
-	RequestCommitmentHash    string    `json:"request_commitment_hash"`
-	PropertyId               int       `json:"property_id"` //the id of the Omni asset
-	Amount                   float64   `json:"amount"`      //amount of the payment
-	CurrTempPubKey           string    `json:"curr_temp_pub_key"`
-	LastTempPrivateKey       string    `json:"last_temp_private_key"`
-	ChannelAddressPrivateKey string    `json:"channel_address_private_key"`
+	ChannelId                 ChannelID `json:"channel_id"` //the global channel id.
+	RequestCommitmentHash     string    `json:"request_commitment_hash"`
+	PropertyId                int       `json:"property_id"` //the id of the Omni asset
+	Amount                    float64   `json:"amount"`      //amount of the payment
+	CurrTempAddressPubKey     string    `json:"curr_temp_address_pub_key"`
+	CurrTempAddressPrivateKey string    `json:"curr_temp_address_private_key"`
+	LastTempAddressPrivateKey string    `json:"last_temp_address_private_key"`
+	ChannelAddressPrivateKey  string    `json:"channel_address_private_key"`
 }
 
 //type: -352 (commitment_tx_signed)
 type CommitmentTxSigned struct {
-	ChannelId                ChannelID `json:"channel_id"`
-	RequestCommitmentHash    string    `json:"request_commitment_hash"`
-	CurrTempPubKey           string    `json:"curr_temp_pub_key"`           // bob3 or alice3
-	LastTempPrivateKey       string    `json:"last_temp_private_key"`       // bob2's private key
-	ChannelAddressPrivateKey string    `json:"channel_address_private_key"` // bob private key
-	Attitude                 bool      `json:"attitude"`                    // true agree false disagree
+	ChannelId                 ChannelID `json:"channel_id"`
+	RequestCommitmentHash     string    `json:"request_commitment_hash"`
+	CurrTempAddressPubKey     string    `json:"curr_temp_address_pub_key"` // bob3 or alice3
+	CurrTempAddressPrivateKey string    `json:"curr_temp_address_private_key"`
+	LastTempAddressPrivateKey string    `json:"last_temp_address_private_key"` // bob2's private key
+	ChannelAddressPrivateKey  string    `json:"channel_address_private_key"`   // bob private key
+	Attitude                  bool      `json:"attitude"`                      // true agree false disagree
 }
 
 //type: -353 (get_balance_request)

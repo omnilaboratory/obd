@@ -48,8 +48,8 @@ func createCommitmentTx(owner string, channelInfo *dao.ChannelInfo, fundingTrans
 	commitmentTxInfo.InputAmount = fundingTransaction.AmountA + fundingTransaction.AmountB
 
 	//output
-	commitmentTxInfo.TempPubKey = outputBean.TempPubKey
-	multiAddr, err := rpcClient.CreateMultiSig(2, []string{commitmentTxInfo.TempPubKey, outputBean.ToPubKey})
+	commitmentTxInfo.TempAddressPubKey = outputBean.TempPubKey
+	multiAddr, err := rpcClient.CreateMultiSig(2, []string{commitmentTxInfo.TempAddressPubKey, outputBean.ToPubKey})
 	if err != nil {
 		return nil, err
 	}

@@ -87,8 +87,9 @@ type CommitmentTxRequestInfo struct {
 	ChannelId bean.ChannelID
 	UserId    string
 	bean.CommitmentTx
-	CreateAt time.Time
-	IsEnable bool
+	LastTempAddressPubKey string
+	CreateAt              time.Time
+	IsEnable              bool
 }
 
 //CommitmentTransaction
@@ -101,73 +102,70 @@ type CommitmentTransaction struct {
 	PeerIdB            string         `json:"peer_id_b"`
 	ChannelId          bean.ChannelID `json:"channel_id"`
 	PropertyId         int64          `json:"property_id"`
-	InputTxid          string         `json:"input_txid"`    //input txid  from channelAddr: alice&bob multiAddr, so need  sign of alice and bob
-	InputVout          uint32         `json:"input_vout"`    // input vout
-	InputAmount        float64        `json:"input_amount"`  //input amount
-	TempPubKey         string         `json:"temp_pub_key"`  //output alice2 or bob2
-	MultiAddress       string         `json:"multi_address"` //output alice2&bob  or alice&bob2  multiAddr
+	InputTxid          string         `json:"input_txid"`           //input txid  from channelAddr: alice&bob multiAddr, so need  sign of alice and bob
+	InputVout          uint32         `json:"input_vout"`           // input vout
+	InputAmount        float64        `json:"input_amount"`         //input amount
+	TempAddressPubKey  string         `json:"temp_address_pub_key"` //output alice2 or bob2
+	MultiAddress       string         `json:"multi_address"`        //output alice2&bob  or alice&bob2  multiAddr
 	RedeemScript       string         `json:"redeem_script"`
 	ScriptPubKey       string         `json:"script_pub_key"`
 	AmountM            float64        `json:"amount_m"` // amount to multiAddr
 	AmountB            float64        `json:"amount_b"` //amount to bob(if Cna) or alice(if Cnb)
-	TxHexFirstSign     string         `json:"tx_hex_first_sign"`
-	TxHexEndSign       string         `json:"tx_hex_end_sign"`
+	TransactionSignHex string         `json:"transaction_sign_hex"`
 	Txid               string         `json:"txid"`
 	CurrState          TxInfoState    `json:"curr_state"`
 	CreateBy           string         `json:"create_by"`
 	CreateAt           time.Time      `json:"create_at"`
-	FirstSignAt        time.Time      `json:"first_sign_at"`
-	EndSignAt          time.Time      `json:"end_sign_at"`
+	SignAt             time.Time      `json:"sign_at"`
+	SendAt             time.Time      `json:"send_at"`
 	LastEditTime       time.Time      `json:"last_edit_time"`
 	Owner              string         `json:"owner"`
 }
 
 // close channel , alice or bob wait 1000 sequence to drawback the balance
 type RevocableDeliveryTransaction struct {
-	Id             int            `storm:"id,increment" json:"id" `
-	CommitmentTxId int            `json:"commitment_tx_id"`
-	PeerIdA        string         `json:"peer_id_a"`
-	PeerIdB        string         `json:"peer_id_b"`
-	ChannelId      bean.ChannelID `json:"channel_id"`
-	PropertyId     int64          `json:"property_id"`
-	InputTxid      string         `json:"input_txid"`     //input txid  from commitTx alice2&bob multtaddr, so need  sign of alice2 and bob
-	InputVout      uint32         `json:"input_vout"`     // input vout
-	InputAmount    float64        `json:"input_amount"`   //input amount
-	OutputAddress  string         `json:"output_address"` //output alice
-	Sequence       int            `json:"sequence"`
-	Amount         float64        `json:"amount"` // output alice amount
-	TxHexFirstSign string         `json:"tx_hex_first_sign"`
-	TxHexEndSign   string         `json:"tx_hex_end_sign"`
-	Txid           string         `json:"txid"`
-	CurrState      TxInfoState    `json:"curr_state"`
-	CreateBy       string         `json:"create_by"`
-	CreateAt       time.Time      `json:"create_at"`
-	FirstSignAt    time.Time      `json:"first_sign_at"`
-	EndSignAt      time.Time      `json:"end_sign_at"`
-	LastEditTime   time.Time      `json:"last_edit_time"`
-	Owner          string         `json:"owner"`
+	Id                 int            `storm:"id,increment" json:"id" `
+	CommitmentTxId     int            `json:"commitment_tx_id"`
+	PeerIdA            string         `json:"peer_id_a"`
+	PeerIdB            string         `json:"peer_id_b"`
+	ChannelId          bean.ChannelID `json:"channel_id"`
+	PropertyId         int64          `json:"property_id"`
+	InputTxid          string         `json:"input_txid"`     //input txid  from commitTx alice2&bob multtaddr, so need  sign of alice2 and bob
+	InputVout          uint32         `json:"input_vout"`     // input vout
+	InputAmount        float64        `json:"input_amount"`   //input amount
+	OutputAddress      string         `json:"output_address"` //output alice
+	Sequence           int            `json:"sequence"`
+	Amount             float64        `json:"amount"` // output alice amount
+	TransactionSignHex string         `json:"transaction_sign_hex"`
+	Txid               string         `json:"txid"`
+	CurrState          TxInfoState    `json:"curr_state"`
+	CreateBy           string         `json:"create_by"`
+	CreateAt           time.Time      `json:"create_at"`
+	SignAt             time.Time      `json:"sign_at"`
+	SendAt             time.Time      `json:"send_at"`
+	LastEditTime       time.Time      `json:"last_edit_time"`
+	Owner              string         `json:"owner"`
 }
 
 // to punish alice do not admit the latest commitment tx
 type BreachRemedyTransaction struct {
-	Id             int            `storm:"id,increment" json:"id" `
-	CommitmentTxId int            `json:"commitment_tx_id"` // parent commitmentTx id
-	PeerIdA        string         `json:"peer_id_a"`
-	PeerIdB        string         `json:"peer_id_b"`
-	ChannelId      bean.ChannelID `json:"channel_id"`
-	PropertyId     int64          `json:"property_id"`
-	InputTxid      string         `json:"input_txid"`        //input txid  from commitTx alice2&bob multtAddr, so need  sign of alice2 and bob
-	InputVout      uint32         `json:"input_vout"`        // input vout
-	InputAmount    float64        `json:"input_amount"`      //input amount
-	Amount         float64        `json:"amount"`            // output boob amount
-	TxHexFirstSign string         `json:"tx_hex_first_sign"` // first alice2 sign
-	TxHexEndSign   string         `json:"tx_hex_end_sign"`   // end bob sign
-	Txid           string         `json:"txid"`
-	CurrState      TxInfoState    `json:"curr_state"`
-	CreateBy       string         `json:"create_by"`
-	CreateAt       time.Time      `json:"create_at"`
-	FirstSignAt    time.Time      `json:"first_sign_at"`
-	EndSignAt      time.Time      `json:"end_sign_at"`
-	LastEditTime   time.Time      `json:"last_edit_time"`
-	Owner          string         `json:"owner"`
+	Id                 int            `storm:"id,increment" json:"id" `
+	CommitmentTxId     int            `json:"commitment_tx_id"` // parent commitmentTx id
+	PeerIdA            string         `json:"peer_id_a"`
+	PeerIdB            string         `json:"peer_id_b"`
+	ChannelId          bean.ChannelID `json:"channel_id"`
+	PropertyId         int64          `json:"property_id"`
+	InputTxid          string         `json:"input_txid"`           //input txid  from commitTx alice2&bob multtAddr, so need  sign of alice2 and bob
+	InputVout          uint32         `json:"input_vout"`           // input vout
+	InputAmount        float64        `json:"input_amount"`         //input amount
+	Amount             float64        `json:"amount"`               // output boob amount
+	TransactionSignHex string         `json:"transaction_sign_hex"` // first alice2 sign
+	Txid               string         `json:"txid"`
+	CurrState          TxInfoState    `json:"curr_state"`
+	CreateBy           string         `json:"create_by"`
+	CreateAt           time.Time      `json:"create_at"`
+	SignAt             time.Time      `json:"sign_at"`
+	SendAt             time.Time      `json:"send_at"`
+	LastEditTime       time.Time      `json:"last_edit_time"`
+	Owner              string         `json:"owner"`
 }

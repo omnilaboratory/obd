@@ -11,10 +11,13 @@ import (
 	"github.com/asdine/storm/q"
 	"github.com/tidwall/gjson"
 	"log"
+	"sync"
 	"time"
 )
 
-type fundingTransactionManager struct{}
+type fundingTransactionManager struct {
+	operateFlag sync.Mutex
+}
 
 var FundingTransactionService fundingTransactionManager
 
@@ -28,27 +31,46 @@ func (service *fundingTransactionManager) CreateFundingTxRequest(jsonData string
 	}
 
 	if len(reqData.TemporaryChannelId) == 0 {
-		log.Println("wrong TemporaryChannelId")
-		return nil, errors.New("wrong TemporaryChannelId")
+		err = errors.New("wrong TemporaryChannelId ")
+		log.Println(err)
+		return nil, err
+
 	}
 
 	fundingTransaction = &dao.FundingTransaction{}
 	count, _ := db.Select(q.Eq("TemporaryChannelId", reqData.TemporaryChannelId)).Count(fundingTransaction)
 	if count == 0 {
 		if tool.CheckIsString(&reqData.FundingTxHex) == false {
-			log.Println("wrong FundingTxHex")
-			return nil, errors.New("wrong FundingTxHex")
+			err = errors.New("wrong FundingTxHex ")
+			log.Println(err)
+			return nil, err
 		}
-		if tool.CheckIsString(&reqData.FunderPubKey2) == false {
-			log.Println("wrong FunderPubKey2")
-			return nil, errors.New("wrong FunderPubKey2")
+		if tool.CheckIsString(&reqData.TempAddressPubKey) == false {
+			err = errors.New("wrong TempAddressPubKey ")
+			log.Println(err)
+			return nil, err
+		}
+		if tool.CheckIsString(&reqData.TempAddressPrivateKey) == false {
+			err = errors.New("wrong TempAddressPrivateKey ")
+			log.Println(err)
+			return nil, err
+		}
+		if tool.CheckIsString(&reqData.ChannelAddressPrivateKey) == false {
+			err = errors.New("wrong ChannelAddressPrivateKey ")
+			log.Println(err)
+			return nil, err
 		}
 
 		fundingTxHexDecode, err := rpcClient.DecodeRawTransaction(reqData.FundingTxHex)
 		if err != nil {
-			log.Println("wrong FundingTxHex", err)
-			return nil, errors.New("wrong FundingTxHex: " + err.Error())
+			err = errors.New("FundingTxHex  parse fail " + err.Error())
+			log.Println(err)
+			return nil, err
 		}
+
+		// sync locker
+		service.operateFlag.Lock()
+		defer service.operateFlag.Unlock()
 
 		channelInfo := &dao.ChannelInfo{}
 		err = db.Select(q.Eq("TemporaryChannelId", reqData.TemporaryChannelId), q.Eq("CurrState", dao.ChannelState_Accept), q.Or(q.Eq("PeerIdA", user.PeerId), q.Eq("PeerIdB", user.PeerId))).OrderBy("CreateAt").Reverse().First(channelInfo)
@@ -58,93 +80,30 @@ func (service *fundingTransactionManager) CreateFundingTxRequest(jsonData string
 		}
 
 		if bean.ChannelIdService.IsEmpty(channelInfo.ChannelId) == false {
-			return nil, errors.New("channel is used, can not funding again")
+			err = errors.New("channel is used, can not funding again")
+			log.Println(err)
+			return nil, err
 		}
 
-		jsonFundingTxHexDecode := gjson.Parse(fundingTxHexDecode)
-		reqData.FundingTxid = jsonFundingTxHexDecode.Get("txid").String()
-
-		//vin
-		if jsonFundingTxHexDecode.Get("vin").IsArray() == false {
-			log.Println("wrong Tx input vin")
-			return nil, errors.New("wrong Tx input vin")
-		}
-		inTxid := jsonFundingTxHexDecode.Get("vin").Array()[0].Get("txid").String()
-		inputTx, err := rpcClient.GetTransactionById(inTxid)
+		fundingTxid, amountA, fundingOutputIndex, err := checkFundingTxHex(fundingTxHexDecode, channelInfo, user)
 		if err != nil {
-			log.Println("wrong input", err)
-			return nil, errors.New("wrong input: " + err.Error())
-		}
-		jsonInputTxDecode := gjson.Parse(inputTx)
-
-		flag := false
-		inputHexDecode, err := rpcClient.DecodeRawTransaction(jsonInputTxDecode.Get("hex").String())
-		if err != nil {
-			log.Println("wrong input", err)
-			return nil, errors.New("wrong input: " + err.Error())
+			log.Println(err)
+			return nil, err
 		}
 
-		funderAddress := channelInfo.AddressA
-		if user.PeerId == channelInfo.PeerIdB {
-			funderAddress = channelInfo.AddressB
-		}
-		jsonInputHexDecode := gjson.Parse(inputHexDecode)
-		if jsonInputHexDecode.Get("vout").IsArray() {
-			for _, item := range jsonInputHexDecode.Get("vout").Array() {
-				addresses := item.Get("scriptPubKey").Get("addresses").Array()
-				for _, subItem := range addresses {
-					if subItem.String() == funderAddress {
-						flag = true
-						break
-					}
-				}
-				if flag {
-					break
-				}
-			}
-		}
-
-		if flag == false {
-			log.Println("wrong vin", jsonFundingTxHexDecode.Get("vin").String())
-			return nil, errors.New("wrong vin: " + jsonFundingTxHexDecode.Get("vin").String())
-		}
-
-		//vout
-		flag = false
-		if jsonFundingTxHexDecode.Get("vout").IsArray() == false {
-			log.Println("wrong Tx vout")
-			return nil, errors.New("wrong Tx vout")
-		}
-		for _, item := range jsonFundingTxHexDecode.Get("vout").Array() {
-			addresses := item.Get("scriptPubKey").Get("addresses").Array()
-			for _, subItem := range addresses {
-				if subItem.String() == channelInfo.ChannelAddress {
-					reqData.AmountA = item.Get("value").Float()
-					reqData.FundingOutputIndex = uint32(item.Get("n").Int())
-					flag = true
-					break
-				}
-			}
-			if flag {
-				break
-			}
-		}
-		if flag == false {
-			log.Println("wrong vout", jsonFundingTxHexDecode.Get("vout").String())
-			return nil, errors.New("wrong vout: " + jsonFundingTxHexDecode.Get("vout").String())
-		}
-
-		hash, _ := chainhash.NewHashFromStr(reqData.FundingTxid)
+		hash, _ := chainhash.NewHashFromStr(fundingTxid)
 		op := &bean.OutPoint{
 			Hash:  *hash,
-			Index: reqData.FundingOutputIndex,
+			Index: fundingOutputIndex,
 		}
 		fundingTransaction.ChannelId = bean.ChannelIdService.NewChanIDFromOutPoint(op)
 		channelInfo.ChannelId = fundingTransaction.ChannelId
 
-		count, err = db.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Or(q.Eq("CurrState", dao.ChannelState_Accept), q.Eq("CurrState", dao.ChannelState_Close))).Count(channelInfo)
+		count, err = db.Select(q.Eq("ChannelId", channelInfo.ChannelId)).Count(channelInfo)
 		if err != nil || count != 0 {
-			return nil, errors.New("fundingTxid and FundingOutputIndex have been used")
+			err = errors.New("fundingTx have been used")
+			log.Println(err)
+			return nil, err
 		}
 
 		fundingTransaction.ChannelInfoId = channelInfo.Id
@@ -154,14 +113,17 @@ func (service *fundingTransactionManager) CreateFundingTxRequest(jsonData string
 
 		// if alice launch funding
 		if user.PeerId == channelInfo.PeerIdA {
-			fundingTransaction.AmountA = reqData.AmountA
+			fundingTransaction.AmountA = amountA
+			tempAddrPrivateKeyMap[channelInfo.PubKeyA] = reqData.ChannelAddressPrivateKey
 		} else { // if bob launch funding
-			fundingTransaction.AmountB = reqData.AmountA
+			fundingTransaction.AmountB = amountA
+			tempAddrPrivateKeyMap[channelInfo.PubKeyB] = reqData.ChannelAddressPrivateKey
 		}
 		fundingTransaction.FundingTxHex = reqData.FundingTxHex
-		fundingTransaction.FundingTxid = reqData.FundingTxid
-		fundingTransaction.FundingOutputIndex = reqData.FundingOutputIndex
-		fundingTransaction.FunderPubKey2ForCommitment = reqData.FunderPubKey2
+		fundingTransaction.FundingTxid = fundingTxid
+		fundingTransaction.FundingOutputIndex = fundingOutputIndex
+		fundingTransaction.FunderPubKey2ForCommitment = reqData.TempAddressPubKey
+		tempAddrPrivateKeyMap[fundingTransaction.FunderPubKey2ForCommitment] = reqData.TempAddressPrivateKey
 
 		tx, err := db.Begin(true)
 		if err != nil {
@@ -190,8 +152,91 @@ func (service *fundingTransactionManager) CreateFundingTxRequest(jsonData string
 		}
 	} else {
 		err = db.Select(q.Eq("TemporaryChannelId", reqData.TemporaryChannelId)).First(fundingTransaction)
+		log.Println(err)
 	}
 	return fundingTransaction, err
+}
+
+func checkFundingTxHex(fundingTxHexDecode string, channelInfo *dao.ChannelInfo, user *bean.User) (fundingTxid string, amountA float64, fundingOutputIndex uint32, err error) {
+	jsonFundingTxHexDecode := gjson.Parse(fundingTxHexDecode)
+	fundingTxid = jsonFundingTxHexDecode.Get("txid").String()
+
+	//vin
+	if jsonFundingTxHexDecode.Get("vin").IsArray() == false {
+		err = errors.New("wrong Tx input vin")
+		log.Println(err)
+		return "", 0, 0, err
+	}
+	inTxid := jsonFundingTxHexDecode.Get("vin").Array()[0].Get("txid").String()
+	inputTx, err := rpcClient.GetTransactionById(inTxid)
+	if err != nil {
+		err = errors.New("wrong input: " + err.Error())
+		log.Println(err)
+		return "", 0, 0, err
+	}
+
+	jsonInputTxDecode := gjson.Parse(inputTx)
+	flag := false
+	inputHexDecode, err := rpcClient.DecodeRawTransaction(jsonInputTxDecode.Get("hex").String())
+	if err != nil {
+		err = errors.New("wrong input: " + err.Error())
+		log.Println(err)
+		return "", 0, 0, err
+	}
+
+	funderAddress := channelInfo.AddressA
+	if user.PeerId == channelInfo.PeerIdB {
+		funderAddress = channelInfo.AddressB
+	}
+	jsonInputHexDecode := gjson.Parse(inputHexDecode)
+	if jsonInputHexDecode.Get("vout").IsArray() {
+		for _, item := range jsonInputHexDecode.Get("vout").Array() {
+			addresses := item.Get("scriptPubKey").Get("addresses").Array()
+			for _, subItem := range addresses {
+				if subItem.String() == funderAddress {
+					flag = true
+					break
+				}
+			}
+			if flag {
+				break
+			}
+		}
+	}
+
+	if flag == false {
+		err = errors.New("wrong vin " + jsonFundingTxHexDecode.Get("vin").String())
+		log.Println(err)
+		return "", 0, 0, err
+	}
+
+	//vout
+	flag = false
+	if jsonFundingTxHexDecode.Get("vout").IsArray() == false {
+		err = errors.New("wrong Tx vout")
+		log.Println(err)
+		return "", 0, 0, err
+	}
+	for _, item := range jsonFundingTxHexDecode.Get("vout").Array() {
+		addresses := item.Get("scriptPubKey").Get("addresses").Array()
+		for _, subItem := range addresses {
+			if subItem.String() == channelInfo.ChannelAddress {
+				amountA = item.Get("value").Float()
+				fundingOutputIndex = uint32(item.Get("n").Int())
+				flag = true
+				break
+			}
+		}
+		if flag {
+			break
+		}
+	}
+	if flag == false {
+		err = errors.New("wrong vout " + jsonFundingTxHexDecode.Get("vout").String())
+		log.Println(err)
+		return "", 0, 0, err
+	}
+	return fundingTxid, amountA, fundingOutputIndex, err
 }
 
 func (service *fundingTransactionManager) FundingTxSign(jsonData string, signer *bean.User) (signed *dao.FundingTransaction, err error) {
@@ -226,14 +271,8 @@ func (service *fundingTransactionManager) FundingTxSign(jsonData string, signer 
 	}
 
 	if reqData.Attitude {
-		if tool.CheckIsString(&reqData.FundeeSignature) == false {
-			return nil, errors.New("wrong FundeeSignature")
-		}
-
-		if owner == channelInfo.PeerIdA {
-			fundingTransaction.AmountB = reqData.AmountB
-		} else {
-			fundingTransaction.AmountA = reqData.AmountB
+		if tool.CheckIsString(&reqData.FundeeChannelAddressPrivateKey) == false {
+			return nil, errors.New("wrong FundeeChannelAddressPrivateKey")
 		}
 		fundingTransaction.CurrState = dao.FundingTransactionState_Accept
 	} else {
@@ -250,6 +289,28 @@ func (service *fundingTransactionManager) FundingTxSign(jsonData string, signer 
 	defer tx.Rollback()
 
 	if reqData.Attitude {
+
+		funderChannelAddressPrivateKey := ""
+		if owner == channelInfo.PeerIdA {
+			fundingTransaction.AmountB = reqData.AmountB
+			funderChannelAddressPrivateKey = tempAddrPrivateKeyMap[channelInfo.PubKeyA]
+		} else {
+			fundingTransaction.AmountA = reqData.AmountB
+			funderChannelAddressPrivateKey = tempAddrPrivateKeyMap[channelInfo.PubKeyB]
+		}
+		if tool.CheckIsString(&funderChannelAddressPrivateKey) == false {
+			err = errors.New("fail to get the funder's channel address private key ")
+			log.Println(err)
+			return nil, err
+		}
+
+		funderTempAddressPrivateKey := tempAddrPrivateKeyMap[fundingTransaction.FunderPubKey2ForCommitment]
+		if tool.CheckIsString(&funderTempAddressPrivateKey) == false {
+			err = errors.New("fail to get the funder's tmep address private key ")
+			log.Println(err)
+			return nil, err
+		}
+
 		// create C1 tx
 		var outputBean = commitmentOutputBean{}
 		outputBean.TempPubKey = fundingTransaction.FunderPubKey2ForCommitment
@@ -274,7 +335,8 @@ func (service *fundingTransactionManager) FundingTxSign(jsonData string, signer 
 		txid, hex, err := rpcClient.BtcCreateAndSignRawTransactionForUnsendInputTx(
 			channelInfo.ChannelAddress,
 			[]string{
-				reqData.FundeeSignature,
+				funderChannelAddressPrivateKey,
+				reqData.FundeeChannelAddressPrivateKey,
 			},
 			[]rpc.TransactionInputItem{
 				{
@@ -295,8 +357,8 @@ func (service *fundingTransactionManager) FundingTxSign(jsonData string, signer 
 			return nil, err
 		}
 		commitmentTxInfo.Txid = txid
-		commitmentTxInfo.TxHexFirstSign = hex
-		commitmentTxInfo.FirstSignAt = time.Now()
+		commitmentTxInfo.TransactionSignHex = hex
+		commitmentTxInfo.SignAt = time.Now()
 		commitmentTxInfo.CurrState = dao.TxInfoState_OtherSign
 		commitmentTxInfo.LastHash = ""
 		commitmentTxInfo.CurrHash = ""
@@ -329,7 +391,8 @@ func (service *fundingTransactionManager) FundingTxSign(jsonData string, signer 
 		txid, hex, err = rpcClient.BtcCreateAndSignRawTransactionForUnsendInputTx(
 			commitmentTxInfo.MultiAddress,
 			[]string{
-				reqData.FundeeSignature,
+				funderTempAddressPrivateKey,
+				reqData.FundeeChannelAddressPrivateKey,
 			},
 			[]rpc.TransactionInputItem{
 				{rdTransaction.InputTxid,
@@ -348,8 +411,8 @@ func (service *fundingTransactionManager) FundingTxSign(jsonData string, signer 
 			return nil, err
 		}
 		rdTransaction.Txid = txid
-		rdTransaction.TxHexFirstSign = hex
-		rdTransaction.FirstSignAt = time.Now()
+		rdTransaction.TransactionSignHex = hex
+		rdTransaction.SignAt = time.Now()
 		rdTransaction.CurrState = dao.TxInfoState_OtherSign
 		err = tx.Save(rdTransaction)
 		if err != nil {

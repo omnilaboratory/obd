@@ -197,13 +197,6 @@ func (c *channelManager) ForceCloseChannel(jsonData string, user *bean.User) (in
 		return nil, errors.New("wrong channelId")
 	}
 
-	if tool.CheckIsString(&reqData.ChannelAddressPrivateKey) == false {
-		return nil, errors.New("empty ChannelAddressPrivateKey")
-	}
-	if tool.CheckIsString(&reqData.LastTempPrivateKey) == false {
-		return nil, errors.New("empty LastTempPrivateKey")
-	}
-
 	channelInfo := &dao.ChannelInfo{}
 	err = db.Select(q.Eq("ChannelId", reqData.ChannelId), q.Eq("CurrState", dao.ChannelState_Accept)).First(channelInfo)
 	if err != nil {
@@ -218,9 +211,9 @@ func (c *channelManager) ForceCloseChannel(jsonData string, user *bean.User) (in
 		return nil, err
 	}
 
-	result, _ := rpcClient.DecodeRawTransaction(lastCommitmentTx.TxHexFirstSign)
+	result, _ := rpcClient.DecodeRawTransaction(lastCommitmentTx.TransactionSignHex)
 	log.Println(result)
-	commitmentTxid, chex, err := rpcClient.BtcSignAndSendRawTransaction(lastCommitmentTx.TxHexFirstSign, reqData.ChannelAddressPrivateKey)
+	commitmentTxid, err := rpcClient.SendRawTransaction(lastCommitmentTx.TransactionSignHex)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -235,7 +228,7 @@ func (c *channelManager) ForceCloseChannel(jsonData string, user *bean.User) (in
 		return nil, err
 	}
 
-	revocableDeliveryTxid, rdhex, err := rpcClient.BtcSignAndSendRawTransaction(lastRevocableDeliveryTx.TxHexFirstSign, reqData.LastTempPrivateKey)
+	revocableDeliveryTxid, err := rpcClient.SendRawTransaction(lastRevocableDeliveryTx.TransactionSignHex)
 	if err != nil {
 		log.Println(err)
 	}
@@ -245,16 +238,14 @@ func (c *channelManager) ForceCloseChannel(jsonData string, user *bean.User) (in
 	defer tx.Rollback()
 
 	lastCommitmentTx.CurrState = dao.TxInfoState_MyselfSign
-	lastCommitmentTx.TxHexEndSign = chex
-	lastCommitmentTx.EndSignAt = time.Now()
+	lastCommitmentTx.SendAt = time.Now()
 	err = tx.Update(lastCommitmentTx)
 	if err != nil {
 		return nil, err
 	}
 
 	lastRevocableDeliveryTx.CurrState = dao.TxInfoState_MyselfSign
-	lastRevocableDeliveryTx.TxHexEndSign = rdhex
-	lastRevocableDeliveryTx.EndSignAt = time.Now()
+	lastRevocableDeliveryTx.SendAt = time.Now()
 	err = tx.Update(lastRevocableDeliveryTx)
 	if err != nil {
 		return nil, err
@@ -310,7 +301,7 @@ func (c *channelManager) SendBreachRemedyTransaction(jsonData string, user *bean
 		return nil, err
 	}
 
-	brtxid, brhex, err := rpcClient.BtcSignAndSendRawTransaction(lastBRTx.TxHexFirstSign, reqData.ChannelAddressPrivateKey)
+	brtxid, err := rpcClient.SendRawTransaction(lastBRTx.TransactionSignHex)
 	if err != nil {
 		err = errors.New("BtcSignAndSendRawTransaction: " + err.Error())
 		log.Println(err)
@@ -318,8 +309,7 @@ func (c *channelManager) SendBreachRemedyTransaction(jsonData string, user *bean
 	}
 	log.Println(brtxid)
 
-	lastBRTx.TxHexEndSign = brhex
-	lastBRTx.EndSignAt = time.Now()
+	lastBRTx.SendAt = time.Now()
 	lastBRTx.CurrState = dao.TxInfoState_MyselfSign
 	err = db.Update(lastBRTx)
 	if err != nil {
@@ -364,7 +354,7 @@ func (c *channelManager) RequestCloseChannel(jsonData string, user *bean.User) (
 	} else {
 		tempAddrPrivateKeyMap[channelInfo.PubKeyB] = reqData.ChannelAddressPrivateKey
 	}
-	tempAddrPrivateKeyMap[lastCommitmentTx.TempPubKey] = reqData.LastTempPrivateKey
+	tempAddrPrivateKeyMap[lastCommitmentTx.TempAddressPubKey] = reqData.LastTempPrivateKey
 	reqData.ChannelAddressPrivateKey = ""
 	reqData.LastTempPrivateKey = ""
 	return reqData, &targetUser, nil
@@ -406,21 +396,7 @@ func (c *channelManager) CloseChannelSign(jsonData string, user *bean.User) (int
 		return nil, nil, err
 	}
 
-	var channelAddressPrivateKey = ""
-	var lastTempPrivateKey = ""
-	if user.PeerId == channelInfo.PeerIdB {
-		channelAddressPrivateKey = tempAddrPrivateKeyMap[channelInfo.PubKeyA]
-	} else {
-		channelAddressPrivateKey = tempAddrPrivateKeyMap[channelInfo.PubKeyB]
-	}
-	lastTempPrivateKey = tempAddrPrivateKeyMap[lastCommitmentTx.TempPubKey]
-
-	if tool.CheckIsString(&channelAddressPrivateKey) == false || tool.CheckIsString(&lastTempPrivateKey) == false {
-		log.Println("error private key, can't signature the transaction")
-		return nil, &targetUser, errors.New("error private key, can't signature the transaction")
-	}
-
-	commitmentTxid, chex, err := rpcClient.BtcSignAndSendRawTransaction(lastCommitmentTx.TxHexFirstSign, channelAddressPrivateKey)
+	commitmentTxid, err := rpcClient.SendRawTransaction(lastCommitmentTx.TransactionSignHex)
 	if err != nil {
 		log.Println(err)
 		return nil, nil, err
@@ -434,7 +410,7 @@ func (c *channelManager) CloseChannelSign(jsonData string, user *bean.User) (int
 		return nil, nil, err
 	}
 
-	revocableDeliveryTxid, rdhex, err := rpcClient.BtcSignAndSendRawTransaction(lastRevocableDeliveryTx.TxHexFirstSign, lastTempPrivateKey)
+	revocableDeliveryTxid, err := rpcClient.SendRawTransaction(lastRevocableDeliveryTx.TransactionSignHex)
 	if err != nil {
 		log.Println(err)
 	}
@@ -444,16 +420,14 @@ func (c *channelManager) CloseChannelSign(jsonData string, user *bean.User) (int
 	defer tx.Rollback()
 
 	lastCommitmentTx.CurrState = dao.TxInfoState_MyselfSign
-	lastCommitmentTx.TxHexEndSign = chex
-	lastCommitmentTx.EndSignAt = time.Now()
+	lastCommitmentTx.SendAt = time.Now()
 	err = tx.Update(lastCommitmentTx)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	lastRevocableDeliveryTx.CurrState = dao.TxInfoState_MyselfSign
-	lastRevocableDeliveryTx.TxHexEndSign = rdhex
-	lastRevocableDeliveryTx.EndSignAt = time.Now()
+	lastRevocableDeliveryTx.SendAt = time.Now()
 	err = tx.Update(lastRevocableDeliveryTx)
 	if err != nil {
 		return nil, nil, err
