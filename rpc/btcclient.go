@@ -187,7 +187,8 @@ func (client *Client) BtcCreateAndSignRawTransaction(fromBitCoinAddress string, 
 	}
 	log.Println("listunspent", array)
 
-	out, _ := decimal.NewFromFloat(minerFee).Add(outTotalAmount).Float64()
+	//out, _ := decimal.NewFromFloat(minerFee).Add(outTotalAmount).Float64()
+	out, _ := outTotalAmount.Float64()
 
 	balance := 0.0
 	var inputs []map[string]interface{}
@@ -203,11 +204,7 @@ func (client *Client) BtcCreateAndSignRawTransaction(fromBitCoinAddress string, 
 		}
 		node["scriptPubKey"] = item.Get("scriptPubKey").String()
 		inputs = append(inputs, node)
-
 		balance, _ = decimal.NewFromFloat(balance).Add(decimal.NewFromFloat(item.Get("amount").Float())).Float64()
-		if balance >= out {
-			break
-		}
 	}
 	log.Println("input list ", inputs)
 
@@ -215,11 +212,30 @@ func (client *Client) BtcCreateAndSignRawTransaction(fromBitCoinAddress string, 
 		return "", "", errors.New("not enough balance")
 	}
 
+	minerFeeAndOut, _ := decimal.NewFromFloat(minerFee).Add(outTotalAmount).Float64()
+
+	subMinerFee := 0.0
+	if balance <= minerFeeAndOut {
+		needLessFee, _ := decimal.NewFromFloat(minerFeeAndOut).Sub(decimal.NewFromFloat(balance)).Float64()
+		if needLessFee > 0 {
+			var outTotalCount = 0
+			for _, item := range outputItems {
+				if item.Amount > 0 {
+					outTotalCount++
+				}
+			}
+			if outTotalCount > 0 {
+				count, _ := decimal.NewFromString(strconv.Itoa(outTotalCount))
+				subMinerFee, _ = decimal.NewFromFloat(minerFee).DivRound(count, 8).Float64()
+			}
+		}
+	}
+
 	drawback, _ := decimal.NewFromFloat(balance).Sub(decimal.NewFromFloat(out)).Float64()
 	output := make(map[string]float64)
 	for _, item := range outputItems {
 		if item.Amount > 0 {
-			output[item.ToBitCoinAddress] = item.Amount
+			output[item.ToBitCoinAddress], _ = decimal.NewFromFloat(item.Amount).Sub(decimal.NewFromFloat(subMinerFee)).Float64()
 		}
 	}
 	output[fromBitCoinAddress] = drawback
@@ -238,7 +254,7 @@ func (client *Client) BtcCreateAndSignRawTransaction(fromBitCoinAddress string, 
 	if privkeys == nil || len(privkeys) == 0 {
 		privkeys = nil
 	}
-	signHex, err := client.SignRawTransactionWithKey(hex, privkeys, nil, "ALL")
+	signHex, err := client.SignRawTransactionWithKey(hex, privkeys, inputs, "ALL")
 	if err != nil {
 		return "", "", err
 	}

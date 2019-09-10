@@ -375,13 +375,6 @@ func (service *commitmentTxSignedManager) CommitmentTxSign(jsonData string, sign
 		return nil, nil, nil, err
 	}
 
-	//for Br
-	//if tool.CheckIsString(&data.LastTempAddressPrivateKey) == false {
-	//	err = errors.New("fail to get the signer's last temp address private key")
-	//	log.Println(err)
-	//	return nil, nil, nil, err
-	//}
-
 	//check the starter's private key
 	// for c rd br
 	creatorChannelAddressPrivateKey := ""
@@ -570,25 +563,18 @@ func createAliceSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFr
 		return nil, err
 	}
 
-	txid, hex, err := rpcClient.BtcCreateAndSignRawTransactionForUnsendInputTx(
+	txid, hex, err := rpcClient.BtcCreateAndSignRawTransaction(
 		channelInfo.ChannelAddress,
 		[]string{
 			tempAddrPrivateKeyMap[channelInfo.PubKeyA],
 			tempAddrPrivateKeyMap[channelInfo.PubKeyB],
-		},
-		[]rpc.TransactionInputItem{
-			{commitmentTxInfo.InputTxid,
-				channelInfo.ChannelAddressScriptPubKey,
-				commitmentTxInfo.InputVout,
-				commitmentTxInfo.InputAmount},
 		},
 		[]rpc.TransactionOutputItem{
 			{commitmentTxInfo.MultiAddress, commitmentTxInfo.AmountM},
 			{outputBean.ToAddress, commitmentTxInfo.AmountB},
 		},
 		0,
-		0,
-		&channelInfo.ChannelAddressRedeemScript)
+		0)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -775,25 +761,18 @@ func createBobSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFrom
 		return nil, err
 	}
 
-	txid, hex, err := rpcClient.BtcCreateAndSignRawTransactionForUnsendInputTx(
+	txid, hex, err := rpcClient.BtcCreateAndSignRawTransaction(
 		channelInfo.ChannelAddress,
 		[]string{
 			tempAddrPrivateKeyMap[channelInfo.PubKeyA],
 			tempAddrPrivateKeyMap[channelInfo.PubKeyB],
-		},
-		[]rpc.TransactionInputItem{
-			{commitmentTxInfo.InputTxid,
-				channelInfo.ChannelAddressScriptPubKey,
-				commitmentTxInfo.InputVout,
-				commitmentTxInfo.InputAmount},
 		},
 		[]rpc.TransactionOutputItem{
 			{commitmentTxInfo.MultiAddress, commitmentTxInfo.AmountM},
 			{outputBean.ToAddress, commitmentTxInfo.AmountB},
 		},
 		0,
-		0,
-		&channelInfo.ChannelAddressRedeemScript)
+		0)
 	if err != nil {
 		log.Println(err)
 		return nil, err
