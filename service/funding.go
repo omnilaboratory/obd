@@ -422,13 +422,11 @@ func (service *fundingTransactionManager) FundingTxSign(jsonData string, signer 
 
 	if reqData.Attitude {
 		// if agree,send the fundingtx to chain network
-		//txid, err := rpcClient.SendRawTransaction(fundingTransaction.FundingTxHex)
+		_, err := rpcClient.SendRawTransaction(fundingTransaction.FundingTxHex)
 		if err != nil {
 			log.Println(err)
-			//return nil, err
+			return nil, err
 		}
-		//fundingTransaction.TxId = txid
-
 	}
 
 	if reqData.Attitude == false {
