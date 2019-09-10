@@ -231,7 +231,7 @@ OBD creats the complete message for Alice and route it to Bob:
 	}
 }
 ```
-In Bob's browser, he will see the message, and he accept the request, by send the following request back:
+In Bob's browser, he will see the message, and he accept the request, by sending the following message back:
 ```
 {
 	"type":-33,
@@ -246,24 +246,91 @@ In Bob's browser, he will see the message, and he accept the request, by send th
 
 When you test, you should replace the `temporary_channel_id` by the exact value that OBD generates for you.
 
-[type: -33 ChannelAccept](https://github.com/LightningOnOmnilayer/Omni-BOLT-spec/blob/master/OmniBOLT-02-peer-protocol.md#the-accept_channel-message)
-Bob:
+### deposit
+Alice(mtu1CPCHK1yfTCwiTquSKRHcBrW2mHmfJH) deposit 0.01 to the channel (2N3vGUfBSNALGGxUo8gTYpVQAmLwjXomLhF), fee is 0.00001, and then abtain the deposite transaction ID:
+
+**request**
 ```
 {
-  "type":-33,
-  "data":[229,183,118,180,41,204,14,173,33,18,101,64,250,6,244,29,115,151,105,108,147,205,77,16,175,249,148,105,117,192,181,34]
+    	"type":1009,
+    	"data":{
+		"fromBitCoinAddress":"mtu1CPCHK1yfTCwiTquSKRHcBrW2mHmfJH",
+		"fromBitCoinAddressPrivKey":"cTBs2yp9DFeJhsJmg9ChFDuC694oiVjSakmU7s6CFr35dfhcko1V",
+		"toBitCoinAddress":"2N3vGUfBSNALGGxUo8gTYpVQAmLwjXomLhF",
+		"amount":0.001,
+		"minerFee":0.00001,
+    	}
 }
 ```
 
-To test "open_channel" in light client mode, open two browsers, one for Alice, and one for Bob. Alice sends [open_channel](https://github.com/LightningOnOmnilayer/Omni-BOLT-spec/blob/master/OmniBOLT-02-peer-protocol.md#the-open_channel-message) to Bob, and Bob replies with APPROAVAL:
+OBD responses with the transaction script and other payloads:
 
-<p align="center">
-  <img width="600" alt="create channel" src="https://github.com/LightningOnOmnilayer/Omni-BOLT-spec/blob/master/imgs/CreateChannel.png">
-</p>
+```
+{
+	"type":1009,
+	"status":true,
+	"sender":"1323c03c-d60f-4465-af15-174d97938309",
+	"result":{
+		"hex":"02000000..... too long to display, you shall get your response from OBD......014eba8ac00000000",
+		"txid":"e25c3f5763b11cda6ea56ad8eda7e5677a037aa614208e46acfa5d8484e89f39"
+	}
+}
+```
+
+then Alice tells Bob she created a deposit transaction:
+```
+{
+	"type":-34,
+	"data":{
+		"temporary_channel_id":[138,61,69,205,17,204,61,156,218,215,97,165,250,225,12,179,46,100,75,124,17,22,112,193,15,17,84,236,116,199,108,126],
+		"property_id":0,
+ 		"funding_tx_hex":"0200e28a6..... too long to display, you shall get your transaction hex from OBD .......a88ac00000000",
+		"temp_address_pub_key":"03ea01f8b137df5744ec2b0b91bc46139cabf228403264df65f6233bd7f0cbd17d",
+    		"temp_address_private_key":"cSgTisoiZLzH5vrwHBMAXLC5nvND2ffcqqDtejMg12rEVrUMeP5R",
+		"channel_address_private_key":"cTBs2yp9DFeJhsJmg9ChFDuC694oiVjSakmU7s6CFr35dfhcko1V"
+	}
+}
+```
+Bob replies he knows this deposit, and then OBD creates commitment transaction, revockable delivery transaction and breach remedy transaction:
+```
+{
+	"type":-35,
+	"data":{
+		"channel_id":[57,159,232,132,132,93,250,172,70,142,32,20,166,122,3,122,103,229,167,237,216,106,165,110,218,28,177,99,87,63,92,226],
+		"fundee_channel_address_private_key":"cUC9UsuybBiS7ZBFBhEFaeuhBXbPSm6yUBZVaMSD2DqS3aiBouvS",
+		"attitude":true
+    	}
+    }
+```
+
+OBD send message to both Alice and Bob, reporting the status of all the internal transactions:
+```
+{
+	"type":-35,
+	"status":true,
+	"sender":"bob",
+	"result":
+	{
+		"amount_a":0.001,
+		"amount_b":0,"channel_id":[57,159,232,132,132,93,250,172,70,142,32,20,166,122,3,122,103,229,167,237,216,106,165,110,218,28,177,99,87,63,92,226],
+		"channel_info_id":1,
+		"create_at":"2019-09-10T17:39:04.5786763+08:00",
+		"create_by":"alice",
+		"curr_state":20,
+		"fundee_sign_at":"2019-09-10T17:39:19.8482475+08:00",
+		"funder_pub_key_2_for_commitment":"03ea01f8b137df5744ec2b0b91bc46139cabf228403264df65f6233bd7f0cbd17d",
+		"funding_output_index":0,
+		"funding_tx_hex":"02000000014eba4c789910f6a37455eda8da82517992e1e28a69a5b1d82233a8cc364ee0a4010000006a47304402207f1c6a788846bad8d1bc1f4a785dcb8c83aa8c90dc132e0bb5059b26b1a31c640220435a70c37cba9c9464e03f395588385253c2a73320a820da6e87dcfd0450b5fd01210389cc1a24ee6aa7e9b8133df08b60ee2fc41ea2a37e50ebafb4392d313594f1c0ffffffff02a08601000000000017a91475138ee96bf42cec92a6815d4fd47b821fbdeceb8799fe0100000000001976a91492c53581aa6f00960c4a1a50039c00ffdbe9e74a88ac00000000",
+		"funding_txid":"e25c3f5763b11cda6ea56ad8eda7e5677a037aa614208e46acfa5d8484e89f39",
+		"id":1,
+		"peer_id_a":"alice",
+		"peer_id_b":"bob",
+		"property_id":0}}
+```
 
 
 # How to Contribute
-OmniBOLT Daemon is MIT licensed open source software. Hopefully you can get started by doing the above steps, but Lightning network is not that easy to develop. Anyone is welcome to join this journey, and please be nice to each other, don't bring any illegal/private stuff, abuse or racial into our community.   
+OmniBOLT Daemon is MIT licensed open source software. Hopefully you can get started by doing the above steps, but Lightning network is not that easy to develop. Anyone is welcome to join this journey, and please be nice to each other, don't bring any illegal/private stuff, abuse or racial into our community.
 
 Please submit issues to this repo or help us with those open ones.
 
