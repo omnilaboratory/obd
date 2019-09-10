@@ -12,6 +12,11 @@ LightningOnOmni implements the [OmniBOLT](https://github.com/LightningOnOmnilaye
 	* [Step 3: compile and run OmniBOLT daemon](https://github.com/LightningOnOmnilayer/LightningOnOmni#step-3-compile-and-run-omnibolt-daemon)
 	* [Step 4: test channel operations using Websocket testing tool](https://github.com/LightningOnOmnilayer/LightningOnOmni#step-4-test-channel-operations-using-websocket-testing-tool)
 	* [Step 5: channel operations on test site](https://github.com/LightningOnOmnilayer/LightningOnOmni#step-5-channel-operations-on-test-site)
+		*[login](https://github.com/LightningOnOmnilayer/LightningOnOmni#login)
+		*[create channel](https://github.com/LightningOnOmnilayer/LightningOnOmni#create-channel)
+		*[deposit](https://github.com/LightningOnOmnilayer/LightningOnOmni#deposit)
+		*[payments in channel](https://github.com/LightningOnOmnilayer/LightningOnOmni#payments-in-a-channel)
+		*close channel (TBD)
  * [How to Contribute](https://github.com/LightningOnOmnilayer/LightningOnOmni#how-to-contribute)
  * [Current Features](https://github.com/LightningOnOmnilayer/LightningOnOmni#current-features)
  * [Related Projects](https://github.com/LightningOnOmnilayer/LightningOnOmni#related-projects)
@@ -326,7 +331,9 @@ OBD sends a message to both Alice and Bob, reporting the status(true or false) o
 		"id":1,
 		"peer_id_a":"alice",
 		"peer_id_b":"bob",
-		"property_id":0}}
+		"property_id":0
+	}
+}
 ```
 
 ### payments in a channel
@@ -375,7 +382,7 @@ then Bob replies the money is well receieved:
 }
 ```
 
-Remember to watch the display of `Message log` window, to see what OBD relies in each communication between Alice and Bob. Thesea are usefull when we try to debug OBD and to write real code for it.
+Remember to watch the display of `Message log` window, to see what OBD replies in each communication between Alice and Bob. These are usefull information when we try to debug OBD and to write real code for it.
 
 This document is not completed yet, and will be updated during our programming.
 
