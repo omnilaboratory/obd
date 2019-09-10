@@ -125,9 +125,9 @@ Which tells us the daemon is running. We are going to use WebSocket online testi
 
 
 ## Step 4: Test channel operations using Websocket testing tool.
-Since OmniBOLT deamon(OBD) exposes WebSocket services, we use online WS testing tool to do experiments. Go to:
+Since OmniBOLT deamon(OBD) exposes WebSocket services, we use web socket test client for Chrome to do experiments. Install it from:
 ```
-https://www.websocket.org/echo.html
+https://chrome.google.com/webstore/detail/websocket-test-client/fgponpodhbmadfljofbimhhlengambbn?hl=en
 ```
 Make sure your browser supports WebSocket, as displayed in this screenshot.
 
@@ -135,24 +135,53 @@ Make sure your browser supports WebSocket, as displayed in this screenshot.
   <img width="500" alt="Screenshot of Websocket online testing site" src="https://github.com/LightningOnOmnilayer/Omni-BOLT-spec/blob/master/imgs/WebSocketTestSite.png">
 </p>
 
-Input `ws://127.0.0.1:60020/ws`, press `Connect`. If on the right text pannel, displays `CONNECTED`, then we are ready to send messeages to OBD.
+Input `ws://127.0.0.1:60020/ws`, press `Open`. If on the right text pannel, displays `OPENED`, then we are ready to send messeages to OBD.
 
-The first message is to get new Omni address for a channel. input the following request into the Message box, and press `SEND`:
+The first message is to login as `Alice`. input the following request into the Request box, and press `SEND`:
 ```
-{"type":1001", data":"email"}
+{
+	"type":1,
+	"data":{
+        "peer_id":"alice"
+        }
+}
 ```
 
-In the right side text pannel, displays the response message from OBD:
+In the `Message Log` pannel, displays the response message from OBD:
 ```
-RECEIVED: {"type":1001,"status":true,"sender":"59dfb5e2-f1dc-46c6-8ff3-dfc9f2f1ea82","result":"mzCihFnTFyZUo76QMKovoWWJAPkBqDi63J"}
+{"type":1,"status":true,"sender":"alice","result":"alice login"}
 ```
 
-It works
+It works.
 
-## Step 5: Channel Operations
+## Step 5: Channel Operations on test site
 
-For example:
+We created a test site for testing OBD commands for new users. Remember this site is for testing only. The URL is:
 
+```
+ws://62.234.216.108:60020/ws
+```
+Open two chrom browsers, left is Alice and the right is Bob. Input URL and click `OPEN`, then both status will show `OPENED`.
+
+### login
+```
+1、alice login
+{
+	"type":1,
+	"data":{
+        "peer_id":"alice"
+        }
+}
+2、bob login
+{
+	"type":1,
+	"data":{
+        "peer_id":"bob"
+        }
+}
+```
+
+### create channel
 [type: -32 openchannel](https://github.com/LightningOnOmnilayer/Omni-BOLT-spec/blob/master/OmniBOLT-02-peer-protocol.md#the-open_channel-message)
 
 Alice:
