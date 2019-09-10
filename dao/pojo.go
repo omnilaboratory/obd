@@ -77,16 +77,16 @@ type FundingTransaction struct {
 type TxInfoState int
 
 const (
-	TxInfoState_OtherSign  TxInfoState = 10
-	TxInfoState_MyselfSign TxInfoState = 20
-	TxInfoState_Abord      TxInfoState = 30
+	TxInfoState_CreateAndSign TxInfoState = 10
+	TxInfoState_SendHex       TxInfoState = 20
+	TxInfoState_Abord         TxInfoState = 30
 )
 
 type CommitmentTxRequestInfo struct {
-	Id        int `storm:"id,increment" json:"id" `
-	ChannelId bean.ChannelID
-	UserId    string
+	Id int `storm:"id,increment" json:"id" `
 	bean.CommitmentTx
+	ChannelId             bean.ChannelID
+	UserId                string
 	LastTempAddressPubKey string
 	CreateAt              time.Time
 	IsEnable              bool

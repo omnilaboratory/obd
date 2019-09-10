@@ -70,7 +70,7 @@ func (service *commitmentTxManager) CreateNewCommitmentTxRequest(jsonData string
 	}
 
 	lastCommitmentTxInfo := &dao.CommitmentTransaction{}
-	err = db.Select(q.Eq("ChannelId", data.ChannelId), q.Eq("CurrState", dao.TxInfoState_OtherSign), q.Eq("Owner", creator.PeerId)).OrderBy("CreateAt").Reverse().First(lastCommitmentTxInfo)
+	err = db.Select(q.Eq("ChannelId", data.ChannelId), q.Eq("CurrState", dao.TxInfoState_CreateAndSign), q.Eq("Owner", creator.PeerId)).OrderBy("CreateAt").Reverse().First(lastCommitmentTxInfo)
 	if err != nil {
 		return nil, nil, errors.New("not find the lastCommitmentTxInfo")
 	}
@@ -330,7 +330,7 @@ func (service *commitmentTxSignedManager) CommitmentTxSign(jsonData string, sign
 	}
 
 	var requestCommitmentTx = &dao.CommitmentTransaction{}
-	err = db.Select(q.Eq("ChannelId", data.ChannelId), q.Eq("CurrHash", data.RequestCommitmentHash), q.Eq("Owner", targetUser), q.Eq("CurrState", dao.TxInfoState_OtherSign)).OrderBy("CreateAt").Reverse().First(requestCommitmentTx)
+	err = db.Select(q.Eq("ChannelId", data.ChannelId), q.Eq("CurrHash", data.RequestCommitmentHash), q.Eq("Owner", targetUser), q.Eq("CurrState", dao.TxInfoState_CreateAndSign)).OrderBy("CreateAt").Reverse().First(requestCommitmentTx)
 	if err != nil {
 		err = errors.New("not found the requested commitment tx")
 		log.Println(err)
@@ -466,7 +466,7 @@ func createAliceSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFr
 	}
 
 	var lastCommitmentATx = &dao.CommitmentTransaction{}
-	err := tx.Select(q.Eq("ChannelId", signData.ChannelId), q.Eq("Owner", owner), q.Eq("CurrState", dao.TxInfoState_OtherSign)).OrderBy("CreateAt").Reverse().First(lastCommitmentATx)
+	err := tx.Select(q.Eq("ChannelId", signData.ChannelId), q.Eq("Owner", owner), q.Eq("CurrState", dao.TxInfoState_CreateAndSign)).OrderBy("CreateAt").Reverse().First(lastCommitmentATx)
 	if err != nil {
 		lastCommitmentATx = nil
 	}
@@ -516,11 +516,11 @@ func createAliceSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFr
 		breachRemedyTransaction.Txid = txid
 		breachRemedyTransaction.TransactionSignHex = hex
 		breachRemedyTransaction.SignAt = time.Now()
-		breachRemedyTransaction.CurrState = dao.TxInfoState_OtherSign
+		breachRemedyTransaction.CurrState = dao.TxInfoState_CreateAndSign
 		err = tx.Save(breachRemedyTransaction)
 
 		lastRDTransaction := &dao.RevocableDeliveryTransaction{}
-		err = tx.Select(q.Eq("ChannelId", signData.ChannelId), q.Eq("Owner", owner), q.Eq("CommitmentTxId", lastCommitmentATx.Id), q.Eq("CurrState", dao.TxInfoState_OtherSign)).OrderBy("CreateAt").Reverse().First(lastRDTransaction)
+		err = tx.Select(q.Eq("ChannelId", signData.ChannelId), q.Eq("Owner", owner), q.Eq("CommitmentTxId", lastCommitmentATx.Id), q.Eq("CurrState", dao.TxInfoState_CreateAndSign)).OrderBy("CreateAt").Reverse().First(lastRDTransaction)
 		if err != nil {
 			log.Println(err)
 			return nil, err
@@ -597,7 +597,7 @@ func createAliceSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFr
 	commitmentTxInfo.Txid = txid
 	commitmentTxInfo.TransactionSignHex = hex
 	commitmentTxInfo.SignAt = time.Now()
-	commitmentTxInfo.CurrState = dao.TxInfoState_OtherSign
+	commitmentTxInfo.CurrState = dao.TxInfoState_CreateAndSign
 	commitmentTxInfo.LastHash = ""
 	commitmentTxInfo.CurrHash = ""
 	if lastCommitmentATx != nil {
@@ -657,7 +657,7 @@ func createAliceSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFr
 	rdTransaction.Txid = txid
 	rdTransaction.TransactionSignHex = hex
 	rdTransaction.SignAt = time.Now()
-	rdTransaction.CurrState = dao.TxInfoState_OtherSign
+	rdTransaction.CurrState = dao.TxInfoState_CreateAndSign
 	err = tx.Save(rdTransaction)
 	if err != nil {
 		log.Println(err)
@@ -674,7 +674,7 @@ func createBobSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFrom
 	}
 
 	var lastCommitmentBTx = &dao.CommitmentTransaction{}
-	err := tx.Select(q.Eq("ChannelId", signData.ChannelId), q.Eq("Owner", owner), q.Eq("CurrState", dao.TxInfoState_OtherSign), q.Or(q.Eq("PeerIdA", signer.PeerId), q.Eq("PeerIdB", signer.PeerId))).OrderBy("CreateAt").Reverse().First(lastCommitmentBTx)
+	err := tx.Select(q.Eq("ChannelId", signData.ChannelId), q.Eq("Owner", owner), q.Eq("CurrState", dao.TxInfoState_CreateAndSign), q.Or(q.Eq("PeerIdA", signer.PeerId), q.Eq("PeerIdB", signer.PeerId))).OrderBy("CreateAt").Reverse().First(lastCommitmentBTx)
 	if err != nil {
 		lastCommitmentBTx = nil
 	}
@@ -722,11 +722,11 @@ func createBobSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFrom
 		breachRemedyTransaction.Txid = txid
 		breachRemedyTransaction.TransactionSignHex = hex
 		breachRemedyTransaction.SignAt = time.Now()
-		breachRemedyTransaction.CurrState = dao.TxInfoState_OtherSign
+		breachRemedyTransaction.CurrState = dao.TxInfoState_CreateAndSign
 		err = tx.Save(breachRemedyTransaction)
 
 		lastRDTransaction := &dao.RevocableDeliveryTransaction{}
-		err = tx.Select(q.Eq("ChannelId", signData.ChannelId), q.Eq("Owner", owner), q.Eq("CommitmentTxId", lastCommitmentBTx.Id), q.Eq("CurrState", dao.TxInfoState_OtherSign)).OrderBy("CreateAt").Reverse().First(lastRDTransaction)
+		err = tx.Select(q.Eq("ChannelId", signData.ChannelId), q.Eq("Owner", owner), q.Eq("CommitmentTxId", lastCommitmentBTx.Id), q.Eq("CurrState", dao.TxInfoState_CreateAndSign)).OrderBy("CreateAt").Reverse().First(lastRDTransaction)
 		if err != nil {
 			log.Println(err)
 			return nil, err
@@ -804,7 +804,7 @@ func createBobSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFrom
 	commitmentTxInfo.Txid = txid
 	commitmentTxInfo.TransactionSignHex = hex
 	commitmentTxInfo.SignAt = time.Now()
-	commitmentTxInfo.CurrState = dao.TxInfoState_OtherSign
+	commitmentTxInfo.CurrState = dao.TxInfoState_CreateAndSign
 	commitmentTxInfo.CurrHash = ""
 	commitmentTxInfo.LastHash = ""
 	if lastCommitmentBTx != nil {
@@ -864,7 +864,7 @@ func createBobSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFrom
 	rdTransaction.Txid = txid
 	rdTransaction.TransactionSignHex = hex
 	rdTransaction.SignAt = time.Now()
-	rdTransaction.CurrState = dao.TxInfoState_OtherSign
+	rdTransaction.CurrState = dao.TxInfoState_CreateAndSign
 	err = tx.Save(rdTransaction)
 	if err != nil {
 		log.Println(err)

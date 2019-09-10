@@ -220,7 +220,6 @@ func (c *channelManager) ForceCloseChannel(jsonData string, user *bean.User) (in
 		return nil, err
 	}
 	log.Println(commitmentTxid)
-	//
 
 	lastRevocableDeliveryTx := &dao.RevocableDeliveryTransaction{}
 	err = db.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("Owner", user.PeerId)).OrderBy("CreateAt").Reverse().First(lastRevocableDeliveryTx)
@@ -241,14 +240,14 @@ func (c *channelManager) ForceCloseChannel(jsonData string, user *bean.User) (in
 	tx, err := db.Begin(true)
 	defer tx.Rollback()
 
-	lastCommitmentTx.CurrState = dao.TxInfoState_MyselfSign
+	lastCommitmentTx.CurrState = dao.TxInfoState_SendHex
 	lastCommitmentTx.SendAt = time.Now()
 	err = tx.Update(lastCommitmentTx)
 	if err != nil {
 		return nil, err
 	}
 
-	lastRevocableDeliveryTx.CurrState = dao.TxInfoState_MyselfSign
+	lastRevocableDeliveryTx.CurrState = dao.TxInfoState_SendHex
 	lastRevocableDeliveryTx.SendAt = time.Now()
 	err = tx.Update(lastRevocableDeliveryTx)
 	if err != nil {
@@ -299,7 +298,7 @@ func (c *channelManager) SendBreachRemedyTransaction(jsonData string, user *bean
 	}
 
 	lastBRTx := &dao.BreachRemedyTransaction{}
-	err = db.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("CurrState", dao.TxInfoState_OtherSign), q.Eq("Owner", user.PeerId)).OrderBy("CreateAt").Reverse().First(lastBRTx)
+	err = db.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("CurrState", dao.TxInfoState_CreateAndSign), q.Eq("Owner", user.PeerId)).OrderBy("CreateAt").Reverse().First(lastBRTx)
 	if err != nil {
 		err = errors.New("not found the latest br")
 		log.Println(err)
@@ -315,7 +314,7 @@ func (c *channelManager) SendBreachRemedyTransaction(jsonData string, user *bean
 	log.Println(brtxid)
 
 	lastBRTx.SendAt = time.Now()
-	lastBRTx.CurrState = dao.TxInfoState_MyselfSign
+	lastBRTx.CurrState = dao.TxInfoState_SendHex
 	err = db.Update(lastBRTx)
 	if err != nil {
 		log.Println(err)
@@ -429,14 +428,14 @@ func (c *channelManager) CloseChannelSign(jsonData string, user *bean.User) (int
 	tx, err := db.Begin(true)
 	defer tx.Rollback()
 
-	lastCommitmentTx.CurrState = dao.TxInfoState_MyselfSign
+	lastCommitmentTx.CurrState = dao.TxInfoState_SendHex
 	lastCommitmentTx.SendAt = time.Now()
 	err = tx.Update(lastCommitmentTx)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	lastRevocableDeliveryTx.CurrState = dao.TxInfoState_MyselfSign
+	lastRevocableDeliveryTx.CurrState = dao.TxInfoState_SendHex
 	lastRevocableDeliveryTx.SendAt = time.Now()
 	err = tx.Update(lastRevocableDeliveryTx)
 	if err != nil {
