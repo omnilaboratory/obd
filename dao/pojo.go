@@ -71,7 +71,6 @@ type FundingTransaction struct {
 	CreateBy                   string                  `json:"create_by"`
 	CreateAt                   time.Time               `json:"create_at"`
 	FundeeSignAt               time.Time               `json:"fundee_sign_at"`
-	TxId                       string                  `json:"tx_id"`
 }
 
 type TxInfoState int

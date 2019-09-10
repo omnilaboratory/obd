@@ -36,6 +36,26 @@ func (service *commitmentTxManager) CreateNewCommitmentTxRequest(jsonData string
 		return nil, nil, errors.New("wrong channel_id")
 	}
 
+	channelInfo := &dao.ChannelInfo{}
+	err = db.Select(q.Eq("ChannelId", data.ChannelId), q.Eq("CurrState", dao.ChannelState_Accept)).First(channelInfo)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	lastCommitmentTxInfo := &dao.CommitmentTransaction{}
+	err = db.Select(q.Eq("ChannelId", data.ChannelId), q.Eq("CurrState", dao.TxInfoState_CreateAndSign), q.Eq("Owner", creator.PeerId)).OrderBy("CreateAt").Reverse().First(lastCommitmentTxInfo)
+	if err != nil {
+		return nil, nil, errors.New("not find the lastCommitmentTxInfo")
+	}
+	balance := lastCommitmentTxInfo.AmountM
+	if balance < 0 {
+		return nil, nil, errors.New("not enough balance")
+	}
+
+	if balance < data.Amount {
+		return nil, nil, errors.New("not enough payment amount")
+	}
+
 	if tool.CheckIsString(&data.ChannelAddressPrivateKey) == false {
 		return nil, nil, errors.New("wrong ChannelAddressPrivateKey")
 	}
@@ -56,31 +76,11 @@ func (service *commitmentTxManager) CreateNewCommitmentTxRequest(jsonData string
 		return nil, nil, errors.New("wrong payment amount")
 	}
 
-	channelInfo := &dao.ChannelInfo{}
-	err = db.Select(q.Eq("ChannelId", data.ChannelId), q.Eq("CurrState", dao.ChannelState_Accept)).First(channelInfo)
-	if err != nil {
-		return nil, nil, err
-	}
-
 	isAliceCreateTransfer := true
 	targetUser = &channelInfo.PeerIdB
 	if creator.PeerId == channelInfo.PeerIdB {
 		isAliceCreateTransfer = false
 		targetUser = &channelInfo.PeerIdA
-	}
-
-	lastCommitmentTxInfo := &dao.CommitmentTransaction{}
-	err = db.Select(q.Eq("ChannelId", data.ChannelId), q.Eq("CurrState", dao.TxInfoState_CreateAndSign), q.Eq("Owner", creator.PeerId)).OrderBy("CreateAt").Reverse().First(lastCommitmentTxInfo)
-	if err != nil {
-		return nil, nil, errors.New("not find the lastCommitmentTxInfo")
-	}
-	balance := lastCommitmentTxInfo.AmountM
-	if balance < 0 {
-		return nil, nil, errors.New("not enough balance")
-	}
-
-	if balance < data.Amount {
-		return nil, nil, errors.New("not enough payment amount")
 	}
 
 	//store the privateKey of last temp addr
@@ -103,8 +103,8 @@ func (service *commitmentTxManager) CreateNewCommitmentTxRequest(jsonData string
 	var tempInfo = &dao.CommitmentTxRequestInfo{}
 	_ = db.Select(q.Eq("ChannelId", data.ChannelId), q.Eq("UserId", creator.PeerId), q.Eq("IsEnable", true)).First(tempInfo)
 	tempInfo.CommitmentTx = *data
+	tempInfo.LastTempAddressPubKey = lastCommitmentTxInfo.TempAddressPubKey
 	if tempInfo.Id == 0 {
-		tempInfo.LastTempAddressPubKey = lastCommitmentTxInfo.TempAddressPubKey
 		tempInfo.ChannelId = data.ChannelId
 		tempInfo.UserId = creator.PeerId
 		tempInfo.CreateAt = time.Now()
@@ -376,11 +376,11 @@ func (service *commitmentTxSignedManager) CommitmentTxSign(jsonData string, sign
 	}
 
 	//for Br
-	if tool.CheckIsString(&data.LastTempAddressPrivateKey) == false {
-		err = errors.New("fail to get the signer's last temp address private key")
-		log.Println(err)
-		return nil, nil, nil, err
-	}
+	//if tool.CheckIsString(&data.LastTempAddressPrivateKey) == false {
+	//	err = errors.New("fail to get the signer's last temp address private key")
+	//	log.Println(err)
+	//	return nil, nil, nil, err
+	//}
 
 	//check the starter's private key
 	// for c rd br
