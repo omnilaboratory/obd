@@ -8,6 +8,10 @@ LightningOnOmni implements the [OmniBOLT](https://github.com/LightningOnOmnilaye
  * [Dependency](https://github.com/LightningOnOmnilayer/LightningOnOmni#dependency)
  * [Installation](https://github.com/LightningOnOmnilayer/LightningOnOmni#installation)
 	* [Step 1: fetch the source code](https://github.com/LightningOnOmnilayer/LightningOnOmni#step-1-fetch-the-source-code)
+	* [Step 2: set up OmniCore node](https://github.com/LightningOnOmnilayer/LightningOnOmni#step-2)
+	* [Step 3: compile and run OmniBOLT daemon](https://github.com/LightningOnOmnilayer/LightningOnOmni#step-3-compile-and-run-omnibolt-daemon)
+	* [Step 4: test channel operations using Websocket testing tool](https://github.com/LightningOnOmnilayer/LightningOnOmni#step-4-test-channel-operations-using-websocket-testing-tool)
+	* [Step 5: channel operations on test site](https://github.com/LightningOnOmnilayer/LightningOnOmni#step-5-channel-operations-on-test-site)
  * [How to Contribute](https://github.com/LightningOnOmnilayer/LightningOnOmni#how-to-contribute)
  * [Current Features](https://github.com/LightningOnOmnilayer/LightningOnOmni#current-features)
  * [Related Projects](https://github.com/LightningOnOmnilayer/LightningOnOmni#related-projects)
@@ -183,34 +187,64 @@ Open two chrom browsers, left is Alice and the right is Bob. Input URL and click
 ```
 
 ### create channel
-[type: -32 openchannel](https://github.com/LightningOnOmnilayer/Omni-BOLT-spec/blob/master/OmniBOLT-02-peer-protocol.md#the-open_channel-message)
 
-Alice:
+Alice send request to Bob for creating a channel between them:
+
+**reqest:**
 ```
- {"type":0,
-    "sender":"44ff0d17-13d0-4741-9f8d-e59b17011965",
-    "recipient":"",
-    "data":"{\"id\":1,
-              \"chain_hash\":\"1EXoDusjGwvnjZUyKkxZ4UHEf77z6A5S4P\",   
-              \"temporary_channel_id\":[229,183,118,180,41,204,14,173,33,18,101,64,250,6,244,29,115,151,105,108,147,205,77,16,175,249,148,105,117,192,181,34],
-              \"funding_satoshis\":0,
-              \"push_msat\":0,
-              \"dust_limit_satoshis\":0,
-              \"max_htlc_value_in_flight_msat\":0,
-              \"channel_reserve_satoshis\":0,
-              \"htlc_minimum_msat\":0,
-              \"feerate_per_kw\":0,
-              \"to_self_delay\":0,
-              \"max_accepted_htlcs\":0,
-              \"funding_pubkey\":\"n1Grf4JGHUC2CdHHoDRYb7jbVKU2Fv8Tsn\",
-              \"revocation_basepoint\":\"\",
-              \"payment_basepoint\":\"\",
-              \"delayed_payment_basepoint\":\"\",
-              \"htlc_basepoint\":\"\",
-              \"create_at\":\"2019-08-23T09:22:16.0104522+08:00\"
-    }"
-} 
+    {
+    	"type":-32,
+    		"data":{"funding_pubkey":"0389cc1a24ee6aa7e9b8133df08b60ee2fc41ea2a37e50ebafb4392d313594f1c0",
+			"funding_address":"mtu1CPCHK1yfTCwiTquSKRHcBrW2mHmfJH"
+    		},
+	"recipient_peer_id":"bob"
+    }
 ```
+OBD creats the complete message for Alice and route it to Bob:
+```
+{
+	"type":-32,
+	"status":true,
+	"sender":"bob",
+	"result":{
+		"type":-32,
+		"status":true,
+		"sender":"bob",
+		"result":		
+			{"chain_hash":"1EXoDusjGwvnjZUyKkxZ4UHEf77z6A5S4P",
+			"channel_reserve_satoshis":0,
+			"delayed_payment_basepoint":"",
+			"dust_limit_satoshis":0,
+			"feerate_per_kw":0,
+			"funding_address":"mtu1CPCHK1yfTCwiTquSKRHcBrW2mHmfJH",
+			"funding_pubkey":"0389cc1a24ee6aa7e9b8133df08b60ee2fc41ea2a37e50ebafb4392d313594f1c0",
+			"funding_satoshis":0,
+			"htlc_basepoint":"",
+			"htlc_minimum_msat":0,
+			"max_accepted_htlcs":0,
+			"max_htlc_value_in_flight_msat":0,
+			"payment_basepoint":"",
+			"push_msat":0,
+			"revocation_basepoint":"",
+			"temporary_channel_id":[115,110,9,131,137,123,219,126,153,157,22,1,117,48,237,221,100,2,148,125,222,216,233,4,201,195,248,13,230,112,81,178],
+			"to_self_delay":0
+	}
+}
+```
+In Bob's browser, he will see the message, and he accept the request, by send the following request back:
+```
+{
+	"type":-33,
+	"data":{
+		"temporary_channel_id":[115,110,9,131,137,123,219,126,153,157,22,1,117,48,237,221,100,2,148,125,222,216,233,4,201,195,248,13,230,112,81,178],
+		"funding_pubkey":"0303391b3681f48f5f181bbfbdea741b9a2fdac0e8d99def43b6faed78bb8a4e28",
+		"funding_address":"n4bJvpVHks3Fz9wWB9f445LGV5xTS6LGpA",
+		"attitude":true
+	}
+}
+```
+
+When you test, you should replace the `temporary_channel_id` by the exact value that OBD generates for you.
 
 [type: -33 ChannelAccept](https://github.com/LightningOnOmnilayer/Omni-BOLT-spec/blob/master/OmniBOLT-02-peer-protocol.md#the-accept_channel-message)
 Bob:
