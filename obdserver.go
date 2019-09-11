@@ -3,6 +3,7 @@ package main
 import (
 	"LightningOnOmni/config"
 	"LightningOnOmni/lightclient"
+	"LightningOnOmni/service"
 	"google.golang.org/grpc"
 	"log"
 	"net/http"
@@ -16,9 +17,6 @@ func init() {
 // gox compile  https://blog.csdn.net/han0373/article/details/81391455
 //gox -os "windows linux darwin" -arch amd64
 func main() {
-
-	// Timer
-	//service.ScheduleService.StartSchudule()
 
 	// grpc
 	//go grpcpack.Server()
@@ -34,7 +32,12 @@ func main() {
 		WriteTimeout:   config.WriteTimeout,
 		MaxHeaderBytes: 1 << 20,
 	}
+
+	// Timer
+	service.ScheduleService.StartSchedule()
+
 	log.Fatal(server.ListenAndServe())
+
 }
 
 func startupGRPCClient() *grpc.ClientConn {

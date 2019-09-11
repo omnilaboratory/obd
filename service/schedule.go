@@ -1,37 +1,39 @@
 package service
 
 import (
-	"LightningOnOmni/config"
 	"LightningOnOmni/dao"
 	"github.com/asdine/storm/q"
 	"log"
 	"time"
 )
 
-type ScheduleManager struct {
-	delay time.Duration
+type scheduleManager struct {
 }
 
-var ScheduleService = ScheduleManager{
-	delay: config.Schedule_Delay10min,
-}
-var ticker = &time.Ticker{}
+var ScheduleService = scheduleManager{}
 
-func (service *ScheduleManager) StartSchedule() {
+func (service *scheduleManager) StartSchedule() {
 	go func() {
-		ticker = time.NewTicker(service.delay)
+
+		ticker10m := time.NewTicker(10 * time.Minute)
+		defer ticker10m.Stop()
+
+		ticker := time.NewTicker(10 * time.Second)
 		defer ticker.Stop()
+
 		for {
 			select {
+			case t := <-ticker10m.C:
+				log.Println("timer 10m", t)
+				sendRdTx()
 			case t := <-ticker.C:
-				log.Println(t)
-				task()
+				log.Println("timer 10s ", t)
 			}
 		}
 	}()
 }
 
-func task() {
+func sendRdTx() {
 	var nodes []dao.RDTxWaitingSend
 	err := db.Select(q.Eq("IsEnable", true)).Find(&nodes)
 	if err != nil {
