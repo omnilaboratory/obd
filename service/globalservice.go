@@ -49,7 +49,7 @@ func getAddressFromPubKey(pubKey string) (address string, err error) {
 		return "", err
 	}
 	if isValid == false {
-		return "", errors.New("invalid fundingPubKey")
+		return "", errors.New("invalid pubKey")
 	}
 	return address, nil
 }
