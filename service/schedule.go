@@ -13,7 +13,7 @@ type ScheduleManager struct {
 }
 
 var ScheduleService = ScheduleManager{
-	config.Schedule_Delay1,
+	delay: config.Schedule_Delay10min,
 }
 var ticker = &time.Ticker{}
 

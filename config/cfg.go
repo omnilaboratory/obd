@@ -21,7 +21,7 @@ var (
 	ChainNode_User string = "omniwallet"
 	ChainNode_Pass string = "cB3]iL2@eZ1?cB2?"
 
-	Schedule_Delay1 time.Duration = 10 * time.Minute
+	Schedule_Delay10min time.Duration = 10 * time.Minute
 )
 
 func init() {
@@ -56,5 +56,5 @@ func init() {
 		log.Println(err)
 		return
 	}
-	Schedule_Delay1 = time.Duration(schedule.Key("delay1").MustInt(5)) * time.Second
+	Schedule_Delay10min = time.Duration(schedule.Key("delay1").MustInt(5)) * time.Second
 }
