@@ -2,6 +2,7 @@ package service
 
 import (
 	"LightningOnOmni/dao"
+	"LightningOnOmni/tool"
 	"github.com/asdine/storm/q"
 	"log"
 	"time"
@@ -41,11 +42,13 @@ func sendRdTx() {
 	}
 
 	for _, node := range nodes {
-		_, err := rpcClient.SendRawTransaction(node.TransactionHex)
-		if err == nil {
-			node.IsEnable = false
-			node.FinishAt = time.Now()
-			db.Save(&node)
+		if tool.CheckIsString(&node.TransactionHex) {
+			_, err := rpcClient.SendRawTransaction(node.TransactionHex)
+			if err == nil {
+				node.IsEnable = false
+				node.FinishAt = time.Now()
+				db.Save(&node)
+			}
 		}
 	}
 }
