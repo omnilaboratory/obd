@@ -146,6 +146,15 @@ type RevocableDeliveryTransaction struct {
 	Owner              string         `json:"owner"`
 }
 
+// rd tx of waiting 1000 sequence
+type RDTxWaitingSend struct {
+	Id             int       `storm:"id,increment" json:"id" `
+	TransactionHex string    `json:"transaction_hex"`
+	IsEnable       bool      `json:"is_enable"`
+	CreateAt       time.Time `json:"create_at"`
+	FinishAt       time.Time `json:"finish_at"`
+}
+
 // to punish alice do not admit the latest commitment tx
 type BreachRemedyTransaction struct {
 	Id                 int            `storm:"id,increment" json:"id" `

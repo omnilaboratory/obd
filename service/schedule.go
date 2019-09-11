@@ -2,7 +2,8 @@ package service
 
 import (
 	"LightningOnOmni/config"
-	"LightningOnOmni/rpc"
+	"LightningOnOmni/dao"
+	"github.com/asdine/storm/q"
 	"log"
 	"time"
 )
@@ -31,11 +32,18 @@ func (service *ScheduleManager) StartSchedule() {
 }
 
 func task() {
-	client := rpc.NewClient()
-	result, err := client.GetNetworkInfo()
+	var nodes []dao.RDTxWaitingSend
+	err := db.Select(q.Eq("IsEnable", true)).Find(&nodes)
 	if err != nil {
-		log.Println(err)
 		return
 	}
-	log.Println(result)
+
+	for _, node := range nodes {
+		_, err := rpcClient.SendRawTransaction(node.TransactionHex)
+		if err == nil {
+			node.IsEnable = false
+			node.FinishAt = time.Now()
+			db.Save(&node)
+		}
+	}
 }

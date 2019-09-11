@@ -21,7 +21,7 @@ var (
 	ChainNode_User string = "omniwallet"
 	ChainNode_Pass string = "cB3]iL2@eZ1?cB2?"
 
-	Schedule_Delay1 time.Duration = 5 * time.Second
+	Schedule_Delay1 time.Duration = 10 * time.Minute
 )
 
 func init() {

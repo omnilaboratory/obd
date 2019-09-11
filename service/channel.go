@@ -8,6 +8,7 @@ import (
 	"LightningOnOmni/tool"
 	"encoding/json"
 	"errors"
+	"github.com/asdine/storm"
 	"github.com/asdine/storm/q"
 	"github.com/tidwall/gjson"
 	"log"
@@ -253,7 +254,11 @@ func (c *channelManager) ForceCloseChannel(jsonData string, user *bean.User) (in
 	if err != nil {
 		return nil, err
 	}
-	//TODO add to timer
+
+	err = addRDTxToWaitDB(tx, lastRevocableDeliveryTx)
+	if err != nil {
+		return nil, err
+	}
 
 	channelInfo.CurrState = dao.ChannelState_Close
 	channelInfo.CloseAt = time.Now()
@@ -432,7 +437,11 @@ func (c *channelManager) CloseChannelSign(jsonData string, user *bean.User) (int
 	if err != nil {
 		return nil, nil, err
 	}
-	//TODO add to timer
+
+	err = addRDTxToWaitDB(tx, lastRevocableDeliveryTx)
+	if err != nil {
+		return nil, nil, err
+	}
 
 	channelInfo.CurrState = dao.ChannelState_Close
 	channelInfo.CloseAt = time.Now()
@@ -447,4 +456,23 @@ func (c *channelManager) CloseChannelSign(jsonData string, user *bean.User) (int
 	}
 
 	return nil, &targetUser, nil
+}
+
+func addRDTxToWaitDB(tx storm.Node, lastRevocableDeliveryTx *dao.RevocableDeliveryTransaction) (err error) {
+	node := &dao.RDTxWaitingSend{}
+	count, err := tx.Select(q.Eq("TransactionHex", lastRevocableDeliveryTx.TransactionSignHex)).Count(node)
+	if err == nil {
+		return err
+	}
+	if count > 0 {
+		return errors.New("always save")
+	}
+	node.TransactionHex = lastRevocableDeliveryTx.TransactionSignHex
+	node.IsEnable = true
+	node.CreateAt = time.Now()
+	err = tx.Save(node)
+	if err != nil {
+		return err
+	}
+	return nil
 }
