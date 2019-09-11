@@ -29,21 +29,13 @@ func (c *channelManager) AliceOpenChannel(msg bean.RequestMessage, peerIdA strin
 	data = &bean.OpenChannelInfo{}
 	json.Unmarshal([]byte(msg.Data), &data)
 
-	if tool.CheckIsString(&data.FundingPubKey) == false {
+	if _, err := getAddressFromPubKey(data.FundingPubKey); err != nil {
 		return nil, errors.New("wrong fundingPubKey")
 	}
 
-	data.FundingAddress, err = tool.GetAddressFromPubKey(data.FundingPubKey)
+	data.FundingAddress, err = getAddressFromPubKey(data.FundingPubKey)
 	if err != nil {
 		return nil, err
-	}
-
-	isValid, err := rpcClient.ValidateAddress(data.FundingAddress)
-	if err != nil {
-		return nil, err
-	}
-	if isValid == false {
-		return nil, errors.New("invalid fundingPubKey")
 	}
 
 	data.ChainHash = config.Init_node_chain_hash
@@ -76,20 +68,9 @@ func (c *channelManager) BobAcceptChannel(jsonData string, peerIdB string) (chan
 	}
 
 	if reqData.Attitude {
-		if tool.CheckIsString(&reqData.FundingPubKey) == false {
-			return nil, errors.New("wrong FundingPubKey")
-		}
-
-		reqData.FundingAddress, err = tool.GetAddressFromPubKey(reqData.FundingPubKey)
+		reqData.FundingAddress, err = getAddressFromPubKey(reqData.FundingPubKey)
 		if err != nil {
 			return nil, err
-		}
-		isValid, err := rpcClient.ValidateAddress(reqData.FundingAddress)
-		if err != nil {
-			return nil, err
-		}
-		if isValid == false {
-			return nil, errors.New("invalid FundingAddress")
 		}
 	}
 

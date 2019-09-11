@@ -4,6 +4,8 @@ import (
 	"LightningOnOmni/bean"
 	"LightningOnOmni/dao"
 	"LightningOnOmni/rpc"
+	"LightningOnOmni/tool"
+	"errors"
 	"log"
 	"time"
 
@@ -32,6 +34,24 @@ func init() {
 		log.Println(err)
 	}
 	rpcClient = rpc.NewClient()
+}
+
+func getAddressFromPubKey(pubKey string) (address string, err error) {
+	if tool.CheckIsString(&pubKey) {
+		return "", errors.New("empty pubKey")
+	}
+	address, err = tool.GetAddressFromPubKey(pubKey)
+	if err != nil {
+		return "", err
+	}
+	isValid, err := rpcClient.ValidateAddress(address)
+	if err != nil {
+		return "", err
+	}
+	if isValid == false {
+		return "", errors.New("invalid fundingPubKey")
+	}
+	return address, nil
 }
 
 func createCommitmentTx(owner string, channelInfo *dao.ChannelInfo, fundingTransaction *dao.FundingTransaction, outputBean commitmentOutputBean, user *bean.User) (*dao.CommitmentTransaction, error) {

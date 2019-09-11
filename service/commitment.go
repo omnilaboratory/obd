@@ -64,7 +64,7 @@ func (service *commitmentTxManager) CreateNewCommitmentTxRequest(jsonData string
 		return nil, nil, errors.New("wrong LastTempAddressPrivateKey")
 	}
 
-	if tool.CheckIsString(&data.CurrTempAddressPubKey) == false {
+	if _, err := getAddressFromPubKey(data.CurrTempAddressPubKey); err != nil {
 		return nil, nil, errors.New("wrong CurrTempAddressPubKey")
 	}
 
@@ -363,7 +363,7 @@ func (service *commitmentTxSignedManager) CommitmentTxSign(jsonData string, sign
 	}
 
 	//for c rd
-	if tool.CheckIsString(&data.CurrTempAddressPubKey) == false {
+	if _, err := getAddressFromPubKey(data.CurrTempAddressPubKey); err != nil {
 		err = errors.New("fail to get the signer's curr temp address pub key")
 		log.Println(err)
 		return nil, nil, nil, err

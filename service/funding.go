@@ -45,7 +45,7 @@ func (service *fundingTransactionManager) CreateFundingTxRequest(jsonData string
 			log.Println(err)
 			return nil, err
 		}
-		if tool.CheckIsString(&reqData.TempAddressPubKey) == false {
+		if _, err := getAddressFromPubKey(reqData.TempAddressPubKey); err != nil {
 			err = errors.New("wrong TempAddressPubKey ")
 			log.Println(err)
 			return nil, err
