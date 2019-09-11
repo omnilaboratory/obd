@@ -32,18 +32,19 @@ func (c *channelManager) AliceOpenChannel(msg bean.RequestMessage, peerIdA strin
 	if tool.CheckIsString(&data.FundingPubKey) == false {
 		return nil, errors.New("wrong fundingPubKey")
 	}
-	if tool.CheckIsString(&data.FundingAddress) == false {
-		return nil, errors.New("wrong FundingAddress")
+
+	data.FundingAddress, err = tool.GetAddressFromPubKey(data.FundingPubKey)
+	if err != nil {
+		return nil, err
 	}
 
-	//TODO need to validate pubKey
-	//isMine, err := rpcClient.ValidateAddress(data.FundingPubKey)
-	//if err != nil {
-	//	return nil, err
-	//}
-	//if isMine == false {
-	//	return nil, errors.New("invalid fundingPubKey")
-	//}
+	isValid, err := rpcClient.ValidateAddress(data.FundingAddress)
+	if err != nil {
+		return nil, err
+	}
+	if isValid == false {
+		return nil, errors.New("invalid fundingPubKey")
+	}
 
 	data.ChainHash = config.Init_node_chain_hash
 	data.TemporaryChannelId = bean.ChannelIdService.NextTemporaryChanID()
@@ -78,14 +79,16 @@ func (c *channelManager) BobAcceptChannel(jsonData string, peerIdB string) (chan
 		if tool.CheckIsString(&reqData.FundingPubKey) == false {
 			return nil, errors.New("wrong FundingPubKey")
 		}
-		if tool.CheckIsString(&reqData.FundingAddress) == false {
-			return nil, errors.New("wrong FundingAddress")
-		}
-		isvalid, err := rpcClient.ValidateAddress(reqData.FundingAddress)
+
+		reqData.FundingAddress, err = tool.GetAddressFromPubKey(reqData.FundingPubKey)
 		if err != nil {
 			return nil, err
 		}
-		if isvalid == false {
+		isValid, err := rpcClient.ValidateAddress(reqData.FundingAddress)
+		if err != nil {
+			return nil, err
+		}
+		if isValid == false {
 			return nil, errors.New("invalid FundingAddress")
 		}
 	}
