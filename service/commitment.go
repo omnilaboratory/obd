@@ -762,7 +762,7 @@ func createBobSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFrom
 		return nil, err
 	}
 
-	txid, hex, err := rpcClient.BtcCreateAndSignRawTransaction(
+	txId, hex, err := rpcClient.BtcCreateAndSignRawTransaction(
 		channelInfo.ChannelAddress,
 		[]string{
 			tempAddrPrivateKeyMap[channelInfo.PubKeyA],
@@ -782,7 +782,7 @@ func createBobSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFrom
 	if lastCommitmentBTx != nil {
 		commitmentTxInfo.LastCommitmentTxId = lastCommitmentBTx.Id
 	}
-	commitmentTxInfo.Txid = txid
+	commitmentTxInfo.Txid = txId
 	commitmentTxInfo.TransactionSignHex = hex
 	commitmentTxInfo.SignAt = time.Now()
 	commitmentTxInfo.CurrState = dao.TxInfoState_CreateAndSign
@@ -820,7 +820,7 @@ func createBobSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFrom
 		currTempAddressPrivateKey = tempAddrPrivateKeyMap[dataFromCreator.CurrTempAddressPubKey]
 	}
 
-	txid, hex, err = rpcClient.BtcCreateAndSignRawTransactionForUnsendInputTx(
+	txId, hex, err = rpcClient.BtcCreateAndSignRawTransactionForUnsendInputTx(
 		commitmentTxInfo.MultiAddress,
 		[]string{
 			tempAddrPrivateKeyMap[channelInfo.PubKeyA],
@@ -842,7 +842,7 @@ func createBobSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFrom
 		log.Println(err)
 		return nil, err
 	}
-	rdTransaction.Txid = txid
+	rdTransaction.Txid = txId
 	rdTransaction.TransactionSignHex = hex
 	rdTransaction.SignAt = time.Now()
 	rdTransaction.CurrState = dao.TxInfoState_CreateAndSign

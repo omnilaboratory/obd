@@ -23,11 +23,12 @@ func TestTask(t *testing.T) {
 	}
 
 	for _, item := range nodes {
-		item.IsEnable = true
+		item.IsEnable = false
 		item.TransactionHex = "33333"
 		item.FinishAt = time.Now()
-		err := db.Save(&item)
+		err := db.Update(&item)
 		log.Println(err)
+		db.UpdateField(&item, "IsEnable", false)
 	}
 	var nodes2 []dao.RDTxWaitingSend
 
