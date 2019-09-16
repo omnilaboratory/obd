@@ -19,7 +19,7 @@ func (service *scheduleManager) StartSchedule() {
 		ticker10m := time.NewTicker(10 * time.Minute)
 		defer ticker10m.Stop()
 
-		ticker := time.NewTicker(10 * time.Second)
+		ticker := time.NewTicker(10 * time.Hour)
 		defer ticker.Stop()
 
 		for {
