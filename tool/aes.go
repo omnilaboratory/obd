@@ -5,11 +5,12 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"encoding/base64"
+	"errors"
 	"sync"
 )
 
 var (
-	commonKey = []byte("nanjishidu170416")
+	commonKey = []byte("03a492b58a0df0a3")
 	iv        = "03a492b58a0df0a3"
 	syncMutex sync.Mutex
 )
@@ -17,41 +18,58 @@ var (
 func SetAesAndIV(key string, myIv string) {
 	syncMutex.Lock()
 	defer syncMutex.Unlock()
-	commonKey = []byte(key)
-	iv = myIv
+	if CheckIsString(&key) {
+		commonKey = []byte(key)
+	}
+	if CheckIsString(&myIv) {
+		iv = myIv
+	}
 }
+
+// cbc mode
 func AesEncrypt(encodeStr string) (string, error) {
-	encodeBytes := []byte(encodeStr)
+	if CheckIsString(&encodeStr) == false {
+		return "", errors.New("empty data")
+	}
 	block, err := aes.NewCipher(commonKey)
 	if err != nil {
 		return "", err
 	}
-
 	blockSize := block.BlockSize()
+	encodeBytes := []byte(encodeStr)
 	encodeBytes = PKCS5Padding(encodeBytes, blockSize)
 
 	blockMode := cipher.NewCBCEncrypter(block, []byte(iv))
 	crypted := make([]byte, len(encodeBytes))
+
 	blockMode.CryptBlocks(crypted, encodeBytes)
 
 	return base64.StdEncoding.EncodeToString(crypted), nil
 }
 
-func AesDecrypt2(cryted string) string {
-	crytedByte, _ := base64.StdEncoding.DecodeString(cryted)
-	block, _ := aes.NewCipher(commonKey)
+func AesDecrypt2(cryted string) (string, error) {
+	if CheckIsString(&cryted) == false {
+		return "", errors.New("empty data")
+	}
+	crytedByte, err := base64.StdEncoding.DecodeString(cryted)
+	if err != nil {
+		return "", err
+	}
+	block, err := aes.NewCipher(commonKey)
+	if err != nil {
+		return "", err
+	}
 
 	blockMode := cipher.NewCBCDecrypter(block, []byte(iv))
 	orig := make([]byte, len(crytedByte))
 	blockMode.CryptBlocks(orig, crytedByte)
 	orig = PKCS5UnPadding(orig)
-	return string(orig)
+	return string(orig), nil
 }
 
 func PKCS5Padding(ciphertext []byte, blockSize int) []byte {
 	padding := blockSize - len(ciphertext)%blockSize
 	padtext := bytes.Repeat([]byte{byte(padding)}, padding)
-
 	return append(ciphertext, padtext...)
 }
 

@@ -2,11 +2,14 @@ package tool
 
 import (
 	"LightningOnOmni/config"
+	"crypto/rand"
 	"crypto/sha256"
+	"encoding/base64"
 	"encoding/hex"
 	"fmt"
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcutil"
+	"io"
 	"log"
 	"strings"
 )
@@ -52,4 +55,13 @@ func GetAddressFromPubKey(pubKey string) (address string, err error) {
 	log.Println("Bitcoin Address:", address)
 
 	return address, nil
+}
+
+func RandBytes(size int) (string, error) {
+	arr := make([]byte, size)
+	if _, err := io.ReadFull(rand.Reader, arr); err != nil {
+		return "", err
+	}
+	log.Println(arr)
+	return base64.StdEncoding.EncodeToString(arr), nil
 }
