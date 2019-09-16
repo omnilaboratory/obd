@@ -1,56 +1,62 @@
 package tool
 
 import (
+	"bytes"
 	"crypto/aes"
 	"crypto/cipher"
-	"crypto/rand"
-	"encoding/hex"
-	"errors"
-	"fmt"
-	"io"
+	"encoding/base64"
 	"sync"
 )
 
 var (
 	commonKey = []byte("nanjishidu170416")
+	iv        = "03a492b58a0df0a3"
 	syncMutex sync.Mutex
 )
 
-func SetAesKey(key string) {
+func SetAesAndIV(key string, myIv string) {
 	syncMutex.Lock()
 	defer syncMutex.Unlock()
 	commonKey = []byte(key)
+	iv = myIv
 }
-func AesEncrypt(plaintext string) (string, error) {
+func AesEncrypt(encodeStr string) (string, error) {
+	encodeBytes := []byte(encodeStr)
 	block, err := aes.NewCipher(commonKey)
 	if err != nil {
 		return "", err
 	}
-	cipherText := make([]byte, aes.BlockSize+len(plaintext))
-	iv := cipherText[:aes.BlockSize]
-	if _, err := io.ReadFull(rand.Reader, iv); err != nil {
-		return "", err
-	}
-	cipher.NewCFBEncrypter(block, iv).XORKeyStream(cipherText[aes.BlockSize:],
-		[]byte(plaintext))
-	return hex.EncodeToString(cipherText), nil
 
+	blockSize := block.BlockSize()
+	encodeBytes = PKCS5Padding(encodeBytes, blockSize)
+
+	blockMode := cipher.NewCBCEncrypter(block, []byte(iv))
+	crypted := make([]byte, len(encodeBytes))
+	blockMode.CryptBlocks(crypted, encodeBytes)
+
+	return base64.StdEncoding.EncodeToString(crypted), nil
 }
-func AesDecrypt(d string) (string, error) {
-	ciphertext, err := hex.DecodeString(d)
-	if err != nil {
-		return "", err
-	}
-	block, err := aes.NewCipher(commonKey)
-	if err != nil {
-		return "", err
-	}
-	if len(ciphertext) < aes.BlockSize {
-		return "", errors.New("ciphertext too short")
-	}
-	iv := ciphertext[:aes.BlockSize]
-	ciphertext = ciphertext[aes.BlockSize:]
-	fmt.Println(len(ciphertext), len(iv))
-	cipher.NewCFBDecrypter(block, iv).XORKeyStream(ciphertext, ciphertext)
-	return string(ciphertext), nil
+
+func AesDecrypt2(cryted string) string {
+	crytedByte, _ := base64.StdEncoding.DecodeString(cryted)
+	block, _ := aes.NewCipher(commonKey)
+
+	blockMode := cipher.NewCBCDecrypter(block, []byte(iv))
+	orig := make([]byte, len(crytedByte))
+	blockMode.CryptBlocks(orig, crytedByte)
+	orig = PKCS5UnPadding(orig)
+	return string(orig)
+}
+
+func PKCS5Padding(ciphertext []byte, blockSize int) []byte {
+	padding := blockSize - len(ciphertext)%blockSize
+	padtext := bytes.Repeat([]byte{byte(padding)}, padding)
+
+	return append(ciphertext, padtext...)
+}
+
+func PKCS5UnPadding(origData []byte) []byte {
+	length := len(origData)
+	unpadding := int(origData[length-1])
+	return origData[:(length - unpadding)]
 }
