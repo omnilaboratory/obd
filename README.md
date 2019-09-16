@@ -409,7 +409,7 @@ Guidelines:
 
 * Generate user OBD(OmniBOLT Daemon) address.  
 * Open Poon-Dryja Channel.
-* Deposit, close.
+* fund, close.
 * Commitment Transaction within a channel.
 
 
