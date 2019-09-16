@@ -12,28 +12,28 @@ import (
 )
 
 var (
-	commonkey = []byte("nanjishidu170416")
+	commonKey = []byte("nanjishidu170416")
 	syncMutex sync.Mutex
 )
 
 func SetAesKey(key string) {
 	syncMutex.Lock()
 	defer syncMutex.Unlock()
-	commonkey = []byte(key)
+	commonKey = []byte(key)
 }
 func AesEncrypt(plaintext string) (string, error) {
-	block, err := aes.NewCipher(commonkey)
+	block, err := aes.NewCipher(commonKey)
 	if err != nil {
 		return "", err
 	}
-	ciphertext := make([]byte, aes.BlockSize+len(plaintext))
-	iv := ciphertext[:aes.BlockSize]
+	cipherText := make([]byte, aes.BlockSize+len(plaintext))
+	iv := cipherText[:aes.BlockSize]
 	if _, err := io.ReadFull(rand.Reader, iv); err != nil {
 		return "", err
 	}
-	cipher.NewCFBEncrypter(block, iv).XORKeyStream(ciphertext[aes.BlockSize:],
+	cipher.NewCFBEncrypter(block, iv).XORKeyStream(cipherText[aes.BlockSize:],
 		[]byte(plaintext))
-	return hex.EncodeToString(ciphertext), nil
+	return hex.EncodeToString(cipherText), nil
 
 }
 func AesDecrypt(d string) (string, error) {
@@ -41,7 +41,7 @@ func AesDecrypt(d string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	block, err := aes.NewCipher(commonkey)
+	block, err := aes.NewCipher(commonKey)
 	if err != nil {
 		return "", err
 	}
