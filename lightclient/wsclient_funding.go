@@ -14,7 +14,23 @@ func (client *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.Se
 	var sendType = enum.SendTargetType_SendToNone
 	data := ""
 	switch msg.Type {
-	case enum.MsgType_FundingCreate_Create:
+	case enum.MsgType_FundingCreate_BtcCreate:
+		node, err := service.FundingTransactionService.CreateFundingBtcTxRequest(msg.Data, client.User)
+		if err != nil {
+			data = err.Error()
+		} else {
+			bytes, err := json.Marshal(node)
+			if err != nil {
+				data = err.Error()
+			} else {
+				data = string(bytes)
+				status = true
+			}
+		}
+		client.sendToMyself(msg.Type, status, data)
+		sendType = enum.SendTargetType_SendToSomeone
+
+	case enum.MsgType_FundingCreate_OmniCreate:
 		//check target whether is online
 		fundingInfo := &bean.FundingCreated{}
 		err := json.Unmarshal([]byte(msg.Data), fundingInfo)
@@ -37,7 +53,7 @@ func (client *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.Se
 		}
 
 		if data == "" {
-			node, err := service.FundingTransactionService.CreateFundingTxRequest(msg.Data, client.User)
+			node, err := service.FundingTransactionService.CreateFundingOmniTxRequest(msg.Data, client.User)
 			if err != nil {
 				data = err.Error()
 			} else {
@@ -145,9 +161,10 @@ func (client *Client) fundingSignModule(msg bean.RequestMessage) (enum.SendTarge
 	var sendType = enum.SendTargetType_SendToNone
 	data := ""
 	switch msg.Type {
+	case enum.MsgType_FundingSign_BtcSign:
 	//get openChannelReq from funder then send to fundee
 	// create a funding tx
-	case enum.MsgType_FundingSign_Sign:
+	case enum.MsgType_FundingSign_OmniSign:
 		signed, err := service.FundingTransactionService.FundingTxSign(msg.Data, client.User)
 		if err != nil {
 			data = err.Error()

@@ -104,7 +104,7 @@ func (client *Client) send(method string, params []interface{}) (result string, 
 	//method = "./omnicore-cli -conf=/root/.bitcoin/omnicore18data/bitcoin.conf "+method
 	log.Println("request to Rpc server:", method, params)
 	req := &Request{
-		Jsonrpc: "1.0",
+		Jsonrpc: "2.0",
 		ID:      client.NextID(),
 		Method:  strings.Trim(method, " "),
 		Params:  rawParams,
@@ -125,6 +125,11 @@ func (client *Client) send(method string, params []interface{}) (result string, 
 		return "", err
 	}
 	defer httpResponse.Body.Close()
+
+	if httpResponse.StatusCode == 403 {
+		err = fmt.Errorf("status code: %d, response: %q , your ip is not allowed", httpResponse.StatusCode, httpResponse.Status)
+		return "", err
+	}
 
 	// Read the raw bytes and close the response.
 	respBytes, err := ioutil.ReadAll(httpResponse.Body)

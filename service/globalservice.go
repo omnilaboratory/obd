@@ -37,7 +37,7 @@ func init() {
 }
 
 func getAddressFromPubKey(pubKey string) (address string, err error) {
-	if tool.CheckIsString(&pubKey) {
+	if tool.CheckIsString(&pubKey) == false {
 		return "", errors.New("empty pubKey")
 	}
 	address, err = tool.GetAddressFromPubKey(pubKey)

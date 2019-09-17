@@ -84,6 +84,21 @@ type FundingCreated struct {
 	ChannelAddressPrivateKey string         `json:"channel_address_private_key"`
 }
 
+//type: -3400 (FundingBtcCreated)
+type FundingBtcCreated struct {
+	TemporaryChannelId       chainhash.Hash `json:"temporary_channel_id"`
+	Amount                   float64        `json:"amount_a"`
+	FundingTxHex             string         `json:"funding_tx_hex"`
+	ChannelAddressPrivateKey string         `json:"channel_address_private_key"`
+}
+
+//type: -3500 (FundingBtcSigned)
+type FundingBtcSigned struct {
+	TemporaryChannelId       chainhash.Hash `json:"temporary_channel_id"`
+	ChannelAddressPrivateKey string         `json:"channel_address_private_key"`
+	Approval                 bool           `json:"approval"`
+}
+
 //type: -35 (funding_signed)
 type FundingSigned struct {
 	ChannelId ChannelID `json:"channel_id"`

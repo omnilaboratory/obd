@@ -24,15 +24,16 @@ const (
 	MsgType_UserLogin  MsgType = 1
 	MsgType_UserLogout MsgType = 2
 
-	MsgType_Core_GetNewAddress                  MsgType = 1001
-	MsgType_Core_GetMiningInfo                  MsgType = 1002
-	MsgType_Core_GetNetworkInfo                 MsgType = 1003
-	MsgType_Core_SignMessageWithPrivKey         MsgType = 1004
-	MsgType_Core_VerifyMessage                  MsgType = 1005
-	MsgType_Core_DumpPrivKey                    MsgType = 1006
-	MsgType_Core_ListUnspent                    MsgType = 1007
-	MsgType_Core_BalanceByAddress               MsgType = 1008
-	MsgType_Core_BtcCreateAndSignRawTransaction MsgType = 1009
+	MsgType_Core_GetNewAddress                    MsgType = 1001
+	MsgType_Core_GetMiningInfo                    MsgType = 1002
+	MsgType_Core_GetNetworkInfo                   MsgType = 1003
+	MsgType_Core_SignMessageWithPrivKey           MsgType = 1004
+	MsgType_Core_VerifyMessage                    MsgType = 1005
+	MsgType_Core_DumpPrivKey                      MsgType = 1006
+	MsgType_Core_ListUnspent                      MsgType = 1007
+	MsgType_Core_BalanceByAddress                 MsgType = 1008
+	MsgType_Core_BtcCreateAndSignRawTransaction   MsgType = 1009
+	MsgType_Core_Omni_CreateAndSignRawTransaction MsgType = 2001
 
 	MsgType_ChannelOpen                 MsgType = -32
 	MsgType_ChannelOpen_ItemByTempId    MsgType = -3201
@@ -43,14 +44,16 @@ const (
 
 	MsgType_ChannelAccept MsgType = -33
 
-	MsgType_FundingCreate_Create       MsgType = -34
+	MsgType_FundingCreate_OmniCreate   MsgType = -34
+	MsgType_FundingCreate_BtcCreate    MsgType = -3400
 	MsgType_FundingCreate_ItemByTempId MsgType = -3401
 	MsgType_FundingCreate_ItemById     MsgType = -3402
 	MsgType_FundingCreate_ALlItem      MsgType = -3403
 	MsgType_FundingCreate_Count        MsgType = -3404
 	MsgType_FundingCreate_DelById      MsgType = -3405
 
-	MsgType_FundingSign_Sign MsgType = -35
+	MsgType_FundingSign_OmniSign MsgType = -35
+	MsgType_FundingSign_BtcSign  MsgType = -3500
 
 	MsgType_CommitmentTx_Create                     MsgType = -351
 	MsgType_CommitmentTx_ItemsByChanId              MsgType = -35101

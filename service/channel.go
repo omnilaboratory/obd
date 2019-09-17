@@ -29,10 +29,6 @@ func (c *channelManager) AliceOpenChannel(msg bean.RequestMessage, peerIdA strin
 	data = &bean.OpenChannelInfo{}
 	json.Unmarshal([]byte(msg.Data), &data)
 
-	if _, err := getAddressFromPubKey(data.FundingPubKey); err != nil {
-		return nil, errors.New("wrong fundingPubKey")
-	}
-
 	data.FundingAddress, err = getAddressFromPubKey(data.FundingPubKey)
 	if err != nil {
 		return nil, err

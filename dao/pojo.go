@@ -2,6 +2,7 @@ package dao
 
 import (
 	"LightningOnOmni/bean"
+	"LightningOnOmni/bean/chainhash"
 	"time"
 )
 
@@ -80,6 +81,12 @@ const (
 	TxInfoState_SendHex       TxInfoState = 20
 	TxInfoState_Abord         TxInfoState = 30
 )
+
+type FundingBtcRequest struct {
+	Id                 int            `storm:"id,increment" json:"id" `
+	TemporaryChannelId chainhash.Hash `json:"temporary_channel_id"`
+	FundingTxHex       string         `json:"funding_tx_hex"`
+}
 
 type CommitmentTxRequestInfo struct {
 	Id int `storm:"id,increment" json:"id" `

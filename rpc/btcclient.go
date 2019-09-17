@@ -79,6 +79,9 @@ func (client *Client) SendRawTransaction(hex string) (result string, err error) 
 func (client *Client) DecodeRawTransaction(hex string) (result string, err error) {
 	return client.send("decoderawtransaction", []interface{}{hex})
 }
+func (client *Client) OmniDecodeTransaction(hex string) (result string, err error) {
+	return client.send("omni_decodetransaction", []interface{}{hex})
+}
 
 func (client *Client) GetBlockCount() (result string, err error) {
 	return client.send("getblockcount", nil)

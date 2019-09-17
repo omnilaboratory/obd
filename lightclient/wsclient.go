@@ -131,13 +131,14 @@ func (client *Client) Read() {
 		if strings.HasPrefix(typeStr, "-33") {
 			sendType, dataOut, status = client.channelModule(msg)
 		}
-		//-34 -3401 -3402 -3403 -3404
+		//-34 -3400 -3401 -3402 -3403 -3404
 		if strings.HasPrefix(typeStr, "-34") {
 			sendType, dataOut, status = client.fundingTransactionModule(msg)
 		}
 
-		//-35
-		if msg.Type == enum.MsgType_FundingSign_Sign {
+		//-35 -3500
+		if msg.Type == enum.MsgType_FundingSign_OmniSign ||
+			msg.Type == enum.MsgType_FundingSign_BtcSign {
 			sendType, dataOut, status = client.fundingSignModule(msg)
 		}
 		//-38
