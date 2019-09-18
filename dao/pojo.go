@@ -84,8 +84,11 @@ const (
 
 type FundingBtcRequest struct {
 	Id                 int            `storm:"id,increment" json:"id" `
+	Owner              string         `json:"owner"`
 	TemporaryChannelId chainhash.Hash `json:"temporary_channel_id"`
-	FundingTxHex       string         `json:"funding_tx_hex"`
+	TxHash             string         `json:"tx_hash"`
+	CreateAt           time.Time      `json:"create_at"`
+	IsEnable           bool           `json:"is_enable"`
 }
 
 type CommitmentTxRequestInfo struct {
@@ -96,6 +99,17 @@ type CommitmentTxRequestInfo struct {
 	LastTempAddressPubKey string
 	CreateAt              time.Time
 	IsEnable              bool
+}
+
+//redeem the btc fee
+type MinerFeeRedeemTransaction struct {
+	Id                 int            `storm:"id,increment" json:"id" `
+	Owner              string         `json:"owner"`
+	TemporaryChannelId chainhash.Hash `json:"temporary_channel_id"`
+	ChannelId          bean.ChannelID `json:"channel_id"`
+	TxHash             string         `json:"tx_hash"`
+	IsEnable           bool           `json:"is_enable"`
+	CreateAt           time.Time      `json:"create_at"`
 }
 
 //CommitmentTransaction

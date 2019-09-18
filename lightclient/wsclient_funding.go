@@ -162,9 +162,21 @@ func (client *Client) fundingSignModule(msg bean.RequestMessage) (enum.SendTarge
 	data := ""
 	switch msg.Type {
 	case enum.MsgType_FundingSign_BtcSign:
-	//get openChannelReq from funder then send to fundee
-	// create a funding tx
-	case enum.MsgType_FundingSign_OmniSign:
+		node, err := service.FundingTransactionService.FundingBtcTxSign(msg.Data, client.User)
+		if err != nil {
+			data = err.Error()
+		} else {
+			bytes, err := json.Marshal(node)
+			if err != nil {
+				data = err.Error()
+			} else {
+				data = string(bytes)
+				status = true
+			}
+		}
+		client.sendToMyself(msg.Type, status, data)
+		sendType = enum.SendTargetType_SendToSomeone
+	case enum.MsgType_FundingSign_OmniSign: //get openChannelReq from funder then send to fundee  create a funding tx
 		signed, err := service.FundingTransactionService.FundingTxSign(msg.Data, client.User)
 		if err != nil {
 			data = err.Error()
