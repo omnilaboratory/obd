@@ -206,23 +206,28 @@ func (client *Client) OmniCreateAndSignRawTransaction(fromBitCoinAddress string,
 
 	return hex, nil
 }
-func (client *Client) OmniCreateAndSignRawTransactionForUnsendInputTx(fromBitCoinAddress string, inputItems []TransactionInputItem, privkeys []string, toBitCoinAddress string, propertyId int64, amount float64, minerFee float64, sequence *int) (hex string, err error) {
+
+//https://blog.csdn.net/ffzhihua/article/details/80733124
+func (client *Client) OmniCreateAndSignRawTransactionForUnsendInputTx(fromBitCoinAddress string, inputItems []TransactionInputItem, privkeys []string, outputItems []TransactionOutputItem, propertyId int64, minerFee float64, sequence *int) (txid, hex string, err error) {
 	if len(fromBitCoinAddress) < 1 {
-		return "", errors.New("fromBitCoinAddress is empty")
+		return "", "", errors.New("fromBitCoinAddress is empty")
 	}
-	if len(toBitCoinAddress) < 1 {
-		return "", errors.New("toBitCoinAddress is empty")
+	if len(outputItems) < 1 {
+		return "", "", errors.New("outputItems is empty")
 	}
-	if amount < config.Dust {
-		return "", errors.New("wrong amount")
+
+	outAmount := decimal.NewFromFloat(0)
+	for _, item := range outputItems {
+		outAmount = outAmount.Add(decimal.NewFromFloat(item.Amount))
 	}
+
+	if outAmount.LessThan(decimal.NewFromFloat(config.Dust)) {
+		return "", "", errors.New("wrong outAmount")
+	}
+
 	pMoney := 0.00000546
 	if minerFee < config.Dust {
 		minerFee = 0.00003
-	}
-
-	if ismine, _ := client.ValidateAddress(toBitCoinAddress); ismine == false {
-		err = client.ImportAddress(toBitCoinAddress)
 	}
 
 	out, _ := decimal.NewFromFloat(minerFee).Add(decimal.NewFromFloat(pMoney)).Float64()
@@ -236,13 +241,14 @@ func (client *Client) OmniCreateAndSignRawTransactionForUnsendInputTx(fromBitCoi
 
 	log.Println("1 balance", balance)
 	if balance < out {
-		return "", errors.New("not enough balance")
+		return "", "", errors.New("not enough balance")
 	}
 
 	//2.Omni_createpayload_simplesend
+	amount, _ := outAmount.Float64()
 	payload, err := client.omniCreatePayloadSimpleSend(propertyId, amount)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	log.Println("2 payload " + payload)
 
@@ -262,21 +268,22 @@ func (client *Client) OmniCreateAndSignRawTransactionForUnsendInputTx(fromBitCoi
 	//3.CreateRawTransaction
 	createrawtransactionStr, err := client.CreateRawTransaction(inputs, outputs)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	log.Println("3 createrawtransactionStr", createrawtransactionStr)
 
 	//4.omni_createrawtx_opreturn
 	opreturn, err := client.omniCreateRawtxOpreturn(createrawtransactionStr, payload)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	log.Println("4 opreturn", opreturn)
 
+	toBitCoinAddress := ""
 	//5. omni_createrawtx_reference
 	reference, err := client.omniCreateRawtxReference(opreturn, toBitCoinAddress)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	log.Println("5 reference", reference)
 
@@ -296,7 +303,7 @@ func (client *Client) OmniCreateAndSignRawTransactionForUnsendInputTx(fromBitCoi
 	}
 	change, err := client.omniCreateRawtxChange(reference, prevtxs, fromBitCoinAddress, minerFee)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	log.Println("6 change", change)
 
@@ -306,11 +313,12 @@ func (client *Client) OmniCreateAndSignRawTransactionForUnsendInputTx(fromBitCoi
 	//7 sign
 	signHex, err := client.SignRawTransactionWithKey(change, privkeys, inputs, "ALL")
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	hex = gjson.Get(signHex, "hex").String()
 	log.Println("7 SignRawTransactionWithKey", hex)
 	decodeHex, _ := client.DecodeRawTransaction(hex)
 	log.Println("7 DecodeSignRawTransactionWithKey", decodeHex)
-	return hex, nil
+	txid = gjson.Get(decodeHex, "txid").String()
+	return txid, hex, nil
 }

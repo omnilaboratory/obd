@@ -72,6 +72,13 @@ func (service *fundingTransactionManager) CreateFundingBtcTxRequest(jsonData str
 	defer tx.Rollback()
 
 	fundingBtcRequest := &dao.FundingBtcRequest{}
+	count, _ := tx.Select(q.Eq("TemporaryChannelId", reqData.TemporaryChannelId), q.Eq("Owner", user.PeerId), q.Eq("IsEnable", true), q.Eq("IsFinish", true)).Count(fundingBtcRequest)
+	if count != 0 {
+		err = errors.New("have funding btc fee")
+		log.Println(err)
+		return nil, err
+	}
+
 	_ = tx.Select(q.Eq("TemporaryChannelId", reqData.TemporaryChannelId), q.Eq("Owner", user.PeerId), q.Eq("IsEnable", true)).Find(fundingBtcRequest)
 	if fundingBtcRequest.Id > 0 {
 		err = tx.UpdateField(fundingBtcRequest, "IsEnable", false)
@@ -88,6 +95,7 @@ func (service *fundingTransactionManager) CreateFundingBtcTxRequest(jsonData str
 	fundingBtcRequest.IsEnable = true
 	fundingBtcRequest.CreateAt = time.Now()
 	fundingBtcRequest.Amount = amount
+	fundingBtcRequest.IsFinish = false
 	err = tx.Save(fundingBtcRequest)
 	if err != nil {
 		log.Println(err)
@@ -373,9 +381,11 @@ func (service *fundingTransactionManager) FundingTxSign(jsonData string, signer 
 		if owner == channelInfo.PeerIdA {
 			fundingTransaction.AmountB = reqData.AmountB
 			funderChannelAddressPrivateKey = tempAddrPrivateKeyMap[channelInfo.PubKeyA]
+			defer delete(tempAddrPrivateKeyMap, channelInfo.PubKeyA)
 		} else {
 			fundingTransaction.AmountA = reqData.AmountB
 			funderChannelAddressPrivateKey = tempAddrPrivateKeyMap[channelInfo.PubKeyB]
+			defer delete(tempAddrPrivateKeyMap, channelInfo.PubKeyB)
 		}
 		if tool.CheckIsString(&funderChannelAddressPrivateKey) == false {
 			err = errors.New("fail to get the funder's channel address private key ")
@@ -384,6 +394,7 @@ func (service *fundingTransactionManager) FundingTxSign(jsonData string, signer 
 		}
 
 		funderTempAddressPrivateKey := tempAddrPrivateKeyMap[fundingTransaction.FunderPubKey2ForCommitment]
+		defer delete(tempAddrPrivateKeyMap, fundingTransaction.FunderPubKey2ForCommitment)
 		if tool.CheckIsString(&funderTempAddressPrivateKey) == false {
 			err = errors.New("fail to get the funder's tmep address private key ")
 			log.Println(err)
@@ -411,12 +422,8 @@ func (service *fundingTransactionManager) FundingTxSign(jsonData string, signer 
 			return nil, err
 		}
 
-		txid, hex, err := rpcClient.BtcCreateAndSignRawTransactionForUnsendInputTx(
+		txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionForUnsendInputTx(
 			channelInfo.ChannelAddress,
-			[]string{
-				funderChannelAddressPrivateKey,
-				reqData.FundeeChannelAddressPrivateKey,
-			},
 			[]rpc.TransactionInputItem{
 				{
 					commitmentTxInfo.InputTxid,
@@ -424,13 +431,36 @@ func (service *fundingTransactionManager) FundingTxSign(jsonData string, signer 
 					commitmentTxInfo.InputVout,
 					commitmentTxInfo.InputAmount},
 			},
+			[]string{
+				funderChannelAddressPrivateKey,
+				reqData.FundeeChannelAddressPrivateKey,
+			},
 			[]rpc.TransactionOutputItem{
 				{commitmentTxInfo.MultiAddress, commitmentTxInfo.AmountM},
 				{outputBean.ToAddress, commitmentTxInfo.AmountB},
 			},
-			0,
-			0,
-			&channelInfo.ChannelAddressRedeemScript)
+			fundingTransaction.PropertyId, 0, nil)
+
+		//txid, hex, err := rpcClient.BtcCreateAndSignRawTransactionForUnsendInputTx(
+		//	channelInfo.ChannelAddress,
+		//	[]string{
+		//		funderChannelAddressPrivateKey,
+		//		reqData.FundeeChannelAddressPrivateKey,
+		//	},
+		//	[]rpc.TransactionInputItem{
+		//		{
+		//			commitmentTxInfo.InputTxid,
+		//			channelInfo.ChannelAddressScriptPubKey,
+		//			commitmentTxInfo.InputVout,
+		//			commitmentTxInfo.InputAmount},
+		//	},
+		//	[]rpc.TransactionOutputItem{
+		//		{commitmentTxInfo.MultiAddress, commitmentTxInfo.AmountM},
+		//		{outputBean.ToAddress, commitmentTxInfo.AmountB},
+		//	},
+		//	0,
+		//	0,
+		//	&channelInfo.ChannelAddressRedeemScript)
 		if err != nil {
 			log.Println(err)
 			return nil, err

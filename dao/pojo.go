@@ -90,6 +90,7 @@ type FundingBtcRequest struct {
 	Amount             float64        `json:"amount"`
 	CreateAt           time.Time      `json:"create_at"`
 	IsEnable           bool           `json:"is_enable"`
+	IsFinish           bool           `json:"is_finish"`
 }
 
 type CommitmentTxRequestInfo struct {

@@ -18,9 +18,9 @@ func TestDecodeTx(t *testing.T) {
 }
 
 func TestGetBalance(t *testing.T) {
-	balance, _ := rpcClient.OmniGetAllBalancesForAddress("2N1DFjaE4yCcECdFwgLQcLmNrLV5zetgQtE")
+	balance, _ := rpcClient.OmniGetAllBalancesForAddress("2NDfTTG31yz2KRS8TjdTRqzHmV4FYNpBxd9")
 	log.Println(balance)
-	balance1, _ := rpcClient.GetBalanceByAddress("2N1DFjaE4yCcECdFwgLQcLmNrLV5zetgQtE")
+	balance1, _ := rpcClient.GetBalanceByAddress("2NDfTTG31yz2KRS8TjdTRqzHmV4FYNpBxd9")
 	log.Println(balance1)
 }
 
