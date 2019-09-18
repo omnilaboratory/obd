@@ -177,7 +177,7 @@ func (client *Client) fundingSignModule(msg bean.RequestMessage) (enum.SendTarge
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_FundingSign_OmniSign: //get openChannelReq from funder then send to fundee  create a funding tx
-		signed, err := service.FundingTransactionService.FundingTxSign(msg.Data, client.User)
+		signed, err := service.FundingTransactionService.FundingOmniTxSign(msg.Data, client.User)
 		if err != nil {
 			data = err.Error()
 		}

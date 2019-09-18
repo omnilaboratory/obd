@@ -326,7 +326,7 @@ func (service *fundingTransactionManager) CreateFundingOmniTxRequest(jsonData st
 	return fundingTransaction, err
 }
 
-func (service *fundingTransactionManager) FundingTxSign(jsonData string, signer *bean.User) (signed *dao.FundingTransaction, err error) {
+func (service *fundingTransactionManager) FundingOmniTxSign(jsonData string, signer *bean.User) (signed *dao.FundingTransaction, err error) {
 	reqData := &bean.FundingSigned{}
 	err = json.Unmarshal([]byte(jsonData), reqData)
 	if err != nil {
