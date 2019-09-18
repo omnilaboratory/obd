@@ -87,6 +87,7 @@ func (service *fundingTransactionManager) CreateFundingBtcTxRequest(jsonData str
 	fundingBtcRequest.TxHash = reqData.FundingTxHex
 	fundingBtcRequest.IsEnable = true
 	fundingBtcRequest.CreateAt = time.Now()
+	fundingBtcRequest.Amount = amount
 	err = tx.Save(fundingBtcRequest)
 	if err != nil {
 		log.Println(err)

@@ -87,6 +87,7 @@ type FundingBtcRequest struct {
 	Owner              string         `json:"owner"`
 	TemporaryChannelId chainhash.Hash `json:"temporary_channel_id"`
 	TxHash             string         `json:"tx_hash"`
+	Amount             float64        `json:"amount"`
 	CreateAt           time.Time      `json:"create_at"`
 	IsEnable           bool           `json:"is_enable"`
 }
