@@ -137,3 +137,113 @@ func createBRTx(owner string, channelInfo *dao.ChannelInfo, commitmentTxInfo *da
 
 	return breachRemedyTransaction, nil
 }
+
+func checkBtcTxHex(btcFeeTxHexDecode string, channelInfo *dao.ChannelInfo, user *bean.User) (amountA float64, fundingOutputIndex uint32, err error) {
+	jsonFundingTxHexDecode := gjson.Parse(btcFeeTxHexDecode)
+	//fundingTxid := jsonFundingTxHexDecode.Get("txid").String()
+
+	//vin
+	if jsonFundingTxHexDecode.Get("vin").IsArray() == false {
+		err = errors.New("wrong Tx input vin")
+		log.Println(err)
+		return 0, 0, err
+	}
+	inTxid := jsonFundingTxHexDecode.Get("vin").Array()[0].Get("txid").String()
+	inputTx, err := rpcClient.GetTransactionById(inTxid)
+	if err != nil {
+		err = errors.New("wrong input: " + err.Error())
+		log.Println(err)
+		return 0, 0, err
+	}
+
+	jsonInputTxDecode := gjson.Parse(inputTx)
+	flag := false
+	inputHexDecode, err := rpcClient.DecodeRawTransaction(jsonInputTxDecode.Get("hex").String())
+	if err != nil {
+		err = errors.New("wrong input: " + err.Error())
+		log.Println(err)
+		return 0, 0, err
+	}
+
+	funderAddress := channelInfo.AddressA
+	if user.PeerId == channelInfo.PeerIdB {
+		funderAddress = channelInfo.AddressB
+	}
+	jsonInputHexDecode := gjson.Parse(inputHexDecode)
+	if jsonInputHexDecode.Get("vout").IsArray() {
+		for _, item := range jsonInputHexDecode.Get("vout").Array() {
+			addresses := item.Get("scriptPubKey").Get("addresses").Array()
+			for _, subItem := range addresses {
+				if subItem.String() == funderAddress {
+					flag = true
+					break
+				}
+			}
+			if flag {
+				break
+			}
+		}
+	}
+
+	if flag == false {
+		err = errors.New("wrong vin " + jsonFundingTxHexDecode.Get("vin").String())
+		log.Println(err)
+		return 0, 0, err
+	}
+
+	//vout
+	flag = false
+	if jsonFundingTxHexDecode.Get("vout").IsArray() == false {
+		err = errors.New("wrong Tx vout")
+		log.Println(err)
+		return 0, 0, err
+	}
+	for _, item := range jsonFundingTxHexDecode.Get("vout").Array() {
+		addresses := item.Get("scriptPubKey").Get("addresses").Array()
+		for _, subItem := range addresses {
+			if subItem.String() == channelInfo.ChannelAddress {
+				amountA = item.Get("value").Float()
+				fundingOutputIndex = uint32(item.Get("n").Int())
+				flag = true
+				break
+			}
+		}
+		if flag {
+			break
+		}
+	}
+	if flag == false {
+		err = errors.New("wrong vout " + jsonFundingTxHexDecode.Get("vout").String())
+		log.Println(err)
+		return 0, 0, err
+	}
+	return amountA, fundingOutputIndex, err
+}
+
+func checkOmniTxHex(fundingTxHexDecode string, channelInfo *dao.ChannelInfo, user *bean.User) (fundingTxid string, amountA float64, propertyId int64, err error) {
+	jsonOmniTxHexDecode := gjson.Parse(fundingTxHexDecode)
+	fundingTxid = jsonOmniTxHexDecode.Get("txid").String()
+
+	funderAddress := channelInfo.AddressA
+	if user.PeerId == channelInfo.PeerIdB {
+		funderAddress = channelInfo.AddressB
+	}
+
+	sendingAddress := jsonOmniTxHexDecode.Get("sendingaddress").String()
+	if sendingAddress != funderAddress {
+		err = errors.New("wrong Tx input")
+		log.Println(err)
+		return "", 0, 0, err
+	}
+	referenceAddress := jsonOmniTxHexDecode.Get("referenceaddress").String()
+	if referenceAddress != channelInfo.ChannelAddress {
+		err = errors.New("wrong Tx output")
+		log.Println(err)
+		return "", 0, 0, err
+	}
+
+	amountA = jsonOmniTxHexDecode.Get("amount").Float()
+	propertyId = jsonOmniTxHexDecode.Get("propertyid").Int()
+
+	return fundingTxid, amountA, propertyId, err
+}

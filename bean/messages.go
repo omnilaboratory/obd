@@ -118,7 +118,7 @@ type FundingSigned struct {
 	RedeemScript string `json:"redeem_script"`
 	//hash of redeemScript
 	P2shAddress string `json:"p2sh_address"`
-	Attitude    bool   `json:"attitude"`
+	Approval    bool   `json:"approval"`
 }
 
 //type: -351 (commitment_tx)
