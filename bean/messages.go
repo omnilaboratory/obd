@@ -141,7 +141,7 @@ type CommitmentTxSigned struct {
 	LastTempAddressPrivateKey string    `json:"last_temp_address_private_key"` // bob2's private key
 	CurrTempAddressPubKey     string    `json:"curr_temp_address_pub_key"`     // bob3 or alice3
 	CurrTempAddressPrivateKey string    `json:"curr_temp_address_private_key"`
-	Attitude                  bool      `json:"attitude"` // true agree false disagree
+	Approval                  bool      `json:"approval"` // true agree false disagree
 }
 
 //type: -353 (get_balance_request)

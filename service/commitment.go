@@ -309,7 +309,7 @@ func (service *commitmentTxSignedManager) CommitmentTxSign(jsonData string, sign
 		targetUser = channelInfo.PeerIdB
 	}
 
-	if data.Attitude == false {
+	if data.Approval == false {
 		return nil, nil, &targetUser, errors.New("signer disagree transaction")
 	}
 
