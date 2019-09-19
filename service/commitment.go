@@ -484,21 +484,27 @@ func createAliceSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFr
 			return nil, err
 		}
 
-		txid, hex, err := rpcClient.BtcCreateAndSignRawTransactionForUnsendInputTx(
+		inputs, err := getRdInputsFromCommitmentTx(lastCommitmentATx.TransactionSignHexToTempMultiAddress, lastCommitmentATx.MultiAddress, lastCommitmentATx.ScriptPubKey)
+		if err != nil {
+			log.Println(err)
+			return nil, err
+		}
+
+		changeToAddress := channelInfo.AddressA
+		if signer.PeerId == channelInfo.PeerIdA {
+			changeToAddress = channelInfo.AddressB
+		}
+
+		txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionForUnsendInputTx(
 			lastCommitmentATx.MultiAddress,
 			[]string{
 				lastTempAddressPrivateKey,
 				tempAddrPrivateKeyMap[channelInfo.PubKeyB],
 			},
-			[]rpc.TransactionInputItem{
-				{breachRemedyTransaction.InputTxid,
-					lastCommitmentATx.ScriptPubKey,
-					breachRemedyTransaction.InputVout,
-					breachRemedyTransaction.InputAmount},
-			},
-			[]rpc.TransactionOutputItem{
-				{channelInfo.AddressB, breachRemedyTransaction.Amount},
-			},
+			inputs,
+			channelInfo.AddressB, changeToAddress,
+			fundingTransaction.PropertyId,
+			breachRemedyTransaction.Amount,
 			0,
 			0,
 			&lastCommitmentATx.RedeemScript)
@@ -563,26 +569,47 @@ func createAliceSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFr
 		return nil, err
 	}
 
-	txid, hex, err := rpcClient.BtcCreateAndSignRawTransaction(
+	txid, hex, inputVoutForBob, err := rpcClient.OmniCreateAndSignRawTransactionForCommitmentTx(
 		channelInfo.ChannelAddress,
 		[]string{
 			tempAddrPrivateKeyMap[channelInfo.PubKeyA],
 			tempAddrPrivateKeyMap[channelInfo.PubKeyB],
 		},
-		[]rpc.TransactionOutputItem{
-			{commitmentTxInfo.MultiAddress, commitmentTxInfo.AmountM},
-			{outputBean.ToAddress, commitmentTxInfo.AmountB},
-		},
+		commitmentTxInfo.MultiAddress,
+		fundingTransaction.PropertyId,
+		commitmentTxInfo.AmountM,
 		0,
-		0,
-		&channelInfo.ChannelAddressRedeemScript)
+		0)
 	if err != nil {
 		log.Println(err)
 		return nil, err
 	}
-	commitmentTxInfo.LastCommitmentTxId = lastCommitmentATx.Id
+	log.Println(inputVoutForBob)
 	commitmentTxInfo.TxidToTempMultiAddress = txid
 	commitmentTxInfo.TransactionSignHexToTempMultiAddress = hex
+
+	//create to Bob tx
+	txid, hex, err = rpcClient.OmniCreateAndSignRawTransactionForCommitmentTxToBob(
+		channelInfo.ChannelAddress,
+		inputVoutForBob,
+		[]string{
+			tempAddrPrivateKeyMap[channelInfo.PubKeyA],
+			tempAddrPrivateKeyMap[channelInfo.PubKeyB],
+		},
+		channelInfo.AddressB,
+		fundingTransaction.FunderAddress,
+		fundingTransaction.PropertyId,
+		commitmentTxInfo.AmountB,
+		0,
+		0)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	commitmentTxInfo.TxidToOther = txid
+	commitmentTxInfo.TransactionSignHexToOther = hex
+
+	commitmentTxInfo.LastCommitmentTxId = lastCommitmentATx.Id
 	commitmentTxInfo.SignAt = time.Now()
 	commitmentTxInfo.CurrState = dao.TxInfoState_CreateAndSign
 	commitmentTxInfo.LastHash = ""
@@ -619,21 +646,23 @@ func createAliceSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFr
 		currTempAddressPrivateKey = signData.CurrTempAddressPrivateKey
 	}
 
-	txid, hex, err = rpcClient.BtcCreateAndSignRawTransactionForUnsendInputTx(
+	inputs, err := getRdInputsFromCommitmentTx(commitmentTxInfo.TransactionSignHexToTempMultiAddress, commitmentTxInfo.MultiAddress, commitmentTxInfo.ScriptPubKey)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	txid, hex, err = rpcClient.OmniCreateAndSignRawTransactionForUnsendInputTx(
 		commitmentTxInfo.MultiAddress,
 		[]string{
 			currTempAddressPrivateKey,
 			tempAddrPrivateKeyMap[channelInfo.PubKeyB],
 		},
-		[]rpc.TransactionInputItem{
-			{rdTransaction.InputTxid,
-				commitmentTxInfo.ScriptPubKey,
-				rdTransaction.InputVout,
-				rdTransaction.InputAmount},
-		},
-		[]rpc.TransactionOutputItem{
-			{rdTransaction.OutputAddress, rdTransaction.Amount},
-		},
+		inputs,
+		rdTransaction.OutputAddress,
+		fundingTransaction.FunderAddress,
+		fundingTransaction.PropertyId,
+		rdTransaction.Amount,
 		0,
 		rdTransaction.Sequence,
 		&commitmentTxInfo.RedeemScript)
@@ -641,6 +670,7 @@ func createAliceSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFr
 		log.Println(err)
 		return nil, err
 	}
+
 	rdTransaction.Txid = txid
 	rdTransaction.TransactionSignHex = hex
 	rdTransaction.SignAt = time.Now()
@@ -684,21 +714,29 @@ func createBobSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFrom
 			lastTempAddressPrivateKey = tempAddrPrivateKeyMap[dataFromCreator.LastTempAddressPubKey]
 		}
 
-		txid, hex, err := rpcClient.BtcCreateAndSignRawTransactionForUnsendInputTx(
+		if tool.CheckIsString(&lastTempAddressPrivateKey) == false {
+			err = errors.New("fail to get the lastTempAddressPrivateKey")
+			log.Println(err)
+			return nil, err
+		}
+
+		inputs, err := getRdInputsFromCommitmentTx(lastCommitmentBTx.TransactionSignHexToTempMultiAddress, lastCommitmentBTx.MultiAddress, lastCommitmentBTx.ScriptPubKey)
+		if err != nil {
+			log.Println(err)
+			return nil, err
+		}
+
+		txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionForUnsendInputTx(
 			lastCommitmentBTx.MultiAddress,
 			[]string{
 				lastTempAddressPrivateKey,
 				tempAddrPrivateKeyMap[channelInfo.PubKeyA],
 			},
-			[]rpc.TransactionInputItem{
-				{breachRemedyTransaction.InputTxid,
-					lastCommitmentBTx.ScriptPubKey,
-					breachRemedyTransaction.InputVout,
-					breachRemedyTransaction.InputAmount},
-			},
-			[]rpc.TransactionOutputItem{
-				{channelInfo.AddressA, breachRemedyTransaction.Amount},
-			},
+			inputs,
+			channelInfo.AddressA,
+			fundingTransaction.FunderAddress,
+			fundingTransaction.PropertyId,
+			breachRemedyTransaction.Amount,
 			0,
 			0,
 			&lastCommitmentBTx.RedeemScript)
@@ -779,11 +817,50 @@ func createBobSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFrom
 		log.Println(err)
 		return nil, err
 	}
+
+	txid, hex, inputVoutForBob, err := rpcClient.OmniCreateAndSignRawTransactionForCommitmentTx(
+		channelInfo.ChannelAddress,
+		[]string{
+			tempAddrPrivateKeyMap[channelInfo.PubKeyA],
+			tempAddrPrivateKeyMap[channelInfo.PubKeyB],
+		},
+		commitmentTxInfo.MultiAddress,
+		fundingTransaction.PropertyId,
+		commitmentTxInfo.AmountM,
+		0,
+		0)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	log.Println(inputVoutForBob)
+	commitmentTxInfo.TxidToTempMultiAddress = txid
+	commitmentTxInfo.TransactionSignHexToTempMultiAddress = hex
+
+	//create to alice tx
+	txid, hex, err = rpcClient.OmniCreateAndSignRawTransactionForCommitmentTxToBob(
+		channelInfo.ChannelAddress,
+		inputVoutForBob,
+		[]string{
+			tempAddrPrivateKeyMap[channelInfo.PubKeyA],
+			tempAddrPrivateKeyMap[channelInfo.PubKeyB],
+		},
+		channelInfo.AddressA,
+		fundingTransaction.FunderAddress,
+		fundingTransaction.PropertyId,
+		commitmentTxInfo.AmountB,
+		0,
+		0)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	commitmentTxInfo.TxidToOther = txid
+	commitmentTxInfo.TransactionSignHexToOther = hex
+
 	if lastCommitmentBTx != nil {
 		commitmentTxInfo.LastCommitmentTxId = lastCommitmentBTx.Id
 	}
-	commitmentTxInfo.TxidToTempMultiAddress = txId
-	commitmentTxInfo.TransactionSignHexToTempMultiAddress = hex
 	commitmentTxInfo.SignAt = time.Now()
 	commitmentTxInfo.CurrState = dao.TxInfoState_CreateAndSign
 	commitmentTxInfo.CurrHash = ""
@@ -820,21 +897,23 @@ func createBobSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFrom
 		currTempAddressPrivateKey = tempAddrPrivateKeyMap[dataFromCreator.CurrTempAddressPubKey]
 	}
 
-	txId, hex, err = rpcClient.BtcCreateAndSignRawTransactionForUnsendInputTx(
+	inputs, err := getRdInputsFromCommitmentTx(commitmentTxInfo.TransactionSignHexToTempMultiAddress, commitmentTxInfo.MultiAddress, commitmentTxInfo.ScriptPubKey)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	txid, hex, err = rpcClient.OmniCreateAndSignRawTransactionForUnsendInputTx(
 		commitmentTxInfo.MultiAddress,
 		[]string{
 			tempAddrPrivateKeyMap[channelInfo.PubKeyA],
 			currTempAddressPrivateKey,
 		},
-		[]rpc.TransactionInputItem{
-			{rdTransaction.InputTxid,
-				commitmentTxInfo.ScriptPubKey,
-				rdTransaction.InputVout,
-				rdTransaction.InputAmount},
-		},
-		[]rpc.TransactionOutputItem{
-			{rdTransaction.OutputAddress, rdTransaction.Amount},
-		},
+		inputs,
+		rdTransaction.OutputAddress,
+		fundingTransaction.FunderAddress,
+		fundingTransaction.PropertyId,
+		rdTransaction.Amount,
 		0,
 		rdTransaction.Sequence,
 		&commitmentTxInfo.RedeemScript)
@@ -842,6 +921,7 @@ func createBobSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFrom
 		log.Println(err)
 		return nil, err
 	}
+
 	rdTransaction.Txid = txId
 	rdTransaction.TransactionSignHex = hex
 	rdTransaction.SignAt = time.Now()

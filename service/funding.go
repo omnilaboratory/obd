@@ -282,9 +282,11 @@ func (service *fundingTransactionManager) CreateFundingOmniTxRequest(jsonData st
 		// if alice launch funding
 		if user.PeerId == channelInfo.PeerIdA {
 			fundingTransaction.AmountA = amountA
+			fundingTransaction.FunderAddress = channelInfo.AddressA
 			tempAddrPrivateKeyMap[channelInfo.PubKeyA] = reqData.ChannelAddressPrivateKey
 		} else { // if bob launch funding
 			fundingTransaction.AmountB = amountA
+			fundingTransaction.FunderAddress = channelInfo.AddressB
 			tempAddrPrivateKeyMap[channelInfo.PubKeyB] = reqData.ChannelAddressPrivateKey
 		}
 		fundingTransaction.FundingTxHex = reqData.FundingTxHex

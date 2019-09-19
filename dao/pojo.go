@@ -70,6 +70,7 @@ type FundingTransaction struct {
 	FundingOutputIndex         uint32                  `json:"funding_output_index"`
 	AmountB                    float64                 `json:"amount_b"`
 	CreateBy                   string                  `json:"create_by"`
+	FunderAddress              string                  `json:"funder_address"`
 	CreateAt                   time.Time               `json:"create_at"`
 	FundeeSignAt               time.Time               `json:"fundee_sign_at"`
 }
