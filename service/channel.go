@@ -193,8 +193,6 @@ func (c *channelManager) ForceCloseChannel(jsonData string, user *bean.User) (in
 		return nil, err
 	}
 
-	result, _ := rpcClient.DecodeRawTransaction(lastCommitmentTx.TransactionSignHexToTempMultiAddress)
-	log.Println(result)
 	commitmentTxid, err := rpcClient.SendRawTransaction(lastCommitmentTx.TransactionSignHexToTempMultiAddress)
 	if err != nil {
 		log.Println(err)
@@ -202,19 +200,27 @@ func (c *channelManager) ForceCloseChannel(jsonData string, user *bean.User) (in
 	}
 	log.Println(commitmentTxid)
 
+	commitmentTxidToBob, err := rpcClient.SendRawTransaction(lastCommitmentTx.TransactionSignHexToOther)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	log.Println(commitmentTxidToBob)
+
 	lastRevocableDeliveryTx := &dao.RevocableDeliveryTransaction{}
 	err = db.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("Owner", user.PeerId)).OrderBy("CreateAt").Reverse().First(lastRevocableDeliveryTx)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	revocableDeliveryTxid, err := rpcClient.SendRawTransaction(lastRevocableDeliveryTx.TransactionSignHex)
 	if err != nil {
 		log.Println(err)
 		msg := err.Error()
 		if strings.Contains(msg, "non-BIP68-final (code 64)") == false {
 			return nil, err
 		}
-	}
-
-	revocableDeliveryTxid, err := rpcClient.SendRawTransaction(lastRevocableDeliveryTx.TransactionSignHex)
-	if err != nil {
-		log.Println(err)
 	}
 	log.Println(revocableDeliveryTxid)
 
@@ -382,6 +388,12 @@ func (c *channelManager) CloseChannelSign(jsonData string, user *bean.User) (int
 		return nil, nil, err
 	}
 	log.Println(commitmentTxid)
+	commitmentTxidToBob, err := rpcClient.SendRawTransaction(lastCommitmentTx.TransactionSignHexToOther)
+	if err != nil {
+		log.Println(err)
+		return nil, nil, err
+	}
+	log.Println(commitmentTxidToBob)
 
 	lastRevocableDeliveryTx := &dao.RevocableDeliveryTransaction{}
 	err = db.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("Owner", user.PeerId)).OrderBy("CreateAt").Reverse().First(lastRevocableDeliveryTx)
@@ -398,7 +410,6 @@ func (c *channelManager) CloseChannelSign(jsonData string, user *bean.User) (int
 			return nil, nil, err
 		}
 	}
-
 	log.Println(revocableDeliveryTxid)
 
 	tx, err := db.Begin(true)
@@ -435,7 +446,7 @@ func (c *channelManager) CloseChannelSign(jsonData string, user *bean.User) (int
 		return nil, nil, err
 	}
 
-	return nil, &targetUser, nil
+	return channelInfo, &targetUser, nil
 }
 
 func addRDTxToWaitDB(tx storm.Node, lastRevocableDeliveryTx *dao.RevocableDeliveryTransaction) (err error) {
