@@ -88,10 +88,23 @@ type FundingBtcRequest struct {
 	Owner              string         `json:"owner"`
 	TemporaryChannelId chainhash.Hash `json:"temporary_channel_id"`
 	TxHash             string         `json:"tx_hash"`
+	TxId               string         `json:"tx_id"`
 	Amount             float64        `json:"amount"`
 	CreateAt           time.Time      `json:"create_at"`
+	FinishAt           time.Time      `json:"finish_at"`
 	IsEnable           bool           `json:"is_enable"`
 	IsFinish           bool           `json:"is_finish"`
+}
+
+//redeem the btc fee
+type MinerFeeRedeemTransaction struct {
+	Id                 int            `storm:"id,increment" json:"id" `
+	Owner              string         `json:"owner"`
+	TemporaryChannelId chainhash.Hash `json:"temporary_channel_id"`
+	ChannelId          bean.ChannelID `json:"channel_id"`
+	TxHash             string         `json:"tx_hash"`
+	Txid               string         `json:"txid"`
+	CreateAt           time.Time      `json:"create_at"`
 }
 
 type CommitmentTxRequestInfo struct {
@@ -102,17 +115,6 @@ type CommitmentTxRequestInfo struct {
 	LastTempAddressPubKey string
 	CreateAt              time.Time
 	IsEnable              bool
-}
-
-//redeem the btc fee
-type MinerFeeRedeemTransaction struct {
-	Id                 int            `storm:"id,increment" json:"id" `
-	Owner              string         `json:"owner"`
-	TemporaryChannelId chainhash.Hash `json:"temporary_channel_id"`
-	ChannelId          bean.ChannelID `json:"channel_id"`
-	TxHash             string         `json:"tx_hash"`
-	IsEnable           bool           `json:"is_enable"`
-	CreateAt           time.Time      `json:"create_at"`
 }
 
 //CommitmentTransaction

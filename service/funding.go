@@ -5,10 +5,12 @@ import (
 	"LightningOnOmni/bean/chainhash"
 	"LightningOnOmni/config"
 	"LightningOnOmni/dao"
+	"LightningOnOmni/rpc"
 	"LightningOnOmni/tool"
 	"encoding/json"
 	"errors"
 	"github.com/asdine/storm/q"
+	"github.com/shopspring/decimal"
 	"github.com/tidwall/gjson"
 	"log"
 	"sync"
@@ -55,14 +57,15 @@ func (service *fundingTransactionManager) CreateFundingBtcTxRequest(jsonData str
 	}
 
 	//get btc miner Fee data from transaction
-	amount, _, err := checkBtcTxHex(btcFeeTxHexDecode, channelInfo, user)
+	fundingTxid, amount, _, err := checkBtcTxHex(btcFeeTxHexDecode, channelInfo, user)
 	if err != nil {
 		log.Println(err)
 		return nil, err
 	}
 
-	if amount < config.Dust {
-		err = errors.New("error btc tx")
+	out, _ := decimal.NewFromFloat(rpc.GetMinerFee()).Add(decimal.NewFromFloat(config.Dust)).Float64()
+	if amount < out {
+		err = errors.New("error btc amount")
 		log.Println(err)
 		return nil, err
 	}
@@ -71,36 +74,12 @@ func (service *fundingTransactionManager) CreateFundingBtcTxRequest(jsonData str
 	defer tx.Rollback()
 
 	fundingBtcRequest := &dao.FundingBtcRequest{}
-	count, _ := tx.Select(q.Eq("TemporaryChannelId", reqData.TemporaryChannelId), q.Eq("Owner", user.PeerId), q.Eq("IsEnable", true), q.Eq("IsFinish", true)).Count(fundingBtcRequest)
+	count, _ := tx.Select(q.Eq("TemporaryChannelId", reqData.TemporaryChannelId), q.Eq("TxId", fundingTxid), q.Eq("Owner", user.PeerId), q.Eq("IsEnable", true), q.Eq("IsFinish", true)).Count(fundingBtcRequest)
 	if count != 0 {
 		err = errors.New("have funding btc fee")
 		log.Println(err)
 		return nil, err
 	}
-
-	_ = tx.Select(q.Eq("TemporaryChannelId", reqData.TemporaryChannelId), q.Eq("Owner", user.PeerId), q.Eq("IsEnable", true)).Find(fundingBtcRequest)
-	if fundingBtcRequest.Id > 0 {
-		err = tx.UpdateField(fundingBtcRequest, "IsEnable", false)
-		if err != nil {
-			log.Println(err)
-			return nil, err
-		}
-	}
-
-	fundingBtcRequest = &dao.FundingBtcRequest{}
-	fundingBtcRequest.Owner = user.PeerId
-	fundingBtcRequest.TemporaryChannelId = reqData.TemporaryChannelId
-	fundingBtcRequest.TxHash = reqData.FundingTxHex
-	fundingBtcRequest.IsEnable = true
-	fundingBtcRequest.CreateAt = time.Now()
-	fundingBtcRequest.Amount = amount
-	fundingBtcRequest.IsFinish = false
-	err = tx.Save(fundingBtcRequest)
-	if err != nil {
-		log.Println(err)
-		return nil, err
-	}
-	tx.Commit()
 
 	pubKey := channelInfo.PubKeyA
 	if user.PeerId == channelInfo.PeerIdB {
@@ -108,13 +87,32 @@ func (service *fundingTransactionManager) CreateFundingBtcTxRequest(jsonData str
 	}
 	tempAddrPrivateKeyMap[pubKey] = reqData.ChannelAddressPrivateKey
 
+	_ = tx.Select(q.Eq("TemporaryChannelId", reqData.TemporaryChannelId), q.Eq("TxId", fundingTxid), q.Eq("Owner", user.PeerId), q.Eq("IsEnable", true)).Find(fundingBtcRequest)
+	if fundingBtcRequest.Id == 0 {
+		fundingBtcRequest = &dao.FundingBtcRequest{}
+		fundingBtcRequest.Owner = user.PeerId
+		fundingBtcRequest.TemporaryChannelId = reqData.TemporaryChannelId
+		fundingBtcRequest.TxHash = reqData.FundingTxHex
+		fundingBtcRequest.TxId = fundingTxid
+		fundingBtcRequest.IsEnable = true
+		fundingBtcRequest.CreateAt = time.Now()
+		fundingBtcRequest.Amount = amount
+		fundingBtcRequest.IsFinish = false
+		err = tx.Save(fundingBtcRequest)
+		if err != nil {
+			log.Println(err)
+			return nil, err
+		}
+	}
+	tx.Commit()
 	node := make(map[string]interface{})
 	node["temporary_channel_id"] = reqData.TemporaryChannelId
 	node["amount"] = amount
+	node["fundingTxid"] = fundingTxid
 	return node, nil
 }
 
-func (service *fundingTransactionManager) FundingBtcTxSign(jsonData string, signer *bean.User) (minerFeeRedeemTransaction *dao.MinerFeeRedeemTransaction, err error) {
+func (service *fundingTransactionManager) FundingBtcTxSign(jsonData string, signer *bean.User) (minerFeeRedeemTransaction interface{}, err error) {
 	reqData := &bean.FundingBtcSigned{}
 	err = json.Unmarshal([]byte(jsonData), reqData)
 	if err != nil {
@@ -132,6 +130,11 @@ func (service *fundingTransactionManager) FundingBtcTxSign(jsonData string, sign
 		log.Println(err)
 		return nil, err
 	}
+	if tool.CheckIsString(&reqData.FundingTxid) == false {
+		err = errors.New("wrong ChannelAddressPrivateKey ")
+		log.Println(err)
+		return nil, err
+	}
 
 	channelInfo := &dao.ChannelInfo{}
 	err = db.Select(q.Eq("TemporaryChannelId", reqData.TemporaryChannelId), q.Eq("CurrState", dao.ChannelState_Accept), q.Or(q.Eq("PeerIdA", signer.PeerId), q.Eq("PeerIdB", signer.PeerId))).OrderBy("CreateAt").Reverse().First(channelInfo)
@@ -145,10 +148,17 @@ func (service *fundingTransactionManager) FundingBtcTxSign(jsonData string, sign
 	}
 
 	fundingBtcRequest := &dao.FundingBtcRequest{}
-	err = db.Select(q.Eq("TemporaryChannelId", reqData.TemporaryChannelId), q.Eq("Owner", creator), q.Eq("IsEnable", true)).Find(fundingBtcRequest)
+	err = db.Select(q.Eq("TemporaryChannelId", reqData.TemporaryChannelId), q.Eq("TxId", reqData.FundingTxid), q.Eq("Owner", creator), q.Eq("IsEnable", true), q.Eq("IsFinish", false)).Find(fundingBtcRequest)
 	if err != nil {
 		log.Println(err)
 		return nil, err
+	}
+	if reqData.Approval == false {
+		db.UpdateField(fundingBtcRequest, "IsEnable", false)
+		db.UpdateField(fundingBtcRequest, "IsFinish", true)
+		fundingBtcRequest.FinishAt = time.Now()
+		db.Update(fundingBtcRequest)
+		return fundingBtcRequest, nil
 	}
 
 	//TODO create miner fee redeem transaction
@@ -195,6 +205,13 @@ func (service *fundingTransactionManager) CreateFundingOmniTxRequest(jsonData st
 		log.Println(err)
 		return nil, err
 	}
+
+	err = checkBtcFundFinish(channelInfo.ChannelAddress)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
 	// if alice launch funding
 	if user.PeerId == channelInfo.PeerIdA {
 		tempAddrPrivateKeyMap[channelInfo.PubKeyA] = reqData.ChannelAddressPrivateKey
@@ -251,7 +268,7 @@ func (service *fundingTransactionManager) CreateFundingOmniTxRequest(jsonData st
 		}
 
 		//get btc miner Fee data from transaction
-		_, fundingOutputIndex, err := checkBtcTxHex(btcTxHashDecode, channelInfo, user)
+		fundingTxid, _, fundingOutputIndex, err := checkBtcTxHex(btcTxHashDecode, channelInfo, user)
 		if err != nil {
 			log.Println(err)
 			return nil, err
@@ -325,6 +342,30 @@ func (service *fundingTransactionManager) CreateFundingOmniTxRequest(jsonData st
 		log.Println(err)
 	}
 	return fundingTransaction, err
+}
+
+func checkBtcFundFinish(address string) error {
+	result, err := rpcClient.ListUnspent(address)
+	if err != nil {
+		return err
+	}
+	array := gjson.Parse(result).Array()
+	if len(array) == 0 {
+		return errors.New("empty balance")
+	}
+	if len(array) < 2 {
+		return errors.New("btc fund have been not finished")
+	}
+	log.Println("listunspent", array)
+
+	out, _ := decimal.NewFromFloat(rpc.GetMinerFee()).Add(decimal.NewFromFloat(0.00000546)).Float64()
+	for _, item := range array {
+		amount := item.Get("amount").Float()
+		if amount < out {
+			return errors.New("btc amount error")
+		}
+	}
+	return nil
 }
 
 func (service *fundingTransactionManager) FundingOmniTxSign(jsonData string, signer *bean.User) (signed *dao.FundingTransaction, err error) {

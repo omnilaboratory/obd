@@ -95,6 +95,7 @@ type FundingBtcCreated struct {
 //type: -3500 (FundingBtcSigned)
 type FundingBtcSigned struct {
 	TemporaryChannelId       chainhash.Hash `json:"temporary_channel_id"`
+	FundingTxid              string         `json:"funding_txid"`
 	ChannelAddressPrivateKey string         `json:"channel_address_private_key"`
 	Approval                 bool           `json:"approval"`
 }

@@ -138,22 +138,22 @@ func createBRTx(owner string, channelInfo *dao.ChannelInfo, commitmentTxInfo *da
 	return breachRemedyTransaction, nil
 }
 
-func checkBtcTxHex(btcFeeTxHexDecode string, channelInfo *dao.ChannelInfo, user *bean.User) (amountA float64, fundingOutputIndex uint32, err error) {
+func checkBtcTxHex(btcFeeTxHexDecode string, channelInfo *dao.ChannelInfo, user *bean.User) (fundingTxid string, amountA float64, fundingOutputIndex uint32, err error) {
 	jsonFundingTxHexDecode := gjson.Parse(btcFeeTxHexDecode)
-	//fundingTxid := jsonFundingTxHexDecode.Get("txid").String()
+	fundingTxid = jsonFundingTxHexDecode.Get("txid").String()
 
 	//vin
 	if jsonFundingTxHexDecode.Get("vin").IsArray() == false {
 		err = errors.New("wrong Tx input vin")
 		log.Println(err)
-		return 0, 0, err
+		return "", 0, 0, err
 	}
 	inTxid := jsonFundingTxHexDecode.Get("vin").Array()[0].Get("txid").String()
 	inputTx, err := rpcClient.GetTransactionById(inTxid)
 	if err != nil {
 		err = errors.New("wrong input: " + err.Error())
 		log.Println(err)
-		return 0, 0, err
+		return "", 0, 0, err
 	}
 
 	jsonInputTxDecode := gjson.Parse(inputTx)
@@ -162,7 +162,7 @@ func checkBtcTxHex(btcFeeTxHexDecode string, channelInfo *dao.ChannelInfo, user 
 	if err != nil {
 		err = errors.New("wrong input: " + err.Error())
 		log.Println(err)
-		return 0, 0, err
+		return "", 0, 0, err
 	}
 
 	funderAddress := channelInfo.AddressA
@@ -188,7 +188,7 @@ func checkBtcTxHex(btcFeeTxHexDecode string, channelInfo *dao.ChannelInfo, user 
 	if flag == false {
 		err = errors.New("wrong vin " + jsonFundingTxHexDecode.Get("vin").String())
 		log.Println(err)
-		return 0, 0, err
+		return "", 0, 0, err
 	}
 
 	//vout
@@ -196,7 +196,7 @@ func checkBtcTxHex(btcFeeTxHexDecode string, channelInfo *dao.ChannelInfo, user 
 	if jsonFundingTxHexDecode.Get("vout").IsArray() == false {
 		err = errors.New("wrong Tx vout")
 		log.Println(err)
-		return 0, 0, err
+		return "", 0, 0, err
 	}
 	for _, item := range jsonFundingTxHexDecode.Get("vout").Array() {
 		addresses := item.Get("scriptPubKey").Get("addresses").Array()
@@ -215,9 +215,9 @@ func checkBtcTxHex(btcFeeTxHexDecode string, channelInfo *dao.ChannelInfo, user 
 	if flag == false {
 		err = errors.New("wrong vout " + jsonFundingTxHexDecode.Get("vout").String())
 		log.Println(err)
-		return 0, 0, err
+		return "", 0, 0, err
 	}
-	return amountA, fundingOutputIndex, err
+	return fundingTxid, amountA, fundingOutputIndex, err
 }
 
 func checkOmniTxHex(fundingTxHexDecode string, channelInfo *dao.ChannelInfo, user *bean.User) (fundingTxid string, amountA float64, propertyId int64, err error) {

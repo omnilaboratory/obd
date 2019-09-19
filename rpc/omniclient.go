@@ -223,7 +223,7 @@ func (client *Client) OmniCreateAndSignRawTransactionForCommitmentTx(fromBitCoin
 
 	pMoney := 0.00000546
 	if minerFee < config.Dust {
-		minerFee = getMinerFee()
+		minerFee = GetMinerFee()
 	}
 
 	out, _ := decimal.NewFromFloat(minerFee).
@@ -375,7 +375,7 @@ func (client *Client) OmniCreateAndSignRawTransactionForCommitmentTxToBob(fromBi
 
 	pMoney := 0.00000546
 	if minerFee < config.Dust {
-		minerFee = getMinerFee()
+		minerFee = GetMinerFee()
 	}
 
 	out, _ := decimal.NewFromFloat(minerFee).
@@ -503,7 +503,7 @@ func (client *Client) OmniCreateAndSignRawTransactionForUnsendInputTx(fromBitCoi
 
 	pMoney := 0.00000546
 	if minerFee < config.Dust {
-		minerFee = getMinerFee()
+		minerFee = GetMinerFee()
 	}
 
 	if ismine, _ := client.ValidateAddress(fromBitCoinAddress); ismine == false {

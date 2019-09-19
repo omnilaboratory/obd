@@ -163,7 +163,7 @@ func (client *Client) BtcCreateAndSignRawTransaction(fromBitCoinAddress string, 
 	}
 
 	if minerFee <= 0 {
-		minerFee = getMinerFee()
+		minerFee = GetMinerFee()
 	}
 
 	outTotalAmount := decimal.NewFromFloat(0)
@@ -286,7 +286,7 @@ func (client *Client) BtcCreateAndSignRawTransactionForUnsendInputTx(fromBitCoin
 	}
 
 	if minerFee <= config.Dust {
-		minerFee = getMinerFee()
+		minerFee = GetMinerFee()
 	}
 
 	outAmount := decimal.NewFromFloat(0)

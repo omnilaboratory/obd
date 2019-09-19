@@ -609,7 +609,10 @@ func createAliceSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFr
 	commitmentTxInfo.TxidToOther = txid
 	commitmentTxInfo.TransactionSignHexToOther = hex
 
-	commitmentTxInfo.LastCommitmentTxId = lastCommitmentATx.Id
+	if lastCommitmentATx != nil {
+		commitmentTxInfo.LastCommitmentTxId = lastCommitmentATx.Id
+	}
+
 	commitmentTxInfo.SignAt = time.Now()
 	commitmentTxInfo.CurrState = dao.TxInfoState_CreateAndSign
 	commitmentTxInfo.LastHash = ""
