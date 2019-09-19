@@ -42,6 +42,12 @@ func (service *commitmentTxManager) CreateNewCommitmentTxRequest(jsonData string
 		return nil, nil, err
 	}
 
+	err = checkBtcFundFinish(channelInfo.ChannelAddress)
+	if err != nil {
+		log.Println(err)
+		return nil, nil, err
+	}
+
 	lastCommitmentTxInfo := &dao.CommitmentTransaction{}
 	err = db.Select(q.Eq("ChannelId", data.ChannelId), q.Eq("CurrState", dao.TxInfoState_CreateAndSign), q.Eq("Owner", creator.PeerId)).OrderBy("CreateAt").Reverse().First(lastCommitmentTxInfo)
 	if err != nil {
@@ -294,6 +300,12 @@ func (service *commitmentTxSignedManager) CommitmentTxSign(jsonData string, sign
 
 	channelInfo := &dao.ChannelInfo{}
 	err = db.Select(q.Eq("ChannelId", data.ChannelId), q.Eq("CurrState", dao.ChannelState_Accept)).First(channelInfo)
+	if err != nil {
+		log.Println(err)
+		return nil, nil, nil, err
+	}
+
+	err = checkBtcFundFinish(channelInfo.ChannelAddress)
 	if err != nil {
 		log.Println(err)
 		return nil, nil, nil, err

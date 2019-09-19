@@ -352,8 +352,8 @@ func (client *Client) BtcCreateAndSignRawTransactionForUnsendInputTx(fromBitCoin
 		return "", "", errors.New("not enough balance")
 	}
 	drawback, _ := decimal.NewFromFloat(balance).Sub(decimal.NewFromFloat(out)).Float64()
-	output := make(map[string]float64)
 
+	output := make(map[string]float64)
 	for _, item := range outputItems {
 		if item.Amount > 0 {
 			output[item.ToBitCoinAddress], _ = decimal.NewFromFloat(item.Amount).Sub(decimal.NewFromFloat(subMinerFee)).Float64()
@@ -362,9 +362,7 @@ func (client *Client) BtcCreateAndSignRawTransactionForUnsendInputTx(fromBitCoin
 	if drawback > 0 {
 		output[fromBitCoinAddress] = drawback
 	}
-
 	hex, err = client.CreateRawTransaction(inputs, output)
-
 	if err != nil {
 		return "", "", err
 	}

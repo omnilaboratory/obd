@@ -57,7 +57,7 @@ func (service *fundingTransactionManager) CreateFundingBtcTxRequest(jsonData str
 	}
 
 	//get btc miner Fee data from transaction
-	fundingTxid, amount, _, err := checkBtcTxHex(btcFeeTxHexDecode, channelInfo, user)
+	fundingTxid, amount, _, err := checkBtcTxHex(btcFeeTxHexDecode, channelInfo, user.PeerId)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -112,7 +112,7 @@ func (service *fundingTransactionManager) CreateFundingBtcTxRequest(jsonData str
 	return node, nil
 }
 
-func (service *fundingTransactionManager) FundingBtcTxSign(jsonData string, signer *bean.User) (minerFeeRedeemTransaction interface{}, err error) {
+func (service *fundingTransactionManager) FundingBtcTxSign(jsonData string, signer *bean.User) (outData interface{}, err error) {
 	reqData := &bean.FundingBtcSigned{}
 	err = json.Unmarshal([]byte(jsonData), reqData)
 	if err != nil {
@@ -142,9 +142,21 @@ func (service *fundingTransactionManager) FundingBtcTxSign(jsonData string, sign
 		log.Println(err)
 		return nil, err
 	}
+
+	toAddress := channelInfo.AddressA
 	creator := channelInfo.PeerIdA
+	pubKey := channelInfo.PubKeyB
 	if signer.PeerId == channelInfo.PeerIdA {
 		creator = channelInfo.PeerIdB
+		pubKey = channelInfo.PubKeyA
+		toAddress = channelInfo.AddressB
+	}
+
+	funderPrivateKey := tempAddrPrivateKeyMap[pubKey]
+	if tool.CheckIsString(&funderPrivateKey) == false {
+		err = errors.New("wrong funderPrivateKey ")
+		log.Println(err)
+		return nil, err
 	}
 
 	fundingBtcRequest := &dao.FundingBtcRequest{}
@@ -154,15 +166,61 @@ func (service *fundingTransactionManager) FundingBtcTxSign(jsonData string, sign
 		return nil, err
 	}
 	if reqData.Approval == false {
-		db.UpdateField(fundingBtcRequest, "IsEnable", false)
-		db.UpdateField(fundingBtcRequest, "IsFinish", true)
 		fundingBtcRequest.FinishAt = time.Now()
-		db.Update(fundingBtcRequest)
+		_ = db.UpdateField(fundingBtcRequest, "IsFinish", true)
+		_ = db.UpdateField(fundingBtcRequest, "IsEnable", false)
+		_ = db.Update(fundingBtcRequest)
 		return fundingBtcRequest, nil
 	}
 
 	//TODO create miner fee redeem transaction
-	minerFeeRedeemTransaction = &dao.MinerFeeRedeemTransaction{}
+	btcFeeTxHexDecode, err := rpcClient.DecodeRawTransaction(fundingBtcRequest.TxHash)
+	if err != nil {
+		err = errors.New("BtcFeeTxHex  parse fail " + err.Error())
+		log.Println(err)
+		return nil, err
+	}
+	_, _, vout, err := checkBtcTxHex(btcFeeTxHexDecode, channelInfo, creator)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	result, err := rpcClient.SendRawTransaction(fundingBtcRequest.TxHash)
+	if err != nil {
+		return nil, err
+	}
+	log.Println(result)
+
+	minerFeeRedeemTransaction := &dao.MinerFeeRedeemTransaction{}
+	txid, hex, err := rpcClient.BtcCreateAndSignRawTransactionForUnsendInputTx(
+		channelInfo.ChannelAddress,
+		[]string{
+			funderPrivateKey,
+			reqData.ChannelAddressPrivateKey},
+		[]rpc.TransactionInputItem{
+			{
+				Txid:         fundingBtcRequest.TxId,
+				Vout:         vout,
+				ScriptPubKey: channelInfo.ChannelAddressScriptPubKey},
+		},
+		[]rpc.TransactionOutputItem{
+			{
+				ToBitCoinAddress: toAddress,
+				Amount:           fundingBtcRequest.Amount},
+		},
+		0,
+		0,
+		&channelInfo.ChannelAddressRedeemScript)
+	if err != nil {
+		return nil, err
+	}
+	minerFeeRedeemTransaction.Txid = txid
+	minerFeeRedeemTransaction.TxHash = hex
+	minerFeeRedeemTransaction.CreateAt = time.Now()
+	minerFeeRedeemTransaction.Owner = creator
+	minerFeeRedeemTransaction.TemporaryChannelId = reqData.TemporaryChannelId
+	_ = db.Save(minerFeeRedeemTransaction)
 
 	return minerFeeRedeemTransaction, nil
 }
@@ -268,7 +326,7 @@ func (service *fundingTransactionManager) CreateFundingOmniTxRequest(jsonData st
 		}
 
 		//get btc miner Fee data from transaction
-		fundingTxid, _, fundingOutputIndex, err := checkBtcTxHex(btcTxHashDecode, channelInfo, user)
+		fundingTxid, _, fundingOutputIndex, err := checkBtcTxHex(btcTxHashDecode, channelInfo, user.PeerId)
 		if err != nil {
 			log.Println(err)
 			return nil, err

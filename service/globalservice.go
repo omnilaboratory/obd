@@ -138,7 +138,7 @@ func createBRTx(owner string, channelInfo *dao.ChannelInfo, commitmentTxInfo *da
 	return breachRemedyTransaction, nil
 }
 
-func checkBtcTxHex(btcFeeTxHexDecode string, channelInfo *dao.ChannelInfo, user *bean.User) (fundingTxid string, amountA float64, fundingOutputIndex uint32, err error) {
+func checkBtcTxHex(btcFeeTxHexDecode string, channelInfo *dao.ChannelInfo, peerId string) (fundingTxid string, amountA float64, fundingOutputIndex uint32, err error) {
 	jsonFundingTxHexDecode := gjson.Parse(btcFeeTxHexDecode)
 	fundingTxid = jsonFundingTxHexDecode.Get("txid").String()
 
@@ -166,7 +166,7 @@ func checkBtcTxHex(btcFeeTxHexDecode string, channelInfo *dao.ChannelInfo, user 
 	}
 
 	funderAddress := channelInfo.AddressA
-	if user.PeerId == channelInfo.PeerIdB {
+	if peerId == channelInfo.PeerIdB {
 		funderAddress = channelInfo.AddressB
 	}
 	jsonInputHexDecode := gjson.Parse(inputHexDecode)
