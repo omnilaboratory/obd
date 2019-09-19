@@ -210,7 +210,7 @@ func (client *Client) OmniCreateAndSignRawTransaction(fromBitCoinAddress string,
 }
 
 // From channelAddress to temp multi address, to Create CommitmentTx
-func (client *Client) OmniCreateAndSignRawTransactionForCommitmentTx(fromBitCoinAddress string, privkeys []string, toBitCoinAddress string, propertyId int64, amount float64, minerFee float64, sequence int) (txid, hex string, channelAddressInputVout int64, err error) {
+func (client *Client) OmniCreateAndSignRawTransactionForCommitmentTx(fromBitCoinAddress string, privkeys []string, toBitCoinAddress string, propertyId int64, amount float64, minerFee float64, sequence int) (txid, hex string, inputVoutForBob int64, err error) {
 	if tool.CheckIsString(&fromBitCoinAddress) == false {
 		return "", "", 0, errors.New("fromBitCoinAddress is empty")
 	}
@@ -244,15 +244,32 @@ func (client *Client) OmniCreateAndSignRawTransactionForCommitmentTx(fromBitCoin
 	}
 
 	inputs := make([]map[string]interface{}, 0, 0)
-	channelAddressInputVout = -1
+	var usedVout int64
 	for _, item := range arrayListUnspent {
 		inputAmount := item.Get("amount").Float()
 		if inputAmount >= out {
-			if channelAddressInputVout == -1 {
-				channelAddressInputVout = item.Get("vout").Int()
-			} else {
-				continue
-			}
+			usedVout = item.Get("vout").Int()
+			node := make(map[string]interface{})
+			node["txid"] = item.Get("txid").String()
+			node["vout"] = item.Get("vout").Int()
+			node["amount"] = inputAmount
+			node["scriptPubKey"] = item.Get("scriptPubKey").String()
+			inputs = append(inputs, node)
+			break
+		}
+	}
+
+	if usedVout == 0 {
+		return "", "", 0, errors.New("not found the miner fee input")
+	}
+
+	inputVoutForBob = -1
+	for _, item := range arrayListUnspent {
+		inputAmount := item.Get("amount").Float()
+		vout := item.Get("vout").Int()
+		if inputAmount >= pMoney && vout != usedVout {
+			inputVoutForBob = vout
+			continue
 		}
 		node := make(map[string]interface{})
 		node["txid"] = item.Get("txid").String()
@@ -261,8 +278,9 @@ func (client *Client) OmniCreateAndSignRawTransactionForCommitmentTx(fromBitCoin
 		node["scriptPubKey"] = item.Get("scriptPubKey").String()
 		inputs = append(inputs, node)
 	}
-	if channelAddressInputVout == -1 {
-		return "", "", 0, errors.New("not found the miner fee input")
+
+	if inputVoutForBob == -1 {
+		return "", "", 0, errors.New("not found the miner fee input for another tx")
 	}
 
 	out, _ = decimal.NewFromFloat(out).
@@ -341,10 +359,10 @@ func (client *Client) OmniCreateAndSignRawTransactionForCommitmentTx(fromBitCoin
 	log.Println("7 DecodeSignRawTransactionWithKey", decodeHex)
 	txid = gjson.Get(decodeHex, "txid").String()
 
-	return txid, hex, channelAddressInputVout, nil
+	return txid, hex, inputVoutForBob, nil
 }
 
-func (client *Client) OmniCreateAndSignRawTransactionForCommitmentTxToBob(fromBitCoinAddress string, usedVout int64, privkeys []string, toBitCoinAddress, changeToAddress string, propertyId int64, amount float64, minerFee float64, sequence int) (txid, hex string, err error) {
+func (client *Client) OmniCreateAndSignRawTransactionForCommitmentTxToBob(fromBitCoinAddress string, inputVoutForBob int64, privkeys []string, toBitCoinAddress, changeToAddress string, propertyId int64, amount float64, minerFee float64, sequence int) (txid, hex string, err error) {
 	if tool.CheckIsString(&fromBitCoinAddress) == false {
 		return "", "", errors.New("fromBitCoinAddress is empty")
 	}
@@ -380,16 +398,15 @@ func (client *Client) OmniCreateAndSignRawTransactionForCommitmentTxToBob(fromBi
 	inputs := make([]map[string]interface{}, 0, 0)
 	for _, item := range arrayListUnspent {
 		vout := item.Get("vout").Int()
-		inputAmount := item.Get("amount").Float()
-		if vout == usedVout || inputAmount <= pMoney {
-			continue
+		if vout == inputVoutForBob {
+			node := make(map[string]interface{})
+			node["txid"] = item.Get("txid").String()
+			node["vout"] = item.Get("vout").Int()
+			node["amount"] = item.Get("amount").Float()
+			node["scriptPubKey"] = item.Get("scriptPubKey").String()
+			inputs = append(inputs, node)
+			break
 		}
-		node := make(map[string]interface{})
-		node["txid"] = item.Get("txid").String()
-		node["vout"] = item.Get("vout").Int()
-		node["amount"] = inputAmount
-		node["scriptPubKey"] = item.Get("scriptPubKey").String()
-		inputs = append(inputs, node)
 	}
 
 	balance := 0.0

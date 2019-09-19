@@ -420,7 +420,7 @@ func (service *fundingTransactionManager) FundingOmniTxSign(jsonData string, sig
 			return nil, err
 		}
 
-		txid, hex, usedVout, err := rpcClient.OmniCreateAndSignRawTransactionForCommitmentTx(
+		txid, hex, inputVoutForBob, err := rpcClient.OmniCreateAndSignRawTransactionForCommitmentTx(
 			channelInfo.ChannelAddress,
 			[]string{
 				funderChannelAddressPrivateKey,
@@ -435,7 +435,7 @@ func (service *fundingTransactionManager) FundingOmniTxSign(jsonData string, sig
 			log.Println(err)
 			return nil, err
 		}
-		log.Println(usedVout)
+		log.Println(inputVoutForBob)
 		commitmentTxInfo.TxidToTempMultiAddress = txid
 		commitmentTxInfo.TransactionSignHexToTempMultiAddress = hex
 
@@ -448,7 +448,7 @@ func (service *fundingTransactionManager) FundingOmniTxSign(jsonData string, sig
 		}
 		txid, hex, err = rpcClient.OmniCreateAndSignRawTransactionForCommitmentTxToBob(
 			channelInfo.ChannelAddress,
-			usedVout,
+			inputVoutForBob,
 			[]string{
 				funderChannelAddressPrivateKey,
 				reqData.FundeeChannelAddressPrivateKey,
