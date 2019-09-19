@@ -101,7 +101,7 @@ func createRDTx(owner string, channelInfo *dao.ChannelInfo, commitmentTxInfo *da
 	rda.Owner = owner
 
 	//input
-	rda.InputTxid = commitmentTxInfo.Txid
+	rda.InputTxid = commitmentTxInfo.TxidToTempMultiAddress
 	rda.InputVout = 0
 	rda.InputAmount = commitmentTxInfo.AmountM
 	//output
@@ -125,7 +125,7 @@ func createBRTx(owner string, channelInfo *dao.ChannelInfo, commitmentTxInfo *da
 	breachRemedyTransaction.Owner = owner
 
 	//input
-	breachRemedyTransaction.InputTxid = commitmentTxInfo.Txid
+	breachRemedyTransaction.InputTxid = commitmentTxInfo.TxidToTempMultiAddress
 	breachRemedyTransaction.InputVout = 0
 	breachRemedyTransaction.InputAmount = commitmentTxInfo.AmountM
 	//output
@@ -246,4 +246,30 @@ func checkOmniTxHex(fundingTxHexDecode string, channelInfo *dao.ChannelInfo, use
 	propertyId = jsonOmniTxHexDecode.Get("propertyid").Int()
 
 	return fundingTxid, amountA, propertyId, err
+}
+
+func getRdInputsFromCommitmentTx(hex string, toAddress, scriptPubKey string) (inputs []rpc.TransactionInputItem, err error) {
+	result, err := rpcClient.DecodeRawTransaction(hex)
+	if err != nil {
+		return nil, err
+	}
+	jsonHex := gjson.Parse(result)
+	if jsonHex.Get("vout").IsArray() {
+		inputs = make([]rpc.TransactionInputItem, 0, 0)
+		for _, item := range jsonHex.Get("vout").Array() {
+			if item.Get("scriptPubKey").Get("addresses").Exists() {
+				address := item.Get("scriptPubKey").Get("addresses").String()
+				if address == toAddress {
+					node := rpc.TransactionInputItem{}
+					node.Txid = jsonHex.Get("txid").String()
+					node.ScriptPubKey = scriptPubKey
+					node.Vout = uint32(item.Get("scriptPubKey").Get("n").Uint())
+					node.Amount = item.Get("value").Float()
+					inputs = append(inputs, node)
+				}
+			}
+		}
+		return inputs, nil
+	}
+	return nil, errors.New("no inputs")
 }

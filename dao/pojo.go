@@ -116,32 +116,34 @@ type MinerFeeRedeemTransaction struct {
 
 //CommitmentTransaction
 type CommitmentTransaction struct {
-	Id                 int            `storm:"id,increment" json:"id" `
-	LastCommitmentTxId int            `json:"last_commitment_tx_id"`
-	LastHash           string         `json:"last_hash"`
-	CurrHash           string         `json:"curr_hash"`
-	PeerIdA            string         `json:"peer_id_a"`
-	PeerIdB            string         `json:"peer_id_b"`
-	ChannelId          bean.ChannelID `json:"channel_id"`
-	PropertyId         int64          `json:"property_id"`
-	InputTxid          string         `json:"input_txid"`           //input txid  from channelAddr: alice&bob multiAddr, so need  sign of alice and bob
-	InputVout          uint32         `json:"input_vout"`           // input vout
-	InputAmount        float64        `json:"input_amount"`         //input amount
-	TempAddressPubKey  string         `json:"temp_address_pub_key"` //output alice2 or bob2
-	MultiAddress       string         `json:"multi_address"`        //output alice2&bob  or alice&bob2  multiAddr
-	RedeemScript       string         `json:"redeem_script"`
-	ScriptPubKey       string         `json:"script_pub_key"`
-	AmountM            float64        `json:"amount_m"` // amount to multiAddr
-	AmountB            float64        `json:"amount_b"` //amount to bob(if Cna) or alice(if Cnb)
-	TransactionSignHex string         `json:"transaction_sign_hex"`
-	Txid               string         `json:"txid"`
-	CurrState          TxInfoState    `json:"curr_state"`
-	CreateBy           string         `json:"create_by"`
-	CreateAt           time.Time      `json:"create_at"`
-	SignAt             time.Time      `json:"sign_at"`
-	SendAt             time.Time      `json:"send_at"`
-	LastEditTime       time.Time      `json:"last_edit_time"`
-	Owner              string         `json:"owner"`
+	Id                                   int            `storm:"id,increment" json:"id" `
+	LastCommitmentTxId                   int            `json:"last_commitment_tx_id"`
+	LastHash                             string         `json:"last_hash"`
+	CurrHash                             string         `json:"curr_hash"`
+	PeerIdA                              string         `json:"peer_id_a"`
+	PeerIdB                              string         `json:"peer_id_b"`
+	ChannelId                            bean.ChannelID `json:"channel_id"`
+	PropertyId                           int64          `json:"property_id"`
+	InputTxid                            string         `json:"input_txid"`           //input txid  from channelAddr: alice&bob multiAddr, so need  sign of alice and bob
+	InputVout                            uint32         `json:"input_vout"`           // input vout
+	InputAmount                          float64        `json:"input_amount"`         //input amount
+	TempAddressPubKey                    string         `json:"temp_address_pub_key"` //output alice2 or bob2
+	MultiAddress                         string         `json:"multi_address"`        //output alice2&bob  or alice&bob2  multiAddr
+	RedeemScript                         string         `json:"redeem_script"`
+	ScriptPubKey                         string         `json:"script_pub_key"`
+	AmountM                              float64        `json:"amount_m"` // amount to multiAddr
+	AmountB                              float64        `json:"amount_b"` //amount to bob(if Cna) or alice(if Cnb)
+	TransactionSignHexToTempMultiAddress string         `json:"transaction_sign_hex_to_temp_multi_address"`
+	TxidToTempMultiAddress               string         `json:"txid_to_temp_multi_address"`
+	TransactionSignHexToOther            string         `json:"transaction_sign_hex_to_other"`
+	TxidToOther                          string         `json:"txid_to_other"`
+	CurrState                            TxInfoState    `json:"curr_state"`
+	CreateBy                             string         `json:"create_by"`
+	CreateAt                             time.Time      `json:"create_at"`
+	SignAt                               time.Time      `json:"sign_at"`
+	SendAt                               time.Time      `json:"send_at"`
+	LastEditTime                         time.Time      `json:"last_edit_time"`
+	Owner                                string         `json:"owner"`
 }
 
 // close channel , alice or bob wait 1000 sequence to drawback the balance

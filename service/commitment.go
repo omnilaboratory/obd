@@ -581,8 +581,8 @@ func createAliceSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFr
 		return nil, err
 	}
 	commitmentTxInfo.LastCommitmentTxId = lastCommitmentATx.Id
-	commitmentTxInfo.Txid = txid
-	commitmentTxInfo.TransactionSignHex = hex
+	commitmentTxInfo.TxidToTempMultiAddress = txid
+	commitmentTxInfo.TransactionSignHexToTempMultiAddress = hex
 	commitmentTxInfo.SignAt = time.Now()
 	commitmentTxInfo.CurrState = dao.TxInfoState_CreateAndSign
 	commitmentTxInfo.LastHash = ""
@@ -782,8 +782,8 @@ func createBobSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFrom
 	if lastCommitmentBTx != nil {
 		commitmentTxInfo.LastCommitmentTxId = lastCommitmentBTx.Id
 	}
-	commitmentTxInfo.Txid = txId
-	commitmentTxInfo.TransactionSignHex = hex
+	commitmentTxInfo.TxidToTempMultiAddress = txId
+	commitmentTxInfo.TransactionSignHexToTempMultiAddress = hex
 	commitmentTxInfo.SignAt = time.Now()
 	commitmentTxInfo.CurrState = dao.TxInfoState_CreateAndSign
 	commitmentTxInfo.CurrHash = ""

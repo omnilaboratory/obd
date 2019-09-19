@@ -5,7 +5,6 @@ import (
 	"LightningOnOmni/bean/chainhash"
 	"LightningOnOmni/config"
 	"LightningOnOmni/dao"
-	"LightningOnOmni/rpc"
 	"LightningOnOmni/tool"
 	"encoding/json"
 	"errors"
@@ -376,7 +375,6 @@ func (service *fundingTransactionManager) FundingOmniTxSign(jsonData string, sig
 	defer tx.Rollback()
 
 	if reqData.Approval {
-
 		funderChannelAddressPrivateKey := ""
 		if owner == channelInfo.PeerIdA {
 			fundingTransaction.AmountB = reqData.AmountB
@@ -422,51 +420,52 @@ func (service *fundingTransactionManager) FundingOmniTxSign(jsonData string, sig
 			return nil, err
 		}
 
-		txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionForUnsendInputTx(
+		txid, hex, usedVout, err := rpcClient.OmniCreateAndSignRawTransactionForCommitmentTx(
 			channelInfo.ChannelAddress,
-			[]rpc.TransactionInputItem{
-				{
-					commitmentTxInfo.InputTxid,
-					channelInfo.ChannelAddressScriptPubKey,
-					commitmentTxInfo.InputVout,
-					commitmentTxInfo.InputAmount},
-			},
 			[]string{
 				funderChannelAddressPrivateKey,
 				reqData.FundeeChannelAddressPrivateKey,
 			},
-			[]rpc.TransactionOutputItem{
-				{commitmentTxInfo.MultiAddress, commitmentTxInfo.AmountM},
-				{outputBean.ToAddress, commitmentTxInfo.AmountB},
-			},
-			fundingTransaction.PropertyId, 0, nil)
-
-		//txid, hex, err := rpcClient.BtcCreateAndSignRawTransactionForUnsendInputTx(
-		//	channelInfo.ChannelAddress,
-		//	[]string{
-		//		funderChannelAddressPrivateKey,
-		//		reqData.FundeeChannelAddressPrivateKey,
-		//	},
-		//	[]rpc.TransactionInputItem{
-		//		{
-		//			commitmentTxInfo.InputTxid,
-		//			channelInfo.ChannelAddressScriptPubKey,
-		//			commitmentTxInfo.InputVout,
-		//			commitmentTxInfo.InputAmount},
-		//	},
-		//	[]rpc.TransactionOutputItem{
-		//		{commitmentTxInfo.MultiAddress, commitmentTxInfo.AmountM},
-		//		{outputBean.ToAddress, commitmentTxInfo.AmountB},
-		//	},
-		//	0,
-		//	0,
-		//	&channelInfo.ChannelAddressRedeemScript)
+			commitmentTxInfo.MultiAddress,
+			fundingTransaction.PropertyId,
+			commitmentTxInfo.AmountM,
+			0,
+			0)
 		if err != nil {
 			log.Println(err)
 			return nil, err
 		}
-		commitmentTxInfo.Txid = txid
-		commitmentTxInfo.TransactionSignHex = hex
+		log.Println(usedVout)
+		commitmentTxInfo.TxidToTempMultiAddress = txid
+		commitmentTxInfo.TransactionSignHexToTempMultiAddress = hex
+
+		//create to Bob tx
+		toAddress := channelInfo.AddressB
+		changeToAddress := channelInfo.AddressA
+		if signer.PeerId == channelInfo.PeerIdA {
+			changeToAddress = channelInfo.AddressB
+			toAddress = channelInfo.AddressA
+		}
+		txid, hex, err = rpcClient.OmniCreateAndSignRawTransactionForCommitmentTxToBob(
+			channelInfo.ChannelAddress,
+			usedVout,
+			[]string{
+				funderChannelAddressPrivateKey,
+				reqData.FundeeChannelAddressPrivateKey,
+			},
+			toAddress,
+			changeToAddress,
+			fundingTransaction.PropertyId,
+			commitmentTxInfo.AmountB,
+			0,
+			0)
+		if err != nil {
+			log.Println(err)
+			return nil, err
+		}
+		commitmentTxInfo.TxidToOther = txid
+		commitmentTxInfo.TransactionSignHexToOther = hex
+
 		commitmentTxInfo.SignAt = time.Now()
 		commitmentTxInfo.CurrState = dao.TxInfoState_CreateAndSign
 		commitmentTxInfo.LastHash = ""
@@ -491,27 +490,25 @@ func (service *fundingTransactionManager) FundingOmniTxSign(jsonData string, sig
 		if owner == channelInfo.PeerIdB {
 			outputAddress = channelInfo.AddressB
 		}
-		rdTransaction, err := createRDTx(owner, channelInfo, commitmentTxInfo, outputAddress, signer)
+		rdTransaction, _ := createRDTx(owner, channelInfo, commitmentTxInfo, outputAddress, signer)
+
+		inputs, err := getRdInputsFromCommitmentTx(commitmentTxInfo.TransactionSignHexToTempMultiAddress, commitmentTxInfo.MultiAddress, commitmentTxInfo.ScriptPubKey)
 		if err != nil {
 			log.Println(err)
 			return nil, err
 		}
 
-		txid, hex, err = rpcClient.BtcCreateAndSignRawTransactionForUnsendInputTx(
+		txid, hex, err = rpcClient.OmniCreateAndSignRawTransactionForUnsendInputTx(
 			commitmentTxInfo.MultiAddress,
 			[]string{
 				funderTempAddressPrivateKey,
 				reqData.FundeeChannelAddressPrivateKey,
 			},
-			[]rpc.TransactionInputItem{
-				{rdTransaction.InputTxid,
-					commitmentTxInfo.ScriptPubKey,
-					rdTransaction.InputVout,
-					rdTransaction.InputAmount},
-			},
-			[]rpc.TransactionOutputItem{
-				{rdTransaction.OutputAddress, rdTransaction.Amount},
-			},
+			inputs,
+			rdTransaction.OutputAddress,
+			changeToAddress,
+			fundingTransaction.PropertyId,
+			rdTransaction.Amount,
 			0,
 			rdTransaction.Sequence,
 			&commitmentTxInfo.RedeemScript)

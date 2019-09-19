@@ -159,3 +159,7 @@ func (client *Client) send(method string, params []interface{}) (result string, 
 	}
 	return gjson.Parse(string(res)).String(), nil
 }
+
+func getMinerFee() float64 {
+	return 0.00003
+}

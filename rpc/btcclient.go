@@ -111,7 +111,7 @@ func (client *Client) DecodeScript(hexString string) (result string, err error) 
 	return client.send("decodescript", []interface{}{hexString})
 }
 
-func (client *Client) ValidateAddress(address string) (isvalid bool, err error) {
+func (client *Client) ValidateAddress(address string) (isValid bool, err error) {
 	importAddress(address)
 	result, err := client.send("validateaddress", []interface{}{address})
 	if err != nil {
@@ -163,7 +163,7 @@ func (client *Client) BtcCreateAndSignRawTransaction(fromBitCoinAddress string, 
 	}
 
 	if minerFee <= 0 {
-		minerFee = 0.00003
+		minerFee = getMinerFee()
 	}
 
 	outTotalAmount := decimal.NewFromFloat(0)
@@ -285,8 +285,8 @@ func (client *Client) BtcCreateAndSignRawTransactionForUnsendInputTx(fromBitCoin
 		return "", "", errors.New("toBitCoinAddress is empty")
 	}
 
-	if minerFee <= 0 {
-		minerFee = 0.00003
+	if minerFee <= config.Dust {
+		minerFee = getMinerFee()
 	}
 
 	outAmount := decimal.NewFromFloat(0)
