@@ -63,7 +63,7 @@ func (c *channelManager) BobAcceptChannel(jsonData string, peerIdB string) (chan
 		return nil, errors.New("wrong TemporaryChannelId")
 	}
 
-	if reqData.Attitude {
+	if reqData.Approval {
 		reqData.FundingAddress, err = getAddressFromPubKey(reqData.FundingPubKey)
 		if err != nil {
 			return nil, err
@@ -77,7 +77,7 @@ func (c *channelManager) BobAcceptChannel(jsonData string, peerIdB string) (chan
 		return nil, err
 	}
 
-	if reqData.Attitude {
+	if reqData.Approval {
 		channelInfo.PubKeyB = reqData.FundingPubKey
 		channelInfo.AddressB = reqData.FundingAddress
 		multiSig, err := rpcClient.CreateMultiSig(2, []string{channelInfo.PubKeyA, channelInfo.PubKeyB})
@@ -95,7 +95,7 @@ func (c *channelManager) BobAcceptChannel(jsonData string, peerIdB string) (chan
 		}
 		channelInfo.ChannelAddressScriptPubKey = gjson.Parse(addrInfoStr).Get("scriptPubKey").String()
 	}
-	if reqData.Attitude {
+	if reqData.Approval {
 		channelInfo.CurrState = dao.ChannelState_Accept
 	} else {
 		channelInfo.CurrState = dao.ChannelState_OpenChannelDefuse
@@ -193,19 +193,22 @@ func (c *channelManager) ForceCloseChannel(jsonData string, user *bean.User) (in
 		return nil, err
 	}
 
-	commitmentTxid, err := rpcClient.SendRawTransaction(lastCommitmentTx.TransactionSignHexToTempMultiAddress)
-	if err != nil {
-		log.Println(err)
-		return nil, err
+	if tool.CheckIsString(&lastCommitmentTx.TransactionSignHexToTempMultiAddress) {
+		commitmentTxid, err := rpcClient.SendRawTransaction(lastCommitmentTx.TransactionSignHexToTempMultiAddress)
+		if err != nil {
+			log.Println(err)
+			return nil, err
+		}
+		log.Println(commitmentTxid)
 	}
-	log.Println(commitmentTxid)
-
-	commitmentTxidToBob, err := rpcClient.SendRawTransaction(lastCommitmentTx.TransactionSignHexToOther)
-	if err != nil {
-		log.Println(err)
-		return nil, err
+	if tool.CheckIsString(&lastCommitmentTx.TransactionSignHexToOther) {
+		commitmentTxidToBob, err := rpcClient.SendRawTransaction(lastCommitmentTx.TransactionSignHexToOther)
+		if err != nil {
+			log.Println(err)
+			return nil, err
+		}
+		log.Println(commitmentTxidToBob)
 	}
-	log.Println(commitmentTxidToBob)
 
 	lastRevocableDeliveryTx := &dao.RevocableDeliveryTransaction{}
 	err = db.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("Owner", user.PeerId)).OrderBy("CreateAt").Reverse().First(lastRevocableDeliveryTx)
@@ -370,7 +373,7 @@ func (c *channelManager) CloseChannelSign(jsonData string, user *bean.User) (int
 		targetUser = channelInfo.PeerIdB
 	}
 
-	if reqData.Attitude == false {
+	if reqData.Approval == false {
 		log.Println("disagree close channel")
 		return nil, &targetUser, errors.New("disagree close channel")
 	}
@@ -382,21 +385,25 @@ func (c *channelManager) CloseChannelSign(jsonData string, user *bean.User) (int
 		return nil, nil, err
 	}
 
-	commitmentTxid, err := rpcClient.SendRawTransaction(lastCommitmentTx.TransactionSignHexToTempMultiAddress)
-	if err != nil {
-		log.Println(err)
-		return nil, nil, err
+	if tool.CheckIsString(&lastCommitmentTx.TransactionSignHexToTempMultiAddress) {
+		commitmentTxid, err := rpcClient.SendRawTransaction(lastCommitmentTx.TransactionSignHexToTempMultiAddress)
+		if err != nil {
+			log.Println(err)
+			return nil, nil, err
+		}
+		log.Println(commitmentTxid)
 	}
-	log.Println(commitmentTxid)
-	commitmentTxidToBob, err := rpcClient.SendRawTransaction(lastCommitmentTx.TransactionSignHexToOther)
-	if err != nil {
-		log.Println(err)
-		return nil, nil, err
+	if tool.CheckIsString(&lastCommitmentTx.TransactionSignHexToOther) {
+		commitmentTxidToBob, err := rpcClient.SendRawTransaction(lastCommitmentTx.TransactionSignHexToOther)
+		if err != nil {
+			log.Println(err)
+			return nil, nil, err
+		}
+		log.Println(commitmentTxidToBob)
 	}
-	log.Println(commitmentTxidToBob)
 
 	lastRevocableDeliveryTx := &dao.RevocableDeliveryTransaction{}
-	err = db.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("Owner", user.PeerId)).OrderBy("CreateAt").Reverse().First(lastRevocableDeliveryTx)
+	err = db.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("Owner", targetUser)).OrderBy("CreateAt").Reverse().First(lastRevocableDeliveryTx)
 	if err != nil {
 		log.Println(err)
 		return nil, nil, err

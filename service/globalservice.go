@@ -254,18 +254,21 @@ func getRdInputsFromCommitmentTx(hex string, toAddress, scriptPubKey string) (in
 		return nil, err
 	}
 	jsonHex := gjson.Parse(result)
+	log.Println(jsonHex)
 	if jsonHex.Get("vout").IsArray() {
 		inputs = make([]rpc.TransactionInputItem, 0, 0)
 		for _, item := range jsonHex.Get("vout").Array() {
 			if item.Get("scriptPubKey").Get("addresses").Exists() {
-				address := item.Get("scriptPubKey").Get("addresses").String()
-				if address == toAddress {
-					node := rpc.TransactionInputItem{}
-					node.Txid = jsonHex.Get("txid").String()
-					node.ScriptPubKey = scriptPubKey
-					node.Vout = uint32(item.Get("scriptPubKey").Get("n").Uint())
-					node.Amount = item.Get("value").Float()
-					inputs = append(inputs, node)
+				addresses := item.Get("scriptPubKey").Get("addresses").Array()
+				for _, address := range addresses {
+					if address.String() == toAddress {
+						node := rpc.TransactionInputItem{}
+						node.Txid = jsonHex.Get("txid").String()
+						node.ScriptPubKey = scriptPubKey
+						node.Vout = uint32(item.Get("n").Uint())
+						node.Amount = item.Get("value").Float()
+						inputs = append(inputs, node)
+					}
 				}
 			}
 		}

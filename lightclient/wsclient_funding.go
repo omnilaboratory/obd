@@ -4,6 +4,7 @@ import (
 	"LightningOnOmni/bean"
 	"LightningOnOmni/bean/enum"
 	"LightningOnOmni/service"
+	"LightningOnOmni/tool"
 	"encoding/json"
 	"log"
 	"strconv"
@@ -15,7 +16,7 @@ func (client *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.Se
 	data := ""
 	switch msg.Type {
 	case enum.MsgType_FundingCreate_BtcCreate:
-		node, err := service.FundingTransactionService.CreateFundingBtcTxRequest(msg.Data, client.User)
+		node, targetUser, err := service.FundingTransactionService.CreateFundingBtcTxRequest(msg.Data, client.User)
 		if err != nil {
 			data = err.Error()
 		} else {
@@ -26,6 +27,9 @@ func (client *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.Se
 				data = string(bytes)
 				status = true
 			}
+		}
+		if status {
+			client.sendToSomeone(msg.Type, status, targetUser, data)
 		}
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
@@ -162,7 +166,7 @@ func (client *Client) fundingSignModule(msg bean.RequestMessage) (enum.SendTarge
 	data := ""
 	switch msg.Type {
 	case enum.MsgType_FundingSign_BtcSign:
-		node, err := service.FundingTransactionService.FundingBtcTxSign(msg.Data, client.User)
+		node, funder, err := service.FundingTransactionService.FundingBtcTxSign(msg.Data, client.User)
 		if err != nil {
 			data = err.Error()
 		} else {
@@ -173,6 +177,9 @@ func (client *Client) fundingSignModule(msg bean.RequestMessage) (enum.SendTarge
 				data = string(bytes)
 				status = true
 			}
+		}
+		if tool.CheckIsString(&funder) {
+			client.sendToSomeone(msg.Type, status, funder, data)
 		}
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone

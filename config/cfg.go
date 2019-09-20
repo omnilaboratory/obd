@@ -9,18 +9,18 @@ import (
 
 var (
 	Cfg          *ini.File
-	ServerPort   int           = 60020
-	GrpcPort     int           = 60021
-	ReadTimeout  time.Duration = 5 * time.Second
-	WriteTimeout time.Duration = 10 * time.Second
+	ServerPort   = 60020
+	GrpcPort     = 60021
+	ReadTimeout  = 5 * time.Second
+	WriteTimeout = 10 * time.Second
 
 	//0.13 omnicore
 	//ChainNode_Host string = "62.234.216.108:18332"
 	//0.18 omnicore
-	ChainNode_Type string = "test"
-	ChainNode_Host string = "62.234.216.108:18334"
-	ChainNode_User string = "omniwallet"
-	ChainNode_Pass string = "cB3]iL2@eZ1?cB2?"
+	ChainNode_Type = "test"
+	ChainNode_Host = "62.234.216.108:18332"
+	ChainNode_User = "omniwallet"
+	ChainNode_Pass = "cB3]iL2@eZ1?cB2?"
 )
 
 func init() {

@@ -171,56 +171,64 @@ func (client *Client) Read() {
 
 		//broadcast except me
 		if sendType == enum.SendTargetType_SendToExceptMe {
-			for client := range GlobalWsClientManager.ClientsMap {
-				if client != client {
-					jsonMessage := getReplyObj(string(dataOut), msg.Type, status, client)
-					client.SendChannel <- jsonMessage
+			for itemClient := range GlobalWsClientManager.ClientsMap {
+				if itemClient != itemClient {
+					jsonMessage := getReplyObj(string(dataOut), msg.Type, status, client, itemClient)
+					itemClient.SendChannel <- jsonMessage
 				}
 			}
 		}
 		//broadcast to all
 		if sendType == enum.SendTargetType_SendToAll {
-			jsonMessage := getReplyObj(string(dataOut), msg.Type, status, client)
+			jsonMessage := getReplyObj(string(dataOut), msg.Type, status, client, nil)
 			GlobalWsClientManager.Broadcast <- jsonMessage
 		}
 	}
 }
 
-func getReplyObj(data string, msgType enum.MsgType, status bool, client *Client) []byte {
+func getReplyObj(data string, msgType enum.MsgType, status bool, fromClient, toClient *Client) []byte {
 	var jsonMessage []byte
 
-	clientId := client.Id
-	if client.User != nil {
-		clientId = client.User.PeerId
+	fromId := fromClient.Id
+	if fromClient.User != nil {
+		fromId = fromClient.User.PeerId
+	}
+
+	toClientId := "all"
+	if toClient != nil {
+		toClientId = toClient.Id
+		if toClient.User != nil {
+			toClientId = toClient.User.PeerId
+		}
 	}
 
 	node := make(map[string]interface{})
 	err := json.Unmarshal([]byte(data), &node)
 	if err == nil {
 		parse := gjson.Parse(data)
-		jsonMessage, _ = json.Marshal(&bean.ReplyMessage{Type: msgType, Status: status, Sender: clientId, Result: parse.Value()})
+		jsonMessage, _ = json.Marshal(&bean.ReplyMessage{Type: msgType, Status: status, From: fromId, To: toClientId, Result: parse.Value()})
 	} else {
 		if strings.Contains(err.Error(), " array into Go value of type map") {
 			parse := gjson.Parse(data)
-			jsonMessage, _ = json.Marshal(&bean.ReplyMessage{Type: msgType, Status: status, Sender: clientId, Result: parse.Value()})
+			jsonMessage, _ = json.Marshal(&bean.ReplyMessage{Type: msgType, Status: status, From: fromId, To: toClientId, Result: parse.Value()})
 		} else {
-			jsonMessage, _ = json.Marshal(&bean.ReplyMessage{Type: msgType, Status: status, Sender: clientId, Result: data})
+			jsonMessage, _ = json.Marshal(&bean.ReplyMessage{Type: msgType, Status: status, From: fromId, To: toClientId, Result: data})
 		}
 	}
 	return jsonMessage
 }
 
 func (client *Client) sendToMyself(msgType enum.MsgType, status bool, data string) {
-	jsonMessage := getReplyObj(data, msgType, status, client)
+	jsonMessage := getReplyObj(data, msgType, status, client, client)
 	client.SendChannel <- jsonMessage
 }
 
 func (client *Client) sendToSomeone(msgType enum.MsgType, status bool, recipientPeerId string, data string) error {
 	if &recipientPeerId != nil {
-		for client := range GlobalWsClientManager.ClientsMap {
-			if client.User != nil && client.User.PeerId == recipientPeerId {
-				jsonMessage := getReplyObj(data, msgType, status, client)
-				client.SendChannel <- jsonMessage
+		for itemClient := range GlobalWsClientManager.ClientsMap {
+			if itemClient.User != nil && itemClient.User.PeerId == recipientPeerId {
+				jsonMessage := getReplyObj(data, msgType, status, client, itemClient)
+				itemClient.SendChannel <- jsonMessage
 				return nil
 			}
 		}

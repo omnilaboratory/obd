@@ -16,7 +16,8 @@ type RequestMessage struct {
 type ReplyMessage struct {
 	Type   enum.MsgType `json:"type"`
 	Status bool         `json:"status"`
-	Sender string       `json:"sender"`
+	From   string       `json:"from"`
+	To     string       `json:"to"`
 	Result interface{}  `json:"result"`
 }
 
@@ -38,21 +39,21 @@ type OpenChannelInfo struct {
 	MaxHtlcValueInFlightMsat uint64              `json:"max_htlc_value_in_flight_msat"`
 	ChannelReserveSatoshis   uint64              `json:"channel_reserve_satoshis"`
 	HtlcMinimumMsat          uint64              `json:"htlc_minimum_msat"`
-	FeeRatePerKw             uint32              `json:"feerate_per_kw"`
+	FeeRatePerKw             uint32              `json:"fee_rate_per_kw"`
 	ToSelfDelay              uint16              `json:"to_self_delay"`
 	MaxAcceptedHtlcs         uint16              `json:"max_accepted_htlcs"`
 	FundingPubKey            string              `json:"funding_pubkey"`
 	FundingAddress           string              `json:"funding_address"`
-	RevocationBasePoint      chainhash.Point     `json:"revocation_basepoint"`
-	PaymentBasePoint         chainhash.Point     `json:"payment_basepoint"`
-	DelayedPaymentBasePoint  chainhash.Point     `json:"delayed_payment_basepoint"`
-	HtlcBasePoint            chainhash.Point     `json:"htlc_basepoint"`
+	RevocationBasePoint      chainhash.Point     `json:"revocation_base_point"`
+	PaymentBasePoint         chainhash.Point     `json:"payment_base_point"`
+	DelayedPaymentBasePoint  chainhash.Point     `json:"delayed_payment_base_point"`
+	HtlcBasePoint            chainhash.Point     `json:"htlc_base_point"`
 }
 
 //type = -33
 type AcceptChannelInfo struct {
 	OpenChannelInfo
-	Attitude bool `json:"attitude"`
+	Approval bool `json:"approval"`
 }
 
 //type: -38 (close_channel)
@@ -63,7 +64,7 @@ type CloseChannel struct {
 //type: -39 (close_channel_sign)
 type CloseChannelSign struct {
 	ChannelId ChannelID `json:"channel_id"`
-	Attitude  bool      `json:"attitude"` // true agree false disagree
+	Approval  bool      `json:"approval"` // true agree false disagree
 }
 
 //type: -35107 (SendBreachRemedyTransaction)

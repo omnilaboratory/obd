@@ -13,6 +13,7 @@ import (
 	"github.com/shopspring/decimal"
 	"github.com/tidwall/gjson"
 	"log"
+	"strings"
 	"sync"
 	"time"
 )
@@ -23,71 +24,73 @@ type fundingTransactionManager struct {
 
 var FundingTransactionService fundingTransactionManager
 
-func (service *fundingTransactionManager) CreateFundingBtcTxRequest(jsonData string, user *bean.User) (fundingTransaction map[string]interface{}, err error) {
+func (service *fundingTransactionManager) CreateFundingBtcTxRequest(jsonData string, user *bean.User) (fundingTransaction map[string]interface{}, targetUser string, err error) {
 	reqData := &bean.FundingBtcCreated{}
 	err = json.Unmarshal([]byte(jsonData), reqData)
 	if err != nil {
 		log.Println(err)
-		return nil, err
+		return nil, "", err
 	}
 
 	if len(reqData.TemporaryChannelId) == 0 {
 		err = errors.New("wrong TemporaryChannelId ")
 		log.Println(err)
-		return nil, err
+		return nil, "", err
 	}
 	if tool.CheckIsString(&reqData.ChannelAddressPrivateKey) == false {
 		err = errors.New("wrong ChannelAddressPrivateKey ")
 		log.Println(err)
-		return nil, err
+		return nil, "", err
 	}
 
 	btcFeeTxHexDecode, err := rpcClient.DecodeRawTransaction(reqData.FundingTxHex)
 	if err != nil {
 		err = errors.New("BtcFeeTxHex  parse fail " + err.Error())
 		log.Println(err)
-		return nil, err
+		return nil, "", err
 	}
 
 	channelInfo := &dao.ChannelInfo{}
 	err = db.Select(q.Eq("TemporaryChannelId", reqData.TemporaryChannelId), q.Eq("CurrState", dao.ChannelState_Accept), q.Or(q.Eq("PeerIdA", user.PeerId), q.Eq("PeerIdB", user.PeerId))).OrderBy("CreateAt").Reverse().First(channelInfo)
 	if err != nil {
 		log.Println(err)
-		return nil, err
+		return nil, "", err
 	}
 
 	//get btc miner Fee data from transaction
 	fundingTxid, amount, _, err := checkBtcTxHex(btcFeeTxHexDecode, channelInfo, user.PeerId)
 	if err != nil {
 		log.Println(err)
-		return nil, err
+		return nil, "", err
 	}
 
 	out, _ := decimal.NewFromFloat(rpc.GetMinerFee()).Add(decimal.NewFromFloat(config.Dust)).Float64()
 	if amount < out {
 		err = errors.New("error btc amount")
 		log.Println(err)
-		return nil, err
+		return nil, "", err
 	}
 
-	tx, _ := db.Begin(true)
-	defer tx.Rollback()
-
 	fundingBtcRequest := &dao.FundingBtcRequest{}
-	count, _ := tx.Select(q.Eq("TemporaryChannelId", reqData.TemporaryChannelId), q.Eq("TxId", fundingTxid), q.Eq("Owner", user.PeerId), q.Eq("IsEnable", true), q.Eq("IsFinish", true)).Count(fundingBtcRequest)
+	count, _ := db.Select(q.Eq("TemporaryChannelId", reqData.TemporaryChannelId), q.Eq("TxId", fundingTxid), q.Eq("Owner", user.PeerId), q.Eq("IsEnable", true), q.Eq("IsFinish", true)).Count(fundingBtcRequest)
 	if count != 0 {
 		err = errors.New("have funding btc fee")
 		log.Println(err)
-		return nil, err
+		return nil, "", err
 	}
 
+	targetUser = channelInfo.PeerIdB
 	pubKey := channelInfo.PubKeyA
 	if user.PeerId == channelInfo.PeerIdB {
 		pubKey = channelInfo.PubKeyB
+		targetUser = channelInfo.PeerIdA
 	}
 	tempAddrPrivateKeyMap[pubKey] = reqData.ChannelAddressPrivateKey
 
-	_ = tx.Select(q.Eq("TemporaryChannelId", reqData.TemporaryChannelId), q.Eq("TxId", fundingTxid), q.Eq("Owner", user.PeerId), q.Eq("IsEnable", true)).Find(fundingBtcRequest)
+	err = db.Select(q.Eq("TemporaryChannelId", reqData.TemporaryChannelId), q.Eq("TxId", fundingTxid), q.Eq("Owner", user.PeerId), q.Eq("IsEnable", true)).First(fundingBtcRequest)
+	if err != nil {
+		log.Println(err)
+	}
 	if fundingBtcRequest.Id == 0 {
 		fundingBtcRequest = &dao.FundingBtcRequest{}
 		fundingBtcRequest.Owner = user.PeerId
@@ -98,79 +101,78 @@ func (service *fundingTransactionManager) CreateFundingBtcTxRequest(jsonData str
 		fundingBtcRequest.CreateAt = time.Now()
 		fundingBtcRequest.Amount = amount
 		fundingBtcRequest.IsFinish = false
-		err = tx.Save(fundingBtcRequest)
+		err = db.Save(fundingBtcRequest)
 		if err != nil {
 			log.Println(err)
-			return nil, err
+			return nil, "", err
 		}
 	}
-	tx.Commit()
 	node := make(map[string]interface{})
 	node["temporary_channel_id"] = reqData.TemporaryChannelId
 	node["amount"] = amount
-	node["fundingTxid"] = fundingTxid
-	return node, nil
+	node["funding_txid"] = fundingTxid
+	return node, targetUser, nil
 }
 
-func (service *fundingTransactionManager) FundingBtcTxSign(jsonData string, signer *bean.User) (outData interface{}, err error) {
+func (service *fundingTransactionManager) FundingBtcTxSign(jsonData string, signer *bean.User) (outData interface{}, funder string, err error) {
 	reqData := &bean.FundingBtcSigned{}
 	err = json.Unmarshal([]byte(jsonData), reqData)
 	if err != nil {
 		log.Println(err)
-		return nil, err
+		return nil, "", err
 	}
 
 	if len(reqData.TemporaryChannelId) == 0 {
 		err = errors.New("wrong TemporaryChannelId ")
 		log.Println(err)
-		return nil, err
+		return nil, "", err
 	}
 	if tool.CheckIsString(&reqData.ChannelAddressPrivateKey) == false {
 		err = errors.New("wrong ChannelAddressPrivateKey ")
 		log.Println(err)
-		return nil, err
+		return nil, "", err
 	}
 	if tool.CheckIsString(&reqData.FundingTxid) == false {
-		err = errors.New("wrong ChannelAddressPrivateKey ")
+		err = errors.New("wrong FundingTxid ")
 		log.Println(err)
-		return nil, err
+		return nil, "", err
 	}
 
 	channelInfo := &dao.ChannelInfo{}
 	err = db.Select(q.Eq("TemporaryChannelId", reqData.TemporaryChannelId), q.Eq("CurrState", dao.ChannelState_Accept), q.Or(q.Eq("PeerIdA", signer.PeerId), q.Eq("PeerIdB", signer.PeerId))).OrderBy("CreateAt").Reverse().First(channelInfo)
 	if err != nil {
 		log.Println(err)
-		return nil, err
+		return nil, "", err
 	}
 
-	toAddress := channelInfo.AddressA
-	creator := channelInfo.PeerIdA
-	pubKey := channelInfo.PubKeyB
+	redeemToAddress := channelInfo.AddressA
+	funder = channelInfo.PeerIdA
+	funderPubKey := channelInfo.PubKeyA
 	if signer.PeerId == channelInfo.PeerIdA {
-		creator = channelInfo.PeerIdB
-		pubKey = channelInfo.PubKeyA
-		toAddress = channelInfo.AddressB
+		funder = channelInfo.PeerIdB
+		funderPubKey = channelInfo.PubKeyB
+		redeemToAddress = channelInfo.AddressB
 	}
 
-	funderPrivateKey := tempAddrPrivateKeyMap[pubKey]
+	funderPrivateKey := tempAddrPrivateKeyMap[funderPubKey]
 	if tool.CheckIsString(&funderPrivateKey) == false {
 		err = errors.New("wrong funderPrivateKey ")
 		log.Println(err)
-		return nil, err
+		return nil, "", err
 	}
 
 	fundingBtcRequest := &dao.FundingBtcRequest{}
-	err = db.Select(q.Eq("TemporaryChannelId", reqData.TemporaryChannelId), q.Eq("TxId", reqData.FundingTxid), q.Eq("Owner", creator), q.Eq("IsEnable", true), q.Eq("IsFinish", false)).Find(fundingBtcRequest)
+	err = db.Select(q.Eq("TemporaryChannelId", reqData.TemporaryChannelId), q.Eq("TxId", reqData.FundingTxid), q.Eq("Owner", funder), q.Eq("IsEnable", true), q.Eq("IsFinish", false)).First(fundingBtcRequest)
 	if err != nil {
 		log.Println(err)
-		return nil, err
+		return nil, "", err
 	}
 	if reqData.Approval == false {
 		fundingBtcRequest.FinishAt = time.Now()
 		_ = db.UpdateField(fundingBtcRequest, "IsFinish", true)
 		_ = db.UpdateField(fundingBtcRequest, "IsEnable", false)
 		_ = db.Update(fundingBtcRequest)
-		return fundingBtcRequest, nil
+		return fundingBtcRequest, funder, nil
 	}
 
 	//TODO create miner fee redeem transaction
@@ -178,17 +180,19 @@ func (service *fundingTransactionManager) FundingBtcTxSign(jsonData string, sign
 	if err != nil {
 		err = errors.New("BtcFeeTxHex  parse fail " + err.Error())
 		log.Println(err)
-		return nil, err
+		return nil, funder, err
 	}
-	_, _, vout, err := checkBtcTxHex(btcFeeTxHexDecode, channelInfo, creator)
+	_, amount, vout, err := checkBtcTxHex(btcFeeTxHexDecode, channelInfo, funder)
 	if err != nil {
 		log.Println(err)
-		return nil, err
+		return nil, funder, err
 	}
 
 	result, err := rpcClient.SendRawTransaction(fundingBtcRequest.TxHash)
 	if err != nil {
-		return nil, err
+		if strings.Contains(err.Error(), "Transaction already in block chain") == false {
+			return nil, funder, err
+		}
 	}
 	log.Println(result)
 
@@ -202,27 +206,28 @@ func (service *fundingTransactionManager) FundingBtcTxSign(jsonData string, sign
 			{
 				Txid:         fundingBtcRequest.TxId,
 				Vout:         vout,
+				Amount:       amount,
 				ScriptPubKey: channelInfo.ChannelAddressScriptPubKey},
 		},
 		[]rpc.TransactionOutputItem{
 			{
-				ToBitCoinAddress: toAddress,
+				ToBitCoinAddress: redeemToAddress,
 				Amount:           fundingBtcRequest.Amount},
 		},
 		0,
 		0,
 		&channelInfo.ChannelAddressRedeemScript)
 	if err != nil {
-		return nil, err
+		return nil, funder, err
 	}
 	minerFeeRedeemTransaction.Txid = txid
 	minerFeeRedeemTransaction.TxHash = hex
 	minerFeeRedeemTransaction.CreateAt = time.Now()
-	minerFeeRedeemTransaction.Owner = creator
+	minerFeeRedeemTransaction.Owner = funder
 	minerFeeRedeemTransaction.TemporaryChannelId = reqData.TemporaryChannelId
 	_ = db.Save(minerFeeRedeemTransaction)
 
-	return minerFeeRedeemTransaction, nil
+	return minerFeeRedeemTransaction, funder, nil
 }
 
 //funder request to fund to the multiAddr (channel)
@@ -278,7 +283,11 @@ func (service *fundingTransactionManager) CreateFundingOmniTxRequest(jsonData st
 	}
 	tempAddrPrivateKeyMap[reqData.TempAddressPubKey] = reqData.TempAddressPrivateKey
 
-	count, _ := db.Select(q.Eq("TemporaryChannelId", reqData.TemporaryChannelId)).Count(&dao.FundingTransaction{})
+	fundingTransaction = &dao.FundingTransaction{}
+	count := 0
+	if bean.ChannelIdService.IsEmpty(channelInfo.ChannelId) == false {
+		count, _ = db.Select(q.Eq("ChannelId", channelInfo.ChannelId)).Count(fundingTransaction)
+	}
 	if count == 0 {
 		if tool.CheckIsString(&reqData.FundingTxHex) == false {
 			err = errors.New("wrong TxHash ")
@@ -338,10 +347,8 @@ func (service *fundingTransactionManager) CreateFundingOmniTxRequest(jsonData st
 			Index: fundingOutputIndex,
 		}
 
-		fundingTransaction = &dao.FundingTransaction{}
 		fundingTransaction.ChannelId = bean.ChannelIdService.NewChanIDFromOutPoint(op)
 		channelInfo.ChannelId = fundingTransaction.ChannelId
-
 		count, err = db.Select(q.Eq("ChannelId", channelInfo.ChannelId)).Count(channelInfo)
 		if err != nil || count != 0 {
 			err = errors.New("fundingTx have been used")
@@ -396,7 +403,7 @@ func (service *fundingTransactionManager) CreateFundingOmniTxRequest(jsonData st
 			return nil, err
 		}
 	} else {
-		err = db.Select(q.Eq("TemporaryChannelId", reqData.TemporaryChannelId)).First(fundingTransaction)
+		err = db.Select(q.Eq("ChannelId", channelInfo.ChannelId)).First(fundingTransaction)
 		log.Println(err)
 	}
 	return fundingTransaction, err
@@ -416,11 +423,14 @@ func checkBtcFundFinish(address string) error {
 	}
 	log.Println("listunspent", array)
 
-	out, _ := decimal.NewFromFloat(rpc.GetMinerFee()).Add(decimal.NewFromFloat(0.00000546)).Float64()
+	pMoney := rpc.GetOmniDustBtc()
+	out, _ := decimal.NewFromFloat(rpc.GetMinerFee()).Add(decimal.NewFromFloat(pMoney)).Float64()
 	for _, item := range array {
 		amount := item.Get("amount").Float()
-		if amount < out {
-			return errors.New("btc amount error")
+		if amount != pMoney {
+			if amount < out {
+				return errors.New("btc amount error")
+			}
 		}
 	}
 	return nil
@@ -521,51 +531,60 @@ func (service *fundingTransactionManager) FundingOmniTxSign(jsonData string, sig
 			return nil, err
 		}
 
-		txid, hex, inputVoutForBob, err := rpcClient.OmniCreateAndSignRawTransactionForCommitmentTx(
-			channelInfo.ChannelAddress,
-			[]string{
-				funderChannelAddressPrivateKey,
-				reqData.FundeeChannelAddressPrivateKey,
-			},
-			commitmentTxInfo.MultiAddress,
-			fundingTransaction.PropertyId,
-			commitmentTxInfo.AmountM,
-			0,
-			0)
-		if err != nil {
-			log.Println(err)
-			return nil, err
+		usedTxidTemp := ""
+		if commitmentTxInfo.AmountM > 0 {
+			txid, hex, usedTxid, err := rpcClient.OmniCreateAndSignRawTransactionForCommitmentTx(
+				channelInfo.ChannelAddress,
+				[]string{
+					funderChannelAddressPrivateKey,
+					reqData.FundeeChannelAddressPrivateKey,
+				},
+				commitmentTxInfo.MultiAddress,
+				fundingTransaction.PropertyId,
+				commitmentTxInfo.AmountM,
+				0,
+				0, &channelInfo.ChannelAddressRedeemScript)
+			if err != nil {
+				log.Println(err)
+				return nil, err
+			}
+			log.Println(usedTxid)
+			usedTxidTemp = usedTxid
+			commitmentTxInfo.TxidToTempMultiAddress = txid
+			commitmentTxInfo.TransactionSignHexToTempMultiAddress = hex
 		}
-		log.Println(inputVoutForBob)
-		commitmentTxInfo.TxidToTempMultiAddress = txid
-		commitmentTxInfo.TransactionSignHexToTempMultiAddress = hex
 
-		//create to Bob tx
-		toAddress := channelInfo.AddressB
 		changeToAddress := channelInfo.AddressA
 		if signer.PeerId == channelInfo.PeerIdA {
 			changeToAddress = channelInfo.AddressB
-			toAddress = channelInfo.AddressA
 		}
-		txid, hex, err = rpcClient.OmniCreateAndSignRawTransactionForCommitmentTxToBob(
-			channelInfo.ChannelAddress,
-			inputVoutForBob,
-			[]string{
-				funderChannelAddressPrivateKey,
-				reqData.FundeeChannelAddressPrivateKey,
-			},
-			toAddress,
-			changeToAddress,
-			fundingTransaction.PropertyId,
-			commitmentTxInfo.AmountB,
-			0,
-			0)
-		if err != nil {
-			log.Println(err)
-			return nil, err
+
+		//create to Bob tx
+		if commitmentTxInfo.AmountB > 0 {
+			toAddress := channelInfo.AddressB
+			if signer.PeerId == channelInfo.PeerIdA {
+				toAddress = channelInfo.AddressA
+			}
+			txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionForCommitmentTxToBob(
+				channelInfo.ChannelAddress,
+				usedTxidTemp,
+				[]string{
+					funderChannelAddressPrivateKey,
+					reqData.FundeeChannelAddressPrivateKey,
+				},
+				toAddress,
+				changeToAddress,
+				fundingTransaction.PropertyId,
+				commitmentTxInfo.AmountB,
+				0,
+				0, &channelInfo.ChannelAddressRedeemScript)
+			if err != nil {
+				log.Println(err)
+				return nil, err
+			}
+			commitmentTxInfo.TxidToOther = txid
+			commitmentTxInfo.TransactionSignHexToOther = hex
 		}
-		commitmentTxInfo.TxidToOther = txid
-		commitmentTxInfo.TransactionSignHexToOther = hex
 
 		commitmentTxInfo.SignAt = time.Now()
 		commitmentTxInfo.CurrState = dao.TxInfoState_CreateAndSign
@@ -599,7 +618,7 @@ func (service *fundingTransactionManager) FundingOmniTxSign(jsonData string, sig
 			return nil, err
 		}
 
-		txid, hex, err = rpcClient.OmniCreateAndSignRawTransactionForUnsendInputTx(
+		txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionForUnsendInputTx(
 			commitmentTxInfo.MultiAddress,
 			[]string{
 				funderTempAddressPrivateKey,

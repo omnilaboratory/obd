@@ -8,6 +8,13 @@ import (
 	"time"
 )
 
+func TestChannelManager_AliceOpenChannel(t *testing.T) {
+	hex := "02000000013ec76f18e3fb709436c5ee4f66c95baa7cb533c6ac975c96bb79ce0e42a7428f00000000d90047304402202c47c570fae9c4dd2e233bbeaf6baa30071b29f0b1c0fd18709163bca154c324022041539e44cc7f5796da8dde64f7a3914e005187595487182ce43250776074cb380147304402201040640a7fb04b1a4a1da22e95e2e864ba7a2efdfd08b8fb1064e5a58cba5ccf02204550dabf44d1af93b64bfcdc2a87dd720f58a3b0f000d6adb7b790068254df4001475221034434a59d648b5a7585182ef71dbc3ecc44236e5fa028b4c55c6adb76fd473ca1210373869bdf9667964b51d9a93ab92a20cd524e21be4d5f4690f51330e827379bbe52aeffffffff033c1900000000000017a91427f4ab8c95d6f4b945f88da4b0a72a3d6031c29d870000000000000000166a146f6d6e690000000000000079000000003b9aca001c0200000000000017a91427f4ab8c95d6f4b945f88da4b0a72a3d6031c29d8700000000"
+	inputs, err := getRdInputsFromCommitmentTx(hex, "2MvtVSk3K2Kqn851kqJnvhKC73xdSM5Yhww", "522103ea01f8b137df5744ec2b0b91bc46139cabf228403264df65f6233bd7f0cbd17d210373869bdf9667964b51d9a93ab92a20cd524e21be4d5f4690f51330e827379bbe52ae")
+	log.Println(err)
+	log.Println(inputs)
+}
+
 func TestDecodeTx(t *testing.T) {
 	result, err := rpcClient.OmniDecodeTransaction("02000000017840e4bd98a8d022d3ca359239127922eb7329edd21e206637173af427e5e57a010000006a47304402202d5c989ab0fdb94adee355a12f417f1e17f856bb790c68d1e96a666e4ed4309502201d61614d482ec9b64bfdf5741eb30348cab512d156103c52eac3df1c087eac600121034434a59d648b5a7585182ef71dbc3ecc44236e5fa028b4c55c6adb76fd473ca1ffffffff03960b0f00000000001976a9140505ea289a01ba42c259f6608b79c3738c69aacd88ac0000000000000000166a146f6d6e690000000000000079000000003b9aca001c0200000000000017a914dff7bd260fc3ebb602f94ac21347b69e20a4847c8700000000")
 	log.Println(err)
@@ -18,10 +25,14 @@ func TestDecodeTx(t *testing.T) {
 }
 
 func TestGetBalance(t *testing.T) {
-	balance, _ := rpcClient.OmniGetAllBalancesForAddress("2NDfTTG31yz2KRS8TjdTRqzHmV4FYNpBxd9")
+
+	address := "2N9cf5TUd12ChU32ZyV58WJAF9GFmVUuHxK"
+	balance, _ := rpcClient.OmniGetAllBalancesForAddress(address)
 	log.Println(balance)
-	balance1, _ := rpcClient.GetBalanceByAddress("2NDfTTG31yz2KRS8TjdTRqzHmV4FYNpBxd9")
+	balance1, _ := rpcClient.GetBalanceByAddress(address)
 	log.Println(balance1)
+	result, _ := rpcClient.ListUnspent(address)
+	log.Println(result)
 }
 
 func TestSend(t *testing.T) {
