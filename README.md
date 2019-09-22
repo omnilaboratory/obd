@@ -20,6 +20,7 @@ LightningOnOmni implements the [OmniBOLT](https://github.com/LightningOnOmnilaye
 		* close channel (TBD)
  * [How to Contribute](https://github.com/LightningOnOmnilayer/LightningOnOmni#how-to-contribute)
  * [Current Features](https://github.com/LightningOnOmnilayer/LightningOnOmni#current-features)
+ * [Comming Features](https://github.com/LightningOnOmnilayer/LightningOnOmni#comming-features)
  * [Related Projects](https://github.com/LightningOnOmnilayer/LightningOnOmni#related-projects)
 
 # Dependency
