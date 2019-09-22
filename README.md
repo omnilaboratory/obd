@@ -407,10 +407,20 @@ Guidelines:
 
 # Current Features
 
-* Generate user OBD(OmniBOLT Daemon) address.  
+* Generate user OBD(OmniBOLT Daemon) address.
 * Open Poon-Dryja Channel.
-* fund, close.
+* BTC and Omni assets in funding and transaction.
+* fund and close channel.
 * Commitment Transaction within a channel.
+
+# Comming Features
+
+* HTL contracts, supported by HED, BR, RD, HT, HTRD transactions.
+* Multiple channel support for one OBD.
+* OBD communication.
+* Light client implementation.
+* Balance and transaction history.
+* to be updated, pursuant to the development of OmniBOLT specification.
 
 
 # Related projects: 
