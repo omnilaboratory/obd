@@ -417,7 +417,8 @@ Guidelines:
 # Comming Features
 
 * HTL contracts, supported by HED, BR, RD, HT, HTRD transactions.
-* Multiple channel support for one OBD.
+* Multiple channel management for one OBD, scaling out in performance.
+* Payment across multiple channels.
 * OBD communication.
 * Light client implementation.
 * Balance and transaction history.
