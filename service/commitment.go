@@ -161,15 +161,36 @@ func (service *commitmentTxManager) GetLatestRDTxByChannelId(jsonData string, us
 	}
 
 	channelInfo := &dao.ChannelInfo{}
-	err = db.Select(q.Eq("ChannelId", chanId), q.Eq("CurrState", dao.ChannelState_Accept)).First(channelInfo)
+	err = db.Select(q.Eq("ChannelId", chanId)).First(channelInfo)
 	if err != nil {
 		return nil, err
 	}
 
 	node = &dao.RevocableDeliveryTransaction{}
-	err = db.Select(q.Eq("ChannelId", chanId), q.Eq("Owner", user.PeerId), q.Or(q.Eq("PeerIdA", user.PeerId), q.Eq("PeerIdB", user.PeerId))).OrderBy("CreateAt").Reverse().First(node)
+	err = db.Select(q.Eq("ChannelId", chanId), q.Eq("Owner", user.PeerId)).OrderBy("CreateAt").Reverse().First(node)
 	return node, err
 }
+func (service *commitmentTxManager) GetLatestAllRDByChannelId(jsonData string, user *bean.User) (nodes []dao.RevocableDeliveryTransaction, err error) {
+	var chanId bean.ChannelID
+	array := gjson.Get(jsonData, "channel_id").Array()
+	if len(array) != 32 {
+		return nil, errors.New("wrong channel_id")
+	}
+	for index, value := range array {
+		chanId[index] = byte(value.Num)
+	}
+
+	channelInfo := &dao.ChannelInfo{}
+	err = db.Select(q.Eq("ChannelId", chanId)).First(channelInfo)
+	if err != nil {
+		return nil, err
+	}
+
+	nodes = []dao.RevocableDeliveryTransaction{}
+	err = db.Select(q.Eq("ChannelId", chanId), q.Eq("Owner", user.PeerId)).OrderBy("CreateAt").Reverse().Find(&nodes)
+	return nodes, err
+}
+
 func (service *commitmentTxManager) GetLatestBRTxByChannelId(jsonData string, user *bean.User) (node *dao.BreachRemedyTransaction, err error) {
 	var chanId bean.ChannelID
 	array := gjson.Get(jsonData, "channel_id").Array()
@@ -181,7 +202,7 @@ func (service *commitmentTxManager) GetLatestBRTxByChannelId(jsonData string, us
 	}
 
 	channelInfo := &dao.ChannelInfo{}
-	err = db.Select(q.Eq("ChannelId", chanId), q.Eq("CurrState", dao.ChannelState_Accept)).First(channelInfo)
+	err = db.Select(q.Eq("ChannelId", chanId)).First(channelInfo)
 	if err != nil {
 		return nil, err
 	}
@@ -189,6 +210,27 @@ func (service *commitmentTxManager) GetLatestBRTxByChannelId(jsonData string, us
 	node = &dao.BreachRemedyTransaction{}
 	err = db.Select(q.Eq("ChannelId", chanId), q.Eq("Owner", user.PeerId)).OrderBy("CreateAt").Reverse().First(node)
 	return node, err
+}
+
+func (service *commitmentTxManager) GetLatestAllBRByChannelId(jsonData string, user *bean.User) (nodes []dao.BreachRemedyTransaction, err error) {
+	var chanId bean.ChannelID
+	array := gjson.Get(jsonData, "channel_id").Array()
+	if len(array) != 32 {
+		return nil, errors.New("wrong channel_id")
+	}
+	for index, value := range array {
+		chanId[index] = byte(value.Num)
+	}
+
+	channelInfo := &dao.ChannelInfo{}
+	err = db.Select(q.Eq("ChannelId", chanId)).First(channelInfo)
+	if err != nil {
+		return nil, err
+	}
+
+	nodes = []dao.BreachRemedyTransaction{}
+	err = db.Select(q.Eq("ChannelId", chanId), q.Eq("Owner", user.PeerId)).OrderBy("CreateAt").Reverse().Find(&nodes)
+	return nodes, err
 }
 
 func (service *commitmentTxManager) GetItemsByChannelId(jsonData string, user *bean.User) (nodes []dao.CommitmentTransaction, count *int, err error) {
@@ -203,7 +245,7 @@ func (service *commitmentTxManager) GetItemsByChannelId(jsonData string, user *b
 	}
 
 	channelInfo := &dao.ChannelInfo{}
-	err = db.Select(q.Eq("ChannelId", chanId), q.Eq("CurrState", dao.ChannelState_Accept)).First(channelInfo)
+	err = db.Select(q.Eq("ChannelId", chanId)).First(channelInfo)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -483,51 +525,49 @@ func createAliceSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFr
 			return nil, err
 		}
 
-		lastTempAddressPrivateKey := ""
-		if isAliceCreateTransfer {
-			lastTempAddressPrivateKey = tempAddrPrivateKeyMap[dataFromCreator.LastTempAddressPubKey]
-		} else {
-			lastTempAddressPrivateKey = signData.LastTempAddressPrivateKey
-		}
-		if tool.CheckIsString(&lastTempAddressPrivateKey) == false {
-			err = errors.New("fail to get the lastTempAddressPrivateKey")
-			log.Println(err)
-			return nil, err
-		}
+		if breachRemedyTransaction.Amount > 0 {
+			lastTempAddressPrivateKey := ""
+			if isAliceCreateTransfer {
+				lastTempAddressPrivateKey = tempAddrPrivateKeyMap[dataFromCreator.LastTempAddressPubKey]
+			} else {
+				lastTempAddressPrivateKey = signData.LastTempAddressPrivateKey
+			}
+			if tool.CheckIsString(&lastTempAddressPrivateKey) == false {
+				err = errors.New("fail to get the lastTempAddressPrivateKey")
+				log.Println(err)
+				return nil, err
+			}
 
-		inputs, err := getRdInputsFromCommitmentTx(lastCommitmentATx.TransactionSignHexToTempMultiAddress, lastCommitmentATx.MultiAddress, lastCommitmentATx.ScriptPubKey)
-		if err != nil {
-			log.Println(err)
-			return nil, err
-		}
+			inputs, err := getRdInputsFromCommitmentTx(lastCommitmentATx.TransactionSignHexToTempMultiAddress, lastCommitmentATx.MultiAddress, lastCommitmentATx.ScriptPubKey)
+			if err != nil {
+				log.Println(err)
+				return nil, err
+			}
 
-		changeToAddress := channelInfo.AddressA
-		if signer.PeerId == channelInfo.PeerIdA {
-			changeToAddress = channelInfo.AddressB
+			txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionForUnsendInputTx(
+				lastCommitmentATx.MultiAddress,
+				[]string{
+					lastTempAddressPrivateKey,
+					tempAddrPrivateKeyMap[channelInfo.PubKeyB],
+				},
+				inputs,
+				channelInfo.AddressB,
+				fundingTransaction.FunderAddress,
+				fundingTransaction.PropertyId,
+				breachRemedyTransaction.Amount,
+				0,
+				0,
+				&lastCommitmentATx.RedeemScript)
+			if err != nil {
+				log.Println(err)
+				return nil, err
+			}
+			breachRemedyTransaction.Txid = txid
+			breachRemedyTransaction.TransactionSignHex = hex
+			breachRemedyTransaction.SignAt = time.Now()
+			breachRemedyTransaction.CurrState = dao.TxInfoState_CreateAndSign
+			err = tx.Save(breachRemedyTransaction)
 		}
-
-		txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionForUnsendInputTx(
-			lastCommitmentATx.MultiAddress,
-			[]string{
-				lastTempAddressPrivateKey,
-				tempAddrPrivateKeyMap[channelInfo.PubKeyB],
-			},
-			inputs,
-			channelInfo.AddressB, changeToAddress,
-			fundingTransaction.PropertyId,
-			breachRemedyTransaction.Amount,
-			0,
-			0,
-			&lastCommitmentATx.RedeemScript)
-		if err != nil {
-			log.Println(err)
-			return nil, err
-		}
-		breachRemedyTransaction.Txid = txid
-		breachRemedyTransaction.TransactionSignHex = hex
-		breachRemedyTransaction.SignAt = time.Now()
-		breachRemedyTransaction.CurrState = dao.TxInfoState_CreateAndSign
-		err = tx.Save(breachRemedyTransaction)
 
 		lastRDTransaction := &dao.RevocableDeliveryTransaction{}
 		err = tx.Select(q.Eq("ChannelId", signData.ChannelId), q.Eq("Owner", owner), q.Eq("CommitmentTxId", lastCommitmentATx.Id), q.Eq("CurrState", dao.TxInfoState_CreateAndSign)).OrderBy("CreateAt").Reverse().First(lastRDTransaction)
@@ -714,7 +754,6 @@ func createBobSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFrom
 	if err != nil {
 		lastCommitmentBTx = nil
 	}
-
 	//In unilataral funding mode, only Alice is required to fund the channel.
 	//So during funding procedure, on Bob side, he has no commitment transaction and revockable delivery transaction.
 	if lastCommitmentBTx != nil {
@@ -726,48 +765,50 @@ func createBobSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFrom
 			return nil, err
 		}
 
-		lastTempAddressPrivateKey := ""
-		if isAliceCreateTransfer {
-			lastTempAddressPrivateKey = signData.LastTempAddressPrivateKey
-		} else {
-			lastTempAddressPrivateKey = tempAddrPrivateKeyMap[dataFromCreator.LastTempAddressPubKey]
-		}
+		if breachRemedyTransaction.Amount > 0 {
+			lastTempAddressPrivateKey := ""
+			if isAliceCreateTransfer {
+				lastTempAddressPrivateKey = signData.LastTempAddressPrivateKey
+			} else {
+				lastTempAddressPrivateKey = tempAddrPrivateKeyMap[dataFromCreator.LastTempAddressPubKey]
+			}
 
-		if tool.CheckIsString(&lastTempAddressPrivateKey) == false {
-			err = errors.New("fail to get the lastTempAddressPrivateKey")
-			log.Println(err)
-			return nil, err
-		}
+			if tool.CheckIsString(&lastTempAddressPrivateKey) == false {
+				err = errors.New("fail to get the lastTempAddressPrivateKey")
+				log.Println(err)
+				return nil, err
+			}
 
-		inputs, err := getRdInputsFromCommitmentTx(lastCommitmentBTx.TransactionSignHexToTempMultiAddress, lastCommitmentBTx.MultiAddress, lastCommitmentBTx.ScriptPubKey)
-		if err != nil {
-			log.Println(err)
-			return nil, err
-		}
+			inputs, err := getRdInputsFromCommitmentTx(lastCommitmentBTx.TransactionSignHexToTempMultiAddress, lastCommitmentBTx.MultiAddress, lastCommitmentBTx.ScriptPubKey)
+			if err != nil {
+				log.Println(err)
+				return nil, err
+			}
 
-		txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionForUnsendInputTx(
-			lastCommitmentBTx.MultiAddress,
-			[]string{
-				lastTempAddressPrivateKey,
-				tempAddrPrivateKeyMap[channelInfo.PubKeyA],
-			},
-			inputs,
-			channelInfo.AddressA,
-			fundingTransaction.FunderAddress,
-			fundingTransaction.PropertyId,
-			breachRemedyTransaction.Amount,
-			0,
-			0,
-			&lastCommitmentBTx.RedeemScript)
-		if err != nil {
-			log.Println(err)
-			return nil, err
+			txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionForUnsendInputTx(
+				lastCommitmentBTx.MultiAddress,
+				[]string{
+					lastTempAddressPrivateKey,
+					tempAddrPrivateKeyMap[channelInfo.PubKeyA],
+				},
+				inputs,
+				channelInfo.AddressA,
+				fundingTransaction.FunderAddress,
+				fundingTransaction.PropertyId,
+				breachRemedyTransaction.Amount,
+				0,
+				0,
+				&lastCommitmentBTx.RedeemScript)
+			if err != nil {
+				log.Println(err)
+				return nil, err
+			}
+			breachRemedyTransaction.Txid = txid
+			breachRemedyTransaction.TransactionSignHex = hex
+			breachRemedyTransaction.SignAt = time.Now()
+			breachRemedyTransaction.CurrState = dao.TxInfoState_CreateAndSign
+			err = tx.Save(breachRemedyTransaction)
 		}
-		breachRemedyTransaction.Txid = txid
-		breachRemedyTransaction.TransactionSignHex = hex
-		breachRemedyTransaction.SignAt = time.Now()
-		breachRemedyTransaction.CurrState = dao.TxInfoState_CreateAndSign
-		err = tx.Save(breachRemedyTransaction)
 
 		lastRDTransaction := &dao.RevocableDeliveryTransaction{}
 		err = tx.Select(q.Eq("ChannelId", signData.ChannelId), q.Eq("Owner", owner), q.Eq("CommitmentTxId", lastCommitmentBTx.Id), q.Eq("CurrState", dao.TxInfoState_CreateAndSign)).OrderBy("CreateAt").Reverse().First(lastRDTransaction)

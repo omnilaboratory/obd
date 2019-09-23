@@ -105,8 +105,38 @@ func (client *Client) commitmentTxModule(msg bean.RequestMessage) (enum.SendTarg
 		}
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
+	case enum.MsgType_CommitmentTx_AllRDByChanId:
+		node, err := service.CommitmentTxService.GetLatestAllRDByChannelId(msg.Data, client.User)
+		if err != nil {
+			data = err.Error()
+		} else {
+			bytes, err := json.Marshal(node)
+			if err != nil {
+				data = err.Error()
+			} else {
+				data = string(bytes)
+				status = true
+			}
+		}
+		client.sendToMyself(msg.Type, status, data)
+		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_CommitmentTx_LatestBRByChanId:
 		node, err := service.CommitmentTxService.GetLatestBRTxByChannelId(msg.Data, client.User)
+		if err != nil {
+			data = err.Error()
+		} else {
+			bytes, err := json.Marshal(node)
+			if err != nil {
+				data = err.Error()
+			} else {
+				data = string(bytes)
+				status = true
+			}
+		}
+		client.sendToMyself(msg.Type, status, data)
+		sendType = enum.SendTargetType_SendToSomeone
+	case enum.MsgType_CommitmentTx_AllBRByChanId:
+		node, err := service.CommitmentTxService.GetLatestAllBRByChannelId(msg.Data, client.User)
 		if err != nil {
 			data = err.Error()
 		} else {

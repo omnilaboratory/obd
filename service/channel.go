@@ -280,12 +280,8 @@ func (c *channelManager) SendBreachRemedyTransaction(jsonData string, user *bean
 		return nil, errors.New("wrong channelId")
 	}
 
-	if tool.CheckIsString(&reqData.ChannelAddressPrivateKey) == false {
-		return nil, errors.New("empty ChannelAddressPrivateKey")
-	}
-
 	channelInfo := &dao.ChannelInfo{}
-	err = db.Select(q.Eq("ChannelId", reqData.ChannelId), q.Eq("CurrState", dao.ChannelState_Accept)).First(channelInfo)
+	err = db.Select(q.Eq("ChannelId", reqData.ChannelId), q.Eq("CurrState", dao.ChannelState_Close)).First(channelInfo)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -346,7 +342,19 @@ func (c *channelManager) RequestCloseChannel(jsonData string, user *bean.User) (
 		log.Println(err)
 		return nil, nil, err
 	}
-	return reqData, &targetUser, nil
+
+	dbData := &dao.CloseChannel{}
+	dbData.ChannelId = reqData.ChannelId
+	dbData.Owner = user.PeerId
+	dbData.CreateAt = time.Now()
+	dataBytes, _ := json.Marshal(dbData)
+	dbData.Hex = tool.SignMsg(dataBytes)
+	db.Save(dbData)
+
+	toData := make(map[string]interface{})
+	toData["channel_id"] = reqData.ChannelId
+	toData["request_close_channel_hash"] = dbData.Hex
+	return toData, &targetUser, nil
 }
 
 func (c *channelManager) CloseChannelSign(jsonData string, user *bean.User) (interface{}, *string, error) {
@@ -356,6 +364,24 @@ func (c *channelManager) CloseChannelSign(jsonData string, user *bean.User) (int
 	}
 	reqData := &bean.CloseChannelSign{}
 	err := json.Unmarshal([]byte(jsonData), reqData)
+	if err != nil {
+		log.Println(err)
+		return nil, nil, err
+	}
+
+	if bean.ChannelIdService.IsEmpty(reqData.ChannelId) {
+		err = errors.New("empty channel_id")
+		log.Println(err)
+		return nil, nil, err
+	}
+
+	if tool.CheckIsString(&reqData.RequestCloseChannelHash) == false {
+		err = errors.New("empty request_close_channel_hash")
+		log.Println(err)
+		return nil, nil, err
+	}
+
+	err = db.Select(q.Eq("ChannelId", reqData.ChannelId), q.Eq("Hex", reqData.RequestCloseChannelHash)).First(&dao.CloseChannel{})
 	if err != nil {
 		log.Println(err)
 		return nil, nil, err

@@ -63,6 +63,8 @@ const (
 	MsgType_CommitmentTx_LatestRDByChanId           MsgType = -35105
 	MsgType_CommitmentTx_LatestBRByChanId           MsgType = -35106
 	MsgType_SendBreachRemedyTransaction             MsgType = -35107
+	MsgType_CommitmentTx_AllRDByChanId              MsgType = -35108
+	MsgType_CommitmentTx_AllBRByChanId              MsgType = -35109
 
 	MsgType_CommitmentTxSigned_Sign         MsgType = -352
 	MsgType_CommitmentTxSigned_ItemByChanId MsgType = -35201

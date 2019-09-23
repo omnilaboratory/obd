@@ -63,8 +63,9 @@ type CloseChannel struct {
 
 //type: -39 (close_channel_sign)
 type CloseChannelSign struct {
-	ChannelId ChannelID `json:"channel_id"`
-	Approval  bool      `json:"approval"` // true agree false disagree
+	ChannelId               ChannelID `json:"channel_id"`
+	RequestCloseChannelHash string    `json:"request_close_channel_hash"`
+	Approval                bool      `json:"approval"` // true agree false disagree
 }
 
 //type: -35107 (SendBreachRemedyTransaction)

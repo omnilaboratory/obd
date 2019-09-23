@@ -44,6 +44,8 @@ type ChannelInfo struct {
 type CloseChannel struct {
 	bean.CloseChannel
 	Id       int       `storm:"id,increment" json:"id"`
+	Hex      string    `json:"hex"`
+	Owner    string    `json:"owner"`
 	CreateAt time.Time `json:"create_at"`
 }
 
