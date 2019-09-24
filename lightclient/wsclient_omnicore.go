@@ -165,21 +165,26 @@ func (client *Client) omniCoreModule(msg bean.RequestMessage) (enum.SendTargetTy
 		if tool.CheckIsString(&fromBitCoinAddressPrivKey) {
 			privKeys = append(privKeys, fromBitCoinAddressPrivKey)
 		}
-		if tool.CheckIsString(&fromBitCoinAddress) &&
-			tool.CheckIsString(&toBitCoinAddress) {
-			_, hex, err := rpcClient.OmniCreateAndSignRawTransaction(fromBitCoinAddress, privKeys, toBitCoinAddress, propertyId, amount, minerFee, 0)
-			node := make(map[string]interface{})
-			node["hex"] = hex
-
-			if err != nil {
-				data = err.Error()
-			} else {
-				bytes, _ := json.Marshal(node)
-				data = string(bytes)
-				status = true
-			}
+		_, err := rpcClient.OmniGetProperty(propertyId)
+		if err != nil {
+			data = err.Error()
 		} else {
-			data = "error address"
+			if tool.CheckIsString(&fromBitCoinAddress) &&
+				tool.CheckIsString(&toBitCoinAddress) {
+				_, hex, err := rpcClient.OmniCreateAndSignRawTransaction(fromBitCoinAddress, privKeys, toBitCoinAddress, propertyId, amount, minerFee, 0)
+				node := make(map[string]interface{})
+				node["hex"] = hex
+
+				if err != nil {
+					data = err.Error()
+				} else {
+					bytes, _ := json.Marshal(node)
+					data = string(bytes)
+					status = true
+				}
+			} else {
+				data = "error address"
+			}
 		}
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
