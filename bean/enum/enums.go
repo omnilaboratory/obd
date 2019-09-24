@@ -65,6 +65,9 @@ const (
 	MsgType_SendBreachRemedyTransaction             MsgType = -35107
 	MsgType_CommitmentTx_AllRDByChanId              MsgType = -35108
 	MsgType_CommitmentTx_AllBRByChanId              MsgType = -35109
+	MsgType_CommitmentTx_GetBroadcastCommitmentTx   MsgType = -35110
+	MsgType_CommitmentTx_GetBroadcastRDTx           MsgType = -35111
+	MsgType_CommitmentTx_GetBroadcastBRTx           MsgType = -35112
 
 	MsgType_CommitmentTxSigned_Sign         MsgType = -352
 	MsgType_CommitmentTxSigned_ItemByChanId MsgType = -35201

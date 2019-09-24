@@ -166,6 +166,51 @@ func (client *Client) commitmentTxModule(msg bean.RequestMessage) (enum.SendTarg
 		}
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
+	case enum.MsgType_CommitmentTx_GetBroadcastCommitmentTx:
+		node, err := service.CommitmentTxService.GetBroadcastCommitmentTxByChannelId(msg.Data, client.User)
+		if err != nil {
+			data = err.Error()
+		} else {
+			bytes, err := json.Marshal(node)
+			if err != nil {
+				data = err.Error()
+			} else {
+				data = string(bytes)
+				status = true
+			}
+		}
+		client.sendToMyself(msg.Type, status, data)
+		sendType = enum.SendTargetType_SendToSomeone
+	case enum.MsgType_CommitmentTx_GetBroadcastRDTx:
+		node, err := service.CommitmentTxService.GetBroadcastRDTxByChannelId(msg.Data, client.User)
+		if err != nil {
+			data = err.Error()
+		} else {
+			bytes, err := json.Marshal(node)
+			if err != nil {
+				data = err.Error()
+			} else {
+				data = string(bytes)
+				status = true
+			}
+		}
+		client.sendToMyself(msg.Type, status, data)
+		sendType = enum.SendTargetType_SendToSomeone
+	case enum.MsgType_CommitmentTx_GetBroadcastBRTx:
+		node, err := service.CommitmentTxService.GetBroadcastCommitmentTxByChannelId(msg.Data, client.User)
+		if err != nil {
+			data = err.Error()
+		} else {
+			bytes, err := json.Marshal(node)
+			if err != nil {
+				data = err.Error()
+			} else {
+				data = string(bytes)
+				status = true
+			}
+		}
+		client.sendToMyself(msg.Type, status, data)
+		sendType = enum.SendTargetType_SendToSomeone
 	}
 	return sendType, []byte(data), status
 }

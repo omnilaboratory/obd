@@ -15,22 +15,19 @@ var ScheduleService = scheduleManager{}
 
 func (service *scheduleManager) StartSchedule() {
 	go func() {
-
-		return
-
 		ticker10m := time.NewTicker(10 * time.Minute)
 		defer ticker10m.Stop()
 
-		ticker := time.NewTicker(10 * time.Hour)
-		defer ticker.Stop()
+		//ticker := time.NewTicker(10 * time.Hour)
+		//defer ticker.Stop()
 
 		for {
 			select {
 			case t := <-ticker10m.C:
 				log.Println("timer 10m", t)
 				sendRdTx()
-			case t := <-ticker.C:
-				log.Println("timer 10s ", t)
+				//case t := <-ticker.C:
+				//	log.Println("timer 10s ", t)
 			}
 		}
 	}()

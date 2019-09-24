@@ -13,7 +13,6 @@ import (
 
 	"github.com/asdine/storm"
 	"github.com/asdine/storm/q"
-	"github.com/tidwall/gjson"
 )
 
 type commitmentTxManager struct {
@@ -125,189 +124,6 @@ func (service *commitmentTxManager) CreateNewCommitmentTxRequest(jsonData string
 	return data, targetUser, err
 }
 
-func (service *commitmentTxManager) GetLatestCommitmentTxByChannelId(jsonData string, user *bean.User) (node *dao.CommitmentTransaction, err error) {
-	if tool.CheckIsString(&jsonData) == false {
-		return nil, errors.New("empty jsonData")
-	}
-	var reqData = &bean.GetBalanceRequest{}
-	err = json.Unmarshal([]byte(jsonData), reqData)
-	if err != nil {
-		return nil, err
-	}
-
-	if bean.ChannelIdService.IsEmpty(reqData.ChannelId) {
-		return nil, errors.New("wrong channelId")
-	}
-
-	channelInfo := &dao.ChannelInfo{}
-	err = db.Select(q.Eq("ChannelId", reqData.ChannelId), q.Eq("CurrState", dao.ChannelState_Accept)).First(channelInfo)
-	if err != nil {
-		return nil, err
-	}
-
-	node = &dao.CommitmentTransaction{}
-	err = db.Select(q.Eq("ChannelId", reqData.ChannelId), q.Eq("Owner", user.PeerId), q.Or(q.Eq("PeerIdA", user.PeerId), q.Eq("PeerIdB", user.PeerId))).OrderBy("CreateAt").Reverse().First(node)
-	return node, err
-}
-
-func (service *commitmentTxManager) GetLatestRDTxByChannelId(jsonData string, user *bean.User) (node *dao.RevocableDeliveryTransaction, err error) {
-	var chanId bean.ChannelID
-	array := gjson.Get(jsonData, "channel_id").Array()
-	if len(array) != 32 {
-		return nil, errors.New("wrong channel_id")
-	}
-	for index, value := range array {
-		chanId[index] = byte(value.Num)
-	}
-
-	channelInfo := &dao.ChannelInfo{}
-	err = db.Select(q.Eq("ChannelId", chanId)).First(channelInfo)
-	if err != nil {
-		return nil, err
-	}
-
-	node = &dao.RevocableDeliveryTransaction{}
-	err = db.Select(q.Eq("ChannelId", chanId), q.Eq("Owner", user.PeerId)).OrderBy("CreateAt").Reverse().First(node)
-	return node, err
-}
-func (service *commitmentTxManager) GetLatestAllRDByChannelId(jsonData string, user *bean.User) (nodes []dao.RevocableDeliveryTransaction, err error) {
-	var chanId bean.ChannelID
-	array := gjson.Get(jsonData, "channel_id").Array()
-	if len(array) != 32 {
-		return nil, errors.New("wrong channel_id")
-	}
-	for index, value := range array {
-		chanId[index] = byte(value.Num)
-	}
-
-	channelInfo := &dao.ChannelInfo{}
-	err = db.Select(q.Eq("ChannelId", chanId)).First(channelInfo)
-	if err != nil {
-		return nil, err
-	}
-
-	nodes = []dao.RevocableDeliveryTransaction{}
-	err = db.Select(q.Eq("ChannelId", chanId), q.Eq("Owner", user.PeerId)).OrderBy("CreateAt").Reverse().Find(&nodes)
-	return nodes, err
-}
-
-func (service *commitmentTxManager) GetLatestBRTxByChannelId(jsonData string, user *bean.User) (node *dao.BreachRemedyTransaction, err error) {
-	var chanId bean.ChannelID
-	array := gjson.Get(jsonData, "channel_id").Array()
-	if len(array) != 32 {
-		return nil, errors.New("wrong channel_id")
-	}
-	for index, value := range array {
-		chanId[index] = byte(value.Num)
-	}
-
-	channelInfo := &dao.ChannelInfo{}
-	err = db.Select(q.Eq("ChannelId", chanId)).First(channelInfo)
-	if err != nil {
-		return nil, err
-	}
-
-	node = &dao.BreachRemedyTransaction{}
-	err = db.Select(q.Eq("ChannelId", chanId), q.Eq("Owner", user.PeerId)).OrderBy("CreateAt").Reverse().First(node)
-	return node, err
-}
-
-func (service *commitmentTxManager) GetLatestAllBRByChannelId(jsonData string, user *bean.User) (nodes []dao.BreachRemedyTransaction, err error) {
-	var chanId bean.ChannelID
-	array := gjson.Get(jsonData, "channel_id").Array()
-	if len(array) != 32 {
-		return nil, errors.New("wrong channel_id")
-	}
-	for index, value := range array {
-		chanId[index] = byte(value.Num)
-	}
-
-	channelInfo := &dao.ChannelInfo{}
-	err = db.Select(q.Eq("ChannelId", chanId)).First(channelInfo)
-	if err != nil {
-		return nil, err
-	}
-
-	nodes = []dao.BreachRemedyTransaction{}
-	err = db.Select(q.Eq("ChannelId", chanId), q.Eq("Owner", user.PeerId)).OrderBy("CreateAt").Reverse().Find(&nodes)
-	return nodes, err
-}
-
-func (service *commitmentTxManager) GetItemsByChannelId(jsonData string, user *bean.User) (nodes []dao.CommitmentTransaction, count *int, err error) {
-	var chanId bean.ChannelID
-
-	array := gjson.Get(jsonData, "channel_id").Array()
-	if len(array) != 32 {
-		return nil, nil, errors.New("wrong channel_id")
-	}
-	for index, value := range array {
-		chanId[index] = byte(value.Num)
-	}
-
-	channelInfo := &dao.ChannelInfo{}
-	err = db.Select(q.Eq("ChannelId", chanId)).First(channelInfo)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	pageIndex := gjson.Get(jsonData, "page_index").Int()
-	if pageIndex <= 0 {
-		pageIndex = 1
-	}
-	pageSize := gjson.Get(jsonData, "page_size").Int()
-	if pageSize <= 0 {
-		pageSize = 10
-	}
-	skip := (pageIndex - 1) * pageSize
-
-	db, err := dao.DBService.GetDB()
-	if err != nil {
-		return nil, nil, err
-	}
-
-	nodes = []dao.CommitmentTransaction{}
-	tempCount, err := db.Select(q.Eq("ChannelId", chanId)).Count(&dao.CommitmentTransaction{})
-	if err != nil {
-		return nil, nil, err
-	}
-	count = &tempCount
-	err = db.Select(q.Eq("ChannelId", chanId), q.Eq("Owner", user.PeerId)).OrderBy("CreateAt").Reverse().Skip(int(skip)).Limit(int(pageSize)).Find(&nodes)
-	return nodes, count, err
-}
-
-func (service *commitmentTxManager) GetItemById(id int) (node *dao.CommitmentTransaction, err error) {
-	db, err := dao.DBService.GetDB()
-	if err != nil {
-		return nil, err
-	}
-	node = &dao.CommitmentTransaction{}
-	err = db.Select(q.Eq("Id", id)).First(node)
-	return node, nil
-}
-
-func (service *commitmentTxManager) TotalCount() (count int, err error) {
-	db, err := dao.DBService.GetDB()
-	if err != nil {
-		return 0, err
-	}
-	return db.Count(&dao.CommitmentTransaction{})
-}
-
-func (service *commitmentTxManager) Del(id int) (node *dao.CommitmentTransaction, err error) {
-	db, err := dao.DBService.GetDB()
-	if err != nil {
-		return nil, err
-	}
-
-	node = &dao.CommitmentTransaction{}
-	err = db.One("Id", id, node)
-	if err != nil {
-		return nil, err
-	}
-	err = db.DeleteStruct(node)
-	return node, err
-}
-
 type commitmentTxSignedManager struct {
 	operationFlag sync.Mutex
 }
@@ -316,8 +132,9 @@ var CommitmentTxSignedService commitmentTxSignedManager
 
 func (service *commitmentTxSignedManager) CommitmentTxSign(jsonData string, signer *bean.User) (*dao.CommitmentTransaction, *dao.CommitmentTransaction, *string, error) {
 	if tool.CheckIsString(&jsonData) == false {
-		log.Println("empty json data")
-		return nil, nil, nil, errors.New("empty json data")
+		err := errors.New("empty json data")
+		log.Println(err)
+		return nil, nil, nil, err
 	}
 
 	data := &bean.CommitmentTxSigned{}
@@ -511,15 +328,27 @@ func createAliceSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFr
 		isAliceCreateTransfer = false
 	}
 
-	var lastCommitmentATx = &dao.CommitmentTransaction{}
-	err := tx.Select(q.Eq("ChannelId", signData.ChannelId), q.Eq("Owner", owner), q.Eq("CurrState", dao.TxInfoState_CreateAndSign)).OrderBy("CreateAt").Reverse().First(lastCommitmentATx)
+	var lastCommitmentTx = &dao.CommitmentTransaction{}
+	err := tx.Select(q.Eq("ChannelId", signData.ChannelId), q.Eq("Owner", owner), q.Eq("CurrState", dao.TxInfoState_CreateAndSign)).OrderBy("CreateAt").Reverse().First(lastCommitmentTx)
 	if err != nil {
-		lastCommitmentATx = nil
+		lastCommitmentTx = nil
 	}
 
-	if lastCommitmentATx != nil {
+	if lastCommitmentTx != nil {
+
+		count, _ := tx.Select(q.Eq("CommitmentTxId", lastCommitmentTx.Id)).Count(&dao.BreachRemedyTransaction{})
+		if count > 0 {
+			err = errors.New("already exist BreachRemedyTransaction ")
+			return nil, err
+		}
+
+		count, _ = tx.Select(q.Eq("CommitmentTxId", lastCommitmentTx.Id)).Count(&dao.RevocableDeliveryTransaction{})
+		if count > 0 {
+			err = errors.New("already exist RevocableDeliveryTransaction")
+			return nil, err
+		}
 		// create BRa tx  for bob ，let the lastCommitmentTx abort,
-		breachRemedyTransaction, err := createBRTx(channelInfo.PeerIdB, channelInfo, lastCommitmentATx, signer)
+		breachRemedyTransaction, err := createBRTx(channelInfo.PeerIdB, channelInfo, lastCommitmentTx, signer)
 		if err != nil {
 			log.Println(err)
 			return nil, err
@@ -538,14 +367,14 @@ func createAliceSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFr
 				return nil, err
 			}
 
-			inputs, err := getRdInputsFromCommitmentTx(lastCommitmentATx.TransactionSignHexToTempMultiAddress, lastCommitmentATx.MultiAddress, lastCommitmentATx.ScriptPubKey)
+			inputs, err := getRdInputsFromCommitmentTx(lastCommitmentTx.TransactionSignHexToTempMultiAddress, lastCommitmentTx.MultiAddress, lastCommitmentTx.ScriptPubKey)
 			if err != nil {
 				log.Println(err)
 				return nil, err
 			}
 
 			txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionForUnsendInputTx(
-				lastCommitmentATx.MultiAddress,
+				lastCommitmentTx.MultiAddress,
 				[]string{
 					lastTempAddressPrivateKey,
 					tempAddrPrivateKeyMap[channelInfo.PubKeyB],
@@ -557,7 +386,7 @@ func createAliceSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFr
 				breachRemedyTransaction.Amount,
 				0,
 				0,
-				&lastCommitmentATx.RedeemScript)
+				&lastCommitmentTx.RedeemScript)
 			if err != nil {
 				log.Println(err)
 				return nil, err
@@ -570,15 +399,15 @@ func createAliceSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFr
 		}
 
 		lastRDTransaction := &dao.RevocableDeliveryTransaction{}
-		err = tx.Select(q.Eq("ChannelId", signData.ChannelId), q.Eq("Owner", owner), q.Eq("CommitmentTxId", lastCommitmentATx.Id), q.Eq("CurrState", dao.TxInfoState_CreateAndSign)).OrderBy("CreateAt").Reverse().First(lastRDTransaction)
+		err = tx.Select(q.Eq("ChannelId", signData.ChannelId), q.Eq("Owner", owner), q.Eq("CommitmentTxId", lastCommitmentTx.Id), q.Eq("CurrState", dao.TxInfoState_CreateAndSign)).OrderBy("CreateAt").Reverse().First(lastRDTransaction)
 		if err != nil {
 			log.Println(err)
 			return nil, err
 		}
 
-		lastCommitmentATx.CurrState = dao.TxInfoState_Abord
+		lastCommitmentTx.CurrState = dao.TxInfoState_Abord
 		lastRDTransaction.CurrState = dao.TxInfoState_Abord
-		err = tx.Update(lastCommitmentATx)
+		err = tx.Update(lastCommitmentTx)
 		if err != nil {
 			log.Println(err)
 			return nil, err
@@ -597,18 +426,18 @@ func createAliceSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFr
 		//default alice transfer to bob ,then alice minus money
 		outputBean.AmountM, _ = decimal.NewFromFloat(fundingTransaction.AmountA).Sub(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
 		outputBean.AmountB, _ = decimal.NewFromFloat(fundingTransaction.AmountB).Add(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
-		if lastCommitmentATx != nil {
-			outputBean.AmountM, _ = decimal.NewFromFloat(lastCommitmentATx.AmountM).Sub(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
-			outputBean.AmountB, _ = decimal.NewFromFloat(lastCommitmentATx.AmountB).Add(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
+		if lastCommitmentTx != nil {
+			outputBean.AmountM, _ = decimal.NewFromFloat(lastCommitmentTx.AmountM).Sub(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
+			outputBean.AmountB, _ = decimal.NewFromFloat(lastCommitmentTx.AmountB).Add(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
 		}
 	} else {
 		outputBean.TempPubKey = signData.CurrTempAddressPubKey
 		// if bob transfer to alice,then alice add money
 		outputBean.AmountM, _ = decimal.NewFromFloat(fundingTransaction.AmountA).Add(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
 		outputBean.AmountB, _ = decimal.NewFromFloat(fundingTransaction.AmountB).Sub(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
-		if lastCommitmentATx != nil {
-			outputBean.AmountM, _ = decimal.NewFromFloat(lastCommitmentATx.AmountM).Add(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
-			outputBean.AmountB, _ = decimal.NewFromFloat(lastCommitmentATx.AmountB).Sub(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
+		if lastCommitmentTx != nil {
+			outputBean.AmountM, _ = decimal.NewFromFloat(lastCommitmentTx.AmountM).Add(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
+			outputBean.AmountB, _ = decimal.NewFromFloat(lastCommitmentTx.AmountB).Sub(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
 		}
 	}
 	outputBean.ToAddress = channelInfo.AddressB
@@ -665,16 +494,16 @@ func createAliceSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFr
 		commitmentTxInfo.TxidToOther = txid
 		commitmentTxInfo.TransactionSignHexToOther = hex
 	}
-	if lastCommitmentATx != nil {
-		commitmentTxInfo.LastCommitmentTxId = lastCommitmentATx.Id
+	if lastCommitmentTx != nil {
+		commitmentTxInfo.LastCommitmentTxId = lastCommitmentTx.Id
 	}
 
 	commitmentTxInfo.SignAt = time.Now()
 	commitmentTxInfo.CurrState = dao.TxInfoState_CreateAndSign
 	commitmentTxInfo.LastHash = ""
 	commitmentTxInfo.CurrHash = ""
-	if lastCommitmentATx != nil {
-		commitmentTxInfo.LastHash = lastCommitmentATx.CurrHash
+	if lastCommitmentTx != nil {
+		commitmentTxInfo.LastHash = lastCommitmentTx.CurrHash
 	}
 	err = tx.Save(commitmentTxInfo)
 	if err != nil {
@@ -749,17 +578,29 @@ func createBobSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFrom
 		isAliceCreateTransfer = false
 	}
 
-	var lastCommitmentBTx = &dao.CommitmentTransaction{}
-	err := tx.Select(q.Eq("ChannelId", signData.ChannelId), q.Eq("Owner", owner), q.Eq("CurrState", dao.TxInfoState_CreateAndSign), q.Or(q.Eq("PeerIdA", signer.PeerId), q.Eq("PeerIdB", signer.PeerId))).OrderBy("CreateAt").Reverse().First(lastCommitmentBTx)
+	var lastCommitmentTx = &dao.CommitmentTransaction{}
+	err := tx.Select(q.Eq("ChannelId", signData.ChannelId), q.Eq("Owner", owner), q.Eq("CurrState", dao.TxInfoState_CreateAndSign), q.Or(q.Eq("PeerIdA", signer.PeerId), q.Eq("PeerIdB", signer.PeerId))).OrderBy("CreateAt").Reverse().First(lastCommitmentTx)
 	if err != nil {
-		lastCommitmentBTx = nil
+		lastCommitmentTx = nil
 	}
 	//In unilataral funding mode, only Alice is required to fund the channel.
 	//So during funding procedure, on Bob side, he has no commitment transaction and revockable delivery transaction.
-	if lastCommitmentBTx != nil {
+	if lastCommitmentTx != nil {
+
+		count, _ := tx.Select(q.Eq("CommitmentTxId", lastCommitmentTx.Id)).Count(&dao.BreachRemedyTransaction{})
+		if count > 0 {
+			err = errors.New("already exist BreachRemedyTransaction ")
+			return nil, err
+		}
+
+		count, _ = tx.Select(q.Eq("CommitmentTxId", lastCommitmentTx.Id)).Count(&dao.RevocableDeliveryTransaction{})
+		if count > 0 {
+			err = errors.New("already exist RevocableDeliveryTransaction")
+			return nil, err
+		}
 
 		// create BRb tx for alice
-		breachRemedyTransaction, err := createBRTx(channelInfo.PeerIdA, channelInfo, lastCommitmentBTx, signer)
+		breachRemedyTransaction, err := createBRTx(channelInfo.PeerIdA, channelInfo, lastCommitmentTx, signer)
 		if err != nil {
 			log.Println(err)
 			return nil, err
@@ -779,14 +620,14 @@ func createBobSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFrom
 				return nil, err
 			}
 
-			inputs, err := getRdInputsFromCommitmentTx(lastCommitmentBTx.TransactionSignHexToTempMultiAddress, lastCommitmentBTx.MultiAddress, lastCommitmentBTx.ScriptPubKey)
+			inputs, err := getRdInputsFromCommitmentTx(lastCommitmentTx.TransactionSignHexToTempMultiAddress, lastCommitmentTx.MultiAddress, lastCommitmentTx.ScriptPubKey)
 			if err != nil {
 				log.Println(err)
 				return nil, err
 			}
 
 			txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionForUnsendInputTx(
-				lastCommitmentBTx.MultiAddress,
+				lastCommitmentTx.MultiAddress,
 				[]string{
 					lastTempAddressPrivateKey,
 					tempAddrPrivateKeyMap[channelInfo.PubKeyA],
@@ -798,7 +639,7 @@ func createBobSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFrom
 				breachRemedyTransaction.Amount,
 				0,
 				0,
-				&lastCommitmentBTx.RedeemScript)
+				&lastCommitmentTx.RedeemScript)
 			if err != nil {
 				log.Println(err)
 				return nil, err
@@ -811,15 +652,15 @@ func createBobSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFrom
 		}
 
 		lastRDTransaction := &dao.RevocableDeliveryTransaction{}
-		err = tx.Select(q.Eq("ChannelId", signData.ChannelId), q.Eq("Owner", owner), q.Eq("CommitmentTxId", lastCommitmentBTx.Id), q.Eq("CurrState", dao.TxInfoState_CreateAndSign)).OrderBy("CreateAt").Reverse().First(lastRDTransaction)
+		err = tx.Select(q.Eq("ChannelId", signData.ChannelId), q.Eq("Owner", owner), q.Eq("CommitmentTxId", lastCommitmentTx.Id), q.Eq("CurrState", dao.TxInfoState_CreateAndSign)).OrderBy("CreateAt").Reverse().First(lastRDTransaction)
 		if err != nil {
 			log.Println(err)
 			return nil, err
 		}
 
-		lastCommitmentBTx.CurrState = dao.TxInfoState_Abord
+		lastCommitmentTx.CurrState = dao.TxInfoState_Abord
 		lastRDTransaction.CurrState = dao.TxInfoState_Abord
-		err = tx.Update(lastCommitmentBTx)
+		err = tx.Update(lastCommitmentTx)
 		if err != nil {
 			log.Println(err)
 			return nil, err
@@ -838,17 +679,17 @@ func createBobSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFrom
 		//by default, alice transfers money to bob,then bob's balance increases.
 		outputBean.AmountM, _ = decimal.NewFromFloat(fundingTransaction.AmountB).Add(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
 		outputBean.AmountB, _ = decimal.NewFromFloat(fundingTransaction.AmountA).Sub(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
-		if lastCommitmentBTx != nil {
-			outputBean.AmountM, _ = decimal.NewFromFloat(lastCommitmentBTx.AmountM).Add(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
-			outputBean.AmountB, _ = decimal.NewFromFloat(lastCommitmentBTx.AmountB).Sub(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
+		if lastCommitmentTx != nil {
+			outputBean.AmountM, _ = decimal.NewFromFloat(lastCommitmentTx.AmountM).Add(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
+			outputBean.AmountB, _ = decimal.NewFromFloat(lastCommitmentTx.AmountB).Sub(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
 		}
 	} else {
 		outputBean.TempPubKey = dataFromCreator.CurrTempAddressPubKey
 		outputBean.AmountM, _ = decimal.NewFromFloat(fundingTransaction.AmountA).Sub(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
 		outputBean.AmountB, _ = decimal.NewFromFloat(fundingTransaction.AmountB).Add(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
-		if lastCommitmentBTx != nil {
-			outputBean.AmountM, _ = decimal.NewFromFloat(lastCommitmentBTx.AmountM).Sub(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
-			outputBean.AmountB, _ = decimal.NewFromFloat(lastCommitmentBTx.AmountB).Add(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
+		if lastCommitmentTx != nil {
+			outputBean.AmountM, _ = decimal.NewFromFloat(lastCommitmentTx.AmountM).Sub(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
+			outputBean.AmountB, _ = decimal.NewFromFloat(lastCommitmentTx.AmountB).Add(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
 		}
 	}
 	outputBean.ToAddress = channelInfo.AddressA
@@ -906,15 +747,15 @@ func createBobSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFrom
 		commitmentTxInfo.TransactionSignHexToOther = hex
 	}
 
-	if lastCommitmentBTx != nil {
-		commitmentTxInfo.LastCommitmentTxId = lastCommitmentBTx.Id
+	if lastCommitmentTx != nil {
+		commitmentTxInfo.LastCommitmentTxId = lastCommitmentTx.Id
 	}
 	commitmentTxInfo.SignAt = time.Now()
 	commitmentTxInfo.CurrState = dao.TxInfoState_CreateAndSign
 	commitmentTxInfo.CurrHash = ""
 	commitmentTxInfo.LastHash = ""
-	if lastCommitmentBTx != nil {
-		commitmentTxInfo.LastHash = lastCommitmentBTx.CurrHash
+	if lastCommitmentTx != nil {
+		commitmentTxInfo.LastHash = lastCommitmentTx.CurrHash
 	}
 	err = tx.Save(commitmentTxInfo)
 	if err != nil {
@@ -979,62 +820,4 @@ func createBobSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFrom
 		return nil, err
 	}
 	return commitmentTxInfo, err
-}
-
-func (service *commitmentTxSignedManager) GetItemsByChannelId(jsonData string) (nodes []dao.CommitmentTransaction, count *int, err error) {
-	var chanId bean.ChannelID
-	array := gjson.Get(jsonData, "channel_id").Array()
-
-	if len(array) != 32 {
-		return nil, nil, errors.New("wrong channel_id")
-	}
-	for index, value := range array {
-		chanId[index] = byte(value.Num)
-	}
-
-	pageIndex := gjson.Get(jsonData, "page_index").Int()
-	if pageIndex <= 0 {
-		pageIndex = 1
-	}
-	pageSize := gjson.Get(jsonData, "page_size").Int()
-	if pageSize <= 0 {
-		pageSize = 10
-	}
-	skip := (pageIndex - 1) * pageSize
-
-	db, err := dao.DBService.GetDB()
-	if err != nil {
-		log.Println(err)
-		return nil, nil, err
-	}
-
-	nodes = []dao.CommitmentTransaction{}
-	tempCount, err := db.Select(q.Eq("ChannelId", chanId)).Count(&dao.CommitmentTransaction{})
-	if err != nil {
-		log.Println(err)
-		return nil, nil, err
-	}
-	count = &tempCount
-	err = db.Select(q.Eq("ChannelId", chanId)).Skip(int(skip)).Limit(int(pageSize)).Find(&nodes)
-	return nodes, count, err
-}
-
-func (service *commitmentTxSignedManager) GetItemById(id int) (node *dao.CommitmentTransaction, err error) {
-	db, err := dao.DBService.GetDB()
-	if err != nil {
-		log.Println(err)
-		return nil, err
-	}
-	node = &dao.CommitmentTransaction{}
-	err = db.Select(q.Eq("Id", id)).First(node)
-	return node, nil
-}
-
-func (service *commitmentTxSignedManager) TotalCount() (count int, err error) {
-	db, err := dao.DBService.GetDB()
-	if err != nil {
-		log.Println(err)
-		return 0, err
-	}
-	return db.Count(&dao.CommitmentTransaction{})
 }

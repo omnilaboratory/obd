@@ -155,6 +155,7 @@ func (service *fundingTransactionManager) FundingBtcTxSign(jsonData string, sign
 	}
 
 	funderPrivateKey := tempAddrPrivateKeyMap[funderPubKey]
+	delete(tempAddrPrivateKeyMap, funderPubKey)
 	if tool.CheckIsString(&funderPrivateKey) == false {
 		err = errors.New("wrong funderPrivateKey ")
 		log.Println(err)
@@ -175,7 +176,6 @@ func (service *fundingTransactionManager) FundingBtcTxSign(jsonData string, sign
 		return fundingBtcRequest, funder, nil
 	}
 
-	//TODO create miner fee redeem transaction
 	btcFeeTxHexDecode, err := rpcClient.DecodeRawTransaction(fundingBtcRequest.TxHash)
 	if err != nil {
 		err = errors.New("BtcFeeTxHex  parse fail " + err.Error())
