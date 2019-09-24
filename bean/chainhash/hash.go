@@ -106,3 +106,12 @@ func Decode(dst *Hash, src string) error {
 	}
 	return nil
 }
+
+func IsEmpty(channelId Hash) bool {
+	for _, item := range channelId {
+		if item != 0 {
+			return false
+		}
+	}
+	return true
+}

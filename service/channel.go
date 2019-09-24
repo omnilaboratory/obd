@@ -27,7 +27,10 @@ func (c *channelManager) AliceOpenChannel(msg bean.RequestMessage, peerIdA strin
 	}
 
 	data = &bean.OpenChannelInfo{}
-	json.Unmarshal([]byte(msg.Data), &data)
+	err = json.Unmarshal([]byte(msg.Data), &data)
+	if err != nil {
+		return nil, err
+	}
 
 	data.FundingAddress, err = getAddressFromPubKey(data.FundingPubKey)
 	if err != nil {
@@ -47,7 +50,7 @@ func (c *channelManager) AliceOpenChannel(msg bean.RequestMessage, peerIdA strin
 	channelInfo.CreateAt = time.Now()
 	channelInfo.CreateBy = peerIdA
 
-	db.Save(channelInfo)
+	err = db.Save(channelInfo)
 	return data, err
 }
 
@@ -59,7 +62,7 @@ func (c *channelManager) BobAcceptChannel(jsonData string, peerIdB string) (chan
 		return nil, err
 	}
 
-	if len(reqData.TemporaryChannelId) != 32 {
+	if chainhash.IsEmpty(reqData.TemporaryChannelId) {
 		return nil, errors.New("wrong TemporaryChannelId")
 	}
 
@@ -349,7 +352,11 @@ func (c *channelManager) RequestCloseChannel(jsonData string, user *bean.User) (
 	dbData.CreateAt = time.Now()
 	dataBytes, _ := json.Marshal(dbData)
 	dbData.Hex = tool.SignMsg(dataBytes)
-	db.Save(dbData)
+	err = db.Save(dbData)
+	if err != nil {
+		log.Println(err)
+		return nil, nil, err
+	}
 
 	toData := make(map[string]interface{})
 	toData["channel_id"] = reqData.ChannelId
