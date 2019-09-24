@@ -44,8 +44,8 @@ func sendRdTx() {
 		if tool.CheckIsString(&node.TransactionHex) {
 			_, err := rpcClient.SendRawTransaction(node.TransactionHex)
 			if err == nil {
-				db.UpdateField(&node, "IsEnable", false)
-				db.UpdateField(&node, "FinishAt", time.Now())
+				_ = db.UpdateField(&node, "IsEnable", false)
+				_ = db.UpdateField(&node, "FinishAt", time.Now())
 			}
 		}
 	}

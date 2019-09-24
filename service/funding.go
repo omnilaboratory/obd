@@ -32,7 +32,7 @@ func (service *fundingTransactionManager) CreateFundingBtcTxRequest(jsonData str
 		return nil, "", err
 	}
 
-	if len(reqData.TemporaryChannelId) == 0 {
+	if chainhash.IsEmpty(reqData.TemporaryChannelId) {
 		err = errors.New("wrong TemporaryChannelId ")
 		log.Println(err)
 		return nil, "", err
@@ -122,7 +122,7 @@ func (service *fundingTransactionManager) FundingBtcTxSign(jsonData string, sign
 		return nil, "", err
 	}
 
-	if len(reqData.TemporaryChannelId) == 0 {
+	if chainhash.IsEmpty(reqData.TemporaryChannelId) {
 		err = errors.New("wrong TemporaryChannelId ")
 		log.Println(err)
 		return nil, "", err
@@ -239,7 +239,7 @@ func (service *fundingTransactionManager) CreateFundingOmniTxRequest(jsonData st
 		return nil, err
 	}
 
-	if len(reqData.TemporaryChannelId) == 0 {
+	if chainhash.IsEmpty(reqData.TemporaryChannelId) {
 		err = errors.New("wrong TemporaryChannelId ")
 		log.Println(err)
 		return nil, err

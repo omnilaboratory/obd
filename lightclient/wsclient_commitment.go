@@ -30,7 +30,7 @@ func (client *Client) commitmentTxModule(msg bean.RequestMessage) (enum.SendTarg
 			}
 		}
 		if targetUser != nil && status {
-			client.sendToSomeone(msg.Type, status, *targetUser, data)
+			_ = client.sendToSomeone(msg.Type, status, *targetUser, data)
 		}
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
@@ -231,7 +231,7 @@ func (client *Client) commitmentTxSignModule(msg bean.RequestMessage) (enum.Send
 			} else {
 				data = string(bytes)
 				status = true
-				client.sendToSomeone(msg.Type, status, ca.PeerIdA, data)
+				_ = client.sendToSomeone(msg.Type, status, ca.PeerIdA, data)
 			}
 			bytes, err = json.Marshal(cb)
 			if err != nil {
@@ -239,7 +239,7 @@ func (client *Client) commitmentTxSignModule(msg bean.RequestMessage) (enum.Send
 			} else {
 				data = string(bytes)
 				status = true
-				client.sendToSomeone(msg.Type, status, ca.PeerIdB, data)
+				_ = client.sendToSomeone(msg.Type, status, ca.PeerIdB, data)
 			}
 		}
 		if status == false {

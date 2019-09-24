@@ -36,10 +36,10 @@ func (clientManager *ClientManager) Start() {
 				log.Println("socket has disconnected.")
 				clientManager.Send(jsonMessage, conn)
 			}
-		case order_message := <-clientManager.Broadcast:
+		case orderMessage := <-clientManager.Broadcast:
 			for conn := range clientManager.ClientsMap {
 				select {
-				case conn.SendChannel <- order_message:
+				case conn.SendChannel <- orderMessage:
 				default:
 					close(conn.SendChannel)
 					delete(clientManager.ClientsMap, conn)

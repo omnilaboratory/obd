@@ -14,7 +14,7 @@ var UserService = UserManager{}
 
 func (service *UserManager) UserLogin(user *bean.User) error {
 	if user != nil {
-		errors.New("user is nil")
+		return errors.New("user is nil")
 	}
 	//打开数据库
 	db, e := dao.DBService.GetDB()

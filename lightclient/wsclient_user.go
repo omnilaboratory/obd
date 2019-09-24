@@ -22,7 +22,7 @@ func (client *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, 
 			}
 			if len(user.PeerId) > 0 {
 				client.User = &user
-				service.UserService.UserLogin(&user)
+				_ = service.UserService.UserLogin(&user)
 				data = client.User.PeerId + " login"
 				sendType = enum.SendTargetType_SendToAll
 				status = true

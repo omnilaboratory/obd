@@ -29,7 +29,7 @@ func (client *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.Se
 			}
 		}
 		if status {
-			client.sendToSomeone(msg.Type, status, targetUser, data)
+			_ = client.sendToSomeone(msg.Type, status, targetUser, data)
 		}
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
@@ -74,7 +74,7 @@ func (client *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.Se
 				if peerId == client.User.PeerId {
 					peerId = node.PeerIdB
 				}
-				client.sendToSomeone(msg.Type, status, peerId, data)
+				_ = client.sendToSomeone(msg.Type, status, peerId, data)
 			}
 		}
 		client.sendToMyself(msg.Type, status, data)
@@ -179,7 +179,7 @@ func (client *Client) fundingSignModule(msg bean.RequestMessage) (enum.SendTarge
 			}
 		}
 		if tool.CheckIsString(&funder) {
-			client.sendToSomeone(msg.Type, status, funder, data)
+			_ = client.sendToSomeone(msg.Type, status, funder, data)
 		}
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone

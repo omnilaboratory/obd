@@ -36,7 +36,7 @@ func (client *Client) channelModule(msg bean.RequestMessage) (enum.SendTargetTyp
 				}
 			}
 		}
-		client.sendToSomeone(msg.Type, status, msg.RecipientPeerId, data)
+		_ = client.sendToSomeone(msg.Type, status, msg.RecipientPeerId, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_ChannelOpen_ItemByTempId:
 		node, err := service.ChannelService.GetChannelByTemporaryChanId(msg.Data)
@@ -123,7 +123,7 @@ func (client *Client) channelModule(msg bean.RequestMessage) (enum.SendTargetTyp
 			}
 		}
 		if status {
-			client.sendToSomeone(msg.Type, status, node.PeerIdA, data)
+			_ = client.sendToSomeone(msg.Type, status, node.PeerIdA, data)
 		}
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
@@ -142,7 +142,7 @@ func (client *Client) channelModule(msg bean.RequestMessage) (enum.SendTargetTyp
 		}
 		if status {
 			if targetClient, err := client.FindUser(targetUser); err == nil {
-				client.sendToSomeone(msg.Type, status, targetClient.User.PeerId, data)
+				_ = client.sendToSomeone(msg.Type, status, targetClient.User.PeerId, data)
 			}
 		}
 		client.sendToMyself(msg.Type, status, data)
@@ -162,7 +162,7 @@ func (client *Client) channelModule(msg bean.RequestMessage) (enum.SendTargetTyp
 		}
 		if status {
 			if targetClient, err := client.FindUser(targetUser); err == nil {
-				client.sendToSomeone(msg.Type, status, targetClient.User.PeerId, data)
+				_ = client.sendToSomeone(msg.Type, status, targetClient.User.PeerId, data)
 			}
 		}
 		client.sendToMyself(msg.Type, status, data)
