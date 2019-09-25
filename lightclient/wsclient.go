@@ -49,6 +49,9 @@ func (client *Client) Write() {
 func (client *Client) Read() {
 	defer func() {
 		_ = service.UserService.UserLogout(client.User)
+		if client.User != nil {
+			delete(GlobalWsClientManager.UserMap, client.User.PeerId)
+		}
 		GlobalWsClientManager.Disconnected <- client
 		_ = client.Socket.Close()
 		log.Println("socket closed after reading...")
@@ -224,23 +227,21 @@ func (client *Client) sendToMyself(msgType enum.MsgType, status bool, data strin
 }
 
 func (client *Client) sendToSomeone(msgType enum.MsgType, status bool, recipientPeerId string, data string) error {
-	if &recipientPeerId != nil {
-		for itemClient := range GlobalWsClientManager.ClientsMap {
-			if itemClient.User != nil && itemClient.User.PeerId == recipientPeerId {
-				jsonMessage := getReplyObj(data, msgType, status, client, itemClient)
-				itemClient.SendChannel <- jsonMessage
-				return nil
-			}
+	if tool.CheckIsString(&recipientPeerId) {
+		itemClient := GlobalWsClientManager.UserMap[recipientPeerId]
+		if itemClient != nil && itemClient.User != nil {
+			jsonMessage := getReplyObj(data, msgType, status, client, itemClient)
+			itemClient.SendChannel <- jsonMessage
+			return nil
 		}
 	}
 	return errors.New("recipient not exist or online")
 }
 func (client *Client) FindUser(peerId *string) (*Client, error) {
 	if tool.CheckIsString(peerId) {
-		for client := range GlobalWsClientManager.ClientsMap {
-			if client.User != nil && client.User.PeerId == *peerId && GlobalWsClientManager.ClientsMap[client] {
-				return client, nil
-			}
+		itemClient := GlobalWsClientManager.UserMap[*peerId]
+		if itemClient != nil && client.User != nil {
+			return itemClient, nil
 		}
 	}
 	return nil, errors.New("user not exist or online")

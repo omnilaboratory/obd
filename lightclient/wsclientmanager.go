@@ -11,6 +11,7 @@ type ClientManager struct {
 	Connected    chan *Client
 	Disconnected chan *Client
 	ClientsMap   map[*Client]bool
+	UserMap      map[string]*Client
 }
 
 var GlobalWsClientManager = ClientManager{
@@ -18,6 +19,7 @@ var GlobalWsClientManager = ClientManager{
 	Connected:    make(chan *Client),
 	Disconnected: make(chan *Client),
 	ClientsMap:   make(map[*Client]bool),
+	UserMap:      make(map[string]*Client),
 }
 
 func (clientManager *ClientManager) Start() {

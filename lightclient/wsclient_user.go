@@ -23,6 +23,9 @@ func (client *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, 
 			if len(user.PeerId) > 0 {
 				client.User = &user
 				_ = service.UserService.UserLogin(&user)
+				if client.User != nil {
+					GlobalWsClientManager.UserMap[user.PeerId] = client
+				}
 				data = client.User.PeerId + " login"
 				sendType = enum.SendTargetType_SendToAll
 				status = true
@@ -35,6 +38,9 @@ func (client *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, 
 		if client.User != nil {
 			data = client.User.PeerId + " logout"
 			sendType = enum.SendTargetType_SendToAll
+			if client.User != nil {
+				delete(GlobalWsClientManager.UserMap, client.User.PeerId)
+			}
 			client.User = nil
 			status = true
 		} else {
