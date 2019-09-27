@@ -1,6 +1,8 @@
 package rpc
 
 import (
+	"github.com/shopspring/decimal"
+	"github.com/tidwall/gjson"
 	"log"
 	"testing"
 )
@@ -53,7 +55,6 @@ func TestClient_GetBalanceByAddress(t *testing.T) {
 
 	privkeys := []string{
 		"cTBs2yp9DFeJhsJmg9ChFDuC694oiVjSakmU7s6CFr35dfhcko1V",
-		"cUC9UsuybBiS7ZBFBhEFaeuhBXbPSm6yUBZVaMSD2DqS3aiBouvS",
 	}
 
 	//srciptPubkey := "a91475138ee96bf42cec92a6815d4fd47b821fbdeceb87"
@@ -61,14 +62,47 @@ func TestClient_GetBalanceByAddress(t *testing.T) {
 		{ToBitCoinAddress: "2Mx1x4dp19FUvHEoyM2Lt5toX4n22oaTXxo", Amount: 0.0001},
 	}
 
-	redemScript := "52210389cc1a24ee6aa7e9b8133df08b60ee2fc41ea2a37e50ebafb4392d313594f1c0210303391b3681f48f5f181bbfbdea741b9a2fdac0e8d99def43b6faed78bb8a4e2852ae"
+	redeemScript := "52210389cc1a24ee6aa7e9b8133df08b60ee2fc41ea2a37e50ebafb4392d313594f1c0210303391b3681f48f5f181bbfbdea741b9a2fdac0e8d99def43b6faed78bb8a4e2852ae"
 
-	txid, hex, err := client.BtcCreateAndSignRawTransaction("2N3vGUfBSNALGGxUo8gTYpVQAmLwjXomLhF", privkeys, outputItems, 0, 0, &redemScript)
+	txid, hex, err := client.BtcCreateAndSignRawTransaction("2N3vGUfBSNALGGxUo8gTYpVQAmLwjXomLhF", privkeys, outputItems, 0, 0, &redeemScript)
 	log.Println(err)
-	log.Println(hex)
+	//log.Println(hex)
 	log.Println(txid)
 
-	result, err := client.SendRawTransaction(hex)
-	log.Println(err)
-	log.Println(result)
+	privkeys = []string{
+		"cUC9UsuybBiS7ZBFBhEFaeuhBXbPSm6yUBZVaMSD2DqS3aiBouvS",
+	}
+
+	fromBitCoinAddress := "2N3vGUfBSNALGGxUo8gTYpVQAmLwjXomLhF"
+	result, err := client.ListUnspent(fromBitCoinAddress)
+
+	array := gjson.Parse(result).Array()
+	log.Println("listunspent", array)
+
+	//out, _ := decimal.NewFromFloat(minerFee).Add(outTotalAmount).Float64()
+
+	balance := 0.0
+	var inputs []map[string]interface{}
+	for _, item := range array {
+		node := make(map[string]interface{})
+		node["txid"] = item.Get("txid").String()
+		node["vout"] = item.Get("vout").Int()
+		node["redeemScript"] = redeemScript
+		node["scriptPubKey"] = item.Get("scriptPubKey").String()
+		inputs = append(inputs, node)
+		balance, _ = decimal.NewFromFloat(balance).Add(decimal.NewFromFloat(item.Get("amount").Float())).Float64()
+	}
+	log.Println("input list ", inputs)
+
+	hex, err = client.SignRawTransactionWithKey(hex, privkeys, inputs, "ALL")
+	parse := gjson.Parse(hex)
+	//log.Println(parse)
+	//log.Println(err)
+	//log.Println(hex)
+	result, err = client.DecodeRawTransaction(parse.Get("hex").String())
+	//log.Println(result)
+	log.Println(gjson.Get(result, "txid"))
+	//result, err := client.SendRawTransaction(hex)
+	//log.Println(err)
+	//log.Println(result)
 }

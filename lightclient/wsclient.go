@@ -35,13 +35,13 @@ func (client *Client) Write() {
 
 	for {
 		select {
-		case _order, ok := <-client.SendChannel:
+		case data, ok := <-client.SendChannel:
 			if !ok {
 				_ = client.Socket.WriteMessage(websocket.CloseMessage, []byte{})
 				return
 			}
-			log.Println("send data", string(_order))
-			_ = client.Socket.WriteMessage(websocket.TextMessage, _order)
+			log.Println("send data", string(data))
+			_ = client.Socket.WriteMessage(websocket.TextMessage, data)
 		}
 	}
 }

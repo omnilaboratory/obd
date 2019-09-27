@@ -5,9 +5,17 @@ import (
 	"log"
 	"net"
 	"net/rpc/jsonrpc"
+	"os/exec"
 )
 
 func main() {
+
+	cmd := exec.Command("msconfig")
+	run := cmd.Run()
+	log.Println(run)
+
+	return
+
 	conn, err := net.Dial("tcp", ":8080")
 	if err != nil {
 		panic(err)
