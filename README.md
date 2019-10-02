@@ -168,7 +168,7 @@ It works.
 
 ## Step 5: Channel Operations on test site
 
-We built a test site for testing OBD commands for new users who is willing to learn the specification and source code. Remember this site is for testing only. The URL is:
+For the convenience of brand new users, who are willing to learn the specification and source code, we built a test site for testing OBD commands and it is for testing only. The URL is:
 
 ```
 ws://62.234.216.108:60020/ws
@@ -207,7 +207,7 @@ Alice sends request to Bob for creating a channel between them:
 	"recipient_peer_id":"bob"
     }
 ```
-OBD creats the complete message for Alice and route it to Bob:
+OBD creats the complete message for Alice and routes it to Bob:
 ```
 {
 	"type":-32,
@@ -238,7 +238,7 @@ OBD creats the complete message for Alice and route it to Bob:
 	}
 }
 ```
-In Bob's browser, he will see the message, and he accept the request, by sending the following message back:
+In Bob's browser, he will see the message, and he accepts the request, by sending the following message back:
 ```
 {
 	"type":-33,
