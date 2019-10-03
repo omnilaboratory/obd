@@ -409,11 +409,16 @@ Join us in [OmniBOLT slack channel](https://join.slack.com/t/omnibolt/shared_inv
 
 # Current Features
 
-* Generate user OBD(OmniBOLT Daemon) address.
-* Open Poon-Dryja Channel.
-* BTC and Omni assets in funding and transaction.
-* fund and close channel.
-* Commitment Transaction within a channel.
+* Generate user OBD(OmniBOLT Daemon) address.  
+* Open Poon-Dryja Channel.  
+* BTC and Omni assets in funding and transaction.  
+* fund and close channel.  
+* Commitment Transaction within a channel.  
+* List latest commitment transaction in a channel.   
+* List all commmitment trsactions in a channel.
+* List all the breach remedy transactions in a channel.
+* Surveil the broadcasting revockable delivery.
+* Execute penelty. 
 
 # Comming Features
 
