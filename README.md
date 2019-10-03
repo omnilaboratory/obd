@@ -417,7 +417,7 @@ Join us in [OmniBOLT slack channel](https://join.slack.com/t/omnibolt/shared_inv
 * List latest commitment transaction in a channel.   
 * List all commmitment trsactions in a channel.
 * List all the breach remedy transactions in a channel.
-* Surveil the broadcasting revockable delivery.
+* Surveil the broadcasting commitment transactions and revockable delivery transactions.
 * Execute penelty. 
 
 # Comming Features
