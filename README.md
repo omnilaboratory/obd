@@ -254,7 +254,7 @@ In Bob's browser, he will see the message, and he accepts the request, by sendin
 When you test, you should replace the `temporary_channel_id` by the exact value that OBD generates for you.
 
 ### deposit
-Alice(mtu1CPCHK1yfTCwiTquSKRHcBrW2mHmfJH) deposits 0.01 to the channel (2N3vGUfBSNALGGxUo8gTYpVQAmLwjXomLhF), where fee is 0.00001, and then abtains the transaction ID:
+Alice(`mtu1CPCHK1yfTCwiTquSKRHcBrW2mHmfJH`) deposits 0.01 to the channel (`2N3vGUfBSNALGGxUo8gTYpVQAmLwjXomLhF`), where fee is 0.00001, and then abtains the transaction ID:
 
 **request**
 ```
