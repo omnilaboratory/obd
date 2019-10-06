@@ -391,7 +391,7 @@ Remember to watch the display of `Message log` window, to see what OBD replies i
 This document is not completed yet, and will be updated during our programming.
 
 # API Document
-The OBD API documentation site is [api.omnilab.online](api.omnilab.online).
+Please visit OBD [online API documentation](https://api.omnilab.online) for the lastest update.
 
 # How to Contribute
 OmniBOLT Daemon is MIT licensed open source software. Hopefully you can get started by doing the above steps, but Lightning network is not that easy to develop. Anyone is welcome to join this journey, and please be nice to each other, don't bring any illegal/private stuff, abuse or racial into our community.
