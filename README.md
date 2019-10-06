@@ -1,6 +1,6 @@
 # LightningOnOmni | OmniBOLT Daemon
 [![](https://img.shields.io/badge/license-MIT-blue)](https://github.com/LightningOnOmnilayer/LightningOnOmni/blob/master/LICENSE) [![](https://img.shields.io/badge/standard%20readme-OK-brightgreen)](https://github.com/LightningOnOmnilayer/LightningOnOmni/blob/master/README.md) [![](https://img.shields.io/badge/golang-%3E%3D1.9.0-orange)](https://golang.org/dl/) [![](https://img.shields.io/badge/protocol-OmniBOLT-brightgreen)](https://github.com/LightningOnOmnilayer/Omni-BOLT-spec) 
-[![](https://img.shields.io/badge/API%20V0.3-Document-brightgreen)]api.omnilab.online) 
+[![](https://img.shields.io/badge/API%20V0.3-Document-blue)](https://api.omnilab.online) 
 
 LightningOnOmni implements the [OmniBOLT](https://github.com/LightningOnOmnilayer/Omni-BOLT-spec) specification, which enables Lightning network to be Omnilayer assets aware. Compile the source code and run the binary executable file, we will have an OmniBOLT deamon(OBD) providing all services for lightning network.   
 
