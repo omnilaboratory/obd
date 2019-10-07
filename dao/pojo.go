@@ -142,13 +142,18 @@ type CommitmentTransaction struct {
 	TxidToTempMultiAddress               string         `json:"txid_to_temp_multi_address"`
 	TransactionSignHexToOther            string         `json:"transaction_sign_hex_to_other"`
 	TxidToOther                          string         `json:"txid_to_other"`
-	CurrState                            TxInfoState    `json:"curr_state"`
-	CreateBy                             string         `json:"create_by"`
-	CreateAt                             time.Time      `json:"create_at"`
-	SignAt                               time.Time      `json:"sign_at"`
-	SendAt                               time.Time      `json:"send_at"`
-	LastEditTime                         time.Time      `json:"last_edit_time"`
-	Owner                                string         `json:"owner"`
+	//htlc
+	ToHtlcTxHash string  `json:"to_htlc_tx_hash"`
+	AmountToHtlc float64 `json:"amount_to_htlc"`
+	TxidToHtlc   string  `json:"txid_to_htlc"`
+
+	CurrState    TxInfoState `json:"curr_state"`
+	CreateBy     string      `json:"create_by"`
+	CreateAt     time.Time   `json:"create_at"`
+	SignAt       time.Time   `json:"sign_at"`
+	SendAt       time.Time   `json:"send_at"`
+	LastEditTime time.Time   `json:"last_edit_time"`
+	Owner        string      `json:"owner"`
 }
 
 // close channel , alice or bob wait 1000 sequence to drawback the balance
