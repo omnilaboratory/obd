@@ -146,6 +146,9 @@ type CommitmentTransaction struct {
 	ToHtlcTxHash string  `json:"to_htlc_tx_hash"`
 	AmountToHtlc float64 `json:"amount_to_htlc"`
 	TxidToHtlc   string  `json:"txid_to_htlc"`
+	HtlcH        string  `json:"htlc_h"`
+
+	TxType int `json:"tx_type"` // 0 rsmc 1 htlc
 
 	CurrState    TxInfoState `json:"curr_state"`
 	CreateBy     string      `json:"create_by"`
