@@ -1,5 +1,7 @@
 package bean
 
+// for lightclient to obd
+
 type BtcSendRequest struct {
 	FromAddress           string  `json:"from_address"`
 	FromAddressPrivateKey string  `json:"from_address_private_key"`
