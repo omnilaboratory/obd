@@ -126,53 +126,21 @@ func (client *Client) omniCoreModule(msg bean.RequestMessage) (enum.SendTargetTy
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_Core_BtcCreateAndSignRawTransaction:
-		fromBitCoinAddress := gjson.Get(msg.Data, "fromBitCoinAddress").String()
-		fromBitCoinAddressPrivKey := gjson.Get(msg.Data, "fromBitCoinAddressPrivKey").String()
-		toBitCoinAddress := gjson.Get(msg.Data, "toBitCoinAddress").String()
-		amount := gjson.Get(msg.Data, "amount").Float()
-		minerFee := gjson.Get(msg.Data, "minerFee").Float()
-		privKeys := make([]string, 0)
-		if tool.CheckIsString(&fromBitCoinAddressPrivKey) {
-			privKeys = append(privKeys, fromBitCoinAddressPrivKey)
-		}
-		if tool.CheckIsString(&fromBitCoinAddress) &&
-			tool.CheckIsString(&toBitCoinAddress) {
-			txid, hex, err := rpcClient.BtcCreateAndSignRawTransaction(fromBitCoinAddress, privKeys, []rpc.TransactionOutputItem{{toBitCoinAddress, amount}}, minerFee, 0, nil)
-			node := make(map[string]interface{})
-			node["txid"] = txid
-			node["hex"] = hex
-
-			if err != nil {
-				data = err.Error()
-			} else {
-				bytes, _ := json.Marshal(node)
-				data = string(bytes)
-				status = true
-			}
-		} else {
-			data = "error address"
-		}
-		client.sendToMyself(msg.Type, status, data)
-		sendType = enum.SendTargetType_SendToSomeone
-	case enum.MsgType_Core_Omni_CreateAndSignRawTransaction:
-		fromBitCoinAddress := gjson.Get(msg.Data, "fromBitCoinAddress").String()
-		fromBitCoinAddressPrivKey := gjson.Get(msg.Data, "fromBitCoinAddressPrivKey").String()
-		toBitCoinAddress := gjson.Get(msg.Data, "toBitCoinAddress").String()
-		amount := gjson.Get(msg.Data, "amount").Float()
-		minerFee := gjson.Get(msg.Data, "minerFee").Float()
-		propertyId := gjson.Get(msg.Data, "propertyId").Int()
-		privKeys := make([]string, 0)
-		if tool.CheckIsString(&fromBitCoinAddressPrivKey) {
-			privKeys = append(privKeys, fromBitCoinAddressPrivKey)
-		}
-		_, err := rpcClient.OmniGetProperty(propertyId)
+		sendInfo := &bean.BtcSendRequest{}
+		err := json.Unmarshal([]byte(msg.Data), sendInfo)
 		if err != nil {
-			data = err.Error()
+			data = "error data"
 		} else {
-			if tool.CheckIsString(&fromBitCoinAddress) &&
-				tool.CheckIsString(&toBitCoinAddress) {
-				_, hex, err := rpcClient.OmniCreateAndSignRawTransaction(fromBitCoinAddress, privKeys, toBitCoinAddress, propertyId, amount, minerFee, 0)
+			privKeys := make([]string, 0)
+			if tool.CheckIsString(&sendInfo.FromAddressPrivateKey) {
+				privKeys = append(privKeys, sendInfo.FromAddressPrivateKey)
+			}
+			if tool.CheckIsString(&sendInfo.FromAddress) &&
+				tool.CheckIsString(&sendInfo.ToAddress) &&
+				sendInfo.Amount > 0 {
+				txid, hex, err := rpcClient.BtcCreateAndSignRawTransaction(sendInfo.FromAddress, privKeys, []rpc.TransactionOutputItem{{sendInfo.FromAddress, sendInfo.Amount}}, sendInfo.MinerFee, 0, nil)
 				node := make(map[string]interface{})
+				node["txid"] = txid
 				node["hex"] = hex
 
 				if err != nil {
@@ -186,6 +154,42 @@ func (client *Client) omniCoreModule(msg bean.RequestMessage) (enum.SendTargetTy
 				data = "error address"
 			}
 		}
+		client.sendToMyself(msg.Type, status, data)
+		sendType = enum.SendTargetType_SendToSomeone
+	case enum.MsgType_Core_Omni_CreateAndSignRawTransaction:
+		sendInfo := &bean.OmniSendRequest{}
+		err := json.Unmarshal([]byte(msg.Data), sendInfo)
+		if err != nil {
+			data = "error data"
+		} else {
+			privKeys := make([]string, 0)
+			if tool.CheckIsString(&sendInfo.FromAddressPrivateKey) {
+				privKeys = append(privKeys, sendInfo.FromAddressPrivateKey)
+			}
+			_, err := rpcClient.OmniGetProperty(sendInfo.PropertyId)
+			if err != nil {
+				data = err.Error()
+			} else {
+				if tool.CheckIsString(&sendInfo.FromAddress) &&
+					tool.CheckIsString(&sendInfo.ToAddress) &&
+					sendInfo.Amount > 0 {
+					_, hex, err := rpcClient.OmniCreateAndSignRawTransaction(sendInfo.FromAddress, privKeys, sendInfo.ToAddress, sendInfo.PropertyId, sendInfo.Amount, sendInfo.MinerFee, 0)
+					node := make(map[string]interface{})
+					node["hex"] = hex
+
+					if err != nil {
+						data = err.Error()
+					} else {
+						bytes, _ := json.Marshal(node)
+						data = string(bytes)
+						status = true
+					}
+				} else {
+					data = "error address"
+				}
+			}
+		}
+
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 
