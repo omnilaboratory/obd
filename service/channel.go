@@ -196,16 +196,16 @@ func (c *channelManager) ForceCloseChannel(jsonData string, user *bean.User) (in
 		return nil, err
 	}
 
-	if tool.CheckIsString(&lastCommitmentTx.TransactionSignHexToTempMultiAddress) {
-		commitmentTxid, err := rpcClient.SendRawTransaction(lastCommitmentTx.TransactionSignHexToTempMultiAddress)
+	if tool.CheckIsString(&lastCommitmentTx.RSMCTxHash) {
+		commitmentTxid, err := rpcClient.SendRawTransaction(lastCommitmentTx.RSMCTxHash)
 		if err != nil {
 			log.Println(err)
 			return nil, err
 		}
 		log.Println(commitmentTxid)
 	}
-	if tool.CheckIsString(&lastCommitmentTx.TransactionSignHexToOther) {
-		commitmentTxidToBob, err := rpcClient.SendRawTransaction(lastCommitmentTx.TransactionSignHexToOther)
+	if tool.CheckIsString(&lastCommitmentTx.ToOtherTxHash) {
+		commitmentTxidToBob, err := rpcClient.SendRawTransaction(lastCommitmentTx.ToOtherTxHash)
 		if err != nil {
 			log.Println(err)
 			return nil, err
@@ -418,16 +418,16 @@ func (c *channelManager) CloseChannelSign(jsonData string, user *bean.User) (int
 		return nil, nil, err
 	}
 
-	if tool.CheckIsString(&lastCommitmentTx.TransactionSignHexToTempMultiAddress) {
-		commitmentTxid, err := rpcClient.SendRawTransaction(lastCommitmentTx.TransactionSignHexToTempMultiAddress)
+	if tool.CheckIsString(&lastCommitmentTx.RSMCTxHash) {
+		commitmentTxid, err := rpcClient.SendRawTransaction(lastCommitmentTx.RSMCTxHash)
 		if err != nil {
 			log.Println(err)
 			return nil, nil, err
 		}
 		log.Println(commitmentTxid)
 	}
-	if tool.CheckIsString(&lastCommitmentTx.TransactionSignHexToOther) {
-		commitmentTxidToBob, err := rpcClient.SendRawTransaction(lastCommitmentTx.TransactionSignHexToOther)
+	if tool.CheckIsString(&lastCommitmentTx.ToOtherTxHash) {
+		commitmentTxidToBob, err := rpcClient.SendRawTransaction(lastCommitmentTx.ToOtherTxHash)
 		if err != nil {
 			log.Println(err)
 			return nil, nil, err

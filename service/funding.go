@@ -532,16 +532,16 @@ func (service *fundingTransactionManager) FundingOmniTxSign(jsonData string, sig
 		}
 
 		usedTxidTemp := ""
-		if commitmentTxInfo.AmountM > 0 {
+		if commitmentTxInfo.AmountToRSMC > 0 {
 			txid, hex, usedTxid, err := rpcClient.OmniCreateAndSignRawTransactionForCommitmentTx(
 				channelInfo.ChannelAddress,
 				[]string{
 					funderChannelAddressPrivateKey,
 					reqData.FundeeChannelAddressPrivateKey,
 				},
-				commitmentTxInfo.MultiAddress,
+				commitmentTxInfo.RSMCMultiAddress,
 				fundingTransaction.PropertyId,
-				commitmentTxInfo.AmountM,
+				commitmentTxInfo.AmountToRSMC,
 				0,
 				0, &channelInfo.ChannelAddressRedeemScript)
 			if err != nil {
@@ -550,8 +550,8 @@ func (service *fundingTransactionManager) FundingOmniTxSign(jsonData string, sig
 			}
 			log.Println(usedTxid)
 			usedTxidTemp = usedTxid
-			commitmentTxInfo.TxidToTempMultiAddress = txid
-			commitmentTxInfo.TransactionSignHexToTempMultiAddress = hex
+			commitmentTxInfo.RSMCTxid = txid
+			commitmentTxInfo.RSMCTxHash = hex
 		}
 
 		changeToAddress := channelInfo.AddressA
@@ -560,7 +560,7 @@ func (service *fundingTransactionManager) FundingOmniTxSign(jsonData string, sig
 		}
 
 		//create to Bob tx
-		if commitmentTxInfo.AmountB > 0 {
+		if commitmentTxInfo.AmountToOther > 0 {
 			toAddress := channelInfo.AddressB
 			if signer.PeerId == channelInfo.PeerIdA {
 				toAddress = channelInfo.AddressA
@@ -575,15 +575,15 @@ func (service *fundingTransactionManager) FundingOmniTxSign(jsonData string, sig
 				toAddress,
 				changeToAddress,
 				fundingTransaction.PropertyId,
-				commitmentTxInfo.AmountB,
+				commitmentTxInfo.AmountToOther,
 				0,
 				0, &channelInfo.ChannelAddressRedeemScript)
 			if err != nil {
 				log.Println(err)
 				return nil, err
 			}
-			commitmentTxInfo.TxidToOther = txid
-			commitmentTxInfo.TransactionSignHexToOther = hex
+			commitmentTxInfo.ToOtherTxid = txid
+			commitmentTxInfo.ToOtherTxHash = hex
 		}
 
 		commitmentTxInfo.SignAt = time.Now()
@@ -612,14 +612,14 @@ func (service *fundingTransactionManager) FundingOmniTxSign(jsonData string, sig
 		}
 		rdTransaction, _ := createRDTx(owner, channelInfo, commitmentTxInfo, outputAddress, signer)
 
-		inputs, err := getRdInputsFromCommitmentTx(commitmentTxInfo.TransactionSignHexToTempMultiAddress, commitmentTxInfo.MultiAddress, commitmentTxInfo.ScriptPubKey)
+		inputs, err := getRdInputsFromCommitmentTx(commitmentTxInfo.RSMCTxHash, commitmentTxInfo.RSMCMultiAddress, commitmentTxInfo.RSMCMultiAddressScriptPubKey)
 		if err != nil {
 			log.Println(err)
 			return nil, err
 		}
 
 		txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionForUnsendInputTx(
-			commitmentTxInfo.MultiAddress,
+			commitmentTxInfo.RSMCMultiAddress,
 			[]string{
 				funderTempAddressPrivateKey,
 				reqData.FundeeChannelAddressPrivateKey,
@@ -631,7 +631,7 @@ func (service *fundingTransactionManager) FundingOmniTxSign(jsonData string, sig
 			rdTransaction.Amount,
 			0,
 			rdTransaction.Sequence,
-			&commitmentTxInfo.RedeemScript)
+			&commitmentTxInfo.RSMCRedeemScript)
 		if err != nil {
 			log.Println(err)
 			return nil, err

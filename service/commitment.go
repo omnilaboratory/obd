@@ -51,7 +51,7 @@ func (service *commitmentTxManager) CreateNewCommitmentTxRequest(jsonData string
 	if err != nil {
 		return nil, nil, errors.New("not find the lastCommitmentTxInfo")
 	}
-	balance := lastCommitmentTxInfo.AmountM
+	balance := lastCommitmentTxInfo.AmountToRSMC
 	if balance < 0 {
 		return nil, nil, errors.New("not enough balance")
 	}
@@ -95,7 +95,7 @@ func (service *commitmentTxManager) CreateNewCommitmentTxRequest(jsonData string
 		tempAddrPrivateKeyMap[channelInfo.PubKeyB] = data.ChannelAddressPrivateKey
 	}
 
-	tempAddrPrivateKeyMap[lastCommitmentTxInfo.TempAddressPubKey] = data.LastTempAddressPrivateKey
+	tempAddrPrivateKeyMap[lastCommitmentTxInfo.RSMCTempAddressPubKey] = data.LastTempAddressPrivateKey
 	tempAddrPrivateKeyMap[data.CurrTempAddressPubKey] = data.CurrTempAddressPrivateKey
 	data.ChannelAddressPrivateKey = ""
 	data.LastTempAddressPrivateKey = ""
@@ -107,7 +107,7 @@ func (service *commitmentTxManager) CreateNewCommitmentTxRequest(jsonData string
 	var tempInfo = &dao.CommitmentTxRequestInfo{}
 	_ = db.Select(q.Eq("ChannelId", data.ChannelId), q.Eq("UserId", creator.PeerId), q.Eq("IsEnable", true)).First(tempInfo)
 	tempInfo.CommitmentTx = *data
-	tempInfo.LastTempAddressPubKey = lastCommitmentTxInfo.TempAddressPubKey
+	tempInfo.LastTempAddressPubKey = lastCommitmentTxInfo.RSMCTempAddressPubKey
 	if tempInfo.Id == 0 {
 		tempInfo.ChannelId = data.ChannelId
 		tempInfo.UserId = creator.PeerId
@@ -262,13 +262,13 @@ func (service *commitmentTxSignedManager) CommitmentTxSign(jsonData string, sign
 	}
 
 	// for c rd
-	creatorCurrTempAddressPrivateKey := tempAddrPrivateKeyMap[requestCommitmentTx.TempAddressPubKey]
+	creatorCurrTempAddressPrivateKey := tempAddrPrivateKeyMap[requestCommitmentTx.RSMCMultiAddressScriptPubKey]
 	if tool.CheckIsString(&creatorCurrTempAddressPrivateKey) == false {
 		err = errors.New("fail to get the starer's curr temp address private key")
 		log.Println(err)
 		return nil, nil, nil, err
 	}
-	defer delete(tempAddrPrivateKeyMap, requestCommitmentTx.TempAddressPubKey)
+	defer delete(tempAddrPrivateKeyMap, requestCommitmentTx.RSMCMultiAddressScriptPubKey)
 
 	//for br
 	creatorLastTempAddressPrivateKey := tempAddrPrivateKeyMap[dataFromCreator.CurrTempAddressPubKey]
@@ -367,14 +367,14 @@ func createAliceSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFr
 				return nil, err
 			}
 
-			inputs, err := getRdInputsFromCommitmentTx(lastCommitmentTx.TransactionSignHexToTempMultiAddress, lastCommitmentTx.MultiAddress, lastCommitmentTx.ScriptPubKey)
+			inputs, err := getRdInputsFromCommitmentTx(lastCommitmentTx.RSMCTxHash, lastCommitmentTx.RSMCMultiAddress, lastCommitmentTx.RSMCRedeemScript)
 			if err != nil {
 				log.Println(err)
 				return nil, err
 			}
 
 			txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionForUnsendInputTx(
-				lastCommitmentTx.MultiAddress,
+				lastCommitmentTx.RSMCMultiAddress,
 				[]string{
 					lastTempAddressPrivateKey,
 					tempAddrPrivateKeyMap[channelInfo.PubKeyB],
@@ -386,7 +386,7 @@ func createAliceSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFr
 				breachRemedyTransaction.Amount,
 				0,
 				0,
-				&lastCommitmentTx.RedeemScript)
+				&lastCommitmentTx.RSMCRedeemScript)
 			if err != nil {
 				log.Println(err)
 				return nil, err
@@ -427,8 +427,8 @@ func createAliceSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFr
 		outputBean.AmountM, _ = decimal.NewFromFloat(fundingTransaction.AmountA).Sub(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
 		outputBean.AmountB, _ = decimal.NewFromFloat(fundingTransaction.AmountB).Add(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
 		if lastCommitmentTx != nil {
-			outputBean.AmountM, _ = decimal.NewFromFloat(lastCommitmentTx.AmountM).Sub(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
-			outputBean.AmountB, _ = decimal.NewFromFloat(lastCommitmentTx.AmountB).Add(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
+			outputBean.AmountM, _ = decimal.NewFromFloat(lastCommitmentTx.AmountToRSMC).Sub(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
+			outputBean.AmountB, _ = decimal.NewFromFloat(lastCommitmentTx.AmountToOther).Add(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
 		}
 	} else {
 		outputBean.TempPubKey = signData.CurrTempAddressPubKey
@@ -436,8 +436,8 @@ func createAliceSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFr
 		outputBean.AmountM, _ = decimal.NewFromFloat(fundingTransaction.AmountA).Add(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
 		outputBean.AmountB, _ = decimal.NewFromFloat(fundingTransaction.AmountB).Sub(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
 		if lastCommitmentTx != nil {
-			outputBean.AmountM, _ = decimal.NewFromFloat(lastCommitmentTx.AmountM).Add(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
-			outputBean.AmountB, _ = decimal.NewFromFloat(lastCommitmentTx.AmountB).Sub(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
+			outputBean.AmountM, _ = decimal.NewFromFloat(lastCommitmentTx.AmountToRSMC).Add(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
+			outputBean.AmountB, _ = decimal.NewFromFloat(lastCommitmentTx.AmountToOther).Sub(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
 		}
 	}
 	outputBean.ToAddress = channelInfo.AddressB
@@ -450,16 +450,16 @@ func createAliceSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFr
 	}
 
 	usedTxidTemp := ""
-	if commitmentTxInfo.AmountM > 0 {
+	if commitmentTxInfo.AmountToRSMC > 0 {
 		txid, hex, usedTxid, err := rpcClient.OmniCreateAndSignRawTransactionForCommitmentTx(
 			channelInfo.ChannelAddress,
 			[]string{
 				tempAddrPrivateKeyMap[channelInfo.PubKeyA],
 				tempAddrPrivateKeyMap[channelInfo.PubKeyB],
 			},
-			commitmentTxInfo.MultiAddress,
+			commitmentTxInfo.RSMCMultiAddress,
 			fundingTransaction.PropertyId,
-			commitmentTxInfo.AmountM,
+			commitmentTxInfo.AmountToRSMC,
 			0,
 			0, &channelInfo.ChannelAddressRedeemScript)
 		if err != nil {
@@ -468,12 +468,12 @@ func createAliceSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFr
 		}
 		log.Println(usedTxid)
 		usedTxidTemp = usedTxid
-		commitmentTxInfo.TxidToTempMultiAddress = txid
-		commitmentTxInfo.TransactionSignHexToTempMultiAddress = hex
+		commitmentTxInfo.RSMCTxid = txid
+		commitmentTxInfo.RSMCTxHash = hex
 	}
 
 	//create to Bob tx
-	if commitmentTxInfo.AmountB > 0 {
+	if commitmentTxInfo.AmountToOther > 0 {
 		txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionForCommitmentTxToBob(
 			channelInfo.ChannelAddress,
 			usedTxidTemp,
@@ -484,15 +484,15 @@ func createAliceSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFr
 			channelInfo.AddressB,
 			fundingTransaction.FunderAddress,
 			fundingTransaction.PropertyId,
-			commitmentTxInfo.AmountB,
+			commitmentTxInfo.AmountToOther,
 			0,
 			0, &channelInfo.ChannelAddressRedeemScript)
 		if err != nil {
 			log.Println(err)
 			return nil, err
 		}
-		commitmentTxInfo.TxidToOther = txid
-		commitmentTxInfo.TransactionSignHexToOther = hex
+		commitmentTxInfo.ToOtherTxid = txid
+		commitmentTxInfo.ToOtherTxHash = hex
 	}
 	if lastCommitmentTx != nil {
 		commitmentTxInfo.LastCommitmentTxId = lastCommitmentTx.Id
@@ -534,14 +534,14 @@ func createAliceSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFr
 		currTempAddressPrivateKey = signData.CurrTempAddressPrivateKey
 	}
 
-	inputs, err := getRdInputsFromCommitmentTx(commitmentTxInfo.TransactionSignHexToTempMultiAddress, commitmentTxInfo.MultiAddress, commitmentTxInfo.ScriptPubKey)
+	inputs, err := getRdInputsFromCommitmentTx(commitmentTxInfo.RSMCTxHash, commitmentTxInfo.RSMCMultiAddress, commitmentTxInfo.RSMCMultiAddressScriptPubKey)
 	if err != nil {
 		log.Println(err)
 		return nil, err
 	}
 
 	txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionForUnsendInputTx(
-		commitmentTxInfo.MultiAddress,
+		commitmentTxInfo.RSMCMultiAddress,
 		[]string{
 			currTempAddressPrivateKey,
 			tempAddrPrivateKeyMap[channelInfo.PubKeyB],
@@ -553,7 +553,7 @@ func createAliceSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFr
 		rdTransaction.Amount,
 		0,
 		rdTransaction.Sequence,
-		&commitmentTxInfo.RedeemScript)
+		&commitmentTxInfo.RSMCRedeemScript)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -620,14 +620,14 @@ func createBobSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFrom
 				return nil, err
 			}
 
-			inputs, err := getRdInputsFromCommitmentTx(lastCommitmentTx.TransactionSignHexToTempMultiAddress, lastCommitmentTx.MultiAddress, lastCommitmentTx.ScriptPubKey)
+			inputs, err := getRdInputsFromCommitmentTx(lastCommitmentTx.RSMCTxHash, lastCommitmentTx.RSMCMultiAddress, lastCommitmentTx.RSMCMultiAddressScriptPubKey)
 			if err != nil {
 				log.Println(err)
 				return nil, err
 			}
 
 			txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionForUnsendInputTx(
-				lastCommitmentTx.MultiAddress,
+				lastCommitmentTx.RSMCMultiAddress,
 				[]string{
 					lastTempAddressPrivateKey,
 					tempAddrPrivateKeyMap[channelInfo.PubKeyA],
@@ -639,7 +639,7 @@ func createBobSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFrom
 				breachRemedyTransaction.Amount,
 				0,
 				0,
-				&lastCommitmentTx.RedeemScript)
+				&lastCommitmentTx.RSMCRedeemScript)
 			if err != nil {
 				log.Println(err)
 				return nil, err
@@ -680,16 +680,16 @@ func createBobSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFrom
 		outputBean.AmountM, _ = decimal.NewFromFloat(fundingTransaction.AmountB).Add(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
 		outputBean.AmountB, _ = decimal.NewFromFloat(fundingTransaction.AmountA).Sub(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
 		if lastCommitmentTx != nil {
-			outputBean.AmountM, _ = decimal.NewFromFloat(lastCommitmentTx.AmountM).Add(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
-			outputBean.AmountB, _ = decimal.NewFromFloat(lastCommitmentTx.AmountB).Sub(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
+			outputBean.AmountM, _ = decimal.NewFromFloat(lastCommitmentTx.AmountToRSMC).Add(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
+			outputBean.AmountB, _ = decimal.NewFromFloat(lastCommitmentTx.AmountToOther).Sub(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
 		}
 	} else {
 		outputBean.TempPubKey = dataFromCreator.CurrTempAddressPubKey
 		outputBean.AmountM, _ = decimal.NewFromFloat(fundingTransaction.AmountA).Sub(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
 		outputBean.AmountB, _ = decimal.NewFromFloat(fundingTransaction.AmountB).Add(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
 		if lastCommitmentTx != nil {
-			outputBean.AmountM, _ = decimal.NewFromFloat(lastCommitmentTx.AmountM).Sub(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
-			outputBean.AmountB, _ = decimal.NewFromFloat(lastCommitmentTx.AmountB).Add(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
+			outputBean.AmountM, _ = decimal.NewFromFloat(lastCommitmentTx.AmountToRSMC).Sub(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
+			outputBean.AmountB, _ = decimal.NewFromFloat(lastCommitmentTx.AmountToOther).Add(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
 		}
 	}
 	outputBean.ToAddress = channelInfo.AddressA
@@ -702,16 +702,16 @@ func createBobSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFrom
 	}
 
 	usedTxidTemp := ""
-	if commitmentTxInfo.AmountM > 0 {
+	if commitmentTxInfo.AmountToRSMC > 0 {
 		txid, hex, usedTxid, err := rpcClient.OmniCreateAndSignRawTransactionForCommitmentTx(
 			channelInfo.ChannelAddress,
 			[]string{
 				tempAddrPrivateKeyMap[channelInfo.PubKeyA],
 				tempAddrPrivateKeyMap[channelInfo.PubKeyB],
 			},
-			commitmentTxInfo.MultiAddress,
+			commitmentTxInfo.RSMCMultiAddress,
 			fundingTransaction.PropertyId,
-			commitmentTxInfo.AmountM,
+			commitmentTxInfo.AmountToRSMC,
 			0,
 			0, &channelInfo.ChannelAddressRedeemScript)
 		if err != nil {
@@ -720,12 +720,12 @@ func createBobSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFrom
 		}
 		log.Println(usedTxid)
 		usedTxidTemp = usedTxid
-		commitmentTxInfo.TxidToTempMultiAddress = txid
-		commitmentTxInfo.TransactionSignHexToTempMultiAddress = hex
+		commitmentTxInfo.RSMCTxid = txid
+		commitmentTxInfo.RSMCTxHash = hex
 	}
 
 	//create to alice tx
-	if commitmentTxInfo.AmountM > 0 {
+	if commitmentTxInfo.AmountToRSMC > 0 {
 		txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionForCommitmentTxToBob(
 			channelInfo.ChannelAddress,
 			usedTxidTemp,
@@ -736,15 +736,15 @@ func createBobSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFrom
 			channelInfo.AddressA,
 			fundingTransaction.FunderAddress,
 			fundingTransaction.PropertyId,
-			commitmentTxInfo.AmountB,
+			commitmentTxInfo.AmountToOther,
 			0,
 			0, &channelInfo.ChannelAddressRedeemScript)
 		if err != nil {
 			log.Println(err)
 			return nil, err
 		}
-		commitmentTxInfo.TxidToOther = txid
-		commitmentTxInfo.TransactionSignHexToOther = hex
+		commitmentTxInfo.ToOtherTxid = txid
+		commitmentTxInfo.ToOtherTxHash = hex
 	}
 
 	if lastCommitmentTx != nil {
@@ -785,14 +785,14 @@ func createBobSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFrom
 		currTempAddressPrivateKey = tempAddrPrivateKeyMap[dataFromCreator.CurrTempAddressPubKey]
 	}
 
-	inputs, err := getRdInputsFromCommitmentTx(commitmentTxInfo.TransactionSignHexToTempMultiAddress, commitmentTxInfo.MultiAddress, commitmentTxInfo.ScriptPubKey)
+	inputs, err := getRdInputsFromCommitmentTx(commitmentTxInfo.RSMCTxHash, commitmentTxInfo.RSMCMultiAddress, commitmentTxInfo.RSMCMultiAddressScriptPubKey)
 	if err != nil {
 		log.Println(err)
 		return nil, err
 	}
 
 	txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionForUnsendInputTx(
-		commitmentTxInfo.MultiAddress,
+		commitmentTxInfo.RSMCMultiAddress,
 		[]string{
 			tempAddrPrivateKeyMap[channelInfo.PubKeyA],
 			currTempAddressPrivateKey,
@@ -804,7 +804,7 @@ func createBobSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFrom
 		rdTransaction.Amount,
 		0,
 		rdTransaction.Sequence,
-		&commitmentTxInfo.RedeemScript)
+		&commitmentTxInfo.RSMCRedeemScript)
 	if err != nil {
 		log.Println(err)
 		return nil, err

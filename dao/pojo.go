@@ -121,34 +121,41 @@ type CommitmentTxRequestInfo struct {
 
 //CommitmentTransaction
 type CommitmentTransaction struct {
-	Id                                   int            `storm:"id,increment" json:"id" `
-	LastCommitmentTxId                   int            `json:"last_commitment_tx_id"`
-	LastHash                             string         `json:"last_hash"`
-	CurrHash                             string         `json:"curr_hash"`
-	PeerIdA                              string         `json:"peer_id_a"`
-	PeerIdB                              string         `json:"peer_id_b"`
-	ChannelId                            bean.ChannelID `json:"channel_id"`
-	PropertyId                           int64          `json:"property_id"`
-	InputTxid                            string         `json:"input_txid"`           //input txid  from channelAddr: alice&bob multiAddr, so need  sign of alice and bob
-	InputVout                            uint32         `json:"input_vout"`           // input vout
-	InputAmount                          float64        `json:"input_amount"`         //input amount
-	TempAddressPubKey                    string         `json:"temp_address_pub_key"` //output alice2 or bob2
-	MultiAddress                         string         `json:"multi_address"`        //output alice2&bob  or alice&bob2  multiAddr
-	RedeemScript                         string         `json:"redeem_script"`
-	ScriptPubKey                         string         `json:"script_pub_key"`
-	AmountM                              float64        `json:"amount_m"` // amount to multiAddr
-	AmountB                              float64        `json:"amount_b"` //amount to bob(if Cna) or alice(if Cnb)
-	TransactionSignHexToTempMultiAddress string         `json:"transaction_sign_hex_to_temp_multi_address"`
-	TxidToTempMultiAddress               string         `json:"txid_to_temp_multi_address"`
-	TransactionSignHexToOther            string         `json:"transaction_sign_hex_to_other"`
-	TxidToOther                          string         `json:"txid_to_other"`
-	//htlc
-	ToHtlcTxHash string  `json:"to_htlc_tx_hash"`
-	AmountToHtlc float64 `json:"amount_to_htlc"`
-	TxidToHtlc   string  `json:"txid_to_htlc"`
-	HtlcH        string  `json:"htlc_h"`
+	Id                 int            `storm:"id,increment" json:"id" `
+	LastCommitmentTxId int            `json:"last_commitment_tx_id"`
+	LastHash           string         `json:"last_hash"`
+	CurrHash           string         `json:"curr_hash"`
+	PeerIdA            string         `json:"peer_id_a"`
+	PeerIdB            string         `json:"peer_id_b"`
+	ChannelId          bean.ChannelID `json:"channel_id"`
+	PropertyId         int64          `json:"property_id"`
+	InputTxid          string         `json:"input_txid"`   //input txid  from channelAddr: alice&bob multiAddr, so need  sign of alice and bob
+	InputVout          uint32         `json:"input_vout"`   // input vout
+	InputAmount        float64        `json:"input_amount"` //input amount
 
 	TxType int `json:"tx_type"` // 0 rsmc 1 htlc
+
+	//RSMC
+	RSMCTempAddressPubKey        string  `json:"rsmc_temp_address_pub_key"` //aliceTempRemc or bobTempRsmc
+	RSMCMultiAddress             string  `json:"rsmc_multi_address"`        //output aliceTempRsmc&bob  or alice&bobTempRsmc  multiAddr
+	RSMCRedeemScript             string  `json:"rsmc_redeem_script"`
+	RSMCMultiAddressScriptPubKey string  `json:"rsmc_multi_address_script_pub_key"`
+	AmountToRSMC                 float64 `json:"amount_to_rsmc"` // amount to multiAddr
+	RSMCTxHash                   string  `json:"rsmc_tx_hash"`
+	RSMCTxid                     string  `json:"rsmc_txid"`
+	//To other
+	ToOtherTxHash string  `json:"to_other_tx_hash"`
+	ToOtherTxid   string  `json:"to_other_txid"`
+	AmountToOther float64 `json:"amount_to_other"` //amount to bob(if Cna) or alice(if Cnb)
+	//htlc
+	HTLCTempAddressPubKey        string  `json:"htlc_temp_address_pub_key"` //alice for htlc or bob for htlc
+	HTLCMultiAddress             string  `json:"htlc_multi_address"`        //output aliceTempHtlc&bob  or alice&bobTempHtlc  multiAddr
+	HTLCRedeemScript             string  `json:"htlc_redeem_script"`
+	HTLCMultiAddressScriptPubKey string  `json:"htlc_multi_address_script_pub_key"`
+	AmountToHtlc                 float64 `json:"amount_to_htlc"`
+	HtlcTxHash                   string  `json:"htlc_tx_hash"`
+	HTLCTxid                     string  `json:"htlc_txid"`
+	HtlcH                        string  `json:"htlc_h"`
 
 	CurrState    TxInfoState `json:"curr_state"`
 	CreateBy     string      `json:"create_by"`

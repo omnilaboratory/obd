@@ -68,21 +68,21 @@ func createCommitmentTx(owner string, channelInfo *dao.ChannelInfo, fundingTrans
 	commitmentTxInfo.InputAmount = fundingTransaction.AmountA + fundingTransaction.AmountB
 
 	//output
-	commitmentTxInfo.TempAddressPubKey = outputBean.TempPubKey
-	multiAddr, err := rpcClient.CreateMultiSig(2, []string{commitmentTxInfo.TempAddressPubKey, outputBean.ToPubKey})
+	commitmentTxInfo.RSMCTempAddressPubKey = outputBean.TempPubKey
+	multiAddr, err := rpcClient.CreateMultiSig(2, []string{commitmentTxInfo.RSMCTempAddressPubKey, outputBean.ToPubKey})
 	if err != nil {
 		return nil, err
 	}
-	commitmentTxInfo.MultiAddress = gjson.Get(multiAddr, "address").String()
-	commitmentTxInfo.RedeemScript = gjson.Get(multiAddr, "redeemScript").String()
-	json, err := rpcClient.GetAddressInfo(commitmentTxInfo.MultiAddress)
+	commitmentTxInfo.RSMCMultiAddress = gjson.Get(multiAddr, "address").String()
+	commitmentTxInfo.RSMCRedeemScript = gjson.Get(multiAddr, "redeemScript").String()
+	json, err := rpcClient.GetAddressInfo(commitmentTxInfo.RSMCMultiAddress)
 	if err != nil {
 		return nil, err
 	}
-	commitmentTxInfo.ScriptPubKey = gjson.Get(json, "scriptPubKey").String()
+	commitmentTxInfo.RSMCMultiAddressScriptPubKey = gjson.Get(json, "scriptPubKey").String()
 
-	commitmentTxInfo.AmountM = outputBean.AmountM
-	commitmentTxInfo.AmountB = outputBean.AmountB
+	commitmentTxInfo.AmountToRSMC = outputBean.AmountM
+	commitmentTxInfo.AmountToOther = outputBean.AmountB
 
 	commitmentTxInfo.CreateBy = user.PeerId
 	commitmentTxInfo.CreateAt = time.Now()
@@ -101,13 +101,13 @@ func createRDTx(owner string, channelInfo *dao.ChannelInfo, commitmentTxInfo *da
 	rda.Owner = owner
 
 	//input
-	rda.InputTxid = commitmentTxInfo.TxidToTempMultiAddress
+	rda.InputTxid = commitmentTxInfo.RSMCTxid
 	rda.InputVout = 0
-	rda.InputAmount = commitmentTxInfo.AmountM
+	rda.InputAmount = commitmentTxInfo.AmountToRSMC
 	//output
 	rda.OutputAddress = toAddress
 	rda.Sequence = 1000
-	rda.Amount = commitmentTxInfo.AmountM
+	rda.Amount = commitmentTxInfo.AmountToRSMC
 
 	rda.CreateBy = user.PeerId
 	rda.CreateAt = time.Now()
@@ -125,11 +125,11 @@ func createBRTx(owner string, channelInfo *dao.ChannelInfo, commitmentTxInfo *da
 	breachRemedyTransaction.Owner = owner
 
 	//input
-	breachRemedyTransaction.InputTxid = commitmentTxInfo.TxidToTempMultiAddress
+	breachRemedyTransaction.InputTxid = commitmentTxInfo.RSMCTxid
 	breachRemedyTransaction.InputVout = 0
-	breachRemedyTransaction.InputAmount = commitmentTxInfo.AmountM
+	breachRemedyTransaction.InputAmount = commitmentTxInfo.AmountToRSMC
 	//output
-	breachRemedyTransaction.Amount = commitmentTxInfo.AmountM
+	breachRemedyTransaction.Amount = commitmentTxInfo.AmountToRSMC
 
 	breachRemedyTransaction.CreateBy = user.PeerId
 	breachRemedyTransaction.CreateAt = time.Now()
