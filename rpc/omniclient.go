@@ -153,7 +153,8 @@ func (client *Client) OmniCreateAndSignRawTransaction(fromBitCoinAddress string,
 		inputs = append(inputs, node)
 	}
 
-	outputs := make(map[string]float64)
+	outputs := make(map[string]interface{})
+	//outputs["data"]="e4bda0e5a5bdefbc8ce4b896e7958ce38082"
 	//3.CreateRawTransaction
 	createrawtransactionStr, err := client.CreateRawTransaction(inputs, outputs)
 	if err != nil {
@@ -289,7 +290,7 @@ func (client *Client) OmniCreateAndSignRawTransactionForCommitmentTx(fromBitCoin
 	}
 	log.Println("2 payload " + payload)
 
-	outputs := make(map[string]float64)
+	outputs := make(map[string]interface{})
 	//3.CreateRawTransaction
 	createrawtransactionStr, err := client.CreateRawTransaction(inputs, outputs)
 	if err != nil {
@@ -417,7 +418,7 @@ func (client *Client) OmniCreateAndSignRawTransactionForCommitmentTxToBob(fromBi
 	}
 	log.Println("2 payload " + payload)
 
-	outputs := make(map[string]float64)
+	outputs := make(map[string]interface{})
 	//3.CreateRawTransaction
 	createrawtransactionStr, err := client.CreateRawTransaction(inputs, outputs)
 	if err != nil {
@@ -542,11 +543,14 @@ func (client *Client) OmniCreateAndSignRawTransactionForUnsendInputTx(fromBitCoi
 	log.Println("2 payload " + payload)
 
 	//3.CreateRawTransaction
-	outputs := make(map[string]float64)
+	outputs := make(map[string]interface{})
+	outputs["data"] = "e4bda0e5a5bdefbc8ce4b896e7958ce38082"
+
 	createrawtransactionStr, err := client.CreateRawTransaction(inputs, outputs)
 	if err != nil {
 		return "", "", err
 	}
+
 	log.Println("3 createrawtransactionStr", createrawtransactionStr)
 
 	//4.Omni_createrawtx_opreturn

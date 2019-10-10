@@ -56,11 +56,11 @@ type HTLCTimeoutDeliveryTxB struct {
 type HTLCExecutionDeliveryA struct {
 	Id             int         `storm:"id,increment" json:"id" `
 	CommitmentTxId int         `json:"commitment_tx_id"`
-	InputTxid      string      `json:"input_txid"`   // input txid  from commitTx alic2e&bob multtaddr, so need  sign of alice2 and bob
+	InputTxid      string      `json:"input_txid"`   // input txid  from commitTx aliceTempHtlc&bob multtaddr, so need  sign of aliceTempHtlc and bob
 	InputVout      uint32      `json:"input_vout"`   // input vout
-	InputAmount    float64     `json:"input_amount"` //input amount
+	InputAmount    float64     `json:"input_amount"` // input amount
 	HtlcR          string      `json:"htlc_r"`
-	OutputAddress  string      `json:"output_address"`
+	OutputAddress  string      `json:"output_address"` //to Bob
 	OutAmount      float64     `json:"out_amount"`
 	TxHash         string      `json:"tx_hash"`
 	Txid           string      `json:"txid"`
@@ -71,3 +71,6 @@ type HTLCExecutionDeliveryA struct {
 	SendAt         time.Time   `json:"send_at"`
 	CreateBy       time.Time   `json:"create_by"`
 }
+
+//HE1b 如果bob获得了正确的R，就可以完成签名，标识这次的htlc可以成功了
+type HTLCExecutionB HTLCExecutionDeliveryA

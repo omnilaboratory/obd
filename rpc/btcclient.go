@@ -64,7 +64,7 @@ func (client *Client) GetBalanceByAddress(address string) (balance decimal.Decim
 	return balance, nil
 }
 
-func (client *Client) CreateRawTransaction(inputs []map[string]interface{}, outputs map[string]float64) (result string, err error) {
+func (client *Client) CreateRawTransaction(inputs []map[string]interface{}, outputs map[string]interface{}) (result string, err error) {
 	return client.send("createrawtransaction", []interface{}{inputs, outputs})
 }
 
@@ -239,12 +239,14 @@ func (client *Client) BtcCreateAndSignRawTransaction(fromBitCoinAddress string, 
 	}
 
 	drawback, _ := decimal.NewFromFloat(balance).Sub(decimal.NewFromFloat(minerFeeAndOut)).Float64()
-	output := make(map[string]float64)
+	output := make(map[string]interface{})
 	for _, item := range outputItems {
 		if item.Amount > 0 {
 			output[item.ToBitCoinAddress], _ = decimal.NewFromFloat(item.Amount).Sub(decimal.NewFromFloat(subMinerFee)).Float64()
 		}
 	}
+
+	//output["data"]="e4bda0e5a5bdefbc8ce4b896e7958ce38082"
 	if drawback > 0 {
 		output[fromBitCoinAddress] = drawback
 	}
@@ -353,7 +355,7 @@ func (client *Client) BtcCreateAndSignRawTransactionForUnsendInputTx(fromBitCoin
 	}
 	drawback, _ := decimal.NewFromFloat(balance).Sub(decimal.NewFromFloat(out)).Float64()
 
-	output := make(map[string]float64)
+	output := make(map[string]interface{})
 	for _, item := range outputItems {
 		if item.Amount > 0 {
 			output[item.ToBitCoinAddress], _ = decimal.NewFromFloat(item.Amount).Sub(decimal.NewFromFloat(subMinerFee)).Float64()

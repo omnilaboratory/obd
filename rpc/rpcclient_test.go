@@ -1,6 +1,7 @@
 package rpc
 
 import (
+	"encoding/hex"
 	"github.com/shopspring/decimal"
 	"github.com/tidwall/gjson"
 	"log"
@@ -9,6 +10,16 @@ import (
 
 func init() {
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
+}
+
+func TestDemo(t *testing.T) {
+	name := "abc"
+	s := hex.EncodeToString([]byte(name))
+	log.Println(s)
+	//bytes, e := hex.DecodeString(s)
+	bytes, e := hex.DecodeString("6f6d6e6900000000800004ef0000000002faf080")
+	log.Println(e)
+	log.Println(string(bytes))
 }
 
 func TestClient_OmniSend(t *testing.T) {
@@ -94,7 +105,7 @@ func TestClient_GetBalanceByAddress(t *testing.T) {
 	}
 	log.Println("input list ", inputs)
 
-	hex, err = client.SignRawTransactionWithKey(hex, privkeys, inputs, "ALL")
+	hex, err = client.SignRawTransactionWithKey(hex, privkeys, inputs, "NONE|ANYONECANPAY")
 	parse := gjson.Parse(hex)
 	//log.Println(parse)
 	//log.Println(err)
