@@ -13,11 +13,11 @@ func init() {
 }
 
 func TestDemo(t *testing.T) {
-	name := "abc"
+	name := "Yuki will you marry me ? Tetsu.Yuki will you marry me ? Tetsu."
 	s := hex.EncodeToString([]byte(name))
 	log.Println(s)
 	//bytes, e := hex.DecodeString(s)
-	bytes, e := hex.DecodeString("6f6d6e6900000000800004ef0000000002faf080")
+	bytes, e := hex.DecodeString(s)
 	log.Println(e)
 	log.Println(string(bytes))
 }

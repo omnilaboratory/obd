@@ -245,14 +245,13 @@ func (client *Client) BtcCreateAndSignRawTransaction(fromBitCoinAddress string, 
 			output[item.ToBitCoinAddress], _ = decimal.NewFromFloat(item.Amount).Sub(decimal.NewFromFloat(subMinerFee)).Float64()
 		}
 	}
-
-	//output["data"]="e4bda0e5a5bdefbc8ce4b896e7958ce38082"
 	if drawback > 0 {
 		output[fromBitCoinAddress] = drawback
 	}
 
-	hex, err = client.CreateRawTransaction(inputs, output)
+	output["data"] = "59756b692077696c6c20796f75206d61727279206d65203f2054657473752e59756b692077696c6c20796f75206d61727279206d65203f2054657473752e"
 
+	hex, err = client.CreateRawTransaction(inputs, output)
 	if err != nil {
 		return "", "", err
 	}
