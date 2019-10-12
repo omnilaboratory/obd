@@ -9,8 +9,80 @@ import (
 	"time"
 )
 
+func TestDemoChannelTreeData(t *testing.T) {
+
+	var tree *PathNode
+	tree = &PathNode{
+		ParentNode:     nil,
+		CurrNodePeerId: "Dave",
+		Level:          0,
+		IsRoot:         true,
+		IsTarget:       false,
+		PeerMap:        make(map[string]*PathNode),
+	}
+	var nodeMap = make(map[string]*PathNode)
+	var branchMap = make(map[string]*PathBranchInfo)
+	_ = PathService.CreateDemoChannel("Alice", "Dave", 10, nil, tree, nodeMap, branchMap)
+	for key, value := range branchMap {
+		log.Println(key, value)
+	}
+
+}
+
+func TestDemoChannelInfoData(t *testing.T) {
+
+	var nodes []dao.DemoChannelInfo
+	db.All(&nodes)
+	log.Println(nodes)
+	return
+
+	node := &dao.DemoChannelInfo{
+		PeerIdA: "Alice",
+		AmountA: 9,
+		PeerIdB: "Bob",
+		AmountB: 0,
+	}
+	db.Save(node)
+	node = &dao.DemoChannelInfo{
+		PeerIdA: "Alice",
+		AmountA: 12,
+		PeerIdB: "Carl",
+		AmountB: 0,
+	}
+	db.Save(node)
+	node = &dao.DemoChannelInfo{
+		PeerIdA: "Bob",
+		AmountA: 13,
+		PeerIdB: "Carl",
+		AmountB: 0,
+	}
+	db.Save(node)
+	node = &dao.DemoChannelInfo{
+		PeerIdA: "Bob",
+		AmountA: 0,
+		PeerIdB: "Carl",
+		AmountB: 14,
+	}
+	db.Save(node)
+	//node = &dao.DemoChannelInfo{
+	//	PeerIdA: "Carl",
+	//	AmountA: 50,
+	//	PeerIdB: "Dave",
+	//	AmountB: 0,
+	//}
+	//db.Save(node)
+	node = &dao.DemoChannelInfo{
+		PeerIdA: "Bob",
+		AmountA: 11,
+		PeerIdB: "Dave",
+		AmountB: 0,
+	}
+	db.Save(node)
+
+}
+
 func TestPathManager_GetPath(t *testing.T) {
-	targetNode, nodes, err := PathService.GetPath("alice", "carol", 10)
+	targetNode, nodes, err := PathService.GetPath("alice", "carol", 10, nil)
 	log.Println(err)
 	log.Println(targetNode)
 	bytes, err := json.Marshal(nodes)

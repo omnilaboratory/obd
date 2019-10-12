@@ -65,3 +65,7 @@ func RandBytes(size int) (string, error) {
 	log.Println(arr)
 	return base64.StdEncoding.EncodeToString(arr), nil
 }
+
+func GetHtlcFee() float64 {
+	return 1
+}
