@@ -24,5 +24,9 @@ func (service *htlcHMessageManager) DealHtlcRequest(jsonData string, creator *be
 		return nil, err
 	}
 
-	return nil, nil
+	data = &bean.HtlcHRespond{}
+	data.PropertyId = htlcHRequest.PropertyId
+	data.Amount = htlcHRequest.Amount
+	data.RequestHash = ""
+	return data, nil
 }
