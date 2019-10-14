@@ -14,7 +14,6 @@ func (client *Client) htlcHDealModule(msg bean.RequestMessage) (enum.SendTargetT
 
 	switch msg.Type {
 	case enum.MsgType_HTLC_RequestH:
-
 		htlcHRequest := &bean.HtlcHRequest{}
 		err := json.Unmarshal([]byte(msg.Data), htlcHRequest)
 		if err != nil {
@@ -32,6 +31,24 @@ func (client *Client) htlcHDealModule(msg bean.RequestMessage) (enum.SendTargetT
 					status = true
 					_ = client.sendToSomeone(msg.Type, status, htlcHRequest.RecipientPeerId, data)
 				}
+			}
+		}
+		if status == false {
+			client.sendToMyself(msg.Type, status, data)
+		}
+		sendType = enum.SendTargetType_SendToSomeone
+	case enum.MsgType_HTLC_RespondH:
+		respond, err := service.HtlcHMessageService.DealHtlcResponse(msg.Data, client.User)
+		if err != nil {
+			data = err.Error()
+		} else {
+			bytes, err := json.Marshal(respond)
+			if err != nil {
+				data = err.Error()
+			} else {
+				data = string(bytes)
+				status = true
+				_ = client.sendToSomeone(msg.Type, status, respond.SenderPeerId, data)
 			}
 		}
 		if status == false {

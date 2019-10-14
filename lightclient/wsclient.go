@@ -168,8 +168,8 @@ func (client *Client) Read() {
 			}
 		}
 
-		//-40
-		if strings.HasPrefix(typeStr, "-40") {
+		//-40 -41
+		if msg.Type == enum.MsgType_HTLC_RequestH || msg.Type == enum.MsgType_HTLC_RespondH {
 			sendType, dataOut, status = client.htlcHDealModule(msg)
 		}
 

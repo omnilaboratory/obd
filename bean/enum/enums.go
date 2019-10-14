@@ -81,4 +81,5 @@ const (
 	MsgType_CloseChannelSign    MsgType = -39
 
 	MsgType_HTLC_RequestH MsgType = -40
+	MsgType_HTLC_RespondH MsgType = -41
 )

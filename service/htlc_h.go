@@ -2,6 +2,7 @@ package service
 
 import (
 	"LightningOnOmni/bean"
+	"LightningOnOmni/dao"
 	"LightningOnOmni/tool"
 	"encoding/json"
 	"errors"
@@ -28,5 +29,17 @@ func (service *htlcHMessageManager) DealHtlcRequest(jsonData string, creator *be
 	data.PropertyId = htlcHRequest.PropertyId
 	data.Amount = htlcHRequest.Amount
 	data.RequestHash = ""
+	return data, nil
+}
+func (service *htlcHMessageManager) DealHtlcResponse(jsonData string, creator *bean.User) (data *dao.HtlcCreateRandHInfo, err error) {
+	if tool.CheckIsString(&jsonData) == false {
+		return nil, errors.New("empty json data")
+	}
+	htlcHRespond := &bean.HtlcHRespond{}
+	err = json.Unmarshal([]byte(jsonData), htlcHRespond)
+	if err != nil {
+		return nil, err
+	}
+
 	return data, nil
 }
