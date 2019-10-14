@@ -168,6 +168,11 @@ func (client *Client) Read() {
 			}
 		}
 
+		//-40
+		if strings.HasPrefix(typeStr, "-40") {
+			sendType, dataOut, status = client.htlcHDealModule(msg)
+		}
+
 		if len(dataOut) == 0 {
 			dataOut = dataReq
 		}
