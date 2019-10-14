@@ -184,8 +184,9 @@ type HtlcHRequest struct {
 
 //type -41: carl tell alice the H,and he ca
 type HtlcHRespond struct {
+	RequestHash string  `json:"request_hash"`
+	Approval    bool    `json:"approval"` // true agree false disagree
 	PropertyId  int     `json:"property_id"`
 	Amount      float64 `json:"amount"`
 	H           string  `json:"h"`
-	RequestHash string  `json:"request_hash"`
 }

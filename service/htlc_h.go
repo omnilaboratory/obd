@@ -78,11 +78,31 @@ func (service *htlcHMessageManager) DealHtlcResponse(jsonData string, creator *b
 		return nil, err
 	}
 
-	createRandHInfo := dao.HtlcCreateRandHInfo{}
-	err = db.Select(q.Eq("RequestHash", htlcHRespond.RequestHash), q.Eq("CurrState", dao.NS_Create)).First(&createRandHInfo)
+	createRandHInfo := &dao.HtlcCreateRandHInfo{}
+	err = db.Select(q.Eq("RequestHash", htlcHRespond.RequestHash), q.Eq("CurrState", dao.NS_Create)).First(createRandHInfo)
 	if err != nil {
 		return nil, err
 	}
 
-	return data, nil
+	if htlcHRespond.Approval {
+		s, _ := tool.RandBytes(32)
+		temp := append([]byte(createRandHInfo.RequestHash), s...)
+		log.Println(temp)
+		r := tool.SignMsg(temp)
+		log.Println(r)
+		h := tool.SignMsg([]byte(r))
+		log.Println(h)
+
+		createRandHInfo.R = r
+		createRandHInfo.H = r
+		createRandHInfo.CurrState = dao.NS_Finish
+	} else {
+		createRandHInfo.CurrState = dao.NS_Refuse
+	}
+	createRandHInfo.SignAt = time.Now()
+	err = db.Update(createRandHInfo)
+	if err != nil {
+		return nil, err
+	}
+	return createRandHInfo, nil
 }
