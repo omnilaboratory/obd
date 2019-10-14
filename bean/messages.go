@@ -188,5 +188,4 @@ type HtlcHRespond struct {
 	Approval    bool    `json:"approval"` // true agree false disagree
 	PropertyId  int     `json:"property_id"`
 	Amount      float64 `json:"amount"`
-	H           string  `json:"h"`
 }
