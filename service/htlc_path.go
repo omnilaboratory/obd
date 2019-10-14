@@ -41,7 +41,7 @@ type pathManager struct{}
 
 var PathService = pathManager{}
 
-func (p *pathManager) CreateDemoChannel(realSenderPeerId, realReceiverPeerId string, amount float64, currNode *PathNode, tree *PathNode, nodeMap map[string]*PathNode, branchMap map[string]*PathBranchInfo) {
+func (p *pathManager) CreateDemoChannelNetwork(realSenderPeerId, realReceiverPeerId string, amount float64, currNode *PathNode, tree *PathNode, nodeMap map[string]*PathNode, branchMap map[string]*PathBranchInfo) {
 	if nodeMap == nil {
 		nodeMap = make(map[string]*PathNode)
 	}
@@ -52,7 +52,7 @@ func (p *pathManager) CreateDemoChannel(realSenderPeerId, realReceiverPeerId str
 
 	amount += float64(currNode.Level) * 1.0
 	var nodes []dao.DemoChannelInfo
-	err := db.Select(q.Not(q.Eq("PeerIdA", currNode.CurrNodePeerId)), q.Eq("PeerIdB", realReceiverPeerId)).Find(&nodes)
+	err := db.Select(q.Eq("PeerIdB", realReceiverPeerId)).Find(&nodes)
 	if err == nil {
 		for _, item := range nodes {
 			if item.AmountA > amount {
@@ -81,15 +81,16 @@ func (p *pathManager) CreateDemoChannel(realSenderPeerId, realReceiverPeerId str
 
 					if interSender == realSenderPeerId {
 						newNode.IsTarget = true
+						return
 					} else {
-						p.CreateDemoChannel(realSenderPeerId, interSender, amount, currNode, tree, nodeMap, branchMap)
+						p.CreateDemoChannelNetwork(realSenderPeerId, interSender, amount, currNode, tree, nodeMap, branchMap)
 					}
 				}
 			}
 		}
 	}
 	nodes = make([]dao.DemoChannelInfo, 0)
-	err = db.Select(q.Not(q.Eq("PeerIdB", currNode.CurrNodePeerId)), q.Eq("PeerIdA", realReceiverPeerId)).Find(&nodes)
+	err = db.Select(q.Eq("PeerIdA", realReceiverPeerId)).Find(&nodes)
 	if err == nil {
 		for _, item := range nodes {
 			if item.AmountB > amount {
@@ -117,13 +118,39 @@ func (p *pathManager) CreateDemoChannel(realSenderPeerId, realReceiverPeerId str
 
 					if interSender == realSenderPeerId {
 						newNode.IsTarget = true
+						return
 					} else {
-						p.CreateDemoChannel(realSenderPeerId, interSender, amount, currNode, tree, nodeMap, branchMap)
+						p.CreateDemoChannelNetwork(realSenderPeerId, interSender, amount, currNode, tree, nodeMap, branchMap)
 					}
 				}
 			}
 		}
 	}
+}
+
+func (p *pathManager) findDemoPath(realSenderPeerId, interSenderPeerId, realReceiverPeerId string, tree *PathNode, nodeMap map[string]*PathNode, branchMap map[string]*PathBranchInfo, path []*PathNode) (error, []*PathNode) {
+	if nodeMap[realSenderPeerId] == nil {
+		return errors.New("not found"), nil
+	}
+
+	if path == nil {
+		path = make([]*PathNode, 0)
+		path = append(path, nodeMap[realSenderPeerId])
+	}
+
+	currNode := nodeMap[interSenderPeerId]
+	childPeers := currNode.PeerMap
+	for key, node := range childPeers {
+		if key == realReceiverPeerId {
+			path = append(path, node)
+			return nil, path
+		} else {
+			interSenderPeerId = key
+
+		}
+	}
+
+	return nil, path
 }
 
 func (p *pathManager) CreateTreeFromReceiver(realSenderPeerId, receiverPeerId string, amount float64, currNode *PathNode, tree *PathNode, nodeMap map[string]*PathNode, branchMap map[string]*PathBranchInfo) {
@@ -220,6 +247,7 @@ func (p *pathManager) dealNodeFromReceiver(currChannel dao.ChannelInfo, commitme
 		nodeMap[interSenderPeerId] = newNode
 		if interSenderPeerId == realSenderPeerId {
 			newNode.IsTarget = true
+			return
 		} else {
 			//查找bob的通道满足余额大于需要额度的列表
 			if findNextLevelValidAlices(currChannel, interSenderPeerId, needReceiveAmount, nodeMap) {

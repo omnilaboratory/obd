@@ -14,7 +14,7 @@ func TestDemoChannelTreeData(t *testing.T) {
 	var tree *PathNode
 	tree = &PathNode{
 		ParentNode:     nil,
-		CurrNodePeerId: "Dave",
+		CurrNodePeerId: "E",
 		Level:          0,
 		IsRoot:         true,
 		IsTarget:       false,
@@ -22,7 +22,7 @@ func TestDemoChannelTreeData(t *testing.T) {
 	}
 	var nodeMap = make(map[string]*PathNode)
 	var branchMap = make(map[string]*PathBranchInfo)
-	_ = PathService.CreateDemoChannel("Alice", "Dave", 10, nil, tree, nodeMap, branchMap)
+	PathService.CreateDemoChannelNetwork("A", "E", 10, nil, tree, nodeMap, branchMap)
 	for key, value := range branchMap {
 		log.Println(key, value)
 	}
@@ -31,50 +31,64 @@ func TestDemoChannelTreeData(t *testing.T) {
 
 func TestDemoChannelInfoData(t *testing.T) {
 
-	var nodes []dao.DemoChannelInfo
-	db.All(&nodes)
-	log.Println(nodes)
-	return
+	//var nodes []dao.DemoChannelInfo
+	//db.All(&nodes)
+	//log.Println(nodes)
+	//return
 
 	node := &dao.DemoChannelInfo{
-		PeerIdA: "Alice",
-		AmountA: 9,
-		PeerIdB: "Bob",
+		PeerIdA: "A",
+		AmountA: 20,
+		PeerIdB: "B",
 		AmountB: 0,
 	}
 	db.Save(node)
 	node = &dao.DemoChannelInfo{
-		PeerIdA: "Alice",
-		AmountA: 12,
-		PeerIdB: "Carl",
+		PeerIdA: "B",
+		AmountA: 18,
+		PeerIdB: "C",
 		AmountB: 0,
 	}
 	db.Save(node)
 	node = &dao.DemoChannelInfo{
-		PeerIdA: "Bob",
-		AmountA: 13,
-		PeerIdB: "Carl",
+		PeerIdA: "C",
+		AmountA: 17,
+		PeerIdB: "D",
 		AmountB: 0,
 	}
 	db.Save(node)
 	node = &dao.DemoChannelInfo{
-		PeerIdA: "Bob",
-		AmountA: 0,
-		PeerIdB: "Carl",
-		AmountB: 14,
+		PeerIdA: "D",
+		AmountA: 16,
+		PeerIdB: "E",
+		AmountB: 0,
 	}
 	db.Save(node)
-	//node = &dao.DemoChannelInfo{
-	//	PeerIdA: "Carl",
-	//	AmountA: 50,
-	//	PeerIdB: "Dave",
-	//	AmountB: 0,
-	//}
-	//db.Save(node)
 	node = &dao.DemoChannelInfo{
-		PeerIdA: "Bob",
+		PeerIdA: "B",
+		AmountA: 19,
+		PeerIdB: "D",
+		AmountB: 0,
+	}
+	db.Save(node)
+	node = &dao.DemoChannelInfo{
+		PeerIdA: "D",
+		AmountA: 15,
+		PeerIdB: "B",
+		AmountB: 0,
+	}
+	db.Save(node)
+	node = &dao.DemoChannelInfo{
+		PeerIdA: "A",
 		AmountA: 11,
-		PeerIdB: "Dave",
+		PeerIdB: "E",
+		AmountB: 0,
+	}
+	db.Save(node)
+	node = &dao.DemoChannelInfo{
+		PeerIdA: "E",
+		AmountA: 12,
+		PeerIdB: "A",
 		AmountB: 0,
 	}
 	db.Save(node)

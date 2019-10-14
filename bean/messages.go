@@ -174,3 +174,18 @@ type GetBalanceRespond struct {
 	//currently not in use
 	Frozen float64 `json:"frozen"`
 }
+
+//type -40: alice tell carl ,she wanna transfer some money to Carl
+type HtlcHRequest struct {
+	PropertyId      int     `json:"property_id"`
+	Amount          float64 `json:"amount"`
+	RecipientPeerId string  `json:"recipient_peer_id"`
+}
+
+//type -41: carl tell alice the H,and he ca
+type HtlcHRespond struct {
+	PropertyId  int     `json:"property_id"`
+	Amount      float64 `json:"amount"`
+	H           string  `json:"h"`
+	RequestHash string  `json:"request_hash"`
+}
