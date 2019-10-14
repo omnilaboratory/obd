@@ -74,3 +74,25 @@ type HTLCExecutionDeliveryA struct {
 
 //HE1b 如果bob获得了正确的R，就可以完成签名，标识这次的htlc可以成功了
 type HTLCExecutionB HTLCExecutionDeliveryA
+
+type NormalState int
+
+const (
+	NS_Create NormalState = 10
+	NS_Finish NormalState = 20
+	NS_Refuse NormalState = 30
+)
+
+type HtlcCreateRandHInfo struct {
+	Id              int         `storm:"id,increment" json:"id" `
+	SenderPeerId    string      `json:"sender_peer_id"`
+	RecipientPeerId string      `json:"recipient_peer_id"`
+	PropertyId      int         `json:"property_id"`
+	Amount          float64     `json:"amount"`
+	R               string      `json:"r"`
+	H               string      `json:"h"`
+	CurrState       NormalState `json:"curr_state"`
+	RequestHash     string      `json:"request_hash"`
+	CreateBy        string      `json:"create_by"`
+	CreateAt        time.Time   `json:"create_at"`
+}

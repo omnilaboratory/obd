@@ -222,24 +222,3 @@ type BreachRemedyTransaction struct {
 	LastEditTime       time.Time      `json:"last_edit_time"`
 	Owner              string         `json:"owner"`
 }
-
-type NormalState int
-
-const (
-	NS_Create NormalState = 10
-	NS_Finish NormalState = 20
-)
-
-type HtlcCreateRandHInfo struct {
-	Id              int         `storm:"id,increment" json:"id" `
-	SenderPeerId    string      `json:"sender_peer_id"`
-	RecipientPeerId string      `json:"recipient_peer_id"`
-	PropertyId      int         `json:"property_id"`
-	Amount          float64     `json:"amount"`
-	R               string      `json:"r"`
-	H               string      `json:"h"`
-	CurrState       NormalState `json:"curr_state"`
-	RequestHash     string      `json:"request_hash"`
-	CreateBy        string      `json:"create_by"`
-	CreateAt        time.Time   `json:"create_at"`
-}
