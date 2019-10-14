@@ -23,13 +23,17 @@ func (client *Client) htlcHDealModule(msg bean.RequestMessage) (enum.SendTargetT
 				data = err.Error()
 			} else {
 				respond, err := service.HtlcHMessageService.DealHtlcRequest(msg.Data, client.User)
-				bytes, err := json.Marshal(respond)
 				if err != nil {
 					data = err.Error()
 				} else {
-					data = string(bytes)
-					status = true
-					_ = client.sendToSomeone(msg.Type, status, htlcHRequest.RecipientPeerId, data)
+					bytes, err := json.Marshal(respond)
+					if err != nil {
+						data = err.Error()
+					} else {
+						data = string(bytes)
+						status = true
+						_ = client.sendToSomeone(msg.Type, status, htlcHRequest.RecipientPeerId, data)
+					}
 				}
 			}
 		}
