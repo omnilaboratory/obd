@@ -2,6 +2,7 @@ package tool
 
 import (
 	"LightningOnOmni/config"
+	"crypto/md5"
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
@@ -24,8 +25,13 @@ func CheckIsString(str *string) bool {
 	return true
 }
 
-func SignMsg(msg []byte) string {
+func SignMsgWithSha256(msg []byte) string {
 	hash := sha256.New()
+	hash.Write(msg)
+	return fmt.Sprintf("%x", hash.Sum(nil))
+}
+func SignMsgWithMd5(msg []byte) string {
+	hash := md5.New()
 	hash.Write(msg)
 	return fmt.Sprintf("%x", hash.Sum(nil))
 }

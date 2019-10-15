@@ -351,7 +351,7 @@ func (c *channelManager) RequestCloseChannel(jsonData string, user *bean.User) (
 	dbData.Owner = user.PeerId
 	dbData.CreateAt = time.Now()
 	dataBytes, _ := json.Marshal(dbData)
-	dbData.Hex = tool.SignMsg(dataBytes)
+	dbData.Hex = tool.SignMsgWithSha256(dataBytes)
 	err = db.Save(dbData)
 	if err != nil {
 		log.Println(err)

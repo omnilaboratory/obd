@@ -49,7 +49,7 @@ func (service *htlcHMessageManager) DealHtlcRequest(jsonData string, creator *be
 		return nil, err
 	}
 	bytes, err := json.Marshal(createRandHInfo)
-	msgHash := tool.SignMsg(bytes)
+	msgHash := tool.SignMsgWithSha256(bytes)
 	createRandHInfo.RequestHash = msgHash
 	err = tx.Update(createRandHInfo)
 	if err != nil {
@@ -89,8 +89,8 @@ func (service *htlcHMessageManager) DealHtlcResponse(jsonData string, user *bean
 	if htlcHRespond.Approval {
 		s, _ := tool.RandBytes(32)
 		temp := append([]byte(createRandHInfo.RequestHash), s...)
-		r := tool.SignMsg(temp)
-		h := tool.SignMsg([]byte(r))
+		r := tool.SignMsgWithSha256(temp)
+		h := tool.SignMsgWithSha256([]byte(r))
 
 		createRandHInfo.R = r
 		createRandHInfo.H = h

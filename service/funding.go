@@ -597,7 +597,7 @@ func (service *fundingTransactionManager) FundingOmniTxSign(jsonData string, sig
 		}
 
 		bytes, err := json.Marshal(commitmentTxInfo)
-		msgHash := tool.SignMsg(bytes)
+		msgHash := tool.SignMsgWithSha256(bytes)
 		commitmentTxInfo.CurrHash = msgHash
 		err = tx.Update(commitmentTxInfo)
 		if err != nil {

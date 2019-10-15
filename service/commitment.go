@@ -512,7 +512,7 @@ func createAliceSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFr
 	}
 
 	bytes, err := json.Marshal(commitmentTxInfo)
-	msgHash := tool.SignMsg(bytes)
+	msgHash := tool.SignMsgWithSha256(bytes)
 	commitmentTxInfo.CurrHash = msgHash
 	err = tx.Update(commitmentTxInfo)
 	if err != nil {
@@ -763,7 +763,7 @@ func createBobSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFrom
 		return nil, err
 	}
 	bytes, err := json.Marshal(commitmentTxInfo)
-	msgHash := tool.SignMsg(bytes)
+	msgHash := tool.SignMsgWithSha256(bytes)
 	commitmentTxInfo.CurrHash = msgHash
 	err = tx.Update(commitmentTxInfo)
 	if err != nil {
