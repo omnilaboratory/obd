@@ -8,6 +8,7 @@ import (
 	"errors"
 	"github.com/asdine/storm/q"
 	"log"
+	"strconv"
 	"sync"
 	"time"
 )
@@ -130,8 +131,13 @@ func (service *htlcHMessageManager) GetHtlcCreatedRandHInfoList(user *bean.User)
 }
 
 func (service *htlcHMessageManager) GetHtlcCreatedRandHInfoItem(msgData string, user *bean.User) (data interface{}, err error) {
+	id, err := strconv.Atoi(msgData)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
 	var createRandHInfo dao.HtlcCreateRandHInfo
-	err = db.Select(q.Eq("Id", msgData), q.Eq("CreateBy", user.PeerId)).First(&createRandHInfo)
+	err = db.Select(q.Eq("Id", id), q.Eq("CreateBy", user.PeerId)).First(&createRandHInfo)
 	if err != nil {
 		return nil, err
 	}
@@ -149,8 +155,13 @@ func (service *htlcHMessageManager) GetHtlcSignedRandHInfoList(user *bean.User) 
 }
 
 func (service *htlcHMessageManager) GetHtlcSignedRandHInfoItem(msgData string, user *bean.User) (data interface{}, err error) {
+	id, err := strconv.Atoi(msgData)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
 	var createRandHInfo dao.HtlcCreateRandHInfo
-	err = db.Select(q.Eq("Id", msgData), q.Eq("SignBy", user.PeerId)).First(&createRandHInfo)
+	err = db.Select(q.Eq("Id", id), q.Eq("SignBy", user.PeerId)).First(&createRandHInfo)
 	if err != nil {
 		return nil, err
 	}
