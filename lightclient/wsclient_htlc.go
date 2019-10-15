@@ -13,7 +13,7 @@ func (client *Client) htlcHDealModule(msg bean.RequestMessage) (enum.SendTargetT
 	data := ""
 
 	switch msg.Type {
-	case enum.MsgType_HTLC_RequestH:
+	case enum.MsgType_HTLC_RequestH_N40:
 		htlcHRequest := &bean.HtlcHRequest{}
 		err := json.Unmarshal([]byte(msg.Data), htlcHRequest)
 		if err != nil {
@@ -41,8 +41,8 @@ func (client *Client) htlcHDealModule(msg bean.RequestMessage) (enum.SendTargetT
 			client.sendToMyself(msg.Type, status, data)
 		}
 		sendType = enum.SendTargetType_SendToSomeone
-	case enum.MsgType_HTLC_RespondH:
-		respond, err := service.HtlcHMessageService.DealHtlcResponse(msg.Data, client.User)
+	case enum.MsgType_HTLC_CreatedRAndHInfoList_N4001:
+		respond, err := service.HtlcHMessageService.GetHtlcCreatedRandHInfoList(client.User)
 		if err != nil {
 			data = err.Error()
 		} else {
@@ -52,12 +52,70 @@ func (client *Client) htlcHDealModule(msg bean.RequestMessage) (enum.SendTargetT
 			} else {
 				data = string(bytes)
 				status = true
-				_ = client.sendToSomeone(msg.Type, status, respond.SenderPeerId, data)
 			}
 		}
-		if status == false {
-			client.sendToMyself(msg.Type, status, data)
+		client.sendToMyself(msg.Type, status, data)
+		sendType = enum.SendTargetType_SendToSomeone
+	case enum.MsgType_HTLC_CreatedRAndHInfoItem_N4002:
+		respond, err := service.HtlcHMessageService.GetHtlcCreatedRandHInfoItem(msg.Data, client.User)
+		if err != nil {
+			data = err.Error()
+		} else {
+			bytes, err := json.Marshal(respond)
+			if err != nil {
+				data = err.Error()
+			} else {
+				data = string(bytes)
+				status = true
+			}
 		}
+		client.sendToMyself(msg.Type, status, data)
+		sendType = enum.SendTargetType_SendToSomeone
+	case enum.MsgType_HTLC_RespondH_N41:
+		respond, senderUser, err := service.HtlcHMessageService.DealHtlcResponse(msg.Data, client.User)
+		if err != nil {
+			data = err.Error()
+		} else {
+			bytes, err := json.Marshal(respond)
+			if err != nil {
+				data = err.Error()
+			} else {
+				data = string(bytes)
+				status = true
+				_ = client.sendToSomeone(msg.Type, status, *senderUser, data)
+			}
+		}
+		client.sendToMyself(msg.Type, status, data)
+		sendType = enum.SendTargetType_SendToSomeone
+	case enum.MsgType_HTLC_SignedRAndHInfoList_N4101:
+		respond, err := service.HtlcHMessageService.GetHtlcSignedRandHInfoList(client.User)
+		if err != nil {
+			data = err.Error()
+		} else {
+			bytes, err := json.Marshal(respond)
+			if err != nil {
+				data = err.Error()
+			} else {
+				data = string(bytes)
+				status = true
+			}
+		}
+		client.sendToMyself(msg.Type, status, data)
+		sendType = enum.SendTargetType_SendToSomeone
+	case enum.MsgType_HTLC_SignedRAndHInfoItem_N4102:
+		respond, err := service.HtlcHMessageService.GetHtlcSignedRandHInfoItem(msg.Data, client.User)
+		if err != nil {
+			data = err.Error()
+		} else {
+			bytes, err := json.Marshal(respond)
+			if err != nil {
+				data = err.Error()
+			} else {
+				data = string(bytes)
+				status = true
+			}
+		}
+		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	}
 

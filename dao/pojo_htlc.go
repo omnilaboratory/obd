@@ -96,4 +96,5 @@ type HtlcCreateRandHInfo struct {
 	CreateBy        string      `json:"create_by"`
 	CreateAt        time.Time   `json:"create_at"`
 	SignAt          time.Time   `json:"sign_at"`
+	SignBy          string      `json:"sign_by"`
 }

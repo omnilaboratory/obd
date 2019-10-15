@@ -15,7 +15,7 @@ func (client *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.Se
 	var sendType = enum.SendTargetType_SendToNone
 	data := ""
 	switch msg.Type {
-	case enum.MsgType_FundingCreate_BtcCreate:
+	case enum.MsgType_FundingCreate_BtcCreate_N3400:
 		node, targetUser, err := service.FundingTransactionService.CreateFundingBtcTxRequest(msg.Data, client.User)
 		if err != nil {
 			data = err.Error()
@@ -34,7 +34,7 @@ func (client *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.Se
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 
-	case enum.MsgType_FundingCreate_OmniCreate:
+	case enum.MsgType_FundingCreate_OmniCreate_N34:
 		//check target whether is online
 		fundingInfo := &bean.FundingCreated{}
 		err := json.Unmarshal([]byte(msg.Data), fundingInfo)
@@ -79,7 +79,7 @@ func (client *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.Se
 		}
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
-	case enum.MsgType_FundingCreate_ItemByTempId:
+	case enum.MsgType_FundingCreate_ItemByTempId_N3401:
 		node, err := service.FundingTransactionService.ItemByTempId(msg.Data)
 		if err != nil {
 			data = err.Error()
@@ -94,7 +94,7 @@ func (client *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.Se
 		}
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
-	case enum.MsgType_FundingCreate_ItemById:
+	case enum.MsgType_FundingCreate_ItemById_N3402:
 		id, err := strconv.Atoi(msg.Data)
 		if err != nil {
 			log.Println(err)
@@ -114,7 +114,7 @@ func (client *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.Se
 		}
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
-	case enum.MsgType_FundingCreate_ALlItem:
+	case enum.MsgType_FundingCreate_ALlItem_N3403:
 		node, err := service.FundingTransactionService.AllItem(client.User.PeerId)
 		if err != nil {
 			data = err.Error()
@@ -129,7 +129,7 @@ func (client *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.Se
 		}
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
-	case enum.MsgType_FundingCreate_DelById:
+	case enum.MsgType_FundingCreate_DelById_N3405:
 		id, err := strconv.Atoi(msg.Data)
 		for {
 			if err != nil {
@@ -147,7 +147,7 @@ func (client *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.Se
 		}
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
-	case enum.MsgType_FundingCreate_Count:
+	case enum.MsgType_FundingCreate_Count_N3404:
 		count, err := service.FundingTransactionService.TotalCount(client.User.PeerId)
 		if err != nil {
 			data = err.Error()
@@ -165,7 +165,7 @@ func (client *Client) fundingSignModule(msg bean.RequestMessage) (enum.SendTarge
 	var sendType = enum.SendTargetType_SendToNone
 	data := ""
 	switch msg.Type {
-	case enum.MsgType_FundingSign_BtcSign:
+	case enum.MsgType_FundingSign_BtcSign_N3500:
 		node, funder, err := service.FundingTransactionService.FundingBtcTxSign(msg.Data, client.User)
 		if err != nil {
 			data = err.Error()
@@ -183,7 +183,7 @@ func (client *Client) fundingSignModule(msg bean.RequestMessage) (enum.SendTarge
 		}
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
-	case enum.MsgType_FundingSign_OmniSign: //get openChannelReq from funder then send to fundee  create a funding tx
+	case enum.MsgType_FundingSign_OmniSign_N35: //get openChannelReq from funder then send to fundee  create a funding tx
 		signed, err := service.FundingTransactionService.FundingOmniTxSign(msg.Data, client.User)
 		if err != nil {
 			data = err.Error()

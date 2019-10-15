@@ -16,7 +16,7 @@ func (client *Client) omniCoreModule(msg bean.RequestMessage) (enum.SendTargetTy
 	data := ""
 	rpcClient := rpc.NewClient()
 	switch msg.Type {
-	case enum.MsgType_Core_GetNewAddress:
+	case enum.MsgType_Core_GetNewAddress_1001:
 		var label = msg.Data
 		address, err := rpcClient.GetNewAddress(label)
 		if err != nil {
@@ -27,7 +27,7 @@ func (client *Client) omniCoreModule(msg bean.RequestMessage) (enum.SendTargetTy
 		}
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
-	case enum.MsgType_Core_GetMiningInfo:
+	case enum.MsgType_Core_GetMiningInfo_1002:
 		result, err := rpcClient.GetMiningInfo()
 		if err != nil {
 			data = err.Error()
@@ -37,7 +37,7 @@ func (client *Client) omniCoreModule(msg bean.RequestMessage) (enum.SendTargetTy
 		}
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
-	case enum.MsgType_Core_GetNetworkInfo:
+	case enum.MsgType_Core_GetNetworkInfo_1003:
 		result, err := rpcClient.GetNetworkInfo()
 		if err != nil {
 			data = err.Error()
@@ -47,7 +47,7 @@ func (client *Client) omniCoreModule(msg bean.RequestMessage) (enum.SendTargetTy
 		}
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
-	case enum.MsgType_Core_SignMessageWithPrivKey:
+	case enum.MsgType_Core_SignMessageWithPrivKey_1004:
 		privkey := gjson.Get(msg.Data, "privkey").String()
 		message := gjson.Get(msg.Data, "message").String()
 		if tool.CheckIsString(&privkey) && tool.CheckIsString(&message) {
@@ -63,7 +63,7 @@ func (client *Client) omniCoreModule(msg bean.RequestMessage) (enum.SendTargetTy
 		}
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
-	case enum.MsgType_Core_VerifyMessage:
+	case enum.MsgType_Core_VerifyMessage_1005:
 		address := gjson.Get(msg.Data, "address").String()
 		signature := gjson.Get(msg.Data, "signature").String()
 		message := gjson.Get(msg.Data, "message").String()
@@ -80,7 +80,7 @@ func (client *Client) omniCoreModule(msg bean.RequestMessage) (enum.SendTargetTy
 		}
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
-	case enum.MsgType_Core_DumpPrivKey:
+	case enum.MsgType_Core_DumpPrivKey_1006:
 		address := gjson.Get(msg.Data, "address").String()
 		if tool.CheckIsString(&address) {
 			ok, err := rpcClient.DumpPrivKey(address)
@@ -95,7 +95,7 @@ func (client *Client) omniCoreModule(msg bean.RequestMessage) (enum.SendTargetTy
 		}
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
-	case enum.MsgType_Core_ListUnspent:
+	case enum.MsgType_Core_ListUnspent_1007:
 		address := gjson.Get(msg.Data, "address").String()
 		if tool.CheckIsString(&address) {
 			ok, err := rpcClient.ListUnspent(address)
@@ -110,7 +110,7 @@ func (client *Client) omniCoreModule(msg bean.RequestMessage) (enum.SendTargetTy
 		}
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
-	case enum.MsgType_Core_BalanceByAddress:
+	case enum.MsgType_Core_BalanceByAddress_1008:
 		address := gjson.Get(msg.Data, "address").String()
 		if tool.CheckIsString(&address) {
 			balance, err := rpcClient.GetBalanceByAddress(address)

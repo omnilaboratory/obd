@@ -68,20 +68,21 @@ func (service *htlcHMessageManager) DealHtlcRequest(jsonData string, creator *be
 
 	return data, nil
 }
-func (service *htlcHMessageManager) DealHtlcResponse(jsonData string, creator *bean.User) (data *dao.HtlcCreateRandHInfo, err error) {
+
+func (service *htlcHMessageManager) DealHtlcResponse(jsonData string, user *bean.User) (data interface{}, senderPeerId *string, err error) {
 	if tool.CheckIsString(&jsonData) == false {
-		return nil, errors.New("empty json data")
+		return nil, nil, errors.New("empty json data")
 	}
 	htlcHRespond := &bean.HtlcHRespond{}
 	err = json.Unmarshal([]byte(jsonData), htlcHRespond)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	createRandHInfo := &dao.HtlcCreateRandHInfo{}
 	err = db.Select(q.Eq("RequestHash", htlcHRespond.RequestHash), q.Eq("CurrState", dao.NS_Create)).First(createRandHInfo)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	if htlcHRespond.Approval {
@@ -100,7 +101,56 @@ func (service *htlcHMessageManager) DealHtlcResponse(jsonData string, creator *b
 		createRandHInfo.CurrState = dao.NS_Refuse
 	}
 	createRandHInfo.SignAt = time.Now()
+	createRandHInfo.SignBy = user.PeerId
 	err = db.Update(createRandHInfo)
+	if err != nil {
+		return nil, &createRandHInfo.SenderPeerId, err
+	}
+
+	responseData := make(map[string]interface{})
+	responseData["id"] = createRandHInfo.Id
+	responseData["request_hash"] = htlcHRespond.RequestHash
+	responseData["approval"] = htlcHRespond.Approval
+	if htlcHRespond.Approval {
+		responseData["h"] = createRandHInfo.H
+	}
+	return responseData, &createRandHInfo.SenderPeerId, nil
+}
+
+func (service *htlcHMessageManager) GetHtlcCreatedRandHInfoList(user *bean.User) (data interface{}, err error) {
+	var createRandHInfoList []dao.HtlcCreateRandHInfo
+	err = db.Select(q.Eq("CreateBy", user.PeerId)).Find(&createRandHInfoList)
+	if err != nil {
+		return nil, err
+	}
+	for _, item := range createRandHInfoList {
+		item.R = ""
+	}
+	return createRandHInfoList, nil
+}
+
+func (service *htlcHMessageManager) GetHtlcCreatedRandHInfoItem(msgData string, user *bean.User) (data interface{}, err error) {
+	var createRandHInfo dao.HtlcCreateRandHInfo
+	err = db.Select(q.Eq("Id", msgData), q.Eq("CreateBy", user.PeerId)).First(&createRandHInfo)
+	if err != nil {
+		return nil, err
+	}
+	createRandHInfo.R = ""
+	return createRandHInfo, nil
+}
+
+func (service *htlcHMessageManager) GetHtlcSignedRandHInfoList(user *bean.User) (data interface{}, err error) {
+	var createRandHInfoList []dao.HtlcCreateRandHInfo
+	err = db.Select(q.Eq("RecipientPeerId", user.PeerId), q.Eq("SignBy", user.PeerId)).Find(&createRandHInfoList)
+	if err != nil {
+		return nil, err
+	}
+	return createRandHInfoList, nil
+}
+
+func (service *htlcHMessageManager) GetHtlcSignedRandHInfoItem(msgData string, user *bean.User) (data interface{}, err error) {
+	var createRandHInfo dao.HtlcCreateRandHInfo
+	err = db.Select(q.Eq("Id", msgData), q.Eq("SignBy", user.PeerId)).First(&createRandHInfo)
 	if err != nil {
 		return nil, err
 	}

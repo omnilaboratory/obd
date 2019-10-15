@@ -107,70 +107,87 @@ func (client *Client) Read() {
 		var sendType = enum.SendTargetType_SendToNone
 		status := false
 		var dataOut []byte
-		var flag = true
+		var needLogin = true
 		if msg.Type < 1000 && msg.Type >= 0 {
 			sendType, dataOut, status = client.userModule(msg)
-			flag = false
+			needLogin = false
 		}
 
 		if msg.Type > 1000 {
 			sendType, dataOut, status = client.omniCoreModule(msg)
-			flag = false
+			needLogin = false
 		}
 
-		if flag {
+		if needLogin {
+			//not login
 			if client.User == nil {
 				client.sendToMyself(msg.Type, false, "please login")
 				continue
+			} else { // already login
+				for {
+					typeStr := strconv.Itoa(int(msg.Type))
+					//-32 -3201 -3202 -3203 -3204
+					if strings.HasPrefix(typeStr, strconv.Itoa(int(enum.MsgType_ChannelOpen_N32))) {
+						sendType, dataOut, status = client.channelModule(msg)
+						break
+					}
+					//-33 -3301 -3302 -3303 -3304
+					if strings.HasPrefix(typeStr, strconv.Itoa(int(enum.MsgType_ChannelAccept_N33))) {
+						sendType, dataOut, status = client.channelModule(msg)
+						break
+					}
+					//-34 -3400 -3401 -3402 -3403 -3404
+					if strings.HasPrefix(typeStr, strconv.Itoa(int(enum.MsgType_FundingCreate_OmniCreate_N34))) {
+						sendType, dataOut, status = client.fundingTransactionModule(msg)
+						break
+					}
+
+					//-35 -3500
+					if msg.Type == enum.MsgType_FundingSign_OmniSign_N35 ||
+						msg.Type == enum.MsgType_FundingSign_BtcSign_N3500 {
+						sendType, dataOut, status = client.fundingSignModule(msg)
+						break
+					}
+
+					if strings.HasPrefix(typeStr, strconv.Itoa(int(enum.MsgType_FundingSign_OmniSign_N35))) {
+						//-351 -35101 -35102 -35103 -35104
+						if strings.HasPrefix(typeStr, strconv.Itoa(int(enum.MsgType_CommitmentTx_Create_N351))) {
+							sendType, dataOut, status = client.commitmentTxModule(msg)
+							break
+						}
+						//-352 -35201 -35202 -35203 -35204
+						if strings.HasPrefix(typeStr, strconv.Itoa(int(enum.MsgType_CommitmentTxSigned_Sign_N352))) {
+							sendType, dataOut, status = client.commitmentTxSignModule(msg)
+							break
+						}
+						//-353 -35301 -35302 -35303 -35304
+						if strings.HasPrefix(typeStr, strconv.Itoa(int(enum.MsgType_GetBalanceRequest_N353))) {
+							sendType, dataOut, status = client.otherModule(msg)
+							break
+						}
+						//-354 -35401 -35402 -35403 -35404
+						if strings.HasPrefix(typeStr, strconv.Itoa(int(enum.MsgType_GetBalanceRespond_N354))) {
+							sendType, dataOut, status = client.otherModule(msg)
+							break
+						}
+					}
+
+					//-38
+					if msg.Type == enum.MsgType_CloseChannelRequest_N38 ||
+						msg.Type == enum.MsgType_CloseChannelSign_N39 {
+						sendType, dataOut, status = client.channelModule(msg)
+						break
+					}
+
+					//-40 -41
+					if strings.HasPrefix(typeStr, strconv.Itoa(int(enum.MsgType_HTLC_RequestH_N40))) ||
+						strings.HasPrefix(typeStr, strconv.Itoa(int(enum.MsgType_HTLC_RespondH_N41))) {
+						sendType, dataOut, status = client.htlcHDealModule(msg)
+						break
+					}
+					break
+				}
 			}
-		}
-
-		typeStr := strconv.Itoa(int(msg.Type))
-		//-32 -3201 -3202 -3203 -3204
-		if strings.HasPrefix(typeStr, "-32") {
-			sendType, dataOut, status = client.channelModule(msg)
-		}
-		//-33 -3301 -3302 -3303 -3304
-		if strings.HasPrefix(typeStr, "-33") {
-			sendType, dataOut, status = client.channelModule(msg)
-		}
-		//-34 -3400 -3401 -3402 -3403 -3404
-		if strings.HasPrefix(typeStr, "-34") {
-			sendType, dataOut, status = client.fundingTransactionModule(msg)
-		}
-
-		//-35 -3500
-		if msg.Type == enum.MsgType_FundingSign_OmniSign ||
-			msg.Type == enum.MsgType_FundingSign_BtcSign {
-			sendType, dataOut, status = client.fundingSignModule(msg)
-		}
-		//-38
-		if msg.Type == enum.MsgType_CloseChannelRequest || msg.Type == enum.MsgType_CloseChannelSign {
-			sendType, dataOut, status = client.channelModule(msg)
-		}
-
-		if strings.HasPrefix(typeStr, "-35") {
-			//-351 -35101 -35102 -35103 -35104
-			if strings.HasPrefix(typeStr, "-351") {
-				sendType, dataOut, status = client.commitmentTxModule(msg)
-			} else
-			//-352 -35201 -35202 -35203 -35204
-			if strings.HasPrefix(typeStr, "-352") {
-				sendType, dataOut, status = client.commitmentTxSignModule(msg)
-			} else
-			//-353 -35301 -35302 -35303 -35304
-			if strings.HasPrefix(typeStr, "-353") {
-				sendType, dataOut, status = client.otherModule(msg)
-			} else
-			//-354 -35401 -35402 -35403 -35404
-			if strings.HasPrefix(typeStr, "-354") {
-				sendType, dataOut, status = client.otherModule(msg)
-			}
-		}
-
-		//-40 -41
-		if msg.Type == enum.MsgType_HTLC_RequestH || msg.Type == enum.MsgType_HTLC_RespondH {
-			sendType, dataOut, status = client.htlcHDealModule(msg)
 		}
 
 		if len(dataOut) == 0 {
