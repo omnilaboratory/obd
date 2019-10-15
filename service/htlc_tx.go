@@ -175,11 +175,27 @@ func (service *htlcTxManager) SignOpenHtlc(msgData string, user bean.User) (data
 		aliceChannel := &dao.ChannelInfo{}
 		err := tx.One("Id", htlcSingleHopTxBaseInfo.FirstChannelId, aliceChannel)
 		if err != nil {
+			log.Println(err.Error())
 			return nil, err
 		}
 		carlChannel := &dao.ChannelInfo{}
 		err = tx.One("Id", htlcSingleHopTxBaseInfo.SecondChannelId, carlChannel)
 		if err != nil {
+			log.Println(err.Error())
+			return nil, err
+		}
+
+		aliceChannel.CurrState = dao.ChannelState_HtlcBegin
+		err = tx.Update(aliceChannel)
+		if err != nil {
+			log.Println(err.Error())
+			return nil, err
+		}
+
+		carlChannel.CurrState = dao.ChannelState_HtlcBegin
+		err = tx.Update(carlChannel)
+		if err != nil {
+			log.Println(err.Error())
 			return nil, err
 		}
 	}
