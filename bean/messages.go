@@ -197,5 +197,6 @@ type HtlcRequestCreate struct {
 
 //type -44: bob sign the request
 type HtlcSignRequestCreate struct {
-	Approval bool `json:"approval"` // true agree false disagree
+	RequestHash string `json:"request_hash"`
+	Approval    bool   `json:"approval"` // true agree false disagree
 }

@@ -98,3 +98,16 @@ type HtlcCreateRandHInfo struct {
 	SignAt          time.Time   `json:"sign_at"`
 	SignBy          string      `json:"sign_by"`
 }
+
+type HtlcSingleHopTxBaseInfo struct {
+	Id                             int         `storm:"id,increment" json:"id" `
+	HtlcCreateRandHInfoRequestHash string      `json:"htlc_create_rand_h_info_request_hash"`
+	FirstChannelId                 int         `json:"alice_channel_id"`
+	InterNodePeerId                string      `json:"inter_node_peer_id"`
+	SecondChannelId                int         `json:"second_channel_id"`
+	CurrState                      NormalState `json:"curr_state"`
+	CreateBy                       string      `json:"create_by"`
+	CreateAt                       time.Time   `json:"create_at"`
+	SignAt                         time.Time   `json:"sign_at"`
+	SignBy                         string      `json:"sign_by"`
+}

@@ -86,6 +86,7 @@ func (service *htlcHMessageManager) DealHtlcResponse(jsonData string, user *bean
 		return nil, nil, err
 	}
 
+	createRandHInfo.CurrState = dao.NS_Refuse
 	if htlcHRespond.Approval {
 		s, _ := tool.RandBytes(32)
 		temp := append([]byte(createRandHInfo.RequestHash), s...)
@@ -95,9 +96,8 @@ func (service *htlcHMessageManager) DealHtlcResponse(jsonData string, user *bean
 		createRandHInfo.R = r
 		createRandHInfo.H = h
 		createRandHInfo.CurrState = dao.NS_Finish
-	} else {
-		createRandHInfo.CurrState = dao.NS_Refuse
 	}
+
 	createRandHInfo.SignAt = time.Now()
 	createRandHInfo.SignBy = user.PeerId
 	err = db.Update(createRandHInfo)

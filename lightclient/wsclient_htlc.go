@@ -129,19 +129,26 @@ func (client *Client) htlcTxModule(msg bean.RequestMessage) (enum.SendTargetType
 	data := ""
 	switch msg.Type {
 	case enum.MsgType_HTLC_CreateHtlc_N42:
-		respond, err := service.HtlcTxService.RequestOpenHtlc(msg.Data, *client.User)
+		respond, bob, err := service.HtlcTxService.RequestOpenHtlc(msg.Data, *client.User)
 		if err != nil {
 			data = err.Error()
 		} else {
-			bytes, err := json.Marshal(respond)
-			if err != nil {
-				data = err.Error()
+			if _, err := client.FindUser(&bob); err != nil {
+				data = "inter node not on online"
 			} else {
-				data = string(bytes)
-				status = true
+				bytes, err := json.Marshal(respond)
+				if err != nil {
+					data = err.Error()
+				} else {
+					data = string(bytes)
+					status = true
+					client.sendToSomeone(msg.Type, status, bob, data)
+				}
 			}
 		}
-		client.sendToMyself(msg.Type, status, data)
+		if status == false {
+			client.sendToMyself(msg.Type, status, data)
+		}
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_HTLC_SingHtlc_N43:
 		respond, err := service.HtlcTxService.SignOpenHtlc(msg.Data, *client.User)
