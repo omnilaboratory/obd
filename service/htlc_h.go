@@ -127,7 +127,7 @@ func (service *htlcHMessageManager) GetHtlcCreatedRandHInfoList(user *bean.User)
 	return createRandHInfoList, nil
 }
 
-func (service *htlcHMessageManager) GetHtlcCreatedRandHInfoItem(msgData string, user *bean.User) (data interface{}, err error) {
+func (service *htlcHMessageManager) GetHtlcCreatedRandHInfoItemById(msgData string, user *bean.User) (data interface{}, err error) {
 	id, err := strconv.Atoi(msgData)
 	if err != nil {
 		log.Println(err.Error())

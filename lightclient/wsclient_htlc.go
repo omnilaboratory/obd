@@ -57,7 +57,7 @@ func (client *Client) htlcHDealModule(msg bean.RequestMessage) (enum.SendTargetT
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_HTLC_CreatedRAndHInfoItem_N4002:
-		respond, err := service.HtlcHMessageService.GetHtlcCreatedRandHInfoItem(msg.Data, client.User)
+		respond, err := service.HtlcHMessageService.GetHtlcCreatedRandHInfoItemById(msg.Data, client.User)
 		if err != nil {
 			data = err.Error()
 		} else {
