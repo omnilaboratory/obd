@@ -16,8 +16,19 @@ import (
 var db *storm.DB
 var rpcClient *rpc.Client
 
-//for store the privateKey of -351
+//for store the privateKey
 var tempAddrPrivateKeyMap = make(map[string]string)
+var OnlineUserMap = make(map[string]bool)
+
+func FindUserIsOnline(peerId string) error {
+	if tool.CheckIsString(&peerId) {
+		value, exists := OnlineUserMap[peerId]
+		if exists && value == true {
+			return nil
+		}
+	}
+	return errors.New("user not exist or online")
+}
 
 type commitmentOutputBean struct {
 	TempPubKey string

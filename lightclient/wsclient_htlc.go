@@ -133,17 +133,13 @@ func (client *Client) htlcTxModule(msg bean.RequestMessage) (enum.SendTargetType
 		if err != nil {
 			data = err.Error()
 		} else {
-			if _, err := client.FindUser(&bob); err != nil {
-				data = "inter node not on online"
+			bytes, err := json.Marshal(respond)
+			if err != nil {
+				data = err.Error()
 			} else {
-				bytes, err := json.Marshal(respond)
-				if err != nil {
-					data = err.Error()
-				} else {
-					data = string(bytes)
-					status = true
-					client.sendToSomeone(msg.Type, status, bob, data)
-				}
+				data = string(bytes)
+				status = true
+				_ = client.sendToSomeone(msg.Type, status, bob, data)
 			}
 		}
 		if status == false {

@@ -61,6 +61,10 @@ func (service *htlcTxManager) RequestOpenHtlc(msgData string, user bean.User) (d
 		return nil, "", errors.New("no inter channel can use")
 	}
 
+	if FindUserIsOnline(bob) != nil {
+		return nil, "", errors.New("inter node: " + bob + " not online")
+	}
+
 	log.Println(aliceChannel)
 	aliceCommitmentTxInfo, err := getLatestCommitmentTx(aliceChannel.ChannelId, htlcCreateRandHInfo.SenderPeerId)
 	if err != nil {
@@ -150,8 +154,15 @@ func (service *htlcTxManager) SignOpenHtlc(msgData string, user bean.User) (data
 		return nil, err
 	}
 
+	tx, err := db.Begin(true)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	defer tx.Rollback()
+
 	htlcSingleHopTxBaseInfo := &dao.HtlcSingleHopTxBaseInfo{}
-	err = db.Select(q.Eq("HtlcCreateRandHInfoRequestHash", htlcSignRequestCreate.RequestHash)).First(htlcSingleHopTxBaseInfo)
+	err = tx.Select(q.Eq("HtlcCreateRandHInfoRequestHash", htlcSignRequestCreate.RequestHash)).First(htlcSingleHopTxBaseInfo)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
@@ -160,10 +171,28 @@ func (service *htlcTxManager) SignOpenHtlc(msgData string, user bean.User) (data
 	htlcSingleHopTxBaseInfo.CurrState = dao.NS_Refuse
 	if htlcSignRequestCreate.Approval {
 		htlcSingleHopTxBaseInfo.CurrState = dao.NS_Finish
+		//锁定两个通道
+		aliceChannel := &dao.ChannelInfo{}
+		err := tx.One("Id", htlcSingleHopTxBaseInfo.FirstChannelId, aliceChannel)
+		if err != nil {
+			return nil, err
+		}
+		carlChannel := &dao.ChannelInfo{}
+		err = tx.One("Id", htlcSingleHopTxBaseInfo.SecondChannelId, carlChannel)
+		if err != nil {
+			return nil, err
+		}
 	}
 	htlcSingleHopTxBaseInfo.SignBy = user.PeerId
 	htlcSingleHopTxBaseInfo.SignAt = time.Now()
-	err = db.Update(htlcSingleHopTxBaseInfo)
+
+	err = tx.Update(htlcSingleHopTxBaseInfo)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+
+	err = tx.Commit()
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err

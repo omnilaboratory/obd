@@ -16,13 +16,6 @@ import (
 	"github.com/tidwall/gjson"
 )
 
-type Client struct {
-	Id          string
-	User        *bean.User
-	Socket      *websocket.Conn
-	SendChannel chan []byte
-}
-
 func (client *Client) Write() {
 	defer func() {
 		e := client.Socket.Close()
@@ -50,7 +43,8 @@ func (client *Client) Read() {
 	defer func() {
 		_ = service.UserService.UserLogout(client.User)
 		if client.User != nil {
-			delete(GlobalWsClientManager.UserMap, client.User.PeerId)
+			delete(GlobalWsClientManager.OnlineUserMap, client.User.PeerId)
+			delete(service.OnlineUserMap, client.User.PeerId)
 		}
 		GlobalWsClientManager.Disconnected <- client
 		_ = client.Socket.Close()
@@ -250,7 +244,7 @@ func (client *Client) sendToMyself(msgType enum.MsgType, status bool, data strin
 
 func (client *Client) sendToSomeone(msgType enum.MsgType, status bool, recipientPeerId string, data string) error {
 	if tool.CheckIsString(&recipientPeerId) {
-		itemClient := GlobalWsClientManager.UserMap[recipientPeerId]
+		itemClient := GlobalWsClientManager.OnlineUserMap[recipientPeerId]
 		if itemClient != nil && itemClient.User != nil {
 			jsonMessage := getReplyObj(data, msgType, status, client, itemClient)
 			itemClient.SendChannel <- jsonMessage
@@ -261,8 +255,8 @@ func (client *Client) sendToSomeone(msgType enum.MsgType, status bool, recipient
 }
 func (client *Client) FindUser(peerId *string) (*Client, error) {
 	if tool.CheckIsString(peerId) {
-		itemClient := GlobalWsClientManager.UserMap[*peerId]
-		if itemClient != nil && client.User != nil {
+		itemClient := GlobalWsClientManager.OnlineUserMap[*peerId]
+		if itemClient != nil && itemClient.User != nil {
 			return itemClient, nil
 		}
 	}

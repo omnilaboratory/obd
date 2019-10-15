@@ -3,23 +3,31 @@ package lightclient
 import (
 	"LightningOnOmni/bean"
 	"encoding/json"
+	"github.com/gorilla/websocket"
 	"log"
 )
 
+type Client struct {
+	Id          string
+	User        *bean.User
+	Socket      *websocket.Conn
+	SendChannel chan []byte
+}
+
 type ClientManager struct {
-	Broadcast    chan []byte
-	Connected    chan *Client
-	Disconnected chan *Client
-	ClientsMap   map[*Client]bool
-	UserMap      map[string]*Client
+	Broadcast     chan []byte
+	Connected     chan *Client
+	Disconnected  chan *Client
+	ClientsMap    map[*Client]bool
+	OnlineUserMap map[string]*Client
 }
 
 var GlobalWsClientManager = ClientManager{
-	Broadcast:    make(chan []byte),
-	Connected:    make(chan *Client),
-	Disconnected: make(chan *Client),
-	ClientsMap:   make(map[*Client]bool),
-	UserMap:      make(map[string]*Client),
+	Broadcast:     make(chan []byte),
+	Connected:     make(chan *Client),
+	Disconnected:  make(chan *Client),
+	ClientsMap:    make(map[*Client]bool),
+	OnlineUserMap: make(map[string]*Client),
 }
 
 func (clientManager *ClientManager) Start() {
