@@ -86,4 +86,6 @@ const (
 	MsgType_HTLC_RespondH_N41               MsgType = -41
 	MsgType_HTLC_SignedRAndHInfoList_N4101  MsgType = -4101
 	MsgType_HTLC_SignedRAndHInfoItem_N4102  MsgType = -4102
+	MsgType_HTLC_CreateHtlc_N42             MsgType = -42
+	MsgType_HTLC_SingHtlc_N43               MsgType = -43
 )

@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 )
 
+//htlc h module
 func (client *Client) htlcHDealModule(msg bean.RequestMessage) (enum.SendTargetType, []byte, bool) {
 	status := false
 	var sendType = enum.SendTargetType_SendToNone
@@ -118,6 +119,45 @@ func (client *Client) htlcHDealModule(msg bean.RequestMessage) (enum.SendTargetT
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	}
+	return sendType, []byte(data), status
+}
 
+//htlc tx
+func (client *Client) htlcTxModule(msg bean.RequestMessage) (enum.SendTargetType, []byte, bool) {
+	status := false
+	var sendType = enum.SendTargetType_SendToNone
+	data := ""
+	switch msg.Type {
+	case enum.MsgType_HTLC_CreateHtlc_N42:
+		respond, err := service.HtlcTxService.RequestOpenHtlc(msg.Data, *client.User)
+		if err != nil {
+			data = err.Error()
+		} else {
+			bytes, err := json.Marshal(respond)
+			if err != nil {
+				data = err.Error()
+			} else {
+				data = string(bytes)
+				status = true
+			}
+		}
+		client.sendToMyself(msg.Type, status, data)
+		sendType = enum.SendTargetType_SendToSomeone
+	case enum.MsgType_HTLC_SingHtlc_N43:
+		respond, err := service.HtlcTxService.SignOpenHtlc(msg.Data, *client.User)
+		if err != nil {
+			data = err.Error()
+		} else {
+			bytes, err := json.Marshal(respond)
+			if err != nil {
+				data = err.Error()
+			} else {
+				data = string(bytes)
+				status = true
+			}
+		}
+		client.sendToMyself(msg.Type, status, data)
+		sendType = enum.SendTargetType_SendToSomeone
+	}
 	return sendType, []byte(data), status
 }

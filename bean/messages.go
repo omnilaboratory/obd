@@ -189,3 +189,13 @@ type HtlcHRespond struct {
 	PropertyId  int     `json:"property_id"`
 	Amount      float64 `json:"amount"`
 }
+
+//type -43: alice request create htlc
+type HtlcRequestCreate struct {
+	H string `json:"h"`
+}
+
+//type -44: bob sign the request
+type HtlcSignRequestCreate struct {
+	Approval bool `json:"approval"` // true agree false disagree
+}
