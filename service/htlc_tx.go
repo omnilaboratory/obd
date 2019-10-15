@@ -43,10 +43,10 @@ func (service *htlcTxManager) RequestOpenHtlc(msgData string, user bean.User) (d
 	}
 	//if has the channel direct
 	for _, item := range channelAliceInfos {
-		if item.PeerIdA == htlcCreateRandHInfo.SenderPeerId || item.PeerIdB == htlcCreateRandHInfo.RecipientPeerId {
+		if item.PeerIdA == htlcCreateRandHInfo.SenderPeerId && item.PeerIdB == htlcCreateRandHInfo.RecipientPeerId {
 			return nil, "", errors.New("has direct channel")
 		}
-		if item.PeerIdB == htlcCreateRandHInfo.SenderPeerId || item.PeerIdA == htlcCreateRandHInfo.RecipientPeerId {
+		if item.PeerIdB == htlcCreateRandHInfo.SenderPeerId && item.PeerIdA == htlcCreateRandHInfo.RecipientPeerId {
 			return nil, "", errors.New("has direct channel")
 		}
 	}
@@ -108,16 +108,65 @@ func (service *htlcTxManager) RequestOpenHtlc(msgData string, user bean.User) (d
 func getTwoChannelOfSingleHop(htlcCreateRandHInfo dao.HtlcCreateRandHInfo, channelAliceInfos []dao.ChannelInfo, channelCarlInfos []dao.ChannelInfo) (string, *dao.ChannelInfo, *dao.ChannelInfo) {
 	for _, aliceChannel := range channelAliceInfos {
 		if aliceChannel.PeerIdA == htlcCreateRandHInfo.SenderPeerId {
+			commitmentTxInfo, err := getLatestCommitmentTx(aliceChannel.ChannelId, aliceChannel.PeerIdA)
+			if err != nil {
+				continue
+			}
+			if commitmentTxInfo.AmountToRSMC < (htlcCreateRandHInfo.Amount + tool.GetHtlcFee()) {
+				continue
+			}
+
 			bobPeerId := aliceChannel.PeerIdB
 			for _, carlChannel := range channelCarlInfos {
-				if bobPeerId == carlChannel.PeerIdA || bobPeerId == carlChannel.PeerIdB {
+				if bobPeerId == carlChannel.PeerIdA {
+					commitmentTxInfo, err := getLatestCommitmentTx(carlChannel.ChannelId, carlChannel.PeerIdA)
+					if err != nil {
+						continue
+					}
+					if commitmentTxInfo.AmountToRSMC < htlcCreateRandHInfo.Amount {
+						continue
+					}
+					return bobPeerId, &aliceChannel, &carlChannel
+				}
+				if bobPeerId == carlChannel.PeerIdB {
+					commitmentTxInfo, err := getLatestCommitmentTx(carlChannel.ChannelId, carlChannel.PeerIdB)
+					if err != nil {
+						continue
+					}
+					if commitmentTxInfo.AmountToRSMC < htlcCreateRandHInfo.Amount {
+						continue
+					}
 					return bobPeerId, &aliceChannel, &carlChannel
 				}
 			}
 		} else {
+			commitmentTxInfo, err := getLatestCommitmentTx(aliceChannel.ChannelId, aliceChannel.PeerIdB)
+			if err != nil {
+				continue
+			}
+			if commitmentTxInfo.AmountToRSMC < htlcCreateRandHInfo.Amount {
+				continue
+			}
 			bobPeerId := aliceChannel.PeerIdA
 			for _, carlChannel := range channelCarlInfos {
-				if bobPeerId == carlChannel.PeerIdA || bobPeerId == carlChannel.PeerIdB {
+				if bobPeerId == carlChannel.PeerIdA {
+					commitmentTxInfo, err := getLatestCommitmentTx(carlChannel.ChannelId, carlChannel.PeerIdA)
+					if err != nil {
+						continue
+					}
+					if commitmentTxInfo.AmountToRSMC < htlcCreateRandHInfo.Amount {
+						continue
+					}
+					return bobPeerId, &aliceChannel, &carlChannel
+				}
+				if bobPeerId == carlChannel.PeerIdB {
+					commitmentTxInfo, err := getLatestCommitmentTx(carlChannel.ChannelId, carlChannel.PeerIdB)
+					if err != nil {
+						continue
+					}
+					if commitmentTxInfo.AmountToRSMC < htlcCreateRandHInfo.Amount {
+						continue
+					}
 					return bobPeerId, &aliceChannel, &carlChannel
 				}
 			}
@@ -171,6 +220,7 @@ func (service *htlcTxManager) SignOpenHtlc(msgData string, user bean.User) (data
 	htlcSingleHopTxBaseInfo.CurrState = dao.NS_Refuse
 	if htlcSignRequestCreate.Approval {
 		htlcSingleHopTxBaseInfo.CurrState = dao.NS_Finish
+
 		//锁定两个通道
 		aliceChannel := &dao.ChannelInfo{}
 		err := tx.One("Id", htlcSingleHopTxBaseInfo.FirstChannelId, aliceChannel)
@@ -201,7 +251,6 @@ func (service *htlcTxManager) SignOpenHtlc(msgData string, user bean.User) (data
 	}
 	htlcSingleHopTxBaseInfo.SignBy = user.PeerId
 	htlcSingleHopTxBaseInfo.SignAt = time.Now()
-
 	err = tx.Update(htlcSingleHopTxBaseInfo)
 	if err != nil {
 		log.Println(err.Error())
