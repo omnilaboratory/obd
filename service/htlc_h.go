@@ -89,11 +89,8 @@ func (service *htlcHMessageManager) DealHtlcResponse(jsonData string, user *bean
 	if htlcHRespond.Approval {
 		s, _ := tool.RandBytes(32)
 		temp := append([]byte(createRandHInfo.RequestHash), s...)
-		log.Println(temp)
 		r := tool.SignMsg(temp)
-		log.Println(r)
 		h := tool.SignMsg([]byte(r))
-		log.Println(h)
 
 		createRandHInfo.R = r
 		createRandHInfo.H = h
