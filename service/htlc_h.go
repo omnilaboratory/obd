@@ -96,7 +96,7 @@ func (service *htlcHMessageManager) DealHtlcResponse(jsonData string, user *bean
 		log.Println(h)
 
 		createRandHInfo.R = r
-		createRandHInfo.H = r
+		createRandHInfo.H = h
 		createRandHInfo.CurrState = dao.NS_Finish
 	} else {
 		createRandHInfo.CurrState = dao.NS_Refuse
