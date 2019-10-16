@@ -19,7 +19,7 @@ type htlcTxManager struct {
 var HtlcTxService htlcTxManager
 
 // query bob,and ask bob
-func (service *htlcTxManager) AskBobCreateHtlc(msgData string, user bean.User) (data map[string]interface{}, bob string, err error) {
+func (service *htlcTxManager) FindPathOfSingleHopAndSendToBob(msgData string, user bean.User) (data map[string]interface{}, bob string, err error) {
 	if tool.CheckIsString(&msgData) == false {
 		return nil, "", errors.New("empty json data")
 	}
@@ -146,30 +146,37 @@ func getAllChannels(peerId string) (channelInfos []dao.ChannelInfo) {
 	return channelInfos
 }
 
-func (service *htlcTxManager) BobSignAskCreateHtlc(msgData string, user bean.User) (data map[string]interface{}, err error) {
+func (service *htlcTxManager) BobConfirmPath(msgData string, user bean.User) (data map[string]interface{}, senderPeerId string, err error) {
 	if tool.CheckIsString(&msgData) == false {
-		return nil, errors.New("empty json data")
+		return nil, "", errors.New("empty json data")
 	}
 
 	htlcSignRequestCreate := &bean.HtlcSignRequestCreate{}
 	err = json.Unmarshal([]byte(msgData), htlcSignRequestCreate)
 	if err != nil {
 		log.Println(err.Error())
-		return nil, err
+		return nil, "", err
 	}
 
 	tx, err := db.Begin(true)
 	if err != nil {
 		log.Println(err)
-		return nil, err
+		return nil, "", err
 	}
 	defer tx.Rollback()
+
+	htlcCreateRandHInfo := &dao.HtlcCreateRandHInfo{}
+	err = tx.Select(q.Eq("RequestHash", htlcSignRequestCreate.RequestHash)).First(htlcCreateRandHInfo)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, "", err
+	}
 
 	htlcSingleHopTxBaseInfo := &dao.HtlcSingleHopTxBaseInfo{}
 	err = tx.Select(q.Eq("HtlcCreateRandHInfoRequestHash", htlcSignRequestCreate.RequestHash)).First(htlcSingleHopTxBaseInfo)
 	if err != nil {
 		log.Println(err.Error())
-		return nil, err
+		return nil, "", err
 	}
 
 	htlcSingleHopTxBaseInfo.CurrState = dao.NS_Refuse
@@ -181,27 +188,27 @@ func (service *htlcTxManager) BobSignAskCreateHtlc(msgData string, user bean.Use
 		err := tx.One("Id", htlcSingleHopTxBaseInfo.FirstChannelId, aliceChannel)
 		if err != nil {
 			log.Println(err.Error())
-			return nil, err
+			return nil, "", err
 		}
 		carlChannel := &dao.ChannelInfo{}
 		err = tx.One("Id", htlcSingleHopTxBaseInfo.SecondChannelId, carlChannel)
 		if err != nil {
 			log.Println(err.Error())
-			return nil, err
+			return nil, "", err
 		}
 
 		aliceChannel.CurrState = dao.ChannelState_HtlcBegin
 		err = tx.Update(aliceChannel)
 		if err != nil {
 			log.Println(err.Error())
-			return nil, err
+			return nil, "", err
 		}
 
 		carlChannel.CurrState = dao.ChannelState_HtlcBegin
 		err = tx.Update(carlChannel)
 		if err != nil {
 			log.Println(err.Error())
-			return nil, err
+			return nil, "", err
 		}
 	}
 	htlcSingleHopTxBaseInfo.SignBy = user.PeerId
@@ -209,16 +216,16 @@ func (service *htlcTxManager) BobSignAskCreateHtlc(msgData string, user bean.Use
 	err = tx.Update(htlcSingleHopTxBaseInfo)
 	if err != nil {
 		log.Println(err.Error())
-		return nil, err
+		return nil, "", err
 	}
 
 	err = tx.Commit()
 	if err != nil {
 		log.Println(err.Error())
-		return nil, err
+		return nil, "", err
 	}
 	data = make(map[string]interface{})
 	data["approval"] = htlcSignRequestCreate.Approval
 	data["request_hash"] = htlcSignRequestCreate.RequestHash
-	return data, nil
+	return data, htlcCreateRandHInfo.SenderPeerId, nil
 }

@@ -128,8 +128,8 @@ func (client *Client) htlcTxModule(msg bean.RequestMessage) (enum.SendTargetType
 	var sendType = enum.SendTargetType_SendToNone
 	data := ""
 	switch msg.Type {
-	case enum.MsgType_HTLC_CreateHtlc_N42:
-		respond, bob, err := service.HtlcTxService.AskBobCreateHtlc(msg.Data, *client.User)
+	case enum.MsgType_HTLC_FindPath_N42:
+		respond, bob, err := service.HtlcTxService.FindPathOfSingleHopAndSendToBob(msg.Data, *client.User)
 		if err != nil {
 			data = err.Error()
 		} else {
@@ -146,8 +146,8 @@ func (client *Client) htlcTxModule(msg bean.RequestMessage) (enum.SendTargetType
 			client.sendToMyself(msg.Type, status, data)
 		}
 		sendType = enum.SendTargetType_SendToSomeone
-	case enum.MsgType_HTLC_SingHtlc_N43:
-		respond, err := service.HtlcTxService.BobSignAskCreateHtlc(msg.Data, *client.User)
+	case enum.MsgType_HTLC_ConfirmPathHtlc_N43:
+		respond, senderPeerId, err := service.HtlcTxService.BobConfirmPath(msg.Data, *client.User)
 		if err != nil {
 			data = err.Error()
 		} else {
@@ -157,9 +157,12 @@ func (client *Client) htlcTxModule(msg bean.RequestMessage) (enum.SendTargetType
 			} else {
 				data = string(bytes)
 				status = true
+				_ = client.sendToSomeone(msg.Type, status, senderPeerId, data)
 			}
 		}
-		client.sendToMyself(msg.Type, status, data)
+		if status == false {
+			client.sendToMyself(msg.Type, status, data)
+		}
 		sendType = enum.SendTargetType_SendToSomeone
 	}
 	return sendType, []byte(data), status
