@@ -91,71 +91,43 @@ func (service *htlcTxManager) RequestOpenHtlc(msgData string, user bean.User) (d
 func getTwoChannelOfSingleHop(htlcCreateRandHInfo dao.HtlcCreateRandHInfo, channelAliceInfos []dao.ChannelInfo, channelCarlInfos []dao.ChannelInfo) (string, *dao.ChannelInfo, *dao.ChannelInfo) {
 	for _, aliceChannel := range channelAliceInfos {
 		if aliceChannel.PeerIdA == htlcCreateRandHInfo.SenderPeerId {
-			commitmentTxInfo, err := getLatestCommitmentTx(aliceChannel.ChannelId, aliceChannel.PeerIdA)
-			if err != nil {
-				continue
-			}
-			if commitmentTxInfo.AmountToRSMC < (htlcCreateRandHInfo.Amount + tool.GetHtlcFee()) {
-				continue
-			}
-
 			bobPeerId := aliceChannel.PeerIdB
-			for _, carlChannel := range channelCarlInfos {
-				if bobPeerId == carlChannel.PeerIdA {
-					commitmentTxInfo, err := getLatestCommitmentTx(carlChannel.ChannelId, carlChannel.PeerIdA)
-					if err != nil {
-						continue
-					}
-					if commitmentTxInfo.AmountToRSMC < htlcCreateRandHInfo.Amount {
-						continue
-					}
-					return bobPeerId, &aliceChannel, &carlChannel
-				}
-				if bobPeerId == carlChannel.PeerIdB {
-					commitmentTxInfo, err := getLatestCommitmentTx(carlChannel.ChannelId, carlChannel.PeerIdB)
-					if err != nil {
-						continue
-					}
-					if commitmentTxInfo.AmountToRSMC < htlcCreateRandHInfo.Amount {
-						continue
-					}
-					return bobPeerId, &aliceChannel, &carlChannel
-				}
+			carlChannel, err := getCarlChannelHasInterNodeBob(htlcCreateRandHInfo, aliceChannel, channelCarlInfos, aliceChannel.PeerIdA, bobPeerId)
+			if err == nil {
+				return bobPeerId, &aliceChannel, carlChannel
 			}
 		} else {
-			commitmentTxInfo, err := getLatestCommitmentTx(aliceChannel.ChannelId, aliceChannel.PeerIdB)
-			if err != nil {
-				continue
-			}
-			if commitmentTxInfo.AmountToRSMC < htlcCreateRandHInfo.Amount {
-				continue
-			}
 			bobPeerId := aliceChannel.PeerIdA
-			for _, carlChannel := range channelCarlInfos {
-				if bobPeerId == carlChannel.PeerIdA {
-					commitmentTxInfo, err := getLatestCommitmentTx(carlChannel.ChannelId, carlChannel.PeerIdA)
-					if err != nil {
-						continue
-					}
-					if commitmentTxInfo.AmountToRSMC < htlcCreateRandHInfo.Amount {
-						continue
-					}
-					return bobPeerId, &aliceChannel, &carlChannel
-				}
-				if bobPeerId == carlChannel.PeerIdB {
-					commitmentTxInfo, err := getLatestCommitmentTx(carlChannel.ChannelId, carlChannel.PeerIdB)
-					if err != nil {
-						continue
-					}
-					if commitmentTxInfo.AmountToRSMC < htlcCreateRandHInfo.Amount {
-						continue
-					}
-					return bobPeerId, &aliceChannel, &carlChannel
-				}
+			carlChannel, err := getCarlChannelHasInterNodeBob(htlcCreateRandHInfo, aliceChannel, channelCarlInfos, aliceChannel.PeerIdB, bobPeerId)
+			if err == nil {
+				return bobPeerId, &aliceChannel, carlChannel
 			}
 		}
 	}
 	return "", nil, nil
+}
+
+func getCarlChannelHasInterNodeBob(htlcCreateRandHInfo dao.HtlcCreateRandHInfo, aliceChannel dao.ChannelInfo, channelCarlInfos []dao.ChannelInfo, alicePeerId, bobPeerId string) (*dao.ChannelInfo, error) {
+	//alice and bob's channel, whether alice has enough money
+	commitmentTxInfo, err := getLatestCommitmentTx(aliceChannel.ChannelId, alicePeerId)
+	if err != nil {
+		return nil, err
+	}
+	if commitmentTxInfo.AmountToRSMC < htlcCreateRandHInfo.Amount {
+		return nil, err
+	}
+	//bob and carl's channel,whether bob has enough money
+	for _, carlChannel := range channelCarlInfos {
+		commitmentTxInfo, err := getLatestCommitmentTx(carlChannel.ChannelId, bobPeerId)
+		if err != nil {
+			continue
+		}
+		if commitmentTxInfo.AmountToRSMC < htlcCreateRandHInfo.Amount {
+			continue
+		}
+		return &carlChannel, nil
+	}
+	return nil, err
 }
 
 func getAllChannels(peerId string) (channelInfos []dao.ChannelInfo) {
@@ -174,7 +146,7 @@ func getAllChannels(peerId string) (channelInfos []dao.ChannelInfo) {
 	return channelInfos
 }
 
-func (service *htlcTxManager) SignOpenHtlc(msgData string, user bean.User) (data interface{}, err error) {
+func (service *htlcTxManager) SignOpenHtlc(msgData string, user bean.User) (data map[string]interface{}, err error) {
 	if tool.CheckIsString(&msgData) == false {
 		return nil, errors.New("empty json data")
 	}
@@ -245,6 +217,7 @@ func (service *htlcTxManager) SignOpenHtlc(msgData string, user bean.User) (data
 		log.Println(err.Error())
 		return nil, err
 	}
-
+	data = make(map[string]interface{})
+	data["approval"] = htlcSignRequestCreate.Approval
 	return data, nil
 }
