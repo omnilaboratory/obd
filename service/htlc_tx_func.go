@@ -28,6 +28,10 @@ func getTwoChannelOfSingleHop(htlcCreateRandHInfo dao.HtlcCreateRandHInfo, chann
 
 func getCarlChannelHasInterNodeBob(htlcCreateRandHInfo dao.HtlcCreateRandHInfo, aliceChannel dao.ChannelInfo, channelCarlInfos []dao.ChannelInfo, alicePeerId, bobPeerId string) (*dao.ChannelInfo, error) {
 	//alice and bob's channel, whether alice has enough money
+	if err := FindUserIsOnline(bobPeerId); err != nil {
+		return nil, err
+	}
+
 	commitmentTxInfo, err := getLatestCommitmentTx(aliceChannel.ChannelId, alicePeerId)
 	if err != nil {
 		return nil, err

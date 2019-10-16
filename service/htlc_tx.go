@@ -64,9 +64,6 @@ func (service *htlcTxManager) AliceFindPathOfSingleHopAndSendToBob(msgData strin
 	log.Println(aliceChannel)
 	log.Println(carlChannel)
 	log.Println(bob)
-	if FindUserIsOnline(bob) != nil {
-		return nil, "", errors.New("inter node: " + bob + " not online")
-	}
 
 	// operate db
 	htlcSingleHopTxBaseInfo := &dao.HtlcSingleHopTxBaseInfo{}
