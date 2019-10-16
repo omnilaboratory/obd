@@ -105,6 +105,9 @@ type HtlcSingleHopTxBaseInfo struct {
 	FirstChannelId                 int         `json:"alice_channel_id"`
 	InterNodePeerId                string      `json:"inter_node_peer_id"`
 	SecondChannelId                int         `json:"second_channel_id"`
+	BobCurrRsmcTempPubKey          string      `json:"bob_curr_rsmc_temp_pub_key"`
+	BobCurrHtlcTempPubKey          string      `json:"bob_curr_htlc_temp_pub_key"`
+	BobCurrHtlcTempForHt1bPubKey   string      `json:"bob_curr_htlc_temp_for_ht1b_pub_key"`
 	CurrState                      NormalState `json:"curr_state"`
 	CreateBy                       string      `json:"create_by"`
 	CreateAt                       time.Time   `json:"create_at"`

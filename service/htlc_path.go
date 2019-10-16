@@ -1,7 +1,6 @@
 package service
 
 import (
-	"LightningOnOmni/bean"
 	"LightningOnOmni/dao"
 	"LightningOnOmni/tool"
 	"errors"
@@ -291,12 +290,6 @@ func findNextLevelValidAlices(currChannel dao.ChannelInfo, interSenderPeerId str
 		}
 	}
 	return false
-}
-
-func getLatestCommitmentTx(channelId bean.ChannelID, owner string) (commitmentTxInfo *dao.CommitmentTransaction, err error) {
-	commitmentTxInfo = &dao.CommitmentTransaction{}
-	err = db.Select(q.Eq("ChannelId", channelId), q.Eq("Owner", owner), q.Eq("CurrState", dao.TxInfoState_CreateAndSign)).OrderBy("CreateAt").Reverse().First(commitmentTxInfo)
-	return commitmentTxInfo, err
 }
 
 func (p *pathManager) CreateTree(senderPeerId, receiverPeerId string, amount float64, currNode *TreeNode, tree *TreeNode, nodeMap map[string]TreeNode) (err error) {

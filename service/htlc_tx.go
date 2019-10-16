@@ -19,7 +19,7 @@ type htlcTxManager struct {
 var HtlcTxService htlcTxManager
 
 // query bob,and ask bob
-func (service *htlcTxManager) FindPathOfSingleHopAndSendToBob(msgData string, user bean.User) (data map[string]interface{}, bob string, err error) {
+func (service *htlcTxManager) AliceFindPathOfSingleHopAndSendToBob(msgData string, user bean.User) (data map[string]interface{}, bob string, err error) {
 	if tool.CheckIsString(&msgData) == false {
 		return nil, "", errors.New("empty json data")
 	}
@@ -88,64 +88,6 @@ func (service *htlcTxManager) FindPathOfSingleHopAndSendToBob(msgData string, us
 	return data, bob, nil
 }
 
-func getTwoChannelOfSingleHop(htlcCreateRandHInfo dao.HtlcCreateRandHInfo, channelAliceInfos []dao.ChannelInfo, channelCarlInfos []dao.ChannelInfo) (string, *dao.ChannelInfo, *dao.ChannelInfo) {
-	for _, aliceChannel := range channelAliceInfos {
-		if aliceChannel.PeerIdA == htlcCreateRandHInfo.SenderPeerId {
-			bobPeerId := aliceChannel.PeerIdB
-			carlChannel, err := getCarlChannelHasInterNodeBob(htlcCreateRandHInfo, aliceChannel, channelCarlInfos, aliceChannel.PeerIdA, bobPeerId)
-			if err == nil {
-				return bobPeerId, &aliceChannel, carlChannel
-			}
-		} else {
-			bobPeerId := aliceChannel.PeerIdA
-			carlChannel, err := getCarlChannelHasInterNodeBob(htlcCreateRandHInfo, aliceChannel, channelCarlInfos, aliceChannel.PeerIdB, bobPeerId)
-			if err == nil {
-				return bobPeerId, &aliceChannel, carlChannel
-			}
-		}
-	}
-	return "", nil, nil
-}
-
-func getCarlChannelHasInterNodeBob(htlcCreateRandHInfo dao.HtlcCreateRandHInfo, aliceChannel dao.ChannelInfo, channelCarlInfos []dao.ChannelInfo, alicePeerId, bobPeerId string) (*dao.ChannelInfo, error) {
-	//alice and bob's channel, whether alice has enough money
-	commitmentTxInfo, err := getLatestCommitmentTx(aliceChannel.ChannelId, alicePeerId)
-	if err != nil {
-		return nil, err
-	}
-	if commitmentTxInfo.AmountToRSMC < (htlcCreateRandHInfo.Amount + tool.GetHtlcFee()) {
-		return nil, errors.New("curr channel not have enough money")
-	}
-	//bob and carl's channel,whether bob has enough money
-	for _, carlChannel := range channelCarlInfos {
-		commitmentTxInfo, err := getLatestCommitmentTx(carlChannel.ChannelId, bobPeerId)
-		if err != nil {
-			continue
-		}
-		if commitmentTxInfo.AmountToRSMC < htlcCreateRandHInfo.Amount {
-			continue
-		}
-		return &carlChannel, nil
-	}
-	return nil, errors.New("not found the channel")
-}
-
-func getAllChannels(peerId string) (channelInfos []dao.ChannelInfo) {
-	var channelAInfos []dao.ChannelInfo
-	_ = db.Select(q.Eq("PeerIdA", peerId), q.Eq("CurrState", dao.ChannelState_Accept)).Find(&channelAInfos)
-	var channelBInfos []dao.ChannelInfo
-	_ = db.Select(q.Eq("PeerIdB", peerId), q.Eq("CurrState", dao.ChannelState_Accept)).Find(&channelBInfos)
-
-	channelInfos = []dao.ChannelInfo{}
-	if channelAInfos != nil && len(channelAInfos) > 0 {
-		channelInfos = append(channelInfos, channelAInfos...)
-	}
-	if channelBInfos != nil && len(channelBInfos) > 0 {
-		channelInfos = append(channelInfos, channelBInfos...)
-	}
-	return channelInfos
-}
-
 func (service *htlcTxManager) BobConfirmPath(msgData string, user bean.User) (data map[string]interface{}, senderPeerId string, err error) {
 	if tool.CheckIsString(&msgData) == false {
 		return nil, "", errors.New("empty json data")
@@ -156,6 +98,21 @@ func (service *htlcTxManager) BobConfirmPath(msgData string, user bean.User) (da
 	if err != nil {
 		log.Println(err.Error())
 		return nil, "", err
+	}
+
+	if htlcSignRequestCreate.Approval {
+		if tool.CheckIsString(&htlcSignRequestCreate.ChannelAddressPrivateKey) == false {
+			return nil, "", errors.New("channel_address_private_key is empty")
+		}
+		if tool.CheckIsString(&htlcSignRequestCreate.LastTempAddressPrivateKey) == false {
+			return nil, "", errors.New("last_temp_address_private_key is empty")
+		}
+		if tool.CheckIsString(&htlcSignRequestCreate.CurrRsmcTempAddressPubKey) == false {
+			return nil, "", errors.New("curr_rsmc_temp_address_pub_key is empty")
+		}
+		if tool.CheckIsString(&htlcSignRequestCreate.CurrRsmcTempAddressPrivateKey) == false {
+			return nil, "", errors.New("curr_rsmc_temp_address_private_key is empty")
+		}
 	}
 
 	tx, err := db.Begin(true)
@@ -182,6 +139,9 @@ func (service *htlcTxManager) BobConfirmPath(msgData string, user bean.User) (da
 	htlcSingleHopTxBaseInfo.CurrState = dao.NS_Refuse
 	if htlcSignRequestCreate.Approval {
 		htlcSingleHopTxBaseInfo.CurrState = dao.NS_Finish
+
+		htlcSingleHopTxBaseInfo.BobCurrRsmcTempPubKey = htlcSignRequestCreate.CurrRsmcTempAddressPubKey
+		htlcSingleHopTxBaseInfo.BobCurrHtlcTempPubKey = htlcSignRequestCreate.CurrHtlcTempAddressPubKey
 
 		//锁定两个通道
 		aliceChannel := &dao.ChannelInfo{}
@@ -210,6 +170,18 @@ func (service *htlcTxManager) BobConfirmPath(msgData string, user bean.User) (da
 			log.Println(err.Error())
 			return nil, "", err
 		}
+
+		if aliceChannel.PeerIdB == user.PeerId {
+			tempAddrPrivateKeyMap[aliceChannel.PubKeyB] = htlcSignRequestCreate.ChannelAddressPrivateKey
+		} else {
+			tempAddrPrivateKeyMap[aliceChannel.PubKeyA] = htlcSignRequestCreate.ChannelAddressPrivateKey
+		}
+		bobLatestCommitmentTx, err := getLatestCommitmentTx(aliceChannel.ChannelId, user.PeerId)
+		if err == nil {
+			tempAddrPrivateKeyMap[bobLatestCommitmentTx.RSMCTempAddressPubKey] = htlcSignRequestCreate.LastTempAddressPrivateKey
+		}
+		tempAddrPrivateKeyMap[htlcSingleHopTxBaseInfo.BobCurrRsmcTempPubKey] = htlcSignRequestCreate.CurrRsmcTempAddressPrivateKey
+		tempAddrPrivateKeyMap[htlcSingleHopTxBaseInfo.BobCurrHtlcTempPubKey] = htlcSignRequestCreate.CurrHtlcTempAddressPrivateKey
 	}
 	htlcSingleHopTxBaseInfo.SignBy = user.PeerId
 	htlcSingleHopTxBaseInfo.SignAt = time.Now()
@@ -228,4 +200,59 @@ func (service *htlcTxManager) BobConfirmPath(msgData string, user bean.User) (da
 	data["approval"] = htlcSignRequestCreate.Approval
 	data["request_hash"] = htlcSignRequestCreate.RequestHash
 	return data, htlcCreateRandHInfo.SenderPeerId, nil
+}
+
+// -44
+func (service *htlcTxManager) AliceOpenHtlcChannel(msgData string, user bean.User) (outData map[string]interface{}, targetUser string, err error) {
+	if tool.CheckIsString(&msgData) == false {
+		err = errors.New("empty json data")
+		log.Println(err)
+		return nil, "", err
+	}
+	htlcRequestOpen := &bean.HtlcRequestOpen{}
+	err = json.Unmarshal([]byte(msgData), htlcRequestOpen)
+	if err != nil {
+		log.Println(err)
+		return nil, "", err
+	}
+
+	if tool.CheckIsString(&htlcRequestOpen.RequestHash) == false {
+		err = errors.New("empty request_hash")
+		log.Println(err)
+		return nil, "", err
+	}
+
+	singleHopTxBaseInfo := dao.HtlcSingleHopTxBaseInfo{}
+	err = db.Select(q.Eq("", htlcRequestOpen.RequestHash)).First(&singleHopTxBaseInfo)
+	if err != nil {
+		log.Println(err)
+		return nil, "", err
+	}
+
+	if tool.CheckIsString(&htlcRequestOpen.ChannelAddressPrivateKey) == false {
+		err = errors.New("channel_address_private_key is empty")
+		log.Println(err)
+		return nil, "", err
+	}
+	if tool.CheckIsString(&htlcRequestOpen.LastTempAddressPrivateKey) == false {
+		err = errors.New("last_temp_address_private_key is empty")
+		log.Println(err)
+		return nil, "", err
+	}
+	if tool.CheckIsString(&htlcRequestOpen.CurrRsmcTempAddressPubKey) == false {
+		err = errors.New("curr_rsmc_temp_address_pub_key is empty")
+		log.Println(err)
+		return nil, "", err
+	}
+	if tool.CheckIsString(&htlcRequestOpen.CurrRsmcTempAddressPrivateKey) == false {
+		err = errors.New("curr_rsmc_temp_address_private_key is empty")
+		log.Println(err)
+		return nil, "", err
+	}
+	//1、上一个交易必然是RSMC交易，所以需要结算上一个交易，为其创建BR交易
+	//2、然后创建HTLC的commitment交易（Cna和Cnb），它有一个输入（三个btc的input），三个输出（rsmc，bob，htlc）
+	//3、关于htlc的输出，也是把资金放到一个临时多签地址里面，这个资金在Alice(交易发起方)一方会创建一个锁定一天的交易（HT1a）
+	//4、HT1a的构造，Cna的第三个输出作为输入，产生htlc里面的rsmc（为何要用这种呢？这个本身是alice自己的余额，所以提现是需要限制的，限制就是rsmc）
+
+	return nil, "", nil
 }

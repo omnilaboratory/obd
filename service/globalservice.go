@@ -6,6 +6,7 @@ import (
 	"LightningOnOmni/rpc"
 	"LightningOnOmni/tool"
 	"errors"
+	"github.com/asdine/storm/q"
 	"log"
 	"time"
 
@@ -286,4 +287,10 @@ func getRdInputsFromCommitmentTx(hex string, toAddress, scriptPubKey string) (in
 		return inputs, nil
 	}
 	return nil, errors.New("no inputs")
+}
+
+func getLatestCommitmentTx(channelId bean.ChannelID, owner string) (commitmentTxInfo *dao.CommitmentTransaction, err error) {
+	commitmentTxInfo = &dao.CommitmentTransaction{}
+	err = db.Select(q.Eq("ChannelId", channelId), q.Eq("Owner", owner), q.Eq("CurrState", dao.TxInfoState_CreateAndSign)).OrderBy("CreateAt").Reverse().First(commitmentTxInfo)
+	return commitmentTxInfo, err
 }
