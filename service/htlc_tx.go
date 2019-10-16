@@ -61,28 +61,11 @@ func (service *htlcTxManager) RequestOpenHtlc(msgData string, user bean.User) (d
 		return nil, "", errors.New("no inter channel can use")
 	}
 
+	log.Println(aliceChannel)
+	log.Println(carlChannel)
+	log.Println(bob)
 	if FindUserIsOnline(bob) != nil {
 		return nil, "", errors.New("inter node: " + bob + " not online")
-	}
-
-	log.Println(aliceChannel)
-	aliceCommitmentTxInfo, err := getLatestCommitmentTx(aliceChannel.ChannelId, htlcCreateRandHInfo.SenderPeerId)
-	if err != nil {
-		return nil, "", err
-	}
-	amountAliceNeed := aliceCommitmentTxInfo.AmountToRSMC + tool.GetHtlcFee()
-	if aliceCommitmentTxInfo.AmountToRSMC < amountAliceNeed {
-		return nil, "", errors.New("sender node not enough money")
-	}
-
-	log.Println(bob)
-	log.Println(carlChannel)
-	bobCommitmentTxInfo, err := getLatestCommitmentTx(carlChannel.ChannelId, bob)
-	if err != nil {
-		return nil, "", err
-	}
-	if bobCommitmentTxInfo.AmountToRSMC < htlcCreateRandHInfo.Amount {
-		return nil, "", errors.New("inter node not enough money")
 	}
 
 	// operate db
