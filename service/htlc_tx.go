@@ -114,7 +114,7 @@ func getCarlChannelHasInterNodeBob(htlcCreateRandHInfo dao.HtlcCreateRandHInfo, 
 		return nil, err
 	}
 	if commitmentTxInfo.AmountToRSMC < htlcCreateRandHInfo.Amount {
-		return nil, err
+		return nil, errors.New("curr channel not have enough money")
 	}
 	//bob and carl's channel,whether bob has enough money
 	for _, carlChannel := range channelCarlInfos {
@@ -127,7 +127,7 @@ func getCarlChannelHasInterNodeBob(htlcCreateRandHInfo dao.HtlcCreateRandHInfo, 
 		}
 		return &carlChannel, nil
 	}
-	return nil, err
+	return nil, errors.New("not found the channel")
 }
 
 func getAllChannels(peerId string) (channelInfos []dao.ChannelInfo) {
