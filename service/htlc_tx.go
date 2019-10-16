@@ -19,7 +19,7 @@ type htlcTxManager struct {
 var HtlcTxService htlcTxManager
 
 // query bob,and ask bob
-func (service *htlcTxManager) RequestOpenHtlc(msgData string, user bean.User) (data map[string]interface{}, bob string, err error) {
+func (service *htlcTxManager) AskBobCreateHtlc(msgData string, user bean.User) (data map[string]interface{}, bob string, err error) {
 	if tool.CheckIsString(&msgData) == false {
 		return nil, "", errors.New("empty json data")
 	}
@@ -146,7 +146,7 @@ func getAllChannels(peerId string) (channelInfos []dao.ChannelInfo) {
 	return channelInfos
 }
 
-func (service *htlcTxManager) SignOpenHtlc(msgData string, user bean.User) (data map[string]interface{}, err error) {
+func (service *htlcTxManager) BobSignAskCreateHtlc(msgData string, user bean.User) (data map[string]interface{}, err error) {
 	if tool.CheckIsString(&msgData) == false {
 		return nil, errors.New("empty json data")
 	}
@@ -219,5 +219,6 @@ func (service *htlcTxManager) SignOpenHtlc(msgData string, user bean.User) (data
 	}
 	data = make(map[string]interface{})
 	data["approval"] = htlcSignRequestCreate.Approval
+	data["request_hash"] = htlcSignRequestCreate.RequestHash
 	return data, nil
 }

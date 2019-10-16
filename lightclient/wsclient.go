@@ -179,6 +179,12 @@ func (client *Client) Read() {
 						sendType, dataOut, status = client.htlcHDealModule(msg)
 						break
 					}
+					//-42 -43
+					if strings.HasPrefix(typeStr, strconv.Itoa(int(enum.MsgType_HTLC_CreateHtlc_N42))) ||
+						strings.HasPrefix(typeStr, strconv.Itoa(int(enum.MsgType_HTLC_SingHtlc_N43))) {
+						sendType, dataOut, status = client.htlcTxModule(msg)
+						break
+					}
 					break
 				}
 			}

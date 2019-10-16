@@ -129,7 +129,7 @@ func (client *Client) htlcTxModule(msg bean.RequestMessage) (enum.SendTargetType
 	data := ""
 	switch msg.Type {
 	case enum.MsgType_HTLC_CreateHtlc_N42:
-		respond, bob, err := service.HtlcTxService.RequestOpenHtlc(msg.Data, *client.User)
+		respond, bob, err := service.HtlcTxService.AskBobCreateHtlc(msg.Data, *client.User)
 		if err != nil {
 			data = err.Error()
 		} else {
@@ -147,7 +147,7 @@ func (client *Client) htlcTxModule(msg bean.RequestMessage) (enum.SendTargetType
 		}
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_HTLC_SingHtlc_N43:
-		respond, err := service.HtlcTxService.SignOpenHtlc(msg.Data, *client.User)
+		respond, err := service.HtlcTxService.BobSignAskCreateHtlc(msg.Data, *client.User)
 		if err != nil {
 			data = err.Error()
 		} else {

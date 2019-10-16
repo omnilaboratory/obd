@@ -190,12 +190,17 @@ type HtlcHRespond struct {
 	Amount      float64 `json:"amount"`
 }
 
-//type -43: alice request create htlc
+//type -42: alice request ask bob whether agree to become the internode
 type HtlcRequestCreate struct {
 	H string `json:"h"`
 }
 
-//type -44: bob sign the request
+//type -4201: alice request obd  to open htlc channel
+type HtlcRequestOpen struct {
+	RequestHash string `json:"request_hash"`
+}
+
+//type -43: bob sign the request
 type HtlcSignRequestCreate struct {
 	RequestHash string `json:"request_hash"`
 	Approval    bool   `json:"approval"` // true agree false disagree
