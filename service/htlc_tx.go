@@ -113,7 +113,7 @@ func getCarlChannelHasInterNodeBob(htlcCreateRandHInfo dao.HtlcCreateRandHInfo, 
 	if err != nil {
 		return nil, err
 	}
-	if commitmentTxInfo.AmountToRSMC < htlcCreateRandHInfo.Amount {
+	if commitmentTxInfo.AmountToRSMC < (htlcCreateRandHInfo.Amount + tool.GetHtlcFee()) {
 		return nil, errors.New("curr channel not have enough money")
 	}
 	//bob and carl's channel,whether bob has enough money

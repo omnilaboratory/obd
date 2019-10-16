@@ -181,7 +181,7 @@ func (client *Client) Read() {
 					}
 					//-42 -43
 					if strings.HasPrefix(typeStr, strconv.Itoa(int(enum.MsgType_HTLC_FindPath_N42))) ||
-						strings.HasPrefix(typeStr, strconv.Itoa(int(enum.MsgType_HTLC_ConfirmPathHtlc_N43))) {
+						strings.HasPrefix(typeStr, strconv.Itoa(int(enum.MsgType_HTLC_ConfirmPath_N43))) {
 						sendType, dataOut, status = client.htlcTxModule(msg)
 						break
 					}

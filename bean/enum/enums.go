@@ -87,5 +87,6 @@ const (
 	MsgType_HTLC_SignedRAndHInfoList_N4101  MsgType = -4101
 	MsgType_HTLC_SignedRAndHInfoItem_N4102  MsgType = -4102
 	MsgType_HTLC_FindPath_N42               MsgType = -42
-	MsgType_HTLC_ConfirmPathHtlc_N43        MsgType = -43
+	MsgType_HTLC_ConfirmPath_N43            MsgType = -43
+	MsgType_HTLC_OpenChannel_N44            MsgType = -44
 )

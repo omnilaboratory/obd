@@ -146,7 +146,7 @@ func (client *Client) htlcTxModule(msg bean.RequestMessage) (enum.SendTargetType
 			client.sendToMyself(msg.Type, status, data)
 		}
 		sendType = enum.SendTargetType_SendToSomeone
-	case enum.MsgType_HTLC_ConfirmPathHtlc_N43:
+	case enum.MsgType_HTLC_ConfirmPath_N43:
 		respond, senderPeerId, err := service.HtlcTxService.BobConfirmPath(msg.Data, *client.User)
 		if err != nil {
 			data = err.Error()

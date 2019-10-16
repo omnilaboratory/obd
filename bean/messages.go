@@ -195,13 +195,25 @@ type HtlcRequestCreate struct {
 	H string `json:"h"`
 }
 
-//type -4201: alice request obd  to open htlc channel
-type HtlcRequestOpen struct {
-	RequestHash string `json:"request_hash"`
-}
-
 //type -43: bob sign the request
 type HtlcSignRequestCreate struct {
-	RequestHash string `json:"request_hash"`
-	Approval    bool   `json:"approval"` // true agree false disagree
+	RequestHash                   string `json:"request_hash"`
+	Approval                      bool   `json:"approval"` // true agree false disagree
+	ChannelAddressPrivateKey      string `json:"channel_address_private_key"`
+	LastTempAddressPrivateKey     string `json:"last_temp_address_private_key"`
+	CurrRsmcTempAddressPubKey     string `json:"curr_rsmc_temp_address_pub_key"`
+	CurrRsmcTempAddressPrivateKey string `json:"curr_rsmc_temp_address_private_key"`
+	CurrHtlcTempAddressPubKey     string `json:"curr_htlc_temp_address_pub_key"`
+	CurrHtlcTempAddressPrivateKey string `json:"curr_htlc_temp_address_private_key"`
+}
+
+//type -44: alice request obd  to open htlc channel
+type HtlcRequestOpen struct {
+	RequestHash                   string `json:"request_hash"`
+	ChannelAddressPrivateKey      string `json:"channel_address_private_key"`
+	LastTempAddressPrivateKey     string `json:"last_temp_address_private_key"`
+	CurrRsmcTempAddressPubKey     string `json:"curr_rsmc_temp_address_pub_key"`
+	CurrRsmcTempAddressPrivateKey string `json:"curr_rsmc_temp_address_private_key"`
+	CurrHtlcTempAddressPubKey     string `json:"curr_htlc_temp_address_pub_key"`
+	CurrHtlcTempAddressPrivateKey string `json:"curr_htlc_temp_address_private_key"`
 }

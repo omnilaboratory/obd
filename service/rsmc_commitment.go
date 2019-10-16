@@ -271,13 +271,13 @@ func (service *commitmentTxSignedManager) CommitmentTxSign(jsonData string, sign
 	defer delete(tempAddrPrivateKeyMap, requestCommitmentTx.RSMCMultiAddressScriptPubKey)
 
 	//for br
-	creatorLastTempAddressPrivateKey := tempAddrPrivateKeyMap[dataFromCreator.CurrTempAddressPubKey]
+	creatorLastTempAddressPrivateKey := tempAddrPrivateKeyMap[dataFromCreator.LastTempAddressPubKey]
 	if tool.CheckIsString(&creatorLastTempAddressPrivateKey) == false {
-		err = errors.New("fail to get the starer's last temp address  private key")
+		err = errors.New("fail to get the starter's last temp address  private key")
 		log.Println(err)
 		return nil, nil, nil, err
 	}
-	defer delete(tempAddrPrivateKeyMap, dataFromCreator.CurrTempAddressPubKey)
+	defer delete(tempAddrPrivateKeyMap, dataFromCreator.LastTempAddressPubKey)
 
 	//launch database transaction, if anything goes wrong, roll back.
 	tx, err := db.Begin(true)
