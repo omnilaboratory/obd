@@ -32,23 +32,27 @@ func getCarlChannelHasInterNodeBob(htlcCreateRandHInfo dao.HtlcCreateRandHInfo, 
 		return nil, err
 	}
 
-	commitmentTxInfo, err := getLatestCommitmentTx(aliceChannel.ChannelId, alicePeerId)
+	aliceCommitmentTxInfo, err := getLatestCommitmentTx(aliceChannel.ChannelId, alicePeerId)
 	if err != nil {
 		return nil, err
 	}
-	if commitmentTxInfo.AmountToRSMC < (htlcCreateRandHInfo.Amount + tool.GetHtlcFee()) {
-		return nil, errors.New("curr channel not have enough money")
+	if aliceCommitmentTxInfo.AmountToRSMC < (htlcCreateRandHInfo.Amount + tool.GetHtlcFee()) {
+		return nil, errors.New("channel not have enough money")
 	}
+
 	//bob and carl's channel,whether bob has enough money
 	for _, carlChannel := range channelCarlInfos {
-		commitmentTxInfo, err := getLatestCommitmentTx(carlChannel.ChannelId, bobPeerId)
-		if err != nil {
-			continue
+		if (carlChannel.PeerIdA == bobPeerId && carlChannel.PeerIdB == htlcCreateRandHInfo.RecipientPeerId) ||
+			(carlChannel.PeerIdB == bobPeerId && carlChannel.PeerIdA == htlcCreateRandHInfo.RecipientPeerId) {
+			commitmentTxInfo, err := getLatestCommitmentTx(carlChannel.ChannelId, bobPeerId)
+			if err != nil {
+				continue
+			}
+			if commitmentTxInfo.AmountToRSMC < htlcCreateRandHInfo.Amount {
+				continue
+			}
+			return &carlChannel, nil
 		}
-		if commitmentTxInfo.AmountToRSMC < htlcCreateRandHInfo.Amount {
-			continue
-		}
-		return &carlChannel, nil
 	}
 	return nil, errors.New("not found the channel")
 }
