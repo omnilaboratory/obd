@@ -113,6 +113,12 @@ func (service *htlcTxManager) BobConfirmPath(msgData string, user bean.User) (da
 		if tool.CheckIsString(&htlcSignRequestCreate.CurrRsmcTempAddressPrivateKey) == false {
 			return nil, "", errors.New("curr_rsmc_temp_address_private_key is empty")
 		}
+		if tool.CheckIsString(&htlcSignRequestCreate.CurrHtlcTempAddressForHt1aPubKey) == false {
+			return nil, "", errors.New("curr_htlc_temp_address_for_ht1a_pub_key is empty")
+		}
+		if tool.CheckIsString(&htlcSignRequestCreate.CurrHtlcTempAddressForHt1aPrivateKey) == false {
+			return nil, "", errors.New("curr_htlc_temp_address_for_ht1a_private_key is empty")
+		}
 	}
 
 	tx, err := db.Begin(true)
@@ -249,10 +255,23 @@ func (service *htlcTxManager) AliceOpenHtlcChannel(msgData string, user bean.Use
 		log.Println(err)
 		return nil, "", err
 	}
+	if tool.CheckIsString(&htlcRequestOpen.CurrHtlcTempAddressForHt1aPubKey) == false {
+		err = errors.New("curr_htlc_temp_address_for_ht1a_pub_key is empty")
+		log.Println(err)
+		return nil, "", err
+	}
+	if tool.CheckIsString(&htlcRequestOpen.CurrHtlcTempAddressForHt1aPrivateKey) == false {
+		err = errors.New("curr_htlc_temp_address_for_ht1a_private_key is empty")
+		log.Println(err)
+		return nil, "", err
+	}
 	//1、上一个交易必然是RSMC交易，所以需要结算上一个交易，为其创建BR交易
 	//2、然后创建HTLC的commitment交易（Cna和Cnb），它有一个输入（三个btc的input），三个输出（rsmc，bob，htlc）
 	//3、关于htlc的输出，也是把资金放到一个临时多签地址里面，这个资金在Alice(交易发起方)一方会创建一个锁定一天的交易（HT1a）
-	//4、HT1a的构造，Cna的第三个输出作为输入，产生htlc里面的rsmc（为何要用这种呢？这个本身是alice自己的余额，所以提现是需要限制的，限制就是rsmc）
+	//4、HT1a的构造，Cna的第三个输出作为输入，
+	// 	其输出就是产生htlc里面的rsmc（为何要用这种呢？这个本身是alice自己的余额，所以提现是需要限制的，限制就是rsmc）
+	// 	和CommitmentTx一样，要产生rsmc，就是要创建一个临时多签地址，所以又需要一组私钥
+	// 	所以alice要创建BR，Cna，HT1a，HED1a,HTRD1a
 
 	return nil, "", nil
 }
