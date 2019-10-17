@@ -27,11 +27,12 @@ func getTwoChannelOfSingleHop(htlcCreateRandHInfo dao.HtlcCreateRandHInfo, chann
 }
 
 func getCarlChannelHasInterNodeBob(htlcCreateRandHInfo dao.HtlcCreateRandHInfo, aliceChannel dao.ChannelInfo, channelCarlInfos []dao.ChannelInfo, alicePeerId, bobPeerId string) (*dao.ChannelInfo, error) {
-	//alice and bob's channel, whether alice has enough money
+	//whether bob is online
 	if err := FindUserIsOnline(bobPeerId); err != nil {
 		return nil, err
 	}
 
+	//alice and bob's channel, whether alice has enough money
 	aliceCommitmentTxInfo, err := getLatestCommitmentTx(aliceChannel.ChannelId, alicePeerId)
 	if err != nil {
 		return nil, err
@@ -58,17 +59,7 @@ func getCarlChannelHasInterNodeBob(htlcCreateRandHInfo dao.HtlcCreateRandHInfo, 
 }
 
 func getAllChannels(peerId string) (channelInfos []dao.ChannelInfo) {
-	var channelAInfos []dao.ChannelInfo
-	_ = db.Select(q.Eq("PeerIdA", peerId), q.Eq("CurrState", dao.ChannelState_Accept)).Find(&channelAInfos)
-	var channelBInfos []dao.ChannelInfo
-	_ = db.Select(q.Eq("PeerIdB", peerId)).Find(&channelBInfos)
-
-	channelInfos = []dao.ChannelInfo{}
-	if channelAInfos != nil && len(channelAInfos) > 0 {
-		channelInfos = append(channelInfos, channelAInfos...)
-	}
-	if channelBInfos != nil && len(channelBInfos) > 0 {
-		channelInfos = append(channelInfos, channelBInfos...)
-	}
+	channelInfos = make([]dao.ChannelInfo, 0)
+	_ = db.Select(q.Or(q.Eq("PeerIdA", peerId), q.Eq("PeerIdB", peerId)), q.Eq("CurrState", dao.ChannelState_Accept)).Find(&channelInfos)
 	return channelInfos
 }
