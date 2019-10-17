@@ -543,7 +543,7 @@ func (service *fundingTransactionManager) FundingOmniTxSign(jsonData string, sig
 				fundingTransaction.PropertyId,
 				commitmentTxInfo.AmountToRSMC,
 				0,
-				0, &channelInfo.ChannelAddressRedeemScript)
+				0, &channelInfo.ChannelAddressRedeemScript, "")
 			if err != nil {
 				log.Println(err)
 				return nil, err
