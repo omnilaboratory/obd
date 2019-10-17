@@ -12,6 +12,7 @@ type HTLCTimeoutTxA struct {
 	Id                           int            `storm:"id,increment" json:"id" `
 	ChannelId                    bean.ChannelID `json:"channel_id"`
 	CommitmentTxId               int            `json:"commitment_tx_id"`
+	PropertyId                   int64          `json:"property_id"`
 	InputHex                     string         `json:"input_hex"`
 	Timeout                      int            `json:"timeout"` // if 3days 432=3*24*6
 	CurrBlockHeight              int            `json:"curr_block_height"`

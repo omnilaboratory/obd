@@ -346,12 +346,11 @@ func createHtlcTimeoutTx(tx storm.Node, owner string, channelInfo dao.ChannelInf
 	outputBean.AmountToRsmc = commitmentTxInfo.AmountToHtlc
 	outputBean.RsmcTempPubKey = htlcRequestOpen.CurrHtlcTempAddressForHt1aPubKey
 	outputBean.ToChannelAddress = channelInfo.PubKeyB
-	htlcTimeoutTxA, err = createHtlcTimeoutTxObj(owner, channelInfo, commitmentTxInfo.HtlcTxHash, outputBean, operator)
+	htlcTimeoutTxA, err = createHtlcTimeoutTxObj(owner, channelInfo, commitmentTxInfo, outputBean, operator)
 	if err != nil {
 		log.Println(err)
 		return nil, err
 	}
-	log.Println(htlcTimeoutTxA)
 
 	inputs, err := getInputsOfNextTxByParseTxHashVout(commitmentTxInfo.HtlcTxHash, commitmentTxInfo.HTLCMultiAddress, commitmentTxInfo.HTLCMultiAddressScriptPubKey)
 	if err != nil {
@@ -390,13 +389,13 @@ func createHtlcTimeoutTx(tx storm.Node, owner string, channelInfo dao.ChannelInf
 	return htlcTimeoutTxA, nil
 }
 
-func createHtlcTimeoutTxObj(owner string, channelInfo dao.ChannelInfo, inputHex string, outputBean commitmentOutputBean, user bean.User) (*dao.HTLCTimeoutTxA, error) {
+func createHtlcTimeoutTxObj(owner string, channelInfo dao.ChannelInfo, commitmentTxInfo dao.CommitmentTransaction, outputBean commitmentOutputBean, user bean.User) (*dao.HTLCTimeoutTxA, error) {
 	htlcTimeoutTxA := &dao.HTLCTimeoutTxA{}
 	htlcTimeoutTxA.ChannelId = channelInfo.ChannelId
+	htlcTimeoutTxA.PropertyId = commitmentTxInfo.PropertyId
 	htlcTimeoutTxA.Owner = owner
-
 	//input
-	htlcTimeoutTxA.InputHex = inputHex
+	htlcTimeoutTxA.InputHex = commitmentTxInfo.HtlcTxHash
 
 	//output to rsmc
 	htlcTimeoutTxA.RSMCTempAddressPubKey = outputBean.RsmcTempPubKey
@@ -406,11 +405,11 @@ func createHtlcTimeoutTxObj(owner string, channelInfo dao.ChannelInfo, inputHex 
 	}
 	htlcTimeoutTxA.RSMCMultiAddress = gjson.Get(multiAddr, "address").String()
 	htlcTimeoutTxA.RSMCRedeemScript = gjson.Get(multiAddr, "redeemScript").String()
-	json, err := rpcClient.GetAddressInfo(htlcTimeoutTxA.RSMCMultiAddress)
+	jsonData, err := rpcClient.GetAddressInfo(htlcTimeoutTxA.RSMCMultiAddress)
 	if err != nil {
 		return nil, err
 	}
-	htlcTimeoutTxA.RSMCMultiAddressScriptPubKey = gjson.Get(json, "scriptPubKey").String()
+	htlcTimeoutTxA.RSMCMultiAddressScriptPubKey = gjson.Get(jsonData, "scriptPubKey").String()
 	htlcTimeoutTxA.RSMCOutAmount = outputBean.AmountToRsmc
 	htlcTimeoutTxA.CreateBy = user.PeerId
 	htlcTimeoutTxA.CreateAt = time.Now()
@@ -649,23 +648,23 @@ func htlcCreateRD(tx storm.Node, channelInfo dao.ChannelInfo, operator bean.User
 	return rdTransaction, nil
 }
 
-func createHtlcRDTxObj(owner string, channelInfo *dao.ChannelInfo, commitmentTxInfo *dao.HTLCTimeoutTxA, toAddress string, user *bean.User) (*dao.RevocableDeliveryTransaction, error) {
+func createHtlcRDTxObj(owner string, channelInfo *dao.ChannelInfo, htlcTimeoutTxA *dao.HTLCTimeoutTxA, toAddress string, user *bean.User) (*dao.RevocableDeliveryTransaction, error) {
 	rda := &dao.RevocableDeliveryTransaction{}
-
-	rda.CommitmentTxId = commitmentTxInfo.Id
+	rda.CommitmentTxId = htlcTimeoutTxA.Id
 	rda.PeerIdA = channelInfo.PeerIdA
 	rda.PeerIdB = channelInfo.PeerIdB
 	rda.ChannelId = channelInfo.ChannelId
+	rda.PropertyId = htlcTimeoutTxA.PropertyId
 	rda.Owner = owner
 
 	//input
-	rda.InputTxid = commitmentTxInfo.RSMCTxid
+	rda.InputTxid = htlcTimeoutTxA.RSMCTxid
 	rda.InputVout = 0
-	rda.InputAmount = commitmentTxInfo.RSMCOutAmount
+	rda.InputAmount = htlcTimeoutTxA.RSMCOutAmount
 	//output
 	rda.OutputAddress = toAddress
 	rda.Sequence = 1000
-	rda.Amount = commitmentTxInfo.RSMCOutAmount
+	rda.Amount = htlcTimeoutTxA.RSMCOutAmount
 
 	rda.CreateBy = user.PeerId
 	rda.CreateAt = time.Now()
