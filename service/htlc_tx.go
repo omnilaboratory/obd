@@ -6,6 +6,7 @@ import (
 	"LightningOnOmni/tool"
 	"encoding/json"
 	"errors"
+	"github.com/asdine/storm"
 	"github.com/asdine/storm/q"
 	"log"
 	"sync"
@@ -320,7 +321,7 @@ func (service *htlcTxManager) AliceOpenHtlcChannel(msgData string, user bean.Use
 	}
 
 	//开始创建htlc的承诺交易
-	commitmentTransactionOfA, err := htlcCreateAliceTxes(tx, channelInfo, user, *fundingTransaction, *htlcRequestOpen, singleHopTxBaseInfo, hAndRInfo)
+	commitmentTransactionOfA, err := service.htlcCreateAliceTxes(tx, channelInfo, user, *fundingTransaction, *htlcRequestOpen, singleHopTxBaseInfo, hAndRInfo)
 	if err != nil {
 		log.Println(err)
 		return nil, "", err
@@ -334,4 +335,61 @@ func (service *htlcTxManager) AliceOpenHtlcChannel(msgData string, user bean.Use
 	}
 
 	return nil, "", nil
+}
+
+// 创建PeerIdA方的htlc的承诺交易，rsmc的Rd
+// 这里要做一个判断，作为这次交易的发起者，
+// 如果PeerIdA是发起者，在这Cna的逻辑中创建HT1a和HED1a
+// 如果PeerIdB是发起者，那么在Cna中就应该创建HTLC Time Delivery 1b(HED1b) 和HTLC Execution  1a(HE1b)
+func (service *htlcTxManager) htlcCreateAliceTxes(tx storm.Node, channelInfo dao.ChannelInfo, operator bean.User,
+	fundingTransaction dao.FundingTransaction, htlcRequestOpen bean.HtlcRequestOpen,
+	singleHopTxBaseInfo dao.HtlcSingleHopTxBaseInfo, hAndRInfo dao.HtlcCreateRandHInfo) (*dao.CommitmentTransaction, error) {
+	owner := channelInfo.PeerIdA
+	currOperatorIsTxStarter := true
+	if operator.PeerId == channelInfo.PeerIdB {
+		currOperatorIsTxStarter = false
+	}
+
+	var lastCommitmentATx = &dao.CommitmentTransaction{}
+	err := tx.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("Owner", owner), q.Eq("CurrState", dao.TxInfoState_CreateAndSign)).OrderBy("CreateAt").Reverse().First(lastCommitmentATx)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	// create Cna tx
+	commitmentTxInfo, err := htlcCreateCna(tx, channelInfo, operator, fundingTransaction, htlcRequestOpen, singleHopTxBaseInfo, hAndRInfo, currOperatorIsTxStarter, lastCommitmentATx, owner)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	// create RDna tx
+	_, err = htlcCreateRDOfRsmc(
+		tx, channelInfo, operator, fundingTransaction, htlcRequestOpen,
+		singleHopTxBaseInfo, currOperatorIsTxStarter, commitmentTxInfo, owner)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	if currOperatorIsTxStarter { // 如果当前操作人是PeerIdA 创建HT1a
+		// create ht1a
+		htlcTimeoutTxA, err := createHtlcTimeoutTx(tx, owner, channelInfo, fundingTransaction, *commitmentTxInfo, htlcRequestOpen, operator)
+		if err != nil {
+			log.Println(err)
+			return nil, err
+		}
+		log.Println(htlcTimeoutTxA)
+		// 继续创建htrd
+		rdTransaction, err := htlcCreateRD(tx, channelInfo, operator, fundingTransaction, htlcRequestOpen, singleHopTxBaseInfo, currOperatorIsTxStarter, htlcTimeoutTxA, owner)
+		if err != nil {
+			log.Println(err)
+			return nil, err
+		}
+		log.Println(rdTransaction)
+
+	} else { // 如果当前操作人是PeerIdA 创建HED
+
+	}
+
+	return commitmentTxInfo, nil
 }
