@@ -311,7 +311,9 @@ func htlcCreateAliceTxes(tx storm.Node, channelInfo dao.ChannelInfo, operator be
 	}
 
 	// create RDna tx
-	_, err = htlcCreateRDOfRsmc(tx, channelInfo, operator, fundingTransaction, htlcRequestOpen, singleHopTxBaseInfo, currOperatorIsTxStarter, commitmentTxInfo, owner)
+	_, err = htlcCreateRDOfRsmc(
+		tx, channelInfo, operator, fundingTransaction, htlcRequestOpen,
+		singleHopTxBaseInfo, currOperatorIsTxStarter, commitmentTxInfo, owner)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -324,6 +326,14 @@ func htlcCreateAliceTxes(tx storm.Node, channelInfo dao.ChannelInfo, operator be
 			return nil, err
 		}
 		log.Println(htlcTimeoutTxA)
+		// 继续创建htrd
+		rdTransaction, err := htlcCreateRD(tx, channelInfo, operator, fundingTransaction, htlcRequestOpen, singleHopTxBaseInfo, currOperatorIsTxStarter, htlcTimeoutTxA, owner)
+		if err != nil {
+			log.Println(err)
+			return nil, err
+		}
+		log.Println(rdTransaction)
+
 	} else { // 如果当前操作人是PeerIdA 创建HED
 
 	}
@@ -582,4 +592,84 @@ func htlcCreateRDOfRsmc(tx storm.Node, channelInfo dao.ChannelInfo, operator bea
 		return nil, err
 	}
 	return rdTransaction, nil
+}
+
+func htlcCreateRD(tx storm.Node, channelInfo dao.ChannelInfo, operator bean.User,
+	fundingTransaction dao.FundingTransaction, htlcRequestOpen bean.HtlcRequestOpen,
+	singleHopTxBaseInfo dao.HtlcSingleHopTxBaseInfo, currOperatorIsTxStarter bool,
+	htlcTimeoutTxA *dao.HTLCTimeoutTxA, owner string) (*dao.RevocableDeliveryTransaction, error) {
+
+	rdTransaction, err := createHtlcRDTxObj(owner, &channelInfo, htlcTimeoutTxA, channelInfo.AddressA, &operator)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	currTempAddressPrivateKey := ""
+	if currOperatorIsTxStarter {
+		currTempAddressPrivateKey = htlcRequestOpen.CurrRsmcTempAddressPrivateKey
+	} else {
+		currTempAddressPrivateKey = tempAddrPrivateKeyMap[singleHopTxBaseInfo.BobCurrRsmcTempPubKey]
+	}
+
+	inputs, err := getInputsOfNextTxByParseTxHashVout(htlcTimeoutTxA.RSMCTxHash, htlcTimeoutTxA.RSMCMultiAddress, htlcTimeoutTxA.RSMCMultiAddressScriptPubKey)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionForUnsendInputTx(
+		htlcTimeoutTxA.RSMCMultiAddress,
+		[]string{
+			currTempAddressPrivateKey,
+			tempAddrPrivateKeyMap[channelInfo.PubKeyB],
+		},
+		inputs,
+		rdTransaction.OutputAddress,
+		fundingTransaction.FunderAddress,
+		fundingTransaction.PropertyId,
+		rdTransaction.Amount,
+		0,
+		rdTransaction.Sequence,
+		&htlcTimeoutTxA.RSMCRedeemScript)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	rdTransaction.Txid = txid
+	rdTransaction.TransactionSignHex = hex
+	rdTransaction.SignAt = time.Now()
+	rdTransaction.CurrState = dao.TxInfoState_CreateAndSign
+	err = tx.Save(rdTransaction)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	return rdTransaction, nil
+}
+
+func createHtlcRDTxObj(owner string, channelInfo *dao.ChannelInfo, commitmentTxInfo *dao.HTLCTimeoutTxA, toAddress string, user *bean.User) (*dao.RevocableDeliveryTransaction, error) {
+	rda := &dao.RevocableDeliveryTransaction{}
+
+	rda.CommitmentTxId = commitmentTxInfo.Id
+	rda.PeerIdA = channelInfo.PeerIdA
+	rda.PeerIdB = channelInfo.PeerIdB
+	rda.ChannelId = channelInfo.ChannelId
+	rda.Owner = owner
+
+	//input
+	rda.InputTxid = commitmentTxInfo.RSMCTxid
+	rda.InputVout = 0
+	rda.InputAmount = commitmentTxInfo.RSMCOutAmount
+	//output
+	rda.OutputAddress = toAddress
+	rda.Sequence = 1000
+	rda.Amount = commitmentTxInfo.RSMCOutAmount
+
+	rda.CreateBy = user.PeerId
+	rda.CreateAt = time.Now()
+	rda.LastEditTime = time.Now()
+
+	return rda, nil
 }
