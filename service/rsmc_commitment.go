@@ -342,11 +342,6 @@ func createAliceSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFr
 			return nil, err
 		}
 
-		count, _ = tx.Select(q.Eq("CommitmentTxId", lastCommitmentTx.Id)).Count(&dao.RevocableDeliveryTransaction{})
-		if count > 0 {
-			err = errors.New("already exist RevocableDeliveryTransaction")
-			return nil, err
-		}
 		// create BRa tx  for bob ，let the lastCommitmentTx abort,
 		breachRemedyTransaction, err := createBRTx(channelInfo.PeerIdB, channelInfo, lastCommitmentTx, signer)
 		if err != nil {
@@ -367,7 +362,7 @@ func createAliceSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFr
 				return nil, err
 			}
 
-			inputs, err := getRdInputsFromCommitmentTx(lastCommitmentTx.RSMCTxHash, lastCommitmentTx.RSMCMultiAddress, lastCommitmentTx.RSMCRedeemScript)
+			inputs, err := getRDOrBRInputsFromCommitmentTx(lastCommitmentTx.RSMCTxHash, lastCommitmentTx.RSMCMultiAddress, lastCommitmentTx.RSMCRedeemScript)
 			if err != nil {
 				log.Println(err)
 				return nil, err
@@ -534,7 +529,7 @@ func createAliceSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFr
 		currTempAddressPrivateKey = signData.CurrTempAddressPrivateKey
 	}
 
-	inputs, err := getRdInputsFromCommitmentTx(commitmentTxInfo.RSMCTxHash, commitmentTxInfo.RSMCMultiAddress, commitmentTxInfo.RSMCMultiAddressScriptPubKey)
+	inputs, err := getRDOrBRInputsFromCommitmentTx(commitmentTxInfo.RSMCTxHash, commitmentTxInfo.RSMCMultiAddress, commitmentTxInfo.RSMCMultiAddressScriptPubKey)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -593,12 +588,6 @@ func createBobSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFrom
 			return nil, err
 		}
 
-		count, _ = tx.Select(q.Eq("CommitmentTxId", lastCommitmentTx.Id)).Count(&dao.RevocableDeliveryTransaction{})
-		if count > 0 {
-			err = errors.New("already exist RevocableDeliveryTransaction")
-			return nil, err
-		}
-
 		// create BRb tx for alice
 		breachRemedyTransaction, err := createBRTx(channelInfo.PeerIdA, channelInfo, lastCommitmentTx, signer)
 		if err != nil {
@@ -620,7 +609,7 @@ func createBobSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFrom
 				return nil, err
 			}
 
-			inputs, err := getRdInputsFromCommitmentTx(lastCommitmentTx.RSMCTxHash, lastCommitmentTx.RSMCMultiAddress, lastCommitmentTx.RSMCMultiAddressScriptPubKey)
+			inputs, err := getRDOrBRInputsFromCommitmentTx(lastCommitmentTx.RSMCTxHash, lastCommitmentTx.RSMCMultiAddress, lastCommitmentTx.RSMCMultiAddressScriptPubKey)
 			if err != nil {
 				log.Println(err)
 				return nil, err
@@ -785,7 +774,7 @@ func createBobSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFrom
 		currTempAddressPrivateKey = tempAddrPrivateKeyMap[dataFromCreator.CurrTempAddressPubKey]
 	}
 
-	inputs, err := getRdInputsFromCommitmentTx(commitmentTxInfo.RSMCTxHash, commitmentTxInfo.RSMCMultiAddress, commitmentTxInfo.RSMCMultiAddressScriptPubKey)
+	inputs, err := getRDOrBRInputsFromCommitmentTx(commitmentTxInfo.RSMCTxHash, commitmentTxInfo.RSMCMultiAddress, commitmentTxInfo.RSMCMultiAddressScriptPubKey)
 	if err != nil {
 		log.Println(err)
 		return nil, err

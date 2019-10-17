@@ -260,7 +260,8 @@ func checkOmniTxHex(fundingTxHexDecode string, channelInfo *dao.ChannelInfo, use
 	return fundingTxid, amountA, propertyId, err
 }
 
-func getRdInputsFromCommitmentTx(hex string, toAddress, scriptPubKey string) (inputs []rpc.TransactionInputItem, err error) {
+//从承诺交易的输出里面构建到RD和BR的输入
+func getRDOrBRInputsFromCommitmentTx(hex string, toAddress, scriptPubKey string) (inputs []rpc.TransactionInputItem, err error) {
 	result, err := rpcClient.DecodeRawTransaction(hex)
 	if err != nil {
 		return nil, err

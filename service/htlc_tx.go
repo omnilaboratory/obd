@@ -270,5 +270,58 @@ func (service *htlcTxManager) AliceOpenHtlcChannel(msgData string, user bean.Use
 	// 	和CommitmentTx一样，要产生rsmc，就是要创建一个临时多签地址，所以又需要一组私钥
 	// 	所以alice要创建BR，Cna，HT1a，HED1a,HTRD1a
 
+	//launch database transaction, if anything goes wrong, roll back.
+	tx, err := db.Begin(true)
+	if err != nil {
+		return nil, "", err
+	}
+	defer tx.Rollback()
+
+	channelInfo := dao.ChannelInfo{}
+	err = tx.One("Id", singleHopTxBaseInfo.FirstChannelId, &channelInfo)
+	if err != nil {
+		log.Println(err)
+		return nil, "", err
+	}
+
+	if user.PeerId == channelInfo.PeerIdA {
+		tempAddrPrivateKeyMap[channelInfo.PubKeyA] = htlcRequestOpen.ChannelAddressPrivateKey
+		defer delete(tempAddrPrivateKeyMap, channelInfo.PubKeyA)
+	} else {
+		tempAddrPrivateKeyMap[channelInfo.PubKeyB] = htlcRequestOpen.ChannelAddressPrivateKey
+		defer delete(tempAddrPrivateKeyMap, channelInfo.PubKeyB)
+	}
+
+	// get the funding transaction
+	var fundingTransaction = &dao.FundingTransaction{}
+	err = tx.Select(q.Eq("ChannelId", singleHopTxBaseInfo.FirstChannelId), q.Eq("CurrState", dao.FundingTransactionState_Accept)).OrderBy("CreateAt").Reverse().First(fundingTransaction)
+	if err != nil {
+		log.Println(err)
+		return nil, "", err
+	}
+	//PeerIdA(概念中的Alice) 对上一次承诺交易的废弃
+	err = htlcAliceAbortLastCommitmentTx(tx, channelInfo, user, *fundingTransaction, *htlcRequestOpen)
+	if err != nil {
+		log.Println(err)
+		return nil, "", err
+	}
+	//PeerIdB(概念中的Bob) 对上一次承诺交易的废弃
+	err = htlcBobAbortLastCommitmentTx(tx, channelInfo, user, *fundingTransaction, *htlcRequestOpen)
+	if err != nil {
+		log.Println(err)
+		return nil, "", err
+	}
+	err = htlcCreateAliceTxes(tx, user)
+	if err != nil {
+		log.Println(err)
+		return nil, "", err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		log.Println(err)
+		return nil, "", err
+	}
+
 	return nil, "", nil
 }
