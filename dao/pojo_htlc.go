@@ -12,11 +12,9 @@ type HTLCTimeoutTxA struct {
 	Id                           int            `storm:"id,increment" json:"id" `
 	ChannelId                    bean.ChannelID `json:"channel_id"`
 	CommitmentTxId               int            `json:"commitment_tx_id"`
-	InputTxid                    string         `json:"input_txid"` //input txid  from commitTx aliceTempHtlc&bob multtaddr, so need  sign of aliceTempHtlc and bob
-	InputVout                    uint32         `json:"input_vout"` // input vout
-	Timeout                      int            `json:"timeout"`    // if 3days 432=3*24*6
+	InputHex                     string         `json:"input_hex"`
+	Timeout                      int            `json:"timeout"` // if 3days 432=3*24*6
 	CurrBlockHeight              int            `json:"curr_block_height"`
-	InputAmount                  float64        `json:"input_amount"` //input amount
 	RSMCTempAddressPubKey        string         `json:"rsmc_temp_address_pub_key"`
 	RSMCMultiAddress             string         `json:"rsmc_multi_address"`
 	RSMCRedeemScript             string         `json:"rsmc_redeem_script"`
@@ -28,6 +26,7 @@ type HTLCTimeoutTxA struct {
 	Owner                        string         `json:"owner"`
 	CreateBy                     string         `json:"create_by"`
 	CreateAt                     time.Time      `json:"create_at"`
+	SignAt                       time.Time      `json:"sign_at"`
 	SendAt                       time.Time      `json:"send_at"`
 }
 

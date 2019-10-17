@@ -32,11 +32,13 @@ func FindUserIsOnline(peerId string) error {
 }
 
 type commitmentOutputBean struct {
-	TempPubKey string
-	AmountM    float64
-	ToPubKey   string
-	ToAddress  string
-	AmountB    float64
+	RsmcTempPubKey   string
+	AmountToRsmc     float64
+	ToChannelPubKey  string
+	ToChannelAddress string
+	AmountToOther    float64
+	HtlcTempPubKey   string
+	AmountToHtlc     float64
 }
 
 func init() {
@@ -79,9 +81,9 @@ func createCommitmentTx(owner string, channelInfo *dao.ChannelInfo, fundingTrans
 	commitmentTxInfo.InputVout = fundingTransaction.FundingOutputIndex
 	commitmentTxInfo.InputAmount = fundingTransaction.AmountA + fundingTransaction.AmountB
 
-	//output
-	commitmentTxInfo.RSMCTempAddressPubKey = outputBean.TempPubKey
-	multiAddr, err := rpcClient.CreateMultiSig(2, []string{commitmentTxInfo.RSMCTempAddressPubKey, outputBean.ToPubKey})
+	//output to rsmc
+	commitmentTxInfo.RSMCTempAddressPubKey = outputBean.RsmcTempPubKey
+	multiAddr, err := rpcClient.CreateMultiSig(2, []string{commitmentTxInfo.RSMCTempAddressPubKey, outputBean.ToChannelPubKey})
 	if err != nil {
 		return nil, err
 	}
@@ -93,8 +95,24 @@ func createCommitmentTx(owner string, channelInfo *dao.ChannelInfo, fundingTrans
 	}
 	commitmentTxInfo.RSMCMultiAddressScriptPubKey = gjson.Get(json, "scriptPubKey").String()
 
-	commitmentTxInfo.AmountToRSMC = outputBean.AmountM
-	commitmentTxInfo.AmountToOther = outputBean.AmountB
+	if tool.CheckIsString(&outputBean.HtlcTempPubKey) {
+		commitmentTxInfo.HTLCTempAddressPubKey = outputBean.HtlcTempPubKey
+		multiAddr, err := rpcClient.CreateMultiSig(2, []string{commitmentTxInfo.HTLCTempAddressPubKey, outputBean.ToChannelPubKey})
+		if err != nil {
+			return nil, err
+		}
+		commitmentTxInfo.HTLCMultiAddress = gjson.Get(multiAddr, "address").String()
+		commitmentTxInfo.HTLCRedeemScript = gjson.Get(multiAddr, "redeemScript").String()
+		json, err := rpcClient.GetAddressInfo(commitmentTxInfo.HTLCMultiAddress)
+		if err != nil {
+			return nil, err
+		}
+		commitmentTxInfo.HTLCMultiAddressScriptPubKey = gjson.Get(json, "scriptPubKey").String()
+	}
+
+	commitmentTxInfo.AmountToRSMC = outputBean.AmountToRsmc
+	commitmentTxInfo.AmountToOther = outputBean.AmountToOther
+	commitmentTxInfo.AmountToHtlc = outputBean.AmountToHtlc
 
 	commitmentTxInfo.CreateBy = user.PeerId
 	commitmentTxInfo.CreateAt = time.Now()
@@ -102,6 +120,7 @@ func createCommitmentTx(owner string, channelInfo *dao.ChannelInfo, fundingTrans
 
 	return commitmentTxInfo, nil
 }
+
 func createRDTx(owner string, channelInfo *dao.ChannelInfo, commitmentTxInfo *dao.CommitmentTransaction, toAddress string, user *bean.User) (*dao.RevocableDeliveryTransaction, error) {
 	rda := &dao.RevocableDeliveryTransaction{}
 
@@ -260,8 +279,8 @@ func checkOmniTxHex(fundingTxHexDecode string, channelInfo *dao.ChannelInfo, use
 	return fundingTxid, amountA, propertyId, err
 }
 
-//从承诺交易的输出里面构建到RD和BR的输入
-func getRDOrBRInputsFromCommitmentTx(hex string, toAddress, scriptPubKey string) (inputs []rpc.TransactionInputItem, err error) {
+//从未广播的交易hash数据中解析出他的输出，以此作为下个交易的输入
+func getInputsOfNextTxByParseTxHashVout(hex string, toAddress, scriptPubKey string) (inputs []rpc.TransactionInputItem, err error) {
 	result, err := rpcClient.DecodeRawTransaction(hex)
 	if err != nil {
 		return nil, err

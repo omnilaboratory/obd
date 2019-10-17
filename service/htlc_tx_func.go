@@ -4,9 +4,12 @@ import (
 	"LightningOnOmni/bean"
 	"LightningOnOmni/dao"
 	"LightningOnOmni/tool"
+	"encoding/json"
 	"errors"
 	"github.com/asdine/storm"
 	"github.com/asdine/storm/q"
+	"github.com/shopspring/decimal"
+	"github.com/tidwall/gjson"
 	"log"
 	"time"
 )
@@ -127,7 +130,7 @@ func htlcAliceAbortLastCommitmentTx(tx storm.Node, channelInfo dao.ChannelInfo, 
 				return err
 			}
 
-			inputs, err := getRDOrBRInputsFromCommitmentTx(lastCommitmentATx.RSMCTxHash, lastCommitmentATx.RSMCMultiAddress, lastCommitmentATx.RSMCRedeemScript)
+			inputs, err := getInputsOfNextTxByParseTxHashVout(lastCommitmentATx.RSMCTxHash, lastCommitmentATx.RSMCMultiAddress, lastCommitmentATx.RSMCRedeemScript)
 			if err != nil {
 				log.Println(err)
 				return err
@@ -234,7 +237,7 @@ func htlcBobAbortLastCommitmentTx(tx storm.Node, channelInfo dao.ChannelInfo, us
 				return err
 			}
 
-			inputs, err := getRDOrBRInputsFromCommitmentTx(lastCommitmentBTx.RSMCTxHash, lastCommitmentBTx.RSMCMultiAddress, lastCommitmentBTx.RSMCRedeemScript)
+			inputs, err := getInputsOfNextTxByParseTxHashVout(lastCommitmentBTx.RSMCTxHash, lastCommitmentBTx.RSMCMultiAddress, lastCommitmentBTx.RSMCRedeemScript)
 			if err != nil {
 				log.Println(err)
 				return err
@@ -285,13 +288,298 @@ func htlcBobAbortLastCommitmentTx(tx storm.Node, channelInfo dao.ChannelInfo, us
 // 这里要做一个判断，作为这次交易的发起者，
 // 如果PeerIdA是发起者，在这Cna的逻辑中创建HT1a和HED1a
 // 如果PeerIdB是发起者，那么在Cna中就应该创建HTLC Time Delivery 1b(HED1b) 和HTLC Execution  1a(HE1b)
-func htlcCreateAliceTxes(tx storm.Node, channelInfo dao.ChannelInfo, operator bean.User) error {
-
+func htlcCreateAliceTxes(tx storm.Node, channelInfo dao.ChannelInfo, operator bean.User,
+	fundingTransaction dao.FundingTransaction, htlcRequestOpen bean.HtlcRequestOpen,
+	singleHopTxBaseInfo dao.HtlcSingleHopTxBaseInfo, hAndRInfo dao.HtlcCreateRandHInfo) (*dao.CommitmentTransaction, error) {
+	owner := channelInfo.PeerIdA
 	currOperatorIsTxStarter := true
 	if operator.PeerId == channelInfo.PeerIdB {
 		currOperatorIsTxStarter = false
 	}
-	log.Println(currOperatorIsTxStarter)
 
-	return nil
+	var lastCommitmentATx = &dao.CommitmentTransaction{}
+	err := tx.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("Owner", owner), q.Eq("CurrState", dao.TxInfoState_CreateAndSign)).OrderBy("CreateAt").Reverse().First(lastCommitmentATx)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	// create Cna tx
+	commitmentTxInfo, err := htlcCreateCna(tx, channelInfo, operator, fundingTransaction, htlcRequestOpen, singleHopTxBaseInfo, hAndRInfo, currOperatorIsTxStarter, lastCommitmentATx, owner)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	// create RDna tx
+	_, err = htlcCreateRDOfRsmc(tx, channelInfo, operator, fundingTransaction, htlcRequestOpen, singleHopTxBaseInfo, currOperatorIsTxStarter, commitmentTxInfo, owner)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	if currOperatorIsTxStarter { // 如果当前操作人是PeerIdA 创建HT1a
+		// create ht1a
+		htlcTimeoutTxA, err := createHtlcTimeoutTx(tx, owner, channelInfo, fundingTransaction, *commitmentTxInfo, htlcRequestOpen, operator)
+		if err != nil {
+			log.Println(err)
+			return nil, err
+		}
+		log.Println(htlcTimeoutTxA)
+	} else { // 如果当前操作人是PeerIdA 创建HED
+
+	}
+
+	return commitmentTxInfo, nil
+}
+
+func createHtlcTimeoutTx(tx storm.Node, owner string, channelInfo dao.ChannelInfo, fundingTransaction dao.FundingTransaction, commitmentTxInfo dao.CommitmentTransaction, htlcRequestOpen bean.HtlcRequestOpen, operator bean.User) (htlcTimeoutTxA *dao.HTLCTimeoutTxA, err error) {
+	outputBean := commitmentOutputBean{}
+	outputBean.AmountToRsmc = commitmentTxInfo.AmountToHtlc
+	outputBean.RsmcTempPubKey = htlcRequestOpen.CurrHtlcTempAddressForHt1aPubKey
+	outputBean.ToChannelAddress = channelInfo.PubKeyB
+	htlcTimeoutTxA, err = createHtlcTimeoutTxObj(owner, channelInfo, commitmentTxInfo.HtlcTxHash, outputBean, operator)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	log.Println(htlcTimeoutTxA)
+
+	inputs, err := getInputsOfNextTxByParseTxHashVout(commitmentTxInfo.HtlcTxHash, commitmentTxInfo.HTLCMultiAddress, commitmentTxInfo.HTLCMultiAddressScriptPubKey)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionForUnsendInputTx(
+		commitmentTxInfo.HTLCMultiAddress,
+		[]string{
+			htlcRequestOpen.CurrHtlcTempAddressPrivateKey,
+			tempAddrPrivateKeyMap[channelInfo.PubKeyB],
+		},
+		inputs,
+		htlcTimeoutTxA.RSMCMultiAddress,
+		fundingTransaction.FunderAddress,
+		fundingTransaction.PropertyId,
+		htlcTimeoutTxA.RSMCOutAmount,
+		0,
+		htlcTimeoutTxA.Timeout,
+		&commitmentTxInfo.HTLCRedeemScript)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	htlcTimeoutTxA.RSMCTxid = txid
+	htlcTimeoutTxA.RSMCTxHash = hex
+	htlcTimeoutTxA.SignAt = time.Now()
+	htlcTimeoutTxA.CurrState = dao.TxInfoState_CreateAndSign
+	err = tx.Save(htlcTimeoutTxA)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	return htlcTimeoutTxA, nil
+}
+
+func createHtlcTimeoutTxObj(owner string, channelInfo dao.ChannelInfo, inputHex string, outputBean commitmentOutputBean, user bean.User) (*dao.HTLCTimeoutTxA, error) {
+	htlcTimeoutTxA := &dao.HTLCTimeoutTxA{}
+	htlcTimeoutTxA.ChannelId = channelInfo.ChannelId
+	htlcTimeoutTxA.Owner = owner
+
+	//input
+	htlcTimeoutTxA.InputHex = inputHex
+
+	//output to rsmc
+	htlcTimeoutTxA.RSMCTempAddressPubKey = outputBean.RsmcTempPubKey
+	multiAddr, err := rpcClient.CreateMultiSig(2, []string{htlcTimeoutTxA.RSMCTempAddressPubKey, outputBean.ToChannelPubKey})
+	if err != nil {
+		return nil, err
+	}
+	htlcTimeoutTxA.RSMCMultiAddress = gjson.Get(multiAddr, "address").String()
+	htlcTimeoutTxA.RSMCRedeemScript = gjson.Get(multiAddr, "redeemScript").String()
+	json, err := rpcClient.GetAddressInfo(htlcTimeoutTxA.RSMCMultiAddress)
+	if err != nil {
+		return nil, err
+	}
+	htlcTimeoutTxA.RSMCMultiAddressScriptPubKey = gjson.Get(json, "scriptPubKey").String()
+	htlcTimeoutTxA.RSMCOutAmount = outputBean.AmountToRsmc
+	htlcTimeoutTxA.CreateBy = user.PeerId
+	htlcTimeoutTxA.CreateAt = time.Now()
+	return htlcTimeoutTxA, nil
+}
+
+func htlcCreateCna(tx storm.Node, channelInfo dao.ChannelInfo, operator bean.User,
+	fundingTransaction dao.FundingTransaction, htlcRequestOpen bean.HtlcRequestOpen,
+	singleHopTxBaseInfo dao.HtlcSingleHopTxBaseInfo, hAndRInfo dao.HtlcCreateRandHInfo,
+	currOperatorIsTxStarter bool, lastCommitmentATx *dao.CommitmentTransaction, owner string) (*dao.CommitmentTransaction, error) {
+	var outputBean = commitmentOutputBean{}
+	if currOperatorIsTxStarter {
+		outputBean.RsmcTempPubKey = htlcRequestOpen.CurrRsmcTempAddressPubKey
+		outputBean.AmountToRsmc, _ = decimal.NewFromFloat(lastCommitmentATx.AmountToRSMC).Sub(decimal.NewFromFloat(hAndRInfo.Amount)).Float64()
+		outputBean.AmountToOther = lastCommitmentATx.AmountToOther
+		outputBean.HtlcTempPubKey = htlcRequestOpen.CurrHtlcTempAddressPubKey
+		outputBean.AmountToHtlc = hAndRInfo.Amount
+	} else {
+		outputBean.RsmcTempPubKey = singleHopTxBaseInfo.BobCurrRsmcTempPubKey
+		outputBean.AmountToRsmc = lastCommitmentATx.AmountToRSMC
+		outputBean.AmountToOther, _ = decimal.NewFromFloat(lastCommitmentATx.AmountToOther).Add(decimal.NewFromFloat(hAndRInfo.Amount)).Float64()
+		outputBean.HtlcTempPubKey = singleHopTxBaseInfo.BobCurrHtlcTempForHt1bPubKey
+		outputBean.AmountToHtlc = hAndRInfo.Amount
+	}
+	outputBean.ToChannelAddress = channelInfo.AddressB
+	outputBean.ToChannelPubKey = channelInfo.PubKeyB
+
+	commitmentTxInfo, err := createCommitmentTx(owner, &channelInfo, &fundingTransaction, outputBean, &operator)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	commitmentTxInfo.TxType = 1
+
+	allUsedTxidTemp := ""
+	// rsmc
+	if commitmentTxInfo.AmountToRSMC > 0 {
+		txid, hex, usedTxid, err := rpcClient.OmniCreateAndSignRawTransactionForCommitmentTx(
+			channelInfo.ChannelAddress,
+			[]string{
+				tempAddrPrivateKeyMap[channelInfo.PubKeyA],
+				tempAddrPrivateKeyMap[channelInfo.PubKeyB],
+			},
+			commitmentTxInfo.RSMCMultiAddress,
+			fundingTransaction.PropertyId,
+			commitmentTxInfo.AmountToRSMC,
+			0,
+			0, &channelInfo.ChannelAddressRedeemScript, "")
+		if err != nil {
+			log.Println(err)
+			return nil, err
+		}
+		allUsedTxidTemp += usedTxid
+		commitmentTxInfo.RSMCTxid = txid
+		commitmentTxInfo.RSMCTxHash = hex
+	}
+
+	//htlc
+	if commitmentTxInfo.AmountToHtlc > 0 {
+		txid, hex, usedTxid, err := rpcClient.OmniCreateAndSignRawTransactionForCommitmentTx(
+			channelInfo.ChannelAddress,
+			[]string{
+				tempAddrPrivateKeyMap[channelInfo.PubKeyA],
+				tempAddrPrivateKeyMap[channelInfo.PubKeyB],
+			},
+			commitmentTxInfo.HTLCMultiAddress,
+			fundingTransaction.PropertyId,
+			commitmentTxInfo.AmountToHtlc,
+			0,
+			0, &channelInfo.ChannelAddressRedeemScript, allUsedTxidTemp)
+		if err != nil {
+			log.Println(err)
+			return nil, err
+		}
+		allUsedTxidTemp += "," + usedTxid
+		commitmentTxInfo.HTLCTxid = txid
+		commitmentTxInfo.HtlcTxHash = hex
+	}
+
+	//create to Bob tx
+	if commitmentTxInfo.AmountToOther > 0 {
+		txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionForCommitmentTxToBob(
+			channelInfo.ChannelAddress,
+			allUsedTxidTemp,
+			[]string{
+				tempAddrPrivateKeyMap[channelInfo.PubKeyA],
+				tempAddrPrivateKeyMap[channelInfo.PubKeyB],
+			},
+			channelInfo.AddressB,
+			fundingTransaction.FunderAddress,
+			fundingTransaction.PropertyId,
+			commitmentTxInfo.AmountToOther,
+			0,
+			0, &channelInfo.ChannelAddressRedeemScript)
+		if err != nil {
+			log.Println(err)
+			return nil, err
+		}
+		commitmentTxInfo.ToOtherTxid = txid
+		commitmentTxInfo.ToOtherTxHash = hex
+	}
+
+	commitmentTxInfo.LastCommitmentTxId = lastCommitmentATx.Id
+
+	commitmentTxInfo.SignAt = time.Now()
+	commitmentTxInfo.CurrState = dao.TxInfoState_CreateAndSign
+	commitmentTxInfo.LastHash = ""
+	commitmentTxInfo.CurrHash = ""
+	if lastCommitmentATx != nil {
+		commitmentTxInfo.LastHash = lastCommitmentATx.CurrHash
+	}
+	err = tx.Save(commitmentTxInfo)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	bytes, err := json.Marshal(commitmentTxInfo)
+	msgHash := tool.SignMsgWithSha256(bytes)
+	commitmentTxInfo.CurrHash = msgHash
+	err = tx.Update(commitmentTxInfo)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	return commitmentTxInfo, nil
+}
+
+func htlcCreateRDOfRsmc(tx storm.Node, channelInfo dao.ChannelInfo, operator bean.User,
+	fundingTransaction dao.FundingTransaction, htlcRequestOpen bean.HtlcRequestOpen,
+	singleHopTxBaseInfo dao.HtlcSingleHopTxBaseInfo, currOperatorIsTxStarter bool,
+	commitmentTxInfo *dao.CommitmentTransaction, owner string) (*dao.RevocableDeliveryTransaction, error) {
+
+	rdTransaction, err := createRDTx(owner, &channelInfo, commitmentTxInfo, channelInfo.AddressA, &operator)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	currTempAddressPrivateKey := ""
+	if currOperatorIsTxStarter {
+		currTempAddressPrivateKey = htlcRequestOpen.CurrRsmcTempAddressPrivateKey
+	} else {
+		currTempAddressPrivateKey = tempAddrPrivateKeyMap[singleHopTxBaseInfo.BobCurrRsmcTempPubKey]
+	}
+
+	inputs, err := getInputsOfNextTxByParseTxHashVout(commitmentTxInfo.RSMCTxHash, commitmentTxInfo.RSMCMultiAddress, commitmentTxInfo.RSMCMultiAddressScriptPubKey)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionForUnsendInputTx(
+		commitmentTxInfo.RSMCMultiAddress,
+		[]string{
+			currTempAddressPrivateKey,
+			tempAddrPrivateKeyMap[channelInfo.PubKeyB],
+		},
+		inputs,
+		rdTransaction.OutputAddress,
+		fundingTransaction.FunderAddress,
+		fundingTransaction.PropertyId,
+		rdTransaction.Amount,
+		0,
+		rdTransaction.Sequence,
+		&commitmentTxInfo.RSMCRedeemScript)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	rdTransaction.Txid = txid
+	rdTransaction.TransactionSignHex = hex
+	rdTransaction.SignAt = time.Now()
+	rdTransaction.CurrState = dao.TxInfoState_CreateAndSign
+	err = tx.Save(rdTransaction)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	return rdTransaction, nil
 }

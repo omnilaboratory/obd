@@ -362,7 +362,7 @@ func createAliceSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFr
 				return nil, err
 			}
 
-			inputs, err := getRDOrBRInputsFromCommitmentTx(lastCommitmentTx.RSMCTxHash, lastCommitmentTx.RSMCMultiAddress, lastCommitmentTx.RSMCRedeemScript)
+			inputs, err := getInputsOfNextTxByParseTxHashVout(lastCommitmentTx.RSMCTxHash, lastCommitmentTx.RSMCMultiAddress, lastCommitmentTx.RSMCRedeemScript)
 			if err != nil {
 				log.Println(err)
 				return nil, err
@@ -417,32 +417,33 @@ func createAliceSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFr
 	// create Cna tx
 	var outputBean = commitmentOutputBean{}
 	if isAliceCreateTransfer {
-		outputBean.TempPubKey = dataFromCreator.CurrTempAddressPubKey
+		outputBean.RsmcTempPubKey = dataFromCreator.CurrTempAddressPubKey
 		//default alice transfer to bob ,then alice minus money
-		outputBean.AmountM, _ = decimal.NewFromFloat(fundingTransaction.AmountA).Sub(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
-		outputBean.AmountB, _ = decimal.NewFromFloat(fundingTransaction.AmountB).Add(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
+		outputBean.AmountToRsmc, _ = decimal.NewFromFloat(fundingTransaction.AmountA).Sub(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
+		outputBean.AmountToOther, _ = decimal.NewFromFloat(fundingTransaction.AmountB).Add(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
 		if lastCommitmentTx != nil {
-			outputBean.AmountM, _ = decimal.NewFromFloat(lastCommitmentTx.AmountToRSMC).Sub(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
-			outputBean.AmountB, _ = decimal.NewFromFloat(lastCommitmentTx.AmountToOther).Add(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
+			outputBean.AmountToRsmc, _ = decimal.NewFromFloat(lastCommitmentTx.AmountToRSMC).Sub(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
+			outputBean.AmountToOther, _ = decimal.NewFromFloat(lastCommitmentTx.AmountToOther).Add(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
 		}
 	} else {
-		outputBean.TempPubKey = signData.CurrTempAddressPubKey
+		outputBean.RsmcTempPubKey = signData.CurrTempAddressPubKey
 		// if bob transfer to alice,then alice add money
-		outputBean.AmountM, _ = decimal.NewFromFloat(fundingTransaction.AmountA).Add(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
-		outputBean.AmountB, _ = decimal.NewFromFloat(fundingTransaction.AmountB).Sub(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
+		outputBean.AmountToRsmc, _ = decimal.NewFromFloat(fundingTransaction.AmountA).Add(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
+		outputBean.AmountToOther, _ = decimal.NewFromFloat(fundingTransaction.AmountB).Sub(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
 		if lastCommitmentTx != nil {
-			outputBean.AmountM, _ = decimal.NewFromFloat(lastCommitmentTx.AmountToRSMC).Add(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
-			outputBean.AmountB, _ = decimal.NewFromFloat(lastCommitmentTx.AmountToOther).Sub(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
+			outputBean.AmountToRsmc, _ = decimal.NewFromFloat(lastCommitmentTx.AmountToRSMC).Add(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
+			outputBean.AmountToOther, _ = decimal.NewFromFloat(lastCommitmentTx.AmountToOther).Sub(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
 		}
 	}
-	outputBean.ToAddress = channelInfo.AddressB
-	outputBean.ToPubKey = channelInfo.PubKeyB
+	outputBean.ToChannelAddress = channelInfo.AddressB
+	outputBean.ToChannelPubKey = channelInfo.PubKeyB
 
 	commitmentTxInfo, err := createCommitmentTx(owner, channelInfo, fundingTransaction, outputBean, signer)
 	if err != nil {
 		log.Println(err)
 		return nil, err
 	}
+	commitmentTxInfo.TxType = 0
 
 	usedTxidTemp := ""
 	if commitmentTxInfo.AmountToRSMC > 0 {
@@ -456,7 +457,7 @@ func createAliceSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFr
 			fundingTransaction.PropertyId,
 			commitmentTxInfo.AmountToRSMC,
 			0,
-			0, &channelInfo.ChannelAddressRedeemScript)
+			0, &channelInfo.ChannelAddressRedeemScript, "")
 		if err != nil {
 			log.Println(err)
 			return nil, err
@@ -529,7 +530,7 @@ func createAliceSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFr
 		currTempAddressPrivateKey = signData.CurrTempAddressPrivateKey
 	}
 
-	inputs, err := getRDOrBRInputsFromCommitmentTx(commitmentTxInfo.RSMCTxHash, commitmentTxInfo.RSMCMultiAddress, commitmentTxInfo.RSMCMultiAddressScriptPubKey)
+	inputs, err := getInputsOfNextTxByParseTxHashVout(commitmentTxInfo.RSMCTxHash, commitmentTxInfo.RSMCMultiAddress, commitmentTxInfo.RSMCMultiAddressScriptPubKey)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -609,7 +610,7 @@ func createBobSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFrom
 				return nil, err
 			}
 
-			inputs, err := getRDOrBRInputsFromCommitmentTx(lastCommitmentTx.RSMCTxHash, lastCommitmentTx.RSMCMultiAddress, lastCommitmentTx.RSMCMultiAddressScriptPubKey)
+			inputs, err := getInputsOfNextTxByParseTxHashVout(lastCommitmentTx.RSMCTxHash, lastCommitmentTx.RSMCMultiAddress, lastCommitmentTx.RSMCMultiAddressScriptPubKey)
 			if err != nil {
 				log.Println(err)
 				return nil, err
@@ -664,31 +665,32 @@ func createBobSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFrom
 	// create Cnb tx
 	var outputBean = commitmentOutputBean{}
 	if isAliceCreateTransfer {
-		outputBean.TempPubKey = signData.CurrTempAddressPubKey
+		outputBean.RsmcTempPubKey = signData.CurrTempAddressPubKey
 		//by default, alice transfers money to bob,then bob's balance increases.
-		outputBean.AmountM, _ = decimal.NewFromFloat(fundingTransaction.AmountB).Add(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
-		outputBean.AmountB, _ = decimal.NewFromFloat(fundingTransaction.AmountA).Sub(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
+		outputBean.AmountToRsmc, _ = decimal.NewFromFloat(fundingTransaction.AmountB).Add(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
+		outputBean.AmountToOther, _ = decimal.NewFromFloat(fundingTransaction.AmountA).Sub(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
 		if lastCommitmentTx != nil {
-			outputBean.AmountM, _ = decimal.NewFromFloat(lastCommitmentTx.AmountToRSMC).Add(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
-			outputBean.AmountB, _ = decimal.NewFromFloat(lastCommitmentTx.AmountToOther).Sub(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
+			outputBean.AmountToRsmc, _ = decimal.NewFromFloat(lastCommitmentTx.AmountToRSMC).Add(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
+			outputBean.AmountToOther, _ = decimal.NewFromFloat(lastCommitmentTx.AmountToOther).Sub(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
 		}
 	} else {
-		outputBean.TempPubKey = dataFromCreator.CurrTempAddressPubKey
-		outputBean.AmountM, _ = decimal.NewFromFloat(fundingTransaction.AmountA).Sub(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
-		outputBean.AmountB, _ = decimal.NewFromFloat(fundingTransaction.AmountB).Add(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
+		outputBean.RsmcTempPubKey = dataFromCreator.CurrTempAddressPubKey
+		outputBean.AmountToRsmc, _ = decimal.NewFromFloat(fundingTransaction.AmountA).Sub(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
+		outputBean.AmountToOther, _ = decimal.NewFromFloat(fundingTransaction.AmountB).Add(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
 		if lastCommitmentTx != nil {
-			outputBean.AmountM, _ = decimal.NewFromFloat(lastCommitmentTx.AmountToRSMC).Sub(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
-			outputBean.AmountB, _ = decimal.NewFromFloat(lastCommitmentTx.AmountToOther).Add(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
+			outputBean.AmountToRsmc, _ = decimal.NewFromFloat(lastCommitmentTx.AmountToRSMC).Sub(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
+			outputBean.AmountToOther, _ = decimal.NewFromFloat(lastCommitmentTx.AmountToOther).Add(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
 		}
 	}
-	outputBean.ToAddress = channelInfo.AddressA
-	outputBean.ToPubKey = channelInfo.PubKeyA
+	outputBean.ToChannelAddress = channelInfo.AddressA
+	outputBean.ToChannelPubKey = channelInfo.PubKeyA
 
 	commitmentTxInfo, err := createCommitmentTx(owner, channelInfo, fundingTransaction, outputBean, signer)
 	if err != nil {
 		log.Println(err)
 		return nil, err
 	}
+	commitmentTxInfo.TxType = 0
 
 	usedTxidTemp := ""
 	if commitmentTxInfo.AmountToRSMC > 0 {
@@ -702,7 +704,7 @@ func createBobSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFrom
 			fundingTransaction.PropertyId,
 			commitmentTxInfo.AmountToRSMC,
 			0,
-			0, &channelInfo.ChannelAddressRedeemScript)
+			0, &channelInfo.ChannelAddressRedeemScript, "")
 		if err != nil {
 			log.Println(err)
 			return nil, err
@@ -774,7 +776,7 @@ func createBobSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFrom
 		currTempAddressPrivateKey = tempAddrPrivateKeyMap[dataFromCreator.CurrTempAddressPubKey]
 	}
 
-	inputs, err := getRDOrBRInputsFromCommitmentTx(commitmentTxInfo.RSMCTxHash, commitmentTxInfo.RSMCMultiAddress, commitmentTxInfo.RSMCMultiAddressScriptPubKey)
+	inputs, err := getInputsOfNextTxByParseTxHashVout(commitmentTxInfo.RSMCTxHash, commitmentTxInfo.RSMCMultiAddress, commitmentTxInfo.RSMCMultiAddressScriptPubKey)
 	if err != nil {
 		log.Println(err)
 		return nil, err

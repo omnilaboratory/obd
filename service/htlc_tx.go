@@ -232,6 +232,13 @@ func (service *htlcTxManager) AliceOpenHtlcChannel(msgData string, user bean.Use
 		return nil, "", err
 	}
 
+	hAndRInfo := dao.HtlcCreateRandHInfo{}
+	err = db.Select(q.Eq("RequestHash", singleHopTxBaseInfo.HtlcCreateRandHInfoRequestHash)).First(&hAndRInfo)
+	if err != nil {
+		log.Println(err)
+		return nil, "", err
+	}
+
 	if tool.CheckIsString(&htlcRequestOpen.ChannelAddressPrivateKey) == false {
 		err = errors.New("channel_address_private_key is empty")
 		log.Println(err)
@@ -311,11 +318,14 @@ func (service *htlcTxManager) AliceOpenHtlcChannel(msgData string, user bean.Use
 		log.Println(err)
 		return nil, "", err
 	}
-	err = htlcCreateAliceTxes(tx, user)
+
+	//开始创建htlc的承诺交易
+	commitmentTransactionOfA, err := htlcCreateAliceTxes(tx, channelInfo, user, *fundingTransaction, *htlcRequestOpen, singleHopTxBaseInfo, hAndRInfo)
 	if err != nil {
 		log.Println(err)
 		return nil, "", err
 	}
+	log.Println(commitmentTransactionOfA)
 
 	err = tx.Commit()
 	if err != nil {

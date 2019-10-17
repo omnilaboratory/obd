@@ -7,6 +7,7 @@ import (
 	"github.com/shopspring/decimal"
 	"github.com/tidwall/gjson"
 	"log"
+	"strings"
 )
 
 //https://github.com/OmniLayer/omnicore/blob/master/src/omnicore/doc/rpc-api.md
@@ -211,7 +212,7 @@ func (client *Client) OmniCreateAndSignRawTransaction(fromBitCoinAddress string,
 }
 
 // From channelAddress to temp multi address, to Create CommitmentTx
-func (client *Client) OmniCreateAndSignRawTransactionForCommitmentTx(fromBitCoinAddress string, privkeys []string, toBitCoinAddress string, propertyId int64, amount float64, minerFee float64, sequence int, redeemScript *string) (txid, hex string, usedTxid string, err error) {
+func (client *Client) OmniCreateAndSignRawTransactionForCommitmentTx(fromBitCoinAddress string, privkeys []string, toBitCoinAddress string, propertyId int64, amount float64, minerFee float64, sequence int, redeemScript *string, usedTxid string) (txid, hex string, currUseTxid string, err error) {
 	if tool.CheckIsString(&fromBitCoinAddress) == false {
 		return "", "", "", errors.New("fromBitCoinAddress is empty")
 	}
@@ -245,11 +246,14 @@ func (client *Client) OmniCreateAndSignRawTransactionForCommitmentTx(fromBitCoin
 	}
 
 	inputs := make([]map[string]interface{}, 0, 0)
-	usedTxid = ""
+	currUseTxid = ""
 	for _, item := range arrayListUnspent {
 		inputAmount := item.Get("amount").Float()
 		if inputAmount >= out {
-			usedTxid = item.Get("txid").String()
+			currUseTxid = item.Get("txid").String()
+			if usedTxid != "" && usedTxid == currUseTxid {
+				continue
+			}
 			node := make(map[string]interface{})
 			node["txid"] = item.Get("txid").String()
 			node["vout"] = item.Get("vout").Int()
@@ -263,7 +267,7 @@ func (client *Client) OmniCreateAndSignRawTransactionForCommitmentTx(fromBitCoin
 		}
 	}
 
-	if usedTxid == "" {
+	if currUseTxid == "" {
 		return "", "", "", errors.New("not found the miner fee input")
 	}
 
@@ -346,7 +350,7 @@ func (client *Client) OmniCreateAndSignRawTransactionForCommitmentTx(fromBitCoin
 	log.Println("7 DecodeSignRawTransactionWithKey", decodeHex)
 	txid = gjson.Get(decodeHex, "txid").String()
 
-	return txid, hex, usedTxid, nil
+	return txid, hex, currUseTxid, nil
 }
 
 func (client *Client) OmniCreateAndSignRawTransactionForCommitmentTxToBob(fromBitCoinAddress string, usedTxid string, privkeys []string, toBitCoinAddress, changeToAddress string, propertyId int64, amount float64, minerFee float64, sequence int, redeemScript *string) (txid, hex string, err error) {
@@ -385,7 +389,7 @@ func (client *Client) OmniCreateAndSignRawTransactionForCommitmentTxToBob(fromBi
 	inputs := make([]map[string]interface{}, 0, 0)
 	for _, item := range arrayListUnspent {
 		txid := item.Get("txid").String()
-		if txid != usedTxid {
+		if strings.Contains(usedTxid, txid) == false {
 			node := make(map[string]interface{})
 			node["txid"] = txid
 			node["vout"] = item.Get("vout").Int()

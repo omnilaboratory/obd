@@ -512,17 +512,17 @@ func (service *fundingTransactionManager) FundingOmniTxSign(jsonData string, sig
 
 		// create C1 tx
 		var outputBean = commitmentOutputBean{}
-		outputBean.TempPubKey = fundingTransaction.FunderPubKey2ForCommitment
+		outputBean.RsmcTempPubKey = fundingTransaction.FunderPubKey2ForCommitment
 		if owner == channelInfo.PeerIdA {
-			outputBean.ToPubKey = channelInfo.PubKeyB
-			outputBean.ToAddress = channelInfo.AddressB
-			outputBean.AmountM = fundingTransaction.AmountA
-			outputBean.AmountB = fundingTransaction.AmountB
+			outputBean.ToChannelPubKey = channelInfo.PubKeyB
+			outputBean.ToChannelAddress = channelInfo.AddressB
+			outputBean.AmountToRsmc = fundingTransaction.AmountA
+			outputBean.AmountToOther = fundingTransaction.AmountB
 		} else {
-			outputBean.ToPubKey = channelInfo.PubKeyA
-			outputBean.ToAddress = channelInfo.AddressA
-			outputBean.AmountM = fundingTransaction.AmountB
-			outputBean.AmountB = fundingTransaction.AmountA
+			outputBean.ToChannelPubKey = channelInfo.PubKeyA
+			outputBean.ToChannelAddress = channelInfo.AddressA
+			outputBean.AmountToRsmc = fundingTransaction.AmountB
+			outputBean.AmountToOther = fundingTransaction.AmountA
 		}
 
 		commitmentTxInfo, err := createCommitmentTx(owner, channelInfo, fundingTransaction, outputBean, signer)
@@ -612,7 +612,7 @@ func (service *fundingTransactionManager) FundingOmniTxSign(jsonData string, sig
 		}
 		rdTransaction, _ := createRDTx(owner, channelInfo, commitmentTxInfo, outputAddress, signer)
 
-		inputs, err := getRDOrBRInputsFromCommitmentTx(commitmentTxInfo.RSMCTxHash, commitmentTxInfo.RSMCMultiAddress, commitmentTxInfo.RSMCMultiAddressScriptPubKey)
+		inputs, err := getInputsOfNextTxByParseTxHashVout(commitmentTxInfo.RSMCTxHash, commitmentTxInfo.RSMCMultiAddress, commitmentTxInfo.RSMCMultiAddressScriptPubKey)
 		if err != nil {
 			log.Println(err)
 			return nil, err
