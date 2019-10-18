@@ -248,12 +248,12 @@ func (client *Client) OmniCreateAndSignRawTransactionForCommitmentTx(fromBitCoin
 	inputs := make([]map[string]interface{}, 0, 0)
 	currUseTxid = ""
 	for _, item := range arrayListUnspent {
+		currUseTxid = item.Get("txid").String()
+		if usedTxid != "" && usedTxid == currUseTxid {
+			continue
+		}
 		inputAmount := item.Get("amount").Float()
 		if inputAmount >= out {
-			currUseTxid = item.Get("txid").String()
-			if usedTxid != "" && usedTxid == currUseTxid {
-				continue
-			}
 			node := make(map[string]interface{})
 			node["txid"] = item.Get("txid").String()
 			node["vout"] = item.Get("vout").Int()
