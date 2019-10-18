@@ -513,12 +513,13 @@ func (service *fundingTransactionManager) FundingOmniTxSign(jsonData string, sig
 		// create C1 tx
 		var outputBean = commitmentOutputBean{}
 		outputBean.RsmcTempPubKey = fundingTransaction.FunderPubKey2ForCommitment
+		// if alice funding
 		if owner == channelInfo.PeerIdA {
 			outputBean.ToChannelPubKey = channelInfo.PubKeyB
 			outputBean.ToChannelAddress = channelInfo.AddressB
 			outputBean.AmountToRsmc = fundingTransaction.AmountA
 			outputBean.AmountToOther = fundingTransaction.AmountB
-		} else {
+		} else { // if bob funding
 			outputBean.ToChannelPubKey = channelInfo.PubKeyA
 			outputBean.ToChannelAddress = channelInfo.AddressA
 			outputBean.AmountToRsmc = fundingTransaction.AmountB

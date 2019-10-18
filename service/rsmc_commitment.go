@@ -323,9 +323,9 @@ func (service *commitmentTxSignedManager) CommitmentTxSign(jsonData string, sign
 func createAliceSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFromCreator dao.CommitmentTxRequestInfo, channelInfo *dao.ChannelInfo, fundingTransaction *dao.FundingTransaction, signer *bean.User) (*dao.CommitmentTransaction, error) {
 	owner := channelInfo.PeerIdA
 
-	var isAliceCreateTransfer = true
+	var isAliceSendToBob = true
 	if signer.PeerId == channelInfo.PeerIdA {
-		isAliceCreateTransfer = false
+		isAliceSendToBob = false
 	}
 
 	var lastCommitmentTx = &dao.CommitmentTransaction{}
@@ -351,7 +351,7 @@ func createAliceSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFr
 
 		if breachRemedyTransaction.Amount > 0 {
 			lastTempAddressPrivateKey := ""
-			if isAliceCreateTransfer {
+			if isAliceSendToBob {
 				lastTempAddressPrivateKey = tempAddrPrivateKeyMap[dataFromCreator.LastTempAddressPubKey]
 			} else {
 				lastTempAddressPrivateKey = signData.LastTempAddressPrivateKey
@@ -416,7 +416,7 @@ func createAliceSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFr
 
 	// create Cna tx
 	var outputBean = commitmentOutputBean{}
-	if isAliceCreateTransfer {
+	if isAliceSendToBob {
 		outputBean.RsmcTempPubKey = dataFromCreator.CurrTempAddressPubKey
 		//default alice transfer to bob ,then alice minus money
 		outputBean.AmountToRsmc, _ = decimal.NewFromFloat(fundingTransaction.AmountA).Sub(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
@@ -524,7 +524,7 @@ func createAliceSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFr
 	}
 
 	currTempAddressPrivateKey := ""
-	if isAliceCreateTransfer {
+	if isAliceSendToBob {
 		currTempAddressPrivateKey = tempAddrPrivateKeyMap[dataFromCreator.CurrTempAddressPubKey]
 	} else {
 		currTempAddressPrivateKey = signData.CurrTempAddressPrivateKey
@@ -569,9 +569,9 @@ func createAliceSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFr
 
 func createBobSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFromCreator dao.CommitmentTxRequestInfo, channelInfo *dao.ChannelInfo, fundingTransaction *dao.FundingTransaction, signer *bean.User) (*dao.CommitmentTransaction, error) {
 	owner := channelInfo.PeerIdB
-	var isAliceCreateTransfer = true
+	var isAliceSendToBob = true
 	if signer.PeerId == channelInfo.PeerIdA {
-		isAliceCreateTransfer = false
+		isAliceSendToBob = false
 	}
 
 	var lastCommitmentTx = &dao.CommitmentTransaction{}
@@ -598,7 +598,7 @@ func createBobSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFrom
 
 		if breachRemedyTransaction.Amount > 0 {
 			lastTempAddressPrivateKey := ""
-			if isAliceCreateTransfer {
+			if isAliceSendToBob {
 				lastTempAddressPrivateKey = signData.LastTempAddressPrivateKey
 			} else {
 				lastTempAddressPrivateKey = tempAddrPrivateKeyMap[dataFromCreator.LastTempAddressPubKey]
@@ -664,7 +664,7 @@ func createBobSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFrom
 
 	// create Cnb tx
 	var outputBean = commitmentOutputBean{}
-	if isAliceCreateTransfer {
+	if isAliceSendToBob {
 		outputBean.RsmcTempPubKey = signData.CurrTempAddressPubKey
 		//by default, alice transfers money to bob,then bob's balance increases.
 		outputBean.AmountToRsmc, _ = decimal.NewFromFloat(fundingTransaction.AmountB).Add(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
@@ -770,7 +770,7 @@ func createBobSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFrom
 	}
 
 	currTempAddressPrivateKey := ""
-	if isAliceCreateTransfer {
+	if isAliceSendToBob {
 		currTempAddressPrivateKey = signData.CurrTempAddressPrivateKey
 	} else {
 		currTempAddressPrivateKey = tempAddrPrivateKeyMap[dataFromCreator.CurrTempAddressPubKey]

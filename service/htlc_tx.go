@@ -345,9 +345,9 @@ func (service *htlcTxManager) htlcCreateAliceTxes(tx storm.Node, channelInfo dao
 	fundingTransaction dao.FundingTransaction, htlcRequestOpen bean.HtlcRequestOpen,
 	singleHopTxBaseInfo dao.HtlcSingleHopTxBaseInfo, hAndRInfo dao.HtlcCreateRandHInfo) (*dao.CommitmentTransaction, error) {
 	owner := channelInfo.PeerIdA
-	currOperatorIsTxStarter := true
+	isAliceSendToBob := true
 	if operator.PeerId == channelInfo.PeerIdB {
-		currOperatorIsTxStarter = false
+		isAliceSendToBob = false
 	}
 
 	var lastCommitmentATx = &dao.CommitmentTransaction{}
@@ -357,7 +357,7 @@ func (service *htlcTxManager) htlcCreateAliceTxes(tx storm.Node, channelInfo dao
 		return nil, err
 	}
 	// create Cna tx
-	commitmentTxInfo, err := htlcCreateCna(tx, channelInfo, operator, fundingTransaction, htlcRequestOpen, singleHopTxBaseInfo, hAndRInfo, currOperatorIsTxStarter, lastCommitmentATx, owner)
+	commitmentTxInfo, err := htlcCreateCna(tx, channelInfo, operator, fundingTransaction, htlcRequestOpen, singleHopTxBaseInfo, hAndRInfo, isAliceSendToBob, lastCommitmentATx, owner)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -366,12 +366,12 @@ func (service *htlcTxManager) htlcCreateAliceTxes(tx storm.Node, channelInfo dao
 	// create RDna tx
 	_, err = htlcCreateRDOfRsmc(
 		tx, channelInfo, operator, fundingTransaction, htlcRequestOpen,
-		singleHopTxBaseInfo, currOperatorIsTxStarter, commitmentTxInfo, owner)
+		singleHopTxBaseInfo, isAliceSendToBob, commitmentTxInfo, owner)
 	if err != nil {
 		log.Println(err)
 		return nil, err
 	}
-	if currOperatorIsTxStarter { // 如果当前操作人是PeerIdA 创建HT1a
+	if isAliceSendToBob { // 如果当前操作人是PeerIdA 创建HT1a
 		// create ht1a
 		htlcTimeoutTxA, err := createHtlcTimeoutTx(tx, owner, channelInfo, fundingTransaction, *commitmentTxInfo, htlcRequestOpen, operator)
 		if err != nil {
@@ -380,7 +380,7 @@ func (service *htlcTxManager) htlcCreateAliceTxes(tx storm.Node, channelInfo dao
 		}
 		log.Println(htlcTimeoutTxA)
 		// 继续创建htrd
-		rdTransaction, err := htlcCreateRD(tx, channelInfo, operator, fundingTransaction, htlcRequestOpen, singleHopTxBaseInfo, currOperatorIsTxStarter, htlcTimeoutTxA, owner)
+		rdTransaction, err := htlcCreateRD(tx, channelInfo, operator, fundingTransaction, htlcRequestOpen, singleHopTxBaseInfo, isAliceSendToBob, htlcTimeoutTxA, owner)
 		if err != nil {
 			log.Println(err)
 			return nil, err
