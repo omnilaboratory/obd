@@ -32,13 +32,13 @@ func FindUserIsOnline(peerId string) error {
 }
 
 type commitmentOutputBean struct {
-	RsmcTempPubKey   string
-	AmountToRsmc     float64
-	ToChannelPubKey  string
-	ToChannelAddress string
-	AmountToOther    float64
-	HtlcTempPubKey   string
-	AmountToHtlc     float64
+	AmountToRsmc               float64
+	AmountToOther              float64
+	AmountToHtlc               float64
+	RsmcTempPubKey             string
+	HtlcTempPubKey             string
+	OppositeSideChannelPubKey  string
+	OppositeSideChannelAddress string
 }
 
 func init() {
@@ -83,7 +83,7 @@ func createCommitmentTx(owner string, channelInfo *dao.ChannelInfo, fundingTrans
 
 	//output to rsmc
 	commitmentTxInfo.RSMCTempAddressPubKey = outputBean.RsmcTempPubKey
-	multiAddr, err := rpcClient.CreateMultiSig(2, []string{commitmentTxInfo.RSMCTempAddressPubKey, outputBean.ToChannelPubKey})
+	multiAddr, err := rpcClient.CreateMultiSig(2, []string{commitmentTxInfo.RSMCTempAddressPubKey, outputBean.OppositeSideChannelPubKey})
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +97,7 @@ func createCommitmentTx(owner string, channelInfo *dao.ChannelInfo, fundingTrans
 
 	if tool.CheckIsString(&outputBean.HtlcTempPubKey) {
 		commitmentTxInfo.HTLCTempAddressPubKey = outputBean.HtlcTempPubKey
-		multiAddr, err := rpcClient.CreateMultiSig(2, []string{commitmentTxInfo.HTLCTempAddressPubKey, outputBean.ToChannelPubKey})
+		multiAddr, err := rpcClient.CreateMultiSig(2, []string{commitmentTxInfo.HTLCTempAddressPubKey, outputBean.OppositeSideChannelPubKey})
 		if err != nil {
 			return nil, err
 		}

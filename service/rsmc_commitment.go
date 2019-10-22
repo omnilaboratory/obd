@@ -435,8 +435,8 @@ func createAliceSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFr
 			outputBean.AmountToOther, _ = decimal.NewFromFloat(lastCommitmentTx.AmountToOther).Sub(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
 		}
 	}
-	outputBean.ToChannelAddress = channelInfo.AddressB
-	outputBean.ToChannelPubKey = channelInfo.PubKeyB
+	outputBean.OppositeSideChannelAddress = channelInfo.AddressB
+	outputBean.OppositeSideChannelPubKey = channelInfo.PubKeyB
 
 	commitmentTxInfo, err := createCommitmentTx(owner, channelInfo, fundingTransaction, outputBean, signer)
 	if err != nil {
@@ -682,8 +682,8 @@ func createBobSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFrom
 			outputBean.AmountToOther, _ = decimal.NewFromFloat(lastCommitmentTx.AmountToOther).Add(decimal.NewFromFloat(dataFromCreator.Amount)).Float64()
 		}
 	}
-	outputBean.ToChannelAddress = channelInfo.AddressA
-	outputBean.ToChannelPubKey = channelInfo.PubKeyA
+	outputBean.OppositeSideChannelAddress = channelInfo.AddressA
+	outputBean.OppositeSideChannelPubKey = channelInfo.PubKeyA
 
 	commitmentTxInfo, err := createCommitmentTx(owner, channelInfo, fundingTransaction, outputBean, signer)
 	if err != nil {
