@@ -396,6 +396,10 @@ func (service *htlcTxManager) htlcCreateAliceSideTxs(tx storm.Node, channelInfo 
 			return nil, err
 		}
 		log.Println(htrdTransaction)
+
+		//HEDa的构建放到得到R的时候
+		//htlcCreateExecutionDeliveryA
+
 	} else {
 		// 如果是bob转给alice，Alice作为中间商，作为当前通道的接收者
 		// 这个时候，Cna产生的output2是锁定的bob的钱，在Alice这一方，Alice如果拿到了R，就去创建HE1a,得到的转账收益，
@@ -480,6 +484,8 @@ func (service *htlcTxManager) htlcCreateBobSideTxs(dbTx storm.Node, channelInfo 
 			return nil, err
 		}
 		log.Println(htrdTransaction)
+
+		//HEDb的构建放到得到R的时候
 	}
 
 	return commitmentTxInfo, nil
