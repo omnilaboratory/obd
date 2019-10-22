@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcutil"
+	"golang.org/x/crypto/ripemd160"
 	"io"
 	"log"
 	"strings"
@@ -30,6 +31,13 @@ func SignMsgWithSha256(msg []byte) string {
 	hash.Write(msg)
 	return fmt.Sprintf("%x", hash.Sum(nil))
 }
+
+func SignMsgWithRipemd160(msg []byte) string {
+	hash := ripemd160.New()
+	hash.Write(msg)
+	return fmt.Sprintf("%x", hash.Sum(nil))
+}
+
 func SignMsgWithMd5(msg []byte) string {
 	hash := md5.New()
 	hash.Write(msg)

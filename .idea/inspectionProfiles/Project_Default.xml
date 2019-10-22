@@ -17,5 +17,13 @@
         <method importPath="github.com/asdine/storm" receiver="Node" name="Rollback" />
       </methods>
     </inspection_tool>
+    <inspection_tool class="GoUnusedCallResult" enabled="true" level="WARNING" enabled_by_default="true">
+      <functions>
+        <function importPath="errors" name="New" />
+        <function importPath="fmt" name="Sprint" />
+        <function importPath="fmt" name="Errorf" />
+        <function importPath="sort" name="Reverse" />
+      </functions>
+    </inspection_tool>
   </profile>
 </component>

@@ -548,7 +548,7 @@ func (client *Client) OmniCreateAndSignRawTransactionForUnsendInputTx(fromBitCoi
 
 	//3.CreateRawTransaction
 	outputs := make(map[string]interface{})
-	outputs["data"] = "e4bda0e5a5bdefbc8ce4b896e7958ce38082"
+	//outputs["data"] = "e4bda0e5a5bdefbc8ce4b896e7958ce38082"
 
 	createrawtransactionStr, err := client.CreateRawTransaction(inputs, outputs)
 	if err != nil {

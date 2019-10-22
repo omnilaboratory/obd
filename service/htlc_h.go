@@ -34,7 +34,7 @@ func (service *htlcHMessageManager) DealHtlcRequest(jsonData string, creator *be
 
 	// Check out if the HTLC can be launched.
 	err = checkIfHtlcCanBeLaunched(creator, htlcHRequest)
-	if err != nil {  // CAN NOT launch HTLC.
+	if err != nil { // CAN NOT launch HTLC.
 		return nil, err
 	}
 
@@ -45,23 +45,23 @@ func (service *htlcHMessageManager) DealHtlcRequest(jsonData string, creator *be
 		return nil, err
 	}
 	defer tx.Rollback()
-	createRandHInfo := &dao.HtlcCreateRandHInfo{}
-	createRandHInfo.SenderPeerId = creator.PeerId
-	createRandHInfo.RecipientPeerId = htlcHRequest.RecipientPeerId
-	createRandHInfo.PropertyId = htlcHRequest.PropertyId
-	createRandHInfo.Amount = htlcHRequest.Amount
-	createRandHInfo.CurrState = dao.NS_Create
-	createRandHInfo.CreateAt = time.Now()
-	createRandHInfo.CreateBy = creator.PeerId
-	err = tx.Save(createRandHInfo)
+	rAndHInfo := &dao.HtlcRAndHInfo{}
+	rAndHInfo.SenderPeerId = creator.PeerId
+	rAndHInfo.RecipientPeerId = htlcHRequest.RecipientPeerId
+	rAndHInfo.PropertyId = htlcHRequest.PropertyId
+	rAndHInfo.Amount = htlcHRequest.Amount
+	rAndHInfo.CurrState = dao.NS_Create
+	rAndHInfo.CreateAt = time.Now()
+	rAndHInfo.CreateBy = creator.PeerId
+	err = tx.Save(rAndHInfo)
 	if err != nil {
 		log.Println(err)
 		return nil, err
 	}
-	bytes, err := json.Marshal(createRandHInfo)
+	bytes, err := json.Marshal(rAndHInfo)
 	msgHash := tool.SignMsgWithSha256(bytes)
-	createRandHInfo.RequestHash = msgHash
-	err = tx.Update(createRandHInfo)
+	rAndHInfo.RequestHash = msgHash
+	err = tx.Update(rAndHInfo)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -90,51 +90,54 @@ func (service *htlcHMessageManager) DealHtlcResponse(jsonData string, user *bean
 		return nil, nil, err
 	}
 
-	createRandHInfo := &dao.HtlcCreateRandHInfo{}
-	err = db.Select(q.Eq("RequestHash", htlcHRespond.RequestHash), q.Eq("CurrState", dao.NS_Create)).First(createRandHInfo)
+	rAndHInfo := &dao.HtlcRAndHInfo{}
+	err = db.Select(q.Eq("RequestHash", htlcHRespond.RequestHash), q.Eq("CurrState", dao.NS_Create)).First(rAndHInfo)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	createRandHInfo.CurrState = dao.NS_Refuse
+	rAndHInfo.CurrState = dao.NS_Refuse
 	if htlcHRespond.Approval {
+
 		s, _ := tool.RandBytes(32)
-		temp := append([]byte(createRandHInfo.RequestHash), s...)
-		r := tool.SignMsgWithSha256(temp)
+		temp := append([]byte(rAndHInfo.RequestHash), s...)
+		temp = append(temp, user.PeerId...)
+		r := tool.SignMsgWithRipemd160(temp)
+
 		h := tool.SignMsgWithSha256([]byte(r))
 
-		createRandHInfo.R = r
-		createRandHInfo.H = h
-		createRandHInfo.CurrState = dao.NS_Finish
+		rAndHInfo.R = r
+		rAndHInfo.H = h
+		rAndHInfo.CurrState = dao.NS_Finish
 	}
 
-	createRandHInfo.SignAt = time.Now()
-	createRandHInfo.SignBy = user.PeerId
-	err = db.Update(createRandHInfo)
+	rAndHInfo.SignAt = time.Now()
+	rAndHInfo.SignBy = user.PeerId
+	err = db.Update(rAndHInfo)
 	if err != nil {
-		return nil, &createRandHInfo.SenderPeerId, err
+		return nil, &rAndHInfo.SenderPeerId, err
 	}
 
 	responseData := make(map[string]interface{})
-	responseData["id"] = createRandHInfo.Id
+	responseData["id"] = rAndHInfo.Id
 	responseData["request_hash"] = htlcHRespond.RequestHash
 	responseData["approval"] = htlcHRespond.Approval
 	if htlcHRespond.Approval {
-		responseData["h"] = createRandHInfo.H
+		responseData["h"] = rAndHInfo.H
 	}
-	return responseData, &createRandHInfo.SenderPeerId, nil
+	return responseData, &rAndHInfo.SenderPeerId, nil
 }
 
 func (service *htlcHMessageManager) GetHtlcCreatedRandHInfoList(user *bean.User) (data interface{}, err error) {
-	var createRandHInfoList []dao.HtlcCreateRandHInfo
-	err = db.Select(q.Eq("CreateBy", user.PeerId)).Find(&createRandHInfoList)
+	var rAndHInfoList []dao.HtlcRAndHInfo
+	err = db.Select(q.Eq("CreateBy", user.PeerId)).Find(&rAndHInfoList)
 	if err != nil {
 		return nil, err
 	}
-	for _, item := range createRandHInfoList {
+	for _, item := range rAndHInfoList {
 		item.R = ""
 	}
-	return createRandHInfoList, nil
+	return rAndHInfoList, nil
 }
 
 func (service *htlcHMessageManager) GetHtlcCreatedRandHInfoItemById(msgData string, user *bean.User) (data interface{}, err error) {
@@ -143,22 +146,22 @@ func (service *htlcHMessageManager) GetHtlcCreatedRandHInfoItemById(msgData stri
 		log.Println(err.Error())
 		return nil, err
 	}
-	var createRandHInfo dao.HtlcCreateRandHInfo
-	err = db.Select(q.Eq("Id", id), q.Eq("CreateBy", user.PeerId)).First(&createRandHInfo)
+	var rAndHInfo dao.HtlcRAndHInfo
+	err = db.Select(q.Eq("Id", id), q.Eq("CreateBy", user.PeerId)).First(&rAndHInfo)
 	if err != nil {
 		return nil, err
 	}
-	createRandHInfo.R = ""
-	return createRandHInfo, nil
+	rAndHInfo.R = ""
+	return rAndHInfo, nil
 }
 
 func (service *htlcHMessageManager) GetHtlcSignedRandHInfoList(user *bean.User) (data interface{}, err error) {
-	var createRandHInfoList []dao.HtlcCreateRandHInfo
-	err = db.Select(q.Eq("RecipientPeerId", user.PeerId), q.Eq("SignBy", user.PeerId)).Find(&createRandHInfoList)
+	var rAndHInfoList []dao.HtlcRAndHInfo
+	err = db.Select(q.Eq("RecipientPeerId", user.PeerId), q.Eq("SignBy", user.PeerId)).Find(&rAndHInfoList)
 	if err != nil {
 		return nil, err
 	}
-	return createRandHInfoList, nil
+	return rAndHInfoList, nil
 }
 
 func (service *htlcHMessageManager) GetHtlcSignedRandHInfoItem(msgData string, user *bean.User) (data interface{}, err error) {
@@ -167,12 +170,12 @@ func (service *htlcHMessageManager) GetHtlcSignedRandHInfoItem(msgData string, u
 		log.Println(err.Error())
 		return nil, err
 	}
-	var createRandHInfo dao.HtlcCreateRandHInfo
-	err = db.Select(q.Eq("Id", id), q.Eq("SignBy", user.PeerId)).First(&createRandHInfo)
+	var rAndHInfo dao.HtlcRAndHInfo
+	err = db.Select(q.Eq("Id", id), q.Eq("SignBy", user.PeerId)).First(&rAndHInfo)
 	if err != nil {
 		return nil, err
 	}
-	return createRandHInfo, nil
+	return rAndHInfo, nil
 }
 
 // checkIfHtlcCanBeLaunched
@@ -195,7 +198,7 @@ func checkIfHtlcCanBeLaunched(creator *bean.User, htlcHRequest *bean.HtlcHReques
 	if len(channelsOfAlice) == 0 {
 		return errors.New("The sender has no channel.")
 	}
-	
+
 	// Check out if there is a direct channel between Alice and Carol.
 	// If Yes, NO need to launch HTLC.
 	for _, item := range channelsOfAlice {
@@ -216,8 +219,8 @@ func checkIfHtlcCanBeLaunched(creator *bean.User, htlcHRequest *bean.HtlcHReques
 	}
 
 	var hasMiddleman = false
-	arrMiddleman := make([]string, 0)  // Save the middlemen.
-	
+	arrMiddleman := make([]string, 0) // Save the middlemen.
+
 	// Looking for a middleman.
 	for _, itemAlice := range channelsOfAlice {
 		if itemAlice.PeerIdA == creator.PeerId { // PeerIdA is Alice.
@@ -230,7 +233,7 @@ func checkIfHtlcCanBeLaunched(creator *bean.User, htlcHRequest *bean.HtlcHReques
 				}
 			}
 		}
-		
+
 		if itemAlice.PeerIdB == creator.PeerId { // PeerIdB is Alice.
 			for _, itemCarol := range channelsOfCarol {
 				// PeerIdA of Alice's channel maybe a middleman.
@@ -247,20 +250,20 @@ func checkIfHtlcCanBeLaunched(creator *bean.User, htlcHRequest *bean.HtlcHReques
 	if hasMiddleman == false {
 		return errors.New("There is NOT a middleman, CAN NOT launch HTLC.")
 	}
-	
+
 	// Case 3. The middleman is NOT online, CAN NOT launch HTLC.
 	var allMiddlemanNotOnline = true
-	arrOnlineMiddleman := make([]string, 0)  // Save the online middlemen.
-	
+	arrOnlineMiddleman := make([]string, 0) // Save the online middlemen.
+
 	// Find all online middlemen.
 	for _, item := range arrMiddleman {
 		if FindUserIsOnline(item) == nil { // The middleman is online.
 			// Save the middleman for using in future.
-			arrOnlineMiddleman    = append(arrOnlineMiddleman, item)
+			arrOnlineMiddleman = append(arrOnlineMiddleman, item)
 			allMiddlemanNotOnline = false
 		}
 	}
-	
+
 	// The middleman is NOT online.
 	if allMiddlemanNotOnline == true {
 		return errors.New("The middleman is NOT online, CAN NOT launch HTLC.")
@@ -301,10 +304,10 @@ func checkIfHtlcCanBeLaunched(creator *bean.User, htlcHRequest *bean.HtlcHReques
 			return err
 		}
 
-		// If there is enough balance that Alice transfer to Middleman and 
+		// If there is enough balance that Alice transfer to Middleman and
 		// Middleman transfer to Carol, then record the Middleman.
-		if commitmentTxAlice.AmountToRSMC >= (htlcHRequest.Amount + tool.GetHtlcFee()) && 
-		   commitmentTxCarol.AmountToRSMC >= (htlcHRequest.Amount + tool.GetHtlcFee()) {
+		if commitmentTxAlice.AmountToRSMC >= (htlcHRequest.Amount+tool.GetHtlcFee()) &&
+			commitmentTxCarol.AmountToRSMC >= (htlcHRequest.Amount+tool.GetHtlcFee()) {
 
 			arrQualifiedMiddleman = append(arrQualifiedMiddleman, middleman)
 		}
@@ -323,8 +326,8 @@ func checkIfHtlcCanBeLaunched(creator *bean.User, htlcHRequest *bean.HtlcHReques
 // Get a channel info by two peer ID.
 func GetChannelInfoByTwoPeerID(peerIdA string, peerIdB string) (channelInfo *dao.ChannelInfo, err error) {
 	channelInfo = &dao.ChannelInfo{}
-	err = db.Select(q.Eq("CurrState", dao.ChannelState_Accept), 
-		q.Or(q.And(q.Eq("PeerIdA", peerIdA), q.Eq("PeerIdB", peerIdB))), 
+	err = db.Select(q.Eq("CurrState", dao.ChannelState_Accept),
+		q.Or(q.And(q.Eq("PeerIdA", peerIdA), q.Eq("PeerIdB", peerIdB))),
 		q.And(q.Eq("PeerIdA", peerIdB), q.Eq("PeerIdB", peerIdA))).First(channelInfo)
 
 	return channelInfo, err

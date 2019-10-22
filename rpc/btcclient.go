@@ -249,7 +249,7 @@ func (client *Client) BtcCreateAndSignRawTransaction(fromBitCoinAddress string, 
 		output[fromBitCoinAddress] = drawback
 	}
 
-	output["data"] = "59756b692077696c6c20796f75206d61727279206d65203f2054657473752e59756b692077696c6c20796f75206d61727279206d65203f2054657473752e"
+	//output["data"] = "59756b692077696c6c20796f75206d61727279206d65203f2054657473752e59756b692077696c6c20796f75206d61727279206d65203f2054657473752e"
 
 	hex, err = client.CreateRawTransaction(inputs, output)
 	if err != nil {

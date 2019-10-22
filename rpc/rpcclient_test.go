@@ -17,7 +17,8 @@ func TestDemo(t *testing.T) {
 	s := hex.EncodeToString([]byte(name))
 	log.Println(s)
 	//bytes, e := hex.DecodeString(s)
-	bytes, e := hex.DecodeString(s)
+
+	bytes, e := hex.DecodeString("03c57bea53afd7c3c2d75653ca35ca968c8e9610b6448f822cfb006730870ee961")
 	log.Println(e)
 	log.Println(string(bytes))
 }
@@ -38,7 +39,7 @@ func TestClient_OmniSend(t *testing.T) {
 		121,
 		2,
 		0,
-		0, &ChannelAddressRedeemScript)
+		0, &ChannelAddressRedeemScript, "")
 	log.Println(err)
 	log.Println(txid)
 	log.Println(hex)

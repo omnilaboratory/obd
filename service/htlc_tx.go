@@ -32,32 +32,32 @@ func (service *htlcTxManager) AliceFindPathOfSingleHopAndSendToBob(msgData strin
 		return nil, "", err
 	}
 
-	htlcCreateRandHInfo := &dao.HtlcCreateRandHInfo{}
-	err = db.Select(q.Eq("CreateBy", user.PeerId), q.Eq("CurrState", dao.NS_Finish), q.Eq("H", reqData.H)).First(htlcCreateRandHInfo)
+	rAndHInfo := &dao.HtlcRAndHInfo{}
+	err = db.Select(q.Eq("CreateBy", user.PeerId), q.Eq("CurrState", dao.NS_Finish), q.Eq("H", reqData.H)).First(rAndHInfo)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, "", err
 	}
-	channelAliceInfos := getAllChannels(htlcCreateRandHInfo.SenderPeerId)
+	channelAliceInfos := getAllChannels(rAndHInfo.SenderPeerId)
 	if len(channelAliceInfos) == 0 {
 		return nil, "", errors.New("sender's channel not found")
 	}
 	//if has the channel direct
 	for _, item := range channelAliceInfos {
-		if item.PeerIdA == htlcCreateRandHInfo.SenderPeerId && item.PeerIdB == htlcCreateRandHInfo.RecipientPeerId {
+		if item.PeerIdA == rAndHInfo.SenderPeerId && item.PeerIdB == rAndHInfo.RecipientPeerId {
 			return nil, "", errors.New("has direct channel")
 		}
-		if item.PeerIdB == htlcCreateRandHInfo.SenderPeerId && item.PeerIdA == htlcCreateRandHInfo.RecipientPeerId {
+		if item.PeerIdB == rAndHInfo.SenderPeerId && item.PeerIdA == rAndHInfo.RecipientPeerId {
 			return nil, "", errors.New("has direct channel")
 		}
 	}
 
-	channelCarlInfos := getAllChannels(htlcCreateRandHInfo.RecipientPeerId)
+	channelCarlInfos := getAllChannels(rAndHInfo.RecipientPeerId)
 	if len(channelCarlInfos) == 0 {
 		return nil, "", errors.New("recipient's channel not found")
 	}
 
-	bob, aliceChannel, carlChannel := getTwoChannelOfSingleHop(*htlcCreateRandHInfo, channelAliceInfos, channelCarlInfos)
+	bob, aliceChannel, carlChannel := getTwoChannelOfSingleHop(*rAndHInfo, channelAliceInfos, channelCarlInfos)
 	if tool.CheckIsString(&bob) == false {
 		return nil, "", errors.New("no inter channel can use")
 	}
@@ -67,22 +67,22 @@ func (service *htlcTxManager) AliceFindPathOfSingleHopAndSendToBob(msgData strin
 	log.Println(bob)
 
 	// operate db
-	htlcSingleHopTxBaseInfo := &dao.HtlcSingleHopTxBaseInfo{}
-	htlcSingleHopTxBaseInfo.FirstChannelId = aliceChannel.Id
-	htlcSingleHopTxBaseInfo.SecondChannelId = carlChannel.Id
-	htlcSingleHopTxBaseInfo.InterNodePeerId = bob
-	htlcSingleHopTxBaseInfo.HtlcCreateRandHInfoRequestHash = htlcCreateRandHInfo.RequestHash
-	htlcSingleHopTxBaseInfo.CurrState = dao.NS_Create
-	htlcSingleHopTxBaseInfo.CreateBy = user.PeerId
-	htlcSingleHopTxBaseInfo.CreateAt = time.Now()
-	err = db.Save(htlcSingleHopTxBaseInfo)
+	htlcSingleHopPathInfo := &dao.HtlcSingleHopPathInfo{}
+	htlcSingleHopPathInfo.FirstChannelId = aliceChannel.Id
+	htlcSingleHopPathInfo.SecondChannelId = carlChannel.Id
+	htlcSingleHopPathInfo.InterNodePeerId = bob
+	htlcSingleHopPathInfo.HtlcCreateRandHInfoRequestHash = rAndHInfo.RequestHash
+	htlcSingleHopPathInfo.CurrState = dao.NS_Create
+	htlcSingleHopPathInfo.CreateBy = user.PeerId
+	htlcSingleHopPathInfo.CreateAt = time.Now()
+	err = db.Save(htlcSingleHopPathInfo)
 	if err != nil {
 		return nil, "", err
 	}
 
 	data = make(map[string]interface{})
-	data["request_hash"] = htlcCreateRandHInfo.RequestHash
-	data["h"] = htlcCreateRandHInfo.H
+	data["request_hash"] = rAndHInfo.RequestHash
+	data["h"] = rAndHInfo.H
 	return data, bob, nil
 }
 
@@ -126,36 +126,36 @@ func (service *htlcTxManager) BobConfirmPath(msgData string, user bean.User) (da
 	}
 	defer tx.Rollback()
 
-	htlcCreateRandHInfo := &dao.HtlcCreateRandHInfo{}
-	err = tx.Select(q.Eq("RequestHash", htlcSignRequestCreate.RequestHash)).First(htlcCreateRandHInfo)
+	rAndHInfo := &dao.HtlcRAndHInfo{}
+	err = tx.Select(q.Eq("RequestHash", htlcSignRequestCreate.RequestHash)).First(rAndHInfo)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, "", err
 	}
 
-	htlcSingleHopTxBaseInfo := &dao.HtlcSingleHopTxBaseInfo{}
-	err = tx.Select(q.Eq("HtlcCreateRandHInfoRequestHash", htlcSignRequestCreate.RequestHash)).First(htlcSingleHopTxBaseInfo)
+	htlcSingleHopPathInfo := &dao.HtlcSingleHopPathInfo{}
+	err = tx.Select(q.Eq("HtlcCreateRandHInfoRequestHash", htlcSignRequestCreate.RequestHash)).First(htlcSingleHopPathInfo)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, "", err
 	}
 
-	htlcSingleHopTxBaseInfo.CurrState = dao.NS_Refuse
+	htlcSingleHopPathInfo.CurrState = dao.NS_Refuse
 	if htlcSignRequestCreate.Approval {
-		htlcSingleHopTxBaseInfo.CurrState = dao.NS_Finish
+		htlcSingleHopPathInfo.CurrState = dao.NS_Finish
 
-		htlcSingleHopTxBaseInfo.BobCurrRsmcTempPubKey = htlcSignRequestCreate.CurrRsmcTempAddressPubKey
-		htlcSingleHopTxBaseInfo.BobCurrHtlcTempPubKey = htlcSignRequestCreate.CurrHtlcTempAddressPubKey
+		htlcSingleHopPathInfo.BobCurrRsmcTempPubKey = htlcSignRequestCreate.CurrRsmcTempAddressPubKey
+		htlcSingleHopPathInfo.BobCurrHtlcTempPubKey = htlcSignRequestCreate.CurrHtlcTempAddressPubKey
 
 		//锁定两个通道
 		aliceChannel := &dao.ChannelInfo{}
-		err := tx.One("Id", htlcSingleHopTxBaseInfo.FirstChannelId, aliceChannel)
+		err := tx.One("Id", htlcSingleHopPathInfo.FirstChannelId, aliceChannel)
 		if err != nil {
 			log.Println(err.Error())
 			return nil, "", err
 		}
 		carlChannel := &dao.ChannelInfo{}
-		err = tx.One("Id", htlcSingleHopTxBaseInfo.SecondChannelId, carlChannel)
+		err = tx.One("Id", htlcSingleHopPathInfo.SecondChannelId, carlChannel)
 		if err != nil {
 			log.Println(err.Error())
 			return nil, "", err
@@ -184,12 +184,12 @@ func (service *htlcTxManager) BobConfirmPath(msgData string, user bean.User) (da
 		if err == nil {
 			tempAddrPrivateKeyMap[bobLatestCommitmentTx.RSMCTempAddressPubKey] = htlcSignRequestCreate.LastTempAddressPrivateKey
 		}
-		tempAddrPrivateKeyMap[htlcSingleHopTxBaseInfo.BobCurrRsmcTempPubKey] = htlcSignRequestCreate.CurrRsmcTempAddressPrivateKey
-		tempAddrPrivateKeyMap[htlcSingleHopTxBaseInfo.BobCurrHtlcTempPubKey] = htlcSignRequestCreate.CurrHtlcTempAddressPrivateKey
+		tempAddrPrivateKeyMap[htlcSingleHopPathInfo.BobCurrRsmcTempPubKey] = htlcSignRequestCreate.CurrRsmcTempAddressPrivateKey
+		tempAddrPrivateKeyMap[htlcSingleHopPathInfo.BobCurrHtlcTempPubKey] = htlcSignRequestCreate.CurrHtlcTempAddressPrivateKey
 	}
-	htlcSingleHopTxBaseInfo.SignBy = user.PeerId
-	htlcSingleHopTxBaseInfo.SignAt = time.Now()
-	err = tx.Update(htlcSingleHopTxBaseInfo)
+	htlcSingleHopPathInfo.SignBy = user.PeerId
+	htlcSingleHopPathInfo.SignAt = time.Now()
+	err = tx.Update(htlcSingleHopPathInfo)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, "", err
@@ -203,7 +203,7 @@ func (service *htlcTxManager) BobConfirmPath(msgData string, user bean.User) (da
 	data = make(map[string]interface{})
 	data["approval"] = htlcSignRequestCreate.Approval
 	data["request_hash"] = htlcSignRequestCreate.RequestHash
-	return data, htlcCreateRandHInfo.SenderPeerId, nil
+	return data, rAndHInfo.SenderPeerId, nil
 }
 
 // -44
@@ -226,15 +226,15 @@ func (service *htlcTxManager) AliceOpenHtlcChannel(msgData string, user bean.Use
 		return nil, "", err
 	}
 
-	singleHopTxBaseInfo := dao.HtlcSingleHopTxBaseInfo{}
-	err = db.Select(q.Eq("", htlcRequestOpen.RequestHash)).First(&singleHopTxBaseInfo)
+	htlcSingleHopPathInfo := dao.HtlcSingleHopPathInfo{}
+	err = db.Select(q.Eq("", htlcRequestOpen.RequestHash)).First(&htlcSingleHopPathInfo)
 	if err != nil {
 		log.Println(err)
 		return nil, "", err
 	}
 
-	hAndRInfo := dao.HtlcCreateRandHInfo{}
-	err = db.Select(q.Eq("RequestHash", singleHopTxBaseInfo.HtlcCreateRandHInfoRequestHash)).First(&hAndRInfo)
+	hAndRInfo := dao.HtlcRAndHInfo{}
+	err = db.Select(q.Eq("RequestHash", htlcSingleHopPathInfo.HtlcCreateRandHInfoRequestHash)).First(&hAndRInfo)
 	if err != nil {
 		log.Println(err)
 		return nil, "", err
@@ -286,7 +286,7 @@ func (service *htlcTxManager) AliceOpenHtlcChannel(msgData string, user bean.Use
 	defer tx.Rollback()
 
 	channelInfo := dao.ChannelInfo{}
-	err = tx.One("Id", singleHopTxBaseInfo.FirstChannelId, &channelInfo)
+	err = tx.One("Id", htlcSingleHopPathInfo.FirstChannelId, &channelInfo)
 	if err != nil {
 		log.Println(err)
 		return nil, "", err
@@ -302,7 +302,7 @@ func (service *htlcTxManager) AliceOpenHtlcChannel(msgData string, user bean.Use
 
 	// get the funding transaction
 	var fundingTransaction = &dao.FundingTransaction{}
-	err = tx.Select(q.Eq("ChannelId", singleHopTxBaseInfo.FirstChannelId), q.Eq("CurrState", dao.FundingTransactionState_Accept)).OrderBy("CreateAt").Reverse().First(fundingTransaction)
+	err = tx.Select(q.Eq("ChannelId", htlcSingleHopPathInfo.FirstChannelId), q.Eq("CurrState", dao.FundingTransactionState_Accept)).OrderBy("CreateAt").Reverse().First(fundingTransaction)
 	if err != nil {
 		log.Println(err)
 		return nil, "", err
@@ -321,12 +321,20 @@ func (service *htlcTxManager) AliceOpenHtlcChannel(msgData string, user bean.Use
 	}
 
 	//开始创建htlc的承诺交易
-	commitmentTransactionOfA, err := service.htlcCreateAliceTxes(tx, channelInfo, user, *fundingTransaction, *htlcRequestOpen, singleHopTxBaseInfo, hAndRInfo)
+	//Cna Alice这一方的交易
+	commitmentTransactionOfA, err := service.htlcCreateAliceTxs(tx, channelInfo, user, *fundingTransaction, *htlcRequestOpen, htlcSingleHopPathInfo, hAndRInfo)
 	if err != nil {
 		log.Println(err)
 		return nil, "", err
 	}
 	log.Println(commitmentTransactionOfA)
+	//Cnb Alice这一方的交易
+	commitmentTransactionOfB, err := service.htlcCreateBobTxs(tx, channelInfo, user, *fundingTransaction, *htlcRequestOpen, htlcSingleHopPathInfo, hAndRInfo)
+	if err != nil {
+		log.Println(err)
+		return nil, "", err
+	}
+	log.Println(commitmentTransactionOfB)
 
 	err = tx.Commit()
 	if err != nil {
@@ -341,13 +349,13 @@ func (service *htlcTxManager) AliceOpenHtlcChannel(msgData string, user bean.Use
 // 这里要做一个判断，作为这次交易的发起者，
 // 如果PeerIdA是发起者，在这Cna的逻辑中创建HT1a和HED1a
 // 如果PeerIdB是发起者，那么在Cna中就应该创建HTLC Time Delivery 1b(HED1b) 和HTLC Execution  1a(HE1b)
-func (service *htlcTxManager) htlcCreateAliceTxes(tx storm.Node, channelInfo dao.ChannelInfo, operator bean.User,
+func (service *htlcTxManager) htlcCreateAliceTxs(tx storm.Node, channelInfo dao.ChannelInfo, operator bean.User,
 	fundingTransaction dao.FundingTransaction, htlcRequestOpen bean.HtlcRequestOpen,
-	singleHopTxBaseInfo dao.HtlcSingleHopTxBaseInfo, hAndRInfo dao.HtlcCreateRandHInfo) (*dao.CommitmentTransaction, error) {
+	htlcSingleHopPathInfo dao.HtlcSingleHopPathInfo, hAndRInfo dao.HtlcRAndHInfo) (*dao.CommitmentTransaction, error) {
 	owner := channelInfo.PeerIdA
-	isAliceSendToBob := true
+	bobIsInterNodeSoAliceSend2Bob := true
 	if operator.PeerId == channelInfo.PeerIdB {
-		isAliceSendToBob = false
+		bobIsInterNodeSoAliceSend2Bob = false
 	}
 
 	var lastCommitmentATx = &dao.CommitmentTransaction{}
@@ -357,21 +365,22 @@ func (service *htlcTxManager) htlcCreateAliceTxes(tx storm.Node, channelInfo dao
 		return nil, err
 	}
 	// create Cna tx
-	commitmentTxInfo, err := htlcCreateCna(tx, channelInfo, operator, fundingTransaction, htlcRequestOpen, singleHopTxBaseInfo, hAndRInfo, isAliceSendToBob, lastCommitmentATx, owner)
+	commitmentTxInfo, err := htlcCreateCna(tx, channelInfo, operator, fundingTransaction, htlcRequestOpen, htlcSingleHopPathInfo, hAndRInfo, bobIsInterNodeSoAliceSend2Bob, lastCommitmentATx, owner)
 	if err != nil {
 		log.Println(err)
 		return nil, err
 	}
 
-	// create RDna tx
+	// create rsmc RDna tx
 	_, err = htlcCreateRDOfRsmc(
 		tx, channelInfo, operator, fundingTransaction, htlcRequestOpen,
-		singleHopTxBaseInfo, isAliceSendToBob, commitmentTxInfo, owner)
+		htlcSingleHopPathInfo, bobIsInterNodeSoAliceSend2Bob, commitmentTxInfo, owner)
 	if err != nil {
 		log.Println(err)
 		return nil, err
 	}
-	if isAliceSendToBob { // 如果当前操作人是PeerIdA 创建HT1a
+	// output2,给htlc创建的交易
+	if bobIsInterNodeSoAliceSend2Bob { // 如是通道中的Alice转账给Bob，bob作为中间节点  创建HT1a
 		// create ht1a
 		htlcTimeoutTxA, err := createHtlcTimeoutTx(tx, owner, channelInfo, fundingTransaction, *commitmentTxInfo, htlcRequestOpen, operator)
 		if err != nil {
@@ -380,15 +389,112 @@ func (service *htlcTxManager) htlcCreateAliceTxes(tx storm.Node, channelInfo dao
 		}
 		log.Println(htlcTimeoutTxA)
 		// 继续创建htrd
-		rdTransaction, err := htlcCreateRD(tx, channelInfo, operator, fundingTransaction, htlcRequestOpen, singleHopTxBaseInfo, isAliceSendToBob, htlcTimeoutTxA, owner)
+		htrdTransaction, err := htlcCreateRD(tx, channelInfo, operator, fundingTransaction, htlcRequestOpen, htlcSingleHopPathInfo, bobIsInterNodeSoAliceSend2Bob, htlcTimeoutTxA, owner)
 		if err != nil {
 			log.Println(err)
 			return nil, err
 		}
-		log.Println(rdTransaction)
+		log.Println(htrdTransaction)
 
-	} else { // 如果当前操作人是PeerIdA 创建HED
+		//创建hed1a  此交易要修改创建时机，等到bob拿到R的时候，再来创建，这个时候就需要广播交易（关闭通道），那么在很多情况下，其实是不用创建的
+		hednA, err := htlcCreateExecutionDeliveryA(tx, channelInfo, fundingTransaction, *commitmentTxInfo, htlcRequestOpen, owner, hAndRInfo, "")
+		if err != nil {
+			log.Println(err)
+			return nil, err
+		}
+		log.Println(hednA)
 
+	} else {
+		// 如果是bob转给alice，Alice作为中间商，作为当前通道的接收者
+		// 这个时候，Cna产生的output2是锁定的bob的钱，在Alice这一方，Alice如果拿到了R，就去创建HE1a,得到的转账收益，
+		// 而如果她后续要提现，就又要创建HERD1a，
+		// 而bob的钱，需要在这里等待一天（因为一个hop）才能赎回：HTD1a，因为现在已经被锁定在了output2里面，等待Alice拿到R
+		// 所以这个时候，只需要创建HTD1a,保证bob的钱能回去，因为不是bob自己广播，所以bob的钱的赎回，不需要走rsmc的流程，自己提现，才需要通过RSMC机制，完成去信任机制
+		// create HTD1B for Alice
+		htlcTimeoutDeliveryTxB, err := createHtlcTimeoutDeliveryTx(tx, owner, channelInfo.PeerIdA, channelInfo, fundingTransaction, *commitmentTxInfo, htlcRequestOpen, operator)
+		if err != nil {
+			log.Println(err)
+			return nil, err
+		}
+		log.Println(htlcTimeoutDeliveryTxB)
+	}
+
+	return commitmentTxInfo, nil
+}
+
+// 创建PeerIdA方的htlc的承诺交易，rsmc的Rd
+// 这里要做一个判断，作为这次交易的发起者，
+// 如果PeerIdA是发起者，在这Cna的逻辑中创建HT1a和HED1a
+// 如果PeerIdB是发起者，那么在Cna中就应该创建HTLC Time Delivery 1b(HED1b) 和HTLC Execution  1a(HE1b)
+func (service *htlcTxManager) htlcCreateBobTxs(tx storm.Node, channelInfo dao.ChannelInfo, operator bean.User,
+	fundingTransaction dao.FundingTransaction, htlcRequestOpen bean.HtlcRequestOpen,
+	htlcSingleHopPathInfo dao.HtlcSingleHopPathInfo, hAndRInfo dao.HtlcRAndHInfo) (*dao.CommitmentTransaction, error) {
+	owner := channelInfo.PeerIdB
+	bobIsInterNodeSoAliceSend2Bob := true
+	if operator.PeerId == channelInfo.PeerIdB {
+		bobIsInterNodeSoAliceSend2Bob = false
+	}
+
+	var lastCommitmentBTx = &dao.CommitmentTransaction{}
+	err := tx.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("Owner", owner), q.Eq("CurrState", dao.TxInfoState_CreateAndSign)).OrderBy("CreateAt").Reverse().First(lastCommitmentBTx)
+	if err != nil {
+		lastCommitmentBTx = nil
+	}
+	// create Cnb tx
+	commitmentTxInfo, err := htlcCreateCnb(tx, channelInfo, operator, fundingTransaction, htlcRequestOpen, htlcSingleHopPathInfo, hAndRInfo, bobIsInterNodeSoAliceSend2Bob, lastCommitmentBTx, owner)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	// create rsmc RDnb tx
+	_, err = htlcCreateRDOfRsmc(
+		tx, channelInfo, operator, fundingTransaction, htlcRequestOpen,
+		htlcSingleHopPathInfo, bobIsInterNodeSoAliceSend2Bob, commitmentTxInfo, owner)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	// htlc txs
+	// output2,给htlc创建的交易
+	if bobIsInterNodeSoAliceSend2Bob { // 如是通道中的Alice转账给Bob，bob作为中间节点  创建HT1a
+		// create ht1a
+		htlcTimeoutTxA, err := createHtlcTimeoutTx(tx, owner, channelInfo, fundingTransaction, *commitmentTxInfo, htlcRequestOpen, operator)
+		if err != nil {
+			log.Println(err)
+			return nil, err
+		}
+		log.Println(htlcTimeoutTxA)
+		// 继续创建htrd
+		htrdTransaction, err := htlcCreateRD(tx, channelInfo, operator, fundingTransaction, htlcRequestOpen, htlcSingleHopPathInfo, bobIsInterNodeSoAliceSend2Bob, htlcTimeoutTxA, owner)
+		if err != nil {
+			log.Println(err)
+			return nil, err
+		}
+		log.Println(htrdTransaction)
+
+		//创建hed1a  此交易要修改创建时机，等到bob拿到R的时候，再来创建，这个时候就需要广播交易（关闭通道），那么在很多情况下，其实是不用创建的
+		hednA, err := htlcCreateExecutionDeliveryA(tx, channelInfo, fundingTransaction, *commitmentTxInfo, htlcRequestOpen, owner, hAndRInfo, "")
+		if err != nil {
+			log.Println(err)
+			return nil, err
+		}
+		log.Println(hednA)
+
+	} else {
+		// 如果是bob转给alice，Alice作为中间商，作为当前通道的接收者
+		// 这个时候，Cna产生的output2是锁定的bob的钱，在Alice这一方，Alice如果拿到了R，就去创建HE1a,得到的转账收益，
+		// 而如果她后续要提现，就又要创建HERD1a，
+		// 而bob的钱，需要在这里等待一天（因为一个hop）才能赎回：HTD1a，因为现在已经被锁定在了output2里面，等待Alice拿到R
+		// 所以这个时候，只需要创建HTD1a,保证bob的钱能回去，因为不是bob自己广播，所以bob的钱的赎回，不需要走rsmc的流程，自己提现，才需要通过RSMC机制，完成去信任机制
+		// create HTD1B for Alice
+		htlcTimeoutDeliveryTxB, err := createHtlcTimeoutDeliveryTx(tx, owner, channelInfo.PeerIdA, channelInfo, fundingTransaction, *commitmentTxInfo, htlcRequestOpen, operator)
+		if err != nil {
+			log.Println(err)
+			return nil, err
+		}
+		log.Println(htlcTimeoutDeliveryTxB)
 	}
 
 	return commitmentTxInfo, nil
