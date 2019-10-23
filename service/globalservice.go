@@ -280,7 +280,7 @@ func checkOmniTxHex(fundingTxHexDecode string, channelInfo *dao.ChannelInfo, use
 }
 
 //从未广播的交易hash数据中解析出他的输出，以此作为下个交易的输入
-func getInputsOfNextTxByParseTxHashVout(hex string, toAddress, scriptPubKey string) (inputs []rpc.TransactionInputItem, err error) {
+func getInputsForNextTxByParseTxHashVout(hex string, toAddress, scriptPubKey string) (inputs []rpc.TransactionInputItem, err error) {
 	result, err := rpcClient.DecodeRawTransaction(hex)
 	if err != nil {
 		return nil, err

@@ -71,14 +71,14 @@ func getAllChannels(peerId string) (channelInfos []dao.ChannelInfo) {
 	return channelInfos
 }
 
-func htlcAliceAbortLastCommitmentTx(tx storm.Node, channelInfo dao.ChannelInfo, user bean.User, fundingTransaction dao.FundingTransaction, htlcRequestOpen bean.HtlcRequestOpen) error {
+func htlcAliceAbortLastCommitmentTx(tx storm.Node, channelInfo dao.ChannelInfo, user bean.User, fundingTransaction dao.FundingTransaction, requestData bean.HtlcRequestOpen) error {
 	owner := channelInfo.PeerIdA
 	// 现在是创建PeerIdA方向，当前的操作者user可能对应PeerIdA，也可能对应PeerIdB
 	// 默认假设当前操作者正好是PeerIdA，数据（公钥，私钥）的使用当前操作用户的
-	var currOpUserIsPeerIdA = true
+	var bobIsInterNodeSoAliceSend2Bob = true
 	// 如果不是，那PeerIdA对应的就是另一个方，数据（公钥，私钥）的使用就要使用另一方的数据了
 	if user.PeerId == channelInfo.PeerIdB {
-		currOpUserIsPeerIdA = false
+		bobIsInterNodeSoAliceSend2Bob = false
 	}
 
 	//针对的是Cna
@@ -117,11 +117,10 @@ func htlcAliceAbortLastCommitmentTx(tx storm.Node, channelInfo dao.ChannelInfo, 
 		if breachRemedyTransaction.Amount > 0 {
 			lastTempAddressPrivateKey := ""
 			// 如果当前操作用户是PeerIdA方（概念中的Alice方），则取当前操作人传入的数据
-			if currOpUserIsPeerIdA {
-				lastTempAddressPrivateKey = htlcRequestOpen.LastTempAddressPrivateKey
+			if bobIsInterNodeSoAliceSend2Bob {
+				lastTempAddressPrivateKey = requestData.LastTempAddressPrivateKey
 			} else {
-				// 如果当前操作用户是PeerIdB方，而我们现在正在处理概念中的Alice方，所以我们要取另一方的数据
-				// 这些数据都是存在内存中，用完就删除
+				// 如果当前操作用户是PeerIdB方，而我们现在正在处理Alice方，所以我们要取另一方的数据
 				lastTempAddressPrivateKey = tempAddrPrivateKeyMap[lastCommitmentATx.RSMCTempAddressPubKey]
 			}
 			if tool.CheckIsString(&lastTempAddressPrivateKey) == false {
@@ -130,7 +129,7 @@ func htlcAliceAbortLastCommitmentTx(tx storm.Node, channelInfo dao.ChannelInfo, 
 				return err
 			}
 
-			inputs, err := getInputsOfNextTxByParseTxHashVout(lastCommitmentATx.RSMCTxHash, lastCommitmentATx.RSMCMultiAddress, lastCommitmentATx.RSMCRedeemScript)
+			inputs, err := getInputsForNextTxByParseTxHashVout(lastCommitmentATx.RSMCTxHash, lastCommitmentATx.RSMCMultiAddress, lastCommitmentATx.RSMCRedeemScript)
 			if err != nil {
 				log.Println(err)
 				return err
@@ -159,15 +158,19 @@ func htlcAliceAbortLastCommitmentTx(tx storm.Node, channelInfo dao.ChannelInfo, 
 			breachRemedyTransaction.SignAt = time.Now()
 			breachRemedyTransaction.CurrState = dao.TxInfoState_CreateAndSign
 			err = tx.Save(breachRemedyTransaction)
+			if err != nil {
+				log.Println(err)
+				return err
+			}
 		}
 
 		lastCommitmentATx.CurrState = dao.TxInfoState_Abord
-		lastRDTransaction.CurrState = dao.TxInfoState_Abord
 		err = tx.Update(lastCommitmentATx)
 		if err != nil {
 			log.Println(err)
 			return err
 		}
+		lastRDTransaction.CurrState = dao.TxInfoState_Abord
 		err = tx.Update(lastRDTransaction)
 		if err != nil {
 			log.Println(err)
@@ -178,14 +181,14 @@ func htlcAliceAbortLastCommitmentTx(tx storm.Node, channelInfo dao.ChannelInfo, 
 }
 
 //概念的bob方结束上一次的Rsmc的交易
-func htlcBobAbortLastCommitmentTx(tx storm.Node, channelInfo dao.ChannelInfo, user bean.User, fundingTransaction dao.FundingTransaction, htlcRequestOpen bean.HtlcRequestOpen) error {
+func htlcBobAbortLastCommitmentTx(tx storm.Node, channelInfo dao.ChannelInfo, user bean.User, fundingTransaction dao.FundingTransaction, requestData bean.HtlcRequestOpen) error {
 	owner := channelInfo.PeerIdB
 	// 现在是创建PeerIdB方向，当前的操作者user可能对应PeerIdA，也可能对应PeerIdB
 	// 默认假设当前操作者正好是PeerIdA，数据（公钥，私钥）的使用当前操作用户的
-	var currOpUserIsPeerIdA = true
+	var bobIsInterNodeSoAliceSend2Bob = true
 	// 如果不是，那PeerIdA对应的就是另一个方，数据（公钥，私钥）的使用就要使用另一方的数据了
 	if user.PeerId == channelInfo.PeerIdB {
-		currOpUserIsPeerIdA = false
+		bobIsInterNodeSoAliceSend2Bob = false
 	}
 
 	//针对的是Cnb
@@ -216,7 +219,7 @@ func htlcBobAbortLastCommitmentTx(tx storm.Node, channelInfo dao.ChannelInfo, us
 		}
 
 		// create BRa tx  for bob ，let the lastCommitmentBTx abort,
-		// 为概念的Alice方创建上一次交易的BR对象
+		// 为了惩罚Bob，为Alice方创建上一次交易的BR交易
 		breachRemedyTransaction, err := createBRTx(channelInfo.PeerIdA, &channelInfo, lastCommitmentBTx, &user)
 		if err != nil {
 			log.Println(err)
@@ -226,10 +229,10 @@ func htlcBobAbortLastCommitmentTx(tx storm.Node, channelInfo dao.ChannelInfo, us
 		//如果金额大于0
 		if breachRemedyTransaction.Amount > 0 {
 			lastTempAddressPrivateKey := ""
-			if currOpUserIsPeerIdA {
+			if bobIsInterNodeSoAliceSend2Bob {
 				lastTempAddressPrivateKey = tempAddrPrivateKeyMap[lastCommitmentBTx.RSMCTempAddressPubKey]
 			} else {
-				lastTempAddressPrivateKey = htlcRequestOpen.LastTempAddressPrivateKey
+				lastTempAddressPrivateKey = requestData.LastTempAddressPrivateKey
 			}
 			if tool.CheckIsString(&lastTempAddressPrivateKey) == false {
 				err = errors.New("fail to get the lastTempAddressPrivateKey")
@@ -237,7 +240,7 @@ func htlcBobAbortLastCommitmentTx(tx storm.Node, channelInfo dao.ChannelInfo, us
 				return err
 			}
 
-			inputs, err := getInputsOfNextTxByParseTxHashVout(lastCommitmentBTx.RSMCTxHash, lastCommitmentBTx.RSMCMultiAddress, lastCommitmentBTx.RSMCRedeemScript)
+			inputs, err := getInputsForNextTxByParseTxHashVout(lastCommitmentBTx.RSMCTxHash, lastCommitmentBTx.RSMCMultiAddress, lastCommitmentBTx.RSMCRedeemScript)
 			if err != nil {
 				log.Println(err)
 				return err
@@ -250,7 +253,7 @@ func htlcBobAbortLastCommitmentTx(tx storm.Node, channelInfo dao.ChannelInfo, us
 					tempAddrPrivateKeyMap[channelInfo.PubKeyB],
 				},
 				inputs,
-				channelInfo.AddressB,
+				channelInfo.AddressA,
 				fundingTransaction.FunderAddress,
 				fundingTransaction.PropertyId,
 				breachRemedyTransaction.Amount,
@@ -266,15 +269,19 @@ func htlcBobAbortLastCommitmentTx(tx storm.Node, channelInfo dao.ChannelInfo, us
 			breachRemedyTransaction.SignAt = time.Now()
 			breachRemedyTransaction.CurrState = dao.TxInfoState_CreateAndSign
 			err = tx.Save(breachRemedyTransaction)
+			if err != nil {
+				log.Println(err)
+				return err
+			}
 		}
 
 		lastCommitmentBTx.CurrState = dao.TxInfoState_Abord
-		lastRDTransaction.CurrState = dao.TxInfoState_Abord
 		err = tx.Update(lastCommitmentBTx)
 		if err != nil {
 			log.Println(err)
 			return err
 		}
+		lastRDTransaction.CurrState = dao.TxInfoState_Abord
 		err = tx.Update(lastRDTransaction)
 		if err != nil {
 			log.Println(err)
@@ -295,7 +302,7 @@ func createHtlcTimeoutTxForAliceSide(tx storm.Node, owner string, channelInfo da
 		return nil, err
 	}
 
-	inputs, err := getInputsOfNextTxByParseTxHashVout(commitmentTxInfo.HtlcTxHash, commitmentTxInfo.HTLCMultiAddress, commitmentTxInfo.HTLCMultiAddressScriptPubKey)
+	inputs, err := getInputsForNextTxByParseTxHashVout(commitmentTxInfo.HtlcTxHash, commitmentTxInfo.HTLCMultiAddress, commitmentTxInfo.HTLCMultiAddressScriptPubKey)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -343,7 +350,7 @@ func createHtlcTimeoutTxForBobSide(tx storm.Node, owner string, channelInfo dao.
 		return nil, err
 	}
 
-	inputs, err := getInputsOfNextTxByParseTxHashVout(commitmentTxInfo.HtlcTxHash, commitmentTxInfo.HTLCMultiAddress, commitmentTxInfo.HTLCMultiAddressScriptPubKey)
+	inputs, err := getInputsForNextTxByParseTxHashVout(commitmentTxInfo.HtlcTxHash, commitmentTxInfo.HTLCMultiAddress, commitmentTxInfo.HTLCMultiAddressScriptPubKey)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -380,21 +387,21 @@ func createHtlcTimeoutTxForBobSide(tx storm.Node, owner string, channelInfo dao.
 	return htlcTimeoutTx, nil
 }
 
-func createHtlcTimeoutDeliveryTx(tx storm.Node, owner string, outputAddress string, timeout int, channelInfo dao.ChannelInfo, fundingTransaction dao.FundingTransaction, commitmentTxInfo dao.CommitmentTransaction, htlcRequestOpen bean.HtlcRequestOpen, operator bean.User) (htlcTimeoutDeliveryTxB *dao.HTLCTimeoutDeliveryTxB, err error) {
-	htlcTimeoutDeliveryTxB = &dao.HTLCTimeoutDeliveryTxB{}
-	htlcTimeoutDeliveryTxB.ChannelId = channelInfo.ChannelId
-	htlcTimeoutDeliveryTxB.CommitmentTxId = commitmentTxInfo.Id
-	htlcTimeoutDeliveryTxB.PropertyId = commitmentTxInfo.PropertyId
-	htlcTimeoutDeliveryTxB.OutputAddress = outputAddress
-	htlcTimeoutDeliveryTxB.InputHex = commitmentTxInfo.HtlcTxHash
-	htlcTimeoutDeliveryTxB.OutAmount = commitmentTxInfo.AmountToHtlc
-	htlcTimeoutDeliveryTxB.Owner = owner
-	htlcTimeoutDeliveryTxB.CurrState = dao.TxInfoState_CreateAndSign
-	htlcTimeoutDeliveryTxB.CreateBy = operator.PeerId
-	htlcTimeoutDeliveryTxB.Timeout = timeout
-	htlcTimeoutDeliveryTxB.CreateAt = time.Now()
+func createHtlcTimeoutDeliveryTx(tx storm.Node, owner string, outputAddress string, timeout int, channelInfo dao.ChannelInfo, fundingTransaction dao.FundingTransaction, commitmentTxInfo dao.CommitmentTransaction, htlcRequestOpen bean.HtlcRequestOpen, operator bean.User) (htlcTimeoutDeliveryTx *dao.HTLCTimeoutDeliveryTxB, err error) {
+	htlcTimeoutDeliveryTx = &dao.HTLCTimeoutDeliveryTxB{}
+	htlcTimeoutDeliveryTx.ChannelId = channelInfo.ChannelId
+	htlcTimeoutDeliveryTx.CommitmentTxId = commitmentTxInfo.Id
+	htlcTimeoutDeliveryTx.PropertyId = commitmentTxInfo.PropertyId
+	htlcTimeoutDeliveryTx.OutputAddress = outputAddress
+	htlcTimeoutDeliveryTx.InputHex = commitmentTxInfo.HtlcTxHash
+	htlcTimeoutDeliveryTx.OutAmount = commitmentTxInfo.AmountToHtlc
+	htlcTimeoutDeliveryTx.Owner = owner
+	htlcTimeoutDeliveryTx.CurrState = dao.TxInfoState_CreateAndSign
+	htlcTimeoutDeliveryTx.CreateBy = operator.PeerId
+	htlcTimeoutDeliveryTx.Timeout = timeout
+	htlcTimeoutDeliveryTx.CreateAt = time.Now()
 
-	inputs, err := getInputsOfNextTxByParseTxHashVout(commitmentTxInfo.HtlcTxHash, commitmentTxInfo.HTLCMultiAddress, commitmentTxInfo.HTLCMultiAddressScriptPubKey)
+	inputs, err := getInputsForNextTxByParseTxHashVout(commitmentTxInfo.HtlcTxHash, commitmentTxInfo.HTLCMultiAddress, commitmentTxInfo.HTLCMultiAddressScriptPubKey)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -407,26 +414,26 @@ func createHtlcTimeoutDeliveryTx(tx storm.Node, owner string, outputAddress stri
 			tempAddrPrivateKeyMap[channelInfo.PubKeyB],
 		},
 		inputs,
-		htlcTimeoutDeliveryTxB.OutputAddress,
+		htlcTimeoutDeliveryTx.OutputAddress,
 		fundingTransaction.FunderAddress,
 		fundingTransaction.PropertyId,
-		htlcTimeoutDeliveryTxB.OutAmount,
+		htlcTimeoutDeliveryTx.OutAmount,
 		0,
-		htlcTimeoutDeliveryTxB.Timeout,
+		htlcTimeoutDeliveryTx.Timeout,
 		&commitmentTxInfo.HTLCRedeemScript)
 	if err != nil {
 		log.Println(err)
 		return nil, err
 	}
 
-	htlcTimeoutDeliveryTxB.Txid = txid
-	htlcTimeoutDeliveryTxB.TxHash = hex
-	err = tx.Save(htlcTimeoutDeliveryTxB)
+	htlcTimeoutDeliveryTx.Txid = txid
+	htlcTimeoutDeliveryTx.TxHash = hex
+	err = tx.Save(htlcTimeoutDeliveryTx)
 	if err != nil {
 		log.Println(err)
 		return nil, err
 	}
-	return htlcTimeoutDeliveryTxB, nil
+	return htlcTimeoutDeliveryTx, nil
 }
 
 func createHtlcTimeoutTxObj(owner string, channelInfo dao.ChannelInfo, commitmentTxInfo dao.CommitmentTransaction, outputBean commitmentOutputBean, user bean.User) (*dao.HTLCTimeoutTxA, error) {
@@ -458,7 +465,7 @@ func createHtlcTimeoutTxObj(owner string, channelInfo dao.ChannelInfo, commitmen
 }
 
 func htlcCreateCna(tx storm.Node, channelInfo dao.ChannelInfo, operator bean.User,
-	fundingTransaction dao.FundingTransaction, htlcRequestOpen bean.HtlcRequestOpen,
+	fundingTransaction dao.FundingTransaction, requestData bean.HtlcRequestOpen,
 	htlcSingleHopPathInfo dao.HtlcSingleHopPathInfo, hAndRInfo dao.HtlcRAndHInfo,
 	bobIsInterNodeSoAliceSend2Bob bool, lastCommitmentATx *dao.CommitmentTransaction, owner string) (*dao.CommitmentTransaction, error) {
 	// htlc的资产分配方案
@@ -467,8 +474,8 @@ func htlcCreateCna(tx storm.Node, channelInfo dao.ChannelInfo, operator bean.Use
 		//	alice借道bob，bob作为中间商，而当前的操作者是alice
 		//	这个时候，我们在创建Cna，那么当前操作者Alice传进来的信息就是创建临时多签地址，转账等交易需要的信息了
 		//	而bob作为中间商，他的余额应该是不变的，变化的是alice的余额，一部分被锁定在了tohtlc的临时多签地址里面了
-		outputBean.RsmcTempPubKey = htlcRequestOpen.CurrRsmcTempAddressPubKey
-		outputBean.HtlcTempPubKey = htlcRequestOpen.CurrHtlcTempAddressPubKey
+		outputBean.RsmcTempPubKey = requestData.CurrRsmcTempAddressPubKey
+		outputBean.HtlcTempPubKey = requestData.CurrHtlcTempAddressPubKey
 		if lastCommitmentATx == nil {
 			outputBean.AmountToRsmc, _ = decimal.NewFromFloat(fundingTransaction.AmountA).Sub(decimal.NewFromFloat(hAndRInfo.Amount)).Float64()
 			outputBean.AmountToOther = fundingTransaction.AmountB
@@ -491,15 +498,15 @@ func htlcCreateCna(tx storm.Node, channelInfo dao.ChannelInfo, operator bean.Use
 		}
 	}
 	outputBean.AmountToHtlc = hAndRInfo.Amount
-	outputBean.OppositeSideChannelAddress = channelInfo.AddressB
 	outputBean.OppositeSideChannelPubKey = channelInfo.PubKeyB
+	outputBean.OppositeSideChannelAddress = channelInfo.AddressB
 
 	commitmentTxInfo, err := createCommitmentTx(owner, &channelInfo, &fundingTransaction, outputBean, &operator)
 	if err != nil {
 		log.Println(err)
 		return nil, err
 	}
-	commitmentTxInfo.TxType = 1
+	commitmentTxInfo.TxType = dao.CommitmentTransactionType_Htlc
 
 	allUsedTxidTemp := ""
 	// rsmc
@@ -628,15 +635,15 @@ func htlcCreateCnb(tx storm.Node, channelInfo dao.ChannelInfo, operator bean.Use
 		}
 	}
 	outputBean.AmountToHtlc = hAndRInfo.Amount
-	outputBean.OppositeSideChannelAddress = channelInfo.AddressA
 	outputBean.OppositeSideChannelPubKey = channelInfo.PubKeyA
+	outputBean.OppositeSideChannelAddress = channelInfo.AddressA
 
 	commitmentTxInfo, err := createCommitmentTx(owner, &channelInfo, &fundingTransaction, outputBean, &operator)
 	if err != nil {
 		log.Println(err)
 		return nil, err
 	}
-	commitmentTxInfo.TxType = 1
+	commitmentTxInfo.TxType = dao.CommitmentTransactionType_Htlc
 
 	allUsedTxidTemp := ""
 	// rsmc
@@ -749,7 +756,7 @@ func htlcCreateRDOfRsmc(tx storm.Node, channelInfo dao.ChannelInfo, operator bea
 		currTempAddressPrivateKey = tempAddrPrivateKeyMap[htlcSingleHopPathInfo.BobCurrRsmcTempPubKey]
 	}
 
-	inputs, err := getInputsOfNextTxByParseTxHashVout(commitmentTxInfo.RSMCTxHash, commitmentTxInfo.RSMCMultiAddress, commitmentTxInfo.RSMCMultiAddressScriptPubKey)
+	inputs, err := getInputsForNextTxByParseTxHashVout(commitmentTxInfo.RSMCTxHash, commitmentTxInfo.RSMCMultiAddress, commitmentTxInfo.RSMCMultiAddressScriptPubKey)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -786,7 +793,7 @@ func htlcCreateRDOfRsmc(tx storm.Node, channelInfo dao.ChannelInfo, operator bea
 	return rdTransaction, nil
 }
 
-func htlcCreateRD(tx storm.Node, channelInfo dao.ChannelInfo, operator bean.User,
+func createHtlcRD(tx storm.Node, channelInfo dao.ChannelInfo, operator bean.User,
 	fundingTransaction dao.FundingTransaction, requestData bean.HtlcRequestOpen, bobIsInterNodeSoAliceSend2Bob bool,
 	htlcTimeoutTx *dao.HTLCTimeoutTxA, owner string) (*dao.RevocableDeliveryTransaction, error) {
 
@@ -807,7 +814,7 @@ func htlcCreateRD(tx storm.Node, channelInfo dao.ChannelInfo, operator bean.User
 		currChannelAddressPrivateKey = tempAddrPrivateKeyMap[channelInfo.PubKeyA]
 	}
 
-	inputs, err := getInputsOfNextTxByParseTxHashVout(htlcTimeoutTx.RSMCTxHash, htlcTimeoutTx.RSMCMultiAddress, htlcTimeoutTx.RSMCMultiAddressScriptPubKey)
+	inputs, err := getInputsForNextTxByParseTxHashVout(htlcTimeoutTx.RSMCTxHash, htlcTimeoutTx.RSMCMultiAddress, htlcTimeoutTx.RSMCMultiAddressScriptPubKey)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -884,7 +891,7 @@ func htlcCreateExecutionDeliveryA(tx storm.Node, channelInfo dao.ChannelInfo, fu
 	hednA.OutputAddress = channelInfo.AddressB
 	hednA.OutAmount = commitmentTxInfo.AmountToHtlc
 
-	inputs, err := getInputsOfNextTxByParseTxHashVout(commitmentTxInfo.HtlcTxHash, commitmentTxInfo.HTLCMultiAddress, commitmentTxInfo.HTLCMultiAddressScriptPubKey)
+	inputs, err := getInputsForNextTxByParseTxHashVout(commitmentTxInfo.HtlcTxHash, commitmentTxInfo.HTLCMultiAddress, commitmentTxInfo.HTLCMultiAddressScriptPubKey)
 	if err != nil {
 		log.Println(err)
 		return nil, err

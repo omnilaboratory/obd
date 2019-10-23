@@ -165,7 +165,7 @@ func (client *Client) htlcTxModule(msg bean.RequestMessage) (enum.SendTargetType
 		}
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_HTLC_OpenChannel_N44:
-		respond, senderPeerId, err := service.HtlcTxService.AliceOpenHtlcChannel(msg.Data, *client.User)
+		respond, senderPeerId, err := service.HtlcTxService.AliceBeginCreateHtlcCommitmentTx(msg.Data, *client.User)
 		if err != nil {
 			data = err.Error()
 		} else {

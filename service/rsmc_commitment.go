@@ -362,7 +362,7 @@ func createAliceSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFr
 				return nil, err
 			}
 
-			inputs, err := getInputsOfNextTxByParseTxHashVout(lastCommitmentTx.RSMCTxHash, lastCommitmentTx.RSMCMultiAddress, lastCommitmentTx.RSMCRedeemScript)
+			inputs, err := getInputsForNextTxByParseTxHashVout(lastCommitmentTx.RSMCTxHash, lastCommitmentTx.RSMCMultiAddress, lastCommitmentTx.RSMCRedeemScript)
 			if err != nil {
 				log.Println(err)
 				return nil, err
@@ -443,7 +443,7 @@ func createAliceSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFr
 		log.Println(err)
 		return nil, err
 	}
-	commitmentTxInfo.TxType = 0
+	commitmentTxInfo.TxType = dao.CommitmentTransactionType_Rsmc
 
 	usedTxidTemp := ""
 	if commitmentTxInfo.AmountToRSMC > 0 {
@@ -530,7 +530,7 @@ func createAliceSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFr
 		currTempAddressPrivateKey = signData.CurrTempAddressPrivateKey
 	}
 
-	inputs, err := getInputsOfNextTxByParseTxHashVout(commitmentTxInfo.RSMCTxHash, commitmentTxInfo.RSMCMultiAddress, commitmentTxInfo.RSMCMultiAddressScriptPubKey)
+	inputs, err := getInputsForNextTxByParseTxHashVout(commitmentTxInfo.RSMCTxHash, commitmentTxInfo.RSMCMultiAddress, commitmentTxInfo.RSMCMultiAddressScriptPubKey)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -610,7 +610,7 @@ func createBobSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFrom
 				return nil, err
 			}
 
-			inputs, err := getInputsOfNextTxByParseTxHashVout(lastCommitmentTx.RSMCTxHash, lastCommitmentTx.RSMCMultiAddress, lastCommitmentTx.RSMCMultiAddressScriptPubKey)
+			inputs, err := getInputsForNextTxByParseTxHashVout(lastCommitmentTx.RSMCTxHash, lastCommitmentTx.RSMCMultiAddress, lastCommitmentTx.RSMCMultiAddressScriptPubKey)
 			if err != nil {
 				log.Println(err)
 				return nil, err
@@ -690,7 +690,7 @@ func createBobSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFrom
 		log.Println(err)
 		return nil, err
 	}
-	commitmentTxInfo.TxType = 0
+	commitmentTxInfo.TxType = dao.CommitmentTransactionType_Rsmc
 
 	usedTxidTemp := ""
 	if commitmentTxInfo.AmountToRSMC > 0 {
@@ -776,7 +776,7 @@ func createBobSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFrom
 		currTempAddressPrivateKey = tempAddrPrivateKeyMap[dataFromCreator.CurrTempAddressPubKey]
 	}
 
-	inputs, err := getInputsOfNextTxByParseTxHashVout(commitmentTxInfo.RSMCTxHash, commitmentTxInfo.RSMCMultiAddress, commitmentTxInfo.RSMCMultiAddressScriptPubKey)
+	inputs, err := getInputsForNextTxByParseTxHashVout(commitmentTxInfo.RSMCTxHash, commitmentTxInfo.RSMCMultiAddress, commitmentTxInfo.RSMCMultiAddressScriptPubKey)
 	if err != nil {
 		log.Println(err)
 		return nil, err

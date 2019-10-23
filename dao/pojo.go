@@ -120,6 +120,13 @@ type CommitmentTxRequestInfo struct {
 	IsEnable              bool
 }
 
+type CommitmentTransactionType int
+
+const (
+	CommitmentTransactionType_Rsmc = 0
+	CommitmentTransactionType_Htlc = 1
+)
+
 //CommitmentTransaction
 type CommitmentTransaction struct {
 	Id                 int            `storm:"id,increment" json:"id" `
@@ -134,7 +141,7 @@ type CommitmentTransaction struct {
 	InputVout          uint32         `json:"input_vout"`   // input vout
 	InputAmount        float64        `json:"input_amount"` //input amount
 
-	TxType int `json:"tx_type"` // 0 rsmc 1 htlc
+	TxType CommitmentTransactionType `json:"tx_type"` // 0 rsmc 1 htlc
 
 	//RSMC
 	RSMCTempAddressPubKey        string  `json:"rsmc_temp_address_pub_key"` //aliceTempRemc or bobTempRsmc
