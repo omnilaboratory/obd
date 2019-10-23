@@ -129,7 +129,7 @@ func (client *Client) htlcTxModule(msg bean.RequestMessage) (enum.SendTargetType
 	data := ""
 	switch msg.Type {
 	case enum.MsgType_HTLC_FindPath_N42:
-		respond, bob, err := service.HtlcTxService.AliceFindPathOfSingleHopAndSendToBob(msg.Data, *client.User)
+		respond, bob, err := service.HtlcForwardTxService.AliceFindPathOfSingleHopAndSendToBob(msg.Data, *client.User)
 		if err != nil {
 			data = err.Error()
 		} else {
@@ -147,7 +147,7 @@ func (client *Client) htlcTxModule(msg bean.RequestMessage) (enum.SendTargetType
 		}
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_HTLC_ConfirmPath_N43:
-		respond, senderPeerId, err := service.HtlcTxService.BobConfirmPath(msg.Data, *client.User)
+		respond, senderPeerId, err := service.HtlcForwardTxService.BobConfirmPath(msg.Data, *client.User)
 		if err != nil {
 			data = err.Error()
 		} else {
@@ -165,7 +165,7 @@ func (client *Client) htlcTxModule(msg bean.RequestMessage) (enum.SendTargetType
 		}
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_HTLC_OpenChannel_N44:
-		respond, senderPeerId, err := service.HtlcTxService.SenderBeginCreateHtlcCommitmentTx(msg.Data, *client.User)
+		respond, senderPeerId, err := service.HtlcForwardTxService.SenderBeginCreateHtlcCommitmentTx(msg.Data, *client.User)
 		if err != nil {
 			data = err.Error()
 		} else {

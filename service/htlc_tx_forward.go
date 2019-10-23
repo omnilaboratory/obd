@@ -13,14 +13,15 @@ import (
 	"time"
 )
 
-type htlcTxManager struct {
+type htlcForwardTxManager struct {
 	operationFlag sync.Mutex
 }
 
-var HtlcTxService htlcTxManager
+// htlc 正向交易
+var HtlcForwardTxService htlcForwardTxManager
 
 // query bob,and ask bob
-func (service *htlcTxManager) AliceFindPathOfSingleHopAndSendToBob(msgData string, user bean.User) (data map[string]interface{}, bob string, err error) {
+func (service *htlcForwardTxManager) AliceFindPathOfSingleHopAndSendToBob(msgData string, user bean.User) (data map[string]interface{}, bob string, err error) {
 	if tool.CheckIsString(&msgData) == false {
 		return nil, "", errors.New("empty json data")
 	}
@@ -86,7 +87,7 @@ func (service *htlcTxManager) AliceFindPathOfSingleHopAndSendToBob(msgData strin
 	return data, bob, nil
 }
 
-func (service *htlcTxManager) BobConfirmPath(msgData string, user bean.User) (data map[string]interface{}, senderPeerId string, err error) {
+func (service *htlcForwardTxManager) BobConfirmPath(msgData string, user bean.User) (data map[string]interface{}, senderPeerId string, err error) {
 	if tool.CheckIsString(&msgData) == false {
 		return nil, "", errors.New("empty json data")
 	}
@@ -207,7 +208,7 @@ func (service *htlcTxManager) BobConfirmPath(msgData string, user bean.User) (da
 }
 
 // -44
-func (service *htlcTxManager) SenderBeginCreateHtlcCommitmentTx(msgData string, user bean.User) (outData map[string]interface{}, targetUser string, err error) {
+func (service *htlcForwardTxManager) SenderBeginCreateHtlcCommitmentTx(msgData string, user bean.User) (outData map[string]interface{}, targetUser string, err error) {
 	if tool.CheckIsString(&msgData) == false {
 		err = errors.New("empty json data")
 		log.Println(err)
@@ -356,7 +357,7 @@ func (service *htlcTxManager) SenderBeginCreateHtlcCommitmentTx(msgData string, 
 // 这里要做一个判断，作为这次交易的发起者，
 // 如果PeerIdA是发起者，在这Cna的逻辑中创建HT1a和HED1a
 // 如果PeerIdB是发起者，那么在Cna中就应该创建HTLC Time Delivery 1b(HED1b) 和HTLC Execution  1a(HE1b)
-func (service *htlcTxManager) htlcCreateAliceSideTxs(tx storm.Node, channelInfo dao.ChannelInfo, operator bean.User,
+func (service *htlcForwardTxManager) htlcCreateAliceSideTxs(tx storm.Node, channelInfo dao.ChannelInfo, operator bean.User,
 	fundingTransaction dao.FundingTransaction, requestData bean.HtlcRequestOpen,
 	pathInfo dao.HtlcSingleHopPathInfo, hAndRInfo dao.HtlcRAndHInfo) (*dao.CommitmentTransaction, error) {
 
@@ -432,7 +433,7 @@ func (service *htlcTxManager) htlcCreateAliceSideTxs(tx storm.Node, channelInfo 
 // 这里要做一个判断，作为这次交易的发起者，
 // 如果PeerIdA是发起者，在这Cna的逻辑中创建HT1a和HED1a
 // 如果PeerIdB是发起者，那么在Cna中就应该创建HTLC Time Delivery 1b(HED1b) 和HTLC Execution  1a(HE1b)
-func (service *htlcTxManager) htlcCreateBobSideTxs(dbTx storm.Node, channelInfo dao.ChannelInfo, operator bean.User,
+func (service *htlcForwardTxManager) htlcCreateBobSideTxs(dbTx storm.Node, channelInfo dao.ChannelInfo, operator bean.User,
 	fundingTransaction dao.FundingTransaction, requestData bean.HtlcRequestOpen,
 	htlcSingleHopPathInfo dao.HtlcSingleHopPathInfo, hAndRInfo dao.HtlcRAndHInfo) (*dao.CommitmentTransaction, error) {
 
