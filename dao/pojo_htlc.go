@@ -102,13 +102,9 @@ type HtlcSingleHopPathInfoState int
 
 const (
 	SingleHopPathInfoState_Created            HtlcSingleHopPathInfoState = 0
-	SingleHopPathInfoState_StepOneBegin       HtlcSingleHopPathInfoState = 10
-	SingleHopPathInfoState_StepOneFinish      HtlcSingleHopPathInfoState = 11
-	SingleHopPathInfoState_StepTwoBegin       HtlcSingleHopPathInfoState = 20
-	SingleHopPathInfoState_StepTwoFinish      HtlcSingleHopPathInfoState = 21
-	SingleHopPathInfoState_BackOneFinish      HtlcSingleHopPathInfoState = 30
-	SingleHopPathInfoState_BackTwoFinish      HtlcSingleHopPathInfoState = 31
-	SingleHopPathInfoState_RefusedByInterNode HtlcSingleHopPathInfoState = 40
+	SingleHopPathInfoState_StepBegin          HtlcSingleHopPathInfoState = 10
+	SingleHopPathInfoState_StepFinish         HtlcSingleHopPathInfoState = 11
+	SingleHopPathInfoState_RefusedByInterNode HtlcSingleHopPathInfoState = -1
 )
 
 type HtlcSingleHopPathInfo struct {
@@ -121,6 +117,7 @@ type HtlcSingleHopPathInfo struct {
 	BobCurrHtlcTempPubKey          string                     `json:"bob_curr_htlc_temp_pub_key"`
 	BobCurrHtlcTempForHt1bPubKey   string                     `json:"bob_curr_htlc_temp_for_ht1b_pub_key"`
 	CurrState                      HtlcSingleHopPathInfoState `json:"curr_state"`
+	CurrStep                       int                        `json:"curr_step"`
 	CreateBy                       string                     `json:"create_by"`
 	CreateAt                       time.Time                  `json:"create_at"`
 }

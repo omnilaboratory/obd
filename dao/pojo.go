@@ -82,6 +82,8 @@ type TxInfoState int
 
 const (
 	TxInfoState_CreateAndSign TxInfoState = 10
+	TxInfoState_Htlc_GetH     TxInfoState = 11 // 创建Htlc交易的时候的状态
+	TxInfoState_Htlc_GetR     TxInfoState = 12 // 获取到R后的状态
 	TxInfoState_SendHex       TxInfoState = 20
 	TxInfoState_Abord         TxInfoState = 30
 )

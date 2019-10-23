@@ -20,13 +20,13 @@ type htlcForwardTxManager struct {
 // htlc 正向交易
 var HtlcForwardTxService htlcForwardTxManager
 
-// query bob,and ask bob
+// -42 find inter node and send msg to inter node
 func (service *htlcForwardTxManager) AliceFindPathOfSingleHopAndSendToBob(msgData string, user bean.User) (data map[string]interface{}, bob string, err error) {
 	if tool.CheckIsString(&msgData) == false {
 		return nil, "", errors.New("empty json data")
 	}
 
-	reqData := &bean.HtlcRequestCreate{}
+	reqData := &bean.HtlcRequestFindPathAndSendH{}
 	err = json.Unmarshal([]byte(msgData), reqData)
 	if err != nil {
 		log.Println(err.Error())
@@ -63,10 +63,6 @@ func (service *htlcForwardTxManager) AliceFindPathOfSingleHopAndSendToBob(msgDat
 		return nil, "", errors.New("no inter channel can use")
 	}
 
-	log.Println(aliceChannel)
-	log.Println(carlChannel)
-	log.Println(bob)
-
 	// operate db
 	htlcSingleHopPathInfo := &dao.HtlcSingleHopPathInfo{}
 	htlcSingleHopPathInfo.FirstChannelId = aliceChannel.Id
@@ -74,6 +70,7 @@ func (service *htlcForwardTxManager) AliceFindPathOfSingleHopAndSendToBob(msgDat
 	htlcSingleHopPathInfo.InterNodePeerId = bob
 	htlcSingleHopPathInfo.HtlcCreateRandHInfoRequestHash = rAndHInfo.RequestHash
 	htlcSingleHopPathInfo.CurrState = dao.SingleHopPathInfoState_Created
+	htlcSingleHopPathInfo.CurrStep = 0
 	htlcSingleHopPathInfo.CreateBy = user.PeerId
 	htlcSingleHopPathInfo.CreateAt = time.Now()
 	err = db.Save(htlcSingleHopPathInfo)
@@ -87,12 +84,57 @@ func (service *htlcForwardTxManager) AliceFindPathOfSingleHopAndSendToBob(msgDat
 	return data, bob, nil
 }
 
-func (service *htlcForwardTxManager) BobConfirmPath(msgData string, user bean.User) (data map[string]interface{}, senderPeerId string, err error) {
+// -45 send H to next node
+func (service *htlcForwardTxManager) SendH(msgData string, user bean.User) (data map[string]interface{}, targetUserId string, err error) {
 	if tool.CheckIsString(&msgData) == false {
 		return nil, "", errors.New("empty json data")
 	}
 
-	requestData := &bean.HtlcSignRequestCreate{}
+	requestData := &bean.HtlcSendH{}
+	err = json.Unmarshal([]byte(msgData), requestData)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, "", err
+	}
+
+	htlcSingleHopPathInfo := &dao.HtlcSingleHopPathInfo{}
+	err = db.Select(q.Eq("HtlcCreateRandHInfoRequestHash", requestData.RequestHash)).First(htlcSingleHopPathInfo)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, "", err
+	}
+
+	rAndHInfo := dao.HtlcRAndHInfo{}
+	err = db.Select(q.Eq("", requestData.RequestHash)).First(&rAndHInfo)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, "", err
+	}
+
+	carlChannel := &dao.ChannelInfo{}
+	err = db.One("Id", htlcSingleHopPathInfo.SecondChannelId, carlChannel)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, "", err
+	}
+
+	targetUserId = carlChannel.PeerIdB
+	if user.PeerId == carlChannel.PeerIdB {
+		targetUserId = carlChannel.AddressA
+	}
+	data = make(map[string]interface{})
+	data["request_hash"] = htlcSingleHopPathInfo.HtlcCreateRandHInfoRequestHash
+	data["h"] = rAndHInfo.H
+	return data, targetUserId, nil
+}
+
+// -43
+func (service *htlcForwardTxManager) SignGetH(msgData string, user bean.User) (data map[string]interface{}, targetUser string, err error) {
+	if tool.CheckIsString(&msgData) == false {
+		return nil, "", errors.New("empty json data")
+	}
+
+	requestData := &bean.HtlcSignGetH{}
 	err = json.Unmarshal([]byte(msgData), requestData)
 	if err != nil {
 		log.Println(err.Error())
@@ -140,7 +182,7 @@ func (service *htlcForwardTxManager) BobConfirmPath(msgData string, user bean.Us
 		log.Println(err.Error())
 		return nil, "", err
 	}
-	if requestData.Approval == false && htlcSingleHopPathInfo.CurrState == dao.SingleHopPathInfoState_StepOneFinish {
+	if requestData.Approval == false && htlcSingleHopPathInfo.CurrStep == 1 {
 		err = errors.New("the receiver can not refuse")
 		log.Println(err)
 		return nil, "", err
@@ -148,11 +190,7 @@ func (service *htlcForwardTxManager) BobConfirmPath(msgData string, user bean.Us
 	if requestData.Approval == false {
 		htlcSingleHopPathInfo.CurrState = dao.SingleHopPathInfoState_RefusedByInterNode
 	} else {
-		if htlcSingleHopPathInfo.CurrState == dao.SingleHopPathInfoState_Created {
-			htlcSingleHopPathInfo.CurrState = dao.SingleHopPathInfoState_StepOneBegin
-		} else {
-			htlcSingleHopPathInfo.CurrState = dao.SingleHopPathInfoState_StepTwoBegin
-		}
+		htlcSingleHopPathInfo.CurrState = dao.SingleHopPathInfoState_StepBegin
 	}
 
 	if requestData.Approval {
@@ -244,6 +282,7 @@ func (service *htlcForwardTxManager) SenderBeginCreateHtlcCommitmentTx(msgData s
 		log.Println(err)
 		return nil, "", err
 	}
+	htlcSingleHopPathInfo.CurrStep += 1
 
 	hAndRInfo := dao.HtlcRAndHInfo{}
 	err = db.Select(q.Eq("RequestHash", htlcSingleHopPathInfo.HtlcCreateRandHInfoRequestHash)).First(&hAndRInfo)
@@ -307,9 +346,11 @@ func (service *htlcForwardTxManager) SenderBeginCreateHtlcCommitmentTx(msgData s
 
 	//当前操作者是Alice Alice转账给Bob
 	if user.PeerId == channelInfo.PeerIdA {
+		targetUser = channelInfo.PeerIdB
 		tempAddrPrivateKeyMap[channelInfo.PubKeyA] = requestData.ChannelAddressPrivateKey
 		defer delete(tempAddrPrivateKeyMap, channelInfo.PubKeyA)
 	} else { //当前操作者是Bob Bob转账给Alice
+		targetUser = channelInfo.PeerIdA
 		tempAddrPrivateKeyMap[channelInfo.PubKeyB] = requestData.ChannelAddressPrivateKey
 		defer delete(tempAddrPrivateKeyMap, channelInfo.PubKeyB)
 	}
@@ -355,12 +396,7 @@ func (service *htlcForwardTxManager) SenderBeginCreateHtlcCommitmentTx(msgData s
 	log.Println(commitmentTransactionOfB)
 	//创建htlc的承诺交易 end
 
-	if htlcSingleHopPathInfo.CurrState == dao.SingleHopPathInfoState_StepOneBegin {
-		htlcSingleHopPathInfo.CurrState = dao.SingleHopPathInfoState_StepOneFinish
-	}
-	if htlcSingleHopPathInfo.CurrState == dao.SingleHopPathInfoState_StepTwoBegin {
-		htlcSingleHopPathInfo.CurrState = dao.SingleHopPathInfoState_StepTwoFinish
-	}
+	htlcSingleHopPathInfo.CurrState = dao.SingleHopPathInfoState_StepFinish
 	err = dbTx.Update(&htlcSingleHopPathInfo)
 	if err != nil {
 		log.Println(err)
@@ -373,7 +409,10 @@ func (service *htlcForwardTxManager) SenderBeginCreateHtlcCommitmentTx(msgData s
 		return nil, "", err
 	}
 
-	return nil, "", nil
+	data := make(map[string]interface{})
+	data["commitmentTransactionOfA"] = commitmentTransactionOfA
+	data["commitmentTransactionOfB"] = commitmentTransactionOfB
+	return data, targetUser, nil
 }
 
 // 创建Alice方的htlc的承诺交易，rsmc的Rd

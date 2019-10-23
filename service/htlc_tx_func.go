@@ -577,7 +577,7 @@ func htlcCreateCna(tx storm.Node, channelInfo dao.ChannelInfo, operator bean.Use
 	}
 
 	commitmentTxInfo.SignAt = time.Now()
-	commitmentTxInfo.CurrState = dao.TxInfoState_CreateAndSign
+	commitmentTxInfo.CurrState = dao.TxInfoState_Htlc_GetH
 	commitmentTxInfo.LastHash = ""
 	commitmentTxInfo.CurrHash = ""
 	if lastCommitmentATx != nil {
@@ -714,7 +714,7 @@ func htlcCreateCnb(tx storm.Node, channelInfo dao.ChannelInfo, operator bean.Use
 	}
 
 	commitmentTxInfo.SignAt = time.Now()
-	commitmentTxInfo.CurrState = dao.TxInfoState_CreateAndSign
+	commitmentTxInfo.CurrState = dao.TxInfoState_Htlc_GetH
 	commitmentTxInfo.LastHash = ""
 	commitmentTxInfo.CurrHash = ""
 	if lastCommitmentTx != nil {

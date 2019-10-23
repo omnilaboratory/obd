@@ -191,12 +191,12 @@ type HtlcHRespond struct {
 }
 
 //type -42: alice request ask bob whether agree to be the interNode
-type HtlcRequestCreate struct {
+type HtlcRequestFindPathAndSendH struct {
 	H string `json:"h"`
 }
 
 //type -43: bob sign the request for the interNode
-type HtlcSignRequestCreate struct {
+type HtlcSignGetH struct {
 	RequestHash                          string `json:"request_hash"`
 	Approval                             bool   `json:"approval"`                                    // true agree false disagree ,最后的收款节点，必须是true
 	ChannelAddressPrivateKey             string `json:"channel_address_private_key"`                 //	开通通道用到的私钥
@@ -209,7 +209,7 @@ type HtlcSignRequestCreate struct {
 	CurrHtlcTempAddressForHt1aPrivateKey string `json:"curr_htlc_temp_address_for_ht1a_private_key"` //	创建Ht1a中生成ht1a的输出的Rmsc的临时私钥
 }
 
-//type -44: alice request obd  to open htlc tx
+//type -44: sender request obd  to open htlc tx
 type HtlcRequestOpen struct {
 	RequestHash                          string `json:"request_hash"`
 	ChannelAddressPrivateKey             string `json:"channel_address_private_key"`                 //	开通通道用到的私钥
@@ -220,4 +220,9 @@ type HtlcRequestOpen struct {
 	CurrHtlcTempAddressPrivateKey        string `json:"curr_htlc_temp_address_private_key"`          //	创建Cnx中的toHtlc的部分使用的临时私钥
 	CurrHtlcTempAddressForHt1aPubKey     string `json:"curr_htlc_temp_address_for_ht1a_pub_key"`     //	创建Ht1a中生成ht1a的输出的Rmsc的临时公钥
 	CurrHtlcTempAddressForHt1aPrivateKey string `json:"curr_htlc_temp_address_for_ht1a_private_key"` //	创建Ht1a中生成ht1a的输出的Rmsc的临时私钥
+}
+
+//type -45: bob send h to carl
+type HtlcSendH struct {
+	RequestHash string `json:"request_hash"`
 }

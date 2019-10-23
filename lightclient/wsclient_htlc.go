@@ -128,7 +128,7 @@ func (client *Client) htlcTxModule(msg bean.RequestMessage) (enum.SendTargetType
 	var sendType = enum.SendTargetType_SendToNone
 	data := ""
 	switch msg.Type {
-	case enum.MsgType_HTLC_FindPath_N42:
+	case enum.MsgType_HTLC_FindPathAndSendH_N42:
 		respond, bob, err := service.HtlcForwardTxService.AliceFindPathOfSingleHopAndSendToBob(msg.Data, *client.User)
 		if err != nil {
 			data = err.Error()
@@ -146,8 +146,26 @@ func (client *Client) htlcTxModule(msg bean.RequestMessage) (enum.SendTargetType
 			client.sendToMyself(msg.Type, status, data)
 		}
 		sendType = enum.SendTargetType_SendToSomeone
-	case enum.MsgType_HTLC_ConfirmPath_N43:
-		respond, senderPeerId, err := service.HtlcForwardTxService.BobConfirmPath(msg.Data, *client.User)
+	case enum.MsgType_HTLC_SendH_N45:
+		respond, bob, err := service.HtlcForwardTxService.SendH(msg.Data, *client.User)
+		if err != nil {
+			data = err.Error()
+		} else {
+			bytes, err := json.Marshal(respond)
+			if err != nil {
+				data = err.Error()
+			} else {
+				data = string(bytes)
+				status = true
+				_ = client.sendToSomeone(msg.Type, status, bob, data)
+			}
+		}
+		if status == false {
+			client.sendToMyself(msg.Type, status, data)
+		}
+		sendType = enum.SendTargetType_SendToSomeone
+	case enum.MsgType_HTLC_SignGetH_N43:
+		respond, senderPeerId, err := service.HtlcForwardTxService.SignGetH(msg.Data, *client.User)
 		if err != nil {
 			data = err.Error()
 		} else {
@@ -164,7 +182,7 @@ func (client *Client) htlcTxModule(msg bean.RequestMessage) (enum.SendTargetType
 			client.sendToMyself(msg.Type, status, data)
 		}
 		sendType = enum.SendTargetType_SendToSomeone
-	case enum.MsgType_HTLC_OpenChannel_N44:
+	case enum.MsgType_HTLC_CreateCommitmentTx_N44:
 		respond, senderPeerId, err := service.HtlcForwardTxService.SenderBeginCreateHtlcCommitmentTx(msg.Data, *client.User)
 		if err != nil {
 			data = err.Error()

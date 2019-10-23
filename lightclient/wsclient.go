@@ -180,8 +180,9 @@ func (client *Client) Read() {
 						break
 					}
 					//-42 -43
-					if strings.HasPrefix(typeStr, strconv.Itoa(int(enum.MsgType_HTLC_FindPath_N42))) ||
-						strings.HasPrefix(typeStr, strconv.Itoa(int(enum.MsgType_HTLC_ConfirmPath_N43))) {
+					if strings.HasPrefix(typeStr, strconv.Itoa(int(enum.MsgType_HTLC_FindPathAndSendH_N42))) ||
+						strings.HasPrefix(typeStr, strconv.Itoa(int(enum.MsgType_HTLC_SignGetH_N43))) ||
+						strings.HasPrefix(typeStr, strconv.Itoa(int(enum.MsgType_HTLC_SendH_N45))) {
 						sendType, dataOut, status = client.htlcTxModule(msg)
 						break
 					}
