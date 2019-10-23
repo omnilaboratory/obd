@@ -84,7 +84,7 @@ func (service *htlcForwardTxManager) AliceFindPathOfSingleHopAndSendToBob(msgDat
 	return data, bob, nil
 }
 
-// -45 send H to next node
+// -43 send H to next node
 func (service *htlcForwardTxManager) SendH(msgData string, user bean.User) (data map[string]interface{}, targetUserId string, err error) {
 	if tool.CheckIsString(&msgData) == false {
 		return nil, "", errors.New("empty json data")
@@ -128,7 +128,7 @@ func (service *htlcForwardTxManager) SendH(msgData string, user bean.User) (data
 	return data, targetUserId, nil
 }
 
-// -43
+// -44
 func (service *htlcForwardTxManager) SignGetH(msgData string, user bean.User) (data map[string]interface{}, targetUser string, err error) {
 	if tool.CheckIsString(&msgData) == false {
 		return nil, "", errors.New("empty json data")
@@ -256,7 +256,7 @@ func (service *htlcForwardTxManager) SignGetH(msgData string, user bean.User) (d
 	return data, rAndHInfo.SenderPeerId, nil
 }
 
-// -44
+// -45
 func (service *htlcForwardTxManager) SenderBeginCreateHtlcCommitmentTx(msgData string, user bean.User) (outData map[string]interface{}, targetUser string, err error) {
 	if tool.CheckIsString(&msgData) == false {
 		err = errors.New("empty json data")

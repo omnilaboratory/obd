@@ -146,7 +146,7 @@ func (client *Client) htlcTxModule(msg bean.RequestMessage) (enum.SendTargetType
 			client.sendToMyself(msg.Type, status, data)
 		}
 		sendType = enum.SendTargetType_SendToSomeone
-	case enum.MsgType_HTLC_SendH_N45:
+	case enum.MsgType_HTLC_SendH_N43:
 		respond, bob, err := service.HtlcForwardTxService.SendH(msg.Data, *client.User)
 		if err != nil {
 			data = err.Error()
@@ -164,7 +164,7 @@ func (client *Client) htlcTxModule(msg bean.RequestMessage) (enum.SendTargetType
 			client.sendToMyself(msg.Type, status, data)
 		}
 		sendType = enum.SendTargetType_SendToSomeone
-	case enum.MsgType_HTLC_SignGetH_N43:
+	case enum.MsgType_HTLC_SignGetH_N44:
 		respond, senderPeerId, err := service.HtlcForwardTxService.SignGetH(msg.Data, *client.User)
 		if err != nil {
 			data = err.Error()
@@ -182,7 +182,7 @@ func (client *Client) htlcTxModule(msg bean.RequestMessage) (enum.SendTargetType
 			client.sendToMyself(msg.Type, status, data)
 		}
 		sendType = enum.SendTargetType_SendToSomeone
-	case enum.MsgType_HTLC_CreateCommitmentTx_N44:
+	case enum.MsgType_HTLC_CreateCommitmentTx_N45:
 		respond, senderPeerId, err := service.HtlcForwardTxService.SenderBeginCreateHtlcCommitmentTx(msg.Data, *client.User)
 		if err != nil {
 			data = err.Error()
