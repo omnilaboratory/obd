@@ -207,7 +207,7 @@ func (service *htlcTxManager) BobConfirmPath(msgData string, user bean.User) (da
 }
 
 // -44
-func (service *htlcTxManager) AliceBeginCreateHtlcCommitmentTx(msgData string, user bean.User) (outData map[string]interface{}, targetUser string, err error) {
+func (service *htlcTxManager) SenderBeginCreateHtlcCommitmentTx(msgData string, user bean.User) (outData map[string]interface{}, targetUser string, err error) {
 	if tool.CheckIsString(&msgData) == false {
 		err = errors.New("empty json data")
 		log.Println(err)
@@ -408,10 +408,10 @@ func (service *htlcTxManager) htlcCreateAliceSideTxs(tx storm.Node, channelInfo 
 		}
 		log.Println(htrdTransaction)
 
-		//HEDa的构建放到得到R的时候
+		//HEDa的构建放到得到R的时候   当bob得到R的时候，构建给bob的HED交易
 		//htlcCreateExecutionDeliveryA
 
-	} else {
+	} else { // bob is sender, 如果alice得到R，构建Htlc Execution交易以及接下来的HERD交易，如果超时，bob的钱就应该超时赎回HTDelivery
 		// 如果是bob转给alice，Alice作为中间商，作为当前通道的接收者
 		// create HTD for bob  锁定了bob的钱，超时了，就应该给bob赎回
 		htlcTimeoutDeliveryTxB, err := createHtlcTimeoutDeliveryTx(tx, channelInfo.PeerIdB, channelInfo.AddressB, 6*24, channelInfo, fundingTransaction, *commitmentTxInfo, requestData, operator)
@@ -420,6 +420,9 @@ func (service *htlcTxManager) htlcCreateAliceSideTxs(tx storm.Node, channelInfo 
 			return nil, err
 		}
 		log.Println(htlcTimeoutDeliveryTxB)
+
+		// Alice拿到了R，就可以用R去构建HTLC Execution 交易，因为是Alice这边的交易，那么就需要用RSMC来限制提现操作 即构建HE和HERD
+
 	}
 
 	return commitmentTxInfo, nil
@@ -465,7 +468,7 @@ func (service *htlcTxManager) htlcCreateBobSideTxs(dbTx storm.Node, channelInfo 
 	if bobIsInterNodeSoAliceSend2Bob {
 		// 如是通道中的Alice转账给Bob，bob作为中间节点  创建HTD1b ，Alice的钱在超时的情况下，可以返回到Alice账号
 		// 当前操作的请求者是Alice
-		// create HTD1b
+		// create HTD1b 当超时的情况，Alice赎回自己的钱的交易
 		htlcTimeoutDeliveryTxB, err := createHtlcTimeoutDeliveryTx(dbTx, channelInfo.PeerIdA, channelInfo.AddressA, 6*24, channelInfo, fundingTransaction, *commitmentTxInfo, requestData, operator)
 		if err != nil {
 			log.Println(err)
@@ -473,11 +476,10 @@ func (service *htlcTxManager) htlcCreateBobSideTxs(dbTx storm.Node, channelInfo 
 		}
 		log.Println(htlcTimeoutDeliveryTxB)
 
-		// 有了R后，创建给bob的收款交易(HE1b )及其后续交易（herd1b, Rsmc，因为在Bob方，他想提现，就必须走Rsmc的保护体制）
+		// Htlc Execution 如果bob拿到了R，就构建bob的HE交易 然后后续的HERD
+
 	} else {
-		// 如果是Bob给Alice转账，现在是bob的钱被锁定在在output2里面，Bob需要在超时的时候，拿回自己的钱，或者Alice得到R的时候，生成HED1A
-		// 创建bob的超时赎回的交易，当前操作的请求者是bob
-		// create ht1a bob超时赎回自己的钱钱
+		// create ht  for bob, bob超时赎回自己的钱钱
 		htlcTimeoutTxB, err := createHtlcTimeoutTxForBobSide(dbTx, owner, channelInfo, fundingTransaction, *commitmentTxInfo, requestData, operator)
 		if err != nil {
 			log.Println(err)
@@ -493,8 +495,7 @@ func (service *htlcTxManager) htlcCreateBobSideTxs(dbTx storm.Node, channelInfo 
 		}
 		log.Println(htrdTransaction)
 
-		//HEDb的构建放到得到R的时候
+		//HEDa 如果Alice拿到了R，就需要构建HTLC Execution Delivery 交易，把钱给Alice，这个交易的拥有着是Alice
 	}
-
 	return commitmentTxInfo, nil
 }
