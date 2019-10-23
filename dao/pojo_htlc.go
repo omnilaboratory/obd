@@ -98,18 +98,29 @@ type HtlcRAndHInfo struct {
 	SignBy          string      `json:"sign_by"`
 }
 
+type HtlcSingleHopPathInfoState int
+
+const (
+	SingleHopPathInfoState_Created            HtlcSingleHopPathInfoState = 0
+	SingleHopPathInfoState_StepOneBegin       HtlcSingleHopPathInfoState = 10
+	SingleHopPathInfoState_StepOneFinish      HtlcSingleHopPathInfoState = 11
+	SingleHopPathInfoState_StepTwoBegin       HtlcSingleHopPathInfoState = 20
+	SingleHopPathInfoState_StepTwoFinish      HtlcSingleHopPathInfoState = 21
+	SingleHopPathInfoState_BackOneFinish      HtlcSingleHopPathInfoState = 30
+	SingleHopPathInfoState_BackTwoFinish      HtlcSingleHopPathInfoState = 31
+	SingleHopPathInfoState_RefusedByInterNode HtlcSingleHopPathInfoState = 40
+)
+
 type HtlcSingleHopPathInfo struct {
-	Id                             int         `storm:"id,increment" json:"id" `
-	HtlcCreateRandHInfoRequestHash string      `json:"htlc_create_rand_h_info_request_hash"`
-	FirstChannelId                 int         `json:"alice_channel_id"`
-	InterNodePeerId                string      `json:"inter_node_peer_id"`
-	SecondChannelId                int         `json:"second_channel_id"`
-	BobCurrRsmcTempPubKey          string      `json:"bob_curr_rsmc_temp_pub_key"`
-	BobCurrHtlcTempPubKey          string      `json:"bob_curr_htlc_temp_pub_key"`
-	BobCurrHtlcTempForHt1bPubKey   string      `json:"bob_curr_htlc_temp_for_ht1b_pub_key"`
-	CurrState                      NormalState `json:"curr_state"`
-	CreateBy                       string      `json:"create_by"`
-	CreateAt                       time.Time   `json:"create_at"`
-	SignAt                         time.Time   `json:"sign_at"`
-	SignBy                         string      `json:"sign_by"`
+	Id                             int                        `storm:"id,increment" json:"id" `
+	HtlcCreateRandHInfoRequestHash string                     `json:"htlc_create_rand_h_info_request_hash"`
+	FirstChannelId                 int                        `json:"alice_channel_id"`
+	InterNodePeerId                string                     `json:"inter_node_peer_id"`
+	SecondChannelId                int                        `json:"second_channel_id"`
+	BobCurrRsmcTempPubKey          string                     `json:"bob_curr_rsmc_temp_pub_key"`
+	BobCurrHtlcTempPubKey          string                     `json:"bob_curr_htlc_temp_pub_key"`
+	BobCurrHtlcTempForHt1bPubKey   string                     `json:"bob_curr_htlc_temp_for_ht1b_pub_key"`
+	CurrState                      HtlcSingleHopPathInfoState `json:"curr_state"`
+	CreateBy                       string                     `json:"create_by"`
+	CreateAt                       time.Time                  `json:"create_at"`
 }

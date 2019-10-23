@@ -190,15 +190,15 @@ type HtlcHRespond struct {
 	Amount      float64 `json:"amount"`
 }
 
-//type -42: alice request ask bob whether agree to become the internode
+//type -42: alice request ask bob whether agree to be the interNode
 type HtlcRequestCreate struct {
 	H string `json:"h"`
 }
 
-//type -43: bob sign the request
+//type -43: bob sign the request for the interNode
 type HtlcSignRequestCreate struct {
 	RequestHash                          string `json:"request_hash"`
-	Approval                             bool   `json:"approval"`                                    // true agree false disagree
+	Approval                             bool   `json:"approval"`                                    // true agree false disagree ,最后的收款节点，必须是true
 	ChannelAddressPrivateKey             string `json:"channel_address_private_key"`                 //	开通通道用到的私钥
 	LastTempAddressPrivateKey            string `json:"last_temp_address_private_key"`               //	上个RSMC委托交易用到的临时私钥
 	CurrRsmcTempAddressPubKey            string `json:"curr_rsmc_temp_address_pub_key"`              //	创建Cnx中的toRsmc的部分使用的临时公钥
@@ -209,7 +209,7 @@ type HtlcSignRequestCreate struct {
 	CurrHtlcTempAddressForHt1aPrivateKey string `json:"curr_htlc_temp_address_for_ht1a_private_key"` //	创建Ht1a中生成ht1a的输出的Rmsc的临时私钥
 }
 
-//type -44: alice request obd  to open htlc channel
+//type -44: alice request obd  to open htlc tx
 type HtlcRequestOpen struct {
 	RequestHash                          string `json:"request_hash"`
 	ChannelAddressPrivateKey             string `json:"channel_address_private_key"`                 //	开通通道用到的私钥
