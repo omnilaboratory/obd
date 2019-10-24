@@ -296,7 +296,8 @@ func createHtlcTimeoutTxForAliceSide(tx storm.Node, owner string, channelInfo da
 	outputBean.AmountToRsmc = commitmentTxInfo.AmountToHtlc
 	outputBean.OppositeSideChannelPubKey = channelInfo.PubKeyB
 	outputBean.RsmcTempPubKey = requestData.CurrHtlcTempAddressForHt1aPubKey
-	htlcTimeoutTx, err = createHtlcTimeoutTxObj(owner, channelInfo, commitmentTxInfo, outputBean, operator)
+
+	htlcTimeoutTx, err = createHtlcTimeoutTxObj(tx, owner, channelInfo, commitmentTxInfo, outputBean, operator)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -344,7 +345,7 @@ func createHtlcTimeoutTxForBobSide(tx storm.Node, owner string, channelInfo dao.
 	outputBean.AmountToRsmc = commitmentTxInfo.AmountToHtlc
 	outputBean.OppositeSideChannelPubKey = channelInfo.PubKeyA
 	outputBean.RsmcTempPubKey = requestData.CurrHtlcTempAddressForHt1aPubKey
-	htlcTimeoutTx, err = createHtlcTimeoutTxObj(owner, channelInfo, commitmentTxInfo, outputBean, operator)
+	htlcTimeoutTx, err = createHtlcTimeoutTxObj(tx, owner, channelInfo, commitmentTxInfo, outputBean, operator)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -436,11 +437,18 @@ func createHtlcTimeoutDeliveryTx(tx storm.Node, owner string, outputAddress stri
 	return htlcTimeoutDeliveryTx, nil
 }
 
-func createHtlcTimeoutTxObj(owner string, channelInfo dao.ChannelInfo, commitmentTxInfo dao.CommitmentTransaction, outputBean commitmentOutputBean, user bean.User) (*dao.HTLCTimeoutTxA, error) {
+func createHtlcTimeoutTxObj(tx storm.Node, owner string, channelInfo dao.ChannelInfo, commitmentTxInfo dao.CommitmentTransaction, outputBean commitmentOutputBean, user bean.User) (*dao.HTLCTimeoutTxA, error) {
 	htlcTimeoutTx := &dao.HTLCTimeoutTxA{}
 	htlcTimeoutTx.ChannelId = channelInfo.ChannelId
+	htlcTimeoutTx.CommitmentTxId = commitmentTxInfo.Id
 	htlcTimeoutTx.PropertyId = commitmentTxInfo.PropertyId
 	htlcTimeoutTx.Owner = owner
+	count, err := tx.Select(q.Eq("ChannelId", htlcTimeoutTx.ChannelId), q.Eq("CommitmentTxId", htlcTimeoutTx.CommitmentTxId), q.Eq("Owner", owner)).Count(htlcTimeoutTx)
+	if err == nil {
+		if count > 0 {
+			return nil, errors.New("already exist")
+		}
+	}
 	//input
 	htlcTimeoutTx.InputHex = commitmentTxInfo.HtlcTxHash
 

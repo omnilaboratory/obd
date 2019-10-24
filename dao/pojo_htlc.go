@@ -7,7 +7,7 @@ import (
 
 type HTLCCommitmentTransaction CommitmentTransaction
 
-//HT1a 锁住发起方的交易资金：锁住的意思是：把资金放到一个临时多签帐号（alice1&bob1）
+//HT1a 锁住发起方的交易资金：锁住的意思是：把资金放到一个临时多签帐号（alice1&bob）
 type HTLCTimeoutTxA struct {
 	Id                           int            `storm:"id,increment" json:"id" `
 	ChannelId                    bean.ChannelID `json:"channel_id"`
@@ -120,4 +120,14 @@ type HtlcSingleHopPathInfo struct {
 	CurrStep                       int                        `json:"curr_step"`
 	CreateBy                       string                     `json:"create_by"`
 	CreateAt                       time.Time                  `json:"create_at"`
+}
+
+// 为记录-48的关闭htlc的请求数据
+type HtlcRequestCloseCurrTxInfo struct {
+	Id                        int            `storm:"id,increment" json:"id" `
+	RequestHash               string         `json:"request_hash"`
+	ChannelId                 bean.ChannelID `json:"channel_id"`
+	CurrRsmcTempAddressPubKey string         `json:"curr_rsmc_temp_address_pub_key"`
+	CreateBy                  string         `json:"create_by"`
+	CreateAt                  time.Time      `json:"create_at"`
 }

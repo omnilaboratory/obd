@@ -203,6 +203,8 @@ func (client *Client) htlcTxModule(msg bean.RequestMessage) (enum.SendTargetType
 
 	case enum.MsgType_HTLC_SendR_N46:
 		sendType = enum.SendTargetType_SendToSomeone
+	case enum.MsgType_HTLC_SignGetR_N47:
+		sendType = enum.SendTargetType_SendToSomeone
 	}
 	return sendType, []byte(data), status
 }
@@ -227,6 +229,8 @@ func (client *Client) htlcCloseModule(msg bean.RequestMessage) (enum.SendTargetT
 			}
 		}
 		client.sendToMyself(msg.Type, status, data)
+		sendType = enum.SendTargetType_SendToSomeone
+	case enum.MsgType_HTLC_SignCloseCurrTx_N49:
 		sendType = enum.SendTargetType_SendToSomeone
 	}
 	return sendType, []byte(data), status

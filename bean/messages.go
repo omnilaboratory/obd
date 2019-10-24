@@ -231,19 +231,21 @@ type HtlcSendH struct {
 type HtlcRequestCloseCurrTx struct {
 	ChannelId                            ChannelID `json:"channel_id"`
 	ChannelAddressPrivateKey             string    `json:"channel_address_private_key"` //	开通通道用到的私钥
-	LastRsmcTempAddressPubKey            string    `json:"last_rsmc_temp_address_pub_key"`
-	LastHtlcTempAddressForHt1aPrivateKey string    `json:"last_htlc_temp_address_for_ht_1_a_private_key"`
+	LastRsmcTempAddressPrivateKey        string    `json:"last_rsmc_temp_address_private_key"`
+	LastHtlcTempAddressPrivateKey        string    `json:"last_htlc_temp_address_private_key"`
+	LastHtlcTempAddressForHt1aPrivateKey string    `json:"last_htlc_temp_address_for_ht1a_private_key"`
 	CurrRsmcTempAddressPubKey            string    `json:"curr_rsmc_temp_address_pub_key"`
 	CurrRsmcTempAddressPrivateKey        string    `json:"curr_rsmc_temp_address_private_key"`
 }
 
-//type -49: receiver sign the request
+//type -49: receiver sign the close request
 type HtlcSignCloseCurrTx struct {
-	ChannelId                            ChannelID `json:"channel_id"`
-	Approval                             bool      `json:"approval"`
-	ChannelAddressPrivateKey             string    `json:"channel_address_private_key"` //	开通通道用到的私钥
-	LastRsmcTempAddressPubKey            string    `json:"last_rsmc_temp_address_pub_key"`
-	LastHtlcTempAddressForHt1aPrivateKey string    `json:"last_htlc_temp_address_for_ht_1_a_private_key"`
-	CurrRsmcTempAddressPubKey            string    `json:"curr_rsmc_temp_address_pub_key"`
-	CurrRsmcTempAddressPrivateKey        string    `json:"curr_rsmc_temp_address_private_key"`
+	RequestCloseHtlcHash                 string `json:"request_close_htlc_hash"` //-48的操作，临时存储一下
+	Approval                             bool   `json:"approval"`
+	ChannelAddressPrivateKey             string `json:"channel_address_private_key"` //	开通通道用到的私钥
+	LastRsmcTempAddressPrivateKey        string `json:"last_rsmc_temp_address_private_key"`
+	LastHtlcTempAddressPrivateKey        string `json:"last_htlc_temp_address_private_key"`
+	LastHtlcTempAddressForHt1aPrivateKey string `json:"last_htlc_temp_address_for_ht1a_private_key"`
+	CurrRsmcTempAddressPubKey            string `json:"curr_rsmc_temp_address_pub_key"`
+	CurrRsmcTempAddressPrivateKey        string `json:"curr_rsmc_temp_address_private_key"`
 }
