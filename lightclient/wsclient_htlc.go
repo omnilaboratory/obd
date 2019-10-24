@@ -213,7 +213,7 @@ func (client *Client) htlcCloseModule(msg bean.RequestMessage) (enum.SendTargetT
 	var sendType = enum.SendTargetType_SendToNone
 	data := ""
 	switch msg.Type {
-	case enum.MsgType_HTLC_CloseCurrTx_N47:
+	case enum.MsgType_HTLC_RequestCloseCurrTx_N48:
 		outData, err := service.HtlcCloseTxService.RequestCloseHtlc(msg.Data, *client.User)
 		if err != nil {
 			data = err.Error()
