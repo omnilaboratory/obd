@@ -90,4 +90,8 @@ const (
 	MsgType_HTLC_SendH_N43                  MsgType = -43
 	MsgType_HTLC_SignGetH_N44               MsgType = -44
 	MsgType_HTLC_CreateCommitmentTx_N45     MsgType = -45
+	MsgType_HTLC_SendR_N46                  MsgType = -46
+	MsgType_HTLC_SignGetR_N47               MsgType = -47
+	MsgType_HTLC_RequestCloseCurrTx_N48     MsgType = -48
+	MsgType_HTLC_SignCloseCurrTx_N49        MsgType = -49
 )

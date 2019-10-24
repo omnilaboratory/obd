@@ -200,6 +200,34 @@ func (client *Client) htlcTxModule(msg bean.RequestMessage) (enum.SendTargetType
 			client.sendToMyself(msg.Type, status, data)
 		}
 		sendType = enum.SendTargetType_SendToSomeone
+
+	case enum.MsgType_HTLC_SendR_N46:
+		sendType = enum.SendTargetType_SendToSomeone
+	}
+	return sendType, []byte(data), status
+}
+
+//htlc tx
+func (client *Client) htlcCloseModule(msg bean.RequestMessage) (enum.SendTargetType, []byte, bool) {
+	status := false
+	var sendType = enum.SendTargetType_SendToNone
+	data := ""
+	switch msg.Type {
+	case enum.MsgType_HTLC_CloseCurrTx_N47:
+		outData, err := service.HtlcCloseTxService.RequestCloseHtlc(msg.Data, *client.User)
+		if err != nil {
+			data = err.Error()
+		} else {
+			bytes, err := json.Marshal(outData)
+			if err != nil {
+				data = err.Error()
+			} else {
+				data = string(bytes)
+				status = true
+			}
+		}
+		client.sendToMyself(msg.Type, status, data)
+		sendType = enum.SendTargetType_SendToSomeone
 	}
 	return sendType, []byte(data), status
 }

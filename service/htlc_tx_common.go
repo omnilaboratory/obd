@@ -927,3 +927,9 @@ func htlcCreateExecutionDeliveryA(tx storm.Node, channelInfo dao.ChannelInfo, fu
 	}
 	return hednA, nil
 }
+
+func getHtlcLatestCommitmentTx(channelId bean.ChannelID, owner string) (commitmentTxInfo *dao.CommitmentTransaction, err error) {
+	commitmentTxInfo = &dao.CommitmentTransaction{}
+	err = db.Select(q.Eq("ChannelId", channelId), q.Eq("Owner", owner), q.Eq("CurrState", dao.TxInfoState_Htlc_GetR)).OrderBy("CreateAt").Reverse().First(commitmentTxInfo)
+	return commitmentTxInfo, err
+}

@@ -2,6 +2,10 @@ package service
 
 import (
 	"LightningOnOmni/bean"
+	"LightningOnOmni/tool"
+	"encoding/json"
+	"errors"
+	"log"
 	"sync"
 )
 
@@ -13,9 +17,33 @@ type htlcCloseTxManager struct {
 // htlc 关闭htlc交易
 var HtlcCloseTxService htlcCloseTxManager
 
-func (service *htlcCloseTxManager) RequestCloseHtlc(msgData string, user bean.User) error {
+// -47
+func (service *htlcCloseTxManager) RequestCloseHtlc(msgData string, user bean.User) (outData interface{}, err error) {
+	if tool.CheckIsString(&msgData) == false {
+		return nil, errors.New("empty json data")
+	}
 
-	return nil
+	reqData := &bean.HtlcRequestCloseCurrTx{}
+	err = json.Unmarshal([]byte(msgData), reqData)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	if bean.ChannelIdService.IsEmpty(reqData.ChannelId) {
+		err = errors.New("wrong channel Id")
+		log.Println(err)
+		return nil, err
+	}
+
+	commitmentTxInfo, err := getHtlcLatestCommitmentTx(reqData.ChannelId, user.PeerId)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	log.Println(commitmentTxInfo)
+
+	return commitmentTxInfo, nil
 }
 
 func (service *htlcCloseTxManager) SignCloseHtlc(msgData string, user bean.User) error {

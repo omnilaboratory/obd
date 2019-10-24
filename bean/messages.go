@@ -226,3 +226,24 @@ type HtlcRequestOpen struct {
 type HtlcSendH struct {
 	RequestHash string `json:"request_hash"`
 }
+
+//type -48: user wanna close htlc tx when tx is on getH state
+type HtlcRequestCloseCurrTx struct {
+	ChannelId                            ChannelID `json:"channel_id"`
+	ChannelAddressPrivateKey             string    `json:"channel_address_private_key"` //	开通通道用到的私钥
+	LastRsmcTempAddressPubKey            string    `json:"last_rsmc_temp_address_pub_key"`
+	LastHtlcTempAddressForHt1aPrivateKey string    `json:"last_htlc_temp_address_for_ht_1_a_private_key"`
+	CurrRsmcTempAddressPubKey            string    `json:"curr_rsmc_temp_address_pub_key"`
+	CurrRsmcTempAddressPrivateKey        string    `json:"curr_rsmc_temp_address_private_key"`
+}
+
+//type -49: receiver sign the request
+type HtlcSignCloseCurrTx struct {
+	ChannelId                            ChannelID `json:"channel_id"`
+	Approval                             bool      `json:"approval"`
+	ChannelAddressPrivateKey             string    `json:"channel_address_private_key"` //	开通通道用到的私钥
+	LastRsmcTempAddressPubKey            string    `json:"last_rsmc_temp_address_pub_key"`
+	LastHtlcTempAddressForHt1aPrivateKey string    `json:"last_htlc_temp_address_for_ht_1_a_private_key"`
+	CurrRsmcTempAddressPubKey            string    `json:"curr_rsmc_temp_address_pub_key"`
+	CurrRsmcTempAddressPrivateKey        string    `json:"curr_rsmc_temp_address_private_key"`
+}
