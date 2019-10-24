@@ -291,7 +291,7 @@ func htlcBobAbortLastCommitmentTx(tx storm.Node, channelInfo dao.ChannelInfo, us
 	return nil
 }
 
-func createHtlcTimeoutTxForAliceSide(tx storm.Node, owner string, channelInfo dao.ChannelInfo, fundingTransaction dao.FundingTransaction, commitmentTxInfo dao.CommitmentTransaction, requestData bean.HtlcRequestOpen, operator bean.User) (htlcTimeoutTx *dao.HTLCTimeoutTxA, err error) {
+func createHtlcTimeoutTxForAliceSide(tx storm.Node, owner string, channelInfo dao.ChannelInfo, fundingTransaction dao.FundingTransaction, commitmentTxInfo dao.CommitmentTransaction, requestData bean.HtlcRequestOpen, operator bean.User) (htlcTimeoutTx *dao.HTLCTimeoutTxForAAndExecutionForB, err error) {
 	outputBean := commitmentOutputBean{}
 	outputBean.AmountToRsmc = commitmentTxInfo.AmountToHtlc
 	outputBean.OppositeSideChannelPubKey = channelInfo.PubKeyB
@@ -340,7 +340,7 @@ func createHtlcTimeoutTxForAliceSide(tx storm.Node, owner string, channelInfo da
 	return htlcTimeoutTx, nil
 }
 
-func createHtlcTimeoutTxForBobSide(tx storm.Node, owner string, channelInfo dao.ChannelInfo, fundingTransaction dao.FundingTransaction, commitmentTxInfo dao.CommitmentTransaction, requestData bean.HtlcRequestOpen, operator bean.User) (htlcTimeoutTx *dao.HTLCTimeoutTxA, err error) {
+func createHtlcTimeoutTxForBobSide(tx storm.Node, owner string, channelInfo dao.ChannelInfo, fundingTransaction dao.FundingTransaction, commitmentTxInfo dao.CommitmentTransaction, requestData bean.HtlcRequestOpen, operator bean.User) (htlcTimeoutTx *dao.HTLCTimeoutTxForAAndExecutionForB, err error) {
 	outputBean := commitmentOutputBean{}
 	outputBean.AmountToRsmc = commitmentTxInfo.AmountToHtlc
 	outputBean.OppositeSideChannelPubKey = channelInfo.PubKeyA
@@ -437,8 +437,8 @@ func createHtlcTimeoutDeliveryTx(tx storm.Node, owner string, outputAddress stri
 	return htlcTimeoutDeliveryTx, nil
 }
 
-func createHtlcTimeoutTxObj(tx storm.Node, owner string, channelInfo dao.ChannelInfo, commitmentTxInfo dao.CommitmentTransaction, outputBean commitmentOutputBean, user bean.User) (*dao.HTLCTimeoutTxA, error) {
-	htlcTimeoutTx := &dao.HTLCTimeoutTxA{}
+func createHtlcTimeoutTxObj(tx storm.Node, owner string, channelInfo dao.ChannelInfo, commitmentTxInfo dao.CommitmentTransaction, outputBean commitmentOutputBean, user bean.User) (*dao.HTLCTimeoutTxForAAndExecutionForB, error) {
+	htlcTimeoutTx := &dao.HTLCTimeoutTxForAAndExecutionForB{}
 	htlcTimeoutTx.ChannelId = channelInfo.ChannelId
 	htlcTimeoutTx.CommitmentTxId = commitmentTxInfo.Id
 	htlcTimeoutTx.PropertyId = commitmentTxInfo.PropertyId
@@ -803,11 +803,16 @@ func htlcCreateRDOfRsmc(tx storm.Node, channelInfo dao.ChannelInfo, operator bea
 
 func createHtlcRD(tx storm.Node, channelInfo dao.ChannelInfo, operator bean.User,
 	fundingTransaction dao.FundingTransaction, requestData bean.HtlcRequestOpen, bobIsInterNodeSoAliceSend2Bob bool,
-	htlcTimeoutTx *dao.HTLCTimeoutTxA, owner string) (*dao.RevocableDeliveryTransaction, error) {
+	htlcTimeoutTx *dao.HTLCTimeoutTxForAAndExecutionForB, owner string) (*dao.RevocableDeliveryTransaction, error) {
 
 	outAddress := channelInfo.AddressA
 	if bobIsInterNodeSoAliceSend2Bob == false {
 		outAddress = channelInfo.AddressB
+	}
+
+	count, _ := tx.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("CommitmentTxId", htlcTimeoutTx.Id), q.Eq("Owner", owner), q.Eq("RDType", 1)).Count(&dao.RevocableDeliveryTransaction{})
+	if count > 0 {
+		return nil, errors.New("already create")
 	}
 
 	rdTransaction, err := createHtlcRDTxObj(owner, &channelInfo, htlcTimeoutTx, outAddress, &operator)
@@ -859,30 +864,31 @@ func createHtlcRD(tx storm.Node, channelInfo dao.ChannelInfo, operator bean.User
 	return rdTransaction, nil
 }
 
-func createHtlcRDTxObj(owner string, channelInfo *dao.ChannelInfo, htlcTimeoutTx *dao.HTLCTimeoutTxA, toAddress string,
+func createHtlcRDTxObj(owner string, channelInfo *dao.ChannelInfo, htlcTimeoutTx *dao.HTLCTimeoutTxForAAndExecutionForB, toAddress string,
 	user *bean.User) (*dao.RevocableDeliveryTransaction, error) {
-	rda := &dao.RevocableDeliveryTransaction{}
-	rda.CommitmentTxId = htlcTimeoutTx.Id
-	rda.PeerIdA = channelInfo.PeerIdA
-	rda.PeerIdB = channelInfo.PeerIdB
-	rda.ChannelId = channelInfo.ChannelId
-	rda.PropertyId = htlcTimeoutTx.PropertyId
-	rda.Owner = owner
+	htrd := &dao.RevocableDeliveryTransaction{}
+	htrd.ChannelId = channelInfo.ChannelId
+	htrd.CommitmentTxId = htlcTimeoutTx.Id
+	htrd.PeerIdA = channelInfo.PeerIdA
+	htrd.PeerIdB = channelInfo.PeerIdB
+	htrd.PropertyId = htlcTimeoutTx.PropertyId
+	htrd.Owner = owner
+	htrd.RDType = 1
 
 	//input
-	rda.InputTxid = htlcTimeoutTx.RSMCTxid
-	rda.InputVout = 0
-	rda.InputAmount = htlcTimeoutTx.RSMCOutAmount
+	htrd.InputTxid = htlcTimeoutTx.RSMCTxid
+	htrd.InputVout = 0
+	htrd.InputAmount = htlcTimeoutTx.RSMCOutAmount
 	//output
-	rda.OutputAddress = toAddress
-	rda.Sequence = 1000
-	rda.Amount = htlcTimeoutTx.RSMCOutAmount
+	htrd.OutputAddress = toAddress
+	htrd.Sequence = 1000
+	htrd.Amount = htlcTimeoutTx.RSMCOutAmount
 
-	rda.CreateBy = user.PeerId
-	rda.CreateAt = time.Now()
-	rda.LastEditTime = time.Now()
+	htrd.CreateBy = user.PeerId
+	htrd.CreateAt = time.Now()
+	htrd.LastEditTime = time.Now()
 
-	return rda, nil
+	return htrd, nil
 }
 
 //创建hed1a  此交易要修改创建时机，等到bob拿到R的时候，再来创建，这个时候就需要广播交易（关闭通道），那么在很多情况下，其实是不用创建的
@@ -940,4 +946,42 @@ func getHtlcLatestCommitmentTx(channelId bean.ChannelID, owner string) (commitme
 	commitmentTxInfo = &dao.CommitmentTransaction{}
 	err = db.Select(q.Eq("ChannelId", channelId), q.Eq("Owner", owner), q.Eq("CurrState", dao.TxInfoState_Htlc_GetR)).OrderBy("CreateAt").Reverse().First(commitmentTxInfo)
 	return commitmentTxInfo, err
+}
+
+func createHtlcBRTx(owner string, channelInfo *dao.ChannelInfo, commitmentTxInfo *dao.CommitmentTransaction, user *bean.User) (*dao.HTLCBreachRemedyTransaction, error) {
+	hbr := &dao.HTLCBreachRemedyTransaction{}
+	hbr.CommitmentTxId = commitmentTxInfo.Id
+	hbr.PeerIdA = channelInfo.PeerIdA
+	hbr.PeerIdB = channelInfo.PeerIdB
+	hbr.ChannelId = channelInfo.ChannelId
+	hbr.PropertyId = commitmentTxInfo.PropertyId
+	hbr.Owner = owner
+
+	//input
+	hbr.InputTxid = commitmentTxInfo.HTLCTxid
+	hbr.InputVout = 0
+	hbr.InputAmount = commitmentTxInfo.AmountToHtlc
+	//output
+	hbr.Amount = commitmentTxInfo.AmountToHtlc
+
+	hbr.CreateBy = user.PeerId
+	hbr.CreateAt = time.Now()
+	hbr.LastEditTime = time.Now()
+
+	return hbr, nil
+}
+func createHtlcTimeoutBRTx(owner string, channelInfo *dao.ChannelInfo, txInfo dao.HTLCTimeoutTxForAAndExecutionForB, user *bean.User) (*dao.HTLCTimeoutBreachRemedyTransaction, error) {
+	htbr := &dao.HTLCTimeoutBreachRemedyTransaction{}
+	htbr.CommitmentTxId = txInfo.Id
+	htbr.ChannelId = channelInfo.ChannelId
+	htbr.PropertyId = txInfo.PropertyId
+	htbr.Owner = owner
+	htbr.InputHash = txInfo.RSMCTxHash
+	//output
+	htbr.Amount = txInfo.RSMCOutAmount
+
+	htbr.CreateBy = user.PeerId
+	htbr.CreateAt = time.Now()
+	htbr.LastEditTime = time.Now()
+	return htbr, nil
 }

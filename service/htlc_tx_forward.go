@@ -337,8 +337,13 @@ func (service *htlcForwardTxManager) SenderBeginCreateHtlcCommitmentTx(msgData s
 	}
 	defer dbTx.Rollback()
 
+	channelId := htlcSingleHopPathInfo.FirstChannelId
+	if htlcSingleHopPathInfo.CurrStep == 2 {
+		channelId = htlcSingleHopPathInfo.SecondChannelId
+	}
+
 	channelInfo := dao.ChannelInfo{}
-	err = dbTx.One("Id", htlcSingleHopPathInfo.FirstChannelId, &channelInfo)
+	err = dbTx.One("Id", channelId, &channelInfo)
 	if err != nil {
 		log.Println(err)
 		return nil, "", err
@@ -357,7 +362,7 @@ func (service *htlcForwardTxManager) SenderBeginCreateHtlcCommitmentTx(msgData s
 
 	// get the funding transaction
 	var fundingTransaction = &dao.FundingTransaction{}
-	err = dbTx.Select(q.Eq("ChannelId", htlcSingleHopPathInfo.FirstChannelId), q.Eq("CurrState", dao.FundingTransactionState_Accept)).OrderBy("CreateAt").Reverse().First(fundingTransaction)
+	err = dbTx.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("CurrState", dao.FundingTransactionState_Accept)).OrderBy("CreateAt").Reverse().First(fundingTransaction)
 	if err != nil {
 		log.Println(err)
 		return nil, "", err

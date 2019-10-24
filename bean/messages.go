@@ -240,8 +240,7 @@ type HtlcRequestCloseCurrTx struct {
 
 //type -49: receiver sign the close request
 type HtlcSignCloseCurrTx struct {
-	RequestCloseHtlcHash                 string `json:"request_close_htlc_hash"` //-48的操作，临时存储一下
-	Approval                             bool   `json:"approval"`
+	RequestCloseHtlcHash                 string `json:"request_close_htlc_hash"`     //-48的操作，临时存储一下
 	ChannelAddressPrivateKey             string `json:"channel_address_private_key"` //	开通通道用到的私钥
 	LastRsmcTempAddressPrivateKey        string `json:"last_rsmc_temp_address_private_key"`
 	LastHtlcTempAddressPrivateKey        string `json:"last_htlc_temp_address_private_key"`

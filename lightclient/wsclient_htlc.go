@@ -216,7 +216,7 @@ func (client *Client) htlcCloseModule(msg bean.RequestMessage) (enum.SendTargetT
 	data := ""
 	switch msg.Type {
 	case enum.MsgType_HTLC_RequestCloseCurrTx_N48:
-		outData, err := service.HtlcCloseTxService.RequestCloseHtlc(msg.Data, *client.User)
+		outData, targetUser, err := service.HtlcCloseTxService.RequestCloseHtlc(msg.Data, *client.User)
 		if err != nil {
 			data = err.Error()
 		} else {
@@ -226,6 +226,7 @@ func (client *Client) htlcCloseModule(msg bean.RequestMessage) (enum.SendTargetT
 			} else {
 				data = string(bytes)
 				status = true
+				_ = client.sendToSomeone(msg.Type, status, targetUser, data)
 			}
 		}
 		client.sendToMyself(msg.Type, status, data)

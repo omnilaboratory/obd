@@ -8,14 +8,14 @@ import (
 type HTLCCommitmentTransaction CommitmentTransaction
 
 //HT1a 锁住发起方的交易资金：锁住的意思是：把资金放到一个临时多签帐号（alice1&bob）
-type HTLCTimeoutTxA struct {
+//HE1b 等获取到R后，锁住接收方的交易资金：锁住的意思是：把资金放到一个临时多签帐号（alice&bob6）
+type HTLCTimeoutTxForAAndExecutionForB struct {
 	Id                           int            `storm:"id,increment" json:"id" `
 	ChannelId                    bean.ChannelID `json:"channel_id"`
 	CommitmentTxId               int            `json:"commitment_tx_id"`
 	PropertyId                   int64          `json:"property_id"`
 	InputHex                     string         `json:"input_hex"`
 	Timeout                      int            `json:"timeout"` // if 3days 432=3*24*6
-	CurrBlockHeight              int            `json:"curr_block_height"`
 	RSMCTempAddressPubKey        string         `json:"rsmc_temp_address_pub_key"`
 	RSMCMultiAddress             string         `json:"rsmc_multi_address"`
 	RSMCRedeemScript             string         `json:"rsmc_redeem_script"`
@@ -130,4 +130,25 @@ type HtlcRequestCloseCurrTxInfo struct {
 	CurrRsmcTempAddressPubKey string         `json:"curr_rsmc_temp_address_pub_key"`
 	CreateBy                  string         `json:"create_by"`
 	CreateAt                  time.Time      `json:"create_at"`
+}
+
+// to punish alice do not admit the latest commitment tx
+type HTLCBreachRemedyTransaction BreachRemedyTransaction
+type HTLCTimeoutBreachRemedyTransaction struct {
+	Id                                  int            `storm:"id,increment" json:"id" `
+	ChannelId                           bean.ChannelID `json:"channel_id"`
+	CommitmentTxId                      int            `json:"commitment_tx_id"` // parent commitmentTx id
+	HTLCTimeoutTxForAAndExecutionForBId int            `json:"htlc_timeout_tx_for_a_and_execution_for_b_id"`
+	PropertyId                          int64          `json:"property_id"`
+	InputHash                           string         `json:"input_hash"`
+	Amount                              float64        `json:"amount"` // output boob amount
+	TxHash                              string         `json:"tx_hash"`
+	Txid                                string         `json:"txid"`
+	CurrState                           TxInfoState    `json:"curr_state"`
+	CreateBy                            string         `json:"create_by"`
+	CreateAt                            time.Time      `json:"create_at"`
+	SignAt                              time.Time      `json:"sign_at"`
+	SendAt                              time.Time      `json:"send_at"`
+	LastEditTime                        time.Time      `json:"last_edit_time"`
+	Owner                               string         `json:"owner"`
 }

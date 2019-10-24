@@ -189,7 +189,8 @@ type RevocableDeliveryTransaction struct {
 	InputAmount        float64        `json:"input_amount"`   //input amount
 	OutputAddress      string         `json:"output_address"` //output alice
 	Sequence           int            `json:"sequence"`
-	Amount             float64        `json:"amount"` // output alice amount
+	RDType             int            `json:"rd_type"` // default 0 for rsmc Rd,1 for htrd
+	Amount             float64        `json:"amount"`  // output alice amount
 	TransactionSignHex string         `json:"transaction_sign_hex"`
 	Txid               string         `json:"txid"`
 	CurrState          TxInfoState    `json:"curr_state"`
