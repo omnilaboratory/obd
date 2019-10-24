@@ -20,9 +20,9 @@ const (
 type MsgType int
 
 const (
-	MsgType_Error      MsgType = 0
-	MsgType_UserLogin  MsgType = 1
-	MsgType_UserLogout MsgType = 2
+	MsgType_Error_0      MsgType = 0
+	MsgType_UserLogin_1  MsgType = 1
+	MsgType_UserLogout_2 MsgType = 2
 
 	MsgType_Core_GetNewAddress_1001                    MsgType = 1001
 	MsgType_Core_GetMiningInfo_1002                    MsgType = 1002

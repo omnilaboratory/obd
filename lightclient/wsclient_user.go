@@ -12,7 +12,7 @@ func (client *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, 
 	var sendType = enum.SendTargetType_SendToNone
 	var data string
 	switch msg.Type {
-	case enum.MsgType_UserLogin:
+	case enum.MsgType_UserLogin_1:
 		if client.User != nil {
 			client.sendToMyself(msg.Type, true, "already login")
 			sendType = enum.SendTargetType_SendToSomeone
@@ -35,7 +35,7 @@ func (client *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, 
 				sendType = enum.SendTargetType_SendToSomeone
 			}
 		}
-	case enum.MsgType_UserLogout:
+	case enum.MsgType_UserLogout_2:
 		if client.User != nil {
 			data = client.User.PeerId + " logout"
 			sendType = enum.SendTargetType_SendToAll

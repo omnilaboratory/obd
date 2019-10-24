@@ -64,7 +64,7 @@ func (client *Client) Read() {
 
 		if parse.Exists() == false {
 			log.Println("wrong json input")
-			client.sendToMyself(enum.MsgType_Error, false, string(dataReq))
+			client.sendToMyself(enum.MsgType_Error_0, false, string(dataReq))
 			continue
 		}
 
