@@ -17,9 +17,9 @@ const (
 	ChannelState_Create            ChannelState = 10
 	ChannelState_Accept            ChannelState = 20
 	ChannelState_Close             ChannelState = 21
+	ChannelState_HtlcBegin         ChannelState = 22
 	ChannelState_OpenChannelDefuse ChannelState = 30
 	ChannelState_FundingDefuse     ChannelState = 31
-	ChannelState_HtlcBegin         ChannelState = 40
 )
 
 type ChannelInfo struct {
