@@ -17,6 +17,9 @@ type htlcForwardTxManager struct {
 	operationFlag sync.Mutex
 }
 
+const singleHopNeedTotalDay = 3
+const singleHopPerHopDuration = 6 * 24
+
 // htlc 正向交易
 var HtlcForwardTxService htlcForwardTxManager
 
@@ -291,6 +294,7 @@ func (service *htlcForwardTxManager) SenderBeginCreateHtlcCommitmentTx(msgData s
 		return nil, "", err
 	}
 
+	// region check private key
 	if tool.CheckIsString(&requestData.ChannelAddressPrivateKey) == false {
 		err = errors.New("channel_address_private_key is empty")
 		log.Println(err)
@@ -321,6 +325,7 @@ func (service *htlcForwardTxManager) SenderBeginCreateHtlcCommitmentTx(msgData s
 		log.Println(err)
 		return nil, "", err
 	}
+	// endregion
 
 	//1、上一个交易必然是RSMC交易，所以需要结算上一个交易，为其创建BR交易
 	//2、然后创建HTLC的commitment交易（Cna和Cnb），它有一个输入（三个btc的input），三个输出（rsmc，bob，htlc）
@@ -458,11 +463,11 @@ func (service *htlcForwardTxManager) htlcCreateAliceSideTxs(tx storm.Node, chann
 		return nil, err
 	}
 	log.Println(rdTx)
-
+	timeout := (singleHopNeedTotalDay - pathInfo.CurrStep) * singleHopPerHopDuration
 	// output2,htlc的后续交易
 	if bobIsInterNodeSoAliceSend2Bob { // 如是通道中的Alice转账给Bob，bob作为中间节点  创建HT1a
 		// create ht1a
-		htlcTimeoutTxA, err := createHtlcTimeoutTxForAliceSide(tx, owner, channelInfo, fundingTransaction, *commitmentTxInfo, requestData, operator)
+		htlcTimeoutTxA, err := createHtlcTimeoutTxForAliceSide(tx, owner, channelInfo, fundingTransaction, *commitmentTxInfo, requestData, timeout, operator)
 		if err != nil {
 			log.Println(err)
 			return nil, err
@@ -482,7 +487,7 @@ func (service *htlcForwardTxManager) htlcCreateAliceSideTxs(tx storm.Node, chann
 	} else { // bob is sender, 如果alice得到R，构建Htlc Execution交易以及接下来的HERD交易，如果超时，bob的钱就应该超时赎回HTDelivery
 		// 如果是bob转给alice，Alice作为中间商，作为当前通道的接收者
 		// create HTD for bob  锁定了bob的钱，超时了，就应该给bob赎回
-		htlcTimeoutDeliveryTxB, err := createHtlcTimeoutDeliveryTx(tx, channelInfo.PeerIdB, channelInfo.AddressB, 6*24, channelInfo, fundingTransaction, *commitmentTxInfo, requestData, operator)
+		htlcTimeoutDeliveryTxB, err := createHtlcTimeoutDeliveryTx(tx, channelInfo.PeerIdB, channelInfo.AddressB, timeout, channelInfo, fundingTransaction, *commitmentTxInfo, requestData, operator)
 		if err != nil {
 			log.Println(err)
 			return nil, err
@@ -530,14 +535,14 @@ func (service *htlcForwardTxManager) htlcCreateBobSideTxs(dbTx storm.Node, chann
 		log.Println(err)
 		return nil, err
 	}
-
+	timeout := (singleHopNeedTotalDay - htlcSingleHopPathInfo.CurrStep) * singleHopPerHopDuration
 	// htlc txs
 	// output2,给htlc创建的交易，如何处理output2里面的钱
 	if bobIsInterNodeSoAliceSend2Bob {
 		// 如是通道中的Alice转账给Bob，bob作为中间节点  创建HTD1b ，Alice的钱在超时的情况下，可以返回到Alice账号
 		// 当前操作的请求者是Alice
 		// create HTD1b 当超时的情况，Alice赎回自己的钱的交易
-		htlcTimeoutDeliveryTxB, err := createHtlcTimeoutDeliveryTx(dbTx, channelInfo.PeerIdA, channelInfo.AddressA, 6*24, channelInfo, fundingTransaction, *commitmentTxInfo, requestData, operator)
+		htlcTimeoutDeliveryTxB, err := createHtlcTimeoutDeliveryTx(dbTx, channelInfo.PeerIdA, channelInfo.AddressA, timeout, channelInfo, fundingTransaction, *commitmentTxInfo, requestData, operator)
 		if err != nil {
 			log.Println(err)
 			return nil, err
@@ -548,7 +553,7 @@ func (service *htlcForwardTxManager) htlcCreateBobSideTxs(dbTx storm.Node, chann
 
 	} else {
 		// create ht  for bob, bob超时赎回自己的钱钱
-		htlcTimeoutTxB, err := createHtlcTimeoutTxForBobSide(dbTx, owner, channelInfo, fundingTransaction, *commitmentTxInfo, requestData, operator)
+		htlcTimeoutTxB, err := createHtlcTimeoutTxForBobSide(dbTx, owner, channelInfo, fundingTransaction, *commitmentTxInfo, requestData, timeout, operator)
 		if err != nil {
 			log.Println(err)
 			return nil, err

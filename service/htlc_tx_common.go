@@ -291,13 +291,13 @@ func htlcBobAbortLastCommitmentTx(tx storm.Node, channelInfo dao.ChannelInfo, us
 	return nil
 }
 
-func createHtlcTimeoutTxForAliceSide(tx storm.Node, owner string, channelInfo dao.ChannelInfo, fundingTransaction dao.FundingTransaction, commitmentTxInfo dao.CommitmentTransaction, requestData bean.HtlcRequestOpen, operator bean.User) (htlcTimeoutTx *dao.HTLCTimeoutTxForAAndExecutionForB, err error) {
+func createHtlcTimeoutTxForAliceSide(tx storm.Node, owner string, channelInfo dao.ChannelInfo, fundingTransaction dao.FundingTransaction, commitmentTxInfo dao.CommitmentTransaction, requestData bean.HtlcRequestOpen, timeout int, operator bean.User) (htlcTimeoutTx *dao.HTLCTimeoutTxForAAndExecutionForB, err error) {
 	outputBean := commitmentOutputBean{}
 	outputBean.AmountToRsmc = commitmentTxInfo.AmountToHtlc
 	outputBean.OppositeSideChannelPubKey = channelInfo.PubKeyB
 	outputBean.RsmcTempPubKey = requestData.CurrHtlcTempAddressForHt1aPubKey
 
-	htlcTimeoutTx, err = createHtlcTimeoutTxObj(tx, owner, channelInfo, commitmentTxInfo, outputBean, operator)
+	htlcTimeoutTx, err = createHtlcTimeoutTxObj(tx, owner, channelInfo, commitmentTxInfo, outputBean, timeout, operator)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -340,12 +340,12 @@ func createHtlcTimeoutTxForAliceSide(tx storm.Node, owner string, channelInfo da
 	return htlcTimeoutTx, nil
 }
 
-func createHtlcTimeoutTxForBobSide(tx storm.Node, owner string, channelInfo dao.ChannelInfo, fundingTransaction dao.FundingTransaction, commitmentTxInfo dao.CommitmentTransaction, requestData bean.HtlcRequestOpen, operator bean.User) (htlcTimeoutTx *dao.HTLCTimeoutTxForAAndExecutionForB, err error) {
+func createHtlcTimeoutTxForBobSide(tx storm.Node, owner string, channelInfo dao.ChannelInfo, fundingTransaction dao.FundingTransaction, commitmentTxInfo dao.CommitmentTransaction, requestData bean.HtlcRequestOpen, timeout int, operator bean.User) (htlcTimeoutTx *dao.HTLCTimeoutTxForAAndExecutionForB, err error) {
 	outputBean := commitmentOutputBean{}
 	outputBean.AmountToRsmc = commitmentTxInfo.AmountToHtlc
 	outputBean.OppositeSideChannelPubKey = channelInfo.PubKeyA
 	outputBean.RsmcTempPubKey = requestData.CurrHtlcTempAddressForHt1aPubKey
-	htlcTimeoutTx, err = createHtlcTimeoutTxObj(tx, owner, channelInfo, commitmentTxInfo, outputBean, operator)
+	htlcTimeoutTx, err = createHtlcTimeoutTxObj(tx, owner, channelInfo, commitmentTxInfo, outputBean, timeout, operator)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -437,7 +437,7 @@ func createHtlcTimeoutDeliveryTx(tx storm.Node, owner string, outputAddress stri
 	return htlcTimeoutDeliveryTx, nil
 }
 
-func createHtlcTimeoutTxObj(tx storm.Node, owner string, channelInfo dao.ChannelInfo, commitmentTxInfo dao.CommitmentTransaction, outputBean commitmentOutputBean, user bean.User) (*dao.HTLCTimeoutTxForAAndExecutionForB, error) {
+func createHtlcTimeoutTxObj(tx storm.Node, owner string, channelInfo dao.ChannelInfo, commitmentTxInfo dao.CommitmentTransaction, outputBean commitmentOutputBean, timeout int, user bean.User) (*dao.HTLCTimeoutTxForAAndExecutionForB, error) {
 	htlcTimeoutTx := &dao.HTLCTimeoutTxForAAndExecutionForB{}
 	htlcTimeoutTx.ChannelId = channelInfo.ChannelId
 	htlcTimeoutTx.CommitmentTxId = commitmentTxInfo.Id
@@ -466,7 +466,7 @@ func createHtlcTimeoutTxObj(tx storm.Node, owner string, channelInfo dao.Channel
 	}
 	htlcTimeoutTx.RSMCMultiAddressScriptPubKey = gjson.Get(jsonData, "scriptPubKey").String()
 	htlcTimeoutTx.RSMCOutAmount = outputBean.AmountToRsmc
-	htlcTimeoutTx.Timeout = 6 * 24
+	htlcTimeoutTx.Timeout = timeout
 	htlcTimeoutTx.CreateBy = user.PeerId
 	htlcTimeoutTx.CreateAt = time.Now()
 	return htlcTimeoutTx, nil
