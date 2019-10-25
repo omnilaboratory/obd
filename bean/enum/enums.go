@@ -94,4 +94,6 @@ const (
 	MsgType_HTLC_SignGetR_N47               MsgType = -47
 	MsgType_HTLC_RequestCloseCurrTx_N48     MsgType = -48
 	MsgType_HTLC_SignCloseCurrTx_N49        MsgType = -49
+	MsgType_HTLC_RequestCloseChannel_N50    MsgType = -50
+	MsgType_HTLC_SignCloseChannel_N51       MsgType = -51
 )

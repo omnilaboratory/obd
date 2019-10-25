@@ -220,7 +220,7 @@ func (c *channelManager) ForceCloseChannel(jsonData string, user *bean.User) (in
 		return nil, err
 	}
 
-	revocableDeliveryTxid, err := rpcClient.SendRawTransaction(lastRevocableDeliveryTx.TransactionSignHex)
+	revocableDeliveryTxid, err := rpcClient.SendRawTransaction(lastRevocableDeliveryTx.TxHash)
 	if err != nil {
 		log.Println(err)
 		msg := err.Error()
@@ -291,7 +291,7 @@ func (c *channelManager) SendBreachRemedyTransaction(jsonData string, user *bean
 	}
 
 	lastBRTx := &dao.BreachRemedyTransaction{}
-	err = db.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("CurrState", dao.TxInfoState_Rsmc_CreateAndSign), q.Eq("Owner", user.PeerId)).OrderBy("CreateAt").Reverse().First(lastBRTx)
+	err = db.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("CurrState", dao.TxInfoState_CreateAndSign), q.Eq("Owner", user.PeerId)).OrderBy("CreateAt").Reverse().First(lastBRTx)
 	if err != nil {
 		err = errors.New("not found the latest br")
 		log.Println(err)
@@ -340,7 +340,7 @@ func (c *channelManager) RequestCloseChannel(jsonData string, user *bean.User) (
 	}
 
 	lastCommitmentTx := &dao.CommitmentTransaction{}
-	err = db.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("Owner", user.PeerId)).OrderBy("CreateAt").Reverse().First(lastCommitmentTx)
+	err = db.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("TxType", dao.CommitmentTransactionType_Rsmc), q.Eq("Owner", user.PeerId)).OrderBy("CreateAt").Reverse().First(lastCommitmentTx)
 	if err != nil {
 		log.Println(err)
 		return nil, nil, err
@@ -349,9 +349,11 @@ func (c *channelManager) RequestCloseChannel(jsonData string, user *bean.User) (
 	dbData := &dao.CloseChannel{}
 	dbData.ChannelId = reqData.ChannelId
 	dbData.Owner = user.PeerId
+	dbData.CommitmentTxId = lastCommitmentTx.Id
+	dbData.CurrState = 0
 	dbData.CreateAt = time.Now()
 	dataBytes, _ := json.Marshal(dbData)
-	dbData.Hex = tool.SignMsgWithSha256(dataBytes)
+	dbData.RequestHex = tool.SignMsgWithSha256(dataBytes)
 	err = db.Save(dbData)
 	if err != nil {
 		log.Println(err)
@@ -360,7 +362,7 @@ func (c *channelManager) RequestCloseChannel(jsonData string, user *bean.User) (
 
 	toData := make(map[string]interface{})
 	toData["channel_id"] = reqData.ChannelId
-	toData["request_close_channel_hash"] = dbData.Hex
+	toData["request_close_channel_hash"] = dbData.RequestHex
 	return toData, &targetUser, nil
 }
 
@@ -388,7 +390,8 @@ func (c *channelManager) CloseChannelSign(jsonData string, user *bean.User) (int
 		return nil, nil, err
 	}
 
-	err = db.Select(q.Eq("ChannelId", reqData.ChannelId), q.Eq("Hex", reqData.RequestCloseChannelHash)).First(&dao.CloseChannel{})
+	closeChannelStarterData := &dao.CloseChannel{}
+	err = db.Select(q.Eq("ChannelId", reqData.ChannelId), q.Eq("CurrState", 0), q.Eq("RequestHex", reqData.RequestCloseChannelHash)).First(closeChannelStarterData)
 	if err != nil {
 		log.Println(err)
 		return nil, nil, err
@@ -412,7 +415,7 @@ func (c *channelManager) CloseChannelSign(jsonData string, user *bean.User) (int
 	}
 
 	lastCommitmentTx := &dao.CommitmentTransaction{}
-	err = db.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("Owner", targetUser)).OrderBy("CreateAt").Reverse().First(lastCommitmentTx)
+	err = db.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("TxType", dao.CommitmentTransactionType_Rsmc), q.Eq("Owner", targetUser)).OrderBy("CreateAt").Reverse().First(lastCommitmentTx)
 	if err != nil {
 		log.Println(err)
 		return nil, nil, err
@@ -442,7 +445,7 @@ func (c *channelManager) CloseChannelSign(jsonData string, user *bean.User) (int
 		return nil, nil, err
 	}
 
-	revocableDeliveryTxid, err := rpcClient.SendRawTransaction(lastRevocableDeliveryTx.TransactionSignHex)
+	revocableDeliveryTxid, err := rpcClient.SendRawTransaction(lastRevocableDeliveryTx.TxHash)
 	if err != nil {
 		log.Println(err)
 		msg := err.Error()
@@ -481,6 +484,9 @@ func (c *channelManager) CloseChannelSign(jsonData string, user *bean.User) (int
 		return nil, nil, err
 	}
 
+	closeChannelStarterData.CurrState = 1
+	_ = tx.Update(closeChannelStarterData)
+
 	err = tx.Commit()
 	if err != nil {
 		return nil, nil, err
@@ -491,14 +497,14 @@ func (c *channelManager) CloseChannelSign(jsonData string, user *bean.User) (int
 
 func addRDTxToWaitDB(tx storm.Node, lastRevocableDeliveryTx *dao.RevocableDeliveryTransaction) (err error) {
 	node := &dao.RDTxWaitingSend{}
-	count, err := tx.Select(q.Eq("TransactionHex", lastRevocableDeliveryTx.TransactionSignHex)).Count(node)
+	count, err := tx.Select(q.Eq("TransactionHex", lastRevocableDeliveryTx.TxHash)).Count(node)
 	if err == nil {
 		return err
 	}
 	if count > 0 {
 		return errors.New("always save")
 	}
-	node.TransactionHex = lastRevocableDeliveryTx.TransactionSignHex
+	node.TransactionHex = lastRevocableDeliveryTx.TxHash
 	node.IsEnable = true
 	node.CreateAt = time.Now()
 	err = tx.Save(node)

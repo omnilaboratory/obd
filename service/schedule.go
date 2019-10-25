@@ -8,8 +8,7 @@ import (
 	"time"
 )
 
-type scheduleManager struct {
-}
+type scheduleManager struct{}
 
 var ScheduleService = scheduleManager{}
 

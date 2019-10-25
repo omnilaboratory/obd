@@ -83,7 +83,7 @@ func htlcAliceAbortLastCommitmentTx(tx storm.Node, channelInfo dao.ChannelInfo, 
 
 	//针对的是Cna
 	var lastCommitmentATx = &dao.CommitmentTransaction{}
-	err := tx.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("Owner", owner), q.Eq("CurrState", dao.TxInfoState_Rsmc_CreateAndSign)).OrderBy("CreateAt").Reverse().First(lastCommitmentATx)
+	err := tx.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("Owner", owner), q.Eq("CurrState", dao.TxInfoState_CreateAndSign)).OrderBy("CreateAt").Reverse().First(lastCommitmentATx)
 	if err != nil {
 		return err
 	}
@@ -99,7 +99,7 @@ func htlcAliceAbortLastCommitmentTx(tx storm.Node, channelInfo dao.ChannelInfo, 
 		}
 
 		lastRDTransaction := &dao.RevocableDeliveryTransaction{}
-		err = tx.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("Owner", owner), q.Eq("CommitmentTxId", lastCommitmentATx.Id), q.Eq("CurrState", dao.TxInfoState_Rsmc_CreateAndSign)).OrderBy("CreateAt").Reverse().First(lastRDTransaction)
+		err = tx.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("Owner", owner), q.Eq("CommitmentTxId", lastCommitmentATx.Id), q.Eq("CurrState", dao.TxInfoState_CreateAndSign)).OrderBy("CreateAt").Reverse().First(lastRDTransaction)
 		if err != nil {
 			log.Println(err)
 			return err
@@ -156,7 +156,7 @@ func htlcAliceAbortLastCommitmentTx(tx storm.Node, channelInfo dao.ChannelInfo, 
 			breachRemedyTransaction.Txid = txid
 			breachRemedyTransaction.TransactionSignHex = hex
 			breachRemedyTransaction.SignAt = time.Now()
-			breachRemedyTransaction.CurrState = dao.TxInfoState_Rsmc_CreateAndSign
+			breachRemedyTransaction.CurrState = dao.TxInfoState_CreateAndSign
 			err = tx.Save(breachRemedyTransaction)
 			if err != nil {
 				log.Println(err)
@@ -193,7 +193,7 @@ func htlcBobAbortLastCommitmentTx(tx storm.Node, channelInfo dao.ChannelInfo, us
 
 	//针对的是Cnb
 	var lastCommitmentBTx = &dao.CommitmentTransaction{}
-	err := tx.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("Owner", owner), q.Eq("CurrState", dao.TxInfoState_Rsmc_CreateAndSign)).OrderBy("CreateAt").Reverse().First(lastCommitmentBTx)
+	err := tx.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("Owner", owner), q.Eq("CurrState", dao.TxInfoState_CreateAndSign)).OrderBy("CreateAt").Reverse().First(lastCommitmentBTx)
 	if err != nil {
 		lastCommitmentBTx = nil
 	}
@@ -212,7 +212,7 @@ func htlcBobAbortLastCommitmentTx(tx storm.Node, channelInfo dao.ChannelInfo, us
 		// 如果有了新的承诺交易，而某人想耍赖，不承认新的交易，而去广播之前的交易，因为等待的1000个10分钟，通过BR就能让违反规则的人血本无归
 		// 如果没有新的交易，当前操作者也能取回自己的钱，虽然要等待1000个区块，但是也不会让自己的钱丢失
 		lastRDTransaction := &dao.RevocableDeliveryTransaction{}
-		err = tx.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("Owner", owner), q.Eq("CommitmentTxId", lastCommitmentBTx.Id), q.Eq("CurrState", dao.TxInfoState_Rsmc_CreateAndSign)).OrderBy("CreateAt").Reverse().First(lastRDTransaction)
+		err = tx.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("Owner", owner), q.Eq("CommitmentTxId", lastCommitmentBTx.Id), q.Eq("CurrState", dao.TxInfoState_CreateAndSign)).OrderBy("CreateAt").Reverse().First(lastRDTransaction)
 		if err != nil {
 			log.Println(err)
 			return err
@@ -267,7 +267,7 @@ func htlcBobAbortLastCommitmentTx(tx storm.Node, channelInfo dao.ChannelInfo, us
 			breachRemedyTransaction.Txid = txid
 			breachRemedyTransaction.TransactionSignHex = hex
 			breachRemedyTransaction.SignAt = time.Now()
-			breachRemedyTransaction.CurrState = dao.TxInfoState_Rsmc_CreateAndSign
+			breachRemedyTransaction.CurrState = dao.TxInfoState_CreateAndSign
 			err = tx.Save(breachRemedyTransaction)
 			if err != nil {
 				log.Println(err)
@@ -331,7 +331,7 @@ func createHtlcTimeoutTxForAliceSide(tx storm.Node, owner string, channelInfo da
 	htlcTimeoutTx.RSMCTxid = txid
 	htlcTimeoutTx.RSMCTxHash = hex
 	htlcTimeoutTx.SignAt = time.Now()
-	htlcTimeoutTx.CurrState = dao.TxInfoState_Rsmc_CreateAndSign
+	htlcTimeoutTx.CurrState = dao.TxInfoState_CreateAndSign
 	err = tx.Save(htlcTimeoutTx)
 	if err != nil {
 		log.Println(err)
@@ -379,7 +379,7 @@ func createHtlcTimeoutTxForBobSide(tx storm.Node, owner string, channelInfo dao.
 	htlcTimeoutTx.RSMCTxid = txid
 	htlcTimeoutTx.RSMCTxHash = hex
 	htlcTimeoutTx.SignAt = time.Now()
-	htlcTimeoutTx.CurrState = dao.TxInfoState_Rsmc_CreateAndSign
+	htlcTimeoutTx.CurrState = dao.TxInfoState_CreateAndSign
 	err = tx.Save(htlcTimeoutTx)
 	if err != nil {
 		log.Println(err)
@@ -397,7 +397,7 @@ func createHtlcTimeoutDeliveryTx(tx storm.Node, owner string, outputAddress stri
 	htlcTimeoutDeliveryTx.InputHex = commitmentTxInfo.HtlcTxHash
 	htlcTimeoutDeliveryTx.OutAmount = commitmentTxInfo.AmountToHtlc
 	htlcTimeoutDeliveryTx.Owner = owner
-	htlcTimeoutDeliveryTx.CurrState = dao.TxInfoState_Rsmc_CreateAndSign
+	htlcTimeoutDeliveryTx.CurrState = dao.TxInfoState_CreateAndSign
 	htlcTimeoutDeliveryTx.CreateBy = operator.PeerId
 	htlcTimeoutDeliveryTx.Timeout = timeout
 	htlcTimeoutDeliveryTx.CreateAt = time.Now()
@@ -802,9 +802,9 @@ func htlcCreateRDOfRsmc(tx storm.Node, channelInfo dao.ChannelInfo, operator bea
 	}
 
 	rdTransaction.Txid = txid
-	rdTransaction.TransactionSignHex = hex
+	rdTransaction.TxHash = hex
 	rdTransaction.SignAt = time.Now()
-	rdTransaction.CurrState = dao.TxInfoState_Rsmc_CreateAndSign
+	rdTransaction.CurrState = dao.TxInfoState_CreateAndSign
 	err = tx.Save(rdTransaction)
 	if err != nil {
 		log.Println(err)
@@ -865,9 +865,9 @@ func createHtlcRD(tx storm.Node, channelInfo dao.ChannelInfo, operator bean.User
 	}
 
 	rdTransaction.Txid = txid
-	rdTransaction.TransactionSignHex = hex
+	rdTransaction.TxHash = hex
 	rdTransaction.SignAt = time.Now()
-	rdTransaction.CurrState = dao.TxInfoState_Rsmc_CreateAndSign
+	rdTransaction.CurrState = dao.TxInfoState_CreateAndSign
 	err = tx.Save(rdTransaction)
 	if err != nil {
 		log.Println(err)
@@ -945,7 +945,7 @@ func htlcCreateExecutionDeliveryA(tx storm.Node, channelInfo dao.ChannelInfo, fu
 	hednA.Txid = txid
 	hednA.TxHash = hex
 	hednA.CreateAt = time.Now()
-	hednA.CurrState = dao.TxInfoState_Rsmc_CreateAndSign
+	hednA.CurrState = dao.TxInfoState_CreateAndSign
 	err = tx.Save(hednA)
 	if err != nil {
 		log.Println(err)

@@ -44,10 +44,12 @@ type ChannelInfo struct {
 
 type CloseChannel struct {
 	bean.CloseChannel
-	Id       int       `storm:"id,increment" json:"id"`
-	Hex      string    `json:"hex"`
-	Owner    string    `json:"owner"`
-	CreateAt time.Time `json:"create_at"`
+	Id             int       `storm:"id,increment" json:"id"`
+	CommitmentTxId int       `json:"commitment_tx_id"`
+	RequestHex     string    `json:"request_hex"`
+	Owner          string    `json:"owner"`
+	CurrState      int       `json:"curr_state"` // 0: create 1 finish
+	CreateAt       time.Time `json:"create_at"`
 }
 
 type FundingTransactionState int
@@ -81,11 +83,11 @@ type FundingTransaction struct {
 type TxInfoState int
 
 const (
-	TxInfoState_Rsmc_CreateAndSign TxInfoState = 10
-	TxInfoState_Htlc_GetH          TxInfoState = 11 // 创建Htlc交易的时候的状态
-	TxInfoState_Htlc_GetR          TxInfoState = 12 // 获取到R后的状态
-	TxInfoState_SendHex            TxInfoState = 20
-	TxInfoState_Abord              TxInfoState = 30
+	TxInfoState_CreateAndSign TxInfoState = 10
+	TxInfoState_Htlc_GetH     TxInfoState = 11 // 创建Htlc交易的时候的状态
+	TxInfoState_Htlc_GetR     TxInfoState = 12 // 获取到R后的状态
+	TxInfoState_SendHex       TxInfoState = 20
+	TxInfoState_Abord         TxInfoState = 30
 )
 
 type FundingBtcRequest struct {
@@ -179,28 +181,28 @@ type CommitmentTransaction struct {
 
 // close channel , alice or bob wait 1000 sequence to drawback the balance
 type RevocableDeliveryTransaction struct {
-	Id                 int            `storm:"id,increment" json:"id" `
-	CommitmentTxId     int            `json:"commitment_tx_id"`
-	PeerIdA            string         `json:"peer_id_a"`
-	PeerIdB            string         `json:"peer_id_b"`
-	ChannelId          bean.ChannelID `json:"channel_id"`
-	PropertyId         int64          `json:"property_id"`
-	InputTxid          string         `json:"input_txid"`     //input txid  from commitTx alice2&bob multtaddr, so need  sign of alice2 and bob
-	InputVout          uint32         `json:"input_vout"`     // input vout
-	InputAmount        float64        `json:"input_amount"`   //input amount
-	OutputAddress      string         `json:"output_address"` //output alice
-	Sequence           int            `json:"sequence"`
-	RDType             int            `json:"rd_type"` // default 0 for rsmc Rd,1 for htrd
-	Amount             float64        `json:"amount"`  // output alice amount
-	TransactionSignHex string         `json:"transaction_sign_hex"`
-	Txid               string         `json:"txid"`
-	CurrState          TxInfoState    `json:"curr_state"`
-	CreateBy           string         `json:"create_by"`
-	CreateAt           time.Time      `json:"create_at"`
-	SignAt             time.Time      `json:"sign_at"`
-	SendAt             time.Time      `json:"send_at"`
-	LastEditTime       time.Time      `json:"last_edit_time"`
-	Owner              string         `json:"owner"`
+	Id             int            `storm:"id,increment" json:"id" `
+	CommitmentTxId int            `json:"commitment_tx_id"`
+	PeerIdA        string         `json:"peer_id_a"`
+	PeerIdB        string         `json:"peer_id_b"`
+	ChannelId      bean.ChannelID `json:"channel_id"`
+	PropertyId     int64          `json:"property_id"`
+	InputTxid      string         `json:"input_txid"`     //input txid  from commitTx alice2&bob multtaddr, so need  sign of alice2 and bob
+	InputVout      uint32         `json:"input_vout"`     // input vout
+	InputAmount    float64        `json:"input_amount"`   //input amount
+	OutputAddress  string         `json:"output_address"` //output alice
+	Sequence       int            `json:"sequence"`
+	RDType         int            `json:"rd_type"` // default 0 for rsmc Rd,1 for htrd
+	Amount         float64        `json:"amount"`  // output alice amount
+	TxHash         string         `json:"tx_hash"`
+	Txid           string         `json:"txid"`
+	CurrState      TxInfoState    `json:"curr_state"`
+	CreateBy       string         `json:"create_by"`
+	CreateAt       time.Time      `json:"create_at"`
+	SignAt         time.Time      `json:"sign_at"`
+	SendAt         time.Time      `json:"send_at"`
+	LastEditTime   time.Time      `json:"last_edit_time"`
+	Owner          string         `json:"owner"`
 }
 
 // rd tx of waiting 1000 sequence

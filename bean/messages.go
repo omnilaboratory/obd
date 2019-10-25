@@ -248,3 +248,6 @@ type HtlcSignCloseCurrTx struct {
 	CurrRsmcTempAddressPubKey            string `json:"curr_rsmc_temp_address_pub_key"`
 	CurrRsmcTempAddressPrivateKey        string `json:"curr_rsmc_temp_address_private_key"`
 }
+
+type HtlcCloseChannel CloseChannel
+type HtlcCloseChannelSign CloseChannelSign

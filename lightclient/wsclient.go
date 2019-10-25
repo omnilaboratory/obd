@@ -187,7 +187,7 @@ func (client *Client) Read() {
 					}
 
 					// -48
-					if msg.Type <= enum.MsgType_HTLC_RequestCloseCurrTx_N48 && msg.Type >= enum.MsgType_HTLC_SignCloseCurrTx_N49 {
+					if msg.Type <= enum.MsgType_HTLC_RequestCloseCurrTx_N48 && msg.Type >= enum.MsgType_HTLC_SignCloseChannel_N51 {
 						sendType, dataOut, status = client.htlcCloseModule(msg)
 						break
 					}

@@ -588,7 +588,7 @@ func (service *fundingTransactionManager) FundingOmniTxSign(jsonData string, sig
 		}
 
 		commitmentTxInfo.SignAt = time.Now()
-		commitmentTxInfo.CurrState = dao.TxInfoState_Rsmc_CreateAndSign
+		commitmentTxInfo.CurrState = dao.TxInfoState_CreateAndSign
 		commitmentTxInfo.LastHash = ""
 		commitmentTxInfo.CurrHash = ""
 		err = tx.Save(commitmentTxInfo)
@@ -638,9 +638,9 @@ func (service *fundingTransactionManager) FundingOmniTxSign(jsonData string, sig
 			return nil, err
 		}
 		rdTransaction.Txid = txid
-		rdTransaction.TransactionSignHex = hex
+		rdTransaction.TxHash = hex
 		rdTransaction.SignAt = time.Now()
-		rdTransaction.CurrState = dao.TxInfoState_Rsmc_CreateAndSign
+		rdTransaction.CurrState = dao.TxInfoState_CreateAndSign
 		err = tx.Save(rdTransaction)
 		if err != nil {
 			return nil, err
