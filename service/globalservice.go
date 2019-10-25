@@ -311,6 +311,6 @@ func getInputsForNextTxByParseTxHashVout(hex string, toAddress, scriptPubKey str
 
 func getLatestCommitmentTx(channelId bean.ChannelID, owner string) (commitmentTxInfo *dao.CommitmentTransaction, err error) {
 	commitmentTxInfo = &dao.CommitmentTransaction{}
-	err = db.Select(q.Eq("ChannelId", channelId), q.Eq("Owner", owner), q.Eq("CurrState", dao.TxInfoState_CreateAndSign)).OrderBy("CreateAt").Reverse().First(commitmentTxInfo)
+	err = db.Select(q.Eq("ChannelId", channelId), q.Eq("Owner", owner), q.Eq("CurrState", dao.TxInfoState_Rsmc_CreateAndSign)).OrderBy("CreateAt").Reverse().First(commitmentTxInfo)
 	return commitmentTxInfo, err
 }

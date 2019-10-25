@@ -291,7 +291,7 @@ func (c *channelManager) SendBreachRemedyTransaction(jsonData string, user *bean
 	}
 
 	lastBRTx := &dao.BreachRemedyTransaction{}
-	err = db.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("CurrState", dao.TxInfoState_CreateAndSign), q.Eq("Owner", user.PeerId)).OrderBy("CreateAt").Reverse().First(lastBRTx)
+	err = db.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("CurrState", dao.TxInfoState_Rsmc_CreateAndSign), q.Eq("Owner", user.PeerId)).OrderBy("CreateAt").Reverse().First(lastBRTx)
 	if err != nil {
 		err = errors.New("not found the latest br")
 		log.Println(err)
