@@ -68,7 +68,9 @@ func (service *htlcBackwardTxManager) CarolSendRToBob(msgData string,
 
 	// Get Bob peerId.
 	htlcSingleHopPathInfo := dao.HtlcSingleHopPathInfo{}
-	err = db.Select(q.Eq("", reqData.RequestHash)).First(&htlcSingleHopPathInfo)
+	err = db.Select(q.Eq("HtlcCreateRandHInfoRequestHash", 
+		reqData.RequestHash)).First(&htlcSingleHopPathInfo)
+
 	if err != nil {
 		log.Println(err)
 		return nil, "", err
@@ -80,7 +82,6 @@ func (service *htlcBackwardTxManager) CarolSendRToBob(msgData string,
 	err = db.Select(
 		q.Eq("RequestHash", reqData.RequestHash), 
 		q.Eq("R", reqData.R), // R from websocket client of Carol
-		q.Eq("CreateBy", user.PeerId), // Carol
 		q.Eq("CurrState", dao.NS_Finish)).First(rAndHInfo)
 
 	if err != nil {
