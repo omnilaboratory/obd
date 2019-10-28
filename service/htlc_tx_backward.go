@@ -6,11 +6,9 @@ import (
 	"LightningOnOmni/tool"
 	"encoding/json"
 	"errors"
-	"github.com/asdine/storm"
 	"github.com/asdine/storm/q"
 	"log"
 	"sync"
-	"time"
 )
 
 type htlcBackwardTxManager struct {
@@ -20,12 +18,12 @@ type htlcBackwardTxManager struct {
 // HTLC Reverse pass the R (Preimage R)
 var HtlcBackwardTxService htlcBackwardTxManager
 
-// CarolSendRToBob
+// SendRToPreviousNode
 //
-// Process type -46: Carol send R to Bob (middleman).
-//  * R is <Preimage_R> 
-func (service *htlcBackwardTxManager) CarolSendRToBob(msgData string, 
-	user bean.User) (data map[string]interface{}, bob string, err error) {
+// Process type -46: Send R to Previous Node (middleman).
+//  * R is <Preimage_R>
+func (service *htlcBackwardTxManager) SendRToPreviousNode(msgData string,
+	user bean.User) (data map[string]interface{}, previousNode string, err error) {
 
 	// region Parse data inputed from [Carol] websocket client.
 	if tool.CheckIsString(&msgData) == false {
@@ -39,14 +37,14 @@ func (service *htlcBackwardTxManager) CarolSendRToBob(msgData string,
 		return nil, "", err
 	}
 	// endregion
-	
+
 	// region Check data inputed from websocket client of Carol.
 	if tool.CheckIsString(&reqData.RequestHash) == false {
 		err = errors.New("empty request_hash")
 		log.Println(err)
 		return nil, "", err
 	}
-	
+
 	if tool.CheckIsString(&reqData.ChannelAddressPrivateKey) == false {
 		err = errors.New("channel_address_private_key is empty")
 		log.Println(err)
@@ -66,7 +64,7 @@ func (service *htlcBackwardTxManager) CarolSendRToBob(msgData string,
 	}
 	// endregion
 
-	// Get Bob peerId.
+	// region Get peerId of previous node.
 	htlcSingleHopPathInfo := dao.HtlcSingleHopPathInfo{}
 	err = db.Select(q.Eq("HtlcCreateRandHInfoRequestHash", 
 		reqData.RequestHash)).First(&htlcSingleHopPathInfo)
@@ -75,7 +73,21 @@ func (service *htlcBackwardTxManager) CarolSendRToBob(msgData string,
 		log.Println(err)
 		return nil, "", err
 	}
-	bob = htlcSingleHopPathInfo.InterNodePeerId
+
+	currChannel := &dao.ChannelInfo{}
+	err = db.One("Id", htlcSingleHopPathInfo.SecondChannelId, currChannel)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, "", err
+	}
+
+	previousNode = currChannel.PeerIdB
+	if user.PeerId == currChannel.PeerIdB {
+		previousNode = currChannel.AddressA
+	}
+
+	htlcSingleHopPathInfo.CurrStep += 1
+	// endregion
 
 	// Check R
 	rAndHInfo := &dao.HtlcRAndHInfo{}
@@ -97,13 +109,13 @@ func (service *htlcBackwardTxManager) CarolSendRToBob(msgData string,
 	responseData["request_hash"] = rAndHInfo.RequestHash
 	responseData["r"] = rAndHInfo.R
 
-	return responseData, bob, nil
+	return responseData, previousNode, nil
 }
 
 // SignGetR
 //
 // Process type -47: Bob (middleman) check out if R is correct.
-//  * R is <Preimage_R> 
+//  * R is <Preimage_R>
 func (service *htlcBackwardTxManager) SignGetR(msgData string, user bean.User) (
 	data map[string]interface{}, targetUser string, err error) {
 
@@ -111,9 +123,10 @@ func (service *htlcBackwardTxManager) SignGetR(msgData string, user bean.User) (
 	// 	return nil, "", errors.New("empty json data")
 	// }
 
-	
 	// data = make(map[string]interface{})
 	// data["approval"] = requestData.Approval
 	// data["request_hash"] = requestData.RequestHash
 	// return data, rAndHInfo.SenderPeerId, nil
+
+	return nil, "", nil
 }

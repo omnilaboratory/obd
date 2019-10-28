@@ -203,7 +203,9 @@ func (client *Client) htlcTxModule(msg bean.RequestMessage) (enum.SendTargetType
 
 	// Coding by Kevin 2019-10-28
 	case enum.MsgType_HTLC_SendR_N46:
-		respond, senderPeerId, err := service.HtlcBackwardTxService.CarolSendRToBob(msg.Data, *client.User)
+		respond, senderPeerId, err := 
+			service.HtlcBackwardTxService.SendRToPreviousNode(msg.Data, *client.User)
+			
 		if err != nil {
 			data = err.Error()
 		} else {
