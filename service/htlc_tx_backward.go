@@ -6,11 +6,9 @@ import (
 	"LightningOnOmni/tool"
 	"encoding/json"
 	"errors"
-	"github.com/asdine/storm"
 	"github.com/asdine/storm/q"
 	"log"
 	"sync"
-	"time"
 )
 
 type htlcBackwardTxManager struct {
@@ -23,8 +21,8 @@ var HtlcBackwardTxService htlcBackwardTxManager
 // CarolSendRToBob
 //
 // Process type -46: Carol send R to Bob (middleman).
-//  * R is <Preimage_R> 
-func (service *htlcBackwardTxManager) CarolSendRToBob(msgData string, 
+//  * R is <Preimage_R>
+func (service *htlcBackwardTxManager) CarolSendRToBob(msgData string,
 	user bean.User) (data map[string]interface{}, bob string, err error) {
 
 	// region Parse data inputed from [Carol] websocket client.
@@ -39,14 +37,14 @@ func (service *htlcBackwardTxManager) CarolSendRToBob(msgData string,
 		return nil, "", err
 	}
 	// endregion
-	
+
 	// region Check data inputed from websocket client of Carol.
 	if tool.CheckIsString(&reqData.RequestHash) == false {
 		err = errors.New("empty request_hash")
 		log.Println(err)
 		return nil, "", err
 	}
-	
+
 	if tool.CheckIsString(&reqData.ChannelAddressPrivateKey) == false {
 		err = errors.New("channel_address_private_key is empty")
 		log.Println(err)
@@ -68,7 +66,7 @@ func (service *htlcBackwardTxManager) CarolSendRToBob(msgData string,
 
 	// Get Bob peerId.
 	htlcSingleHopPathInfo := dao.HtlcSingleHopPathInfo{}
-	err = db.Select(q.Eq("", reqData.RequestHash)).First(&htlcSingleHopPathInfo)
+	err = db.Select(q.Eq("HtlcCreateRandHInfoRequestHash", reqData.RequestHash)).First(&htlcSingleHopPathInfo)
 	if err != nil {
 		log.Println(err)
 		return nil, "", err
@@ -78,8 +76,8 @@ func (service *htlcBackwardTxManager) CarolSendRToBob(msgData string,
 	// Check R
 	rAndHInfo := &dao.HtlcRAndHInfo{}
 	err = db.Select(
-		q.Eq("RequestHash", reqData.RequestHash), 
-		q.Eq("R", reqData.R), // R from websocket client of Carol
+		q.Eq("RequestHash", reqData.RequestHash),
+		q.Eq("R", reqData.R),          // R from websocket client of Carol
 		q.Eq("CreateBy", user.PeerId), // Carol
 		q.Eq("CurrState", dao.NS_Finish)).First(rAndHInfo)
 
@@ -102,7 +100,7 @@ func (service *htlcBackwardTxManager) CarolSendRToBob(msgData string,
 // SignGetR
 //
 // Process type -47: Bob (middleman) check out if R is correct.
-//  * R is <Preimage_R> 
+//  * R is <Preimage_R>
 func (service *htlcBackwardTxManager) SignGetR(msgData string, user bean.User) (
 	data map[string]interface{}, targetUser string, err error) {
 
@@ -110,9 +108,10 @@ func (service *htlcBackwardTxManager) SignGetR(msgData string, user bean.User) (
 	// 	return nil, "", errors.New("empty json data")
 	// }
 
-	
 	// data = make(map[string]interface{})
 	// data["approval"] = requestData.Approval
 	// data["request_hash"] = requestData.RequestHash
 	// return data, rAndHInfo.SenderPeerId, nil
+
+	return nil, "", nil
 }

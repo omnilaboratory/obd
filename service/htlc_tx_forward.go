@@ -17,7 +17,7 @@ type htlcForwardTxManager struct {
 	operationFlag sync.Mutex
 }
 
-const singleHopNeedTotalDay = 3
+const singleHopNeedTotalDay = 2 + 1
 const singleHopPerHopDuration = 6 * 24
 
 // htlc 正向交易
@@ -280,7 +280,7 @@ func (service *htlcForwardTxManager) SenderBeginCreateHtlcCommitmentTx(msgData s
 	}
 
 	htlcSingleHopPathInfo := dao.HtlcSingleHopPathInfo{}
-	err = db.Select(q.Eq("", requestData.RequestHash)).First(&htlcSingleHopPathInfo)
+	err = db.Select(q.Eq("HtlcCreateRandHInfoRequestHash", requestData.RequestHash)).First(&htlcSingleHopPathInfo)
 	if err != nil {
 		log.Println(err)
 		return nil, "", err
