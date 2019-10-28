@@ -227,6 +227,16 @@ type HtlcRequestOpen struct {
 	CurrHtlcTempAddressForHt1aPrivateKey string `json:"curr_htlc_temp_address_for_ht1a_private_key"` //	创建Ht1a中生成ht1a的输出的Rmsc的临时私钥
 }
 
+//type -46: Send R to previous node.
+type HtlcSendR struct {
+	RequestHash                          string `json:"request_hash"`
+	R                                    string `json:"r"`
+	// The key of Sender. Example Carol send R to Bob, the Sender is Carol.
+	ChannelAddressPrivateKey             string `json:"channel_address_private_key"`
+	CurrHtlcTempAddressForHE1bPubKey     string `json:"curr_htlc_temp_address_for_he1b_pub_key"`     
+	CurrHtlcTempAddressForHE1bPrivateKey string `json:"curr_htlc_temp_address_for_he1b_private_key"`
+}
+
 //type -48: user wanna close htlc tx when tx is on getH state
 type HtlcRequestCloseCurrTx struct {
 	ChannelId                            ChannelID `json:"channel_id"`

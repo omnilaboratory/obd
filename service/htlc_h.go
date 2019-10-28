@@ -22,10 +22,24 @@ var HtlcHMessageService htlcHMessageManager
 // DealHtlcRequest
 //
 // Process type -40: Alice start a request to transfer to Carol.
-func (service *htlcHMessageManager) DealHtlcRequest(jsonData string, creator *bean.User) (data *bean.HtlcHRespond, err error) {
+func (service *htlcHMessageManager) DealHtlcRequest(jsonData string, 
+	creator *bean.User) (data *bean.HtlcHRespond, err error) {
+
+	//------------
+	// ** We will launch a HTLC transfer for testing purpose. **
+	// It tests Alice transfer money to Carol through Bob (middleman).
+	//
+	// a) There IS NOT a direct channel between Alice and Carol.
+	// b) There is a direct channel between Alice and Bob.
+	// c) There is a direct channel between Bob and Carol.
+	//------------
+
+	// [jsonData] is content inputed from [Alice] websocket client.
 	if tool.CheckIsString(&jsonData) == false {
 		return nil, errors.New("empty json data")
 	}
+
+	// Get [HtlcHRequest] struct object from [jsonData].
 	htlcHRequest := &bean.HtlcHRequest{}
 	err = json.Unmarshal([]byte(jsonData), htlcHRequest)
 	if err != nil {
@@ -44,7 +58,11 @@ func (service *htlcHMessageManager) DealHtlcRequest(jsonData string, creator *be
 		log.Println(err)
 		return nil, err
 	}
+
+	// If there is an error, roll back the database.
 	defer tx.Rollback()
+
+	// [HtlcRAndHInfo] struct object save the base data about HTLC flow.
 	rAndHInfo := &dao.HtlcRAndHInfo{}
 	rAndHInfo.SenderPeerId = creator.PeerId
 	rAndHInfo.RecipientPeerId = htlcHRequest.RecipientPeerId
@@ -53,25 +71,37 @@ func (service *htlcHMessageManager) DealHtlcRequest(jsonData string, creator *be
 	rAndHInfo.CurrState = dao.NS_Create
 	rAndHInfo.CreateAt = time.Now()
 	rAndHInfo.CreateBy = creator.PeerId
+
+	// Cache data. DO NOT write to database actually.
 	err = tx.Save(rAndHInfo)
 	if err != nil {
 		log.Println(err)
 		return nil, err
 	}
+
+	// Generate a request hash for HTLC Request every time.
+	// The [RequestHash] is used to uniquely identify each HTLC request.
 	bytes, err := json.Marshal(rAndHInfo)
 	msgHash := tool.SignMsgWithSha256(bytes)
 	rAndHInfo.RequestHash = msgHash
+
+	// Update the cache data. DO NOT write to database actually.
 	err = tx.Update(rAndHInfo)
 	if err != nil {
 		log.Println(err)
 		return nil, err
 	}
+
+	// Commit transaction. Write to database actually.
 	err = tx.Commit()
 	if err != nil {
 		log.Println(err)
 		return nil, err
 	}
 
+	// Generate response message.
+	// If no error, the response data is displayed in websocket client of Carol.
+	// Otherwise, it is displayed in websocket client of Alice.
 	data = &bean.HtlcHRespond{}
 	data.PropertyId = htlcHRequest.PropertyId
 	data.Amount = htlcHRequest.Amount
@@ -80,16 +110,26 @@ func (service *htlcHMessageManager) DealHtlcRequest(jsonData string, creator *be
 	return data, nil
 }
 
-func (service *htlcHMessageManager) DealHtlcResponse(jsonData string, user *bean.User) (data interface{}, senderPeerId *string, err error) {
+// DealHtlcResponse
+//
+// Process type -41: Carol response to transfer H to Alice.
+//  * H is <hash_of_preimage_R> 
+func (service *htlcHMessageManager) DealHtlcResponse(jsonData string, 
+	user *bean.User) (data interface{}, senderPeerId *string, err error) {
+
+	// [jsonData] is content inputed from [Carol] websocket client.
 	if tool.CheckIsString(&jsonData) == false {
 		return nil, nil, errors.New("empty json data")
 	}
+
 	htlcHRespond := &bean.HtlcHRespond{}
 	err = json.Unmarshal([]byte(jsonData), htlcHRespond)
 	if err != nil {
 		return nil, nil, err
 	}
 
+	// [HtlcRAndHInfo] has saved to database in [Type -40].
+	// So, get the object from database now. 
 	rAndHInfo := &dao.HtlcRAndHInfo{}
 	err = db.Select(q.Eq("RequestHash", htlcHRespond.RequestHash), q.Eq("CurrState", dao.NS_Create)).First(rAndHInfo)
 	if err != nil {
@@ -97,13 +137,20 @@ func (service *htlcHMessageManager) DealHtlcResponse(jsonData string, user *bean
 	}
 
 	rAndHInfo.CurrState = dao.NS_Refuse
+
+	// Carol approved the request from Alice.
 	if htlcHRespond.Approval {
+
+		// Generate the R and H.
+		// For temp solution currently, the R and H save to database.
+		//  * R is <preimage_R> 
+		//  * H is <hash_of_preimage_R> 
 
 		s, _ := tool.RandBytes(32)
 		temp := append([]byte(rAndHInfo.RequestHash), s...)
 		temp = append(temp, user.PeerId...)
-		r := tool.SignMsgWithRipemd160(temp)
 
+		r := tool.SignMsgWithRipemd160(temp)
 		h := tool.SignMsgWithSha256([]byte(r))
 
 		rAndHInfo.R = r
@@ -118,6 +165,9 @@ func (service *htlcHMessageManager) DealHtlcResponse(jsonData string, user *bean
 		return nil, &rAndHInfo.SenderPeerId, err
 	}
 
+	// Generate response message.
+	// If no error, the response data is displayed in websocket client of Alice.
+	// Otherwise, it is displayed in websocket client of Carol.
 	responseData := make(map[string]interface{})
 	responseData["id"] = rAndHInfo.Id
 	responseData["request_hash"] = htlcHRespond.RequestHash

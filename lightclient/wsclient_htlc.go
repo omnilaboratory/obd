@@ -201,7 +201,24 @@ func (client *Client) htlcTxModule(msg bean.RequestMessage) (enum.SendTargetType
 		}
 		sendType = enum.SendTargetType_SendToSomeone
 
+	// Coding by Kevin 2019-10-28
 	case enum.MsgType_HTLC_SendR_N46:
+		respond, senderPeerId, err := service.HtlcBackwardTxService.CarolSendRToBob(msg.Data, *client.User)
+		if err != nil {
+			data = err.Error()
+		} else {
+			bytes, err := json.Marshal(respond)
+			if err != nil {
+				data = err.Error()
+			} else {
+				data = string(bytes)
+				status = true
+				_ = client.sendToSomeone(msg.Type, status, senderPeerId, data)
+			}
+		}
+		if status == false {
+			client.sendToMyself(msg.Type, status, data)
+		}
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_HTLC_SignGetR_N47:
 		sendType = enum.SendTargetType_SendToSomeone
