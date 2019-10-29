@@ -141,7 +141,7 @@ type HTLCTimeoutBreachRemedyTransaction struct {
 	HTLCTimeoutTxForAAndExecutionForBId int            `json:"htlc_timeout_tx_for_a_and_execution_for_b_id"`
 	PropertyId                          int64          `json:"property_id"`
 	InputHash                           string         `json:"input_hash"`
-	Amount                              float64        `json:"amount"` // output boob amount
+	Amount                              float64        `json:"amount"` // output bob amount
 	TxHash                              string         `json:"tx_hash"`
 	Txid                                string         `json:"txid"`
 	CurrState                           TxInfoState    `json:"curr_state"`
