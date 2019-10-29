@@ -117,9 +117,9 @@ type HtlcSingleHopPathInfo struct {
 	CurrStep                     int                        `json:"curr_step"`
 	CreateBy                     string                     `json:"create_by"`
 	CreateAt                     time.Time                  `json:"create_at"`
-	BobCurrRsmcTempPubKey        string                     `json:"bob_curr_rsmc_temp_pub_key"`          // for cnb output1
-	BobCurrHtlcTempPubKey        string                     `json:"bob_curr_htlc_temp_pub_key"`          // for cnb output2
-	BobCurrHtlcTempForHt1bPubKey string                     `json:"bob_curr_htlc_temp_for_ht1b_pub_key"` // for he1b
+	BobCurrRsmcTempPubKey        string                     `json:"bob_curr_rsmc_temp_pub_key"`          // for cnb output1 temp data
+	BobCurrHtlcTempPubKey        string                     `json:"bob_curr_htlc_temp_pub_key"`          // for cnb output2 temp data
+	BobCurrHtlcTempForHt1bPubKey string                     `json:"bob_curr_htlc_temp_for_ht1b_pub_key"` // for he1b  temp data
 }
 
 // 为记录-48的关闭htlc的请求数据
