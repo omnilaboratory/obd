@@ -197,10 +197,7 @@ type HtlcRequestFindPathAndSendH struct {
 
 //type -43: bob send h to carl
 type HtlcSendH struct {
-	HAndRInfoRequestHash         string `json:"h_and_r_info_request_hash"`
-	BobCurrRsmcTempPubKey        string `json:"bob_curr_rsmc_temp_pub_key"`
-	BobCurrHtlcTempPubKey        string `json:"bob_curr_htlc_temp_pub_key"`
-	BobCurrHtlcTempForHt1bPubKey string `json:"bob_curr_htlc_temp_for_ht1b_pub_key"`
+	HAndRInfoRequestHash string `json:"h_and_r_info_request_hash"`
 }
 
 //type -44: bob sign the request for the interNode

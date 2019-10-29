@@ -115,10 +115,18 @@ func (service *htlcForwardTxManager) SendH(msgData string, user bean.User) (data
 	}
 
 	carlChannel := &dao.ChannelInfo{}
-	err = db.One("Id", htlcSingleHopPathInfo.SecondChannelId, carlChannel)
+	err = db.Select(
+		q.Eq("Id", htlcSingleHopPathInfo.SecondChannelId),
+		q.Or(
+			q.Eq("PeerIdA", user.PeerId),
+			q.Eq("PeerIdB", user.PeerId))).First(carlChannel)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, "", err
+	}
+
+	if carlChannel.PeerIdA != user.PeerId && carlChannel.PeerIdB != user.PeerId {
+		return nil, "", errors.New("error user")
 	}
 
 	targetUserId = carlChannel.PeerIdB
@@ -131,7 +139,7 @@ func (service *htlcForwardTxManager) SendH(msgData string, user bean.User) (data
 	return data, targetUserId, nil
 }
 
-// -44
+// -44  下一个节点回复请求，如果答应，就把那些密钥信息传递过来，临时放到pathinfo里面
 func (service *htlcForwardTxManager) SignGetH(msgData string, user bean.User) (data map[string]interface{}, targetUser string, err error) {
 	if tool.CheckIsString(&msgData) == false {
 		return nil, "", errors.New("empty json data")
@@ -241,7 +249,7 @@ func (service *htlcForwardTxManager) SignGetH(msgData string, user bean.User) (d
 
 		htlcSingleHopPathInfo.BobCurrRsmcTempPubKey = requestData.CurrRsmcTempAddressPubKey
 		htlcSingleHopPathInfo.BobCurrHtlcTempPubKey = requestData.CurrHtlcTempAddressPubKey
-		htlcSingleHopPathInfo.BobCurrHtlcTempForHt1bPubKey = requestData.CurrHtlcTempAddressForHt1aPrivateKey
+		htlcSingleHopPathInfo.BobCurrHtlcTempForHt1bPubKey = requestData.CurrHtlcTempAddressForHt1aPubKey
 	}
 	err = tx.Update(htlcSingleHopPathInfo)
 	if err != nil {
@@ -281,7 +289,7 @@ func (service *htlcForwardTxManager) SenderBeginCreateHtlcCommitmentTx(msgData s
 	}
 
 	htlcSingleHopPathInfo := dao.HtlcSingleHopPathInfo{}
-	err = db.Select(q.Eq("HtlcCreateRandHInfoRequestHash", requestData.RequestHash)).First(&htlcSingleHopPathInfo)
+	err = db.Select(q.Eq("HAndRInfoRequestHash", requestData.RequestHash)).First(&htlcSingleHopPathInfo)
 	if err != nil {
 		log.Println(err)
 		return nil, "", err

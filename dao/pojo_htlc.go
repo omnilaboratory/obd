@@ -108,15 +108,18 @@ const (
 )
 
 type HtlcSingleHopPathInfo struct {
-	Id              int                        `storm:"id,increment" json:"id" `
-	FirstChannelId  int                        `json:"alice_channel_id"`
-	InterNodePeerId string                     `json:"inter_node_peer_id"`
-	SecondChannelId int                        `json:"second_channel_id"`
-	CurrState       HtlcSingleHopPathInfoState `json:"curr_state"`
-	CurrStep        int                        `json:"curr_step"`
-	CreateBy        string                     `json:"create_by"`
-	CreateAt        time.Time                  `json:"create_at"`
-	bean.HtlcSendH
+	Id                           int                        `storm:"id,increment" json:"id" `
+	HAndRInfoRequestHash         string                     `json:"h_and_r_info_request_hash"`
+	FirstChannelId               int                        `json:"alice_channel_id"`
+	InterNodePeerId              string                     `json:"inter_node_peer_id"`
+	SecondChannelId              int                        `json:"second_channel_id"`
+	CurrState                    HtlcSingleHopPathInfoState `json:"curr_state"`
+	CurrStep                     int                        `json:"curr_step"`
+	CreateBy                     string                     `json:"create_by"`
+	CreateAt                     time.Time                  `json:"create_at"`
+	BobCurrRsmcTempPubKey        string                     `json:"bob_curr_rsmc_temp_pub_key"`          // for cnb output1
+	BobCurrHtlcTempPubKey        string                     `json:"bob_curr_htlc_temp_pub_key"`          // for cnb output2
+	BobCurrHtlcTempForHt1bPubKey string                     `json:"bob_curr_htlc_temp_for_ht1b_pub_key"` // for he1b
 }
 
 // 为记录-48的关闭htlc的请求数据
