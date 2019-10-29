@@ -71,7 +71,7 @@ func (service *htlcForwardTxManager) AliceFindPathOfSingleHopAndSendToBob(msgDat
 	htlcSingleHopPathInfo.FirstChannelId = aliceChannel.Id
 	htlcSingleHopPathInfo.SecondChannelId = carlChannel.Id
 	htlcSingleHopPathInfo.InterNodePeerId = bob
-	htlcSingleHopPathInfo.HtlcCreateRandHInfoRequestHash = rAndHInfo.RequestHash
+	htlcSingleHopPathInfo.HAndRInfoRequestHash = rAndHInfo.RequestHash
 	htlcSingleHopPathInfo.CurrState = dao.SingleHopPathInfoState_Created
 	htlcSingleHopPathInfo.CurrStep = 0
 	htlcSingleHopPathInfo.CreateBy = user.PeerId
@@ -101,14 +101,14 @@ func (service *htlcForwardTxManager) SendH(msgData string, user bean.User) (data
 	}
 
 	htlcSingleHopPathInfo := &dao.HtlcSingleHopPathInfo{}
-	err = db.Select(q.Eq("HtlcCreateRandHInfoRequestHash", requestData.RequestHash)).First(htlcSingleHopPathInfo)
+	err = db.Select(q.Eq("HAndRInfoRequestHash", requestData.HAndRInfoRequestHash)).First(htlcSingleHopPathInfo)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, "", err
 	}
 
 	rAndHInfo := dao.HtlcRAndHInfo{}
-	err = db.Select(q.Eq("", requestData.RequestHash)).First(&rAndHInfo)
+	err = db.Select(q.Eq("RequestHash", requestData.HAndRInfoRequestHash)).First(&rAndHInfo)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, "", err
@@ -123,10 +123,10 @@ func (service *htlcForwardTxManager) SendH(msgData string, user bean.User) (data
 
 	targetUserId = carlChannel.PeerIdB
 	if user.PeerId == carlChannel.PeerIdB {
-		targetUserId = carlChannel.AddressA
+		targetUserId = carlChannel.PeerIdA
 	}
 	data = make(map[string]interface{})
-	data["request_hash"] = htlcSingleHopPathInfo.HtlcCreateRandHInfoRequestHash
+	data["request_hash"] = htlcSingleHopPathInfo.HAndRInfoRequestHash
 	data["h"] = rAndHInfo.H
 	return data, targetUserId, nil
 }
@@ -180,7 +180,7 @@ func (service *htlcForwardTxManager) SignGetH(msgData string, user bean.User) (d
 	}
 
 	htlcSingleHopPathInfo := &dao.HtlcSingleHopPathInfo{}
-	err = tx.Select(q.Eq("HtlcCreateRandHInfoRequestHash", requestData.RequestHash)).First(htlcSingleHopPathInfo)
+	err = tx.Select(q.Eq("HAndRInfoRequestHash", requestData.RequestHash)).First(htlcSingleHopPathInfo)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, "", err
@@ -241,6 +241,7 @@ func (service *htlcForwardTxManager) SignGetH(msgData string, user bean.User) (d
 
 		htlcSingleHopPathInfo.BobCurrRsmcTempPubKey = requestData.CurrRsmcTempAddressPubKey
 		htlcSingleHopPathInfo.BobCurrHtlcTempPubKey = requestData.CurrHtlcTempAddressPubKey
+		htlcSingleHopPathInfo.BobCurrHtlcTempForHt1bPubKey = requestData.CurrHtlcTempAddressForHt1aPrivateKey
 	}
 	err = tx.Update(htlcSingleHopPathInfo)
 	if err != nil {
@@ -288,7 +289,7 @@ func (service *htlcForwardTxManager) SenderBeginCreateHtlcCommitmentTx(msgData s
 	htlcSingleHopPathInfo.CurrStep += 1
 
 	hAndRInfo := dao.HtlcRAndHInfo{}
-	err = db.Select(q.Eq("RequestHash", htlcSingleHopPathInfo.HtlcCreateRandHInfoRequestHash)).First(&hAndRInfo)
+	err = db.Select(q.Eq("RequestHash", htlcSingleHopPathInfo.HAndRInfoRequestHash)).First(&hAndRInfo)
 	if err != nil {
 		log.Println(err)
 		return nil, "", err

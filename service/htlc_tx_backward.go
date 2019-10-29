@@ -21,6 +21,15 @@ var HtlcBackwardTxService htlcBackwardTxManager
 // SendRToPreviousNode
 //
 // Process type -46: Send R to Previous Node (middleman).
+// 判断给出的R是否正确，得到对应的singlePathInfo
+// 判断当前路径Step：currStep
+// 	1）currStep==2 carl到bob
+// 	2）currStep==3 bob到alice
+//		得到对应的通道 当前的对应通道，自己是否是资产的接收者
+//		如果不是，return
+//		如果是，得到发送方
+//
+
 //  * R is <Preimage_R>
 func (service *htlcBackwardTxManager) SendRToPreviousNode(msgData string,
 	user bean.User) (data map[string]interface{}, previousNode string, err error) {
@@ -67,7 +76,7 @@ func (service *htlcBackwardTxManager) SendRToPreviousNode(msgData string,
 	// Check out if the input R is correct.
 	rAndHInfo := &dao.HtlcRAndHInfo{}
 	err = db.Select(
-		q.Eq("RequestHash", reqData.RequestHash), 
+		q.Eq("RequestHash", reqData.RequestHash),
 		q.Eq("R", reqData.R), // R from websocket client of Carol
 		q.Eq("CurrState", dao.NS_Finish)).First(rAndHInfo)
 
@@ -78,7 +87,7 @@ func (service *htlcBackwardTxManager) SendRToPreviousNode(msgData string,
 
 	// region Get peerId of previous node.
 	htlcSingleHopPathInfo := dao.HtlcSingleHopPathInfo{}
-	err = db.Select(q.Eq("HtlcCreateRandHInfoRequestHash", 
+	err = db.Select(q.Eq("HAndRInfoRequestHash",
 		reqData.RequestHash)).First(&htlcSingleHopPathInfo)
 
 	if err != nil {
@@ -91,11 +100,11 @@ func (service *htlcBackwardTxManager) SendRToPreviousNode(msgData string,
 	currChannel := &dao.ChannelInfo{}
 	if htlcSingleHopPathInfo.CurrStep == 2 {
 		err = db.One("Id", htlcSingleHopPathInfo.SecondChannelId, currChannel)
-	
-	// CurrStep = 3, that indicate transfer R from Carol to Bob has completed.
+
+		// CurrStep = 3, that indicate transfer R from Carol to Bob has completed.
 	} else if htlcSingleHopPathInfo.CurrStep == 3 {
 		err = db.One("Id", htlcSingleHopPathInfo.FirstChannelId, currChannel)
-		
+
 	} else if htlcSingleHopPathInfo.CurrStep < 2 {
 		return nil, "", errors.New("The transfer H has not completed yet.")
 	} else if htlcSingleHopPathInfo.CurrStep > 3 {
