@@ -64,32 +64,7 @@ func (service *htlcBackwardTxManager) SendRToPreviousNode(msgData string,
 	}
 	// endregion
 
-	// region Get peerId of previous node.
-	htlcSingleHopPathInfo := dao.HtlcSingleHopPathInfo{}
-	err = db.Select(q.Eq("HtlcCreateRandHInfoRequestHash", 
-		reqData.RequestHash)).First(&htlcSingleHopPathInfo)
-
-	if err != nil {
-		log.Println(err)
-		return nil, "", err
-	}
-
-	currChannel := &dao.ChannelInfo{}
-	err = db.One("Id", htlcSingleHopPathInfo.SecondChannelId, currChannel)
-	if err != nil {
-		log.Println(err.Error())
-		return nil, "", err
-	}
-
-	previousNode = currChannel.PeerIdB
-	if user.PeerId == currChannel.PeerIdB {
-		previousNode = currChannel.AddressA
-	}
-
-	htlcSingleHopPathInfo.CurrStep += 1
-	// endregion
-
-	// Check R
+	// Check out if the input R is correct.
 	rAndHInfo := &dao.HtlcRAndHInfo{}
 	err = db.Select(
 		q.Eq("RequestHash", reqData.RequestHash), 
@@ -100,6 +75,46 @@ func (service *htlcBackwardTxManager) SendRToPreviousNode(msgData string,
 		log.Println(err.Error())
 		return nil, "", err
 	}
+
+	// region Get peerId of previous node.
+	htlcSingleHopPathInfo := dao.HtlcSingleHopPathInfo{}
+	err = db.Select(q.Eq("HtlcCreateRandHInfoRequestHash", 
+		reqData.RequestHash)).First(&htlcSingleHopPathInfo)
+
+	if err != nil {
+		log.Println(err)
+		return nil, "", err
+	}
+
+	// Currently solution is Alice to Bob to Carol.
+	// If CurrStep = 2, that indicate the transfer H has completed.
+	currChannel := &dao.ChannelInfo{}
+	if htlcSingleHopPathInfo.CurrStep == 2 {
+		err = db.One("Id", htlcSingleHopPathInfo.SecondChannelId, currChannel)
+	
+	// CurrStep = 3, that indicate transfer R from Carol to Bob has completed.
+	} else if htlcSingleHopPathInfo.CurrStep == 3 {
+		err = db.One("Id", htlcSingleHopPathInfo.FirstChannelId, currChannel)
+		
+	} else if htlcSingleHopPathInfo.CurrStep < 2 {
+		return nil, "", errors.New("The transfer H has not completed yet.")
+	} else if htlcSingleHopPathInfo.CurrStep > 3 {
+		return nil, "", errors.New("The transfer R has completed.")
+	}
+
+	if err != nil {
+		log.Println(err.Error())
+		return nil, "", err
+	}
+
+	previousNode = currChannel.PeerIdB
+	if user.PeerId == currChannel.PeerIdB {
+		previousNode = currChannel.AddressA
+	}
+
+	// Transfer H or R increase step.
+	htlcSingleHopPathInfo.CurrStep += 1
+	// endregion
 
 	// Generate response message.
 	// If no error, the response data is displayed in websocket client of Bob.
