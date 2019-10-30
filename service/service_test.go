@@ -9,27 +9,6 @@ import (
 	"time"
 )
 
-type TestArrData struct {
-	Id   int    `storm:"id,increment" json:"id" `
-	Ids  []int  `json:"ids"`
-	Name string `json:"name"`
-}
-
-func TestDemoArrData(t *testing.T) {
-
-	arr := TestArrData{}
-	arr.Name = "abc"
-	arr.Ids = make([]int, 0)
-	arr.Ids = append(arr.Ids, 0)
-	arr.Ids = append(arr.Ids, 1)
-	arr.Ids = append(arr.Ids, 2)
-	arr.Ids = append(arr.Ids, 3)
-	db.Save(&arr)
-	all := []TestArrData{}
-	db.All(&all)
-	log.Println(arr)
-}
-
 func TestDemoChannelTreeData(t *testing.T) {
 
 	var tree *PathNode

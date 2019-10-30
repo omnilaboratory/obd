@@ -71,7 +71,7 @@ func getAllChannels(peerId string) (channelInfos []dao.ChannelInfo) {
 	return channelInfos
 }
 
-func htlcAliceAbortLastCommitmentTx(tx storm.Node, channelInfo dao.ChannelInfo, user bean.User, fundingTransaction dao.FundingTransaction, requestData bean.HtlcRequestOpen) error {
+func htlcAliceAbortLastRsmcCommitmentTx(tx storm.Node, channelInfo dao.ChannelInfo, user bean.User, fundingTransaction dao.FundingTransaction, requestData bean.HtlcRequestOpen) error {
 	owner := channelInfo.PeerIdA
 	// 现在是创建PeerIdA方向，当前的操作者user可能对应PeerIdA，也可能对应PeerIdB
 	// 默认假设当前操作者正好是PeerIdA，数据（公钥，私钥）的使用当前操作用户的
@@ -181,7 +181,7 @@ func htlcAliceAbortLastCommitmentTx(tx storm.Node, channelInfo dao.ChannelInfo, 
 }
 
 //概念的bob方结束上一次的Rsmc的交易
-func htlcBobAbortLastCommitmentTx(tx storm.Node, channelInfo dao.ChannelInfo, user bean.User, fundingTransaction dao.FundingTransaction, requestData bean.HtlcRequestOpen) error {
+func htlcBobAbortLastRsmcCommitmentTx(tx storm.Node, channelInfo dao.ChannelInfo, user bean.User, fundingTransaction dao.FundingTransaction, requestData bean.HtlcRequestOpen) error {
 	owner := channelInfo.PeerIdB
 	// 现在是创建PeerIdB方向，当前的操作者user可能对应PeerIdA，也可能对应PeerIdB
 	// 默认假设当前操作者正好是PeerIdA，数据（公钥，私钥）的使用当前操作用户的

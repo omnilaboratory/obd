@@ -66,15 +66,16 @@ func (service *htlcForwardTxManager) AliceFindPathOfSingleHopAndSendToBob(msgDat
 	}
 
 	// operate db
+	channelCount := 2
 	htlcSingleHopPathInfo := &dao.HtlcSingleHopPathInfo{}
-	htlcSingleHopPathInfo.ChannelIdArr = make([]int, 2)
+	htlcSingleHopPathInfo.ChannelIdArr = make([]int, channelCount)
 	htlcSingleHopPathInfo.ChannelIdArr[0] = aliceChannel.Id
 	htlcSingleHopPathInfo.ChannelIdArr[1] = carlChannel.Id
 	htlcSingleHopPathInfo.InterNodePeerId = bob
 	htlcSingleHopPathInfo.HAndRInfoRequestHash = rAndHInfo.RequestHash
 	htlcSingleHopPathInfo.CurrState = dao.SingleHopPathInfoState_Created
+	htlcSingleHopPathInfo.TotalStep = len(htlcSingleHopPathInfo.ChannelIdArr) * 2
 	htlcSingleHopPathInfo.CurrStep = 0
-	htlcSingleHopPathInfo.TotalStep = 4
 	htlcSingleHopPathInfo.CreateBy = user.PeerId
 	htlcSingleHopPathInfo.CreateAt = time.Now()
 	err = db.Save(htlcSingleHopPathInfo)
@@ -406,21 +407,22 @@ func (service *htlcForwardTxManager) SenderBeginCreateHtlcCommitmentTx(msgData s
 
 	// 创建上个交易的BR  begin
 	//PeerIdA(概念中的Alice) 对上一次承诺交易的废弃
-	err = htlcAliceAbortLastCommitmentTx(dbTx, channelInfo, user, *fundingTransaction, *requestData)
+	err = htlcAliceAbortLastRsmcCommitmentTx(dbTx, channelInfo, user, *fundingTransaction, *requestData)
 	if err != nil {
 		log.Println(err)
 		return nil, "", err
 	}
 	//PeerIdB(概念中的Bob) 对上一次承诺交易的废弃
-	err = htlcBobAbortLastCommitmentTx(dbTx, channelInfo, user, *fundingTransaction, *requestData)
+	err = htlcBobAbortLastRsmcCommitmentTx(dbTx, channelInfo, user, *fundingTransaction, *requestData)
 	if err != nil {
 		log.Println(err)
 		return nil, "", err
 	}
 	// 创建上个交易的BR  end
 
-	//创建htlc的承诺交易 begin
-	//Cna Alice这一方的交易
+	//region 创建htlc相关的交易: Cna（1+3: Cna + toRsmc + toOther + toHtlc）+ 2(ht1a+htrd1a); cnb(1+3: Cnb + toRsmc + toOther + toHtlc) + 1(htd1b)
+
+	///Cna Alice方(channel.PeerIdA)的交易
 	commitmentTransactionOfA, err := service.htlcCreateAliceSideTxs(dbTx, channelInfo, user, *fundingTransaction, *requestData, htlcSingleHopPathInfo, hAndRInfo)
 	if err != nil {
 		log.Println(err)
@@ -428,14 +430,15 @@ func (service *htlcForwardTxManager) SenderBeginCreateHtlcCommitmentTx(msgData s
 	}
 	log.Println(commitmentTransactionOfA)
 
-	//Cnb Bob 那一方的交易
+	///Cnb Bob方(channel.PeerIdB)的交易
 	commitmentTransactionOfB, err := service.htlcCreateBobSideTxs(dbTx, channelInfo, user, *fundingTransaction, *requestData, htlcSingleHopPathInfo, hAndRInfo)
 	if err != nil {
 		log.Println(err)
 		return nil, "", err
 	}
 	log.Println(commitmentTransactionOfB)
-	//创建htlc的承诺交易 end
+
+	//endregion
 
 	htlcSingleHopPathInfo.CurrState = dao.SingleHopPathInfoState_StepFinish
 	err = dbTx.Update(&htlcSingleHopPathInfo)
