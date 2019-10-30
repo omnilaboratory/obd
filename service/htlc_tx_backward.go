@@ -21,15 +21,6 @@ var HtlcBackwardTxService htlcBackwardTxManager
 // SendRToPreviousNode
 //
 // Process type -46: Send R to Previous Node (middleman).
-// 判断给出的R是否正确，得到对应的singlePathInfo
-// 判断当前路径Step：currStep
-// 	1）currStep==2 carl到bob
-// 	2）currStep==3 bob到alice
-//		得到对应的通道 当前的对应通道，自己是否是资产的接收者
-//		如果不是，return
-//		如果是，得到发送方
-//
-
 //  * R is <Preimage_R>
 func (service *htlcBackwardTxManager) SendRToPreviousNode(msgData string,
 	user bean.User) (data map[string]interface{}, previousNode string, err error) {
