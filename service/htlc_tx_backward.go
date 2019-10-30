@@ -67,7 +67,7 @@ func (service *htlcBackwardTxManager) SendRToPreviousNode(msgData string,
 	// region Check out if the input R is correct.
 	rAndHInfo := &dao.HtlcRAndHInfo{}
 	err = db.Select(
-		q.Eq("RequestHash", reqData.RequestHash), 
+		q.Eq("RequestHash", reqData.RequestHash),
 		q.Eq("R", reqData.R), // R from websocket client of Carol
 		q.Eq("CurrState", dao.NS_Finish)).First(rAndHInfo)
 
@@ -79,7 +79,7 @@ func (service *htlcBackwardTxManager) SendRToPreviousNode(msgData string,
 
 	// region Get peerId of previous node.
 	htlcSingleHopPathInfo := dao.HtlcSingleHopPathInfo{}
-	err = db.Select(q.Eq("HtlcCreateRandHInfoRequestHash", 
+	err = db.Select(q.Eq("HAndRInfoRequestHash",
 		reqData.RequestHash)).First(&htlcSingleHopPathInfo)
 
 	if err != nil {
@@ -88,21 +88,19 @@ func (service *htlcBackwardTxManager) SendRToPreviousNode(msgData string,
 	}
 
 	// Currently solution is Alice to Bob to Carol.
-	// If CurrStep = 2, that indicate the transfer H has completed.
-	currChannel := &dao.ChannelInfo{}
-	if htlcSingleHopPathInfo.CurrStep == 2 {
-		err = db.One("Id", htlcSingleHopPathInfo.SecondChannelId, currChannel)
-	
-	// CurrStep = 3, that indicate transfer R from Carol to Bob has completed.
-	} else if htlcSingleHopPathInfo.CurrStep == 3 {
-		err = db.One("Id", htlcSingleHopPathInfo.FirstChannelId, currChannel)
-		
-	} else if htlcSingleHopPathInfo.CurrStep < 2 {
+	if htlcSingleHopPathInfo.CurrStep < 2 {
 		return nil, "", errors.New("The transfer H has not completed yet.")
 	} else if htlcSingleHopPathInfo.CurrStep > 3 {
 		return nil, "", errors.New("The transfer R has completed.")
 	}
 
+	// If CurrStep = 2, that indicate the transfer H has completed.
+	currChannelIndex := htlcSingleHopPathInfo.TotalStep - htlcSingleHopPathInfo.CurrStep - 1
+	if currChannelIndex < -1 || currChannelIndex > len(htlcSingleHopPathInfo.ChannelIdArr) {
+		return nil, "", errors.New("err channel id")
+	}
+	currChannel := &dao.ChannelInfo{}
+	err = db.One("Id", htlcSingleHopPathInfo.ChannelIdArr[currChannelIndex], currChannel)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, "", err

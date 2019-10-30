@@ -197,7 +197,7 @@ type HtlcRequestFindPathAndSendH struct {
 
 //type -43: bob send h to carl
 type HtlcSendH struct {
-	RequestHash string `json:"request_hash"`
+	HAndRInfoRequestHash string `json:"h_and_r_info_request_hash"`
 }
 
 //type -44: bob sign the request for the interNode
@@ -229,11 +229,11 @@ type HtlcRequestOpen struct {
 
 //type -46: Send R to previous node.
 type HtlcSendR struct {
-	RequestHash                          string `json:"request_hash"`
-	R                                    string `json:"r"`
+	RequestHash string `json:"request_hash"`
+	R           string `json:"r"`
 	// The key of Sender. Example Carol send R to Bob, the Sender is Carol.
 	ChannelAddressPrivateKey             string `json:"channel_address_private_key"`
-	CurrHtlcTempAddressForHE1bPubKey     string `json:"curr_htlc_temp_address_for_he1b_pub_key"`     
+	CurrHtlcTempAddressForHE1bPubKey     string `json:"curr_htlc_temp_address_for_he1b_pub_key"`
 	CurrHtlcTempAddressForHE1bPrivateKey string `json:"curr_htlc_temp_address_for_he1b_private_key"`
 }
 

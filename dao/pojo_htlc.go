@@ -108,18 +108,18 @@ const (
 )
 
 type HtlcSingleHopPathInfo struct {
-	Id                             int                        `storm:"id,increment" json:"id" `
-	HtlcCreateRandHInfoRequestHash string                     `json:"htlc_create_rand_h_info_request_hash"`
-	FirstChannelId                 int                        `json:"alice_channel_id"`
-	InterNodePeerId                string                     `json:"inter_node_peer_id"`
-	SecondChannelId                int                        `json:"second_channel_id"`
-	BobCurrRsmcTempPubKey          string                     `json:"bob_curr_rsmc_temp_pub_key"`
-	BobCurrHtlcTempPubKey          string                     `json:"bob_curr_htlc_temp_pub_key"`
-	BobCurrHtlcTempForHt1bPubKey   string                     `json:"bob_curr_htlc_temp_for_ht1b_pub_key"`
-	CurrState                      HtlcSingleHopPathInfoState `json:"curr_state"`
-	CurrStep                       int                        `json:"curr_step"`
-	CreateBy                       string                     `json:"create_by"`
-	CreateAt                       time.Time                  `json:"create_at"`
+	Id                           int                        `storm:"id,increment" json:"id" `
+	HAndRInfoRequestHash         string                     `json:"h_and_r_info_request_hash"`
+	InterNodePeerId              string                     `json:"inter_node_peer_id"`
+	ChannelIdArr                 []int                      `json:"channel_id_arr"`
+	CurrState                    HtlcSingleHopPathInfoState `json:"curr_state"`
+	TotalStep                    int                        `json:"total_step"`
+	CurrStep                     int                        `json:"curr_step"`
+	CreateBy                     string                     `json:"create_by"`
+	CreateAt                     time.Time                  `json:"create_at"`
+	BobCurrRsmcTempPubKey        string                     `json:"bob_curr_rsmc_temp_pub_key"`          // for cnb output1 temp data
+	BobCurrHtlcTempPubKey        string                     `json:"bob_curr_htlc_temp_pub_key"`          // for cnb output2 temp data
+	BobCurrHtlcTempForHt1bPubKey string                     `json:"bob_curr_htlc_temp_for_ht1b_pub_key"` // for he1b  temp data
 }
 
 // 为记录-48的关闭htlc的请求数据
@@ -141,7 +141,7 @@ type HTLCTimeoutBreachRemedyTransaction struct {
 	HTLCTimeoutTxForAAndExecutionForBId int            `json:"htlc_timeout_tx_for_a_and_execution_for_b_id"`
 	PropertyId                          int64          `json:"property_id"`
 	InputHash                           string         `json:"input_hash"`
-	Amount                              float64        `json:"amount"` // output boob amount
+	Amount                              float64        `json:"amount"` // output bob amount
 	TxHash                              string         `json:"tx_hash"`
 	Txid                                string         `json:"txid"`
 	CurrState                           TxInfoState    `json:"curr_state"`
