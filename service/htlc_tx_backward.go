@@ -64,7 +64,7 @@ func (service *htlcBackwardTxManager) SendRToPreviousNode(msgData string,
 	}
 	// endregion
 
-	// Check out if the input R is correct.
+	// region Check out if the input R is correct.
 	rAndHInfo := &dao.HtlcRAndHInfo{}
 	err = db.Select(
 		q.Eq("RequestHash", reqData.RequestHash), 
@@ -75,6 +75,7 @@ func (service *htlcBackwardTxManager) SendRToPreviousNode(msgData string,
 		log.Println(err.Error())
 		return nil, "", err
 	}
+	// endregion
 
 	// region Get peerId of previous node.
 	htlcSingleHopPathInfo := dao.HtlcSingleHopPathInfo{}
@@ -107,9 +108,14 @@ func (service *htlcBackwardTxManager) SendRToPreviousNode(msgData string,
 		return nil, "", err
 	}
 
-	previousNode = currChannel.PeerIdB
-	if user.PeerId == currChannel.PeerIdB {
-		previousNode = currChannel.AddressA
+	if currChannel.PeerIdA != user.PeerId && currChannel.PeerIdB != user.PeerId {
+		return nil, "", errors.New("error user.")
+	}
+	
+	if user.PeerId == currChannel.PeerIdA {
+		previousNode = currChannel.PeerIdB
+	} else {
+		previousNode = currChannel.PeerIdA
 	}
 
 	// Transfer H or R increase step.
