@@ -93,22 +93,22 @@ func (service *htlcForwardTxManager) SendH(msgData string, user bean.User) (data
 		return nil, "", errors.New("empty json data")
 	}
 
-	requestData := &bean.HtlcSendH{}
-	err = json.Unmarshal([]byte(msgData), requestData)
+	reqData := &bean.HtlcSendH{}
+	err = json.Unmarshal([]byte(msgData), reqData)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, "", err
 	}
 
 	htlcSingleHopPathInfo := &dao.HtlcSingleHopPathInfo{}
-	err = db.Select(q.Eq("HAndRInfoRequestHash", requestData.HAndRInfoRequestHash)).First(htlcSingleHopPathInfo)
+	err = db.Select(q.Eq("HAndRInfoRequestHash", reqData.HAndRInfoRequestHash)).First(htlcSingleHopPathInfo)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, "", err
 	}
 
 	rAndHInfo := dao.HtlcRAndHInfo{}
-	err = db.Select(q.Eq("RequestHash", requestData.HAndRInfoRequestHash)).First(&rAndHInfo)
+	err = db.Select(q.Eq("RequestHash", reqData.HAndRInfoRequestHash)).First(&rAndHInfo)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, "", err
@@ -123,10 +123,6 @@ func (service *htlcForwardTxManager) SendH(msgData string, user bean.User) (data
 	if err != nil {
 		log.Println(err.Error())
 		return nil, "", err
-	}
-
-	if carlChannel.PeerIdA != user.PeerId && carlChannel.PeerIdB != user.PeerId {
-		return nil, "", errors.New("error user")
 	}
 
 	targetUserId = carlChannel.PeerIdB
@@ -152,6 +148,7 @@ func (service *htlcForwardTxManager) SignGetH(msgData string, user bean.User) (d
 		return nil, "", err
 	}
 
+	// region check input data
 	if requestData.Approval {
 		if tool.CheckIsString(&requestData.ChannelAddressPrivateKey) == false {
 			return nil, "", errors.New("channel_address_private_key is empty")
@@ -172,6 +169,7 @@ func (service *htlcForwardTxManager) SignGetH(msgData string, user bean.User) (d
 			return nil, "", errors.New("curr_htlc_temp_address_for_ht1a_private_key is empty")
 		}
 	}
+	// endregion
 
 	tx, err := db.Begin(true)
 	if err != nil {
@@ -179,6 +177,8 @@ func (service *htlcForwardTxManager) SignGetH(msgData string, user bean.User) (d
 		return nil, "", err
 	}
 	defer tx.Rollback()
+
+	// region query db data
 
 	rAndHInfo := &dao.HtlcRAndHInfo{}
 	err = tx.Select(q.Eq("RequestHash", requestData.RequestHash)).First(rAndHInfo)
@@ -209,8 +209,10 @@ func (service *htlcForwardTxManager) SignGetH(msgData string, user bean.User) (d
 		htlcSingleHopPathInfo.CurrState = dao.SingleHopPathInfoState_StepBegin
 	}
 
-	if requestData.Approval {
+	//endregion
 
+	// region temp store data
+	if requestData.Approval {
 		//锁定两个通道
 		if htlcSingleHopPathInfo.CurrStep == 0 {
 			aliceChannel := &dao.ChannelInfo{}
@@ -267,6 +269,9 @@ func (service *htlcForwardTxManager) SignGetH(msgData string, user bean.User) (d
 		htlcSingleHopPathInfo.BobCurrHtlcTempPubKey = requestData.CurrHtlcTempAddressPubKey
 		htlcSingleHopPathInfo.BobCurrHtlcTempForHt1bPubKey = requestData.CurrHtlcTempAddressForHt1aPubKey
 	}
+
+	// endregion
+
 	err = tx.Update(htlcSingleHopPathInfo)
 	if err != nil {
 		log.Println(err.Error())
