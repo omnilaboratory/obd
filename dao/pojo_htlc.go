@@ -114,6 +114,7 @@ type HtlcSingleHopPathInfo struct {
 	InterNodePeerId              string                     `json:"inter_node_peer_id"`
 	SecondChannelId              int                        `json:"second_channel_id"`
 	CurrState                    HtlcSingleHopPathInfoState `json:"curr_state"`
+	TotalStep                    int                        `json:"total_step"`
 	CurrStep                     int                        `json:"curr_step"`
 	CreateBy                     string                     `json:"create_by"`
 	CreateAt                     time.Time                  `json:"create_at"`
