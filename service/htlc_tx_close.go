@@ -200,7 +200,7 @@ func (service *htlcCloseTxManager) SignCloseHtlc(msgData string, user bean.User)
 	}
 	defer dbTx.Rollback()
 
-	//  region create BR
+	//  region create BR  BR2a HBR1a HTBR1a ; BR2b HBR1b HEBR1b
 	lastCommitmentTxInfoA, err := createAliceSideBRTxs(dbTx, channelInfo, isAliceExecutionCloseOp, *reqData, *fundingTransaction, user)
 	if err != nil {
 		return nil, "", err
@@ -213,11 +213,11 @@ func (service *htlcCloseTxManager) SignCloseHtlc(msgData string, user bean.User)
 	//  endregion
 
 	// region create C3a and C3b
-	newCommitmentTxInfoA, err := createAliceRsmcTxs(dbTx, channelInfo, isAliceExecutionCloseOp, *reqData, dataFromCloseOpStarter, lastCommitmentTxInfoA, *fundingTransaction, user)
+	newCommitmentTxInfoA, err := createAliceRsmcTxsForCloseHtlc(dbTx, channelInfo, isAliceExecutionCloseOp, *reqData, dataFromCloseOpStarter, lastCommitmentTxInfoA, *fundingTransaction, user)
 	if err != nil {
 		return nil, "", err
 	}
-	newCommitmentTxInfoB, err := createBobRsmcTxs(dbTx, channelInfo, isAliceExecutionCloseOp, *reqData, dataFromCloseOpStarter, lastCommitmentTxInfoB, *fundingTransaction, user)
+	newCommitmentTxInfoB, err := createBobRsmcTxsForCloseHtlc(dbTx, channelInfo, isAliceExecutionCloseOp, *reqData, dataFromCloseOpStarter, lastCommitmentTxInfoB, *fundingTransaction, user)
 	if err != nil {
 		return nil, "", err
 	}
@@ -244,7 +244,7 @@ func (service *htlcCloseTxManager) SignCloseHtlc(msgData string, user bean.User)
 }
 
 // C3a RD3a
-func createAliceRsmcTxs(tx storm.Node, channelInfo dao.ChannelInfo, isAliceExecutionCloseOp bool, reqData bean.HtlcSignCloseCurrTx, dataFromCloseOpStarter dao.HtlcRequestCloseCurrTxInfo, lastCommitmentATx *dao.CommitmentTransaction, fundingTransaction dao.FundingTransaction, operator bean.User) (newCommitmentTxInfo *dao.CommitmentTransaction, err error) {
+func createAliceRsmcTxsForCloseHtlc(tx storm.Node, channelInfo dao.ChannelInfo, isAliceExecutionCloseOp bool, reqData bean.HtlcSignCloseCurrTx, dataFromCloseOpStarter dao.HtlcRequestCloseCurrTxInfo, lastCommitmentATx *dao.CommitmentTransaction, fundingTransaction dao.FundingTransaction, operator bean.User) (newCommitmentTxInfo *dao.CommitmentTransaction, err error) {
 
 	owner := channelInfo.PeerIdA
 	// 这里需要确认一个事情：在这个通道里面，这次的htlc到底是谁是转出方
@@ -337,7 +337,7 @@ func createAliceRsmcTxs(tx storm.Node, channelInfo dao.ChannelInfo, isAliceExecu
 }
 
 // C3b RD3b
-func createBobRsmcTxs(tx storm.Node, channelInfo dao.ChannelInfo, isAliceExecutionCloseOp bool, reqData bean.HtlcSignCloseCurrTx, dataFromCloseOpStarter dao.HtlcRequestCloseCurrTxInfo, lastCommitmentBTx *dao.CommitmentTransaction, fundingTransaction dao.FundingTransaction, operator bean.User) (newCommitmentTxInfo *dao.CommitmentTransaction, err error) {
+func createBobRsmcTxsForCloseHtlc(tx storm.Node, channelInfo dao.ChannelInfo, isAliceExecutionCloseOp bool, reqData bean.HtlcSignCloseCurrTx, dataFromCloseOpStarter dao.HtlcRequestCloseCurrTxInfo, lastCommitmentBTx *dao.CommitmentTransaction, fundingTransaction dao.FundingTransaction, operator bean.User) (newCommitmentTxInfo *dao.CommitmentTransaction, err error) {
 
 	owner := channelInfo.PeerIdB
 	// 这里需要确认一个事情：在这个通道里面，这次的htlc到底是谁是转出方
@@ -429,7 +429,7 @@ func createBobRsmcTxs(tx storm.Node, channelInfo dao.ChannelInfo, isAliceExecuti
 	return commitmentTxInfo, nil
 }
 
-// BR2a,HBR1a,HTBr1a
+// BR2a,HBR1a,HTBR1a
 func createAliceSideBRTxs(tx storm.Node, channelInfo dao.ChannelInfo, isAliceExecutionCloseOp bool, reqData bean.HtlcSignCloseCurrTx, fundingTransaction dao.FundingTransaction, user bean.User) (lastCommitmentTxInfo *dao.CommitmentTransaction, err error) {
 	owner := channelInfo.PeerIdA
 	brOwner := channelInfo.PeerIdB
