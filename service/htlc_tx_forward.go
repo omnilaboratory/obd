@@ -67,8 +67,9 @@ func (service *htlcForwardTxManager) AliceFindPathOfSingleHopAndSendToBob(msgDat
 
 	// operate db
 	htlcSingleHopPathInfo := &dao.HtlcSingleHopPathInfo{}
-	htlcSingleHopPathInfo.FirstChannelId = aliceChannel.Id
-	htlcSingleHopPathInfo.SecondChannelId = carlChannel.Id
+	htlcSingleHopPathInfo.ChannelIdArr = make([]int, 2)
+	htlcSingleHopPathInfo.ChannelIdArr[0] = aliceChannel.Id
+	htlcSingleHopPathInfo.ChannelIdArr[1] = carlChannel.Id
 	htlcSingleHopPathInfo.InterNodePeerId = bob
 	htlcSingleHopPathInfo.HAndRInfoRequestHash = rAndHInfo.RequestHash
 	htlcSingleHopPathInfo.CurrState = dao.SingleHopPathInfoState_Created
@@ -114,9 +115,13 @@ func (service *htlcForwardTxManager) SendH(msgData string, user bean.User) (data
 		return nil, "", err
 	}
 
+	currChannelIndex := htlcSingleHopPathInfo.CurrStep
+	if currChannelIndex < -1 || currChannelIndex > len(htlcSingleHopPathInfo.ChannelIdArr) {
+		return nil, "", errors.New("err channel id")
+	}
 	carlChannel := &dao.ChannelInfo{}
 	err = db.Select(
-		q.Eq("Id", htlcSingleHopPathInfo.SecondChannelId),
+		q.Eq("Id", htlcSingleHopPathInfo.ChannelIdArr[currChannelIndex]),
 		q.Or(
 			q.Eq("PeerIdA", user.PeerId),
 			q.Eq("PeerIdB", user.PeerId))).First(carlChannel)
@@ -215,39 +220,29 @@ func (service *htlcForwardTxManager) SignGetH(msgData string, user bean.User) (d
 	if requestData.Approval {
 		//锁定两个通道
 		if htlcSingleHopPathInfo.CurrStep == 0 {
-			aliceChannel := &dao.ChannelInfo{}
-			err := tx.One("Id", htlcSingleHopPathInfo.FirstChannelId, aliceChannel)
-			if err != nil {
-				log.Println(err.Error())
-				return nil, "", err
-			}
-			carlChannel := &dao.ChannelInfo{}
-			err = tx.One("Id", htlcSingleHopPathInfo.SecondChannelId, carlChannel)
-			if err != nil {
-				log.Println(err.Error())
-				return nil, "", err
-			}
-
-			aliceChannel.CurrState = dao.ChannelState_HtlcBegin
-			err = tx.Update(aliceChannel)
-			if err != nil {
-				log.Println(err.Error())
-				return nil, "", err
-			}
-
-			carlChannel.CurrState = dao.ChannelState_HtlcBegin
-			err = tx.Update(carlChannel)
-			if err != nil {
-				log.Println(err.Error())
-				return nil, "", err
+			for _, id := range htlcSingleHopPathInfo.ChannelIdArr {
+				channelInfo := &dao.ChannelInfo{}
+				err := tx.One("Id", id, channelInfo)
+				if err != nil {
+					log.Println(err.Error())
+					return nil, "", err
+				}
+				channelInfo.CurrState = dao.ChannelState_HtlcBegin
+				err = tx.Update(channelInfo)
+				if err != nil {
+					log.Println(err.Error())
+					return nil, "", err
+				}
 			}
 		}
+
+		currChannelIndex := htlcSingleHopPathInfo.CurrStep
+		if currChannelIndex < -1 || currChannelIndex > len(htlcSingleHopPathInfo.ChannelIdArr) {
+			return nil, "", errors.New("err channel id")
+		}
+
 		currChannel := &dao.ChannelInfo{}
-		id := htlcSingleHopPathInfo.FirstChannelId
-		if htlcSingleHopPathInfo.CurrStep == 1 {
-			id = htlcSingleHopPathInfo.SecondChannelId
-		}
-		err := tx.One("Id", id, currChannel)
+		err := tx.One("Id", htlcSingleHopPathInfo.ChannelIdArr[currChannelIndex], currChannel)
 		if err != nil {
 			log.Println(err.Error())
 			return nil, "", err
@@ -315,6 +310,11 @@ func (service *htlcForwardTxManager) SenderBeginCreateHtlcCommitmentTx(msgData s
 		log.Println(err)
 		return nil, "", err
 	}
+
+	if htlcSingleHopPathInfo.CurrStep > 2 {
+		return nil, "", errors.New("error step")
+	}
+
 	htlcSingleHopPathInfo.CurrStep += 1
 
 	hAndRInfo := dao.HtlcRAndHInfo{}
@@ -372,13 +372,14 @@ func (service *htlcForwardTxManager) SenderBeginCreateHtlcCommitmentTx(msgData s
 	}
 	defer dbTx.Rollback()
 
-	channelId := htlcSingleHopPathInfo.FirstChannelId
-	if htlcSingleHopPathInfo.CurrStep == 2 {
-		channelId = htlcSingleHopPathInfo.SecondChannelId
+	// region prepare the data
+	currChannelIndex := htlcSingleHopPathInfo.CurrStep - 1
+	if currChannelIndex < -1 || currChannelIndex > len(htlcSingleHopPathInfo.ChannelIdArr) {
+		return nil, "", errors.New("err channel id")
 	}
 
 	channelInfo := dao.ChannelInfo{}
-	err = dbTx.One("Id", channelId, &channelInfo)
+	err = dbTx.One("Id", htlcSingleHopPathInfo.ChannelIdArr[currChannelIndex], &channelInfo)
 	if err != nil {
 		log.Println(err)
 		return nil, "", err

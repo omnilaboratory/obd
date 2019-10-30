@@ -110,9 +110,8 @@ const (
 type HtlcSingleHopPathInfo struct {
 	Id                           int                        `storm:"id,increment" json:"id" `
 	HAndRInfoRequestHash         string                     `json:"h_and_r_info_request_hash"`
-	FirstChannelId               int                        `json:"alice_channel_id"`
 	InterNodePeerId              string                     `json:"inter_node_peer_id"`
-	SecondChannelId              int                        `json:"second_channel_id"`
+	ChannelIdArr                 []int                      `json:"channel_id_arr"`
 	CurrState                    HtlcSingleHopPathInfoState `json:"curr_state"`
 	TotalStep                    int                        `json:"total_step"`
 	CurrStep                     int                        `json:"curr_step"`
