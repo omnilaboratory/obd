@@ -231,10 +231,27 @@ type HtlcRequestOpen struct {
 type HtlcSendR struct {
 	RequestHash string `json:"request_hash"`
 	R           string `json:"r"`
-	// The key of Sender. Example Carol send R to Bob, the Sender is Carol.
+
+	// The key of Sender. Example Bob send R to Alice, the Sender is Bob.
 	ChannelAddressPrivateKey             string `json:"channel_address_private_key"`
+
+	// The key of Cnb NO.3 output. Example Bob send R to Alice, that is Bob2's.
+	CurrHtlcTempAddressForCnbPrivateKey  string `json:"curr_htlc_temp_address_for_cnb_private_key"`
+	
+	// These keys of HE1b output. Example Bob send R to Alice, these is Bob3's.
 	CurrHtlcTempAddressForHE1bPubKey     string `json:"curr_htlc_temp_address_for_he1b_pub_key"`
 	CurrHtlcTempAddressForHE1bPrivateKey string `json:"curr_htlc_temp_address_for_he1b_private_key"`
+}
+
+//type -47: Check out if R is correct and create commitment transactions.
+type HtlcCheckRAndCreateTx struct {
+	RequestHash string `json:"request_hash"`
+	
+	// The key of creator tx. Example Bob send R to Alice, that is Alice's.
+	ChannelAddressPrivateKey             string `json:"channel_address_private_key"`
+	
+	// The key of Cna NO.3 output. Example Bob send R to Alice, that is Alice2's.
+	CurrHtlcTempAddressForCnaPrivateKey  string `json:"curr_htlc_temp_address_for_cna_private_key"`
 }
 
 //type -48: user wanna close htlc tx when tx is on getH state

@@ -99,6 +99,7 @@ func (service *htlcBackwardTxManager) SendRToPreviousNode(msgData string,
 	if currChannelIndex < -1 || currChannelIndex > len(htlcSingleHopPathInfo.ChannelIdArr) {
 		return nil, "", errors.New("err channel id")
 	}
+
 	currChannel := &dao.ChannelInfo{}
 	err = db.One("Id", htlcSingleHopPathInfo.ChannelIdArr[currChannelIndex], currChannel)
 	if err != nil {
@@ -120,9 +121,27 @@ func (service *htlcBackwardTxManager) SendRToPreviousNode(msgData string,
 	htlcSingleHopPathInfo.CurrStep += 1
 	// endregion
 
+	// region Save private key to memory.
+	if currChannel.PeerIdB == user.PeerId {
+		tempAddrPrivateKeyMap[currChannel.PubKeyB] = reqData.ChannelAddressPrivateKey
+	} else {
+		tempAddrPrivateKeyMap[currChannel.PubKeyA] = reqData.ChannelAddressPrivateKey
+	}
+	
+	tempAddrPrivateKeyMap[reqData.CurrHtlcTempAddressForHE1bPubKey] = reqData.CurrHtlcTempAddressForHE1bPrivateKey
+		
+	// Save pubkey to database.
+	htlcSingleHopPathInfo.BobCurrHtlcTempForHt1bPubKey = reqData.CurrHtlcTempAddressForHE1bPubKey
+	err = db.Update(htlcSingleHopPathInfo)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, "", err
+	}
+	// endregion
+
 	// Generate response message.
-	// If no error, the response data is displayed in websocket client of Bob.
-	// Otherwise, it is displayed in websocket client of Carol.
+	// If no error, the response data is displayed in websocket client of previous node.
+	// Otherwise, it is displayed in websocket client of myself.
 	responseData := make(map[string]interface{})
 	responseData["id"] = rAndHInfo.Id
 	responseData["request_hash"] = rAndHInfo.RequestHash
