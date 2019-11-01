@@ -421,7 +421,7 @@ func htlcCreateExecutionDelivery(tx storm.Node, channelInfo dao.ChannelInfo, fun
 
 func createHtlcExecution(tx storm.Node, channelInfo dao.ChannelInfo, fundingTransaction dao.FundingTransaction,
 	commitmentTxInfo dao.CommitmentTransaction, reqData bean.HtlcCheckRAndCreateTx,
-	pathInfo dao.HtlcSingleHopPathInfo, aliceIsSender bool, operator bean.User) (htlcTimeoutTx *dao.HTLCTimeoutTxForAAndExecutionForB, err error) {
+	pathInfo dao.HtlcSingleHopPathInfo, aliceIsSender bool, operator bean.User) (he1x *dao.HTLCTimeoutTxForAAndExecutionForB, err error) {
 
 	outputBean := commitmentOutputBean{}
 	outputBean.AmountToRsmc = commitmentTxInfo.AmountToHtlc
@@ -433,7 +433,7 @@ func createHtlcExecution(tx storm.Node, channelInfo dao.ChannelInfo, fundingTran
 		outputBean.OppositeSideChannelPubKey = channelInfo.PubKeyA
 	}
 
-	htlcTimeoutTx, err = createHtlcTimeoutTxObj(tx, owner, channelInfo, commitmentTxInfo, outputBean, 0, operator)
+	he1x, err = createHtlcTimeoutTxObj(tx, owner, channelInfo, commitmentTxInfo, outputBean, 0, operator)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -452,28 +452,28 @@ func createHtlcExecution(tx storm.Node, channelInfo dao.ChannelInfo, fundingTran
 			tempAddrPrivateKeyMap[commitmentTxInfo.HTLCTempAddressPubKey],
 		},
 		inputs,
-		htlcTimeoutTx.RSMCMultiAddress,
+		he1x.RSMCMultiAddress,
 		fundingTransaction.FunderAddress,
 		fundingTransaction.PropertyId,
-		htlcTimeoutTx.RSMCOutAmount,
+		he1x.RSMCOutAmount,
 		0,
-		htlcTimeoutTx.Timeout,
+		he1x.Timeout,
 		&commitmentTxInfo.HTLCRedeemScript)
 	if err != nil {
 		log.Println(err)
 		return nil, err
 	}
 
-	htlcTimeoutTx.RSMCTxid = txid
-	htlcTimeoutTx.RSMCTxHash = hex
-	htlcTimeoutTx.SignAt = time.Now()
-	htlcTimeoutTx.CurrState = dao.TxInfoState_CreateAndSign
-	err = tx.Save(htlcTimeoutTx)
+	he1x.RSMCTxid = txid
+	he1x.RSMCTxHash = hex
+	he1x.SignAt = time.Now()
+	he1x.CurrState = dao.TxInfoState_CreateAndSign
+	err = tx.Save(he1x)
 	if err != nil {
 		log.Println(err)
 		return nil, err
 	}
-	return htlcTimeoutTx, nil
+	return he1x, nil
 }
 
 func createHtlcRDForR(tx storm.Node, channelInfo dao.ChannelInfo,
