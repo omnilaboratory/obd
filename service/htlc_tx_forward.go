@@ -516,7 +516,7 @@ func (service *htlcForwardTxManager) htlcCreateAliceSideTxs(tx storm.Node, chann
 		log.Println(htrdTransaction)
 
 		//HEDa的构建放到得到R的时候   当bob得到R的时候，构建给bob的HED交易
-		//htlcCreateExecutionDeliveryA
+		//htlcCreateExecutionDelivery
 
 	} else { // bob is sender, 如果alice得到R，构建Htlc Execution交易以及接下来的HERD交易，如果超时，bob的钱就应该超时赎回HTDelivery
 		// 如果是bob转给alice，Alice作为中间商，作为当前通道的接收者

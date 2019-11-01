@@ -6,9 +6,11 @@ import (
 	"LightningOnOmni/tool"
 	"encoding/json"
 	"errors"
+	"github.com/asdine/storm"
 	"github.com/asdine/storm/q"
 	"log"
 	"sync"
+	"time"
 )
 
 type htlcBackwardTxManager struct {
@@ -164,7 +166,7 @@ func (service *htlcBackwardTxManager) SendRToPreviousNode(msgData string,
 
 // CheckRAndCreateCTxs
 //
-// Process type -47: Middleman node Check out if R is correct 
+// Process type -47: Middleman node Check out if R is correct
 // and create commitment transactions.
 //  * R is <Preimage_R>
 func (service *htlcBackwardTxManager) CheckRAndCreateCTxs(msgData string, user bean.User) (
@@ -195,6 +197,11 @@ func (service *htlcBackwardTxManager) CheckRAndCreateCTxs(msgData string, user b
 		log.Println(err)
 		return nil, "", err
 	}
+	if tool.CheckIsString(&reqData.R) == false {
+		err = errors.New("R is empty")
+		log.Println(err)
+		return nil, "", err
+	}
 
 	if tool.CheckIsString(&reqData.CurrHtlcTempAddressForCnaPrivateKey) == false {
 		err = errors.New("curr_htlc_temp_address_for_cna_private_key is empty")
@@ -207,6 +214,7 @@ func (service *htlcBackwardTxManager) CheckRAndCreateCTxs(msgData string, user b
 	rAndHInfo := &dao.HtlcRAndHInfo{}
 	err = db.Select(
 		q.Eq("RequestHash", reqData.RequestHash),
+		q.Eq("R", reqData.R),
 		q.Eq("CurrState", dao.NS_Finish)).First(rAndHInfo)
 
 	if err != nil {
@@ -214,8 +222,8 @@ func (service *htlcBackwardTxManager) CheckRAndCreateCTxs(msgData string, user b
 		return nil, "", err
 	}
 	// endregion
-	
-	// region Create HED1a commitment transaction. 
+
+	// region Create HED1a commitment transaction.
 	// launch database transaction, if anything goes wrong, roll back.
 	dbTx, err := db.Begin(true)
 	if err != nil {
@@ -224,22 +232,49 @@ func (service *htlcBackwardTxManager) CheckRAndCreateCTxs(msgData string, user b
 	defer dbTx.Rollback()
 
 	// prepare the data
-	htlcSingleHopPathInfo := dao.HtlcSingleHopPathInfo{}
+	pathInfo := dao.HtlcSingleHopPathInfo{}
 	err = db.Select(q.Eq("HAndRInfoRequestHash",
-		reqData.RequestHash)).First(&htlcSingleHopPathInfo)
+		reqData.RequestHash)).First(&pathInfo)
 
 	if err != nil {
 		log.Println(err)
 		return nil, "", err
 	}
-	
-	currChannelIndex := htlcSingleHopPathInfo.CurrStep - 1
-	if currChannelIndex < -1 || currChannelIndex > len(htlcSingleHopPathInfo.ChannelIdArr) {
+
+	currChannelIndex := pathInfo.CurrStep - 1
+	if currChannelIndex < -1 || currChannelIndex > len(pathInfo.ChannelIdArr) {
 		return nil, "", errors.New("err channel id")
 	}
 
 	channelInfo := dao.ChannelInfo{}
-	err = dbTx.One("Id", htlcSingleHopPathInfo.ChannelIdArr[currChannelIndex], &channelInfo)
+	err = dbTx.One("Id", pathInfo.ChannelIdArr[currChannelIndex], &channelInfo)
+	if err != nil {
+		log.Println(err)
+		return nil, "", err
+	}
+
+	// 判断自己是否有作为发送方的交易
+	// 只有每个通道的转账发送方才能去创建关于R的交易
+	commitmentTransaction := dao.CommitmentTransaction{}
+	err = dbTx.Select(
+		q.Eq("HtlcH", rAndHInfo.H),
+		q.Eq("TxType", dao.CommitmentTransactionType_Htlc),
+		q.Eq("HtlcSender", user.PeerId),
+		q.Eq("ChannelId", channelInfo.ChannelId),
+		q.Eq("Owner", user.PeerId),
+		q.Eq("CurrState", dao.TxInfoState_Htlc_GetH)).First(&commitmentTransaction)
+	if err != nil {
+		log.Println(err)
+		return nil, "", err
+	}
+
+	// get the funding transaction
+	var fundingTransaction = &dao.FundingTransaction{}
+	err = dbTx.Select(
+		q.Eq("ChannelId", channelInfo.ChannelId),
+		q.Eq("CurrState", dao.FundingTransactionState_Accept)).
+		OrderBy("CreateAt").Reverse().First(fundingTransaction)
+
 	if err != nil {
 		log.Println(err)
 		return nil, "", err
@@ -257,41 +292,253 @@ func (service *htlcBackwardTxManager) CheckRAndCreateCTxs(msgData string, user b
 		targetUser = channelInfo.PeerIdB
 		tempAddrPrivateKeyMap[channelInfo.PubKeyA] = reqData.ChannelAddressPrivateKey
 		defer delete(tempAddrPrivateKeyMap, channelInfo.PubKeyA)
-	} else {  // PeerIdB is the creator of commitment transaction.
+	} else { // PeerIdB is the creator of commitment transaction.
 		targetUser = channelInfo.PeerIdA
 		tempAddrPrivateKeyMap[channelInfo.PubKeyB] = reqData.ChannelAddressPrivateKey
 		defer delete(tempAddrPrivateKeyMap, channelInfo.PubKeyB)
 	}
+	// endregion
 
-	// get the funding transaction
-	var fundingTransaction = &dao.FundingTransaction{}
-	err = dbTx.Select(
-		q.Eq("ChannelId", channelInfo.ChannelId), 
-		q.Eq("CurrState", dao.FundingTransactionState_Accept)).
-		OrderBy("CreateAt").Reverse().First(fundingTransaction)
-		
+	var aliceIsSender bool
+	otherSide := channelInfo.PeerIdB
+	// 如果通道的PeerIdA（概念中的Alice）作为发送方
+	if channelInfo.PeerIdA == user.PeerId {
+		aliceIsSender = true
+	} else {
+		aliceIsSender = false
+		otherSide = channelInfo.PeerIdA
+	}
+
+	// 如果转账发送方是PeerIdA（Alice），也就是Alice转账给bob，
+	// 那就创建HED1a:Alice这边直接给钱bob，不需要时间锁定;
+	// HE1b,HERD1b，Bob因为是收款方，他自己的钱需要RSMC的方式锁在通道.
+	// 如果转账发送方是PeerIdB（Bob），也就是Bob转账给Alice，那就创建HE1a,HERD1a：
+	// Alice作为收款方，她得到的钱就需要RSMC锁定;
+	// HED1b：bob是发送方，他这边给Alice的钱是不需要锁定
+
+	// region	HED1x
+	_, err = htlcCreateExecutionDelivery(dbTx, channelInfo, *fundingTransaction, commitmentTransaction, *reqData, aliceIsSender)
 	if err != nil {
 		log.Println(err)
 		return nil, "", err
 	}
 	// endregion
 
+	// region 对方的两个交易
+	commitmentTransactionB := dao.CommitmentTransaction{}
+	err = dbTx.Select(
+		q.Eq("HtlcH", rAndHInfo.H),
+		q.Eq("TxType", dao.CommitmentTransactionType_Htlc),
+		q.Eq("HtlcSender", user.PeerId),
+		q.Eq("ChannelId", channelInfo.ChannelId),
+		q.Eq("Owner", otherSide),
+		q.Eq("CurrState", dao.TxInfoState_Htlc_GetH)).First(&commitmentTransactionB)
+	if err != nil {
+		log.Println(err)
+		return nil, "", err
+	}
 
+	// HE1x
+	he1x, err := createHtlcExecution(dbTx, channelInfo, *fundingTransaction, commitmentTransactionB, *reqData, pathInfo, aliceIsSender, user)
+	if err != nil {
+		log.Println(err)
+		return nil, "", err
+	}
 
-	// data = make(map[string]interface{})
-	// data["approval"] = requestData.Approval
-	// data["request_hash"] = requestData.RequestHash
-	// return data, rAndHInfo.SenderPeerId, nil
+	// htrd1x
+	herd1x, err := createHtlcRDForR(dbTx, channelInfo, *fundingTransaction, he1x, pathInfo, *reqData, aliceIsSender, user)
+	if err != nil {
+		log.Println(err)
+		return nil, "", err
+	}
+	log.Println(herd1x)
+	//endregion
 
-	// 只有每个通道的转账发送方才能去创建关于R的交易
-	// 如果转账发送方是PeerIdA（Alice），也就是Alice转账给bob，
-	// 那就创建HED1a:Alice这边直接给钱bob，不需要时间锁定;
-	// HE1b,HERD1b，Bob因为是收款方，他自己的钱需要RSMC的方式锁在通道.
-	//
-	// 如果转账发送方是PeerIdB（Bob），也就是Bob转账给Alice，那就创建HE1a,HERD1a：
-	// Alice作为收款方，她得到的钱就需要RSMC锁定;
-	// HED1b：bob是发送方，他这边给Alice的钱是不需要锁定
-	// 锁定的，就是自己的钱，就是给自己设定限制，给对方承诺
+	commitmentTransaction.CurrState = dao.TxInfoState_Htlc_GetR
+	_ = dbTx.Update(commitmentTransaction)
+	commitmentTransactionB.CurrState = dao.TxInfoState_Htlc_GetR
+	_ = dbTx.Update(commitmentTransactionB)
 
-	return nil, "", nil
+	err = dbTx.Commit()
+	if err != nil {
+		log.Println(err)
+		return nil, "", err
+	}
+
+	data = make(map[string]interface{})
+	data["commitmentTransaction"] = commitmentTransaction
+	data["commitmentTransactionB"] = commitmentTransactionB
+	return data, "", nil
+}
+
+//创建hed1a  此交易要修改创建时机，等到bob拿到R的时候，再来创建，这个时候就需要广播交易（关闭通道），那么在很多情况下，其实是不用创建的
+func htlcCreateExecutionDelivery(tx storm.Node, channelInfo dao.ChannelInfo, fundingTransaction dao.FundingTransaction,
+	commitmentTxInfo dao.CommitmentTransaction, reqData bean.HtlcCheckRAndCreateTx, aliceIsSender bool) (he1x *dao.HTLCExecutionDelivery, err error) {
+
+	otherSideChannelAddress := channelInfo.AddressB
+	otherSideChannelPubKey := channelInfo.PubKeyB
+	owner := channelInfo.PeerIdB
+	if aliceIsSender == false {
+		otherSideChannelAddress = channelInfo.AddressA
+		otherSideChannelPubKey = channelInfo.PubKeyA
+		owner = channelInfo.PeerIdA
+	}
+
+	he1x = &dao.HTLCExecutionDelivery{}
+	he1x.Owner = owner
+	he1x.OutputAddress = otherSideChannelAddress
+	he1x.OutAmount = commitmentTxInfo.AmountToHtlc
+
+	inputs, err := getInputsForNextTxByParseTxHashVout(commitmentTxInfo.HtlcTxHash, commitmentTxInfo.HTLCMultiAddress, commitmentTxInfo.HTLCMultiAddressScriptPubKey)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionForUnsendInputTx(
+		commitmentTxInfo.HTLCMultiAddress,
+		[]string{
+			reqData.CurrHtlcTempAddressForCnaPrivateKey,
+			tempAddrPrivateKeyMap[otherSideChannelPubKey],
+		},
+		inputs,
+		he1x.OutputAddress,
+		fundingTransaction.FunderAddress,
+		fundingTransaction.PropertyId,
+		he1x.OutAmount,
+		0,
+		0,
+		&commitmentTxInfo.HTLCRedeemScript)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	he1x.Txid = txid
+	he1x.TxHash = hex
+	he1x.CreateAt = time.Now()
+	he1x.CurrState = dao.TxInfoState_CreateAndSign
+	err = tx.Save(he1x)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	return he1x, nil
+}
+
+func createHtlcExecution(tx storm.Node, channelInfo dao.ChannelInfo, fundingTransaction dao.FundingTransaction,
+	commitmentTxInfo dao.CommitmentTransaction, reqData bean.HtlcCheckRAndCreateTx,
+	pathInfo dao.HtlcSingleHopPathInfo, aliceIsSender bool, operator bean.User) (htlcTimeoutTx *dao.HTLCTimeoutTxForAAndExecutionForB, err error) {
+
+	outputBean := commitmentOutputBean{}
+	outputBean.AmountToRsmc = commitmentTxInfo.AmountToHtlc
+	outputBean.OppositeSideChannelPubKey = channelInfo.PubKeyB
+	outputBean.RsmcTempPubKey = pathInfo.BobCurrHtlcTempPubKey
+	owner := channelInfo.PeerIdB
+	if aliceIsSender == false {
+		owner = channelInfo.PeerIdA
+		outputBean.OppositeSideChannelPubKey = channelInfo.PubKeyA
+	}
+
+	htlcTimeoutTx, err = createHtlcTimeoutTxObj(tx, owner, channelInfo, commitmentTxInfo, outputBean, 0, operator)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	inputs, err := getInputsForNextTxByParseTxHashVout(commitmentTxInfo.HtlcTxHash, commitmentTxInfo.HTLCMultiAddress, commitmentTxInfo.HTLCMultiAddressScriptPubKey)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionForUnsendInputTx(
+		commitmentTxInfo.HTLCMultiAddress,
+		[]string{
+			reqData.ChannelAddressPrivateKey,
+			tempAddrPrivateKeyMap[commitmentTxInfo.HTLCTempAddressPubKey],
+		},
+		inputs,
+		htlcTimeoutTx.RSMCMultiAddress,
+		fundingTransaction.FunderAddress,
+		fundingTransaction.PropertyId,
+		htlcTimeoutTx.RSMCOutAmount,
+		0,
+		htlcTimeoutTx.Timeout,
+		&commitmentTxInfo.HTLCRedeemScript)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	htlcTimeoutTx.RSMCTxid = txid
+	htlcTimeoutTx.RSMCTxHash = hex
+	htlcTimeoutTx.SignAt = time.Now()
+	htlcTimeoutTx.CurrState = dao.TxInfoState_CreateAndSign
+	err = tx.Save(htlcTimeoutTx)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	return htlcTimeoutTx, nil
+}
+
+func createHtlcRDForR(tx storm.Node, channelInfo dao.ChannelInfo,
+	fundingTransaction dao.FundingTransaction, he1x *dao.HTLCTimeoutTxForAAndExecutionForB,
+	pathInfo dao.HtlcSingleHopPathInfo, reqData bean.HtlcCheckRAndCreateTx,
+	aliceIsSender bool, operator bean.User) (*dao.RevocableDeliveryTransaction, error) {
+
+	owner := channelInfo.PeerIdB
+	outAddress := channelInfo.AddressB
+	if aliceIsSender == false {
+		owner = channelInfo.PeerIdA
+		outAddress = channelInfo.AddressA
+	}
+
+	count, _ := tx.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("CommitmentTxId", he1x.Id), q.Eq("Owner", owner), q.Eq("RDType", 1)).Count(&dao.RevocableDeliveryTransaction{})
+	if count > 0 {
+		return nil, errors.New("already create")
+	}
+
+	rdTransaction, err := createHtlcRDTxObj(owner, &channelInfo, he1x, outAddress, &operator)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	inputs, err := getInputsForNextTxByParseTxHashVout(he1x.RSMCTxHash, he1x.RSMCMultiAddress, he1x.RSMCMultiAddressScriptPubKey)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionForUnsendInputTx(
+		he1x.RSMCMultiAddress,
+		[]string{
+			reqData.ChannelAddressPrivateKey,
+			tempAddrPrivateKeyMap[pathInfo.BobCurrHtlcTempForHt1bPubKey],
+		},
+		inputs,
+		rdTransaction.OutputAddress,
+		fundingTransaction.FunderAddress,
+		fundingTransaction.PropertyId,
+		rdTransaction.Amount,
+		0,
+		rdTransaction.Sequence,
+		&he1x.RSMCRedeemScript)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	rdTransaction.Txid = txid
+	rdTransaction.TxHash = hex
+	rdTransaction.SignAt = time.Now()
+	rdTransaction.CurrState = dao.TxInfoState_CreateAndSign
+	err = tx.Save(rdTransaction)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	return rdTransaction, nil
 }

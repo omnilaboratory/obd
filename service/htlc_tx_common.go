@@ -903,57 +903,6 @@ func createHtlcRDTxObj(owner string, channelInfo *dao.ChannelInfo, htlcTimeoutTx
 	return htrd, nil
 }
 
-//创建hed1a  此交易要修改创建时机，等到bob拿到R的时候，再来创建，这个时候就需要广播交易（关闭通道），那么在很多情况下，其实是不用创建的
-func htlcCreateExecutionDeliveryA(tx storm.Node, channelInfo dao.ChannelInfo, fundingTransaction dao.FundingTransaction,
-	commitmentTxInfo dao.CommitmentTransaction, htlcRequestOpen bean.HtlcRequestOpen, owner string, hAndRInfo dao.HtlcRAndHInfo, R string) (hednA *dao.HTLCExecutionDeliveryA, err error) {
-
-	if R != hAndRInfo.R {
-		return nil, errors.New("error R")
-	}
-
-	//	alice 借道 bob 给carl 转账，给bob创建这个交易
-	hednA = &dao.HTLCExecutionDeliveryA{}
-	hednA.Owner = owner
-	hednA.OutputAddress = channelInfo.AddressB
-	hednA.OutAmount = commitmentTxInfo.AmountToHtlc
-
-	inputs, err := getInputsForNextTxByParseTxHashVout(commitmentTxInfo.HtlcTxHash, commitmentTxInfo.HTLCMultiAddress, commitmentTxInfo.HTLCMultiAddressScriptPubKey)
-	if err != nil {
-		log.Println(err)
-		return nil, err
-	}
-
-	txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionForUnsendInputTx(
-		commitmentTxInfo.HTLCMultiAddress,
-		[]string{
-			htlcRequestOpen.CurrHtlcTempAddressPrivateKey,
-			tempAddrPrivateKeyMap[channelInfo.PubKeyB],
-		},
-		inputs,
-		hednA.OutputAddress,
-		fundingTransaction.FunderAddress,
-		fundingTransaction.PropertyId,
-		hednA.OutAmount,
-		0,
-		0,
-		&commitmentTxInfo.HTLCRedeemScript)
-	if err != nil {
-		log.Println(err)
-		return nil, err
-	}
-
-	hednA.Txid = txid
-	hednA.TxHash = hex
-	hednA.CreateAt = time.Now()
-	hednA.CurrState = dao.TxInfoState_CreateAndSign
-	err = tx.Save(hednA)
-	if err != nil {
-		log.Println(err)
-		return nil, err
-	}
-	return hednA, nil
-}
-
 func getHtlcLatestCommitmentTx(channelId bean.ChannelID, owner string) (commitmentTxInfo *dao.CommitmentTransaction, err error) {
 	commitmentTxInfo = &dao.CommitmentTransaction{}
 	err = db.Select(q.Eq("ChannelId", channelId), q.Eq("Owner", owner), q.Eq("CurrState", dao.TxInfoState_Htlc_GetR)).OrderBy("CreateAt").Reverse().First(commitmentTxInfo)

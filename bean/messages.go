@@ -243,10 +243,11 @@ type HtlcSendR struct {
 	CurrHtlcTempAddressForHE1bPrivateKey string `json:"curr_htlc_temp_address_for_he1b_private_key"`
 }
 
-//type -47: Middleman node check out if R is correct 
+//type -47: Middleman node check out if R is correct
 // and create commitment transactions.
 type HtlcCheckRAndCreateTx struct {
 	RequestHash string `json:"request_hash"`
+	R           string `json:"r"`
 
 	// The key of creator tx. Example Bob send R to Alice, that is Alice's.
 	ChannelAddressPrivateKey string `json:"channel_address_private_key"`

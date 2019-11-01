@@ -52,7 +52,7 @@ type HTLCTimeoutDeliveryTxB struct {
 }
 
 //HED1a 如果bob返回了正确的R，就可以完成签名，标识这次的htlc可以成功了
-type HTLCExecutionDeliveryA struct {
+type HTLCExecutionDelivery struct {
 	Id             int         `storm:"id,increment" json:"id" `
 	CommitmentTxId int         `json:"commitment_tx_id"`
 	InputTxid      string      `json:"input_txid"`   // input txid  from commitTx aliceTempHtlc&bob multtaddr, so need  sign of aliceTempHtlc and bob
@@ -72,7 +72,7 @@ type HTLCExecutionDeliveryA struct {
 }
 
 //HE1b 如果bob获得了正确的R，就可以完成签名，标识这次的htlc可以成功了
-type HTLCExecutionB HTLCExecutionDeliveryA
+type HTLCExecutionB HTLCExecutionDelivery
 
 type NormalState int
 
