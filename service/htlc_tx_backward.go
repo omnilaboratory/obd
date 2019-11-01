@@ -346,9 +346,11 @@ func (service *htlcBackwardTxManager) CheckRAndCreateTxs(msgData string, user be
 	//endregion
 
 	commitmentTransaction.CurrState = dao.TxInfoState_Htlc_GetR
-	_ = dbTx.Update(commitmentTransaction)
+	commitmentTransaction.LastEditTime = time.Now()
+	_ = dbTx.Update(&commitmentTransaction)
 	commitmentTransactionB.CurrState = dao.TxInfoState_Htlc_GetR
-	_ = dbTx.Update(commitmentTransactionB)
+	commitmentTransactionB.LastEditTime = time.Now()
+	_ = dbTx.Update(&commitmentTransactionB)
 
 	err = dbTx.Commit()
 	if err != nil {
