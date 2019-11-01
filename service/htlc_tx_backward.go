@@ -164,13 +164,13 @@ func (service *htlcBackwardTxManager) SendRToPreviousNode(msgData string,
 	return responseData, previousNode, nil
 }
 
-// CheckRAndCreateCTxs
+// CheckRAndCreateTxs
 //
 // Process type -47: Middleman node Check out if R is correct
 // and create commitment transactions.
 //  * R is <Preimage_R>
-func (service *htlcBackwardTxManager) CheckRAndCreateCTxs(msgData string, user bean.User) (
-	data map[string]interface{}, targetUser string, err error) {
+func (service *htlcBackwardTxManager) CheckRAndCreateTxs(msgData string, user bean.User) (
+	data map[string]interface{}, recipientUser string, err error) {
 
 	// region Parse data inputed from websocket client of middleman node.
 	if tool.CheckIsString(&msgData) == false {
@@ -257,10 +257,10 @@ func (service *htlcBackwardTxManager) CheckRAndCreateCTxs(msgData string, user b
 	// 只有每个通道的转账发送方才能去创建关于R的交易
 	commitmentTransaction := dao.CommitmentTransaction{}
 	err = dbTx.Select(
-		q.Eq("HtlcH", rAndHInfo.H),
-		q.Eq("TxType", dao.CommitmentTransactionType_Htlc),
-		q.Eq("HtlcSender", user.PeerId),
 		q.Eq("ChannelId", channelInfo.ChannelId),
+		q.Eq("TxType", dao.CommitmentTransactionType_Htlc),
+		q.Eq("HtlcH", rAndHInfo.H),
+		q.Eq("HtlcSender", user.PeerId),
 		q.Eq("Owner", user.PeerId),
 		q.Eq("CurrState", dao.TxInfoState_Htlc_GetH)).First(&commitmentTransaction)
 	if err != nil {
@@ -279,34 +279,16 @@ func (service *htlcBackwardTxManager) CheckRAndCreateCTxs(msgData string, user b
 		log.Println(err)
 		return nil, "", err
 	}
-
-	// Save private key to memory.
-	//
-	// PeerIdA of the channel is the creator of commitment transaction.
-	// ChannelAddressPrivateKey is a private key of the creator.
-	//
-	// Example: When Bob transfer R to Alice has completed,
-	// Alice begin create HED1a, HE1b, HERD1b. So, Alice is the creator.
-	// Create HE1b, HERD1b need private key of Alice to sign that.
-	if user.PeerId == channelInfo.PeerIdA {
-		targetUser = channelInfo.PeerIdB
-		tempAddrPrivateKeyMap[channelInfo.PubKeyA] = reqData.ChannelAddressPrivateKey
-		defer delete(tempAddrPrivateKeyMap, channelInfo.PubKeyA)
-	} else { // PeerIdB is the creator of commitment transaction.
-		targetUser = channelInfo.PeerIdA
-		tempAddrPrivateKeyMap[channelInfo.PubKeyB] = reqData.ChannelAddressPrivateKey
-		defer delete(tempAddrPrivateKeyMap, channelInfo.PubKeyB)
-	}
 	// endregion
 
 	var aliceIsSender bool
-	otherSide := channelInfo.PeerIdB
 	// 如果通道的PeerIdA（概念中的Alice）作为发送方
 	if channelInfo.PeerIdA == user.PeerId {
 		aliceIsSender = true
+		recipientUser = channelInfo.PeerIdB
 	} else {
 		aliceIsSender = false
-		otherSide = channelInfo.PeerIdA
+		recipientUser = channelInfo.PeerIdA
 	}
 
 	// 如果转账发送方是PeerIdA（Alice），也就是Alice转账给bob，
@@ -324,14 +306,14 @@ func (service *htlcBackwardTxManager) CheckRAndCreateCTxs(msgData string, user b
 	}
 	// endregion
 
-	// region 对方的两个交易
+	// region 对方的两个交易 he1x herd1x
 	commitmentTransactionB := dao.CommitmentTransaction{}
 	err = dbTx.Select(
-		q.Eq("HtlcH", rAndHInfo.H),
-		q.Eq("TxType", dao.CommitmentTransactionType_Htlc),
-		q.Eq("HtlcSender", user.PeerId),
 		q.Eq("ChannelId", channelInfo.ChannelId),
-		q.Eq("Owner", otherSide),
+		q.Eq("TxType", dao.CommitmentTransactionType_Htlc),
+		q.Eq("HtlcH", rAndHInfo.H),
+		q.Eq("HtlcSender", user.PeerId),
+		q.Eq("Owner", recipientUser),
 		q.Eq("CurrState", dao.TxInfoState_Htlc_GetH)).First(&commitmentTransactionB)
 	if err != nil {
 		log.Println(err)
@@ -368,7 +350,7 @@ func (service *htlcBackwardTxManager) CheckRAndCreateCTxs(msgData string, user b
 	data = make(map[string]interface{})
 	data["commitmentTransaction"] = commitmentTransaction
 	data["commitmentTransactionB"] = commitmentTransactionB
-	return data, "", nil
+	return data, recipientUser, nil
 }
 
 //创建hed1a  此交易要修改创建时机，等到bob拿到R的时候，再来创建，这个时候就需要广播交易（关闭通道），那么在很多情况下，其实是不用创建的
