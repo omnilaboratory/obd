@@ -899,7 +899,7 @@ func (service *htlcCloseTxManager) RequestCloseChannel(msgData string, user bean
 	if tool.CheckIsString(&msgData) == false {
 		return nil, "", errors.New("empty inputData")
 	}
-	reqData := &bean.CloseChannel{}
+	reqData := &bean.HtlcCloseChannelReq{}
 	err = json.Unmarshal([]byte(msgData), reqData)
 	if err != nil {
 		log.Println(err)
@@ -948,7 +948,7 @@ func (service *htlcCloseTxManager) SignCloseChannel(msgData string, user bean.Us
 	if tool.CheckIsString(&msgData) == false {
 		return nil, "", errors.New("empty inputData")
 	}
-	reqData := &bean.CloseChannelSign{}
+	reqData := &bean.HtlcCloseChannelSign{}
 	err = json.Unmarshal([]byte(msgData), reqData)
 	if err != nil {
 		log.Println(err)
