@@ -243,7 +243,8 @@ type HtlcSendR struct {
 	CurrHtlcTempAddressForHE1bPrivateKey string `json:"curr_htlc_temp_address_for_he1b_private_key"`
 }
 
-//type -47: Check out if R is correct and create commitment transactions.
+//type -47: Middleman node check out if R is correct 
+// and create commitment transactions.
 type HtlcCheckRAndCreateTx struct {
 	RequestHash string `json:"request_hash"`
 	

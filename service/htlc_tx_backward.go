@@ -25,7 +25,7 @@ var HtlcBackwardTxService htlcBackwardTxManager
 func (service *htlcBackwardTxManager) SendRToPreviousNode(msgData string,
 	user bean.User) (data map[string]interface{}, previousNode string, err error) {
 
-	// region Parse data inputed from [Carol] websocket client.
+	// region Parse data inputed from websocket client of sender.
 	if tool.CheckIsString(&msgData) == false {
 		return nil, "", errors.New("empty json data")
 	}
@@ -38,7 +38,7 @@ func (service *htlcBackwardTxManager) SendRToPreviousNode(msgData string,
 	}
 	// endregion
 
-	// region Check data inputed from websocket client of Carol.
+	// region Check data inputed from websocket client of sender.
 	if tool.CheckIsString(&reqData.RequestHash) == false {
 		err = errors.New("empty request_hash")
 		log.Println(err)
@@ -47,6 +47,12 @@ func (service *htlcBackwardTxManager) SendRToPreviousNode(msgData string,
 
 	if tool.CheckIsString(&reqData.ChannelAddressPrivateKey) == false {
 		err = errors.New("channel_address_private_key is empty")
+		log.Println(err)
+		return nil, "", err
+	}
+
+	if tool.CheckIsString(&reqData.CurrHtlcTempAddressForCnbPrivateKey) == false {
+		err = errors.New("curr_htlc_temp_address_for_cnb_private_key is empty")
 		log.Println(err)
 		return nil, "", err
 	}
@@ -68,7 +74,7 @@ func (service *htlcBackwardTxManager) SendRToPreviousNode(msgData string,
 	rAndHInfo := &dao.HtlcRAndHInfo{}
 	err = db.Select(
 		q.Eq("RequestHash", reqData.RequestHash),
-		q.Eq("R", reqData.R), // R from websocket client of Carol
+		q.Eq("R", reqData.R), // R from websocket client of sender
 		q.Eq("CurrState", dao.NS_Finish)).First(rAndHInfo)
 
 	if err != nil {
@@ -122,12 +128,18 @@ func (service *htlcBackwardTxManager) SendRToPreviousNode(msgData string,
 	// endregion
 
 	// region Save private key to memory.
-	if currChannel.PeerIdB == user.PeerId {
-		tempAddrPrivateKeyMap[currChannel.PubKeyB] = reqData.ChannelAddressPrivateKey
-	} else {
+	//
+	// PeerIdA of the channel is the sender of transfer R.
+	// ChannelAddressPrivateKey is a private key of the sender.
+	//
+	// Example: When Bob transfer R to Alice, Bob is the sender.
+	// Alice create HED1a need the private key of Bob for sign that.
+	if user.PeerId == currChannel.PeerIdA {
 		tempAddrPrivateKeyMap[currChannel.PubKeyA] = reqData.ChannelAddressPrivateKey
+	} else { // PeerIdB is the sender of transfer R.
+		tempAddrPrivateKeyMap[currChannel.PubKeyB] = reqData.ChannelAddressPrivateKey
 	}
-	
+
 	tempAddrPrivateKeyMap[reqData.CurrHtlcTempAddressForHE1bPubKey] = reqData.CurrHtlcTempAddressForHE1bPrivateKey
 		
 	// Save pubkey to database.
@@ -150,16 +162,121 @@ func (service *htlcBackwardTxManager) SendRToPreviousNode(msgData string,
 	return responseData, previousNode, nil
 }
 
-// SignGetR
+// CheckRAndCreateCTxs
 //
-// Process type -47: Bob (middleman) check out if R is correct.
+// Process type -47: Middleman node Check out if R is correct 
+// and create commitment transactions.
 //  * R is <Preimage_R>
-func (service *htlcBackwardTxManager) SignGetR(msgData string, user bean.User) (
+func (service *htlcBackwardTxManager) CheckRAndCreateCTxs(msgData string, user bean.User) (
 	data map[string]interface{}, targetUser string, err error) {
 
-	// if tool.CheckIsString(&msgData) == false {
-	// 	return nil, "", errors.New("empty json data")
-	// }
+	// region Parse data inputed from websocket client of middleman node.
+	if tool.CheckIsString(&msgData) == false {
+		return nil, "", errors.New("empty json data")
+	}
+
+	reqData := &bean.HtlcCheckRAndCreateTx{}
+	err = json.Unmarshal([]byte(msgData), reqData)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, "", err
+	}
+	// endregion
+
+	// region Check data inputed from websocket client of  middleman node.
+	if tool.CheckIsString(&reqData.RequestHash) == false {
+		err = errors.New("empty request_hash")
+		log.Println(err)
+		return nil, "", err
+	}
+
+	if tool.CheckIsString(&reqData.ChannelAddressPrivateKey) == false {
+		err = errors.New("channel_address_private_key is empty")
+		log.Println(err)
+		return nil, "", err
+	}
+
+	if tool.CheckIsString(&reqData.CurrHtlcTempAddressForCnaPrivateKey) == false {
+		err = errors.New("curr_htlc_temp_address_for_cna_private_key is empty")
+		log.Println(err)
+		return nil, "", err
+	}
+	// endregion
+
+	// region Check out if the request hash is correct.
+	rAndHInfo := &dao.HtlcRAndHInfo{}
+	err = db.Select(
+		q.Eq("RequestHash", reqData.RequestHash),
+		q.Eq("CurrState", dao.NS_Finish)).First(rAndHInfo)
+
+	if err != nil {
+		log.Println(err.Error())
+		return nil, "", err
+	}
+	// endregion
+	
+	// region Create HED1a commitment transaction. 
+	// launch database transaction, if anything goes wrong, roll back.
+	dbTx, err := db.Begin(true)
+	if err != nil {
+		return nil, "", err
+	}
+	defer dbTx.Rollback()
+
+	// prepare the data
+	htlcSingleHopPathInfo := dao.HtlcSingleHopPathInfo{}
+	err = db.Select(q.Eq("HAndRInfoRequestHash",
+		reqData.RequestHash)).First(&htlcSingleHopPathInfo)
+
+	if err != nil {
+		log.Println(err)
+		return nil, "", err
+	}
+	
+	currChannelIndex := htlcSingleHopPathInfo.CurrStep - 1
+	if currChannelIndex < -1 || currChannelIndex > len(htlcSingleHopPathInfo.ChannelIdArr) {
+		return nil, "", errors.New("err channel id")
+	}
+
+	channelInfo := dao.ChannelInfo{}
+	err = dbTx.One("Id", htlcSingleHopPathInfo.ChannelIdArr[currChannelIndex], &channelInfo)
+	if err != nil {
+		log.Println(err)
+		return nil, "", err
+	}
+
+	// Save private key to memory.
+	//
+	// PeerIdA of the channel is the creator of commitment transaction.
+	// ChannelAddressPrivateKey is a private key of the creator.
+	//
+	// Example: When Bob transfer R to Alice has completed,
+	// Alice begin create HED1a, HE1b, HERD1b. So, Alice is the creator.
+	// Create HE1b, HERD1b need private key of Alice to sign that.
+	if user.PeerId == channelInfo.PeerIdA {
+		targetUser = channelInfo.PeerIdB
+		tempAddrPrivateKeyMap[channelInfo.PubKeyA] = reqData.ChannelAddressPrivateKey
+		defer delete(tempAddrPrivateKeyMap, channelInfo.PubKeyA)
+	} else {  // PeerIdB is the creator of commitment transaction.
+		targetUser = channelInfo.PeerIdA
+		tempAddrPrivateKeyMap[channelInfo.PubKeyB] = reqData.ChannelAddressPrivateKey
+		defer delete(tempAddrPrivateKeyMap, channelInfo.PubKeyB)
+	}
+
+	// get the funding transaction
+	var fundingTransaction = &dao.FundingTransaction{}
+	err = dbTx.Select(
+		q.Eq("ChannelId", channelInfo.ChannelId), 
+		q.Eq("CurrState", dao.FundingTransactionState_Accept)).
+		OrderBy("CreateAt").Reverse().First(fundingTransaction)
+		
+	if err != nil {
+		log.Println(err)
+		return nil, "", err
+	}
+	// endregion
+
+
 
 	// data = make(map[string]interface{})
 	// data["approval"] = requestData.Approval
