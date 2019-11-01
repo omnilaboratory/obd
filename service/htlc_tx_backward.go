@@ -284,8 +284,13 @@ func (service *htlcBackwardTxManager) CheckRAndCreateCTxs(msgData string, user b
 	// return data, rAndHInfo.SenderPeerId, nil
 
 	// 只有每个通道的转账发送方才能去创建关于R的交易
-	// 如果转账发送方是PeerIdA（Alice），也就是Alice转账给bob，那就创建HED1a:Alice这边直接给钱bob，不需要时间锁定;HE1b,HERD1b，Bob因为是收款方，他自己的钱需要RSMC的方式锁在通道
-	// 如果转账发送方是PeerIdB（Bob），也就是Bob转账给Alice，那就创建HE1a,HERD1a：Alice作为收款方，她得到的钱就需要RSMC锁定;HED1b：bob是发送方，他这边给Alice的钱是不需要锁定
+	// 如果转账发送方是PeerIdA（Alice），也就是Alice转账给bob，
+	// 那就创建HED1a:Alice这边直接给钱bob，不需要时间锁定;
+	// HE1b,HERD1b，Bob因为是收款方，他自己的钱需要RSMC的方式锁在通道.
+	//
+	// 如果转账发送方是PeerIdB（Bob），也就是Bob转账给Alice，那就创建HE1a,HERD1a：
+	// Alice作为收款方，她得到的钱就需要RSMC锁定;
+	// HED1b：bob是发送方，他这边给Alice的钱是不需要锁定
 	// 锁定的，就是自己的钱，就是给自己设定限制，给对方承诺
 
 	return nil, "", nil
