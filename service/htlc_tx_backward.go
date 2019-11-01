@@ -253,6 +253,15 @@ func (service *htlcBackwardTxManager) CheckRAndCreateTxs(msgData string, user be
 		return nil, "", err
 	}
 
+	if user.PeerId == channelInfo.PeerIdA {
+		tempAddrPrivateKeyMap[channelInfo.PubKeyA] = reqData.ChannelAddressPrivateKey
+	} else {
+		tempAddrPrivateKeyMap[channelInfo.PubKeyB] = reqData.ChannelAddressPrivateKey
+	}
+	defer delete(tempAddrPrivateKeyMap, channelInfo.PubKeyA)
+	defer delete(tempAddrPrivateKeyMap, channelInfo.PubKeyB)
+	defer delete(tempAddrPrivateKeyMap, pathInfo.BobCurrHtlcTempForHt1bPubKey)
+
 	// 判断自己是否有作为发送方的交易
 	// 只有每个通道的转账发送方才能去创建关于R的交易
 	commitmentTransaction := dao.CommitmentTransaction{}
