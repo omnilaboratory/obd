@@ -329,7 +329,7 @@ func (service *htlcBackwardTxManager) CheckRAndCreateTxs(msgData string, user be
 		return nil, "", err
 	}
 
-	// HE1x
+	// HE1x 一个新的Rsmc
 	he1x, err := createHtlcExecution(dbTx, channelInfo, *fundingTransaction, commitmentTransactionB, *reqData, pathInfo, aliceIsSender, user)
 	if err != nil {
 		log.Println(err)
