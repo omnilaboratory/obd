@@ -159,20 +159,17 @@ func (service *htlcForwardTxManager) SignGetH(msgData string, user bean.User) (d
 		if tool.CheckIsString(&requestData.ChannelAddressPrivateKey) == false {
 			return nil, "", errors.New("channel_address_private_key is empty")
 		}
-		if tool.CheckIsString(&requestData.LastTempAddressPrivateKey) == false {
-			return nil, "", errors.New("last_temp_address_private_key is empty")
-		}
 		if tool.CheckIsString(&requestData.CurrRsmcTempAddressPubKey) == false {
 			return nil, "", errors.New("curr_rsmc_temp_address_pub_key is empty")
 		}
 		if tool.CheckIsString(&requestData.CurrRsmcTempAddressPrivateKey) == false {
 			return nil, "", errors.New("curr_rsmc_temp_address_private_key is empty")
 		}
-		if tool.CheckIsString(&requestData.CurrHtlcTempAddressForHt1aPubKey) == false {
-			return nil, "", errors.New("curr_htlc_temp_address_for_ht1a_pub_key is empty")
+		if tool.CheckIsString(&requestData.CurrHtlcTempAddressPubKey) == false {
+			return nil, "", errors.New("curr_htlc_temp_address_pub_key is empty")
 		}
-		if tool.CheckIsString(&requestData.CurrHtlcTempAddressForHt1aPrivateKey) == false {
-			return nil, "", errors.New("curr_htlc_temp_address_for_ht1a_private_key is empty")
+		if tool.CheckIsString(&requestData.CurrHtlcTempAddressPrivateKey) == false {
+			return nil, "", errors.New("curr_htlc_temp_address_private_key is empty")
 		}
 	}
 	// endregion
@@ -193,26 +190,21 @@ func (service *htlcForwardTxManager) SignGetH(msgData string, user bean.User) (d
 		return nil, "", err
 	}
 
-	htlcSingleHopPathInfo := &dao.HtlcSingleHopPathInfo{}
-	err = tx.Select(q.Eq("HAndRInfoRequestHash", requestData.RequestHash)).First(htlcSingleHopPathInfo)
+	pathInfo := &dao.HtlcSingleHopPathInfo{}
+	err = tx.Select(q.Eq("HAndRInfoRequestHash", requestData.RequestHash)).First(pathInfo)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, "", err
 	}
 
-	if htlcSingleHopPathInfo.CurrStep > 2 {
+	if pathInfo.CurrStep > 2 {
 		return nil, "", errors.New("error step")
 	}
 
-	if requestData.Approval == false && htlcSingleHopPathInfo.CurrStep == 1 {
+	if requestData.Approval == false && pathInfo.CurrStep == 1 {
 		err = errors.New("the receiver can not refuse")
 		log.Println(err)
 		return nil, "", err
-	}
-	if requestData.Approval == false {
-		htlcSingleHopPathInfo.CurrState = dao.SingleHopPathInfoState_RefusedByInterNode
-	} else {
-		htlcSingleHopPathInfo.CurrState = dao.SingleHopPathInfoState_StepBegin
 	}
 
 	//endregion
@@ -220,8 +212,8 @@ func (service *htlcForwardTxManager) SignGetH(msgData string, user bean.User) (d
 	// region temp store data
 	if requestData.Approval {
 		//锁定两个通道
-		if htlcSingleHopPathInfo.CurrStep == 0 {
-			for _, id := range htlcSingleHopPathInfo.ChannelIdArr {
+		if pathInfo.CurrStep == 0 && pathInfo.CurrState != dao.SingleHopPathInfoState_StepBegin {
+			for _, id := range pathInfo.ChannelIdArr {
 				channelInfo := &dao.ChannelInfo{}
 				err := tx.One("Id", id, channelInfo)
 				if err != nil {
@@ -237,13 +229,13 @@ func (service *htlcForwardTxManager) SignGetH(msgData string, user bean.User) (d
 			}
 		}
 
-		currChannelIndex := htlcSingleHopPathInfo.CurrStep
-		if currChannelIndex < -1 || currChannelIndex > len(htlcSingleHopPathInfo.ChannelIdArr) {
+		currChannelIndex := pathInfo.CurrStep
+		if currChannelIndex < -1 || currChannelIndex > len(pathInfo.ChannelIdArr) {
 			return nil, "", errors.New("err channel id")
 		}
 
 		currChannel := &dao.ChannelInfo{}
-		err := tx.One("Id", htlcSingleHopPathInfo.ChannelIdArr[currChannelIndex], currChannel)
+		err := tx.One("Id", pathInfo.ChannelIdArr[currChannelIndex], currChannel)
 		if err != nil {
 			log.Println(err.Error())
 			return nil, "", err
@@ -256,24 +248,30 @@ func (service *htlcForwardTxManager) SignGetH(msgData string, user bean.User) (d
 		}
 		bobLatestCommitmentTx, err := getLatestCommitmentTx(currChannel.ChannelId, user.PeerId)
 		if err == nil {
+			if tool.CheckIsString(&requestData.LastTempAddressPrivateKey) == false {
+				return nil, "", errors.New("last_temp_address_private_key is empty")
+			}
 			tempAddrPrivateKeyMap[bobLatestCommitmentTx.RSMCTempAddressPubKey] = requestData.LastTempAddressPrivateKey
 		}
-		tempAddrPrivateKeyMap[htlcSingleHopPathInfo.BobCurrRsmcTempPubKey] = requestData.CurrRsmcTempAddressPrivateKey
-		tempAddrPrivateKeyMap[htlcSingleHopPathInfo.BobCurrHtlcTempPubKey] = requestData.CurrHtlcTempAddressPrivateKey
+		tempAddrPrivateKeyMap[pathInfo.BobCurrRsmcTempPubKey] = requestData.CurrRsmcTempAddressPrivateKey
+		tempAddrPrivateKeyMap[pathInfo.BobCurrHtlcTempPubKey] = requestData.CurrHtlcTempAddressPrivateKey
 
-		htlcSingleHopPathInfo.BobCurrRsmcTempPubKey = requestData.CurrRsmcTempAddressPubKey
-		htlcSingleHopPathInfo.BobCurrHtlcTempPubKey = requestData.CurrHtlcTempAddressPubKey
-		htlcSingleHopPathInfo.BobCurrHtlcTempForHt1bPubKey = requestData.CurrHtlcTempAddressForHt1aPubKey
+		pathInfo.BobCurrRsmcTempPubKey = requestData.CurrRsmcTempAddressPubKey
+		pathInfo.BobCurrHtlcTempPubKey = requestData.CurrHtlcTempAddressPubKey
+	}
+	if requestData.Approval == false {
+		pathInfo.CurrState = dao.SingleHopPathInfoState_RefusedByInterNode
+	} else {
+		pathInfo.CurrState = dao.SingleHopPathInfoState_StepBegin
 	}
 
 	// endregion
 
-	err = tx.Update(htlcSingleHopPathInfo)
+	err = tx.Update(pathInfo)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, "", err
 	}
-
 	err = tx.Commit()
 	if err != nil {
 		log.Println(err.Error())
@@ -305,21 +303,21 @@ func (service *htlcForwardTxManager) SenderBeginCreateHtlcCommitmentTx(msgData s
 		return nil, "", err
 	}
 
-	htlcSingleHopPathInfo := dao.HtlcSingleHopPathInfo{}
-	err = db.Select(q.Eq("HAndRInfoRequestHash", requestData.RequestHash)).First(&htlcSingleHopPathInfo)
+	pathInfo := dao.HtlcSingleHopPathInfo{}
+	err = db.Select(q.Eq("HAndRInfoRequestHash", requestData.RequestHash)).First(&pathInfo)
 	if err != nil {
 		log.Println(err)
 		return nil, "", err
 	}
 
-	if htlcSingleHopPathInfo.CurrStep > 2 {
+	if pathInfo.CurrStep > 2 {
 		return nil, "", errors.New("error step")
 	}
 
-	htlcSingleHopPathInfo.CurrStep += 1
+	pathInfo.CurrStep += 1
 
 	hAndRInfo := dao.HtlcRAndHInfo{}
-	err = db.Select(q.Eq("RequestHash", htlcSingleHopPathInfo.HAndRInfoRequestHash)).First(&hAndRInfo)
+	err = db.Select(q.Eq("RequestHash", pathInfo.HAndRInfoRequestHash)).First(&hAndRInfo)
 	if err != nil {
 		log.Println(err)
 		return nil, "", err
@@ -374,16 +372,28 @@ func (service *htlcForwardTxManager) SenderBeginCreateHtlcCommitmentTx(msgData s
 	defer dbTx.Rollback()
 
 	// region prepare the data
-	currChannelIndex := htlcSingleHopPathInfo.CurrStep - 1
-	if currChannelIndex < -1 || currChannelIndex > len(htlcSingleHopPathInfo.ChannelIdArr) {
+	currChannelIndex := pathInfo.CurrStep - 1
+	if currChannelIndex < -1 || currChannelIndex > len(pathInfo.ChannelIdArr) {
 		return nil, "", errors.New("err channel id")
 	}
 
 	channelInfo := dao.ChannelInfo{}
-	err = dbTx.One("Id", htlcSingleHopPathInfo.ChannelIdArr[currChannelIndex], &channelInfo)
+	err = dbTx.One("Id", pathInfo.ChannelIdArr[currChannelIndex], &channelInfo)
 	if err != nil {
 		log.Println(err)
 		return nil, "", err
+	}
+
+	service.operationFlag.Lock()
+	defer service.operationFlag.Unlock()
+
+	var lastCommitmentTx = &dao.CommitmentTransaction{}
+	err = db.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("Owner", user.PeerId)).OrderBy("CreateAt").Reverse().First(lastCommitmentTx)
+	if err == nil {
+		if lastCommitmentTx != nil &&
+			lastCommitmentTx.TxType == dao.CommitmentTransactionType_Htlc {
+			return nil, "", errors.New("always created")
+		}
 	}
 
 	//当前操作者是Alice Alice转账给Bob
@@ -423,7 +433,7 @@ func (service *htlcForwardTxManager) SenderBeginCreateHtlcCommitmentTx(msgData s
 	//region 创建htlc相关的交易: Cna（1+3: Cna + toRsmc + toOther + toHtlc）+ 2(ht1a+htrd1a); cnb(1+3: Cnb + toRsmc + toOther + toHtlc) + 1(htd1b)
 
 	///Cna Alice方(channel.PeerIdA)的交易
-	commitmentTransactionOfA, err := service.htlcCreateAliceSideTxs(dbTx, channelInfo, user, *fundingTransaction, *requestData, htlcSingleHopPathInfo, hAndRInfo)
+	commitmentTransactionOfA, err := service.htlcCreateAliceSideTxs(dbTx, channelInfo, user, *fundingTransaction, *requestData, pathInfo, hAndRInfo)
 	if err != nil {
 		log.Println(err)
 		return nil, "", err
@@ -431,7 +441,7 @@ func (service *htlcForwardTxManager) SenderBeginCreateHtlcCommitmentTx(msgData s
 	log.Println(commitmentTransactionOfA)
 
 	///Cnb Bob方(channel.PeerIdB)的交易
-	commitmentTransactionOfB, err := service.htlcCreateBobSideTxs(dbTx, channelInfo, user, *fundingTransaction, *requestData, htlcSingleHopPathInfo, hAndRInfo)
+	commitmentTransactionOfB, err := service.htlcCreateBobSideTxs(dbTx, channelInfo, user, *fundingTransaction, *requestData, pathInfo, hAndRInfo)
 	if err != nil {
 		log.Println(err)
 		return nil, "", err
@@ -440,8 +450,8 @@ func (service *htlcForwardTxManager) SenderBeginCreateHtlcCommitmentTx(msgData s
 
 	//endregion
 
-	htlcSingleHopPathInfo.CurrState = dao.SingleHopPathInfoState_StepFinish
-	err = dbTx.Update(&htlcSingleHopPathInfo)
+	pathInfo.CurrState = dao.SingleHopPathInfoState_StepFinish
+	err = dbTx.Update(&pathInfo)
 	if err != nil {
 		log.Println(err)
 		return nil, "", err

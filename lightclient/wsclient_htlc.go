@@ -178,9 +178,7 @@ func (client *Client) htlcTxModule(msg bean.RequestMessage) (enum.SendTargetType
 				_ = client.sendToSomeone(msg.Type, status, senderPeerId, data)
 			}
 		}
-		if status == false {
-			client.sendToMyself(msg.Type, status, data)
-		}
+		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_HTLC_CreateCommitmentTx_N45:
 		respond, senderPeerId, err := service.HtlcForwardTxService.SenderBeginCreateHtlcCommitmentTx(msg.Data, *client.User)
@@ -203,9 +201,9 @@ func (client *Client) htlcTxModule(msg bean.RequestMessage) (enum.SendTargetType
 
 	// Coding by Kevin 2019-10-28
 	case enum.MsgType_HTLC_SendR_N46:
-		respond, senderPeerId, err := 
+		respond, senderPeerId, err :=
 			service.HtlcBackwardTxService.SendRToPreviousNode(msg.Data, *client.User)
-			
+
 		if err != nil {
 			data = err.Error()
 		} else {

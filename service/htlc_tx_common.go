@@ -83,11 +83,10 @@ func htlcAliceAbortLastRsmcCommitmentTx(tx storm.Node, channelInfo dao.ChannelIn
 
 	//针对的是Cna
 	var lastCommitmentATx = &dao.CommitmentTransaction{}
-	err := tx.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("Owner", owner), q.Eq("CurrState", dao.TxInfoState_CreateAndSign)).OrderBy("CreateAt").Reverse().First(lastCommitmentATx)
+	err := tx.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("Owner", owner)).OrderBy("CreateAt").Reverse().First(lastCommitmentATx)
 	if err != nil {
 		return err
 	}
-
 	//	为上一次的Rsmc交易构建BR交易，Alice宣布上一次的交易作废。
 	// （惩罚交易：如果Alice广播这次作废的交易，因为BR交易的存在（bob才能广播），就会失去自己的钱，这个时候，对应的RD交易还需要等待1000个区块高度才能广播）
 	if lastCommitmentATx != nil {
