@@ -22,7 +22,7 @@ var HtlcHMessageService htlcHMessageManager
 // DealHtlcRequest
 //
 // Process type -40: Alice start a request to transfer to Carol.
-func (service *htlcHMessageManager) DealHtlcRequest(jsonData string, 
+func (service *htlcHMessageManager) DealHtlcRequest(jsonData string,
 	creator *bean.User) (data *bean.HtlcHRespond, err error) {
 
 	//------------
@@ -113,8 +113,8 @@ func (service *htlcHMessageManager) DealHtlcRequest(jsonData string,
 // DealHtlcResponse
 //
 // Process type -41: Carol response to transfer H to Alice.
-//  * H is <hash_of_preimage_R> 
-func (service *htlcHMessageManager) DealHtlcResponse(jsonData string, 
+//  * H is <hash_of_preimage_R>
+func (service *htlcHMessageManager) DealHtlcResponse(jsonData string,
 	user *bean.User) (data interface{}, senderPeerId *string, err error) {
 
 	// [jsonData] is content inputed from [Carol] websocket client.
@@ -129,7 +129,7 @@ func (service *htlcHMessageManager) DealHtlcResponse(jsonData string,
 	}
 
 	// [HtlcRAndHInfo] has saved to database in [Type -40].
-	// So, get the object from database now. 
+	// So, get the object from database now.
 	rAndHInfo := &dao.HtlcRAndHInfo{}
 	err = db.Select(q.Eq("RequestHash", htlcHRespond.RequestHash), q.Eq("CurrState", dao.NS_Create)).First(rAndHInfo)
 	if err != nil {
@@ -143,8 +143,8 @@ func (service *htlcHMessageManager) DealHtlcResponse(jsonData string,
 
 		// Generate the R and H.
 		// For temp solution currently, the R and H save to database.
-		//  * R is <preimage_R> 
-		//  * H is <hash_of_preimage_R> 
+		//  * R is <preimage_R>
+		//  * H is <hash_of_preimage_R>
 
 		s, _ := tool.RandBytes(32)
 		temp := append([]byte(rAndHInfo.RequestHash), s...)
@@ -377,8 +377,8 @@ func checkIfHtlcCanBeLaunched(creator *bean.User, htlcHRequest *bean.HtlcHReques
 func GetChannelInfoByTwoPeerID(peerIdA string, peerIdB string) (channelInfo *dao.ChannelInfo, err error) {
 	channelInfo = &dao.ChannelInfo{}
 	err = db.Select(q.Eq("CurrState", dao.ChannelState_Accept),
-		q.Or(q.And(q.Eq("PeerIdA", peerIdA), q.Eq("PeerIdB", peerIdB))),
-		q.And(q.Eq("PeerIdA", peerIdB), q.Eq("PeerIdB", peerIdA))).First(channelInfo)
+		q.Or(q.And(q.Eq("PeerIdA", peerIdA), q.Eq("PeerIdB", peerIdB)),
+			q.And(q.Eq("PeerIdA", peerIdB), q.Eq("PeerIdB", peerIdA)))).First(channelInfo)
 
 	return channelInfo, err
 }
