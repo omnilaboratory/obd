@@ -243,8 +243,10 @@ func (service *htlcForwardTxManager) SignGetH(msgData string, user bean.User) (d
 
 		if currChannel.PeerIdB == user.PeerId {
 			tempAddrPrivateKeyMap[currChannel.PubKeyB] = requestData.ChannelAddressPrivateKey
+			targetUser = currChannel.PeerIdA
 		} else {
 			tempAddrPrivateKeyMap[currChannel.PubKeyA] = requestData.ChannelAddressPrivateKey
+			targetUser = currChannel.PeerIdB
 		}
 		bobLatestCommitmentTx, err := getLatestCommitmentTx(currChannel.ChannelId, user.PeerId)
 		if err == nil {
@@ -280,7 +282,7 @@ func (service *htlcForwardTxManager) SignGetH(msgData string, user bean.User) (d
 	data = make(map[string]interface{})
 	data["approval"] = requestData.Approval
 	data["request_hash"] = requestData.RequestHash
-	return data, rAndHInfo.SenderPeerId, nil
+	return data, targetUser, nil
 }
 
 // -45

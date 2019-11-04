@@ -761,6 +761,10 @@ func htlcCreateRDOfRsmc(tx storm.Node, channelInfo dao.ChannelInfo, operator bea
 	pathInfo dao.HtlcSingleHopPathInfo, bobIsInterNodeSoAliceSend2Bob bool,
 	commitmentTxInfo *dao.CommitmentTransaction, owner string) (*dao.RevocableDeliveryTransaction, error) {
 
+	if tool.CheckIsString(&commitmentTxInfo.RSMCTxHash) == false {
+		return nil, nil
+	}
+
 	rdTransaction, err := createRDTx(owner, &channelInfo, commitmentTxInfo, channelInfo.AddressA, &operator)
 	if err != nil {
 		log.Println(err)

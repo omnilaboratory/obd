@@ -197,6 +197,7 @@ type HtlcRequestFindPathAndSendH struct {
 
 //type -43: bob send h to carl
 type HtlcSendH struct {
+	H                    string `json:"h"`
 	HAndRInfoRequestHash string `json:"h_and_r_info_request_hash"`
 }
 
