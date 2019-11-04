@@ -316,7 +316,7 @@ func createHtlcTimeoutTxForAliceSide(tx storm.Node, owner string, channelInfo da
 		},
 		inputs,
 		htlcTimeoutTx.RSMCMultiAddress,
-		fundingTransaction.FunderAddress,
+		htlcTimeoutTx.RSMCMultiAddress,
 		fundingTransaction.PropertyId,
 		htlcTimeoutTx.RSMCOutAmount,
 		0,
@@ -364,7 +364,7 @@ func createHtlcTimeoutTxForBobSide(tx storm.Node, owner string, channelInfo dao.
 		},
 		inputs,
 		htlcTimeoutTx.RSMCMultiAddress,
-		fundingTransaction.FunderAddress,
+		htlcTimeoutTx.RSMCMultiAddress,
 		fundingTransaction.PropertyId,
 		htlcTimeoutTx.RSMCOutAmount,
 		0,
@@ -538,17 +538,17 @@ func htlcCreateCna(tx storm.Node, channelInfo dao.ChannelInfo, operator bean.Use
 		commitmentTxInfo.RSMCTxHash = hex
 	}
 
-	//htlc
-	if commitmentTxInfo.AmountToHtlc > 0 {
+	//create to Bob tx
+	if commitmentTxInfo.AmountToOther > 0 {
 		txid, hex, usedTxid, err := rpcClient.OmniCreateAndSignRawTransactionForCommitmentTx(
 			channelInfo.ChannelAddress,
 			[]string{
 				tempAddrPrivateKeyMap[channelInfo.PubKeyA],
 				tempAddrPrivateKeyMap[channelInfo.PubKeyB],
 			},
-			commitmentTxInfo.HTLCMultiAddress,
+			channelInfo.AddressB,
 			fundingTransaction.PropertyId,
-			commitmentTxInfo.AmountToHtlc,
+			commitmentTxInfo.AmountToOther,
 			0,
 			0, &channelInfo.ChannelAddressRedeemScript, allUsedTxidTemp)
 		if err != nil {
@@ -556,6 +556,28 @@ func htlcCreateCna(tx storm.Node, channelInfo dao.ChannelInfo, operator bean.Use
 			return nil, err
 		}
 		allUsedTxidTemp += "," + usedTxid
+		commitmentTxInfo.ToOtherTxid = txid
+		commitmentTxInfo.ToOtherTxHash = hex
+	}
+
+	//htlc
+	if commitmentTxInfo.AmountToHtlc > 0 {
+		txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionForCommitmentTxToBob(
+			channelInfo.ChannelAddress, allUsedTxidTemp,
+			[]string{
+				tempAddrPrivateKeyMap[channelInfo.PubKeyA],
+				tempAddrPrivateKeyMap[channelInfo.PubKeyB],
+			},
+			commitmentTxInfo.HTLCMultiAddress,
+			commitmentTxInfo.HTLCMultiAddress,
+			fundingTransaction.PropertyId,
+			commitmentTxInfo.AmountToHtlc,
+			0,
+			0, &channelInfo.ChannelAddressRedeemScript)
+		if err != nil {
+			log.Println(err)
+			return nil, err
+		}
 		commitmentTxInfo.HTLCTxid = txid
 		commitmentTxInfo.HtlcTxHash = hex
 		commitmentTxInfo.HtlcH = hAndRInfo.H
@@ -564,29 +586,6 @@ func htlcCreateCna(tx storm.Node, channelInfo dao.ChannelInfo, operator bean.Use
 		} else {
 			commitmentTxInfo.HtlcSender = channelInfo.PeerIdB
 		}
-	}
-
-	//create to Bob tx
-	if commitmentTxInfo.AmountToOther > 0 {
-		txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionForCommitmentTxToBob(
-			channelInfo.ChannelAddress,
-			allUsedTxidTemp,
-			[]string{
-				tempAddrPrivateKeyMap[channelInfo.PubKeyA],
-				tempAddrPrivateKeyMap[channelInfo.PubKeyB],
-			},
-			channelInfo.AddressB,
-			fundingTransaction.FunderAddress,
-			fundingTransaction.PropertyId,
-			commitmentTxInfo.AmountToOther,
-			0,
-			0, &channelInfo.ChannelAddressRedeemScript)
-		if err != nil {
-			log.Println(err)
-			return nil, err
-		}
-		commitmentTxInfo.ToOtherTxid = txid
-		commitmentTxInfo.ToOtherTxHash = hex
 	}
 
 	commitmentTxInfo.SignAt = time.Now()
@@ -625,7 +624,7 @@ func htlcCreateCnb(tx storm.Node, channelInfo dao.ChannelInfo, operator bean.Use
 		//	这个时候，我们在创建Cna，那么当前操作者Alice传进来的信息就是创建临时多签地址，转账等交易需要的信息了
 		//	而bob作为中间商，他的余额应该是不变的，变化的是alice的余额，一部分被锁定在了tohtlc的临时多签地址里面了
 		outputBean.RsmcTempPubKey = htlcSingleHopPathInfo.BobCurrRsmcTempPubKey
-		outputBean.HtlcTempPubKey = htlcSingleHopPathInfo.BobCurrHtlcTempForHt1bPubKey
+		outputBean.HtlcTempPubKey = htlcSingleHopPathInfo.BobCurrHtlcTempPubKey
 		if lastCommitmentTx == nil {
 			// 给bob，bob是收款方，bob本身的余额还是放到RSMC里面
 			outputBean.AmountToRsmc = fundingTransaction.AmountB
@@ -681,17 +680,17 @@ func htlcCreateCnb(tx storm.Node, channelInfo dao.ChannelInfo, operator bean.Use
 		commitmentTxInfo.RSMCTxHash = hex
 	}
 
-	//htlc
-	if commitmentTxInfo.AmountToHtlc > 0 {
+	//create to alice tx
+	if commitmentTxInfo.AmountToOther > 0 {
 		txid, hex, usedTxid, err := rpcClient.OmniCreateAndSignRawTransactionForCommitmentTx(
 			channelInfo.ChannelAddress,
 			[]string{
 				tempAddrPrivateKeyMap[channelInfo.PubKeyA],
 				tempAddrPrivateKeyMap[channelInfo.PubKeyB],
 			},
-			commitmentTxInfo.HTLCMultiAddress,
+			channelInfo.AddressA,
 			fundingTransaction.PropertyId,
-			commitmentTxInfo.AmountToHtlc,
+			commitmentTxInfo.AmountToOther,
 			0,
 			0, &channelInfo.ChannelAddressRedeemScript, allUsedTxidTemp)
 		if err != nil {
@@ -699,6 +698,29 @@ func htlcCreateCnb(tx storm.Node, channelInfo dao.ChannelInfo, operator bean.Use
 			return nil, err
 		}
 		allUsedTxidTemp += "," + usedTxid
+		commitmentTxInfo.ToOtherTxid = txid
+		commitmentTxInfo.ToOtherTxHash = hex
+	}
+
+	//htlc
+	if commitmentTxInfo.AmountToHtlc > 0 {
+		txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionForCommitmentTxToBob(
+			channelInfo.ChannelAddress,
+			allUsedTxidTemp,
+			[]string{
+				tempAddrPrivateKeyMap[channelInfo.PubKeyA],
+				tempAddrPrivateKeyMap[channelInfo.PubKeyB],
+			},
+			commitmentTxInfo.HTLCMultiAddress,
+			commitmentTxInfo.HTLCMultiAddress,
+			fundingTransaction.PropertyId,
+			commitmentTxInfo.AmountToHtlc,
+			0,
+			0, &channelInfo.ChannelAddressRedeemScript)
+		if err != nil {
+			log.Println(err)
+			return nil, err
+		}
 		commitmentTxInfo.HTLCTxid = txid
 		commitmentTxInfo.HtlcTxHash = hex
 		commitmentTxInfo.HtlcH = hAndRInfo.H
@@ -707,29 +729,6 @@ func htlcCreateCnb(tx storm.Node, channelInfo dao.ChannelInfo, operator bean.Use
 		} else {
 			commitmentTxInfo.HtlcSender = channelInfo.PeerIdB
 		}
-	}
-
-	//create to alice tx
-	if commitmentTxInfo.AmountToOther > 0 {
-		txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionForCommitmentTxToBob(
-			channelInfo.ChannelAddress,
-			allUsedTxidTemp,
-			[]string{
-				tempAddrPrivateKeyMap[channelInfo.PubKeyA],
-				tempAddrPrivateKeyMap[channelInfo.PubKeyB],
-			},
-			channelInfo.AddressA,
-			fundingTransaction.FunderAddress,
-			fundingTransaction.PropertyId,
-			commitmentTxInfo.AmountToOther,
-			0,
-			0, &channelInfo.ChannelAddressRedeemScript)
-		if err != nil {
-			log.Println(err)
-			return nil, err
-		}
-		commitmentTxInfo.ToOtherTxid = txid
-		commitmentTxInfo.ToOtherTxHash = hex
 	}
 
 	commitmentTxInfo.SignAt = time.Now()

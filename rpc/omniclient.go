@@ -249,7 +249,7 @@ func (client *Client) OmniCreateAndSignRawTransactionForCommitmentTx(fromBitCoin
 	currUseTxid = ""
 	for _, item := range arrayListUnspent {
 		currUseTxid = item.Get("txid").String()
-		if usedTxid != "" && usedTxid == currUseTxid {
+		if usedTxid != "" && strings.Contains(usedTxid, currUseTxid) {
 			continue
 		}
 		inputAmount := item.Get("amount").Float()
@@ -373,8 +373,8 @@ func (client *Client) OmniCreateAndSignRawTransactionForCommitmentTxToBob(fromBi
 		Add(decimal.NewFromFloat(pMoney)).
 		Float64()
 
-	client.ValidateAddress(fromBitCoinAddress)
-	client.ValidateAddress(toBitCoinAddress)
+	_, _ = client.ValidateAddress(fromBitCoinAddress)
+	_, _ = client.ValidateAddress(toBitCoinAddress)
 
 	resultListUnspent, err := client.ListUnspent(fromBitCoinAddress)
 	if err != nil {
@@ -389,7 +389,7 @@ func (client *Client) OmniCreateAndSignRawTransactionForCommitmentTxToBob(fromBi
 	inputs := make([]map[string]interface{}, 0, 0)
 	for _, item := range arrayListUnspent {
 		txid := item.Get("txid").String()
-		if strings.Contains(usedTxid, txid) == false {
+		if usedTxid != "" && strings.Contains(usedTxid, txid) == false {
 			node := make(map[string]interface{})
 			node["txid"] = txid
 			node["vout"] = item.Get("vout").Int()
