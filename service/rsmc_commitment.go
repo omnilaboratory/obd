@@ -262,7 +262,7 @@ func (service *commitmentTxSignedManager) CommitmentTxSign(jsonData string, sign
 	}
 
 	// for c rd
-	creatorCurrTempAddressPrivateKey := tempAddrPrivateKeyMap[requestCommitmentTx.RSMCMultiAddressScriptPubKey]
+	creatorCurrTempAddressPrivateKey := tempAddrPrivateKeyMap[dataFromCreator.CurrTempAddressPubKey]
 	if tool.CheckIsString(&creatorCurrTempAddressPrivateKey) == false {
 		err = errors.New("fail to get the starer's curr temp address private key")
 		log.Println(err)
