@@ -473,7 +473,7 @@ func createHtlcTimeoutTxObj(tx storm.Node, owner string, channelInfo dao.Channel
 
 func htlcCreateCna(tx storm.Node, channelInfo dao.ChannelInfo, operator bean.User,
 	fundingTransaction dao.FundingTransaction, requestData bean.HtlcRequestOpen,
-	htlcSingleHopPathInfo dao.HtlcSingleHopPathInfo, hAndRInfo dao.HtlcRAndHInfo,
+	pathInfo dao.HtlcSingleHopPathInfo, hAndRInfo dao.HtlcRAndHInfo,
 	bobIsInterNodeSoAliceSend2Bob bool, lastCommitmentATx *dao.CommitmentTransaction, owner string) (*dao.CommitmentTransaction, error) {
 	// htlc的资产分配方案
 	var outputBean = commitmentOutputBean{}
@@ -494,8 +494,8 @@ func htlcCreateCna(tx storm.Node, channelInfo dao.ChannelInfo, operator bean.Use
 		//	bob借道Alice作为中间节点转账，也就是当前操作者实际是Bob，Alice是中间商，当前通道作为接收者，
 		// 	而这个时候，我们正在创建Cna，为了Alice创建，那么，就需要Alice的信息了
 		// 	Alice作为中间商，她的余额应该不变，变化的是给bob的钱，因为借道，所以bob钱就应该锁定
-		outputBean.RsmcTempPubKey = htlcSingleHopPathInfo.BobCurrRsmcTempPubKey
-		outputBean.HtlcTempPubKey = htlcSingleHopPathInfo.BobCurrHtlcTempForHt1bPubKey
+		outputBean.RsmcTempPubKey = pathInfo.BobCurrRsmcTempPubKey
+		outputBean.HtlcTempPubKey = pathInfo.BobCurrHtlcTempForHt1bPubKey
 		if lastCommitmentATx == nil {
 			outputBean.AmountToRsmc = fundingTransaction.AmountA
 			outputBean.AmountToOther, _ = decimal.NewFromFloat(fundingTransaction.AmountB).Add(decimal.NewFromFloat(hAndRInfo.Amount)).Float64()
@@ -615,7 +615,7 @@ func htlcCreateCna(tx storm.Node, channelInfo dao.ChannelInfo, operator bean.Use
 
 func htlcCreateCnb(tx storm.Node, channelInfo dao.ChannelInfo, operator bean.User,
 	fundingTransaction dao.FundingTransaction, requestData bean.HtlcRequestOpen,
-	htlcSingleHopPathInfo dao.HtlcSingleHopPathInfo, hAndRInfo dao.HtlcRAndHInfo,
+	pathInfo dao.HtlcSingleHopPathInfo, hAndRInfo dao.HtlcRAndHInfo,
 	bobIsInterNodeSoAliceSend2Bob bool, lastCommitmentTx *dao.CommitmentTransaction, owner string) (*dao.CommitmentTransaction, error) {
 	// htlc的资产分配方案
 	var outputBean = commitmentOutputBean{}
@@ -623,8 +623,8 @@ func htlcCreateCnb(tx storm.Node, channelInfo dao.ChannelInfo, operator bean.Use
 		//	alice借道bob，bob作为中间商，而当前的操作者是alice
 		//	这个时候，我们在创建Cna，那么当前操作者Alice传进来的信息就是创建临时多签地址，转账等交易需要的信息了
 		//	而bob作为中间商，他的余额应该是不变的，变化的是alice的余额，一部分被锁定在了tohtlc的临时多签地址里面了
-		outputBean.RsmcTempPubKey = htlcSingleHopPathInfo.BobCurrRsmcTempPubKey
-		outputBean.HtlcTempPubKey = htlcSingleHopPathInfo.BobCurrHtlcTempPubKey
+		outputBean.RsmcTempPubKey = pathInfo.BobCurrRsmcTempPubKey
+		outputBean.HtlcTempPubKey = pathInfo.BobCurrHtlcTempPubKey
 		if lastCommitmentTx == nil {
 			// 给bob，bob是收款方，bob本身的余额还是放到RSMC里面
 			outputBean.AmountToRsmc = fundingTransaction.AmountB
@@ -758,7 +758,7 @@ func htlcCreateCnb(tx storm.Node, channelInfo dao.ChannelInfo, operator bean.Use
 
 func htlcCreateRDOfRsmc(tx storm.Node, channelInfo dao.ChannelInfo, operator bean.User,
 	fundingTransaction dao.FundingTransaction, htlcRequestOpen bean.HtlcRequestOpen,
-	htlcSingleHopPathInfo dao.HtlcSingleHopPathInfo, bobIsInterNodeSoAliceSend2Bob bool,
+	pathInfo dao.HtlcSingleHopPathInfo, bobIsInterNodeSoAliceSend2Bob bool,
 	commitmentTxInfo *dao.CommitmentTransaction, owner string) (*dao.RevocableDeliveryTransaction, error) {
 
 	rdTransaction, err := createRDTx(owner, &channelInfo, commitmentTxInfo, channelInfo.AddressA, &operator)
@@ -771,7 +771,7 @@ func htlcCreateRDOfRsmc(tx storm.Node, channelInfo dao.ChannelInfo, operator bea
 	if bobIsInterNodeSoAliceSend2Bob {
 		currTempAddressPrivateKey = htlcRequestOpen.CurrRsmcTempAddressPrivateKey
 	} else {
-		currTempAddressPrivateKey = tempAddrPrivateKeyMap[htlcSingleHopPathInfo.BobCurrRsmcTempPubKey]
+		currTempAddressPrivateKey = tempAddrPrivateKeyMap[pathInfo.BobCurrRsmcTempPubKey]
 	}
 
 	inputs, err := getInputsForNextTxByParseTxHashVout(commitmentTxInfo.RSMCTxHash, commitmentTxInfo.RSMCMultiAddress, commitmentTxInfo.RSMCMultiAddressScriptPubKey)
