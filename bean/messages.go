@@ -235,7 +235,7 @@ type HtlcSendR struct {
 	ChannelAddressPrivateKey string `json:"channel_address_private_key"`
 
 	// The key of Cnb NO.3 output. Example Bob send R to Alice, that is Bob2's.
-	CurrHtlcTempAddressForCnbPrivateKey string `json:"curr_htlc_temp_address_for_cnb_private_key"`
+	CurrHtlcTempAddressPrivateKey string `json:"curr_htlc_temp_address_private_key"`
 
 	// These keys of HE1b output. Example Bob send R to Alice, these is Bob3's.
 	CurrHtlcTempAddressForHE1bPubKey     string `json:"curr_htlc_temp_address_for_he1b_pub_key"`

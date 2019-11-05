@@ -53,7 +53,7 @@ func (service *htlcBackwardTxManager) SendRToPreviousNode(msgData string,
 		return nil, "", err
 	}
 
-	if tool.CheckIsString(&reqData.CurrHtlcTempAddressForCnbPrivateKey) == false {
+	if tool.CheckIsString(&reqData.CurrHtlcTempAddressPrivateKey) == false {
 		err = errors.New("curr_htlc_temp_address_for_cnb_private_key is empty")
 		log.Println(err)
 		return nil, "", err
@@ -86,30 +86,28 @@ func (service *htlcBackwardTxManager) SendRToPreviousNode(msgData string,
 	// endregion
 
 	// region Get peerId of previous node.
-	htlcSingleHopPathInfo := dao.HtlcSingleHopPathInfo{}
-	err = db.Select(q.Eq("HAndRInfoRequestHash",
-		reqData.RequestHash)).First(&htlcSingleHopPathInfo)
-
+	pathInfo := dao.HtlcSingleHopPathInfo{}
+	err = db.Select(q.Eq("HAndRInfoRequestHash", reqData.RequestHash)).First(&pathInfo)
 	if err != nil {
 		log.Println(err)
 		return nil, "", err
 	}
 
 	// Currently solution is Alice to Bob to Carol.
-	if htlcSingleHopPathInfo.CurrStep < 2 {
+	if pathInfo.CurrStep < 2 {
 		return nil, "", errors.New("The transfer H has not completed yet.")
-	} else if htlcSingleHopPathInfo.CurrStep > 3 {
+	} else if pathInfo.CurrStep > 3 {
 		return nil, "", errors.New("The transfer R has completed.")
 	}
 
 	// If CurrStep = 2, that indicate the transfer H has completed.
-	currChannelIndex := htlcSingleHopPathInfo.TotalStep - htlcSingleHopPathInfo.CurrStep - 1
-	if currChannelIndex < -1 || currChannelIndex > len(htlcSingleHopPathInfo.ChannelIdArr) {
+	currChannelIndex := pathInfo.TotalStep - pathInfo.CurrStep - 1
+	if currChannelIndex < -1 || currChannelIndex > len(pathInfo.ChannelIdArr) {
 		return nil, "", errors.New("err channel id")
 	}
 
 	currChannel := &dao.ChannelInfo{}
-	err = db.One("Id", htlcSingleHopPathInfo.ChannelIdArr[currChannelIndex], currChannel)
+	err = db.One("Id", pathInfo.ChannelIdArr[currChannelIndex], currChannel)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, "", err
@@ -125,8 +123,13 @@ func (service *htlcBackwardTxManager) SendRToPreviousNode(msgData string,
 		previousNode = currChannel.PeerIdA
 	}
 
+	err = FindUserIsOnline(previousNode)
+	if err != nil {
+		log.Println(err)
+		return nil, "", err
+	}
+
 	// Transfer H or R increase step.
-	htlcSingleHopPathInfo.CurrStep += 1
 	// endregion
 
 	// region Save private key to memory.
@@ -145,11 +148,22 @@ func (service *htlcBackwardTxManager) SendRToPreviousNode(msgData string,
 	tempAddrPrivateKeyMap[reqData.CurrHtlcTempAddressForHE1bPubKey] = reqData.CurrHtlcTempAddressForHE1bPrivateKey
 
 	// Save pubkey to database.
-	htlcSingleHopPathInfo.BobCurrHtlcTempForHt1bPubKey = reqData.CurrHtlcTempAddressForHE1bPubKey
-	err = db.Update(htlcSingleHopPathInfo)
-	if err != nil {
-		log.Println(err.Error())
-		return nil, "", err
+	dataChange := false
+	if pathInfo.BobCurrHtlcTempForHt1bPubKey != reqData.CurrHtlcTempAddressForHE1bPubKey {
+		pathInfo.BobCurrHtlcTempForHt1bPubKey = reqData.CurrHtlcTempAddressForHE1bPubKey
+		dataChange = true
+	}
+	if pathInfo.CurrState != dao.SingleHopPathInfoState_StepBegin {
+		pathInfo.CurrState = dao.SingleHopPathInfoState_StepBegin
+		dataChange = true
+	}
+
+	if dataChange {
+		err = db.Update(&pathInfo)
+		if err != nil {
+			log.Println(err.Error())
+			return nil, "", err
+		}
 	}
 	// endregion
 
@@ -241,7 +255,7 @@ func (service *htlcBackwardTxManager) CheckRAndCreateTxs(msgData string, user be
 		return nil, "", err
 	}
 
-	currChannelIndex := pathInfo.CurrStep - 1
+	currChannelIndex := pathInfo.TotalStep - pathInfo.CurrStep - 1
 	if currChannelIndex < -1 || currChannelIndex > len(pathInfo.ChannelIdArr) {
 		return nil, "", errors.New("err channel id")
 	}
@@ -351,6 +365,10 @@ func (service *htlcBackwardTxManager) CheckRAndCreateTxs(msgData string, user be
 	commitmentTransactionB.CurrState = dao.TxInfoState_Htlc_GetR
 	commitmentTransactionB.LastEditTime = time.Now()
 	_ = dbTx.Update(&commitmentTransactionB)
+
+	pathInfo.CurrStep += 1
+	pathInfo.CurrState = dao.SingleHopPathInfoState_StepFinish
+	err = dbTx.Update(&pathInfo)
 
 	err = dbTx.Commit()
 	if err != nil {

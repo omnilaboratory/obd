@@ -28,7 +28,7 @@ func FindUserIsOnline(peerId string) error {
 			return nil
 		}
 	}
-	return errors.New("user not exist or online")
+	return errors.New(peerId + " not exist or online")
 }
 
 type commitmentOutputBean struct {
