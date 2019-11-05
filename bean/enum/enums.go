@@ -86,6 +86,7 @@ const (
 	MsgType_HTLC_RespondH_N41               MsgType = -41
 	MsgType_HTLC_SignedRAndHInfoList_N4101  MsgType = -4101
 	MsgType_HTLC_SignedRAndHInfoItem_N4102  MsgType = -4102
+	MsgType_HTLC_GetRFromLCommitTx_N4103    MsgType = -4103
 	MsgType_HTLC_FindPathAndSendH_N42       MsgType = -42
 	MsgType_HTLC_SendH_N43                  MsgType = -43
 	MsgType_HTLC_SignGetH_N44               MsgType = -44

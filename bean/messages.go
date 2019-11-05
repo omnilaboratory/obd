@@ -279,3 +279,4 @@ type HtlcSignCloseCurrTx struct {
 
 type HtlcCloseChannelReq CloseChannel
 type HtlcCloseChannelSign CloseChannelSign
+type ChannelIdReq CloseChannel

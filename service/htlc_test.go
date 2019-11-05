@@ -1,7 +1,6 @@
 package service
 
 import (
-	"LightningOnOmni/dao"
 	"log"
 	"testing"
 )
@@ -25,12 +24,7 @@ func TestGetBalanceByAddress(t *testing.T) {
 }
 
 func TestUpdateData(t *testing.T) {
-	transaction := []dao.CommitmentTransaction{}
-	db.All(&transaction)
-	//rAndHInfoes := []dao.HtlcRAndHInfo{}
-	//db.All(&rAndHInfoes)
-	//transaction.HtlcH = rAndHInfoes[0].H
-	//db.Update(&transaction)
-	//db.One("Id",7, &transaction)
-
+	r, err := HtlcQueryService.GetRFromCommitmentTx()
+	log.Println(err)
+	log.Println(r)
 }
