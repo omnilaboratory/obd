@@ -168,6 +168,7 @@ type CommitmentTransaction struct {
 	HtlcTxHash                   string  `json:"htlc_tx_hash"`
 	HTLCTxid                     string  `json:"htlc_txid"`
 	HtlcH                        string  `json:"htlc_h"`
+	HtlcR                        string  `json:"htlc_h"`
 	HtlcSender                   string  `json:"htlc_sender"`
 
 	CurrState    TxInfoState `json:"curr_state"`

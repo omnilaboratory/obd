@@ -359,9 +359,11 @@ func (service *htlcBackwardTxManager) CheckRAndCreateTxs(msgData string, user be
 	log.Println(herd1x)
 	//endregion
 
+	commitmentTransaction.HtlcR = rAndHInfo.R
 	commitmentTransaction.CurrState = dao.TxInfoState_Htlc_GetR
 	commitmentTransaction.LastEditTime = time.Now()
 	_ = dbTx.Update(&commitmentTransaction)
+	commitmentTransactionB.HtlcR = rAndHInfo.R
 	commitmentTransactionB.CurrState = dao.TxInfoState_Htlc_GetR
 	commitmentTransactionB.LastEditTime = time.Now()
 	_ = dbTx.Update(&commitmentTransactionB)
