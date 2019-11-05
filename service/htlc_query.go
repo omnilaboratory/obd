@@ -48,7 +48,7 @@ func (service *htlcQueryManager) GetPathInfoByH(msgData string, user bean.User) 
 	}
 
 	pathInfo = &dao.HtlcSingleHopPathInfo{}
-	err = db.Select(q.Eq("R", msgData)).First(pathInfo)
+	err = db.Select(q.Eq("H", msgData)).First(pathInfo)
 	if err != nil {
 		log.Println(err)
 		return nil, err
