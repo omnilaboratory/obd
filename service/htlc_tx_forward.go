@@ -67,18 +67,19 @@ func (service *htlcForwardTxManager) AliceFindPathOfSingleHopAndSendToBob(msgDat
 
 	// operate db
 	channelCount := 2
-	htlcSingleHopPathInfo := &dao.HtlcSingleHopPathInfo{}
-	htlcSingleHopPathInfo.ChannelIdArr = make([]int, channelCount)
-	htlcSingleHopPathInfo.ChannelIdArr[0] = aliceChannel.Id
-	htlcSingleHopPathInfo.ChannelIdArr[1] = carlChannel.Id
-	htlcSingleHopPathInfo.InterNodePeerId = bob
-	htlcSingleHopPathInfo.HAndRInfoRequestHash = rAndHInfo.RequestHash
-	htlcSingleHopPathInfo.CurrState = dao.SingleHopPathInfoState_Created
-	htlcSingleHopPathInfo.TotalStep = len(htlcSingleHopPathInfo.ChannelIdArr) * 2
-	htlcSingleHopPathInfo.CurrStep = 0
-	htlcSingleHopPathInfo.CreateBy = user.PeerId
-	htlcSingleHopPathInfo.CreateAt = time.Now()
-	err = db.Save(htlcSingleHopPathInfo)
+	pathInfo := &dao.HtlcSingleHopPathInfo{}
+	pathInfo.ChannelIdArr = make([]int, channelCount)
+	pathInfo.ChannelIdArr[0] = aliceChannel.Id
+	pathInfo.ChannelIdArr[1] = carlChannel.Id
+	pathInfo.InterNodePeerId = bob
+	pathInfo.HAndRInfoRequestHash = rAndHInfo.RequestHash
+	pathInfo.H = rAndHInfo.H
+	pathInfo.CurrState = dao.SingleHopPathInfoState_Created
+	pathInfo.TotalStep = len(pathInfo.ChannelIdArr) * 2
+	pathInfo.CurrStep = 0
+	pathInfo.CreateBy = user.PeerId
+	pathInfo.CreateAt = time.Now()
+	err = db.Save(pathInfo)
 	if err != nil {
 		return nil, "", err
 	}

@@ -110,6 +110,7 @@ const (
 type HtlcSingleHopPathInfo struct {
 	Id                           int                        `storm:"id,increment" json:"id" `
 	HAndRInfoRequestHash         string                     `json:"h_and_r_info_request_hash"`
+	H                            string                     `json:"h"`
 	InterNodePeerId              string                     `json:"inter_node_peer_id"`
 	ChannelIdArr                 []int                      `json:"channel_id_arr"`
 	CurrState                    HtlcSingleHopPathInfoState `json:"curr_state"`

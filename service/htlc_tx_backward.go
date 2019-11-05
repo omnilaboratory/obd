@@ -294,7 +294,8 @@ func (service *htlcBackwardTxManager) CheckRAndCreateTxs(msgData string, user be
 		q.Eq("HtlcH", rAndHInfo.H),
 		q.Eq("HtlcSender", user.PeerId),
 		q.Eq("Owner", user.PeerId),
-		q.Eq("CurrState", dao.TxInfoState_Htlc_GetH)).First(&commitmentTransaction)
+		q.Eq("CurrState", dao.TxInfoState_Htlc_GetH)).
+		First(&commitmentTransaction)
 	if err != nil {
 		log.Println(err)
 		return nil, "", err
@@ -305,7 +306,9 @@ func (service *htlcBackwardTxManager) CheckRAndCreateTxs(msgData string, user be
 	err = dbTx.Select(
 		q.Eq("ChannelId", channelInfo.ChannelId),
 		q.Eq("CurrState", dao.FundingTransactionState_Accept)).
-		OrderBy("CreateAt").Reverse().First(fundingTransaction)
+		OrderBy("CreateAt").
+		Reverse().
+		First(fundingTransaction)
 
 	if err != nil {
 		log.Println(err)

@@ -6,6 +6,8 @@ import (
 	"LightningOnOmni/tool"
 	"encoding/json"
 	"errors"
+	"github.com/asdine/storm/q"
+	"log"
 )
 
 type htlcQueryManager struct{}
@@ -38,4 +40,18 @@ func (service *htlcQueryManager) GetRFromCommitmentTx(msgData string, user bean.
 		err = errors.New("empty R")
 	}
 	return r, err
+}
+
+func (service *htlcQueryManager) GetPathInfoByH(msgData string, user bean.User) (pathInfo *dao.HtlcSingleHopPathInfo, err error) {
+	if tool.CheckIsString(&msgData) == false {
+		return nil, errors.New("error input data")
+	}
+
+	pathInfo = &dao.HtlcSingleHopPathInfo{}
+	err = db.Select(q.Eq("R", msgData)).First(pathInfo)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	return pathInfo, nil
 }
