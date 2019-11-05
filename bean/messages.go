@@ -252,7 +252,7 @@ type HtlcCheckRAndCreateTx struct {
 	ChannelAddressPrivateKey string `json:"channel_address_private_key"`
 
 	// The key of Cna NO.3 output. Example Bob send R to Alice, that is Alice2's.
-	CurrHtlcTempAddressForCnaPrivateKey string `json:"curr_htlc_temp_address_for_cna_private_key"`
+	CurrHtlcTempAddressPrivateKey string `json:"curr_htlc_temp_address_private_key"`
 }
 
 //type -48: user wanna close htlc tx when tx is on getH state

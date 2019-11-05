@@ -144,8 +144,17 @@ func (service *htlcBackwardTxManager) SendRToPreviousNode(msgData string,
 	} else { // PeerIdB is the sender of transfer R.
 		tempAddrPrivateKeyMap[currChannel.PubKeyB] = reqData.ChannelAddressPrivateKey
 	}
-
 	tempAddrPrivateKeyMap[reqData.CurrHtlcTempAddressForHE1bPubKey] = reqData.CurrHtlcTempAddressForHE1bPrivateKey
+
+	commitmentTxInfo, err := getLatestCommitmentTx(currChannel.ChannelId, user.PeerId)
+	if err != nil {
+		return nil, "", err
+	}
+
+	if commitmentTxInfo.TxType != dao.CommitmentTransactionType_Htlc {
+		return nil, "", errors.New("error tx type")
+	}
+	tempAddrPrivateKeyMap[commitmentTxInfo.HTLCTempAddressPubKey] = reqData.CurrHtlcTempAddressPrivateKey
 
 	// Save pubkey to database.
 	dataChange := false
@@ -217,7 +226,7 @@ func (service *htlcBackwardTxManager) CheckRAndCreateTxs(msgData string, user be
 		return nil, "", err
 	}
 
-	if tool.CheckIsString(&reqData.CurrHtlcTempAddressForCnaPrivateKey) == false {
+	if tool.CheckIsString(&reqData.CurrHtlcTempAddressPrivateKey) == false {
 		err = errors.New("curr_htlc_temp_address_for_cna_private_key is empty")
 		log.Println(err)
 		return nil, "", err
@@ -411,7 +420,7 @@ func htlcCreateExecutionDelivery(tx storm.Node, channelInfo dao.ChannelInfo, fun
 	txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionForUnsendInputTx(
 		commitmentTxInfo.HTLCMultiAddress,
 		[]string{
-			reqData.CurrHtlcTempAddressForCnaPrivateKey,
+			reqData.CurrHtlcTempAddressPrivateKey,
 			tempAddrPrivateKeyMap[otherSideChannelPubKey],
 		},
 		inputs,
@@ -473,7 +482,7 @@ func createHtlcExecution(tx storm.Node, channelInfo dao.ChannelInfo, fundingTran
 		},
 		inputs,
 		he1x.RSMCMultiAddress,
-		fundingTransaction.FunderAddress,
+		he1x.RSMCMultiAddress,
 		fundingTransaction.PropertyId,
 		he1x.RSMCOutAmount,
 		0,
