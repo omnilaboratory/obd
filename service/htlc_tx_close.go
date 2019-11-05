@@ -257,10 +257,12 @@ func (service *htlcCloseTxManager) SignCloseHtlc(msgData string, user bean.User)
 	if err != nil {
 		return nil, "", err
 	}
+	log.Println(newCommitmentTxInfoA)
 	newCommitmentTxInfoB, err := createBobRsmcTxsForCloseHtlc(dbTx, channelInfo, isAliceExecutionCloseOp, *reqData, dataFromCloseOpStarter, lastCommitmentTxInfoB, *fundingTransaction, user)
 	if err != nil {
 		return nil, "", err
 	}
+	log.Println(newCommitmentTxInfoB)
 	// endregion
 
 	channelInfo.CurrState = dao.ChannelState_Accept
@@ -281,8 +283,6 @@ func (service *htlcCloseTxManager) SignCloseHtlc(msgData string, user bean.User)
 
 	outData = make(map[string]interface{})
 	outData["msg"] = "close htlc success"
-	outData["newCommitmentTxInfoA"] = newCommitmentTxInfoA
-	outData["newCommitmentTxInfoB"] = newCommitmentTxInfoB
 	return outData, targetUser, nil
 }
 
@@ -1088,14 +1088,18 @@ func (service *htlcCloseTxManager) RequestCloseChannel(msgData string, user bean
 	closeChannel.ChannelId = reqData.ChannelId
 	closeChannel.Owner = user.PeerId
 	closeChannel.CurrState = 0
-	closeChannel.CreateAt = time.Now()
-	dataBytes, _ := json.Marshal(closeChannel)
-	closeChannel.RequestHex = tool.SignMsgWithSha256(dataBytes)
-	err = db.Save(closeChannel)
-	if err != nil {
-		log.Println(err)
-		return nil, "", err
+	count, _ := db.Select(q.Eq("ChannelId", closeChannel.ChannelId), q.Eq("Owner", closeChannel.Owner), q.Eq("CurrState", closeChannel.CurrState)).Count(closeChannel)
+	if count == 0 {
+		dataBytes, _ := json.Marshal(closeChannel)
+		closeChannel.RequestHex = tool.SignMsgWithSha256(dataBytes)
+		closeChannel.CreateAt = time.Now()
+		err = db.Save(closeChannel)
+		if err != nil {
+			log.Println(err)
+			return nil, "", err
+		}
 	}
+
 	outData = make(map[string]interface{})
 	outData["channel_id"] = reqData.ChannelId
 	outData["request_close_channel_hash"] = closeChannel.RequestHex

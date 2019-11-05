@@ -391,8 +391,8 @@ func (service *htlcBackwardTxManager) CheckRAndCreateTxs(msgData string, user be
 	}
 
 	data = make(map[string]interface{})
-	data["commitmentTransaction"] = commitmentTransaction
-	data["commitmentTransactionB"] = commitmentTransactionB
+	data["r"] = commitmentTransaction.HtlcR
+	data["request_hash"] = rAndHInfo.RequestHash
 	return data, recipientUser, nil
 }
 

@@ -467,8 +467,8 @@ func (service *htlcForwardTxManager) SenderBeginCreateHtlcCommitmentTx(msgData s
 	}
 
 	data := make(map[string]interface{})
-	data["commitmentTransactionOfA"] = commitmentTransactionOfA
-	data["commitmentTransactionOfB"] = commitmentTransactionOfB
+	data["h"] = hAndRInfo.H
+	data["h_and_r_info_request_hash"] = hAndRInfo.RequestHash
 	return data, targetUser, nil
 }
 
