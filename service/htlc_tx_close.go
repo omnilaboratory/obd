@@ -586,8 +586,7 @@ func createAliceSideBRTxs(tx storm.Node, channelInfo dao.ChannelInfo, isAliceExe
 	lastRDTransaction := &dao.RevocableDeliveryTransaction{}
 	err = tx.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("Owner", owner), q.Eq("CommitmentTxId", lastCommitmentTxInfo.Id), q.Eq("CurrState", dao.TxInfoState_CreateAndSign)).OrderBy("CreateAt").Reverse().First(lastRDTransaction)
 	if err != nil {
-		log.Println(err)
-		return nil, err
+		lastRDTransaction = nil
 	}
 
 	htOrHeTx := dao.HTLCTimeoutTxForAAndExecutionForB{}
@@ -696,7 +695,7 @@ func createAliceSideBRTxs(tx storm.Node, channelInfo dao.ChannelInfo, isAliceExe
 			return nil, err
 		}
 
-		inputs, err := getInputsForNextTxByParseTxHashVout(lastCommitmentTxInfo.RSMCTxHash, lastCommitmentTxInfo.RSMCMultiAddress, lastCommitmentTxInfo.RSMCRedeemScript)
+		inputs, err := getInputsForNextTxByParseTxHashVout(lastCommitmentTxInfo.HtlcTxHash, lastCommitmentTxInfo.HTLCMultiAddress, lastCommitmentTxInfo.HTLCRedeemScript)
 		if err != nil {
 			log.Println(err)
 			return nil, err
@@ -801,9 +800,11 @@ func createAliceSideBRTxs(tx storm.Node, channelInfo dao.ChannelInfo, isAliceExe
 	// endregion
 
 	lastCommitmentTxInfo.CurrState = dao.TxInfoState_Abord
-	_ = tx.Update(lastRDTransaction)
-	lastRDTransaction.CurrState = dao.TxInfoState_Abord
-	_ = tx.Update(lastRDTransaction)
+	_ = tx.Update(lastCommitmentTxInfo)
+	if lastRDTransaction != nil {
+		lastRDTransaction.CurrState = dao.TxInfoState_Abord
+		_ = tx.Update(lastRDTransaction)
+	}
 	htrd.CurrState = dao.TxInfoState_Abord
 	_ = tx.Update(htrd)
 
@@ -826,8 +827,7 @@ func createBobSideBRTxs(tx storm.Node, channelInfo dao.ChannelInfo, isAliceExecu
 	lastRDTransaction := &dao.RevocableDeliveryTransaction{}
 	err = tx.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("Owner", owner), q.Eq("CommitmentTxId", lastCommitmentTxInfo.Id), q.Eq("CurrState", dao.TxInfoState_CreateAndSign)).OrderBy("CreateAt").Reverse().First(lastRDTransaction)
 	if err != nil {
-		log.Println(err)
-		return nil, err
+		lastRDTransaction = nil
 	}
 
 	htOrHeTx := dao.HTLCTimeoutTxForAAndExecutionForB{}
@@ -938,7 +938,7 @@ func createBobSideBRTxs(tx storm.Node, channelInfo dao.ChannelInfo, isAliceExecu
 			return nil, err
 		}
 
-		inputs, err := getInputsForNextTxByParseTxHashVout(lastCommitmentTxInfo.RSMCTxHash, lastCommitmentTxInfo.RSMCMultiAddress, lastCommitmentTxInfo.RSMCRedeemScript)
+		inputs, err := getInputsForNextTxByParseTxHashVout(lastCommitmentTxInfo.HtlcTxHash, lastCommitmentTxInfo.HTLCMultiAddress, lastCommitmentTxInfo.HTLCRedeemScript)
 		if err != nil {
 			log.Println(err)
 			return nil, err
@@ -1041,9 +1041,11 @@ func createBobSideBRTxs(tx storm.Node, channelInfo dao.ChannelInfo, isAliceExecu
 	// endregion
 
 	lastCommitmentTxInfo.CurrState = dao.TxInfoState_Abord
-	_ = tx.Update(lastRDTransaction)
-	lastRDTransaction.CurrState = dao.TxInfoState_Abord
-	_ = tx.Update(lastRDTransaction)
+	_ = tx.Update(lastCommitmentTxInfo)
+	if lastRDTransaction != nil {
+		lastRDTransaction.CurrState = dao.TxInfoState_Abord
+		_ = tx.Update(lastRDTransaction)
+	}
 	htrd.CurrState = dao.TxInfoState_Abord
 	_ = tx.Update(htrd)
 
