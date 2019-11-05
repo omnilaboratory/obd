@@ -73,21 +73,25 @@ func (service *htlcCloseTxManager) RequestCloseHtlc(msgData string, user bean.Us
 	}
 	tempAddrPrivateKeyMap[commitmentTxInfo.RSMCTempAddressPubKey] = reqData.LastRsmcTempAddressPrivateKey
 	tempAddrPrivateKeyMap[commitmentTxInfo.HTLCTempAddressPubKey] = reqData.LastHtlcTempAddressPrivateKey
-	tempAddrPrivateKeyMap[ht1aOrHe1b.RSMCTempAddressPubKey] = reqData.LastHtlcTempAddressForHt1aPrivateKey
+	tempAddrPrivateKeyMap[ht1aOrHe1b.RSMCTempAddressPubKey] = reqData.LastHtlcTempAddressForHtnxPrivateKey
 	tempAddrPrivateKeyMap[reqData.CurrRsmcTempAddressPubKey] = reqData.CurrRsmcTempAddressPrivateKey
 
 	info := dao.HtlcRequestCloseCurrTxInfo{}
 	info.ChannelId = commitmentTxInfo.ChannelId
 	info.CurrRsmcTempAddressPubKey = reqData.CurrRsmcTempAddressPubKey
-	info.CreateAt = time.Now()
 	info.CreateBy = user.PeerId
+	info.CurrState = dao.NS_Create
 	infoBytes, _ := json.Marshal(info)
 	requestHash := tool.SignMsgWithSha256(infoBytes)
+	info.CreateAt = time.Now()
 	info.RequestHash = requestHash
-	err = db.Save(&info)
-	if err != nil {
-		log.Println(err)
-		return nil, "", err
+	count, _ := db.Select(q.Eq("ChannelId", info.ChannelId), q.Eq("CreateBy", info.CreateBy), q.Eq("CurrState", info.CurrState)).Count(&dao.HtlcRequestCloseCurrTxInfo{})
+	if count == 0 {
+		err = db.Save(&info)
+		if err != nil {
+			log.Println(err)
+			return nil, "", err
+		}
 	}
 	return info, targetUser, nil
 }
@@ -121,8 +125,8 @@ func (service *htlcCloseTxManager) SignCloseHtlc(msgData string, user bean.User)
 		log.Println(err)
 		return nil, "", err
 	}
-	if tool.CheckIsString(&reqData.LastHtlcTempAddressForHt1aPrivateKey) {
-		err = errors.New("empty LastHtlcTempAddressForHt1aPrivateKey")
+	if tool.CheckIsString(&reqData.LastHtlcTempAddressForHtnxPrivateKey) {
+		err = errors.New("empty LastHtlcTempAddressForHtnxPrivateKey")
 		log.Println(err)
 		return nil, "", err
 	}
@@ -145,7 +149,7 @@ func (service *htlcCloseTxManager) SignCloseHtlc(msgData string, user bean.User)
 
 	// region query data
 	dataFromCloseOpStarter := dao.HtlcRequestCloseCurrTxInfo{}
-	err = db.Select(q.Eq("RequestHash", reqData.RequestCloseHtlcHash)).First(&dataFromCloseOpStarter)
+	err = db.Select(q.Eq("RequestHash", reqData.RequestCloseHtlcHash), q.Eq("CurrState", dao.NS_Create)).First(&dataFromCloseOpStarter)
 	if err != nil {
 		log.Println(err)
 		return nil, "", err
@@ -224,7 +228,10 @@ func (service *htlcCloseTxManager) SignCloseHtlc(msgData string, user bean.User)
 	// endregion
 
 	channelInfo.CurrState = dao.ChannelState_Accept
-	_ = dbTx.Update(channelInfo)
+	_ = dbTx.Update(&channelInfo)
+
+	dataFromCloseOpStarter.CurrState = dao.NS_Finish
+	_ = dbTx.Update(&dataFromCloseOpStarter)
 
 	err = dbTx.Commit()
 	if err != nil {
@@ -603,7 +610,7 @@ func createAliceSideBRTxs(tx storm.Node, channelInfo dao.ChannelInfo, isAliceExe
 		lastTempAddressPrivateKey := ""
 		// 如果当前操作用户是PeerIdA方（概念中的Alice方），则取当前操作人传入的数据
 		if isAliceExecutionCloseOp {
-			lastTempAddressPrivateKey = reqData.LastHtlcTempAddressForHt1aPrivateKey
+			lastTempAddressPrivateKey = reqData.LastHtlcTempAddressForHtnxPrivateKey
 		} else {
 			// 如果当前操作用户是PeerIdB方，而我们现在正在处理Alice方，所以我们要取另一方的数据
 			lastTempAddressPrivateKey = tempAddrPrivateKeyMap[htOrHeTx.RSMCTempAddressPubKey]
@@ -839,7 +846,7 @@ func createBobSideBRTxs(tx storm.Node, channelInfo dao.ChannelInfo, isAliceExecu
 		if isAliceExecutionCloseOp {
 			lastTempAddressPrivateKey = tempAddrPrivateKeyMap[htOrHeTx.RSMCTempAddressPubKey]
 		} else {
-			lastTempAddressPrivateKey = reqData.LastHtlcTempAddressForHt1aPrivateKey
+			lastTempAddressPrivateKey = reqData.LastHtlcTempAddressForHtnxPrivateKey
 		}
 		if tool.CheckIsString(&lastTempAddressPrivateKey) == false {
 			err = errors.New("fail to get the lastTempAddressPrivateKey")

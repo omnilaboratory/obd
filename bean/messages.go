@@ -261,7 +261,7 @@ type HtlcRequestCloseCurrTx struct {
 	ChannelAddressPrivateKey             string    `json:"channel_address_private_key"` //	开通通道用到的私钥
 	LastRsmcTempAddressPrivateKey        string    `json:"last_rsmc_temp_address_private_key"`
 	LastHtlcTempAddressPrivateKey        string    `json:"last_htlc_temp_address_private_key"`
-	LastHtlcTempAddressForHt1aPrivateKey string    `json:"last_htlc_temp_address_for_ht1a_private_key"`
+	LastHtlcTempAddressForHtnxPrivateKey string    `json:"last_htlc_temp_address_for_htnx_private_key"`
 	CurrRsmcTempAddressPubKey            string    `json:"curr_rsmc_temp_address_pub_key"`
 	CurrRsmcTempAddressPrivateKey        string    `json:"curr_rsmc_temp_address_private_key"`
 }
@@ -272,7 +272,7 @@ type HtlcSignCloseCurrTx struct {
 	ChannelAddressPrivateKey             string `json:"channel_address_private_key"` //	开通通道用到的私钥
 	LastRsmcTempAddressPrivateKey        string `json:"last_rsmc_temp_address_private_key"`
 	LastHtlcTempAddressPrivateKey        string `json:"last_htlc_temp_address_private_key"`
-	LastHtlcTempAddressForHt1aPrivateKey string `json:"last_htlc_temp_address_for_ht1a_private_key"`
+	LastHtlcTempAddressForHtnxPrivateKey string `json:"last_htlc_temp_address_for_htnx_private_key"`
 	CurrRsmcTempAddressPubKey            string `json:"curr_rsmc_temp_address_pub_key"`
 	CurrRsmcTempAddressPrivateKey        string `json:"curr_rsmc_temp_address_private_key"`
 }

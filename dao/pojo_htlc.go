@@ -129,6 +129,7 @@ type HtlcRequestCloseCurrTxInfo struct {
 	ChannelId                 bean.ChannelID `json:"channel_id"`
 	CurrRsmcTempAddressPubKey string         `json:"curr_rsmc_temp_address_pub_key"`
 	CreateBy                  string         `json:"create_by"`
+	CurrState                 NormalState    `json:"curr_state"`
 	CreateAt                  time.Time      `json:"create_at"`
 }
 
