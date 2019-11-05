@@ -477,6 +477,9 @@ func htlcCreateCna(tx storm.Node, channelInfo dao.ChannelInfo, operator bean.Use
 	bobIsInterNodeSoAliceSend2Bob bool, lastCommitmentATx *dao.CommitmentTransaction, owner string) (*dao.CommitmentTransaction, error) {
 	// htlc的资产分配方案
 	var outputBean = commitmentOutputBean{}
+
+	amountAndFee := hAndRInfo.Amount + tool.GetHtlcFee()*float64(int(pathInfo.TotalStep/2)-1)
+
 	if bobIsInterNodeSoAliceSend2Bob { //Alice send money to bob
 		//	alice借道bob，bob作为中间商，而当前的操作者是alice
 		//	这个时候，我们在创建Cna，那么当前操作者Alice传进来的信息就是创建临时多签地址，转账等交易需要的信息了
@@ -484,10 +487,10 @@ func htlcCreateCna(tx storm.Node, channelInfo dao.ChannelInfo, operator bean.Use
 		outputBean.RsmcTempPubKey = requestData.CurrRsmcTempAddressPubKey
 		outputBean.HtlcTempPubKey = requestData.CurrHtlcTempAddressPubKey
 		if lastCommitmentATx == nil {
-			outputBean.AmountToRsmc, _ = decimal.NewFromFloat(fundingTransaction.AmountA).Sub(decimal.NewFromFloat(hAndRInfo.Amount)).Float64()
+			outputBean.AmountToRsmc, _ = decimal.NewFromFloat(fundingTransaction.AmountA).Sub(decimal.NewFromFloat(amountAndFee)).Float64()
 			outputBean.AmountToOther = fundingTransaction.AmountB
 		} else {
-			outputBean.AmountToRsmc, _ = decimal.NewFromFloat(lastCommitmentATx.AmountToRSMC).Sub(decimal.NewFromFloat(hAndRInfo.Amount)).Float64()
+			outputBean.AmountToRsmc, _ = decimal.NewFromFloat(lastCommitmentATx.AmountToRSMC).Sub(decimal.NewFromFloat(amountAndFee)).Float64()
 			outputBean.AmountToOther = lastCommitmentATx.AmountToOther
 		}
 	} else { //	bob send money to alice
@@ -498,13 +501,13 @@ func htlcCreateCna(tx storm.Node, channelInfo dao.ChannelInfo, operator bean.Use
 		outputBean.HtlcTempPubKey = pathInfo.BobCurrHtlcTempForHt1bPubKey
 		if lastCommitmentATx == nil {
 			outputBean.AmountToRsmc = fundingTransaction.AmountA
-			outputBean.AmountToOther, _ = decimal.NewFromFloat(fundingTransaction.AmountB).Add(decimal.NewFromFloat(hAndRInfo.Amount)).Float64()
+			outputBean.AmountToOther, _ = decimal.NewFromFloat(fundingTransaction.AmountB).Add(decimal.NewFromFloat(amountAndFee)).Float64()
 		} else {
 			outputBean.AmountToRsmc = lastCommitmentATx.AmountToRSMC
-			outputBean.AmountToOther, _ = decimal.NewFromFloat(lastCommitmentATx.AmountToOther).Sub(decimal.NewFromFloat(hAndRInfo.Amount)).Float64()
+			outputBean.AmountToOther, _ = decimal.NewFromFloat(lastCommitmentATx.AmountToOther).Sub(decimal.NewFromFloat(amountAndFee)).Float64()
 		}
 	}
-	outputBean.AmountToHtlc = hAndRInfo.Amount
+	outputBean.AmountToHtlc = amountAndFee
 	outputBean.OppositeSideChannelPubKey = channelInfo.PubKeyB
 	outputBean.OppositeSideChannelAddress = channelInfo.AddressB
 
@@ -618,6 +621,8 @@ func htlcCreateCnb(tx storm.Node, channelInfo dao.ChannelInfo, operator bean.Use
 	pathInfo dao.HtlcSingleHopPathInfo, hAndRInfo dao.HtlcRAndHInfo,
 	bobIsInterNodeSoAliceSend2Bob bool, lastCommitmentTx *dao.CommitmentTransaction, owner string) (*dao.CommitmentTransaction, error) {
 	// htlc的资产分配方案
+	amountAndFee := hAndRInfo.Amount + tool.GetHtlcFee()*float64(int(pathInfo.TotalStep/2)-1)
+
 	var outputBean = commitmentOutputBean{}
 	if bobIsInterNodeSoAliceSend2Bob { //Alice send money to bob
 		//	alice借道bob，bob作为中间商，而当前的操作者是alice
@@ -629,24 +634,24 @@ func htlcCreateCnb(tx storm.Node, channelInfo dao.ChannelInfo, operator bean.Use
 			// 给bob，bob是收款方，bob本身的余额还是放到RSMC里面
 			outputBean.AmountToRsmc = fundingTransaction.AmountB
 			// 给Alice的，Alice转账给bob，Alice要锁定一部分资金
-			outputBean.AmountToOther, _ = decimal.NewFromFloat(fundingTransaction.AmountA).Sub(decimal.NewFromFloat(hAndRInfo.Amount)).Float64()
+			outputBean.AmountToOther, _ = decimal.NewFromFloat(fundingTransaction.AmountA).Sub(decimal.NewFromFloat(amountAndFee)).Float64()
 		} else {
 			outputBean.AmountToRsmc = lastCommitmentTx.AmountToRSMC
-			outputBean.AmountToOther, _ = decimal.NewFromFloat(lastCommitmentTx.AmountToOther).Sub(decimal.NewFromFloat(hAndRInfo.Amount)).Float64()
+			outputBean.AmountToOther, _ = decimal.NewFromFloat(lastCommitmentTx.AmountToOther).Sub(decimal.NewFromFloat(amountAndFee)).Float64()
 		}
 	} else { //	bob send money to alice bob是发送方 bob的钱就要减少，alice的钱不变
 		// requestData 请求数据就是当前用户Bob的数据，在创建Cnb的时候，需要用bob的临时地址和Alice的通道地址的私钥完成交易的构建
 		outputBean.RsmcTempPubKey = requestData.CurrRsmcTempAddressPubKey
 		outputBean.HtlcTempPubKey = requestData.CurrHtlcTempAddressPubKey
 		if lastCommitmentTx == nil {
-			outputBean.AmountToRsmc, _ = decimal.NewFromFloat(fundingTransaction.AmountB).Add(decimal.NewFromFloat(hAndRInfo.Amount)).Float64()
+			outputBean.AmountToRsmc, _ = decimal.NewFromFloat(fundingTransaction.AmountB).Add(decimal.NewFromFloat(amountAndFee)).Float64()
 			outputBean.AmountToOther = fundingTransaction.AmountA
 		} else {
-			outputBean.AmountToRsmc, _ = decimal.NewFromFloat(lastCommitmentTx.AmountToRSMC).Sub(decimal.NewFromFloat(hAndRInfo.Amount)).Float64()
+			outputBean.AmountToRsmc, _ = decimal.NewFromFloat(lastCommitmentTx.AmountToRSMC).Sub(decimal.NewFromFloat(amountAndFee)).Float64()
 			outputBean.AmountToOther = lastCommitmentTx.AmountToOther
 		}
 	}
-	outputBean.AmountToHtlc = hAndRInfo.Amount
+	outputBean.AmountToHtlc = amountAndFee
 	outputBean.OppositeSideChannelPubKey = channelInfo.PubKeyA
 	outputBean.OppositeSideChannelAddress = channelInfo.AddressA
 
