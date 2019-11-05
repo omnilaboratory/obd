@@ -940,7 +940,7 @@ func createHtlcBRTx(owner string, channelInfo *dao.ChannelInfo, commitmentTxInfo
 }
 func createHtlcTimeoutBRTx(owner string, channelInfo *dao.ChannelInfo, txInfo dao.HTLCTimeoutTxForAAndExecutionForB, user *bean.User) (*dao.HTLCTimeoutBreachRemedyTransaction, error) {
 	htbr := &dao.HTLCTimeoutBreachRemedyTransaction{}
-	htbr.CommitmentTxId = txInfo.Id
+	htbr.HTLCTimeoutTxForAAndExecutionForBId = txInfo.Id
 	htbr.ChannelId = channelInfo.ChannelId
 	htbr.PropertyId = txInfo.PropertyId
 	htbr.Owner = owner

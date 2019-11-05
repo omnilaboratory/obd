@@ -36,11 +36,44 @@ func (service *htlcCloseTxManager) RequestCloseHtlc(msgData string, user bean.Us
 		return nil, "", err
 	}
 
+	// region check data
 	if bean.ChannelIdService.IsEmpty(reqData.ChannelId) {
 		err = errors.New("wrong channel Id")
 		log.Println(err)
 		return nil, "", err
 	}
+
+	if tool.CheckIsString(&reqData.CurrRsmcTempAddressPubKey) == false {
+		err = errors.New("empty CurrRsmcTempAddressPubKey")
+		log.Println(err)
+		return nil, "", err
+	}
+	if tool.CheckIsString(&reqData.CurrRsmcTempAddressPrivateKey) == false {
+		err = errors.New("empty CurrRsmcTempAddressPrivateKey")
+		log.Println(err)
+		return nil, "", err
+	}
+	if tool.CheckIsString(&reqData.LastHtlcTempAddressForHtnxPrivateKey) == false {
+		err = errors.New("empty LastHtlcTempAddressForHtnxPrivateKey")
+		log.Println(err)
+		return nil, "", err
+	}
+	if tool.CheckIsString(&reqData.LastHtlcTempAddressPrivateKey) == false {
+		err = errors.New("empty LastHtlcTempAddressPrivateKey")
+		log.Println(err)
+		return nil, "", err
+	}
+	if tool.CheckIsString(&reqData.LastRsmcTempAddressPrivateKey) == false {
+		err = errors.New("empty LastRsmcTempAddressPrivateKey")
+		log.Println(err)
+		return nil, "", err
+	}
+	if tool.CheckIsString(&reqData.ChannelAddressPrivateKey) == false {
+		err = errors.New("empty ChannelAddressPrivateKey")
+		log.Println(err)
+		return nil, "", err
+	}
+	// endregion
 
 	commitmentTxInfo, err := getHtlcLatestCommitmentTx(reqData.ChannelId, user.PeerId)
 	if err != nil {
@@ -50,7 +83,7 @@ func (service *htlcCloseTxManager) RequestCloseHtlc(msgData string, user bean.Us
 	log.Println(commitmentTxInfo)
 
 	channelInfo := dao.ChannelInfo{}
-	err = db.Select(q.Eq("ChannelId", commitmentTxInfo.ChannelId), q.Eq("", dao.ChannelState_HtlcBegin)).First(&channelInfo)
+	err = db.Select(q.Eq("ChannelId", commitmentTxInfo.ChannelId), q.Eq("CurrState", dao.ChannelState_HtlcBegin)).First(&channelInfo)
 	if err != nil {
 		log.Println(err)
 		return nil, "", err
@@ -110,37 +143,37 @@ func (service *htlcCloseTxManager) SignCloseHtlc(msgData string, user bean.User)
 	}
 
 	// region check data
-	if tool.CheckIsString(&reqData.RequestCloseHtlcHash) {
+	if tool.CheckIsString(&reqData.RequestCloseHtlcHash) == false {
 		err = errors.New("empty RequestCloseHtlcHash")
 		log.Println(err)
 		return nil, "", err
 	}
-	if tool.CheckIsString(&reqData.CurrRsmcTempAddressPubKey) {
+	if tool.CheckIsString(&reqData.CurrRsmcTempAddressPubKey) == false {
 		err = errors.New("empty CurrRsmcTempAddressPubKey")
 		log.Println(err)
 		return nil, "", err
 	}
-	if tool.CheckIsString(&reqData.CurrRsmcTempAddressPrivateKey) {
+	if tool.CheckIsString(&reqData.CurrRsmcTempAddressPrivateKey) == false {
 		err = errors.New("empty CurrRsmcTempAddressPrivateKey")
 		log.Println(err)
 		return nil, "", err
 	}
-	if tool.CheckIsString(&reqData.LastHtlcTempAddressForHtnxPrivateKey) {
+	if tool.CheckIsString(&reqData.LastHtlcTempAddressForHtnxPrivateKey) == false {
 		err = errors.New("empty LastHtlcTempAddressForHtnxPrivateKey")
 		log.Println(err)
 		return nil, "", err
 	}
-	if tool.CheckIsString(&reqData.LastHtlcTempAddressPrivateKey) {
+	if tool.CheckIsString(&reqData.LastHtlcTempAddressPrivateKey) == false {
 		err = errors.New("empty LastHtlcTempAddressPrivateKey")
 		log.Println(err)
 		return nil, "", err
 	}
-	if tool.CheckIsString(&reqData.LastRsmcTempAddressPrivateKey) {
+	if tool.CheckIsString(&reqData.LastRsmcTempAddressPrivateKey) == false {
 		err = errors.New("empty LastRsmcTempAddressPrivateKey")
 		log.Println(err)
 		return nil, "", err
 	}
-	if tool.CheckIsString(&reqData.ChannelAddressPrivateKey) {
+	if tool.CheckIsString(&reqData.ChannelAddressPrivateKey) == false {
 		err = errors.New("empty ChannelAddressPrivateKey")
 		log.Println(err)
 		return nil, "", err
@@ -161,9 +194,12 @@ func (service *htlcCloseTxManager) SignCloseHtlc(msgData string, user bean.User)
 		return nil, "", err
 	}
 	log.Println(commitmentTxInfo)
+	if commitmentTxInfo.TxType != dao.CommitmentTransactionType_Htlc {
+		return nil, "", errors.New("error tx type")
+	}
 
 	channelInfo := dao.ChannelInfo{}
-	err = db.Select(q.Eq("ChannelId", commitmentTxInfo.ChannelId), q.Eq("", dao.ChannelState_HtlcBegin)).First(&channelInfo)
+	err = db.Select(q.Eq("ChannelId", commitmentTxInfo.ChannelId), q.Eq("CurrState", dao.ChannelState_HtlcBegin)).First(&channelInfo)
 	if err != nil {
 		log.Println(err)
 		return nil, "", err
@@ -251,18 +287,20 @@ func (service *htlcCloseTxManager) SignCloseHtlc(msgData string, user bean.User)
 }
 
 // C3a RD3a
-func createAliceRsmcTxsForCloseHtlc(tx storm.Node, channelInfo dao.ChannelInfo, isAliceExecutionCloseOp bool, reqData bean.HtlcSignCloseCurrTx, dataFromCloseOpStarter dao.HtlcRequestCloseCurrTxInfo, lastCommitmentATx *dao.CommitmentTransaction, fundingTransaction dao.FundingTransaction, operator bean.User) (newCommitmentTxInfo *dao.CommitmentTransaction, err error) {
+func createAliceRsmcTxsForCloseHtlc(tx storm.Node, channelInfo dao.ChannelInfo, isAliceExecutionCloseOp bool,
+	reqData bean.HtlcSignCloseCurrTx, dataFromCloseOpStarter dao.HtlcRequestCloseCurrTxInfo,
+	lastCommitmentATx *dao.CommitmentTransaction, fundingTransaction dao.FundingTransaction, operator bean.User) (newCommitmentTxInfo *dao.CommitmentTransaction, err error) {
 
 	owner := channelInfo.PeerIdA
 	// 这里需要确认一个事情：在这个通道里面，这次的htlc到底是谁是转出方
 	// rmsc的资产分配方案
 	var outputBean = commitmentOutputBean{}
-	if lastCommitmentATx.HtlcSender == channelInfo.PeerIdA {
-		outputBean.AmountToRsmc, _ = decimal.NewFromFloat(lastCommitmentATx.AmountToRSMC).Sub(decimal.NewFromFloat(lastCommitmentATx.AmountToHtlc)).Float64()
+	if lastCommitmentATx.HtlcSender == owner {
+		outputBean.AmountToRsmc = lastCommitmentATx.AmountToRSMC
 		outputBean.AmountToOther, _ = decimal.NewFromFloat(lastCommitmentATx.AmountToOther).Add(decimal.NewFromFloat(lastCommitmentATx.AmountToHtlc)).Float64()
 	} else {
 		outputBean.AmountToRsmc, _ = decimal.NewFromFloat(lastCommitmentATx.AmountToRSMC).Add(decimal.NewFromFloat(lastCommitmentATx.AmountToHtlc)).Float64()
-		outputBean.AmountToOther, _ = decimal.NewFromFloat(lastCommitmentATx.AmountToOther).Sub(decimal.NewFromFloat(lastCommitmentATx.AmountToHtlc)).Float64()
+		outputBean.AmountToOther = lastCommitmentATx.AmountToOther
 	}
 	outputBean.OppositeSideChannelPubKey = channelInfo.PubKeyB
 	outputBean.OppositeSideChannelAddress = channelInfo.AddressB
@@ -328,7 +366,6 @@ func createAliceRsmcTxsForCloseHtlc(tx storm.Node, channelInfo dao.ChannelInfo, 
 
 	commitmentTxInfo.SignAt = time.Now()
 	commitmentTxInfo.CurrState = dao.TxInfoState_CreateAndSign
-	commitmentTxInfo.LastHash = ""
 	commitmentTxInfo.CurrHash = ""
 	commitmentTxInfo.LastCommitmentTxId = lastCommitmentATx.Id
 	commitmentTxInfo.LastHash = lastCommitmentATx.CurrHash
@@ -340,6 +377,56 @@ func createAliceRsmcTxsForCloseHtlc(tx storm.Node, channelInfo dao.ChannelInfo, 
 		log.Println(err)
 		return nil, err
 	}
+
+	// create RDna tx
+	rdTransaction, err := createRDTx(owner, &channelInfo, commitmentTxInfo, channelInfo.AddressA, &operator)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	currTempAddressPrivateKey := ""
+	if isAliceExecutionCloseOp {
+		currTempAddressPrivateKey = reqData.CurrRsmcTempAddressPrivateKey
+	} else {
+		currTempAddressPrivateKey = tempAddrPrivateKeyMap[dataFromCloseOpStarter.CurrRsmcTempAddressPubKey]
+	}
+
+	inputs, err := getInputsForNextTxByParseTxHashVout(commitmentTxInfo.RSMCTxHash, commitmentTxInfo.RSMCMultiAddress, commitmentTxInfo.RSMCMultiAddressScriptPubKey)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionForUnsendInputTx(
+		commitmentTxInfo.RSMCMultiAddress,
+		[]string{
+			currTempAddressPrivateKey,
+			tempAddrPrivateKeyMap[channelInfo.PubKeyB],
+		},
+		inputs,
+		rdTransaction.OutputAddress,
+		fundingTransaction.FunderAddress,
+		fundingTransaction.PropertyId,
+		rdTransaction.Amount,
+		0,
+		rdTransaction.Sequence,
+		&commitmentTxInfo.RSMCRedeemScript)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	rdTransaction.Txid = txid
+	rdTransaction.TxHash = hex
+	rdTransaction.SignAt = time.Now()
+	rdTransaction.CurrState = dao.TxInfoState_CreateAndSign
+	err = tx.Save(rdTransaction)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
 	return commitmentTxInfo, nil
 }
 
@@ -350,12 +437,12 @@ func createBobRsmcTxsForCloseHtlc(tx storm.Node, channelInfo dao.ChannelInfo, is
 	// 这里需要确认一个事情：在这个通道里面，这次的htlc到底是谁是转出方
 	// rmsc的资产分配方案
 	var outputBean = commitmentOutputBean{}
-	if lastCommitmentBTx.HtlcSender == channelInfo.PeerIdA {
-		outputBean.AmountToRsmc, _ = decimal.NewFromFloat(lastCommitmentBTx.AmountToRSMC).Add(decimal.NewFromFloat(lastCommitmentBTx.AmountToHtlc)).Float64()
+	if lastCommitmentBTx.HtlcSender == owner {
+		outputBean.AmountToRsmc = lastCommitmentBTx.AmountToRSMC
 		outputBean.AmountToOther, _ = decimal.NewFromFloat(lastCommitmentBTx.AmountToOther).Sub(decimal.NewFromFloat(lastCommitmentBTx.AmountToHtlc)).Float64()
 	} else {
-		outputBean.AmountToRsmc, _ = decimal.NewFromFloat(lastCommitmentBTx.AmountToRSMC).Sub(decimal.NewFromFloat(lastCommitmentBTx.AmountToHtlc)).Float64()
-		outputBean.AmountToOther, _ = decimal.NewFromFloat(lastCommitmentBTx.AmountToOther).Add(decimal.NewFromFloat(lastCommitmentBTx.AmountToHtlc)).Float64()
+		outputBean.AmountToRsmc, _ = decimal.NewFromFloat(lastCommitmentBTx.AmountToRSMC).Add(decimal.NewFromFloat(lastCommitmentBTx.AmountToHtlc)).Float64()
+		outputBean.AmountToOther = lastCommitmentBTx.AmountToOther
 	}
 	outputBean.OppositeSideChannelPubKey = channelInfo.PubKeyA
 	outputBean.OppositeSideChannelAddress = channelInfo.AddressA
@@ -421,7 +508,6 @@ func createBobRsmcTxsForCloseHtlc(tx storm.Node, channelInfo dao.ChannelInfo, is
 
 	commitmentTxInfo.SignAt = time.Now()
 	commitmentTxInfo.CurrState = dao.TxInfoState_CreateAndSign
-	commitmentTxInfo.LastHash = ""
 	commitmentTxInfo.CurrHash = ""
 	commitmentTxInfo.LastCommitmentTxId = lastCommitmentBTx.Id
 	commitmentTxInfo.LastHash = lastCommitmentBTx.CurrHash
@@ -433,6 +519,56 @@ func createBobRsmcTxsForCloseHtlc(tx storm.Node, channelInfo dao.ChannelInfo, is
 		log.Println(err)
 		return nil, err
 	}
+
+	// create RDb tx
+	rdTransaction, err := createRDTx(owner, &channelInfo, commitmentTxInfo, channelInfo.AddressB, &operator)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	currTempAddressPrivateKey := ""
+	if isAliceExecutionCloseOp {
+		currTempAddressPrivateKey = tempAddrPrivateKeyMap[dataFromCloseOpStarter.CurrRsmcTempAddressPubKey]
+	} else {
+		currTempAddressPrivateKey = reqData.CurrRsmcTempAddressPrivateKey
+	}
+
+	inputs, err := getInputsForNextTxByParseTxHashVout(commitmentTxInfo.RSMCTxHash, commitmentTxInfo.RSMCMultiAddress, commitmentTxInfo.RSMCMultiAddressScriptPubKey)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionForUnsendInputTx(
+		commitmentTxInfo.RSMCMultiAddress,
+		[]string{
+			tempAddrPrivateKeyMap[channelInfo.PubKeyA],
+			currTempAddressPrivateKey,
+		},
+		inputs,
+		rdTransaction.OutputAddress,
+		fundingTransaction.FunderAddress,
+		fundingTransaction.PropertyId,
+		rdTransaction.Amount,
+		0,
+		rdTransaction.Sequence,
+		&commitmentTxInfo.RSMCRedeemScript)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	rdTransaction.Txid = txid
+	rdTransaction.TxHash = hex
+	rdTransaction.SignAt = time.Now()
+	rdTransaction.CurrState = dao.TxInfoState_CreateAndSign
+	err = tx.Save(rdTransaction)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
 	return commitmentTxInfo, nil
 }
 
@@ -455,7 +591,11 @@ func createAliceSideBRTxs(tx storm.Node, channelInfo dao.ChannelInfo, isAliceExe
 	}
 
 	htOrHeTx := dao.HTLCTimeoutTxForAAndExecutionForB{}
-	err = db.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("CommitmentTxId", lastCommitmentTxInfo.Id), q.Eq("Owner", user.PeerId)).First(&htOrHeTx)
+	err = db.Select(
+		q.Eq("ChannelId", channelInfo.ChannelId),
+		q.Eq("CommitmentTxId", lastCommitmentTxInfo.Id),
+		q.Eq("Owner", owner),
+	).First(&htOrHeTx)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -593,7 +733,10 @@ func createAliceSideBRTxs(tx storm.Node, channelInfo dao.ChannelInfo, isAliceExe
 	// endregion
 
 	// region create HTBR1a
-	count, _ = tx.Select(q.Eq("CommitmentTxId", htOrHeTx.Id), q.Eq("Owner", owner)).Count(&dao.HTLCTimeoutBreachRemedyTransaction{})
+	count, _ = tx.Select(
+		q.Eq("CommitmentTxId", lastCommitmentTxInfo.Id),
+		q.Eq("HTLCTimeoutTxForAAndExecutionForBId", htOrHeTx.Id),
+		q.Eq("Owner", owner)).Count(&dao.HTLCTimeoutBreachRemedyTransaction{})
 	if count > 0 {
 		err = errors.New("already create HTLCBreachRemedyTransaction")
 		return nil, err
@@ -661,8 +804,8 @@ func createAliceSideBRTxs(tx storm.Node, channelInfo dao.ChannelInfo, isAliceExe
 	_ = tx.Update(lastRDTransaction)
 	lastRDTransaction.CurrState = dao.TxInfoState_Abord
 	_ = tx.Update(lastRDTransaction)
-	htbr.CurrState = dao.TxInfoState_Abord
-	_ = tx.Update(htbr)
+	htrd.CurrState = dao.TxInfoState_Abord
+	_ = tx.Update(htrd)
 
 	return lastCommitmentTxInfo, nil
 }
@@ -688,7 +831,11 @@ func createBobSideBRTxs(tx storm.Node, channelInfo dao.ChannelInfo, isAliceExecu
 	}
 
 	htOrHeTx := dao.HTLCTimeoutTxForAAndExecutionForB{}
-	err = db.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("CommitmentTxId", lastCommitmentTxInfo.Id), q.Eq("Owner", user.PeerId)).First(&htOrHeTx)
+	err = db.Select(
+		q.Eq("ChannelId", channelInfo.ChannelId),
+		q.Eq("CommitmentTxId", lastCommitmentTxInfo.Id),
+		q.Eq("Owner", owner),
+	).First(&htOrHeTx)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -828,7 +975,10 @@ func createBobSideBRTxs(tx storm.Node, channelInfo dao.ChannelInfo, isAliceExecu
 	// endregion
 
 	// region create HEBR1b
-	count, _ = tx.Select(q.Eq("CommitmentTxId", htOrHeTx.Id), q.Eq("Owner", owner)).Count(&dao.HTLCTimeoutBreachRemedyTransaction{})
+	count, _ = tx.Select(
+		q.Eq("CommitmentTxId", lastCommitmentTxInfo.Id),
+		q.Eq("HTLCTimeoutTxForAAndExecutionForBId", htOrHeTx.Id),
+		q.Eq("Owner", owner)).Count(&dao.HTLCTimeoutBreachRemedyTransaction{})
 	if count > 0 {
 		err = errors.New("already create HTLCBreachRemedyTransaction")
 		return nil, err
@@ -894,8 +1044,8 @@ func createBobSideBRTxs(tx storm.Node, channelInfo dao.ChannelInfo, isAliceExecu
 	_ = tx.Update(lastRDTransaction)
 	lastRDTransaction.CurrState = dao.TxInfoState_Abord
 	_ = tx.Update(lastRDTransaction)
-	htbr.CurrState = dao.TxInfoState_Abord
-	_ = tx.Update(htbr)
+	htrd.CurrState = dao.TxInfoState_Abord
+	_ = tx.Update(htrd)
 
 	return lastCommitmentTxInfo, nil
 }
