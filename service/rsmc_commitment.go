@@ -256,7 +256,7 @@ func (service *commitmentTxSignedManager) CommitmentTxSign(jsonData string, sign
 		defer delete(tempAddrPrivateKeyMap, channelInfo.PubKeyB)
 	}
 	if tool.CheckIsString(&creatorChannelAddressPrivateKey) == false {
-		err = errors.New("fail to get the starer's channel private key")
+		err = errors.New("fail to get the starter's channel private key")
 		log.Println(err)
 		return nil, nil, nil, err
 	}
@@ -264,7 +264,7 @@ func (service *commitmentTxSignedManager) CommitmentTxSign(jsonData string, sign
 	// for c rd
 	creatorCurrTempAddressPrivateKey := tempAddrPrivateKeyMap[dataFromCreator.CurrTempAddressPubKey]
 	if tool.CheckIsString(&creatorCurrTempAddressPrivateKey) == false {
-		err = errors.New("fail to get the starer's curr temp address private key")
+		err = errors.New("fail to get the starter's curr temp address private key")
 		log.Println(err)
 		return nil, nil, nil, err
 	}
