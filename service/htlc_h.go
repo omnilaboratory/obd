@@ -8,7 +8,6 @@ import (
 	"errors"
 	"github.com/asdine/storm/q"
 	"log"
-	"strconv"
 	"sync"
 	"time"
 )
@@ -176,56 +175,6 @@ func (service *htlcHMessageManager) DealHtlcResponse(jsonData string,
 		responseData["h"] = rAndHInfo.H
 	}
 	return responseData, &rAndHInfo.SenderPeerId, nil
-}
-
-func (service *htlcHMessageManager) GetHtlcCreatedRandHInfoList(user *bean.User) (data interface{}, err error) {
-	var rAndHInfoList []dao.HtlcRAndHInfo
-	err = db.Select(q.Eq("CreateBy", user.PeerId)).Find(&rAndHInfoList)
-	if err != nil {
-		return nil, err
-	}
-	for _, item := range rAndHInfoList {
-		item.R = ""
-	}
-	return rAndHInfoList, nil
-}
-
-func (service *htlcHMessageManager) GetHtlcCreatedRandHInfoItemById(msgData string, user *bean.User) (data interface{}, err error) {
-	id, err := strconv.Atoi(msgData)
-	if err != nil {
-		log.Println(err.Error())
-		return nil, err
-	}
-	var rAndHInfo dao.HtlcRAndHInfo
-	err = db.Select(q.Eq("Id", id), q.Eq("CreateBy", user.PeerId)).First(&rAndHInfo)
-	if err != nil {
-		return nil, err
-	}
-	rAndHInfo.R = ""
-	return rAndHInfo, nil
-}
-
-func (service *htlcHMessageManager) GetHtlcSignedRandHInfoList(user *bean.User) (data interface{}, err error) {
-	var rAndHInfoList []dao.HtlcRAndHInfo
-	err = db.Select(q.Eq("RecipientPeerId", user.PeerId), q.Eq("SignBy", user.PeerId)).Find(&rAndHInfoList)
-	if err != nil {
-		return nil, err
-	}
-	return rAndHInfoList, nil
-}
-
-func (service *htlcHMessageManager) GetHtlcSignedRandHInfoItem(msgData string, user *bean.User) (data interface{}, err error) {
-	id, err := strconv.Atoi(msgData)
-	if err != nil {
-		log.Println(err.Error())
-		return nil, err
-	}
-	var rAndHInfo dao.HtlcRAndHInfo
-	err = db.Select(q.Eq("Id", id), q.Eq("SignBy", user.PeerId)).First(&rAndHInfo)
-	if err != nil {
-		return nil, err
-	}
-	return rAndHInfo, nil
 }
 
 // checkIfHtlcCanBeLaunched
