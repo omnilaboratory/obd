@@ -55,3 +55,16 @@ func (service *htlcQueryManager) GetPathInfoByH(msgData string, user bean.User) 
 	}
 	return pathInfo, nil
 }
+func (service *htlcQueryManager) GetRByHOfOwner(msgData string, user bean.User) (r string, err error) {
+	if tool.CheckIsString(&msgData) == false {
+		return "", errors.New("error input data")
+	}
+
+	info := &dao.HtlcRAndHInfo{}
+	err = db.Select(q.Eq("H", msgData), q.Eq("SignBy", user.PeerId)).First(info)
+	if err != nil {
+		log.Println(err)
+		return "", err
+	}
+	return info.R, nil
+}
