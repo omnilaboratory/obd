@@ -77,7 +77,7 @@ func (service *htlcQueryManager) GetRByHOfOwner(msgData string, user bean.User) 
 //转账发起方获取H列表
 func (service *htlcHMessageManager) GetHtlcCreatedRandHInfoList(user *bean.User) (data interface{}, err error) {
 	var rAndHInfoList []dao.HtlcRAndHInfo
-	err = db.Select(q.Eq("CreateBy", user.PeerId)).OrderBy("CreateBy").Reverse().Find(&rAndHInfoList)
+	err = db.Select(q.Eq("CreateBy", user.PeerId)).OrderBy("CreateAt").Reverse().Find(&rAndHInfoList)
 	if err != nil {
 		return nil, err
 	}
@@ -106,7 +106,7 @@ func (service *htlcHMessageManager) GetHtlcCreatedRandHInfoItemById(msgData stri
 //htlc最终收款方获取HR的结构体列表
 func (service *htlcHMessageManager) GetHtlcSignedRandHInfoList(user *bean.User) (data interface{}, err error) {
 	var rAndHInfoList []dao.HtlcRAndHInfo
-	err = db.Select(q.Eq("RecipientPeerId", user.PeerId), q.Eq("SignBy", user.PeerId)).OrderBy("CreateBy").Reverse().Find(&rAndHInfoList)
+	err = db.Select(q.Eq("RecipientPeerId", user.PeerId), q.Eq("SignBy", user.PeerId)).OrderBy("CreateAt").Reverse().Find(&rAndHInfoList)
 	if err != nil {
 		return nil, err
 	}
