@@ -24,7 +24,4 @@ func TestGetBalanceByAddress(t *testing.T) {
 }
 
 func TestUpdateData(t *testing.T) {
-	r, err := HtlcQueryService.GetRFromCommitmentTx()
-	log.Println(err)
-	log.Println(r)
 }

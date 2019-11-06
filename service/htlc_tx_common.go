@@ -478,7 +478,7 @@ func htlcCreateCna(tx storm.Node, channelInfo dao.ChannelInfo, operator bean.Use
 	// htlc的资产分配方案
 	var outputBean = commitmentOutputBean{}
 
-	amountAndFee := hAndRInfo.Amount + tool.GetHtlcFee()*float64(int(pathInfo.TotalStep/2)-1)
+	amountAndFee := hAndRInfo.Amount + tool.GetHtlcFee()*float64(int(pathInfo.TotalStep/2)-pathInfo.CurrStep)
 
 	if bobIsInterNodeSoAliceSend2Bob { //Alice send money to bob
 		//	alice借道bob，bob作为中间商，而当前的操作者是alice
@@ -621,7 +621,7 @@ func htlcCreateCnb(tx storm.Node, channelInfo dao.ChannelInfo, operator bean.Use
 	pathInfo dao.HtlcSingleHopPathInfo, hAndRInfo dao.HtlcRAndHInfo,
 	bobIsInterNodeSoAliceSend2Bob bool, lastCommitmentTx *dao.CommitmentTransaction, owner string) (*dao.CommitmentTransaction, error) {
 	// htlc的资产分配方案
-	amountAndFee := hAndRInfo.Amount + tool.GetHtlcFee()*float64(int(pathInfo.TotalStep/2)-1)
+	amountAndFee := hAndRInfo.Amount + tool.GetHtlcFee()*float64(int(pathInfo.TotalStep/2)-pathInfo.CurrStep)
 
 	var outputBean = commitmentOutputBean{}
 	if bobIsInterNodeSoAliceSend2Bob { //Alice send money to bob
