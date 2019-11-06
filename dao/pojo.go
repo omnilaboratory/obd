@@ -226,7 +226,7 @@ type BreachRemedyTransaction struct {
 	InputTxid          string         `json:"input_txid"`           //input txid  from commitTx alice2&bob multtAddr, so need  sign of alice2 and bob
 	InputVout          uint32         `json:"input_vout"`           // input vout
 	InputAmount        float64        `json:"input_amount"`         //input amount
-	Amount             float64        `json:"amount"`               // output boob amount
+	Amount             float64        `json:"amount"`               // output bob amount
 	TransactionSignHex string         `json:"transaction_sign_hex"` // first alice2 sign
 	Txid               string         `json:"txid"`
 	CurrState          TxInfoState    `json:"curr_state"`
