@@ -7,6 +7,7 @@ import (
 	"github.com/shopspring/decimal"
 	"github.com/tidwall/gjson"
 	"log"
+	"strconv"
 	"strings"
 )
 
@@ -212,7 +213,7 @@ func (client *Client) OmniCreateAndSignRawTransaction(fromBitCoinAddress string,
 }
 
 // From channelAddress to temp multi address, to Create CommitmentTx
-func (client *Client) OmniCreateAndSignRawTransactionForCommitmentTx(fromBitCoinAddress string, privkeys []string, toBitCoinAddress string, propertyId int64, amount float64, minerFee float64, sequence int, redeemScript *string, usedTxid string) (txid, hex string, currUseTxid string, err error) {
+func (client *Client) OmniCreateAndSignRawTransactionUserSingleInput(txType int, fromBitCoinAddress string, privkeys []string, toBitCoinAddress string, propertyId int64, amount float64, minerFee float64, sequence int, redeemScript *string, usedTxid string) (txid, hex string, currUseTxid string, err error) {
 	if tool.CheckIsString(&fromBitCoinAddress) == false {
 		return "", "", "", errors.New("fromBitCoinAddress is empty")
 	}
@@ -228,12 +229,12 @@ func (client *Client) OmniCreateAndSignRawTransactionForCommitmentTx(fromBitCoin
 		minerFee = GetMinerFee()
 	}
 
-	out, _ := decimal.NewFromFloat(minerFee).
+	out, _ := decimal.NewFromFloat(pMoney).
 		Add(decimal.NewFromFloat(minerFee)).
 		Float64()
 
-	client.ValidateAddress(fromBitCoinAddress)
-	client.ValidateAddress(toBitCoinAddress)
+	_, _ = client.ValidateAddress(fromBitCoinAddress)
+	_, _ = client.ValidateAddress(toBitCoinAddress)
 
 	resultListUnspent, err := client.ListUnspent(fromBitCoinAddress)
 	if err != nil {
@@ -241,10 +242,12 @@ func (client *Client) OmniCreateAndSignRawTransactionForCommitmentTx(fromBitCoin
 	}
 	arrayListUnspent := gjson.Parse(resultListUnspent).Array()
 	log.Println("listunspent", arrayListUnspent)
-	if len(arrayListUnspent) < 2 {
-		return "", "", "", errors.New("wrong input num, need 2  btc  inputs for miner fee ")
+	inputCount := 3 + txType
+	if len(arrayListUnspent) < inputCount {
+		return "", "", "", errors.New("wrong input num, need " + strconv.Itoa(inputCount) + " input:one for omni token, " + strconv.Itoa(inputCount-1) + "  btc  inputs for miner fee ")
 	}
 
+	balance := 0.0
 	inputs := make([]map[string]interface{}, 0, 0)
 	currUseTxid = ""
 	for _, item := range arrayListUnspent {
@@ -262,6 +265,7 @@ func (client *Client) OmniCreateAndSignRawTransactionForCommitmentTx(fromBitCoin
 			if redeemScript != nil {
 				node["redeemScript"] = *redeemScript
 			}
+			balance, _ = decimal.NewFromFloat(balance).Add(decimal.NewFromFloat(node["amount"].(float64))).Float64()
 			inputs = append(inputs, node)
 			break
 		}
@@ -269,17 +273,6 @@ func (client *Client) OmniCreateAndSignRawTransactionForCommitmentTx(fromBitCoin
 
 	if currUseTxid == "" {
 		return "", "", "", errors.New("not found the miner fee input")
-	}
-
-	out, _ = decimal.NewFromFloat(out).
-		Add(decimal.NewFromFloat(pMoney)).
-		Float64()
-	balance := 0.0
-	for _, item := range inputs {
-		balance, _ = decimal.NewFromFloat(balance).Add(decimal.NewFromFloat(item["amount"].(float64))).Float64()
-		if balance >= out {
-			break
-		}
 	}
 
 	log.Println("1 balance", balance)
@@ -353,7 +346,7 @@ func (client *Client) OmniCreateAndSignRawTransactionForCommitmentTx(fromBitCoin
 	return txid, hex, currUseTxid, nil
 }
 
-func (client *Client) OmniCreateAndSignRawTransactionForCommitmentTxToBob(fromBitCoinAddress string, usedTxid string, privkeys []string, toBitCoinAddress, changeToAddress string, propertyId int64, amount float64, minerFee float64, sequence int, redeemScript *string) (txid, hex string, err error) {
+func (client *Client) OmniCreateAndSignRawTransactionUseRestInput(txType int, fromBitCoinAddress string, usedTxid string, privkeys []string, toBitCoinAddress, changeToAddress string, propertyId int64, amount float64, minerFee float64, sequence int, redeemScript *string) (txid, hex string, err error) {
 	if tool.CheckIsString(&fromBitCoinAddress) == false {
 		return "", "", errors.New("fromBitCoinAddress is empty")
 	}
@@ -382,8 +375,9 @@ func (client *Client) OmniCreateAndSignRawTransactionForCommitmentTxToBob(fromBi
 	}
 	arrayListUnspent := gjson.Parse(resultListUnspent).Array()
 	log.Println("listunspent", arrayListUnspent)
-	if len(arrayListUnspent) < 3 {
-		return "", "", errors.New("wrong input num, need 3 input:one for omni token, 2  btc  inputs for miner fee ")
+	inputCount := 3 + txType
+	if len(arrayListUnspent) < inputCount {
+		return "", "", errors.New("wrong input num, need " + strconv.Itoa(inputCount) + " input:one for omni token, " + strconv.Itoa(inputCount-1) + "  btc  inputs for miner fee ")
 	}
 
 	inputs := make([]map[string]interface{}, 0, 0)
@@ -481,7 +475,7 @@ func (client *Client) OmniCreateAndSignRawTransactionForCommitmentTxToBob(fromBi
 	return txid, hex, nil
 }
 
-func (client *Client) OmniCreateAndSignRawTransactionForUnsendInputTx(fromBitCoinAddress string, privkeys []string, inputItems []TransactionInputItem, toBitCoinAddress, changeToAddress string, propertyId int64, amount float64, minerFee float64, sequence int, redeemScript *string) (txid string, hex string, err error) {
+func (client *Client) OmniCreateAndSignRawTransactionUseUnsendInput(fromBitCoinAddress string, privkeys []string, inputItems []TransactionInputItem, toBitCoinAddress, changeToAddress string, propertyId int64, amount float64, minerFee float64, sequence int, redeemScript *string) (txid string, hex string, err error) {
 	if tool.CheckIsString(&fromBitCoinAddress) == false {
 		return "", "", errors.New("fromBitCoinAddress is empty")
 	}
@@ -497,7 +491,7 @@ func (client *Client) OmniCreateAndSignRawTransactionForUnsendInputTx(fromBitCoi
 		return "", "", errors.New("wrong amount")
 	}
 
-	pMoney := 0.00000540
+	pMoney := GetOmniDustBtc()
 	if minerFee < config.Dust {
 		minerFee = GetMinerFee()
 	}

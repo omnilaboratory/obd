@@ -134,7 +134,7 @@ func htlcAliceAbortLastRsmcCommitmentTx(tx storm.Node, channelInfo dao.ChannelIn
 				return err
 			}
 
-			txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionForUnsendInputTx(
+			txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionUseUnsendInput(
 				lastCommitmentATx.RSMCMultiAddress,
 				[]string{
 					lastTempAddressPrivateKey,
@@ -245,7 +245,7 @@ func htlcBobAbortLastRsmcCommitmentTx(tx storm.Node, channelInfo dao.ChannelInfo
 				return err
 			}
 
-			txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionForUnsendInputTx(
+			txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionUseUnsendInput(
 				lastCommitmentBTx.RSMCMultiAddress,
 				[]string{
 					lastTempAddressPrivateKey,
@@ -308,7 +308,7 @@ func createHtlcTimeoutTxForAliceSide(tx storm.Node, owner string, channelInfo da
 		return nil, err
 	}
 
-	txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionForUnsendInputTx(
+	txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionUseUnsendInput(
 		commitmentTxInfo.HTLCMultiAddress,
 		[]string{
 			requestData.CurrHtlcTempAddressPrivateKey,
@@ -356,7 +356,7 @@ func createHtlcTimeoutTxForBobSide(tx storm.Node, owner string, channelInfo dao.
 		return nil, err
 	}
 
-	txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionForUnsendInputTx(
+	txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionUseUnsendInput(
 		commitmentTxInfo.HTLCMultiAddress,
 		[]string{
 			requestData.CurrHtlcTempAddressPrivateKey,
@@ -407,7 +407,7 @@ func createHtlcTimeoutDeliveryTx(tx storm.Node, owner string, outputAddress stri
 		return nil, err
 	}
 
-	txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionForUnsendInputTx(
+	txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionUseUnsendInput(
 		commitmentTxInfo.HTLCMultiAddress,
 		[]string{
 			htlcRequestOpen.CurrHtlcTempAddressPrivateKey,
@@ -521,7 +521,8 @@ func htlcCreateCna(tx storm.Node, channelInfo dao.ChannelInfo, operator bean.Use
 	allUsedTxidTemp := ""
 	// rsmc
 	if commitmentTxInfo.AmountToRSMC > 0 {
-		txid, hex, usedTxid, err := rpcClient.OmniCreateAndSignRawTransactionForCommitmentTx(
+		txid, hex, usedTxid, err := rpcClient.OmniCreateAndSignRawTransactionUserSingleInput(
+			int(commitmentTxInfo.TxType),
 			channelInfo.ChannelAddress,
 			[]string{
 				tempAddrPrivateKeyMap[channelInfo.PubKeyA],
@@ -543,7 +544,8 @@ func htlcCreateCna(tx storm.Node, channelInfo dao.ChannelInfo, operator bean.Use
 
 	//create to Bob tx
 	if commitmentTxInfo.AmountToOther > 0 {
-		txid, hex, usedTxid, err := rpcClient.OmniCreateAndSignRawTransactionForCommitmentTx(
+		txid, hex, usedTxid, err := rpcClient.OmniCreateAndSignRawTransactionUserSingleInput(
+			int(commitmentTxInfo.TxType),
 			channelInfo.ChannelAddress,
 			[]string{
 				tempAddrPrivateKeyMap[channelInfo.PubKeyA],
@@ -565,7 +567,8 @@ func htlcCreateCna(tx storm.Node, channelInfo dao.ChannelInfo, operator bean.Use
 
 	//htlc
 	if commitmentTxInfo.AmountToHtlc > 0 {
-		txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionForCommitmentTxToBob(
+		txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionUseRestInput(
+			int(commitmentTxInfo.TxType),
 			channelInfo.ChannelAddress, allUsedTxidTemp,
 			[]string{
 				tempAddrPrivateKeyMap[channelInfo.PubKeyA],
@@ -665,7 +668,8 @@ func htlcCreateCnb(tx storm.Node, channelInfo dao.ChannelInfo, operator bean.Use
 	allUsedTxidTemp := ""
 	// rsmc
 	if commitmentTxInfo.AmountToRSMC > 0 {
-		txid, hex, usedTxid, err := rpcClient.OmniCreateAndSignRawTransactionForCommitmentTx(
+		txid, hex, usedTxid, err := rpcClient.OmniCreateAndSignRawTransactionUserSingleInput(
+			int(commitmentTxInfo.TxType),
 			channelInfo.ChannelAddress,
 			[]string{
 				tempAddrPrivateKeyMap[channelInfo.PubKeyA],
@@ -687,7 +691,8 @@ func htlcCreateCnb(tx storm.Node, channelInfo dao.ChannelInfo, operator bean.Use
 
 	//create to alice tx
 	if commitmentTxInfo.AmountToOther > 0 {
-		txid, hex, usedTxid, err := rpcClient.OmniCreateAndSignRawTransactionForCommitmentTx(
+		txid, hex, usedTxid, err := rpcClient.OmniCreateAndSignRawTransactionUserSingleInput(
+			int(commitmentTxInfo.TxType),
 			channelInfo.ChannelAddress,
 			[]string{
 				tempAddrPrivateKeyMap[channelInfo.PubKeyA],
@@ -709,7 +714,8 @@ func htlcCreateCnb(tx storm.Node, channelInfo dao.ChannelInfo, operator bean.Use
 
 	//htlc
 	if commitmentTxInfo.AmountToHtlc > 0 {
-		txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionForCommitmentTxToBob(
+		txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionUseRestInput(
+			int(commitmentTxInfo.TxType),
 			channelInfo.ChannelAddress,
 			allUsedTxidTemp,
 			[]string{
@@ -789,7 +795,7 @@ func htlcCreateRDOfRsmc(tx storm.Node, channelInfo dao.ChannelInfo, operator bea
 		return nil, err
 	}
 
-	txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionForUnsendInputTx(
+	txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionUseUnsendInput(
 		commitmentTxInfo.RSMCMultiAddress,
 		[]string{
 			currTempAddressPrivateKey,
@@ -852,7 +858,7 @@ func createHtlcRD(tx storm.Node, channelInfo dao.ChannelInfo, operator bean.User
 		return nil, err
 	}
 
-	txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionForUnsendInputTx(
+	txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionUseUnsendInput(
 		htlcTimeoutTx.RSMCMultiAddress,
 		[]string{
 			currTempAddressPrivateKey,

@@ -321,7 +321,8 @@ func createAliceRsmcTxsForCloseHtlc(tx storm.Node, channelInfo dao.ChannelInfo, 
 	allUsedTxidTemp := ""
 	// rsmc
 	if commitmentTxInfo.AmountToRSMC > 0 {
-		txid, hex, usedTxid, err := rpcClient.OmniCreateAndSignRawTransactionForCommitmentTx(
+		txid, hex, usedTxid, err := rpcClient.OmniCreateAndSignRawTransactionUserSingleInput(
+			int(commitmentTxInfo.TxType),
 			channelInfo.ChannelAddress,
 			[]string{
 				tempAddrPrivateKeyMap[channelInfo.PubKeyA],
@@ -343,7 +344,8 @@ func createAliceRsmcTxsForCloseHtlc(tx storm.Node, channelInfo dao.ChannelInfo, 
 
 	//create to Bob tx
 	if commitmentTxInfo.AmountToOther > 0 {
-		txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionForCommitmentTxToBob(
+		txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionUseRestInput(
+			int(commitmentTxInfo.TxType),
 			channelInfo.ChannelAddress,
 			allUsedTxidTemp,
 			[]string{
@@ -398,7 +400,7 @@ func createAliceRsmcTxsForCloseHtlc(tx storm.Node, channelInfo dao.ChannelInfo, 
 		return nil, err
 	}
 
-	txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionForUnsendInputTx(
+	txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionUseUnsendInput(
 		commitmentTxInfo.RSMCMultiAddress,
 		[]string{
 			currTempAddressPrivateKey,
@@ -463,7 +465,8 @@ func createBobRsmcTxsForCloseHtlc(tx storm.Node, channelInfo dao.ChannelInfo, is
 	allUsedTxidTemp := ""
 	// rsmc
 	if commitmentTxInfo.AmountToRSMC > 0 {
-		txid, hex, usedTxid, err := rpcClient.OmniCreateAndSignRawTransactionForCommitmentTx(
+		txid, hex, usedTxid, err := rpcClient.OmniCreateAndSignRawTransactionUserSingleInput(
+			int(commitmentTxInfo.TxType),
 			channelInfo.ChannelAddress,
 			[]string{
 				tempAddrPrivateKeyMap[channelInfo.PubKeyA],
@@ -485,7 +488,8 @@ func createBobRsmcTxsForCloseHtlc(tx storm.Node, channelInfo dao.ChannelInfo, is
 
 	//create to alice tx
 	if commitmentTxInfo.AmountToOther > 0 {
-		txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionForCommitmentTxToBob(
+		txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionUseRestInput(
+			int(commitmentTxInfo.TxType),
 			channelInfo.ChannelAddress,
 			allUsedTxidTemp,
 			[]string{
@@ -540,7 +544,7 @@ func createBobRsmcTxsForCloseHtlc(tx storm.Node, channelInfo dao.ChannelInfo, is
 		return nil, err
 	}
 
-	txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionForUnsendInputTx(
+	txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionUseUnsendInput(
 		commitmentTxInfo.RSMCMultiAddress,
 		[]string{
 			tempAddrPrivateKeyMap[channelInfo.PubKeyA],
@@ -638,7 +642,7 @@ func createAliceSideBRTxs(tx storm.Node, channelInfo dao.ChannelInfo, isAliceExe
 			return nil, err
 		}
 
-		txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionForUnsendInputTx(
+		txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionUseUnsendInput(
 			lastCommitmentTxInfo.RSMCMultiAddress,
 			[]string{
 				lastTempAddressPrivateKey,
@@ -701,7 +705,7 @@ func createAliceSideBRTxs(tx storm.Node, channelInfo dao.ChannelInfo, isAliceExe
 			return nil, err
 		}
 
-		txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionForUnsendInputTx(
+		txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionUseUnsendInput(
 			lastCommitmentTxInfo.HTLCMultiAddress,
 			[]string{
 				lastTempAddressPrivateKey,
@@ -769,7 +773,7 @@ func createAliceSideBRTxs(tx storm.Node, channelInfo dao.ChannelInfo, isAliceExe
 			return nil, err
 		}
 
-		txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionForUnsendInputTx(
+		txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionUseUnsendInput(
 			htOrHeTx.RSMCMultiAddress,
 			[]string{
 				lastTempAddressPrivateKey,
@@ -882,7 +886,7 @@ func createBobSideBRTxs(tx storm.Node, channelInfo dao.ChannelInfo, isAliceExecu
 			return nil, err
 		}
 
-		txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionForUnsendInputTx(
+		txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionUseUnsendInput(
 			lastCommitmentTxInfo.RSMCMultiAddress,
 			[]string{
 				lastTempAddressPrivateKey,
@@ -944,7 +948,7 @@ func createBobSideBRTxs(tx storm.Node, channelInfo dao.ChannelInfo, isAliceExecu
 			return nil, err
 		}
 
-		txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionForUnsendInputTx(
+		txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionUseUnsendInput(
 			lastCommitmentTxInfo.HTLCMultiAddress,
 			[]string{
 				lastTempAddressPrivateKey,
@@ -1010,7 +1014,7 @@ func createBobSideBRTxs(tx storm.Node, channelInfo dao.ChannelInfo, isAliceExecu
 			return nil, err
 		}
 
-		txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionForUnsendInputTx(
+		txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionUseUnsendInput(
 			htOrHeTx.RSMCMultiAddress,
 			[]string{
 				lastTempAddressPrivateKey,

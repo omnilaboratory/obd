@@ -29,12 +29,13 @@ func TestClient_OmniSend(t *testing.T) {
 	channelAddr := "2N5EJHxmzRPSYxkijP95p4ZmvbJJ9Vk1hio"
 	toChanelAddr := "2NCprPtFBuBdDUG7xsY7QvAMDWZwfaJvKxR"
 	ChannelAddressRedeemScript := "522103b4df7d3026a437f537dcc0a9e681ffdfb000c9f1223189adf18364588d46e55921024e70d53f1e328c20d28950116d32e503c113be554af643ef68808ad83371737352ae"
-	txid, hex, usedTxid, err := client.OmniCreateAndSignRawTransactionForCommitmentTx(
+	txid, hex, usedTxid, err := client.OmniCreateAndSignRawTransactionUserSingleInput(
 		channelAddr,
 		[]string{
 			"cVaSpCw5UaioTmsrxr3jL4bcn1wsdbbeQuUoQVW6P9pZxNhqa6wc",
 			"cSV9Tmayp42czShgzkVQ8gJYBqnuZ27FdYho5QehUgQL83UJQ3rY",
 		},
+		toChanelAddr,
 		toChanelAddr,
 		121,
 		2,

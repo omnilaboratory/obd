@@ -368,7 +368,7 @@ func createAliceSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFr
 				return nil, err
 			}
 
-			txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionForUnsendInputTx(
+			txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionUseUnsendInput(
 				lastCommitmentTx.RSMCMultiAddress,
 				[]string{
 					lastTempAddressPrivateKey,
@@ -447,7 +447,8 @@ func createAliceSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFr
 
 	usedTxidTemp := ""
 	if commitmentTxInfo.AmountToRSMC > 0 {
-		txid, hex, usedTxid, err := rpcClient.OmniCreateAndSignRawTransactionForCommitmentTx(
+		txid, hex, usedTxid, err := rpcClient.OmniCreateAndSignRawTransactionUserSingleInput(
+			int(commitmentTxInfo.TxType),
 			channelInfo.ChannelAddress,
 			[]string{
 				tempAddrPrivateKeyMap[channelInfo.PubKeyA],
@@ -470,7 +471,8 @@ func createAliceSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFr
 
 	//create to Bob tx
 	if commitmentTxInfo.AmountToOther > 0 {
-		txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionForCommitmentTxToBob(
+		txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionUseRestInput(
+			int(commitmentTxInfo.TxType),
 			channelInfo.ChannelAddress,
 			usedTxidTemp,
 			[]string{
@@ -536,7 +538,7 @@ func createAliceSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFr
 		return nil, err
 	}
 
-	txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionForUnsendInputTx(
+	txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionUseUnsendInput(
 		commitmentTxInfo.RSMCMultiAddress,
 		[]string{
 			currTempAddressPrivateKey,
@@ -616,7 +618,7 @@ func createBobSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFrom
 				return nil, err
 			}
 
-			txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionForUnsendInputTx(
+			txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionUseUnsendInput(
 				lastCommitmentTx.RSMCMultiAddress,
 				[]string{
 					lastTempAddressPrivateKey,
@@ -694,7 +696,8 @@ func createBobSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFrom
 
 	usedTxidTemp := ""
 	if commitmentTxInfo.AmountToRSMC > 0 {
-		txid, hex, usedTxid, err := rpcClient.OmniCreateAndSignRawTransactionForCommitmentTx(
+		txid, hex, usedTxid, err := rpcClient.OmniCreateAndSignRawTransactionUserSingleInput(
+			int(commitmentTxInfo.TxType),
 			channelInfo.ChannelAddress,
 			[]string{
 				tempAddrPrivateKeyMap[channelInfo.PubKeyA],
@@ -717,7 +720,8 @@ func createBobSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFrom
 
 	//create to alice tx
 	if commitmentTxInfo.AmountToRSMC > 0 {
-		txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionForCommitmentTxToBob(
+		txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionUseRestInput(
+			int(commitmentTxInfo.TxType),
 			channelInfo.ChannelAddress,
 			usedTxidTemp,
 			[]string{
@@ -782,7 +786,7 @@ func createBobSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFrom
 		return nil, err
 	}
 
-	txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionForUnsendInputTx(
+	txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionUseUnsendInput(
 		commitmentTxInfo.RSMCMultiAddress,
 		[]string{
 			tempAddrPrivateKeyMap[channelInfo.PubKeyA],

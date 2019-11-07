@@ -420,7 +420,7 @@ func htlcCreateExecutionDelivery(tx storm.Node, channelInfo dao.ChannelInfo, fun
 		return nil, err
 	}
 
-	txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionForUnsendInputTx(
+	txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionUseUnsendInput(
 		commitmentTxInfo.HTLCMultiAddress,
 		[]string{
 			reqData.CurrHtlcTempAddressPrivateKey,
@@ -477,7 +477,7 @@ func createHtlcExecution(tx storm.Node, channelInfo dao.ChannelInfo, fundingTran
 		return nil, err
 	}
 
-	txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionForUnsendInputTx(
+	txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionUseUnsendInput(
 		commitmentTxInfo.HTLCMultiAddress,
 		[]string{
 			reqData.ChannelAddressPrivateKey,
@@ -537,7 +537,7 @@ func createHtlcRDForR(tx storm.Node, channelInfo dao.ChannelInfo,
 		return nil, err
 	}
 
-	txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionForUnsendInputTx(
+	txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionUseUnsendInput(
 		he1x.RSMCMultiAddress,
 		[]string{
 			reqData.ChannelAddressPrivateKey,
