@@ -75,7 +75,7 @@ func (service *htlcCloseTxManager) RequestCloseHtlc(msgData string, user bean.Us
 	}
 	// endregion
 
-	commitmentTxInfo, err := getHtlcLatestCommitmentTx(reqData.ChannelId, user.PeerId)
+	commitmentTxInfo, err := getHtlcLatestCommitmentTxOfGetR(reqData.ChannelId, user.PeerId)
 	if err != nil {
 		log.Println(err)
 		return nil, "", err
@@ -188,7 +188,7 @@ func (service *htlcCloseTxManager) SignCloseHtlc(msgData string, user bean.User)
 		return nil, "", err
 	}
 
-	commitmentTxInfo, err := getHtlcLatestCommitmentTx(dataFromCloseOpStarter.ChannelId, user.PeerId)
+	commitmentTxInfo, err := getHtlcLatestCommitmentTxOfGetR(dataFromCloseOpStarter.ChannelId, user.PeerId)
 	if err != nil {
 		log.Println(err)
 		return nil, "", err
@@ -1271,7 +1271,7 @@ func (service *htlcCloseTxManager) SignCloseChannel(msgData string, user bean.Us
 		}
 	}
 
-	//如果转账方在超时后还没有得到R,或者接收方得到R后想直接体现
+	//如果转账方在超时后还没有得到R,或者接收方得到R后想直接提现
 	if isRsmcTx {
 		htnx := &dao.HTLCTimeoutTxForAAndExecutionForB{}
 		err = tx.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("CommitmentTxId", lastCommitmentTx.Id), q.Eq("Owner", closeOpStarter), q.Eq("CurrState", dao.TxInfoState_CreateAndSign)).First(htnx)
