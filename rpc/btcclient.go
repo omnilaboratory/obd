@@ -83,8 +83,12 @@ func (client *Client) OmniDecodeTransaction(hex string) (result string, err erro
 	return client.send("omni_decodetransaction", []interface{}{hex})
 }
 
-func (client *Client) GetBlockCount() (result string, err error) {
-	return client.send("getblockcount", nil)
+func (client *Client) GetBlockCount() (result int, err error) {
+	height, err := client.send("getblockcount", nil)
+	if err == nil {
+		result, err = strconv.Atoi(height)
+	}
+	return result, err
 }
 
 func (client *Client) GetDifficulty() (result string, err error) {

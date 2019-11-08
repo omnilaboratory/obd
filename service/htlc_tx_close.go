@@ -1160,15 +1160,21 @@ func (service *htlcCloseTxManager) SignCloseChannel(msgData string, user bean.Us
 		closeOpStarter = channelInfo.PeerIdA
 	}
 
-	lastCommitmentTx := &dao.CommitmentTransaction{}
-	err = db.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("TxType", dao.CommitmentTransactionType_Htlc), q.Eq("Owner", closeOpStarter)).OrderBy("CreateAt").Reverse().First(lastCommitmentTx)
+	latestCommitmentTx := &dao.CommitmentTransaction{}
+	err = db.Select(
+		q.Eq("ChannelId", channelInfo.ChannelId),
+		q.Eq("TxType", dao.CommitmentTransactionType_Htlc),
+		q.Eq("Owner", closeOpStarter)).
+		OrderBy("CreateAt").
+		Reverse().
+		First(latestCommitmentTx)
 	if err != nil {
 		log.Println(err)
 		return nil, "", err
 	}
 
-	if tool.CheckIsString(&lastCommitmentTx.RSMCTxHash) {
-		commitmentTxid, err := rpcClient.SendRawTransaction(lastCommitmentTx.RSMCTxHash)
+	if tool.CheckIsString(&latestCommitmentTx.RSMCTxHash) {
+		commitmentTxid, err := rpcClient.SendRawTransaction(latestCommitmentTx.RSMCTxHash)
 		if err != nil {
 			log.Println(err)
 			return nil, "", err
@@ -1176,8 +1182,8 @@ func (service *htlcCloseTxManager) SignCloseChannel(msgData string, user bean.Us
 		log.Println(commitmentTxid)
 	}
 
-	if tool.CheckIsString(&lastCommitmentTx.ToOtherTxHash) {
-		commitmentTxidToBob, err := rpcClient.SendRawTransaction(lastCommitmentTx.ToOtherTxHash)
+	if tool.CheckIsString(&latestCommitmentTx.ToOtherTxHash) {
+		commitmentTxidToBob, err := rpcClient.SendRawTransaction(latestCommitmentTx.ToOtherTxHash)
 		if err != nil {
 			log.Println(err)
 			return nil, "", err
@@ -1185,14 +1191,20 @@ func (service *htlcCloseTxManager) SignCloseChannel(msgData string, user bean.Us
 		log.Println(commitmentTxidToBob)
 	}
 
-	lastRevocableDeliveryTx := &dao.RevocableDeliveryTransaction{}
-	err = db.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("Owner", closeOpStarter)).OrderBy("CreateAt").Reverse().First(lastRevocableDeliveryTx)
+	latestRsmcRD := &dao.RevocableDeliveryTransaction{}
+	err = db.Select(
+		q.Eq("ChannelId", channelInfo.ChannelId),
+		q.Eq("CommitmentTxId", latestCommitmentTx.Id),
+		q.Eq("RDType", 0),
+		q.Eq("Owner", closeOpStarter)).
+		OrderBy("CreateAt").Reverse().
+		First(latestRsmcRD)
 	if err != nil {
 		log.Println(err)
 		return nil, "", err
 	}
 
-	revocableDeliveryTxid, err := rpcClient.SendRawTransaction(lastRevocableDeliveryTx.TxHash)
+	latestRsmcRDTxid, err := rpcClient.SendRawTransaction(latestRsmcRD.TxHash)
 	if err != nil {
 		log.Println(err)
 		msg := err.Error()
@@ -1200,10 +1212,10 @@ func (service *htlcCloseTxManager) SignCloseChannel(msgData string, user bean.Us
 			return nil, "", err
 		}
 	}
-	log.Println(revocableDeliveryTxid)
+	log.Println(latestRsmcRDTxid)
 
-	if tool.CheckIsString(&lastCommitmentTx.HtlcTxHash) {
-		commitmentTxidToHtlc, err := rpcClient.SendRawTransaction(lastCommitmentTx.HtlcTxHash)
+	if tool.CheckIsString(&latestCommitmentTx.HtlcTxHash) {
+		commitmentTxidToHtlc, err := rpcClient.SendRawTransaction(latestCommitmentTx.HtlcTxHash)
 		if err != nil {
 			log.Println(err)
 			return nil, "", err
@@ -1214,11 +1226,11 @@ func (service *htlcCloseTxManager) SignCloseChannel(msgData string, user bean.Us
 	// endregion
 
 	// 提现人是否是这次htlc的转账发起者
-	var starterIsHtlcSender bool
-	if lastCommitmentTx.HtlcSender == closeOpStarter {
-		starterIsHtlcSender = true
+	var withdrawerIsHtlcSender bool
+	if latestCommitmentTx.HtlcSender == closeOpStarter {
+		withdrawerIsHtlcSender = true
 	} else {
-		starterIsHtlcSender = false
+		withdrawerIsHtlcSender = false
 	}
 
 	tx, err := db.Begin(true)
@@ -1227,12 +1239,12 @@ func (service *htlcCloseTxManager) SignCloseChannel(msgData string, user bean.Us
 	// region htlc的相关交易广播
 	isRsmcTx := true
 	// 提现人是这次htlc的转账发起者
-	if starterIsHtlcSender {
+	if withdrawerIsHtlcSender {
 		// 如果已经得到R，直接广播HED1a
-		if lastCommitmentTx.CurrState == dao.TxInfoState_Htlc_GetR {
+		if latestCommitmentTx.CurrState == dao.TxInfoState_Htlc_GetR {
 			isRsmcTx = false
 			hednx := &dao.HTLCExecutionDelivery{}
-			err = tx.Select(q.Eq("CommitmentTxId", lastCommitmentTx.Id), q.Eq("CurrState", dao.TxInfoState_CreateAndSign), q.Eq("Owner", closeOpStarter)).First(hednx)
+			err = tx.Select(q.Eq("CommitmentTxId", latestCommitmentTx.Id), q.Eq("CurrState", dao.TxInfoState_CreateAndSign), q.Eq("Owner", closeOpStarter)).First(hednx)
 			if err == nil {
 				if tool.CheckIsString(&hednx.TxHash) {
 					_, err := rpcClient.SendRawTransaction(hednx.TxHash)
@@ -1248,10 +1260,10 @@ func (service *htlcCloseTxManager) SignCloseChannel(msgData string, user bean.Us
 		}
 	} else { // 提现人是这次htlc的转账接收者
 		//如果还没有获取到R 执行HTD1b
-		if lastCommitmentTx.CurrState == dao.TxInfoState_Htlc_GetH {
+		if latestCommitmentTx.CurrState == dao.TxInfoState_Htlc_GetH {
 			isRsmcTx = false
 			htdnx := &dao.HTLCTimeoutDeliveryTxB{}
-			err = tx.Select(q.Eq("CommitmentTxId", lastCommitmentTx.Id), q.Eq("CurrState", dao.TxInfoState_CreateAndSign), q.Eq("Owner", closeOpStarter)).First(htdnx)
+			err = tx.Select(q.Eq("CommitmentTxId", latestCommitmentTx.Id), q.Eq("CurrState", dao.TxInfoState_CreateAndSign), q.Eq("Owner", closeOpStarter)).First(htdnx)
 			if err == nil {
 				if tool.CheckIsString(&htdnx.TxHash) {
 					_, err := rpcClient.SendRawTransaction(htdnx.TxHash)
@@ -1274,7 +1286,7 @@ func (service *htlcCloseTxManager) SignCloseChannel(msgData string, user bean.Us
 	//如果转账方在超时后还没有得到R,或者接收方得到R后想直接提现
 	if isRsmcTx {
 		htnx := &dao.HTLCTimeoutTxForAAndExecutionForB{}
-		err = tx.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("CommitmentTxId", lastCommitmentTx.Id), q.Eq("Owner", closeOpStarter), q.Eq("CurrState", dao.TxInfoState_CreateAndSign)).First(htnx)
+		err = tx.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("CommitmentTxId", latestCommitmentTx.Id), q.Eq("Owner", closeOpStarter), q.Eq("CurrState", dao.TxInfoState_CreateAndSign)).First(htnx)
 		if err == nil {
 			htrd := &dao.RevocableDeliveryTransaction{}
 			err = tx.Select(q.Eq("CommitmentTxId", htnx.Id), q.Eq("Owner", closeOpStarter), q.Eq("RDType", 1), q.Eq("CurrState", dao.TxInfoState_CreateAndSign)).First(htrd)
@@ -1308,21 +1320,21 @@ func (service *htlcCloseTxManager) SignCloseChannel(msgData string, user bean.Us
 	// endregion
 
 	// region update obj state to db
-	lastCommitmentTx.CurrState = dao.TxInfoState_SendHex
-	lastCommitmentTx.SendAt = time.Now()
-	err = tx.Update(lastCommitmentTx)
+	latestCommitmentTx.CurrState = dao.TxInfoState_SendHex
+	latestCommitmentTx.SendAt = time.Now()
+	err = tx.Update(latestCommitmentTx)
 	if err != nil {
 		return nil, "", err
 	}
 
-	lastRevocableDeliveryTx.CurrState = dao.TxInfoState_SendHex
-	lastRevocableDeliveryTx.SendAt = time.Now()
-	err = tx.Update(lastRevocableDeliveryTx)
+	latestRsmcRD.CurrState = dao.TxInfoState_SendHex
+	latestRsmcRD.SendAt = time.Now()
+	err = tx.Update(latestRsmcRD)
 	if err != nil {
 		return nil, "", err
 	}
 
-	err = addRDTxToWaitDB(tx, lastRevocableDeliveryTx)
+	err = addRDTxToWaitDB(tx, latestRsmcRD)
 	if err != nil {
 		return nil, "", err
 	}

@@ -9,7 +9,6 @@ import (
 	"golang.org/x/net/context"
 	"log"
 	"net/http"
-	"strconv"
 )
 
 type grpcService struct {
@@ -76,11 +75,10 @@ func (s *grpcService) GetBlockCount(c *gin.Context) {
 
 func (s *BtcRpcManager) GetBlockCount(ctx context.Context, in *pb.EmptyRequest) (reply *pb.BlockCountReply, err error) {
 	client := rpc.NewClient()
-	result, err := client.GetBlockCount()
+	count, err := client.GetBlockCount()
 	if err != nil {
 		log.Println(err)
 	}
-	count, err := strconv.Atoi(result)
 	return &pb.BlockCountReply{Count: int32(count)}, nil
 }
 

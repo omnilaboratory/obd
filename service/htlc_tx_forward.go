@@ -65,6 +65,11 @@ func (service *htlcForwardTxManager) AliceFindPathOfSingleHopAndSendToBob(msgDat
 		return nil, "", errors.New("no inter channel can use")
 	}
 
+	currBlockHeight, err := rpcClient.GetBlockCount()
+	if err != nil {
+		return nil, "", errors.New("fail to get blockHeight ,please try again later")
+	}
+
 	// operate db
 	channelCount := 2
 	pathInfo := &dao.HtlcSingleHopPathInfo{}
@@ -75,6 +80,7 @@ func (service *htlcForwardTxManager) AliceFindPathOfSingleHopAndSendToBob(msgDat
 	pathInfo.HAndRInfoRequestHash = rAndHInfo.RequestHash
 	pathInfo.H = rAndHInfo.H
 	pathInfo.CurrState = dao.SingleHopPathInfoState_Created
+	pathInfo.BeginBlockHeight = currBlockHeight
 	pathInfo.TotalStep = len(pathInfo.ChannelIdArr) * 2
 	pathInfo.CurrStep = 0
 	pathInfo.CreateBy = user.PeerId

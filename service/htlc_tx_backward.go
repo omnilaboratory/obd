@@ -100,6 +100,16 @@ func (service *htlcBackwardTxManager) SendRToPreviousNode(msgData string,
 		return nil, "", errors.New("The transfer R has completed.")
 	}
 
+	currBlockHeight, err := rpcClient.GetBlockCount()
+	if err != nil {
+		return nil, "", errors.New("fail to get blockHeight ,please try again later")
+	}
+	needDayCount := (pathInfo.CurrStep + 1) - int(pathInfo.TotalStep/2)
+	maxHeight := pathInfo.BeginBlockHeight + needDayCount*singleHopPerHopDuration
+	if currBlockHeight > maxHeight {
+		return nil, "", errors.New("timeout, can't transfer the R")
+	}
+
 	// If CurrStep = 2, that indicate the transfer H has completed.
 	currChannelIndex := pathInfo.TotalStep - pathInfo.CurrStep - 1
 	if currChannelIndex < -1 || currChannelIndex > len(pathInfo.ChannelIdArr) {

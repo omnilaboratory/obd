@@ -24,4 +24,9 @@ func TestGetBalanceByAddress(t *testing.T) {
 }
 
 func TestUpdateData(t *testing.T) {
+
+	result, err := rpcClient.GetBlockCount()
+	log.Println(result)
+	log.Println(err)
+
 }
