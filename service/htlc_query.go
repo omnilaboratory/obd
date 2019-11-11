@@ -45,17 +45,27 @@ func (service *htlcQueryManager) GetRFromCommitmentTx(msgData string, user bean.
 }
 
 //通过H获取路径信息
-func (service *htlcQueryManager) GetPathInfoByH(msgData string, user bean.User) (pathInfo *dao.HtlcSingleHopPathInfo, err error) {
+func (service *htlcQueryManager) GetPathInfoByH(msgData string, user bean.User) (pathInfo map[string]interface{}, err error) {
 	if tool.CheckIsString(&msgData) == false {
 		return nil, errors.New("error input data")
 	}
 
-	pathInfo = &dao.HtlcSingleHopPathInfo{}
-	err = db.Select(q.Eq("H", msgData)).First(pathInfo)
+	pathInfoFromDb := &dao.HtlcSingleHopPathInfo{}
+	err = db.Select(q.Eq("H", msgData)).First(pathInfoFromDb)
 	if err != nil {
 		log.Println(err)
 		return nil, err
 	}
+	pathInfo = make(map[string]interface{})
+	pathInfo["begin_block_height"] = pathInfoFromDb.BeginBlockHeight
+	pathInfo["channel_id_arr"] = pathInfoFromDb.ChannelIdArr
+	pathInfo["create_at"] = pathInfoFromDb.CreateAt
+	pathInfo["total_step"] = pathInfoFromDb.TotalStep
+	pathInfo["curr_step"] = pathInfoFromDb.CurrStep
+	pathInfo["curr_state"] = pathInfoFromDb.CurrState
+	pathInfo["h"] = pathInfoFromDb.H
+	pathInfo["h_and_r_info_request_hash"] = pathInfoFromDb.HAndRInfoRequestHash
+	pathInfo["create_by"] = pathInfoFromDb.CreateBy
 	return pathInfo, nil
 }
 
