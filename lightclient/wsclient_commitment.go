@@ -39,8 +39,11 @@ func (client *Client) commitmentTxModule(msg bean.RequestMessage) (enum.SendTarg
 		if err != nil {
 			data = err.Error()
 		} else {
-			log.Println(*count)
-			bytes, err := json.Marshal(nodes)
+			page := make(map[string]interface{})
+			page["count"] = len(nodes)
+			page["totalCount"] = count
+			page["body"] = nodes
+			bytes, err := json.Marshal(page)
 			if err != nil {
 				data = err.Error()
 			} else {
@@ -51,11 +54,11 @@ func (client *Client) commitmentTxModule(msg bean.RequestMessage) (enum.SendTarg
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_CommitmentTx_ItemById_N35102:
-		nodes, err := service.CommitmentTxService.GetItemById(int(gjson.Parse(msg.Data).Int()))
+		node, err := service.CommitmentTxService.GetItemById(int(gjson.Parse(msg.Data).Int()))
 		if err != nil {
 			data = err.Error()
 		} else {
-			bytes, err := json.Marshal(nodes)
+			bytes, err := json.Marshal(node)
 			if err != nil {
 				data = err.Error()
 			} else {
@@ -252,7 +255,11 @@ func (client *Client) commitmentTxSignModule(msg bean.RequestMessage) (enum.Send
 		if err != nil {
 			data = err.Error()
 		} else {
-			bytes, err := json.Marshal(nodes)
+			page := make(map[string]interface{})
+			page["count"] = len(nodes)
+			page["totalCount"] = count
+			page["body"] = nodes
+			bytes, err := json.Marshal(page)
 			if err != nil {
 				data = err.Error()
 			} else {
@@ -263,11 +270,11 @@ func (client *Client) commitmentTxSignModule(msg bean.RequestMessage) (enum.Send
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_CommitmentTxSigned_ItemById_N35202:
-		nodes, err := service.CommitmentTxSignedService.GetItemById(int(gjson.Parse(msg.Data).Int()))
+		node, err := service.CommitmentTxSignedService.GetItemById(int(gjson.Parse(msg.Data).Int()))
 		if err != nil {
 			data = err.Error()
 		} else {
-			bytes, err := json.Marshal(nodes)
+			bytes, err := json.Marshal(node)
 			if err != nil {
 				data = err.Error()
 			} else {

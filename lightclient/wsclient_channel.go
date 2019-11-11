@@ -73,7 +73,10 @@ func (client *Client) channelModule(msg bean.RequestMessage) (enum.SendTargetTyp
 		if err != nil {
 			data = err.Error()
 		} else {
-			bytes, err := json.Marshal(nodes)
+			page := make(map[string]interface{})
+			page["count"] = len(nodes)
+			page["body"] = nodes
+			bytes, err := json.Marshal(page)
 			if err != nil {
 				data = err.Error()
 			} else {
