@@ -205,7 +205,7 @@ func (service *commitmentTxManager) GetItemsByChannelId(jsonData string, user *b
 	}
 
 	nodes = []dao.CommitmentTransaction{}
-	tempCount, err := db.Select(q.Eq("ChannelId", chanId)).Count(&dao.CommitmentTransaction{})
+	tempCount, err := db.Select(q.Eq("ChannelId", chanId), q.Eq("Owner", user.PeerId)).Count(&dao.CommitmentTransaction{})
 	if err != nil {
 		return nil, nil, err
 	}
