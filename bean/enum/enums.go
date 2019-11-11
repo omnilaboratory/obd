@@ -41,6 +41,8 @@ const (
 	MsgType_ChannelOpen_Count_N3203           MsgType = -3203
 	MsgType_ChannelOpen_DelItemByTempId_N3204 MsgType = -3204
 	MsgType_ForceCloseChannel_N3205           MsgType = -3205
+	MsgType_GetChannelInfoByChanId_N3206      MsgType = -3206
+	MsgType_GetChannelInfoByChanId_N3207      MsgType = -3207
 
 	MsgType_ChannelAccept_N33 MsgType = -33
 

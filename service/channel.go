@@ -12,6 +12,7 @@ import (
 	"github.com/asdine/storm/q"
 	"github.com/tidwall/gjson"
 	"log"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -158,6 +159,29 @@ func (c *channelManager) AllItem(peerId string) (data []dao.ChannelInfo, err err
 	var infos []dao.ChannelInfo
 	err = db.Select(q.Or(q.Eq("PeerIdA", peerId), q.Eq("PeerIdB", peerId))).OrderBy("CreateAt").Reverse().Find(&infos)
 	return infos, err
+}
+func (c *channelManager) GetChannelInfoByChannelId(jsonData string, peerId string) (info *dao.ChannelInfo, err error) {
+	array := gjson.Parse(jsonData).Array()
+	if len(array) != 32 {
+		return nil, errors.New("wrong ChannelId")
+	}
+
+	var channelId bean.ChannelID
+	for index, value := range array {
+		channelId[index] = byte(value.Num)
+	}
+	info = &dao.ChannelInfo{}
+	err = db.Select(q.Eq("ChannelId", channelId), q.Or(q.Eq("PeerIdA", peerId), q.Eq("PeerIdB", peerId))).First(info)
+	return info, err
+}
+func (c *channelManager) GetChannelInfoById(jsonData string, peerId string) (info *dao.ChannelInfo, err error) {
+	id, err := strconv.Atoi(jsonData)
+	if err != nil {
+		return nil, err
+	}
+	info = &dao.ChannelInfo{}
+	err = db.Select(q.Eq("Id", id), q.Or(q.Eq("PeerIdA", peerId), q.Eq("PeerIdB", peerId))).First(info)
+	return info, err
 }
 
 // TotalCount
