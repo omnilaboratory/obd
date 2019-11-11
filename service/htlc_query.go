@@ -64,6 +64,7 @@ func (service *htlcQueryManager) GetPathInfoByH(msgData string, user bean.User) 
 	pathInfo["curr_step"] = pathInfoFromDb.CurrStep
 	pathInfo["curr_state"] = pathInfoFromDb.CurrState
 	pathInfo["h"] = pathInfoFromDb.H
+	pathInfo["id"] = pathInfoFromDb.Id
 	pathInfo["h_and_r_info_request_hash"] = pathInfoFromDb.HAndRInfoRequestHash
 	pathInfo["create_by"] = pathInfoFromDb.CreateBy
 	return pathInfo, nil
