@@ -1319,7 +1319,7 @@ func (service *htlcCloseTxManager) SignCloseChannel(msgData string, user bean.Us
 
 							htrd.CurrState = dao.TxInfoState_SendHex
 							htrd.SendAt = time.Now()
-							_ = tx.Update(htnx)
+							_ = tx.Update(htrd)
 						}
 					}
 				}
