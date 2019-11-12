@@ -75,12 +75,11 @@ func (service *htlcCloseTxManager) RequestCloseHtlc(msgData string, user bean.Us
 	}
 	// endregion
 
-	commitmentTxInfo, err := getHtlcLatestCommitmentTxOfGetR(reqData.ChannelId, user.PeerId)
+	commitmentTxInfo, err := getHtlcLatestCommitmentTx(reqData.ChannelId, user.PeerId)
 	if err != nil {
 		log.Println(err)
 		return nil, "", err
 	}
-	log.Println(commitmentTxInfo)
 
 	channelInfo := dao.ChannelInfo{}
 	err = db.Select(q.Eq("ChannelId", commitmentTxInfo.ChannelId), q.Eq("CurrState", dao.ChannelState_HtlcBegin)).First(&channelInfo)
@@ -188,14 +187,10 @@ func (service *htlcCloseTxManager) SignCloseHtlc(msgData string, user bean.User)
 		return nil, "", err
 	}
 
-	commitmentTxInfo, err := getHtlcLatestCommitmentTxOfGetR(dataFromCloseOpStarter.ChannelId, user.PeerId)
+	commitmentTxInfo, err := getHtlcLatestCommitmentTx(dataFromCloseOpStarter.ChannelId, user.PeerId)
 	if err != nil {
 		log.Println(err)
 		return nil, "", err
-	}
-	log.Println(commitmentTxInfo)
-	if commitmentTxInfo.TxType != dao.CommitmentTransactionType_Htlc {
-		return nil, "", errors.New("error tx type")
 	}
 
 	channelInfo := dao.ChannelInfo{}
@@ -241,6 +236,7 @@ func (service *htlcCloseTxManager) SignCloseHtlc(msgData string, user bean.User)
 	defer dbTx.Rollback()
 
 	//  region create BR  BR2a HBR1a HTBR1a ; BR2b HBR1b HEBR1b
+	/// HBR1a的存在意义是，在规定时间内完成了交易，创建了后续的C3x，ht1a是不会被广播的，那么如果alice这个时候反悔了，就用这个Br去惩罚她
 	lastCommitmentTxInfoA, err := createAliceSideBRTxs(dbTx, channelInfo, isAliceExecutionCloseOp, *reqData, *fundingTransaction, user)
 	if err != nil {
 		return nil, "", err
@@ -295,12 +291,22 @@ func createAliceRsmcTxsForCloseHtlc(tx storm.Node, channelInfo dao.ChannelInfo, 
 	// 这里需要确认一个事情：在这个通道里面，这次的htlc到底是谁是转出方
 	// rmsc的资产分配方案
 	var outputBean = commitmentOutputBean{}
-	if lastCommitmentATx.HtlcSender == owner {
-		outputBean.AmountToRsmc = lastCommitmentATx.AmountToRSMC
-		outputBean.AmountToOther, _ = decimal.NewFromFloat(lastCommitmentATx.AmountToOther).Add(decimal.NewFromFloat(lastCommitmentATx.AmountToHtlc)).Float64()
+	if lastCommitmentATx.CurrState == dao.TxInfoState_Htlc_GetH { //转账失败 退钱回去
+		if lastCommitmentATx.HtlcSender == owner {
+			outputBean.AmountToRsmc, _ = decimal.NewFromFloat(lastCommitmentATx.AmountToRSMC).Add(decimal.NewFromFloat(lastCommitmentATx.AmountToHtlc)).Float64()
+			outputBean.AmountToOther = lastCommitmentATx.AmountToOther
+		} else {
+			outputBean.AmountToRsmc = lastCommitmentATx.AmountToRSMC
+			outputBean.AmountToOther, _ = decimal.NewFromFloat(lastCommitmentATx.AmountToOther).Add(decimal.NewFromFloat(lastCommitmentATx.AmountToHtlc)).Float64()
+		}
 	} else {
-		outputBean.AmountToRsmc, _ = decimal.NewFromFloat(lastCommitmentATx.AmountToRSMC).Add(decimal.NewFromFloat(lastCommitmentATx.AmountToHtlc)).Float64()
-		outputBean.AmountToOther = lastCommitmentATx.AmountToOther
+		if lastCommitmentATx.HtlcSender == owner {
+			outputBean.AmountToRsmc = lastCommitmentATx.AmountToRSMC
+			outputBean.AmountToOther, _ = decimal.NewFromFloat(lastCommitmentATx.AmountToOther).Add(decimal.NewFromFloat(lastCommitmentATx.AmountToHtlc)).Float64()
+		} else {
+			outputBean.AmountToRsmc, _ = decimal.NewFromFloat(lastCommitmentATx.AmountToRSMC).Add(decimal.NewFromFloat(lastCommitmentATx.AmountToHtlc)).Float64()
+			outputBean.AmountToOther = lastCommitmentATx.AmountToOther
+		}
 	}
 	outputBean.OppositeSideChannelPubKey = channelInfo.PubKeyB
 	outputBean.OppositeSideChannelAddress = channelInfo.AddressB
@@ -439,12 +445,22 @@ func createBobRsmcTxsForCloseHtlc(tx storm.Node, channelInfo dao.ChannelInfo, is
 	// 这里需要确认一个事情：在这个通道里面，这次的htlc到底是谁是转出方
 	// rmsc的资产分配方案
 	var outputBean = commitmentOutputBean{}
-	if lastCommitmentBTx.HtlcSender == owner {
-		outputBean.AmountToRsmc = lastCommitmentBTx.AmountToRSMC
-		outputBean.AmountToOther, _ = decimal.NewFromFloat(lastCommitmentBTx.AmountToOther).Sub(decimal.NewFromFloat(lastCommitmentBTx.AmountToHtlc)).Float64()
-	} else {
-		outputBean.AmountToRsmc, _ = decimal.NewFromFloat(lastCommitmentBTx.AmountToRSMC).Add(decimal.NewFromFloat(lastCommitmentBTx.AmountToHtlc)).Float64()
-		outputBean.AmountToOther = lastCommitmentBTx.AmountToOther
+	if lastCommitmentBTx.CurrState == dao.TxInfoState_Htlc_GetH { //转账失败
+		if lastCommitmentBTx.HtlcSender == owner {
+			outputBean.AmountToRsmc, _ = decimal.NewFromFloat(lastCommitmentBTx.AmountToRSMC).Add(decimal.NewFromFloat(lastCommitmentBTx.AmountToHtlc)).Float64()
+			outputBean.AmountToOther = lastCommitmentBTx.AmountToOther
+		} else { // 是收款方
+			outputBean.AmountToRsmc = lastCommitmentBTx.AmountToRSMC
+			outputBean.AmountToOther, _ = decimal.NewFromFloat(lastCommitmentBTx.AmountToOther).Add(decimal.NewFromFloat(lastCommitmentBTx.AmountToHtlc)).Float64()
+		}
+	} else { //转账成功
+		if lastCommitmentBTx.HtlcSender == owner { // 我是转账方
+			outputBean.AmountToRsmc = lastCommitmentBTx.AmountToRSMC
+			outputBean.AmountToOther, _ = decimal.NewFromFloat(lastCommitmentBTx.AmountToOther).Add(decimal.NewFromFloat(lastCommitmentBTx.AmountToHtlc)).Float64()
+		} else { // 我是收款方
+			outputBean.AmountToRsmc, _ = decimal.NewFromFloat(lastCommitmentBTx.AmountToRSMC).Add(decimal.NewFromFloat(lastCommitmentBTx.AmountToHtlc)).Float64()
+			outputBean.AmountToOther = lastCommitmentBTx.AmountToOther
+		}
 	}
 	outputBean.OppositeSideChannelPubKey = channelInfo.PubKeyA
 	outputBean.OppositeSideChannelAddress = channelInfo.AddressA
@@ -1160,14 +1176,7 @@ func (service *htlcCloseTxManager) SignCloseChannel(msgData string, user bean.Us
 		closeOpStarter = channelInfo.PeerIdA
 	}
 
-	latestCommitmentTx := &dao.CommitmentTransaction{}
-	err = db.Select(
-		q.Eq("ChannelId", channelInfo.ChannelId),
-		q.Eq("TxType", dao.CommitmentTransactionType_Htlc),
-		q.Eq("Owner", closeOpStarter)).
-		OrderBy("CreateAt").
-		Reverse().
-		First(latestCommitmentTx)
+	latestCommitmentTx, err := getHtlcLatestCommitmentTx(channelInfo.ChannelId, user.PeerId)
 	if err != nil {
 		log.Println(err)
 		return nil, "", err
