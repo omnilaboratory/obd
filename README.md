@@ -470,7 +470,7 @@ Three client login.
 
 **Alice login:**
 
-```
+```json
 {
 	"type":1,
 	"data":{
@@ -481,7 +481,7 @@ Three client login.
 
 **Bob login:**
 
-```
+```json
 {
 	"type":1,
 	"data":{
@@ -492,7 +492,7 @@ Three client login.
 
 **Carol login:**
 
-```
+```json
 {
 	"type":1,
 	"data":{
@@ -507,7 +507,7 @@ Alice sends request to her OBD instance, her OBD helps her complete the message,
 
 **Alice send the request:**
 
-```
+```json
 {
 	"type":-32,
     "data":{
@@ -519,13 +519,13 @@ Alice sends request to her OBD instance, her OBD helps her complete the message,
 
 **OBD Responses:**
 
-```
+```json
 [68,9,34,176,221,163,195,216,120,239,152,94,138,101,252,83,99,125,195,221,146,3,0,128,166,224,203,99,101,48,20,164]
 ```
 
 **Bob replies:**
 
-```
+```json
 {
 	"type":-33,
 	"data":{
@@ -667,7 +667,7 @@ Need three times deposit, every time can be 0.0001 btc for miner fee.
 
 **Alice send 1009:**
 
-```
+```json
 {
     "type":1009,
     "data":{
