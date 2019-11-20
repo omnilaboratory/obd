@@ -409,10 +409,8 @@ HTLC(Hashed Timelock Contract) is the second foundamental module in lightning ne
 
 A formal HTL contract describes the following procedure:
 
-<aside class="notice">
 If Bob can tell Alice the secret R, which is the pre-image of <code>Hash(R)</code> that some one else (Carol) in the chain shared with Bob 3 days ago in exchange of 10 USDT in the channel <code>[Bob Carol]</code>, then Bob will get the 10 USDT fund inside the channel <code>[Alice Bob]</code>, otherwise Alice gets her 10 USDT back.
-</aside>
- 
+
 Readers shall find the latest specification in [OmniBOLT 04: HTLC and Payment Routing](https://github.com/LightningOnOmnilayer/Omni-BOLT-spec/blob/master/OmniBOLT-04-HTLC-and-Payment-Routing.md)
 
 ### Prepare Data for Client
@@ -447,7 +445,22 @@ privkey: cMxR8h9z5oKrdyuXVR9uzBbyyaJz1karxH1FW5xezhKzxQc7sCJV
 
 For testing, we generate two multisig addresses.
 
-**Channel [Aice Bob]:**
+*A 2-2 Multisig address is used to save the assets of both participant,* 
+*similar to a safe box, it takes 2 people's keys to open it.*
+
+*A 2-2 Multisig address is created by 2 pubkeys of bitcoin addresses. Example:*
+
+```json
+./omnicore-cli createmultisig 2 '["026337bd8737618b61816c94fb2786d5a386d56cdb7ab68ceb4eafe6fb28452525","0286877b505ddda65fb60b8f4f5d584a5ad41158c2eaedb93fca881efadee315be"]'
+
+Response：
+{
+  "address": "2MvL76hcC7zf41Z5NLRNxAFxtk28RMYstQk",
+  "redeemScript": "5221026337bd8737618b61816c94fb2786d5a386d56cdb7ab68ceb4eafe6fb28452525210286877b505ddda65fb60b8f4f5d584a5ad41158c2eaedb93fca881efadee315be52ae"
+}
+```
+
+**Channel [Alice Bob]:**
 
 ```
 channel_address：2NFhMhDJT9TsnBCG6L2amH3eDXxgwW6EJh7
@@ -464,7 +477,9 @@ channel:
 [223,177,75,185,186,22,47,155,145,238,242,1,158,247,192,1,48,183,197,192,190,72,49,233,62,65,156,103,111,172,109,51]
 ```
 
-### Login for HTLC
+<br/>
+
+### Client login for HTLC testing
 
 Three client login.
 
@@ -501,6 +516,8 @@ Three client login.
 }
 ```
 
+<br/>
+
 ### Open Channel between Alice and Bob（A2B）
 
 Alice sends request to her OBD instance, her OBD helps her complete the message, and routes her request to Bob's OBD for creating a channel between them. 
@@ -518,6 +535,8 @@ Alice sends request to her OBD instance, her OBD helps her complete the message,
 ```
 
 **OBD Responses:**
+
+Create a temporary channel id.
 
 ```json
 [68,9,34,176,221,163,195,216,120,239,152,94,138,101,252,83,99,125,195,221,146,3,0,128,166,224,203,99,101,48,20,164]
@@ -583,7 +602,8 @@ Alice sends request to her OBD instance, her OBD helps her complete the message,
 
 ### Open Channel between Bob and Carol（B2C）
 
-Bob sends request to his OBD instance, his OBD helps he complete the message, and routes his request to Carol's OBD for creating a channel between them. 
+Bob sends request to his OBD instance, his OBD helps he complete the message, 
+and routes his request to Carol's OBD for creating a channel between them. 
 
 **Bob send the request:**
 
@@ -598,6 +618,8 @@ Bob sends request to his OBD instance, his OBD helps he complete the message, an
 ```
 
 **OBD Responses:**
+
+Create a temporary channel id.
 
 ```json
 [26,200,121,127,242,0,84,191,162,35,118,90,99,71,229,123,238,190,22,226,54,211,38,113,229,165,241,132,153,48,99,86]
@@ -661,9 +683,16 @@ Bob sends request to his OBD instance, his OBD helps he complete the message, an
 }
 ```
 
+<br/>
+
 ### Alice deposit BTC to channel A2B for miner fee
 
 Need three times deposit, every time can be 0.0001 btc for miner fee.
+
+*Because currently Omni Core does not support one-to-many transfer, when creating*
+*Cxa or Cxb commitment transactions, there are three outputs: 1) directly address  2)*
+*RSMC address  3) HTLC address. So, we need to construct three raw omni transactions.*
+*This is why we need three times deposit BTC to channel for miner fee.*
 
 **Alice send 1009:**
 
@@ -758,6 +787,9 @@ Need three times deposit, every time can be 0.0001 btc for miner fee.
 
 Deposit USDT for transfer to Bob. This USDT is asset Alice would like to transfer to Carol.
 
+*For testing purpose, we issued a testing asset on Omni Layer.*
+*The asset name is OST-P1-Test, property id is 121.*
+
 **Alice send:**
 
 ```json
@@ -787,7 +819,10 @@ Deposit USDT for transfer to Bob. This USDT is asset Alice would like to transfe
 }
 ```
 
-**Alice2's temp address data:**
+*At this step, in order to create C1a commitment transaction, we need a Alice1's data*
+*for creating a multisig address by Alice1's pubkey and Bob's pubkey.*
+
+**Alice1's temp address data:**
 
 ```shell
 address:  mq8t9iEHoYzw4EzByo9p1uCVBWDnFU4JwW
@@ -879,6 +914,8 @@ pubkey:   0380874d124f259b31ee8cf3256d784f0269ae9cf3b577e5c271c452572f8b28e5
 }
 ```
 
+<br/>
+
 ### Bob deposit BTC to channel B2C for miner fee
 
 Same workflow above.
@@ -889,138 +926,7 @@ Need three times deposit, every time can be 0.0001 btc for miner fee.
 Same workflow above.
 Deposit USDT for transfer to Carol. This USDT is asset Alice would like to transfer to Carol.
 
-### Create RSMC Commitment Transaction between Alice and Bob
-
-Alice transfer assets to Bob.
-
-**Prepare Data:**
-
-```shell
-last_temp_address：     mq8t9iEHoYzw4EzByo9p1uCVBWDnFU4JwW
-last_temp_private_key： cVBFoaRumDJYntRRV244KUj7kyrGauGhT6bZcf15xfhGCh9mAbVp
-
-alice2 data
-curr_temp_address：     moKypvXXnui8obVqFNcJkLGL9w483AqUvQ
-curr_temp_private_key： cVsKRbL4ijWULmbU78nghKYL79GLYo7q9ccgmSR5c6zJWKfEEdJN
-curr_temp_pub_key:      028cda5a6cadd592f8b8728b7842d7f5045609895eb27bc87ef8bbde3bdc6b96f3
-```
-
-**Alice launch the request:**
-
-```json
-{
-	"type":-351,
-	"data":{
-        "channel_id":[174,36,154,103,145,76,58,237,32,61,201,81,17,156,135,216,66,28,83,203,251,152,138,102,158,113,131,32,241,229,43,75],
-        "amount":24,
-        "curr_temp_address_pub_key":"028cda5a6cadd592f8b8728b7842d7f5045609895eb27bc87ef8bbde3bdc6b96f3",
-        "curr_temp_address_private_key":"cVsKRbL4ijWULmbU78nghKYL79GLYo7q9ccgmSR5c6zJWKfEEdJN",
-        "channel_address_private_key":"cToieuvo3JjkEUKa3tjd6J98RXKDTo1d2hUSVgKpZ1KwBvGhQFL8",
-        "last_temp_address_private_key":"cVBFoaRumDJYntRRV244KUj7kyrGauGhT6bZcf15xfhGCh9mAbVp"
-    }
-}
-```
-
-**OBD Responses:**
-
-```json
-{
-    "type": -351, 
-    "status": true, 
-    "from": "alice", 
-    "to": "alice", 
-    "result": {
-        "amount": 24, 
-        "channel_address_private_key": "", 
-        "channel_id": [174,36,154,103,145,76,58,237,32,61,201,81,17,156,135,216,66,28,83,203,251,152,138,102,158,113,131,32,241,229,43,75],
-        "curr_temp_address_private_key": "", 
-        "curr_temp_address_pub_key": "028cda5a6cadd592f8b8728b7842d7f5045609895eb27bc87ef8bbde3bdc6b96f3", 
-        "last_temp_address_private_key": "", 
-        "property_id": 0, 
-        "request_commitment_hash": "f290579190da44c3c9950c3322710ad7f8ea9287d9a6ebebb8284874bfcae50d"
-    }
-}
-```
-
-**Bob2's temp address data:**
-
-```shell
-last_temp_pub_key： 
-
-Bob2
-curr_temp_address：     mnVf4N8yur9bowFokfz8Ypn8C2kqNmp9Hg
-curr_temp_private_key： cURFDvYsF49hazcGK3i4344H1r3pSjHwdqL2yQ85qxdzpub3rozx
-curr_temp_pub_key：     02ef5cc2ab1dd7a840834991fcdf0554e59c550a7d5ff6934eff09c53099e5273b
-```
-
-**Bob replies:**
-
-```json
-{
-	"type":-352,
-	"data":{
-		"channel_id":[174,36,154,103,145,76,58,237,32,61,201,81,17,156,135,216,66,28,83,203,251,152,138,102,158,113,131,32,241,229,43,75],
-		"curr_temp_address_pub_key":"02ef5cc2ab1dd7a840834991fcdf0554e59c550a7d5ff6934eff09c53099e5273b",
-		"curr_temp_address_private_key":"cURFDvYsF49hazcGK3i4344H1r3pSjHwdqL2yQ85qxdzpub3rozx",
-		"last_temp_private_key":"",
-		"request_commitment_hash":"f290579190da44c3c9950c3322710ad7f8ea9287d9a6ebebb8284874bfcae50d",
-		"channel_address_private_key":"cTr7SHQ7FR6Ej8ZU8vDpbt3y9GuF3hnBqn81Tv9Tdi5TeakqKavt",
-		"approval":true
-	}
-}
-```
-
-**OBD Responses:**
-
-```json
-{
-    "type": -352, 
-    "status": true, 
-    "from": "bob", 
-    "to": "bob", 
-    "result": {
-        "amount_to_htlc": 0, 
-        "amount_to_other": 26, 
-        "amount_to_rsmc": 24, 
-        "channel_id": [174,36,154,103,145,76,58,237,32,61,201,81,17,156,135,216,66,28,83,203,251,152,138,102,158,113,131,32,241,229,43,75],
-        "create_at": "2019-11-04T14:37:47.5732+08:00", 
-        "create_by": "bob", 
-        "curr_hash": "1c7b75fd5db490b818113a2c67532b017dfa66c227a5c44b85b04afafb67ba71", 
-        "curr_state": 10, 
-        "htlc_h": "", 
-        "htlc_multi_address": "", 
-        "htlc_multi_address_script_pub_key": "", 
-        "htlc_redeem_script": "", 
-        "htlc_sender": "", 
-        "htlc_temp_address_pub_key": "", 
-        "htlc_tx_hash": "", 
-        "htlc_txid": "", 
-        "id": 4, 
-        "input_amount": 50, 
-        "input_txid": "492be5f12083719e668a98fbcb531c42d8879c1151c93d20ed3a4c91679a24ae", 
-        "input_vout": 2, 
-        "last_commitment_tx_id": 0, 
-        "last_edit_time": "2019-11-04T14:37:47.5732+08:00", 
-        "last_hash": "", 
-        "owner": "bob", 
-        "peer_id_a": "alice", 
-        "peer_id_b": "bob", 
-        "property_id": 121, 
-        "rsmc_multi_address": "2NCqpcN5cZXztLxnuojGDdfASVaiVUgNHms", 
-        "rsmc_multi_address_script_pub_key": "a914d6f56f035723dab75cb42168a78c3950a51463f787", 
-        "rsmc_redeem_script": "522102ef5cc2ab1dd7a840834991fcdf0554e59c550a7d5ff6934eff09c53099e5273b21029cf4b150da0065d5c08bf088e8a5367d35ff72e4e79b39efb401530d19fa3f3c52ae", 
-        "rsmc_temp_address_pub_key": "02ef5cc2ab1dd7a840834991fcdf0554e59c550a7d5ff6934eff09c53099e5273b", 
-        "rsmc_tx_hash": "0200000001d4b6970f7c001c294e645f0dcf15de39906307270313aca51d4431d77e1957c600000000d900473044022029b293c9a41afa157e40a8dc01cf1c37b36f0370e5f352d785637c3517f6987602206c65e2997645a52546aed3df51e3b3dc31b4f754dabf87d7e6575dabbc9ffb350147304402207f081c590e044cfd62eb61f0babff619451f2e2b97b5e84126a7e4ce606773730220032a6eb2e4a7f109886aa2253e80bfc9f44e4c55d6906ee1192323dd0c95785901475221029cf4b150da0065d5c08bf088e8a5367d35ff72e4e79b39efb401530d19fa3f3c2103da1b78a5ab4a5e4e13515e5104dbfc1d2d349d89039c15eda9c0118b7edaa91f52aeffffffff033c1900000000000017a914d6f56f035723dab75cb42168a78c3950a51463f7870000000000000000166a146f6d6e690000000000000079000000008f0d18001c0200000000000017a914d6f56f035723dab75cb42168a78c3950a51463f78700000000", 
-        "rsmc_txid": "79b9da6165f26514c311e9deb166c267a152d3b2739d1b6d20570524b470c530", 
-        "send_at": "0001-01-01T00:00:00Z", 
-        "sign_at": "2019-11-04T14:37:49.5936687+08:00", 
-        "to_other_tx_hash": "0200000003ae249a67914c3aed203dc951119c87d8421c53cbfb988a669e718320f1e52b4902000000d900473044022044bce17ff3e559eb261e58cfd74c75dcce484bca1e036383eccda0af585a867a022076f7c6ae5d115cb59e7346b700d4d5a3dbd0a1ff7b0ad25db0772300334061720147304402206135de8ec7b2d61a93425d07d13e811592d392ca5afd4bef7595f7edae7d7e85022025e2970a19bf19a6ade5e9a5a73d3a669648bbff17c6edf95795613d3229f72601475221029cf4b150da0065d5c08bf088e8a5367d35ff72e4e79b39efb401530d19fa3f3c2103da1b78a5ab4a5e4e13515e5104dbfc1d2d349d89039c15eda9c0118b7edaa91f52aeffffffffd4fc311d028c0063e52e1b881318e56d7fdd3dc8813276631966f19965ab8ab100000000d90047304402201a7a29be4f434fa296ea25324d032eba37e468baf80af5acb7692e41c75f47f602203992ad31a27388025783752daa4b515ac4c9da70f0d2d11212c529b3d90519740147304402206abe4622ed65af415694e932050f671e1f9c11dcaa31afbc19d4bf85a2163baa022035b9a2272cd050b9a9dfa12f96cfec21c5c31b9fadf647ce6802fb519d2220dc01475221029cf4b150da0065d5c08bf088e8a5367d35ff72e4e79b39efb401530d19fa3f3c2103da1b78a5ab4a5e4e13515e5104dbfc1d2d349d89039c15eda9c0118b7edaa91f52aeffffffffe47f333e4a377c9877ee8aedccca476dd5a6bf7aae2116923c937ebfbd173df100000000d900473044022017961e760fb5e9542d27453ab1e8c511189e49053290f5f1e95c8a1d33cdc67d022071e040e3d62c26b0c90b6e85e9d2c89f60ee90b51f5c935ace323cdafe58ab9601473044022017899dd5eab611e951beb18e2b5d5fc6403349c3f84db6a06bce8fae0e367c0e02207c673ff269dd43eb4aabcc8ad3b9b9a5aa67faaedccf9489dc121e4f51a5a0ee01475221029cf4b150da0065d5c08bf088e8a5367d35ff72e4e79b39efb401530d19fa3f3c2103da1b78a5ab4a5e4e13515e5104dbfc1d2d349d89039c15eda9c0118b7edaa91f52aeffffffff0362420000000000001976a91499ee096d15bc8ae4ac8856a918ff2c4572877fa488ac0000000000000000166a146f6d6e690000000000000079000000009af8da0022020000000000001976a91499ee096d15bc8ae4ac8856a918ff2c4572877fa488ac00000000", 
-        "to_other_txid": "6d7f75233f9ba125ee0c7bba31e910fd546703f89c2693298d4becf25096683c", 
-        "tx_type": 0
-    }
-}
-```
-
+<br/>
 
 ### Launch a HTLC
 
