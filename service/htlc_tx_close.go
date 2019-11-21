@@ -1302,7 +1302,7 @@ func (service *htlcCloseTxManager) SignCloseChannel(msgData string, user bean.Us
 			if err == nil {
 				if tool.CheckIsString(&htnx.RSMCTxHash) {
 					_, err := rpcClient.SendRawTransaction(htnx.RSMCTxHash)
-					if err == nil {
+					if err == nil { //如果已经超时
 						if tool.CheckIsString(&htrd.TxHash) {
 							_, err = rpcClient.SendRawTransaction(htrd.TxHash)
 							if err != nil {
@@ -1316,11 +1316,19 @@ func (service *htlcCloseTxManager) SignCloseChannel(msgData string, user bean.Us
 							htnx.CurrState = dao.TxInfoState_SendHex
 							htnx.SendAt = time.Now()
 							_ = tx.Update(htnx)
-
-							htrd.CurrState = dao.TxInfoState_SendHex
-							htrd.SendAt = time.Now()
-							_ = tx.Update(htrd)
 						}
+					} else {
+						if err != nil { // 如果是超时内的正常提现
+							log.Println(err)
+							if htnx.Timeout == 0 {
+								return nil, "", err
+							}
+							msg := err.Error()
+							if strings.Contains(msg, "non-BIP68-final (code 64)") == false {
+								return nil, "", err
+							}
+						}
+						_ = addHT1aTxToWaitDB(tx, htnx, htrd)
 					}
 				}
 			}
@@ -1366,6 +1374,69 @@ func (service *htlcCloseTxManager) SignCloseChannel(msgData string, user bean.Us
 	return nil, closeOpStarter, nil
 }
 
+func addHT1aTxToWaitDB(tx storm.Node, htnx *dao.HTLCTimeoutTxForAAndExecutionForB, htrd *dao.RevocableDeliveryTransaction) error {
+	node := &dao.RDTxWaitingSend{}
+	count, err := tx.Select(q.Eq("TransactionHex", htnx.RSMCTxHash)).Count(node)
+	if err == nil {
+		return err
+	}
+	if count > 0 {
+		return errors.New("always save")
+	}
+	node.TransactionHex = htnx.RSMCTxHash
+	node.Type = 1
+	node.IsEnable = true
+	node.CreateAt = time.Now()
+	node.HtnxIdAndHtnxRdId = make([]int, 2)
+	node.HtnxIdAndHtnxRdId[0] = htnx.Id
+	node.HtnxIdAndHtnxRdId[1] = htrd.Id
+	err = tx.Save(node)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func addHTRD1aTxToWaitDB(htnxIdAndHtnxRdId []int) error {
+	htnxId := htnxIdAndHtnxRdId[0]
+	htrdId := htnxIdAndHtnxRdId[1]
+	htnx := dao.HTLCTimeoutTxForAAndExecutionForB{}
+	err := db.One("Id", htnxId, &htnx)
+	if err != nil {
+		return err
+	}
+
+	htrd := dao.RevocableDeliveryTransaction{}
+	err = db.One("Id", htrdId, &htrd)
+	if err != nil {
+		return err
+	}
+
+	node := &dao.RDTxWaitingSend{}
+	count, err := db.Select(q.Eq("TransactionHex", htrd.TxHash)).Count(node)
+	if err == nil {
+		return err
+	}
+	if count > 0 {
+		return errors.New("always save")
+	}
+
+	node.TransactionHex = htrd.TxHash
+	node.Type = 0
+	node.IsEnable = true
+	node.CreateAt = time.Now()
+	err = db.Save(node)
+	if err != nil {
+		return err
+	}
+
+	htnx.CurrState = dao.TxInfoState_SendHex
+	htnx.SendAt = time.Now()
+	_ = db.Update(htnx)
+
+	return nil
+}
+
 //htlc timeout Delivery 1b
 func addHTDnxTxToWaitDB(tx storm.Node, txInfo *dao.HTLCTimeoutDeliveryTxB) (err error) {
 	node := &dao.RDTxWaitingSend{}
@@ -1377,6 +1448,7 @@ func addHTDnxTxToWaitDB(tx storm.Node, txInfo *dao.HTLCTimeoutDeliveryTxB) (err 
 		return errors.New("always save")
 	}
 	node.TransactionHex = txInfo.TxHash
+	node.Type = 2
 	node.IsEnable = true
 	node.CreateAt = time.Now()
 	err = tx.Save(node)

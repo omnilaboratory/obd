@@ -43,6 +43,9 @@ func sendRdTx() {
 		if tool.CheckIsString(&node.TransactionHex) {
 			_, err := rpcClient.SendRawTransaction(node.TransactionHex)
 			if err == nil {
+				if node.Type == 1 {
+					addHTRD1aTxToWaitDB(node.HtnxIdAndHtnxRdId)
+				}
 				_ = db.UpdateField(&node, "IsEnable", false)
 				_ = db.UpdateField(&node, "FinishAt", time.Now())
 			}
