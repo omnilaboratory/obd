@@ -85,6 +85,33 @@ pass=your password
 ```
 
 ## Step 3: Compile and Run OmniBOLT Daemon
+
+Before compile .go file, you should be get all related packages by run `go get` command in terminal.
+Example: `go get google.golang.org/grpc`
+
+This is a full list for need to get packages.
+
+```
+google.golang.org/grpc
+github.com/gin-gonic/gin
+github.com/gorilla/websocket
+github.com/satori/go.uuid
+github.com/tidwall/gjson
+google.golang.org/grpc
+golang.org/x/net/context
+github.com/shopspring/decimal
+github.com/asdine/storm
+github.com/asdine/storm/q
+github.com/btcsuite/btcd/chaincfg
+github.com/btcsuite/btcutil
+golang.org/x/crypto/ripemd160
+github.com/btcsuite/btcutil/base58
+golang.org/x/crypto/salsa20
+github.com/go-ini/ini
+```
+
+<br/>
+
 If you fail to install gRPC by `go get google.golang.org/grpc` and other gRPC related packages used in this project,try this:
 ```
 $ mkdir -p $GOPATH/src/google.golang.org/
@@ -413,6 +440,8 @@ If Bob can tell Alice the secret R, which is the pre-image of <code>Hash(R)</cod
 
 Readers shall find the latest specification in [OmniBOLT 04: HTLC and Payment Routing](https://github.com/LightningOnOmnilayer/Omni-BOLT-spec/blob/master/OmniBOLT-04-HTLC-and-Payment-Routing.md)
 
+<br/>
+
 ### Prepare Data for Client
 
 Payments via HTLC involve many clients and channels among them, in order for demonstration the complete process, we simply setup three clients: Alice, Bob and Carol, and assume only Bob established channel with other clients. OBD has its backend routing algorithm to find the right path for a payment, but it is not exposed to developers.
@@ -440,6 +469,8 @@ adderss: mgoiBkppoJMc8cC8XRYNvFEjath5DrKqj8
 pubkey:  034094927aa69a96d82d7e67146cf9b8dcd775919d1373d5319454e6004c0cdf7a
 privkey: cMxR8h9z5oKrdyuXVR9uzBbyyaJz1karxH1FW5xezhKzxQc7sCJV
 ```
+
+<br/>
 
 ### Prepare Data for Channel Address
 
@@ -600,6 +631,8 @@ Create a temporary channel id.
 }
 ```
 
+<br/>
+
 ### Open Channel between Bob and Carol（B2C）
 
 Bob sends request to his OBD instance, his OBD helps he complete the message, 
@@ -690,11 +723,11 @@ Create a temporary channel id.
 Need three times deposit, every time can be 0.0001 btc for miner fee.
 
 *Because currently Omni Core does not support one-to-many transfer, when creating*
-*Cxa or Cxb commitment transactions, there are three outputs: 1) directly address  2)*
-*RSMC address  3) HTLC address. So, we need to construct three raw omni transactions.*
+*Cxa or Cxb commitment transactions, there are three outputs: 1) directly address*
+*2) RSMC address  3) HTLC address. So, we need to construct three raw omni transactions.*
 *This is why we need three times deposit BTC to channel for miner fee.*
 
-**Alice send 1009:**
+**Alice send BTC to channel by 1009:**
 
 ```json
 {
@@ -783,6 +816,8 @@ Need three times deposit, every time can be 0.0001 btc for miner fee.
 }
 ```
 
+<br/>
+
 ### Alice deposit USDT to channel A2B for transferring
 
 Deposit USDT for transfer to Bob. This USDT is asset Alice would like to transfer to Carol.
@@ -818,6 +853,8 @@ Deposit USDT for transfer to Bob. This USDT is asset Alice would like to transfe
     }
 }
 ```
+
+<br/>
 
 *At this step, in order to create C1a commitment transaction, we need a Alice1's data*
 *for creating a multisig address by Alice1's pubkey and Bob's pubkey.*
@@ -928,6 +965,7 @@ Deposit USDT for transfer to Carol. This USDT is asset Alice would like to trans
 
 <br/>
 
+
 ### Launch a HTLC
 
 We will launch a HTLC (Hashed Timelock Contract) transfer for testing purpose. 
@@ -1007,6 +1045,8 @@ within three days, then Alice will settle the contract by paying the middleman a
 }
 ```
 
+<br/>
+
 ### Alice looking for a path to transfer to Carol and Send H to Bob
 
 Alice will looking for a path to reach Carol by pathfinding algorithm.
@@ -1047,6 +1087,8 @@ assets from one client to another.
     }
 }
 ```
+
+<br/>
 
 Bob (middleman) receieved request from Alice and agree.
 
@@ -1098,25 +1140,27 @@ pubkey:   03d2edfe1f0a527f70473dbacb386e4e6a9cc0ea0cabf71f6c0a3dd516a8e6099f
 }
 ```
 
+<br/>
+
 Bob agree request, Alice create related commitment transactions between Alice and Bob.
 
 **Alice's temp address data for create HTLC commitment transactions:**
 
 ```shell
 Alice RSMC
-address  mmvTaVWx9EtwRHMkmhLbZF2JBGZc12ym2o
-privkey cSYJ3vwcgMPDqegXFJ2YgCYNNgKS9tNxCaRkZnn3ourQSdGNkJCk
-pubkey 03dab6d7b005e8b15a2dc8d7005b45111876813c24a54ff15316a76ba376cf020f
+address: mmvTaVWx9EtwRHMkmhLbZF2JBGZc12ym2o
+privkey: cSYJ3vwcgMPDqegXFJ2YgCYNNgKS9tNxCaRkZnn3ourQSdGNkJCk
+pubkey:  03dab6d7b005e8b15a2dc8d7005b45111876813c24a54ff15316a76ba376cf020f
 
 Alice HTLC
-address  mtj8ChNcwkJi3ktB4apPTakknpDdiErTDX
-privkey cR7wXNwPjMrDCpnJoinTiMK384YyKNTfyctLQ2CCdQobdanEqgAs
-pubkey 03d16de84b72460055b18e6d572b49c4ab0e1d889c0bf0705becb22e16b65ca916
+address: mtj8ChNcwkJi3ktB4apPTakknpDdiErTDX
+privkey: cR7wXNwPjMrDCpnJoinTiMK384YyKNTfyctLQ2CCdQobdanEqgAs
+pubkey:  03d16de84b72460055b18e6d572b49c4ab0e1d889c0bf0705becb22e16b65ca916
 
 Alice HTna
-address  mvYRwC7zTVhxNWeEgnUrdazMERvbP2yZpP
-privkey cNzNyejXtgC4ySXCVXqa6egVinYLDtGhkRkGd271ZW6AJrVKYZ2w
-pubkey 030cb3034f7374d5bb614e27169df99d346748a1a7a365a27b1138f5db7ad2b0f3
+address: mvYRwC7zTVhxNWeEgnUrdazMERvbP2yZpP
+privkey: cNzNyejXtgC4ySXCVXqa6egVinYLDtGhkRkGd271ZW6AJrVKYZ2w
+pubkey:  030cb3034f7374d5bb614e27169df99d346748a1a7a365a27b1138f5db7ad2b0f3
 ```
 
 **Alice create HTLC commitment transactions:**
@@ -1153,9 +1197,9 @@ pubkey 030cb3034f7374d5bb614e27169df99d346748a1a7a365a27b1138f5db7ad2b0f3
 }
 ```
 
+<br/>
 
 ### Bob Send H to Carol through the Path
-
 
 Setp 2 of the path, Bob (middleman) has got the H and send it to Carol. 
 
@@ -1192,20 +1236,22 @@ contract by paying Carol assets.
 }
 ```
 
+<br/>
+
 Carol (destination) receieved request from Bob and agree.
 
 **Carol's temp address data for create HTLC commitment transactions:**
 
 ```shell
 Carol RSMC
-address  mwFhZchMtq4y9jSvmkAaoyAve1vZ4gfCvB
-privkey cTTFKJ3N8W4qHcpwj19NVVaEYAXBxf8DmBj9g7owLTWQ3mXXfD51
-pubkey 03dd26ec67e15bde83b527be45a1c64f420821ba78ebc5eb9d3fe1a8ae3cd1f6d9
+address: mwFhZchMtq4y9jSvmkAaoyAve1vZ4gfCvB
+privkey: cTTFKJ3N8W4qHcpwj19NVVaEYAXBxf8DmBj9g7owLTWQ3mXXfD51
+pubkey:  03dd26ec67e15bde83b527be45a1c64f420821ba78ebc5eb9d3fe1a8ae3cd1f6d9
 
 Carol HTLC
-address  mmsNgwiBhJLcv7Pup7gvsNKg82ECcLMjdF
-privkey cVW35aEjd56ZFHTSDtq9iUzHAfH6rWGVJcmYBn9QEp9ygSfkgZeG
-pubkey 03e96c6692bef50af7c6c777ff1bd65b1134d18c98be801e00f8e6247db65950b8
+address: mmsNgwiBhJLcv7Pup7gvsNKg82ECcLMjdF
+privkey: cVW35aEjd56ZFHTSDtq9iUzHAfH6rWGVJcmYBn9QEp9ygSfkgZeG
+pubkey:  03e96c6692bef50af7c6c777ff1bd65b1134d18c98be801e00f8e6247db65950b8
 ```
 
 **Carol replies:**
@@ -1240,25 +1286,28 @@ pubkey 03e96c6692bef50af7c6c777ff1bd65b1134d18c98be801e00f8e6247db65950b8
     }
 }
 ```
+
+<br/>
+
 Carol agree request, Bob create related commitment transactions between Bob and Carol.
 
 **Bob's temp address data for create HTLC commitment transactions:**
 
 ```shell
 Bob RSMC
-address  mxHpHW9Sc7JByG3m9nmjC77jexKcMe8mwi
-privkey cTMZ3csaDWvods2jnMkNJZpz98DRWmFQXb4C1vDFTibcST5g3SNb
-pubkey 033c6284ac5c2409cbf2a49103ff05715f5a0497a0490cdc038248ba37c10e8ccb
+address: mxHpHW9Sc7JByG3m9nmjC77jexKcMe8mwi
+privkey: cTMZ3csaDWvods2jnMkNJZpz98DRWmFQXb4C1vDFTibcST5g3SNb
+pubkey:  033c6284ac5c2409cbf2a49103ff05715f5a0497a0490cdc038248ba37c10e8ccb
 
 Bob HTLC
-address  mqkWnkNfhUR7niBVehuBfdXDmhHCL71ohG
-privkey cNon6RZ9uLq6EPpGYt8tDZjQLMWVZDAXcrFy3LH1ZmHQJDbKWnye
-pubkey 025c7cab6f5724a507ad7268bfb6820a3b6902b09a99e1b37241a6b8ede33cc2f1
+address: mqkWnkNfhUR7niBVehuBfdXDmhHCL71ohG
+privkey: cNon6RZ9uLq6EPpGYt8tDZjQLMWVZDAXcrFy3LH1ZmHQJDbKWnye
+pubkey:  025c7cab6f5724a507ad7268bfb6820a3b6902b09a99e1b37241a6b8ede33cc2f1
 
 Bob HTnb
-address  mzQmxkY35FaXfzDKyTQPWzxG7k3vZJqkeP
-privkey cUoDGr5cdNarcv43YXFdXBY2zf9721y6u6MiDnk56TSJWCGKvTbL
-pubkey 02977ddeffc04ac0c99c74db308a4db39e60b338d99f3d1661f5ae24f3e17ad414
+address: mzQmxkY35FaXfzDKyTQPWzxG7k3vZJqkeP
+privkey: cUoDGr5cdNarcv43YXFdXBY2zf9721y6u6MiDnk56TSJWCGKvTbL
+pubkey:  02977ddeffc04ac0c99c74db308a4db39e60b338d99f3d1661f5ae24f3e17ad414
 ```
 
 **Bob create HTLC commitment transactions:**
@@ -1295,6 +1344,8 @@ pubkey 02977ddeffc04ac0c99c74db308a4db39e60b338d99f3d1661f5ae24f3e17ad414
 }
 ```
 
+<br/>
+
 ### Carol Send R to Bob through the Path
 
 So, from previous step (Setp 2), Bob ask Carol if Carol can produce to Bob an unknown 20-byte random input data R from a known hash H, within two days, then Bob will settle the contract by paying assets.
@@ -1308,9 +1359,9 @@ Of course Carol has the preimage R, because she generated it. Then now, Carol se
 ```shell
 Carol HTLC HEnb commitment transaction:
 
-address  mt3esQqTd8udMNQK8Vm8EDka2N3uCdquCa
-privkey cR14XVjQ4yXunTnpqXZ1FMangq5bZNqsQ4gnsVpJ1KAMkxZVqo3F
-pubkey 020eaa8f0c0f2761215af43dd7fccb11df8cafffcff4e8f186bd1b8a8a11e5f680
+address: mt3esQqTd8udMNQK8Vm8EDka2N3uCdquCa
+privkey: cR14XVjQ4yXunTnpqXZ1FMangq5bZNqsQ4gnsVpJ1KAMkxZVqo3F
+pubkey:  020eaa8f0c0f2761215af43dd7fccb11df8cafffcff4e8f186bd1b8a8a11e5f680
 ```
 
 **Carol (destination) Send R (Preimage_R) to Bob (middleman):**
@@ -1344,6 +1395,9 @@ pubkey 020eaa8f0c0f2761215af43dd7fccb11df8cafffcff4e8f186bd1b8a8a11e5f680
     }
 }
 ```
+
+<br/>
+
 Bob receieved the R, and check out if R is correct.
 If correct, then create rest HTLC commitment transactions.
 
@@ -1359,7 +1413,6 @@ If correct, then create rest HTLC commitment transactions.
 		"curr_htlc_temp_address_private_key":"cNon6RZ9uLq6EPpGYt8tDZjQLMWVZDAXcrFy3LH1ZmHQJDbKWnye"
 	}
 }
-
 ```
 
 **OBD Responses:**
@@ -1377,9 +1430,9 @@ If correct, then create rest HTLC commitment transactions.
 }
 ```
 
+<br/>
 
 ### Bob Send R to Alice through the Path
-
 
 Bob send R to Alice, and Alice will create rest HTLC commitment transactions to pay assets to Bob.
 
@@ -1388,9 +1441,9 @@ Bob send R to Alice, and Alice will create rest HTLC commitment transactions to 
 ```shell
 Bob HTLC HEnb commitment transaction:
 
-address  mhDr57jhEWeYg2eYQf7LYHoxZ8ZgXEunaT
-privkey cTeQ2e9Hw6y1RHjCCF9x3MR7pn3yPySgxSYy5rtvmVvM7ZNh9jUZ
-pubkey 03ebdfc067f822e9ae0d76759c422bfd3aee342e21ca716dc16b81b335da73d69e
+address: mhDr57jhEWeYg2eYQf7LYHoxZ8ZgXEunaT
+privkey: cTeQ2e9Hw6y1RHjCCF9x3MR7pn3yPySgxSYy5rtvmVvM7ZNh9jUZ
+pubkey:  03ebdfc067f822e9ae0d76759c422bfd3aee342e21ca716dc16b81b335da73d69e
 ```
 
 **Bob (middleman) Send R (Preimage_R) to Alice (launcher):**
@@ -1425,6 +1478,8 @@ pubkey 03ebdfc067f822e9ae0d76759c422bfd3aee342e21ca716dc16b81b335da73d69e
 }
 ```
 
+<br/>
+
 Alice receieved the R, and check out if R is correct.
 If correct, then create rest HTLC commitment transactions.
 
@@ -1457,6 +1512,7 @@ If correct, then create rest HTLC commitment transactions.
 }
 ```
 
+<br/>
 
 ### Close HTLC
 
@@ -1470,9 +1526,9 @@ Then Alice launch the closing request.
 
 ```shell
 Alice RSMC 
-address  mkPtXTRyA53ddhknMnVqNCDdeN2FsXmtwe
-privkey cTiDwaM3y5LE2HuWWgvRTC9mgHiovf2zntjSgCPyLLeuUTmKk1BY
-pubkey 02fed65567b2ab00e2cbb28b46a687ce8fd0894486989cba54975b45bbc6a85ed8
+address: mkPtXTRyA53ddhknMnVqNCDdeN2FsXmtwe
+privkey: cTiDwaM3y5LE2HuWWgvRTC9mgHiovf2zntjSgCPyLLeuUTmKk1BY
+pubkey:  02fed65567b2ab00e2cbb28b46a687ce8fd0894486989cba54975b45bbc6a85ed8
 ```
 
 ```json
@@ -1510,6 +1566,8 @@ pubkey 02fed65567b2ab00e2cbb28b46a687ce8fd0894486989cba54975b45bbc6a85ed8
 }
 ```
 
+<br/>
+
 Bob agree the closing request, and create BR (Breach Remedy)
 & a newer commitment transactions (known as Cxa or Cxb).
 
@@ -1517,9 +1575,9 @@ Bob agree the closing request, and create BR (Breach Remedy)
 
 ```shell
 Bob RSMC 
-address  n2wKQgrfM5fFXmmA6xNWjWPPFPktJHnqEj
-privkey cU78aif2a4YR5xK8HxBTrPKjdjhD8W4SSZNTw4yFEdwi59JMrYQY
-pubkey 0298bdca47bbb76b1022eb7d18534961a12ce6dd80308c839576602b771e324fba
+address: n2wKQgrfM5fFXmmA6xNWjWPPFPktJHnqEj
+privkey: cU78aif2a4YR5xK8HxBTrPKjdjhD8W4SSZNTw4yFEdwi59JMrYQY
+pubkey:  0298bdca47bbb76b1022eb7d18534961a12ce6dd80308c839576602b771e324fba
 ```
 
 **Bob replies and create BR & a newer commitment transactions:**
@@ -1553,6 +1611,8 @@ pubkey 0298bdca47bbb76b1022eb7d18534961a12ce6dd80308c839576602b771e324fba
 }
 ```
 
+<br/>
+
 For continue using OBD to transfer assets OR some reasons
 Carol need to close this HTLC channel between she and Bob.
 Then Carol launch the closing request.
@@ -1563,9 +1623,9 @@ Then Carol launch the closing request.
 
 ```shell
 Carol RSMC 
-address  mrWGmCyzEQxKWmBQoGmKDSH9Avo7yb6Vz6
-privkey cNDBq3ZKKQEduVyygfcQRzxbhTS3Gt2zz6VEizkp6WyRXn8RdBtH
-pubkey 03080445b531e1df053ce9f1e3d01cdf679f693b23a991ce74145cb0b2e29a2b2d
+address: mrWGmCyzEQxKWmBQoGmKDSH9Avo7yb6Vz6
+privkey: cNDBq3ZKKQEduVyygfcQRzxbhTS3Gt2zz6VEizkp6WyRXn8RdBtH
+pubkey:  03080445b531e1df053ce9f1e3d01cdf679f693b23a991ce74145cb0b2e29a2b2d
 ```
 
 ```json
@@ -1603,6 +1663,8 @@ pubkey 03080445b531e1df053ce9f1e3d01cdf679f693b23a991ce74145cb0b2e29a2b2d
 }
 ```
 
+<br/>
+
 Bob agree the closing request, and create BR (Breach Remedy)
 & a newer commitment transactions (known as Cxa or Cxb).
 
@@ -1610,9 +1672,9 @@ Bob agree the closing request, and create BR (Breach Remedy)
 
 ```shell
 Bob RSMC 
-address  mimQmQxqBVSCbUjVEir5d9Fi9ij9jqPEdP
-privkey cRNxX8S287DA1hkMZHVwnQiMdQVwBBdqpaGYDP1wrRdzT7pSm5kU
-pubkey 02a08635fb1c664aa2bc1a87e76f8dc0b3170c0d45d0f899b3f192093afa1bcd8c
+address: mimQmQxqBVSCbUjVEir5d9Fi9ij9jqPEdP
+privkey: cRNxX8S287DA1hkMZHVwnQiMdQVwBBdqpaGYDP1wrRdzT7pSm5kU
+pubkey:  02a08635fb1c664aa2bc1a87e76f8dc0b3170c0d45d0f899b3f192093afa1bcd8c
 ```
 
 **Bob replies and create BR & a newer commitment transactions:**
@@ -1645,7 +1707,6 @@ pubkey 02a08635fb1c664aa2bc1a87e76f8dc0b3170c0d45d0f899b3f192093afa1bcd8c
     }
 }
 ```
-
 
 <!-- Added by Kevin Zhang 2019-11-19 END POINT-->
 
