@@ -14,6 +14,7 @@ import (
 	"golang.org/x/crypto/ripemd160"
 	"io"
 	"log"
+	"regexp"
 	"strings"
 )
 
@@ -25,6 +26,16 @@ func CheckIsString(str *string) bool {
 		return false
 	}
 	return true
+}
+
+func VerifyEmailFormat(email string) bool {
+	isString := CheckIsString(&email)
+	if isString == false {
+		return false
+	}
+	pattern := `\w+([-+.]\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*` //匹配电子邮箱
+	reg := regexp.MustCompile(pattern)
+	return reg.MatchString(email)
 }
 
 func SignMsgWithSha256(msg []byte) string {
