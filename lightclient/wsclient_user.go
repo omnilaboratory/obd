@@ -1,7 +1,6 @@
 package lightclient
 
 import (
-	"LightningOnOmni/tool"
 	"LightningOnOmni/bean"
 	"LightningOnOmni/bean/enum"
 	"LightningOnOmni/service"
@@ -54,7 +53,7 @@ func (client *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, 
 	// Added by Kevin 2019-11-25
 	// Process a user sign up.
 	case enum.MsgType_UserSignUp:
-		if client.User != nil {  // The user already login.
+		if client.User != nil { // The user already login.
 			client.sendToMyself(msg.Type, true, "already login")
 			sendType = enum.SendTargetType_SendToSomeone
 		} else {
