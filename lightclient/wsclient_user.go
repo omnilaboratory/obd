@@ -49,6 +49,11 @@ func (client *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, 
 			client.sendToMyself(msg.Type, true, "please login")
 			sendType = enum.SendTargetType_SendToSomeone
 		}
+
+	// Added by Kevin 2019-11-25
+	case enum.MsgType_UserSignUp:
+		
 	}
+
 	return sendType, []byte(data), status
 }
