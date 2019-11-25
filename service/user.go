@@ -6,12 +6,48 @@ import (
 	"LightningOnOmni/tool"
 	"errors"
 	"github.com/asdine/storm/q"
+	"time"
 )
 
 type UserManager struct {
 }
 
 var UserService = UserManager{}
+
+// UserSignUp
+func (service *UserManager) UserSignUp(user *bean.User) error {
+	// Check data if correct.
+	if user == nil {
+		return errors.New("user is nil")
+	}
+
+	if tool.VerifyEmailFormat(user.PeerId) == false {
+		return errors.New("E-mail is not correct.")
+	}
+	
+	if tool.CheckIsString(&user.Password) == false {
+		return errors.New("Password is empty.")
+	}
+
+	// Check out if the user already exists.
+	var node dao.User
+	err := db.Select(q.Eq("PeerId", user.PeerId)).First(&node)
+	if err == nil {
+		return errors.New("The user already exists.")
+	}
+	
+	// A new user, sign up.
+	node.PeerId   = user.PeerId
+	node.Password = tool.SignMsgWithSha256([]byte(user.Password))
+	node.CreateAt = time.Now()
+
+	err = db.Save(&node)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
 
 func (service *UserManager) UserLogin(user *bean.User) error {
 	if user == nil {

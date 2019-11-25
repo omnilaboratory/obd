@@ -1,6 +1,7 @@
 package lightclient
 
 import (
+	"LightningOnOmni/tool"
 	"LightningOnOmni/bean"
 	"LightningOnOmni/bean/enum"
 	"LightningOnOmni/service"
@@ -51,8 +52,29 @@ func (client *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, 
 		}
 
 	// Added by Kevin 2019-11-25
+	// Process a user sign up.
 	case enum.MsgType_UserSignUp:
-		
+		if client.User != nil {  // The user already login.
+			client.sendToMyself(msg.Type, true, "already login")
+			sendType = enum.SendTargetType_SendToSomeone
+		} else {
+			user := bean.User{
+				PeerId:   gjson.Get(msg.Data, "peer_id").String(),
+				Password: gjson.Get(msg.Data, "password").String(),
+			}
+
+			// Sign up.
+			err := service.UserService.UserSignUp(&user)
+
+			if err == nil { // Sign up successful.
+				data = client.User.PeerId + " sign up successful."
+				status = true
+				sendType = enum.SendTargetType_SendToAll
+			} else { // Failed.
+				client.sendToMyself(msg.Type, true, err.Error())
+				sendType = enum.SendTargetType_SendToSomeone
+			}
+		}
 	}
 
 	return sendType, []byte(data), status
