@@ -18,20 +18,20 @@ func (client *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, 
 			sendType = enum.SendTargetType_SendToSomeone
 		} else {
 			user := bean.User{
-				PeerId: gjson.Get(msg.Data, "peer_id").String(),
+				PeerId:   gjson.Get(msg.Data, "peer_id").String(),
+				Password: gjson.Get(msg.Data, "password").String(),
 			}
-			if len(user.PeerId) > 0 {
-				client.User = &user
-				_ = service.UserService.UserLogin(&user)
+			err := service.UserService.UserLogin(&user)
+			if err == nil {
 				if client.User != nil {
 					GlobalWsClientManager.OnlineUserMap[user.PeerId] = client
 					service.OnlineUserMap[user.PeerId] = true
 				}
 				data = client.User.PeerId + " login"
-				sendType = enum.SendTargetType_SendToAll
 				status = true
+				sendType = enum.SendTargetType_SendToAll
 			} else {
-				client.sendToMyself(msg.Type, true, "error peer_id")
+				client.sendToMyself(msg.Type, true, err.Error())
 				sendType = enum.SendTargetType_SendToSomeone
 			}
 		}
