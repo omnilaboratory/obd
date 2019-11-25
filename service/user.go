@@ -2,7 +2,6 @@ package service
 
 import (
 	"LightningOnOmni/bean"
-	"LightningOnOmni/bean/enum"
 	"LightningOnOmni/dao"
 	"LightningOnOmni/tool"
 	"errors"
@@ -34,7 +33,7 @@ func (service *UserManager) UserLogin(user *bean.User) error {
 	if err != nil {
 		return err
 	}
-	user.State = enum.UserState_OnLine
+	user.State = bean.UserState_OnLine
 	return nil
 }
 func (service *UserManager) UserLogout(user *bean.User) error {
@@ -46,7 +45,7 @@ func (service *UserManager) UserLogout(user *bean.User) error {
 	if err != nil {
 		return err
 	}
-	node.State = enum.UserState_Offline
+	node.State = bean.UserState_Offline
 	return db.Update(node)
 }
 

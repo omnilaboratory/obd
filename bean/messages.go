@@ -21,11 +21,19 @@ type ReplyMessage struct {
 	Result interface{}  `json:"result"`
 }
 
+type UserState int
+
+const (
+	UserState_ErrorState UserState = -1
+	UserState_Offline    UserState = 0
+	UserState_OnLine     UserState = 1
+)
+
 //type = 1
 type User struct {
-	PeerId   string         `json:"peer_id"`
-	Password string         `json:"password"`
-	State    enum.UserState `json:"state"`
+	PeerId   string    `json:"peer_id"`
+	Password string    `json:"password"`
+	State    UserState `json:"state"`
 }
 
 //https://github.com/LightningOnOmnilayer/Omni-BOLT-spec/blob/master/OmniBOLT-03-RSMC-and-OmniLayer-Transactions.md

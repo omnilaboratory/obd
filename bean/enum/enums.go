@@ -1,13 +1,5 @@
 package enum
 
-type UserState int
-
-const (
-	UserState_ErrorState UserState = -1
-	UserState_Offline    UserState = 0
-	UserState_OnLine     UserState = 1
-)
-
 type SendTargetType int
 
 const (
