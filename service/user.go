@@ -24,7 +24,7 @@ func (service *UserManager) UserLogin(user *bean.User) error {
 		return errors.New("err Password")
 	}
 	var node dao.User
-	err := db.Select(q.Eq("PeerId", user.PeerId), q.Eq("Password", user.Password)).First(&node)
+	err := db.Select(q.Eq("PeerId", user.PeerId), q.Eq("Password", tool.SignMsgWithSha256([]byte(user.Password)))).First(&node)
 	if err != nil {
 		return errors.New("not found user from db")
 	}
@@ -34,6 +34,7 @@ func (service *UserManager) UserLogin(user *bean.User) error {
 		return err
 	}
 	user.State = bean.UserState_OnLine
+	user.Password = node.Password
 	return nil
 }
 func (service *UserManager) UserLogout(user *bean.User) error {
