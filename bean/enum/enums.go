@@ -93,4 +93,7 @@ const (
 	MsgType_HTLC_SignCloseCurrTx_N49        MsgType = -49
 	MsgType_HTLC_RequestCloseChannel_N50    MsgType = -50
 	MsgType_HTLC_SignCloseChannel_N51       MsgType = -51
+	
+	// Added by Kevin 2019-11-25
+	MsgType_UserSignUp  MsgType = 101
 )
