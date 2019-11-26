@@ -14,6 +14,7 @@ type MsgType int
 const (
 	MsgType_Error_0      MsgType = 0
 	MsgType_UserLogin_1  MsgType = 1
+	MsgType_UserSignUp   MsgType = 101
 	MsgType_UserLogout_2 MsgType = 2
 
 	MsgType_Core_GetNewAddress_1001                    MsgType = 1001
@@ -93,7 +94,4 @@ const (
 	MsgType_HTLC_SignCloseCurrTx_N49        MsgType = -49
 	MsgType_HTLC_RequestCloseChannel_N50    MsgType = -50
 	MsgType_HTLC_SignCloseChannel_N51       MsgType = -51
-	
-	// Added by Kevin 2019-11-25
-	MsgType_UserSignUp  MsgType = 101
 )
