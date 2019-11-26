@@ -64,12 +64,12 @@ func (service *UserManager) UserLogin(user *bean.User) error {
 	if err != nil {
 		return errors.New("not found user from db")
 	}
-	node.State = user.State
+	node.State = bean.UserState_OnLine
 	err = db.Update(&node)
 	if err != nil {
 		return err
 	}
-	user.State = bean.UserState_OnLine
+	user.State = node.State
 	user.Password = node.Password
 	return nil
 }
