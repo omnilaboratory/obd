@@ -182,19 +182,38 @@ Make sure your browser supports WebSocket, as displayed in this screenshot.
 
 Input `ws://127.0.0.1:60020/ws`, press `Open`. If on the right text pannel, displays `OPENED`, then we are ready to send messeages to OBD.
 
-The first message is to login as `Alice`. input the following request into the Request box, and press `SEND`:
+The first message is to sign up as `Alice`. input the following request into the Request box, and press `SEND`:
+
+*The peer_id must be an email address.*
 ```
 {
-	"type":1,
+	"type":101,
 	"data":{
-        "peer_id":"alice"
-        }
+        "peer_id":"alice@mail.com",
+        "password":"123456"
+    }
 }
 ```
 
 In the `Message Log` pannel, displays the response message from OBD:
 ```
-{"type":1,"status":true,"sender":"alice","result":"alice login"}
+{"type":101,"status":true,"from":"2835aee2-6743-4f9f-8958-758608b506e9","to":"2835aee2-6743-4f9f-8958-758608b506e9","result":"alice@mail.com sign up successful."}
+```
+
+Then go to login as `Alice`. input the following content and press `SEND`:
+```
+{
+	"type":1,
+	"data":{
+        "peer_id":"alice@mail.com",
+        "password":"123456"
+    }
+}
+```
+
+In the `Message Log` pannel, displays the response message from OBD:
+```
+{"type":1,"status":true,"from":"alice@mail.com","to":"all","result":"alice@mail.com login"}
 ```
 
 It works.
@@ -208,21 +227,45 @@ ws://62.234.216.108:60020/ws
 ```
 Open two chrom browsers, left is Alice and the right is Bob. Input URL and click `OPEN`, then both status will show `OPENED`.
 
+### sign up
+```
+1、alice sign up
+{
+	"type":101,
+	"data":{
+        "peer_id":"alice@mail.com",
+        "password":"123456"
+    }
+}
+
+2、bob sign up
+{
+	"type":101,
+	"data":{
+        "peer_id":"bob@mail.com",
+        "password":"123456"
+    }
+}
+```
+
 ### login
 ```
 1、alice login
 {
 	"type":1,
 	"data":{
-        "peer_id":"alice"
-        }
+        "peer_id":"alice@mail.com",
+        "password":"123456"
+    }
 }
+
 2、bob login
 {
 	"type":1,
 	"data":{
-        "peer_id":"bob"
-        }
+        "peer_id":"bob@mail.com",
+        "password":"123456"
+    }
 }
 ```
 
@@ -419,9 +462,6 @@ then Bob replies the money is well receieved:
 
 Remember to watch the display of `Message log` window, to see what OBD replies in each communication between Alice and Bob. These are usefull information when we try to debug OBD and to write real code for it.
 
-This document is not completed yet, and will be updated during our programming.
-
-
 <!-- Added by Kevin Zhang 2019-11-19 -->
 
 ## Step 6: Transfer assets through HTLC
@@ -510,9 +550,47 @@ channel:
 
 <br/>
 
-### Client login for HTLC testing
+### Clients sign up and login for HTLC testing
 
-Three client login.
+Three clients sign up.
+
+**Alice sign up:**
+
+```json
+{
+	"type":101,
+	"data":{
+        "peer_id":"alice@mail.com",
+        "password":"123456"
+    }
+}
+```
+
+**Bob sign up:**
+
+```json
+{
+	"type":101,
+	"data":{
+        "peer_id":"bob@mail.com",
+        "password":"123456"
+    }
+}
+```
+
+**Carol sign up:**
+
+```json
+{
+	"type":101,
+	"data":{
+        "peer_id":"carol@mail.com",
+        "password":"123456"
+    }
+}
+```
+
+Three clients login.
 
 **Alice login:**
 
@@ -520,7 +598,8 @@ Three client login.
 {
 	"type":1,
 	"data":{
-        "peer_id":"alice"
+        "peer_id":"alice@mail.com",
+        "password":"123456"
     }
 }
 ```
@@ -531,7 +610,8 @@ Three client login.
 {
 	"type":1,
 	"data":{
-        "peer_id":"bob"
+        "peer_id":"bob@mail.com",
+        "password":"123456"
     }
 }
 ```
@@ -542,7 +622,8 @@ Three client login.
 {
 	"type":1,
 	"data":{
-        "peer_id":"carol"
+        "peer_id":"carol@mail.com",
+        "password":"123456"
     }
 }
 ```
@@ -1709,6 +1790,8 @@ pubkey:  02a08635fb1c664aa2bc1a87e76f8dc0b3170c0d45d0f899b3f192093afa1bcd8c
 ```
 
 <!-- Added by Kevin Zhang 2019-11-19 END POINT-->
+
+This document is not completed yet, and will be updated during our programming.
 
 # API Document
 Please visit OBD [online API documentation](https://api.omnilab.online) for the lastest update.
