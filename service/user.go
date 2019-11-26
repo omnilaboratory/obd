@@ -22,7 +22,7 @@ func (service *UserManager) UserSignUp(user *bean.User) error {
 	}
 
 	if tool.VerifyEmailFormat(user.PeerId) == false {
-		return errors.New("E-mail is not correct.")
+		return errors.New("Peer ID (must be an email) is not correct.")
 	}
 
 	if tool.CheckIsString(&user.Password) == false {
