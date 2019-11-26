@@ -24,7 +24,7 @@ func (service *UserManager) UserSignUp(user *bean.User) error {
 	if tool.VerifyEmailFormat(user.PeerId) == false {
 		return errors.New("E-mail is not correct.")
 	}
-	
+
 	if tool.CheckIsString(&user.Password) == false {
 		return errors.New("Password is empty.")
 	}
@@ -35,9 +35,9 @@ func (service *UserManager) UserSignUp(user *bean.User) error {
 	if err == nil {
 		return errors.New("The user already exists.")
 	}
-	
+
 	// A new user, sign up.
-	node.PeerId   = user.PeerId
+	node.PeerId = user.PeerId
 	node.Password = tool.SignMsgWithSha256([]byte(user.Password))
 	node.CreateAt = time.Now()
 
@@ -53,7 +53,7 @@ func (service *UserManager) UserLogin(user *bean.User) error {
 	if user == nil {
 		return errors.New("user is nil")
 	}
-	if tool.CheckIsString(&user.PeerId) == false {
+	if tool.VerifyEmailFormat(user.PeerId) == false {
 		return errors.New("err peerId")
 	}
 	if tool.CheckIsString(&user.Password) == false {
@@ -65,7 +65,7 @@ func (service *UserManager) UserLogin(user *bean.User) error {
 		return errors.New("not found user from db")
 	}
 	node.State = user.State
-	err = db.Update(node)
+	err = db.Update(&node)
 	if err != nil {
 		return err
 	}
