@@ -11,13 +11,14 @@ import (
 	"github.com/tyler-smith/go-bip32"
 	"github.com/tyler-smith/go-bip39"
 	"golang.org/x/crypto/ripemd160"
+	"log"
 )
 
 type Wallet struct {
-	Index   int    `json:"index"`
-	Address string `json:"address"`
-	PubKey  string `json:"pub_key"`
-	Wif     string `json:"wif"`
+	Index      int    `json:"index"`
+	Address    string `json:"address"`
+	PubKey     string `json:"pub_key"`
+	PrivateKey string `json:"private_key"`
 }
 
 func CreateWallet(mnemonic string, index uint32) (wallet *Wallet, err error) {
@@ -30,6 +31,7 @@ func CreateWallet(mnemonic string, index uint32) (wallet *Wallet, err error) {
 	}
 
 	seed := bip39.NewSeed(mnemonic, "")
+	log.Println(seed)
 	masterKey, _ := bip32.NewMasterKey(seed)
 	//m/purpose'
 	purposeExtKey, _ := masterKey.NewChildKey(bip32.FirstHardenedChild + 44)
@@ -49,6 +51,6 @@ func CreateWallet(mnemonic string, index uint32) (wallet *Wallet, err error) {
 
 	privKey, _ := btcec.PrivKeyFromBytes(btcec.S256(), addrIndexExtKey.Key)
 	wif, _ := btcutil.NewWIF(privKey, &chaincfg.MainNetParams, true)
-	wallet.Wif = wif.String()
+	wallet.PrivateKey = wif.String()
 	return wallet, nil
 }
