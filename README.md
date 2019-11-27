@@ -108,6 +108,8 @@ golang.org/x/crypto/ripemd160
 github.com/btcsuite/btcutil/base58
 golang.org/x/crypto/salsa20
 github.com/go-ini/ini
+github.com/tyler-smith/go-bip39
+github.com/tyler-smith/go-bip32
 ```
 
 <br/>
