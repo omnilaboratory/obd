@@ -57,6 +57,7 @@ func getWalletObj(addrIndexExtKey *bip32.Key, wallet *Wallet) (err error) {
 
 	wallet.PubKey = hex.EncodeToString(addrIndexExtKey.PublicKey().Key)
 	wallet.PrivateKey = hex.EncodeToString(addrIndexExtKey.Key)
+
 	privKey, _ := btcec.PrivKeyFromBytes(btcec.S256(), addrIndexExtKey.Key)
 	wif, _ := btcutil.NewWIF(privKey, net, true)
 	wallet.Wif = wif.String()
