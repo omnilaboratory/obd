@@ -103,7 +103,11 @@ func (client *Client) Read() {
 		var dataOut []byte
 		var needLogin = true
 		if msg.Type < 1000 && msg.Type >= 0 {
-			sendType, dataOut, status = client.userModule(msg)
+			if msg.Type == enum.MsgType_GetMnemonic_101 {
+				sendType, dataOut, status = client.hdWalletModule(msg)
+			} else {
+				sendType, dataOut, status = client.userModule(msg)
+			}
 			needLogin = false
 		}
 
@@ -120,6 +124,12 @@ func (client *Client) Read() {
 			} else { // already login
 				for {
 					typeStr := strconv.Itoa(int(msg.Type))
+					//-200 -201
+					if msg.Type <= enum.MsgType_Mnemonic_CreateAddress_N200 && msg.Type >= enum.MsgType_Mnemonic_GetAddressByIndex_201 {
+						sendType, dataOut, status = client.hdWalletModule(msg)
+						break
+					}
+
 					//-32 -3201 -3202 -3203 -3204
 					if strings.HasPrefix(typeStr, strconv.Itoa(int(enum.MsgType_ChannelOpen_N32))) {
 						sendType, dataOut, status = client.channelModule(msg)

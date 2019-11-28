@@ -6,6 +6,7 @@ import (
 	"LightningOnOmni/tool"
 	"errors"
 	"github.com/asdine/storm/q"
+	"github.com/tyler-smith/go-bip39"
 	"time"
 )
 
@@ -21,12 +22,8 @@ func (service *UserManager) UserSignUp(user *bean.User) error {
 		return errors.New("user is nil")
 	}
 
-	if tool.VerifyEmailFormat(user.PeerId) == false {
-		return errors.New("Peer ID (must be an email) is not correct.")
-	}
-
-	if tool.CheckIsString(&user.Password) == false {
-		return errors.New("Password is empty.")
+	if tool.CheckIsString(&user.PeerId) == false {
+		return errors.New("Peer ID  is not correct.")
 	}
 
 	// Check out if the user already exists.
@@ -38,7 +35,6 @@ func (service *UserManager) UserSignUp(user *bean.User) error {
 
 	// A new user, sign up.
 	node.PeerId = user.PeerId
-	node.Password = tool.SignMsgWithSha256([]byte(user.Password))
 	node.CreateAt = time.Now()
 
 	err = db.Save(&node)
@@ -53,32 +49,43 @@ func (service *UserManager) UserLogin(user *bean.User) error {
 	if user == nil {
 		return errors.New("user is nil")
 	}
-	if tool.VerifyEmailFormat(user.PeerId) == false {
-		return errors.New("err peerId")
+	if tool.CheckIsString(&user.Mnemonic) == false || bip39.IsMnemonicValid(user.Mnemonic) == false {
+		return errors.New("err Mnemonic")
 	}
-	if tool.CheckIsString(&user.Password) == false {
-		return errors.New("err Password")
+	changeExtKey, err := HDWalletService.CreateChangeExtKey(user.Mnemonic)
+	if err != nil {
+		return err
 	}
 	var node dao.User
-	err := db.Select(q.Eq("PeerId", user.PeerId), q.Eq("Password", tool.SignMsgWithSha256([]byte(user.Password)))).First(&node)
-	if err != nil {
-		return errors.New("not found user from db")
+	user.PeerId = tool.SignMsgWithSha256([]byte(user.Mnemonic))
+	err = db.Select(q.Eq("PeerId", user.PeerId)).First(&node)
+	if node.Id == 0 {
+		node = dao.User{}
+		node.PeerId = user.PeerId
+		node.State = bean.UserState_OnLine
+		node.CreateAt = time.Now()
+		node.LatestLoginTime = node.CreateAt
+		node.CurrAddrIndex = -1
+		err = db.Save(&node)
+	} else {
+		node.State = bean.UserState_OnLine
+		node.LatestLoginTime = time.Now()
+		err = db.Update(&node)
 	}
-	node.State = bean.UserState_OnLine
-	err = db.Update(&node)
 	if err != nil {
 		return err
 	}
 	user.State = node.State
-	user.Password = node.Password
+	user.ChangeExtKey = changeExtKey
 	return nil
 }
+
 func (service *UserManager) UserLogout(user *bean.User) error {
 	if user == nil {
 		return errors.New("user is nil")
 	}
 	var node dao.User
-	err := db.Select(q.Eq("PeerId", user.PeerId), q.Eq("Password", user.Password)).First(&node)
+	err := db.Select(q.Eq("PeerId", user.PeerId)).First(&node)
 	if err != nil {
 		return err
 	}

@@ -14,7 +14,6 @@ type MsgType int
 const (
 	MsgType_Error_0      MsgType = 0
 	MsgType_UserLogin_1  MsgType = 1
-	MsgType_UserSignUp   MsgType = 101
 	MsgType_UserLogout_2 MsgType = 2
 
 	MsgType_Core_GetNewAddress_1001                    MsgType = 1001
@@ -27,6 +26,10 @@ const (
 	MsgType_Core_BalanceByAddress_1008                 MsgType = 1008
 	MsgType_Core_BtcCreateAndSignRawTransaction_1009   MsgType = 1009
 	MsgType_Core_Omni_CreateAndSignRawTransaction_2001 MsgType = 2001
+
+	MsgType_GetMnemonic_101                MsgType = 101
+	MsgType_Mnemonic_CreateAddress_N200    MsgType = -200
+	MsgType_Mnemonic_GetAddressByIndex_201 MsgType = -201
 
 	MsgType_ChannelOpen_N32                   MsgType = -32
 	MsgType_ChannelOpen_ItemByTempId_N3201    MsgType = -3201

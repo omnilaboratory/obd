@@ -18,10 +18,8 @@ func (client *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, 
 			sendType = enum.SendTargetType_SendToSomeone
 		} else {
 			user := bean.User{
-				PeerId:   gjson.Get(msg.Data, "peer_id").String(),
-				Password: gjson.Get(msg.Data, "password").String(),
+				Mnemonic: gjson.Get(msg.Data, "mnemonic").String(),
 			}
-
 			err := service.UserService.UserLogin(&user)
 			if err == nil {
 				client.User = &user
@@ -51,22 +49,16 @@ func (client *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, 
 		}
 
 	// Added by Kevin 2019-11-25
-	// Process a user sign up.
-	case enum.MsgType_UserSignUp:
+	// Process GetMnemonic
+	case enum.MsgType_GetMnemonic_101:
 		if client.User != nil { // The user already login.
 			client.sendToMyself(msg.Type, true, "already login")
 			sendType = enum.SendTargetType_SendToSomeone
 		} else {
-			user := bean.User{
-				PeerId:   gjson.Get(msg.Data, "peer_id").String(),
-				Password: gjson.Get(msg.Data, "password").String(),
-			}
-
-			// Sign up.
-			err := service.UserService.UserSignUp(&user)
-
-			if err == nil { // Sign up successful.
-				data = user.PeerId + " sign up successful."
+			// get Mnemonic
+			mnemonic, err := service.HDWalletService.Bip39GenMnemonic(256)
+			if err == nil { //get  successful.
+				data = mnemonic
 				status = true
 			} else {
 				data = err.Error()
@@ -75,6 +67,5 @@ func (client *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, 
 			sendType = enum.SendTargetType_SendToSomeone
 		}
 	}
-
 	return sendType, []byte(data), status
 }

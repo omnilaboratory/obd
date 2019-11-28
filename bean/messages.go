@@ -3,6 +3,7 @@ package bean
 import (
 	"LightningOnOmni/bean/chainhash"
 	"LightningOnOmni/bean/enum"
+	"github.com/tyler-smith/go-bip32"
 )
 
 type RequestMessage struct {
@@ -31,9 +32,11 @@ const (
 
 //type = 1
 type User struct {
-	PeerId   string    `json:"peer_id"`
-	Password string    `json:"password"`
-	State    UserState `json:"state"`
+	PeerId        string    `json:"peer_id"`
+	Mnemonic      string    `json:"mnemonic"`
+	State         UserState `json:"state"`
+	ChangeExtKey  *bip32.Key
+	CurrAddrIndex int `json:"curr_addr_index"`
 }
 
 //https://github.com/LightningOnOmnilayer/Omni-BOLT-spec/blob/master/OmniBOLT-03-RSMC-and-OmniLayer-Transactions.md

@@ -9,8 +9,9 @@ import (
 type User struct {
 	Id int `storm:"id,increment" `
 	bean.User
-	CurrState int       `json:"curr_state"`
-	CreateAt  time.Time `json:"create_at"`
+	CurrState       int       `json:"curr_state"`
+	CreateAt        time.Time `json:"create_at"`
+	LatestLoginTime time.Time `json:"latest_login_time"`
 }
 
 type ChannelState int
