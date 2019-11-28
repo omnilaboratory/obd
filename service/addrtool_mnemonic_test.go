@@ -1,12 +1,35 @@
 package service
 
 import (
+	"LightningOnOmni/bean"
+	"LightningOnOmni/tool"
+	"encoding/json"
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcutil/hdkeychain"
 	"github.com/tyler-smith/go-bip39"
 	"log"
 	"testing"
 )
+
+func Test_Demo2(t *testing.T) {
+	mnemonic := "admit glad merge wool melody wagon absurd antenna cricket clap moment universe"
+	mnemonic = "unfold tortoise zoo hand sausage project boring corn test same elevator mansion bargain coffee brick tilt forum purpose hundred embody weapon ripple when narrow"
+	userId := tool.SignMsgWithSha256([]byte(mnemonic))
+
+	changeExtKey, _ := HDWalletService.CreateChangeExtKey(mnemonic)
+	user := &bean.User{}
+	user.CurrAddrIndex = 0
+	user.ChangeExtKey = changeExtKey
+	user.Mnemonic = mnemonic
+	user.PeerId = userId
+
+	for i := 0; i < 10; i++ {
+		wallet, _ := HDWalletService.GetAddressByIndex(user, uint32(i))
+		bytes, _ := json.Marshal(wallet)
+		log.Println(string(bytes))
+	}
+
+}
 
 func Test_Demo1(t *testing.T) {
 	mnemonic := "unfold tortoise zoo hand sausage project boring corn test same elevator mansion bargain coffee brick tilt forum purpose hundred embody weapon ripple when narrow"
@@ -24,7 +47,6 @@ func Test_Demo1(t *testing.T) {
 	acc44H60H0H00, _ := acc44H60H0H0.Child(0)
 	addr, _ := acc44H60H0H00.Address(&chaincfg.TestNet3Params)
 	log.Println(addr)
-
 	btcecPrivKey, _ := acc44H60H0H00.ECPrivKey()
 
 	privateKey := btcecPrivKey.ToECDSA()

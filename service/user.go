@@ -76,6 +76,7 @@ func (service *UserManager) UserLogin(user *bean.User) error {
 		return err
 	}
 	user.State = node.State
+	user.CurrAddrIndex = node.CurrAddrIndex
 	user.ChangeExtKey = changeExtKey
 	return nil
 }

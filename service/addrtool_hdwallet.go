@@ -12,7 +12,6 @@ import (
 	"github.com/btcsuite/btcutil"
 	"github.com/tyler-smith/go-bip32"
 	"github.com/tyler-smith/go-bip39"
-	"log"
 )
 
 type Wallet struct {
@@ -20,6 +19,7 @@ type Wallet struct {
 	Address    string `json:"address"`
 	PubKey     string `json:"pub_key"`
 	PrivateKey string `json:"private_key"`
+	Wif        string `json:"wif"`
 }
 
 type hdWalletManager struct {
@@ -39,20 +39,29 @@ func (service *hdWalletManager) GetAddressByIndex(user *bean.User, index uint32)
 
 	wallet = &Wallet{}
 	wallet.Index = int(index)
+	err = getWalletObj(addrIndexExtKey, wallet)
+	return wallet, err
+}
 
+func getWalletObj(addrIndexExtKey *bip32.Key, wallet *Wallet) (err error) {
 	net := &chaincfg.MainNetParams
 	if config.ChainNode_Type == "test" {
 		net = &chaincfg.TestNet3Params
 	}
 	hash160Bytes := btcutil.Hash160(addrIndexExtKey.PublicKey().Key)
 	addr, err := btcutil.NewAddressPubKeyHash(hash160Bytes, net)
+	if err != nil {
+		return err
+	}
 	wallet.Address = addr.String()
-	wallet.PubKey = hex.EncodeToString(addrIndexExtKey.PublicKey().Key)
 
+	wallet.PubKey = hex.EncodeToString(addrIndexExtKey.PublicKey().Key)
+	wallet.PrivateKey = hex.EncodeToString(addrIndexExtKey.Key)
 	privKey, _ := btcec.PrivKeyFromBytes(btcec.S256(), addrIndexExtKey.Key)
 	wif, _ := btcutil.NewWIF(privKey, net, true)
-	wallet.PrivateKey = wif.String()
-	return wallet, nil
+	wallet.Wif = wif.String()
+
+	return nil
 }
 func (service *hdWalletManager) CreateNewAddress(user *bean.User) (wallet *Wallet, err error) {
 	if user == nil || user.ChangeExtKey == nil {
@@ -72,20 +81,11 @@ func (service *hdWalletManager) CreateNewAddress(user *bean.User) (wallet *Walle
 
 	wallet = &Wallet{}
 	wallet.Index = userDb.CurrAddrIndex
-	net := &chaincfg.MainNetParams
-	if config.ChainNode_Type == "test" {
-		net = &chaincfg.TestNet3Params
+
+	err = getWalletObj(addrIndexExtKey, wallet)
+	if err != nil {
+		return nil, err
 	}
-
-	hash160Bytes := btcutil.Hash160(addrIndexExtKey.PublicKey().Key)
-	addr, err := btcutil.NewAddressPubKeyHash(hash160Bytes, net)
-	wallet.Address = addr.String()
-	wallet.PubKey = hex.EncodeToString(addrIndexExtKey.PublicKey().Key)
-
-	privKey, _ := btcec.PrivKeyFromBytes(btcec.S256(), addrIndexExtKey.Key)
-	wif, _ := btcutil.NewWIF(privKey, net, true)
-	wallet.PrivateKey = wif.String()
-
 	_ = db.Update(&userDb)
 	return wallet, nil
 }
@@ -109,7 +109,6 @@ func (service *hdWalletManager) CreateChangeExtKey(mnemonic string) (changeExtKe
 		coinType = 1
 	}
 	coinTypeExtKey, err := purposeExtKey.NewChildKey(bip32.FirstHardenedChild + uint32(coinType))
-	log.Println(err)
 	//m/purpose'/cointype'/account'
 	accountExtKey, _ := coinTypeExtKey.NewChildKey(bip32.FirstHardenedChild + 0)
 	//m/purpose'/cointype'/account'/change
