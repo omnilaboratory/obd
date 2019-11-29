@@ -86,7 +86,7 @@ pass=your password
 
 ## Step 3: Compile and Run OmniBOLT Daemon
 
-Before compile .go file, you should be get all related packages by run `go get` command in terminal.
+Before compile `obdserver.go` file, you should be get all related packages by run `go get` command in terminal.
 Example: `go get google.golang.org/grpc`
 
 This is a full list for need to get packages.
@@ -186,36 +186,51 @@ Input `ws://127.0.0.1:60020/ws`, press `Open`. If on the right text pannel, disp
 
 The first message is to sign up as `Alice`. input the following request into the Request box, and press `SEND`:
 
-*The peer_id must be an email address.*
-```
+```json
 {
-	"type":101,
-	"data":{
-        "peer_id":"alice@mail.com",
-        "password":"123456"
+	"type":101
+}
+```
+
+In the `Message Log` pannel, displays the response message from OBD:
+
+*Return mnemonic words by hirarchecal deterministic wallet system.*
+
+```json
+{
+    "type":101,
+    "status":true,
+    "from":"c2215a60-8b81-439f-8cb3-11ba51691076",
+    "to":"c2215a60-8b81-439f-8cb3-11ba51691076",
+    "result":"two ribbon knee leaf easy pottery hobby pony mule test bridge liar sand mirror decline gasp focus this park undo rough cricket portion ignore"
+}
+```
+
+Then go to login as `Alice`. input the following message and press `SEND`:
+
+*The mnemonic words is as a login name.*
+
+```json
+{
+    "type":1,
+    "data":{
+        "mnemonic":"two ribbon knee leaf easy pottery hobby pony mule test bridge liar sand mirror decline gasp focus this park undo rough cricket portion ignore"
     }
 }
 ```
 
 In the `Message Log` pannel, displays the response message from OBD:
-```
-{"type":101,"status":true,"from":"2835aee2-6743-4f9f-8958-758608b506e9","to":"2835aee2-6743-4f9f-8958-758608b506e9","result":"alice@mail.com sign up successful."}
-```
 
-Then go to login as `Alice`. input the following content and press `SEND`:
-```
+*A SHA256 string of mnemonic words as a user id.*
+
+```json
 {
-	"type":1,
-	"data":{
-        "peer_id":"alice@mail.com",
-        "password":"123456"
-    }
+    "type":1,
+    "status":true,
+    "from":"7da8d2441e0ad67040a274902f1965ee1a5c3fdd86f1ddc3280eda5230e006f2",
+    "to":"all",
+    "result":"7da8d2441e0ad67040a274902f1965ee1a5c3fdd86f1ddc3280eda5230e006f2 login"
 }
-```
-
-In the `Message Log` pannel, displays the response message from OBD:
-```
-{"type":1,"status":true,"from":"alice@mail.com","to":"all","result":"alice@mail.com login"}
 ```
 
 It works.
@@ -229,128 +244,340 @@ ws://62.234.216.108:60020/ws
 ```
 Open two chrom browsers, left is Alice and the right is Bob. Input URL and click `OPEN`, then both status will show `OPENED`.
 
-### sign up
-```
-1、alice sign up
-{
-	"type":101,
-	"data":{
-        "peer_id":"alice@mail.com",
-        "password":"123456"
-    }
-}
 
-2、bob sign up
+### Sign up
+
+1、Alice sign up
+
+Websocket request:
+
+```
 {
-	"type":101,
-	"data":{
-        "peer_id":"bob@mail.com",
-        "password":"123456"
-    }
+	"type":101
 }
 ```
 
-### login
+OBD responses:
+
+```json
+{
+    "type":101,
+    "status":true,
+    "from":"c2215a60-8b81-439f-8cb3-11ba51691076",
+    "to":"c2215a60-8b81-439f-8cb3-11ba51691076",
+    "result":"two ribbon knee leaf easy pottery hobby pony mule test bridge liar sand mirror decline gasp focus this park undo rough cricket portion ignore"
+}
 ```
-1、alice login
+
+2、Bob sign up
+
+Websocket request:
+
+```
+{
+	"type":101
+}
+```
+
+OBD responses:
+
+```json
+{
+    "type":101,
+    "status":true,
+    "from":"cec4e1db-ef38-4508-a9bf-8c5976df1916",
+    "to":"cec4e1db-ef38-4508-a9bf-8c5976df1916",
+    "result":"outer exhibit burger screen onion dog ensure net depth scan steel field pizza group veteran doctor rhythm inch dawn rotate gravity index modify utility"
+}
+```
+
+### Login
+
+1、Alice login
+
+Websocket request:
+
+```json
 {
 	"type":1,
-	"data":{
-        "peer_id":"alice@mail.com",
-        "password":"123456"
-    }
-}
-
-2、bob login
-{
-	"type":1,
-	"data":{
-        "peer_id":"bob@mail.com",
-        "password":"123456"
+    "data":{
+        "mnemonic":"two ribbon knee leaf easy pottery hobby pony mule test bridge liar sand mirror decline gasp focus this park undo rough cricket portion ignore"
     }
 }
 ```
 
-### create channel
+OBD responses:
+
+```json
+{
+    "type":1,
+    "status":true,
+    "from":"7da8d2441e0ad67040a274902f1965ee1a5c3fdd86f1ddc3280eda5230e006f2",
+    "to":"all",
+    "result":"7da8d2441e0ad67040a274902f1965ee1a5c3fdd86f1ddc3280eda5230e006f2 login"
+}
+```
+
+2、Bob login
+
+Websocket request:
+
+```json
+{
+    "type":1,
+    "data":{
+        "mnemonic":"outer exhibit burger screen onion dog ensure net depth scan steel field pizza group veteran doctor rhythm inch dawn rotate gravity index modify utility"
+    }
+}
+```
+
+OBD responses:
+
+```json
+{
+    "type":1,
+    "status":true,
+    "from":"f38e72f6bf69c69ad1cdc0040550bafb86d5c4d35bd04542fcf5fc5ecb2135be",
+    "to":"all",
+    "result":"f38e72f6bf69c69ad1cdc0040550bafb86d5c4d35bd04542fcf5fc5ecb2135be login"
+}
+```
+
+*A SHA256 string of mnemonic words as a user id.*
+
+**Alice's id is: 7da8d2441e0ad67040a274902f1965ee1a5c3fdd86f1ddc3280eda5230e006f2**
+**Bob's   id is: f38e72f6bf69c69ad1cdc0040550bafb86d5c4d35bd04542fcf5fc5ecb2135be**
+
+
+### Generate a wallet address
+
+A wallet address is used for:
+
+* Create channels
+* Deposit to channels
+* Withdraw from channels
+* As a temp address for create commitment transactions
+
+
+1、Alice's address
+
+Websocket request:
+
+```
+{
+    "type":-200
+}
+```
+
+OBD responses:
+
+```json
+{
+    "type":-200,
+    "status":true,
+    "from":"7da8d2441e0ad67040a274902f1965ee1a5c3fdd86f1ddc3280eda5230e006f2",
+    "to":"7da8d2441e0ad67040a274902f1965ee1a5c3fdd86f1ddc3280eda5230e006f2",
+    "result":{
+        "address":"mkb9Muc1Qjt2XT5onkqwf3NWAP6BerDwsG",
+        "index":0,
+        "private_key":"d33390f109115d130f8d1da429c9ac8bda85870c2bb4501959402c007a9a4f6f",
+        "pub_key":"02cba1d7a57cdfe83fd8ee4d868fb4b926ab893fd2d8df7706e6e0829c60e923ba",
+        "wif":"cUfFRyzqokaHuhEgwT85tbGpf7WpG8NN7N55nWjFQKFtwVbSNmA2"
+    }
+}
+```
+
+2、Bob's address
+
+Websocket request:
+
+```
+{
+    "type":-200
+}
+```
+
+OBD responses:
+
+```json
+{
+    "type":-200,
+    "status":true,
+    "from":"f38e72f6bf69c69ad1cdc0040550bafb86d5c4d35bd04542fcf5fc5ecb2135be",
+    "to":"f38e72f6bf69c69ad1cdc0040550bafb86d5c4d35bd04542fcf5fc5ecb2135be",
+    "result":{
+        "address":"n1ZEtzhL1HJk5zQbgbez2WWNnP1jiHbW9x",
+        "index":0,
+        "private_key":"13dcf0808819c529ce18c6139f1098ed78045d6cf486a2217f4b71561c2c589f",
+        "pub_key":"025b4b752ed16203597a064189ecce30a1055c324cd5644fcc531e8f8f20737185",
+        "wif":"cNFK6XSftD18er8a1VWZKx3BqLfxAMQwy3veoJXtdxptpbb7vrig"
+    }
+}
+```
+
+### Data of Alice, Bob, Channel
+
+Alice's:
+
+```
+"user_id":      7da8d2441e0ad67040a274902f1965ee1a5c3fdd86f1ddc3280eda5230e006f2
+"address":      mkb9Muc1Qjt2XT5onkqwf3NWAP6BerDwsG
+"private_key":  d33390f109115d130f8d1da429c9ac8bda85870c2bb4501959402c007a9a4f6f
+"pub_key":"     02cba1d7a57cdfe83fd8ee4d868fb4b926ab893fd2d8df7706e6e0829c60e923ba
+```
+
+Bob's:
+
+```
+"user_id":      f38e72f6bf69c69ad1cdc0040550bafb86d5c4d35bd04542fcf5fc5ecb2135be
+"address":      n1ZEtzhL1HJk5zQbgbez2WWNnP1jiHbW9x
+"private_key":  13dcf0808819c529ce18c6139f1098ed78045d6cf486a2217f4b71561c2c589f
+"pub_key":      025b4b752ed16203597a064189ecce30a1055c324cd5644fcc531e8f8f20737185
+```
+
+Channel's
+
+```
+"channel_address":   2NFSDbQx3xCunJXixqp9KLSvuK6k7VTmVNu
+"channel_address_redeem_script":"522102cba1d7a57cdfe83fd8ee4d868fb4b926ab893fd2d8df7706e6e0829c60e923ba21025b4b752ed16203597a064189ecce30a1055c324cd5644fcc531e8f8f2073718552ae"
+"channel_address_script_pub_key":"a914f367037f9c5774c06ecd61fb7ea75bf82739af6387"
+```
+
+
+### Create channel
 
 Alice sends request to Bob for creating a channel between them:
 
-**reqest:**
-```
-    {
-    	"type":-32,
-    		"data":{"funding_pubkey":"0389cc1a24ee6aa7e9b8133df08b60ee2fc41ea2a37e50ebafb4392d313594f1c0",
-			"funding_address":"mtu1CPCHK1yfTCwiTquSKRHcBrW2mHmfJH"
-    		},
-	"recipient_peer_id":"bob"
-    }
-```
-OBD creats the complete message for Alice and routes it to Bob:
-```
+*recipient_peer_id is Bob's user_id.*
+
+Websocket request:
+
+```json
 {
-	"type":-32,
-	"status":true,
-	"sender":"bob",
-	"result":{
-		"type":-32,
-		"status":true,
-		"sender":"bob",
-		"result":		
-			{"chain_hash":"1EXoDusjGwvnjZUyKkxZ4UHEf77z6A5S4P",
-			"channel_reserve_satoshis":0,
-			"delayed_payment_basepoint":"",
-			"dust_limit_satoshis":0,
-			"feerate_per_kw":0,
-			"funding_address":"mtu1CPCHK1yfTCwiTquSKRHcBrW2mHmfJH",
-			"funding_pubkey":"0389cc1a24ee6aa7e9b8133df08b60ee2fc41ea2a37e50ebafb4392d313594f1c0",
-			"funding_satoshis":0,
-			"htlc_basepoint":"",
-			"htlc_minimum_msat":0,
-			"max_accepted_htlcs":0,
-			"max_htlc_value_in_flight_msat":0,
-			"payment_basepoint":"",
-			"push_msat":0,
-			"revocation_basepoint":"",
-			"temporary_channel_id":[115,110,9,131,137,123,219,126,153,157,22,1,117,48,237,221,100,2,148,125,222,216,233,4,201,195,248,13,230,112,81,178],
-			"to_self_delay":0
-	}
+    "type":-32,
+    "data":{
+        "funding_pubkey":"02cba1d7a57cdfe83fd8ee4d868fb4b926ab893fd2d8df7706e6e0829c60e923ba"
+    },
+    "recipient_peer_id":"f38e72f6bf69c69ad1cdc0040550bafb86d5c4d35bd04542fcf5fc5ecb2135be"
 }
 ```
-In Bob's browser, he will see the message, and he accepts the request, by sending the following message back:
+
+OBD creats the complete message for Alice and routes it to Bob:
+
+```json
+{
+    "type":-32,
+    "status":true,
+    "from":"7da8d2441e0ad67040a274902f1965ee1a5c3fdd86f1ddc3280eda5230e006f2",
+    "to":"f38e72f6bf69c69ad1cdc0040550bafb86d5c4d35bd04542fcf5fc5ecb2135be",
+    "result":{
+        "chain_hash":"1EXoDusjGwvnjZUyKkxZ4UHEf77z6A5S4P",
+        "channel_reserve_satoshis":0,
+        "delayed_payment_base_point":"",
+        "dust_limit_satoshis":0,
+        "fee_rate_per_kw":0,
+        "funding_address":"mkb9Muc1Qjt2XT5onkqwf3NWAP6BerDwsG",
+        "funding_pubkey":"02cba1d7a57cdfe83fd8ee4d868fb4b926ab893fd2d8df7706e6e0829c60e923ba",
+        "funding_satoshis":0,
+        "htlc_base_point":"",
+        "htlc_minimum_msat":0,
+        "max_accepted_htlcs":0,
+        "max_htlc_value_in_flight_msat":0,
+        "payment_base_point":"",
+        "push_msat":0,
+        "revocation_base_point":"",
+        "temporary_channel_id":[244,48,63,50,134,204,212,189,12,187,107,11,70,62,207,155,171,60,160,197,150,207,10,69,98,178,240,202,231,132,220,110],
+        "to_self_delay":0
+    }
+}
 ```
+
+In Bob's browser, he will see the message, and he accepts the request, by sending the following message back:
+
+Websocket request:
+
+*funding_pubkey is the pubkey Bob's wallet address*
+
+```json
 {
 	"type":-33,
 	"data":{
-		"temporary_channel_id":[115,110,9,131,137,123,219,126,153,157,22,1,117,48,237,221,100,2,148,125,222,216,233,4,201,195,248,13,230,112,81,178],
-		"funding_pubkey":"0303391b3681f48f5f181bbfbdea741b9a2fdac0e8d99def43b6faed78bb8a4e28",
-		"funding_address":"n4bJvpVHks3Fz9wWB9f445LGV5xTS6LGpA",
-		"attitude":true
+		"temporary_channel_id":[244,48,63,50,134,204,212,189,12,187,107,11,70,62,207,155,171,60,160,197,150,207,10,69,98,178,240,202,231,132,220,110],		"funding_pubkey":"025b4b752ed16203597a064189ecce30a1055c324cd5644fcc531e8f8f20737185",
+		"approval":true
 	}
+}
+```
+
+OBD responses:
+
+```json
+{
+    "type":-33,
+    "status":true,
+    "from":"f38e72f6bf69c69ad1cdc0040550bafb86d5c4d35bd04542fcf5fc5ecb2135be",
+    "to":"7da8d2441e0ad67040a274902f1965ee1a5c3fdd86f1ddc3280eda5230e006f2",
+    "result":{
+        "accept_at":"2019-11-29T16:09:26.983149+08:00",
+        "address_a":"mkb9Muc1Qjt2XT5onkqwf3NWAP6BerDwsG",
+        "address_b":"n1ZEtzhL1HJk5zQbgbez2WWNnP1jiHbW9x",
+        "chain_hash":"1EXoDusjGwvnjZUyKkxZ4UHEf77z6A5S4P",
+        "channel_address":"2NFSDbQx3xCunJXixqp9KLSvuK6k7VTmVNu",
+        "channel_address_redeem_script":"522102cba1d7a57cdfe83fd8ee4d868fb4b926ab893fd2d8df7706e6e0829c60e923ba21025b4b752ed16203597a064189ecce30a1055c324cd5644fcc531e8f8f2073718552ae",
+        "channel_address_script_pub_key":"a914f367037f9c5774c06ecd61fb7ea75bf82739af6387",
+        "channel_id":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+        "channel_reserve_satoshis":0,
+        "close_at":"0001-01-01T00:00:00Z",
+        "create_at":"2019-11-29T16:04:46.970979+08:00",
+        "create_by":"7da8d2441e0ad67040a274902f1965ee1a5c3fdd86f1ddc3280eda5230e006f2",
+        "curr_state":20,
+        "delayed_payment_base_point":"",
+        "dust_limit_satoshis":0,
+        "fee_rate_per_kw":0,
+        "funding_address":"mkb9Muc1Qjt2XT5onkqwf3NWAP6BerDwsG",
+        "funding_pubkey":"02cba1d7a57cdfe83fd8ee4d868fb4b926ab893fd2d8df7706e6e0829c60e923ba",
+        "funding_satoshis":0,
+        "htlc_base_point":"",
+        "htlc_minimum_msat":0,
+        "id":3,
+        "max_accepted_htlcs":0,
+        "max_htlc_value_in_flight_msat":0,
+        "payment_base_point":"",
+        "peer_id_a":"7da8d2441e0ad67040a274902f1965ee1a5c3fdd86f1ddc3280eda5230e006f2",
+        "peer_id_b":"f38e72f6bf69c69ad1cdc0040550bafb86d5c4d35bd04542fcf5fc5ecb2135be",
+        "pub_key_a":"02cba1d7a57cdfe83fd8ee4d868fb4b926ab893fd2d8df7706e6e0829c60e923ba",
+        "pub_key_b":"025b4b752ed16203597a064189ecce30a1055c324cd5644fcc531e8f8f20737185",
+        "push_msat":0,
+        "revocation_base_point":"",
+        "temporary_channel_id":[244,48,63,50,134,204,212,189,12,187,107,11,70,62,207,155,171,60,160,197,150,207,10,69,98,178,240,202,231,132,220,110],
+        "to_self_delay":0
+    }
 }
 ```
 
 When you test, you should replace the `temporary_channel_id` by the exact value that OBD generates for you.
 
-### deposit
-Alice(`mtu1CPCHK1yfTCwiTquSKRHcBrW2mHmfJH`) deposits 0.01 to the channel (`2N3vGUfBSNALGGxUo8gTYpVQAmLwjXomLhF`), where fee is 0.00001, and then abtains the transaction ID:
+
+### Deposit
+
+Alice(`mkb9Muc1Qjt2XT5onkqwf3NWAP6BerDwsG`) deposits 0.01 to the channel (`2NFSDbQx3xCunJXixqp9KLSvuK6k7VTmVNu`), where fee is 0.00001, and then abtains the transaction ID:
 
 **request**
-```
+```json
 {
-    	"type":1009,
-    	"data":{
-		"fromBitCoinAddress":"mtu1CPCHK1yfTCwiTquSKRHcBrW2mHmfJH",
-		"fromBitCoinAddressPrivKey":"cTBs2yp9DFeJhsJmg9ChFDuC694oiVjSakmU7s6CFr35dfhcko1V",
-		"toBitCoinAddress":"2N3vGUfBSNALGGxUo8gTYpVQAmLwjXomLhF",
-		"amount":0.001,
-		"minerFee":0.00001,
-    	}
+    "type":1009,
+    "data":{
+    "fromBitCoinAddress":"mkb9Muc1Qjt2XT5onkqwf3NWAP6BerDwsG",
+    "fromBitCoinAddressPrivKey":"d33390f109115d130f8d1da429c9ac8bda85870c2bb4501959402c007a9a4f6f",
+    "toBitCoinAddress":"2NFSDbQx3xCunJXixqp9KLSvuK6k7VTmVNu",
+    "amount":0.001,
+    "minerFee":0.00001,
+    }
 }
 ```
 
 OBD responses with the transaction script and other payloads:
 
-```
+```json
 {
 	"type":1009,
 	"status":true,
@@ -363,7 +590,8 @@ OBD responses with the transaction script and other payloads:
 ```
 
 then Alice tells Bob she created a deposit transaction:
-```
+
+```json
 {
 	"type":-34,
 	"data":{
@@ -376,8 +604,10 @@ then Alice tells Bob she created a deposit transaction:
 	}
 }
 ```
+
 Bob replies he knows this deposit, and then OBD creates commitment transaction, revockable delivery transaction and breach remedy transaction:
-```
+
+```json
 {
 	"type":-35,
 	"data":{
@@ -389,7 +619,8 @@ Bob replies he knows this deposit, and then OBD creates commitment transaction, 
 ```
 
 OBD sends a message to both Alice and Bob, reporting the status(true or false) of all the internal transactions:
-```
+
+```json
 {
 	"type":-35,
 	"status":true,
@@ -416,7 +647,7 @@ OBD sends a message to both Alice and Bob, reporting the status(true or false) o
 }
 ```
 
-### payments in a channel
+### Payments in a channel
 
 Now Alice can use this channel to pay to Bob. Here are some data generated by OBD used in contructing temporary multi-sig addresses and temporary transactions of i-th commitment transaction, which will be invalidated after new(i+1) commitment transaction is created.
 
@@ -431,7 +662,7 @@ You shall find your corresponding temporary data within the responses of OBD:
 
 Alice sends to Bob:
 
-```
+```json
 {
 	"type":-351,
 	"data":{
@@ -447,7 +678,8 @@ Alice sends to Bob:
 ```
 
 then Bob replies the money is well receieved:
-```
+
+```json
 {
 	"type":-352,
 	"data":{
@@ -560,11 +792,7 @@ Three clients sign up.
 
 ```json
 {
-	"type":101,
-	"data":{
-        "peer_id":"alice@mail.com",
-        "password":"123456"
-    }
+	"type":101
 }
 ```
 
@@ -572,11 +800,7 @@ Three clients sign up.
 
 ```json
 {
-	"type":101,
-	"data":{
-        "peer_id":"bob@mail.com",
-        "password":"123456"
-    }
+	"type":101
 }
 ```
 
@@ -584,11 +808,7 @@ Three clients sign up.
 
 ```json
 {
-	"type":101,
-	"data":{
-        "peer_id":"carol@mail.com",
-        "password":"123456"
-    }
+	"type":101
 }
 ```
 
@@ -598,10 +818,9 @@ Three clients login.
 
 ```json
 {
-	"type":1,
-	"data":{
-        "peer_id":"alice@mail.com",
-        "password":"123456"
+    "type":1,
+    "data":{
+        "mnemonic":"<Your own OBD generates for you>"
     }
 }
 ```
@@ -610,10 +829,9 @@ Three clients login.
 
 ```json
 {
-	"type":1,
-	"data":{
-        "peer_id":"bob@mail.com",
-        "password":"123456"
+    "type":1,
+    "data":{
+        "mnemonic":"<Your own OBD generates for you>"
     }
 }
 ```
@@ -622,10 +840,9 @@ Three clients login.
 
 ```json
 {
-	"type":1,
-	"data":{
-        "peer_id":"carol@mail.com",
-        "password":"123456"
+    "type":1,
+    "data":{
+        "mnemonic":"<Your own OBD generates for you>"
     }
 }
 ```
@@ -644,16 +861,38 @@ Alice sends request to her OBD instance, her OBD helps her complete the message,
     "data":{
         "funding_pubkey":"029cf4b150da0065d5c08bf088e8a5367d35ff72e4e79b39efb401530d19fa3f3c"
     },
-    "recipient_peer_id":"bob"
+    "recipient_peer_id":"<Bob's user_id>"
 }
 ```
 
 **OBD Responses:**
 
-Create a temporary channel id.
-
 ```json
-[68,9,34,176,221,163,195,216,120,239,152,94,138,101,252,83,99,125,195,221,146,3,0,128,166,224,203,99,101,48,20,164]
+{
+    "type":-32,
+    "status":true,
+    "from":"7da8d2441e0ad67040a274902f1965ee1a5c3fdd86f1ddc3280eda5230e006f2",
+    "to":"f38e72f6bf69c69ad1cdc0040550bafb86d5c4d35bd04542fcf5fc5ecb2135be",
+    "result":{
+        "chain_hash":"1EXoDusjGwvnjZUyKkxZ4UHEf77z6A5S4P",
+        "channel_reserve_satoshis":0,
+        "delayed_payment_base_point":"",
+        "dust_limit_satoshis":0,
+        "fee_rate_per_kw":0,
+        "funding_address":"mkb9Muc1Qjt2XT5onkqwf3NWAP6BerDwsG",
+        "funding_pubkey":"02cba1d7a57cdfe83fd8ee4d868fb4b926ab893fd2d8df7706e6e0829c60e923ba",
+        "funding_satoshis":0,
+        "htlc_base_point":"",
+        "htlc_minimum_msat":0,
+        "max_accepted_htlcs":0,
+        "max_htlc_value_in_flight_msat":0,
+        "payment_base_point":"",
+        "push_msat":0,
+        "revocation_base_point":"",
+        "temporary_channel_id":[244,48,63,50,134,204,212,189,12,187,107,11,70,62,207,155,171,60,160,197,150,207,10,69,98,178,240,202,231,132,220,110],
+        "to_self_delay":0
+    }
+}
 ```
 
 **Bob replies:**
@@ -674,8 +913,8 @@ Create a temporary channel id.
 {
     "type": -33, 
     "status": true, 
-    "from": "bob", 
-    "to": "bob", 
+    "from": "<user_id>", 
+    "to": "<user_id>", 
     "result": {
         "accept_at": "2019-11-04T10:59:51.1997943+08:00", 
         "address_a": "muYrqVWTKnkaVAMuqn59Ta6GL912ixpxit", 
@@ -729,17 +968,13 @@ and routes his request to Carol's OBD for creating a channel between them.
     "data":{
         "funding_pubkey":"03da1b78a5ab4a5e4e13515e5104dbfc1d2d349d89039c15eda9c0118b7edaa91f"
     },
-    "recipient_peer_id":"carol"
+    "recipient_peer_id":"<Carol's user_id>"
 }
 ```
 
 **OBD Responses:**
 
-Create a temporary channel id.
-
-```json
-[26,200,121,127,242,0,84,191,162,35,118,90,99,71,229,123,238,190,22,226,54,211,38,113,229,165,241,132,153,48,99,86]
-```
+Similar json data structure above.
 
 **Carol replies:**
 
@@ -755,49 +990,7 @@ Create a temporary channel id.
 
 **OBD Responses:**
 
-```json
-{
-    "type": -33, 
-    "status": true, 
-    "from": "carol", 
-    "to": "carol", 
-    "result": {
-        "accept_at": "2019-11-04T11:07:27.4224459+08:00", 
-        "address_a": "mtSJixJ8eCguXDAdkGGoQu3nG1n77a6td8", 
-        "address_b": "mgoiBkppoJMc8cC8XRYNvFEjath5DrKqj8", 
-        "chain_hash": "1EXoDusjGwvnjZUyKkxZ4UHEf77z6A5S4P", 
-        "channel_address": "2MzQW254vB6mHsUvLHxCnKZ73Gcw7kSrvsd", 
-        "channel_address_redeem_script": "522103da1b78a5ab4a5e4e13515e5104dbfc1d2d349d89039c15eda9c0118b7edaa91f21034094927aa69a96d82d7e67146cf9b8dcd775919d1373d5319454e6004c0cdf7a52ae", 
-        "channel_address_script_pub_key": "a9144e8a01887f51a04610909ceaddb596fbfe109b8f87", 
-        "channel_id": [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-        "channel_reserve_satoshis": 0, 
-        "close_at": "0001-01-01T00:00:00Z", 
-        "create_at": "2019-11-04T11:06:50.261993+08:00", 
-        "create_by": "bob", 
-        "curr_state": 20, 
-        "delayed_payment_base_point": "", 
-        "dust_limit_satoshis": 0, 
-        "fee_rate_per_kw": 0, 
-        "funding_address": "mtSJixJ8eCguXDAdkGGoQu3nG1n77a6td8", 
-        "funding_pubkey": "03da1b78a5ab4a5e4e13515e5104dbfc1d2d349d89039c15eda9c0118b7edaa91f", 
-        "funding_satoshis": 0, 
-        "htlc_base_point": "", 
-        "htlc_minimum_msat": 0, 
-        "id": 2, 
-        "max_accepted_htlcs": 0, 
-        "max_htlc_value_in_flight_msat": 0, 
-        "payment_base_point": "", 
-        "peer_id_a": "bob", 
-        "peer_id_b": "carol", 
-        "pub_key_a": "03da1b78a5ab4a5e4e13515e5104dbfc1d2d349d89039c15eda9c0118b7edaa91f", 
-        "pub_key_b": "034094927aa69a96d82d7e67146cf9b8dcd775919d1373d5319454e6004c0cdf7a", 
-        "push_msat": 0, 
-        "revocation_base_point": "", 
-        "temporary_channel_id": [26,200,121,127,242,0,84,191,162,35,118,90,99,71,229,123,238,190,22,226,54,211,38,113,229,165,241,132,153,48,99,86],
-        "to_self_delay": 0
-    }
-}
-```
+Similar json data structure above.
 
 <br/>
 
@@ -831,8 +1024,8 @@ Need three times deposit, every time can be 0.0001 btc for miner fee.
 {
     "type": 1009, 
     "status": true, 
-    "from": "alice", 
-    "to": "alice", 
+    "from": "<user_id>", 
+    "to": "<user_id>", 
     "result": {
         "hex": "0200000002634ad0a2468850f4bed537ffc2a28aa6395cb2c34efe54b321135bae298d5d79020000006a4730440220421bc0e7cbeaebb5ad7e0559d5be01f50143816243904bed8c4fe2972717ad0b02206bf8b4f3dc911b6e8c6748b248e6e59dd4b43e4b5a197379863040f374a979a10121029cf4b150da0065d5c08bf088e8a5367d35ff72e4e79b39efb401530d19fa3f3cffffffffe2fa86ac404f71b97e6b34010549a82c9f3ee1a150c54b7daec99c0da83f8482010000006a47304402207d52f8a36791ce26361809b9a7b9da4175bf3b5ad6004d6a46ecb4a329dfdb370220217c481b71bcafbf3e93fe72837c28e48f38474ea1341bae030867e37be5c08c0121029cf4b150da0065d5c08bf088e8a5367d35ff72e4e79b39efb401530d19fa3f3cffffffff02102700000000000017a914f64403be27af8af0a8abc21aed584b06f80adf30876a190f00000000001976a91499ee096d15bc8ae4ac8856a918ff2c4572877fa488ac00000000", 
         "txid": "b18aab6599f1661963763281c83ddd7f6de51813881b2ee563008c021d31fcd4"
@@ -857,8 +1050,8 @@ Need three times deposit, every time can be 0.0001 btc for miner fee.
 {
     "type": -3400, 
     "status": true, 
-    "from": "alice", 
-    "to": "bob", 
+    "from": "<user_id>", 
+    "to": "<user_id>", 
     "result": {
         "amount": 0.0001, 
         "funding_txid": "b18aab6599f1661963763281c83ddd7f6de51813881b2ee563008c021d31fcd4", 
@@ -885,8 +1078,8 @@ Need three times deposit, every time can be 0.0001 btc for miner fee.
 {
     "type": -3500, 
     "status": true, 
-    "from": "bob", 
-    "to": "bob", 
+    "from": "<user_id>", 
+    "to": "<user_id>", 
     "result": {
         "channel_id": [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
         "create_at": "2019-11-04T13:05:52.1148727+08:00", 
@@ -929,8 +1122,8 @@ Deposit USDT for transfer to Bob. This USDT is asset Alice would like to transfe
 {
     "type": 2001, 
     "status": true, 
-    "from": "alice", 
-    "to": "alice", 
+    "from": "<user_id>", 
+    "to": "<user_id>", 
     "result": {
         "hex": "0200000001e47f333e4a377c9877ee8aedccca476dd5a6bf7aae2116923c937ebfbd173df1010000006a47304402205d721941d28ec7a6a427d0da51cf89e70772548d0829b627919a3ebf8722e96a02207658e909db233dfa6d4ca4f1a3a08fc0325c045c519d2e0e8f6af56ea6e334f00121029cf4b150da0065d5c08bf088e8a5367d35ff72e4e79b39efb401530d19fa3f3cffffffff03a6b50e00000000001976a91499ee096d15bc8ae4ac8856a918ff2c4572877fa488ac0000000000000000166a146f6d6e690000000000000079000000012a05f2001c0200000000000017a914f64403be27af8af0a8abc21aed584b06f80adf308700000000"
     }
@@ -968,8 +1161,8 @@ pubkey:   0380874d124f259b31ee8cf3256d784f0269ae9cf3b577e5c271c452572f8b28e5
 {
     "type": -34, 
     "status": true, 
-    "from": "alice", 
-    "to": "alice", 
+    "from": "<user_id>", 
+    "to": "<user_id>", 
     "result": {
         "amount_a": 50, 
         "amount_b": 0, 
@@ -1010,8 +1203,8 @@ pubkey:   0380874d124f259b31ee8cf3256d784f0269ae9cf3b577e5c271c452572f8b28e5
 {
     "type": -35, 
     "status": true, 
-    "from": "bob", 
-    "to": "bob", 
+    "from": "<user_id>", 
+    "to": "<user_id>", 
     "result": {
         "amount_a": 50, 
         "amount_b": 0, 
@@ -1068,7 +1261,7 @@ c) There is a direct channel between Bob and Carol.
 	"data": {
 		"property_id": 121,
 		"amount": 5,
-		"recipient_peer_id": "carol"
+		"recipient_peer_id": "<Carol's user_id>"
 	}
 }
 ```
@@ -1079,8 +1272,8 @@ c) There is a direct channel between Bob and Carol.
 {
     "type": -40, 
     "status": true, 
-    "from": "alice", 
-    "to": "carol", 
+    "from": "<user_id>", 
+    "to": "<user_id>", 
     "result": {
         "amount": 5, 
         "approval": false, 
@@ -1117,8 +1310,8 @@ within three days, then Alice will settle the contract by paying the middleman a
 {
     "type": -41, 
     "status": true, 
-    "from": "carol", 
-    "to": "alice", 
+    "from": "<user_id>", 
+    "to": "<user_id>", 
     "result": {
         "approval": true, 
         "h": "83519233492eb05ddd547757f2c3d151ad9392b2ebf48fc1a88e07e61dd82a45", 
@@ -1162,8 +1355,8 @@ assets from one client to another.
 {
     "type": -42, 
     "status": true, 
-    "from": "alice", 
-    "to": "bob", 
+    "from": "<user_id>", 
+    "to": "<user_id>", 
     "result": {
         "h": "83519233492eb05ddd547757f2c3d151ad9392b2ebf48fc1a88e07e61dd82a45", 
         "request_hash": "742db9677d53316b8faef7c9f40766e4f39dd6b82487c103960e9170de8ce636"
@@ -1214,8 +1407,8 @@ pubkey:   03d2edfe1f0a527f70473dbacb386e4e6a9cc0ea0cabf71f6c0a3dd516a8e6099f
 {
     "type": -44, 
     "status": true, 
-    "from": "bob", 
-    "to": "alice", 
+    "from": "<user_id>", 
+    "to": "<user_id>", 
     "result": {
         "approval": true, 
         "request_hash": "742db9677d53316b8faef7c9f40766e4f39dd6b82487c103960e9170de8ce636"
@@ -1271,8 +1464,8 @@ pubkey:  030cb3034f7374d5bb614e27169df99d346748a1a7a365a27b1138f5db7ad2b0f3
 {
     "type": -45, 
     "status": true, 
-    "from": "alice", 
-    "to": "bob", 
+    "from": "<user_id>", 
+    "to": "<user_id>", 
     "result": {
         "h": "e7626f2b7207006d6515399c587c09c3bfb5ed3b12f63c12b0d40e634f9dd9a3", 
         "h_and_r_info_request_hash": "1fe82bc9152741670c4ee2b4853df9346c1cc63fce6d1c896e7eeca8cc62c9d9"
@@ -1310,8 +1503,8 @@ contract by paying Carol assets.
 {
     "type": -43, 
     "status": true, 
-    "from": "bob", 
-    "to": "carol", 
+    "from": "<user_id>", 
+    "to": "<user_id>", 
     "result": {
         "h": "e7626f2b7207006d6515399c587c09c3bfb5ed3b12f63c12b0d40e634f9dd9a3", 
         "request_hash": "1fe82bc9152741670c4ee2b4853df9346c1cc63fce6d1c896e7eeca8cc62c9d9"
@@ -1361,8 +1554,8 @@ pubkey:  03e96c6692bef50af7c6c777ff1bd65b1134d18c98be801e00f8e6247db65950b8
 {
     "type": -44, 
     "status": true, 
-    "from": "carol", 
-    "to": "carol", 
+    "from": "<user_id>", 
+    "to": "<user_id>", 
     "result": {
         "approval": true, 
         "request_hash": "742db9677d53316b8faef7c9f40766e4f39dd6b82487c103960e9170de8ce636"
@@ -1418,8 +1611,8 @@ pubkey:  02977ddeffc04ac0c99c74db308a4db39e60b338d99f3d1661f5ae24f3e17ad414
 {
     "type": -45, 
     "status": true, 
-    "from": "bob", 
-    "to": "carol", 
+    "from": "<user_id>", 
+    "to": "<user_id>", 
     "result": {
         "h": "e7626f2b7207006d6515399c587c09c3bfb5ed3b12f63c12b0d40e634f9dd9a3", 
         "h_and_r_info_request_hash": "1fe82bc9152741670c4ee2b4853df9346c1cc63fce6d1c896e7eeca8cc62c9d9"
@@ -1469,8 +1662,8 @@ pubkey:  020eaa8f0c0f2761215af43dd7fccb11df8cafffcff4e8f186bd1b8a8a11e5f680
 {
     "type": -46, 
     "status": true, 
-    "from": "carol", 
-    "to": "bob", 
+    "from": "<user_id>", 
+    "to": "<user_id>", 
     "result": {
         "id": 4, 
         "r": "2de142c8006a3462241e96a610b59f3d92d8259c", 
@@ -1504,8 +1697,8 @@ If correct, then create rest HTLC commitment transactions.
 {
     "type": -47, 
     "status": true, 
-    "from": "bob", 
-    "to": "carol", 
+    "from": "<user_id>", 
+    "to": "<user_id>", 
     "result": {
         "r": "2de142c8006a3462241e96a610b59f3d92d8259c", 
         "request_hash": "1fe82bc9152741670c4ee2b4853df9346c1cc63fce6d1c896e7eeca8cc62c9d9"
@@ -1551,8 +1744,8 @@ pubkey:  03ebdfc067f822e9ae0d76759c422bfd3aee342e21ca716dc16b81b335da73d69e
 {
     "type": -46, 
     "status": true, 
-    "from": "bob", 
-    "to": "alice", 
+    "from": "<user_id>", 
+    "to": "<user_id>", 
     "result": {
         "id": 4, 
         "r": "2de142c8006a3462241e96a610b59f3d92d8259c", 
@@ -1586,8 +1779,8 @@ If correct, then create rest HTLC commitment transactions.
 {
     "type": -47, 
     "status": true, 
-    "from": "alice", 
-    "to": "bob", 
+    "from": "<user_id>", 
+    "to": "<user_id>", 
     "result": {
         "r": "2de142c8006a3462241e96a610b59f3d92d8259c", 
         "request_hash": "1fe82bc9152741670c4ee2b4853df9346c1cc63fce6d1c896e7eeca8cc62c9d9"
@@ -1635,8 +1828,8 @@ pubkey:  02fed65567b2ab00e2cbb28b46a687ce8fd0894486989cba54975b45bbc6a85ed8
 {
     "type": -48, 
     "status": true, 
-    "from": "alice", 
-    "to": "bob", 
+    "from": "<user_id>", 
+    "to": "<user_id>", 
     "result": {
         "channel_id": [174,36,154,103,145,76,58,237,32,61,201,81,17,156,135,216,66,28,83,203,251,152,138,102,158,113,131,32,241,229,43,75],
         "create_at": "2019-11-06T08:45:40.4120228+08:00", 
@@ -1686,8 +1879,8 @@ pubkey:  0298bdca47bbb76b1022eb7d18534961a12ce6dd80308c839576602b771e324fba
 {
     "type": -49, 
     "status": true, 
-    "from": "bob", 
-    "to": "bob", 
+    "from": "<user_id>", 
+    "to": "<user_id>", 
     "result": {
         "msg": "close htlc success"
     }
@@ -1732,8 +1925,8 @@ pubkey:  03080445b531e1df053ce9f1e3d01cdf679f693b23a991ce74145cb0b2e29a2b2d
 {
     "type": -48, 
     "status": true, 
-    "from": "carol", 
-    "to": "carol", 
+    "from": "<user_id>", 
+    "to": "<user_id>", 
     "result": {
         "channel_id": [223,177,75,185,186,22,47,155,145,238,242,1,158,247,192,1,48,183,197,192,190,72,49,233,62,65,156,103,111,172,109,51],
         "create_at": "2019-11-06T08:49:19.3717723+08:00", 
@@ -1783,8 +1976,8 @@ pubkey:  02a08635fb1c664aa2bc1a87e76f8dc0b3170c0d45d0f899b3f192093afa1bcd8c
 {
     "type": -49, 
     "status": true, 
-    "from": "bob", 
-    "to": "carol", 
+    "from": "<user_id>", 
+    "to": "<user_id>", 
     "result": {
         "msg": "close htlc success"
     }
