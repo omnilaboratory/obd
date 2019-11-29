@@ -172,6 +172,9 @@ Which tells us the daemon is running. We are going to use WebSocket online testi
 
 
 ## Step 4: Test channel operations using Websocket testing tool.
+
+**NOTE: You should replace all of relevant data by the exact value that your own OBD generates for you**
+
 Since OmniBOLT deamon(OBD) exposes WebSocket services, we use web socket test client for Chrome to do experiments. Install it from:
 ```
 https://chrome.google.com/webstore/detail/websocket-test-client/fgponpodhbmadfljofbimhhlengambbn?hl=en
@@ -345,8 +348,9 @@ OBD responses:
 
 *A SHA256 string of mnemonic words as a user id.*
 
-**Alice's id is: 7da8d2441e0ad67040a274902f1965ee1a5c3fdd86f1ddc3280eda5230e006f2**
-**Bob's   id is: f38e72f6bf69c69ad1cdc0040550bafb86d5c4d35bd04542fcf5fc5ecb2135be**
+Alice's id is: 7da8d2441e0ad67040a274902f1965ee1a5c3fdd86f1ddc3280eda5230e006f2
+
+Bob's   id is: f38e72f6bf69c69ad1cdc0040550bafb86d5c4d35bd04542fcf5fc5ecb2135be
 
 
 ### Generate a wallet address
@@ -359,7 +363,7 @@ A wallet address is used for:
 * As a temp address for create commitment transactions
 
 
-1、Alice's address
+1、Generate Alice's address
 
 Websocket request:
 
@@ -387,7 +391,7 @@ OBD responses:
 }
 ```
 
-2、Bob's address
+2、Generate Bob's address
 
 Websocket request:
 
