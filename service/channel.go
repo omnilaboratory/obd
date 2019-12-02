@@ -526,7 +526,7 @@ func addRDTxToWaitDB(tx storm.Node, lastRevocableDeliveryTx *dao.RevocableDelive
 		return err
 	}
 	if count > 0 {
-		return errors.New("always save")
+		return errors.New("already save")
 	}
 	node.TransactionHex = lastRevocableDeliveryTx.TxHash
 	node.Type = 0

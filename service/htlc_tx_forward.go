@@ -401,7 +401,7 @@ func (service *htlcForwardTxManager) SenderBeginCreateHtlcCommitmentTx(msgData s
 	if err == nil {
 		if lastCommitmentTx != nil &&
 			lastCommitmentTx.TxType == dao.CommitmentTransactionType_Htlc {
-			return nil, "", errors.New("always created")
+			return nil, "", errors.New("already created")
 		}
 	}
 

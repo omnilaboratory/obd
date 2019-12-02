@@ -1381,7 +1381,7 @@ func addHT1aTxToWaitDB(tx storm.Node, htnx *dao.HTLCTimeoutTxForAAndExecutionFor
 		return err
 	}
 	if count > 0 {
-		return errors.New("always save")
+		return errors.New("already save")
 	}
 	node.TransactionHex = htnx.RSMCTxHash
 	node.Type = 1
@@ -1418,7 +1418,7 @@ func addHTRD1aTxToWaitDB(htnxIdAndHtnxRdId []int) error {
 		return err
 	}
 	if count > 0 {
-		return errors.New("always save")
+		return errors.New("already save")
 	}
 
 	node.TransactionHex = htrd.TxHash
@@ -1445,7 +1445,7 @@ func addHTDnxTxToWaitDB(tx storm.Node, txInfo *dao.HTLCTimeoutDeliveryTxB) (err 
 		return err
 	}
 	if count > 0 {
-		return errors.New("always save")
+		return errors.New("already save")
 	}
 	node.TransactionHex = txInfo.TxHash
 	node.Type = 2
