@@ -595,13 +595,14 @@ OBD responses with the transaction script and other payloads:
 
 ```json
 {
-	"type":1009,
-	"status":true,
-	"sender":"1323c03c-d60f-4465-af15-174d97938309",
-	"result":{
-		"hex":"02000000..... too long to display, you shall get your response from OBD......014eba8ac00000000",
-		"txid":"e25c3f5763b11cda6ea56ad8eda7e5677a037aa614208e46acfa5d8484e89f39"
-	}
+    "type": 1009, 
+    "status": true, 
+    "from": "<user_id>", 
+    "to": "<user_id>", 
+    "result": {
+        "hex": "0200000002634ad0a2468850f4bed537ffc2a28aa6395cb2c34efe54b321135bae298d5d79020000006a4730440220421bc0e7cbeaebb5ad7e0559d5be01f50143816243904bed8c4fe2972717ad0b02206bf8b4f3dc911b6e8c6748b248e6e59dd4b43e4b5a197379863040f374a979a10121029cf4b150da0065d5c08bf088e8a5367d35ff72e4e79b39efb401530d19fa3f3cffffffffe2fa86ac404f71b97e6b34010549a82c9f3ee1a150c54b7daec99c0da83f8482010000006a47304402207d52f8a36791ce26361809b9a7b9da4175bf3b5ad6004d6a46ecb4a329dfdb370220217c481b71bcafbf3e93fe72837c28e48f38474ea1341bae030867e37be5c08c0121029cf4b150da0065d5c08bf088e8a5367d35ff72e4e79b39efb401530d19fa3f3cffffffff02102700000000000017a914f64403be27af8af0a8abc21aed584b06f80adf30876a190f00000000001976a91499ee096d15bc8ae4ac8856a918ff2c4572877fa488ac00000000", 
+        "txid": "b18aab6599f1661963763281c83ddd7f6de51813881b2ee563008c021d31fcd4"
+    }
 }
 ```
 
@@ -615,7 +616,8 @@ Alice starts to deposit omni assets to the channel. This is quite similar to the
 {
 	"type":2001,
 	"data":{
-        "from_address":"muYrqVWTKnkaVAMuqn59Ta6GL912ixpxit",			"from_address_private_key":"cToieuvo3JjkEUKa3tjd6J98RXKDTo1d2hUSVgKpZ1KwBvGhQFL8",
+        "from_address":"muYrqVWTKnkaVAMuqn59Ta6GL912ixpxit",			
+        "from_address_private_key":"cToieuvo3JjkEUKa3tjd6J98RXKDTo1d2hUSVgKpZ1KwBvGhQFL8",
         "to_address":"2NFhMhDJT9TsnBCG6L2amH3eDXxgwW6EJh7",
         "amount":50,
         "property_id": 121
