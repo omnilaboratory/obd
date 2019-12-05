@@ -563,7 +563,19 @@ When you test, you should replace the `temporary_channel_id` by the exact value 
 
 ### Deposit
 
-Alice(`mkb9Muc1Qjt2XT5onkqwf3NWAP6BerDwsG`) deposits 0.01 to the channel (`2NFSDbQx3xCunJXixqp9KLSvuK6k7VTmVNu`), where fee is 0.00001, and then abtains the transaction ID:
+**Deposit BTC for miner fee**
+
+Alice tells her OBD to create a funding transaction. Since on Omnilayer/BTC, the miner fee is bitcoin, so that first we need to deposit small amount of bitcoin used in withdraw money, creating temporary multi-sig addresses for transactions in RSMC and HTLC.  
+
+After that, we need to create the second part of transactions that deposit tokens which both sides agreed to fund the channel.  
+
+This is the place that OBD differs from LND or other lightning implementation, since they are for BTC only, so there is no need for them to deposit extra bitcoin for fee.
+
+*Another difference is that we need two transactions for the miner fees, one for the channel, and the other for a internal temporary multi-sig address. So Alice may raise request twice, and Bob needs to answer twice.*
+
+*It is not finalized yet.*
+
+Alice(`mkb9Muc1Qjt2XT5onkqwf3NWAP6BerDwsG`) deposits 0.01 btc to the channel (`2NFSDbQx3xCunJXixqp9KLSvuK6k7VTmVNu`), where fee is 0.00001, and then abtains the transaction ID:
 
 **request**
 ```json
@@ -593,18 +605,46 @@ OBD responses with the transaction script and other payloads:
 }
 ```
 
-then Alice tells Bob she created a deposit transaction:
+**Deposit Omni Assets**
+
+Alice starts to deposit omni assets to the channel. This is quite similar to the the btc funding procedure.
+
+**request**
+
+```json
+{
+	"type":2001,
+	"data":{
+        "from_address":"muYrqVWTKnkaVAMuqn59Ta6GL912ixpxit",			"from_address_private_key":"cToieuvo3JjkEUKa3tjd6J98RXKDTo1d2hUSVgKpZ1KwBvGhQFL8",
+        "to_address":"2NFhMhDJT9TsnBCG6L2amH3eDXxgwW6EJh7",
+        "amount":50,
+        "property_id": 121
+	}
+}
+```
+
+**OBD responses:**
+
+```json
+{
+    "type":2001,
+    "status":true,
+    "from":"<user_id>",
+    "to":"<user_id>",
+    "result":{
+        "hex":"0200000001e47f333e4a377c9877ee8aedccca476dd5a6bf7aae2116923c937ebfbd173df1010000006a47304402205d721941d28ec7a6a427d0da51cf89e70772548d0829b627919a3ebf8722e96a02207658e909db233dfa6d4ca4f1a3a08fc0325c045c519d2e0e8f6af56ea6e334f00121029cf4b150da0065d5c08bf088e8a5367d35ff72e4e79b39efb401530d19fa3f3cffffffff03a6b50e00000000001976a91499ee096d15bc8ae4ac8856a918ff2c4572877fa488ac0000000000000000166a146f6d6e690000000000000079000000012a05f2001c0200000000000017a914f64403be27af8af0a8abc21aed584b06f80adf308700000000"
+    }
+}
+```
+
+Then Alice tells Bob she created a deposit transaction:
 
 ```json
 {
 	"type":-34,
 	"data":{
-		"temporary_channel_id":[138,61,69,205,17,204,61,156,218,215,97,165,250,225,12,179,46,100,75,124,17,22,112,193,15,17,84,236,116,199,108,126],
-		"property_id":0,
- 		"funding_tx_hex":"0200e28a6..... too long to display, you shall get your transaction hex from OBD .......a88ac00000000",
-		"temp_address_pub_key":"03ea01f8b137df5744ec2b0b91bc46139cabf228403264df65f6233bd7f0cbd17d",
-    		"temp_address_private_key":"cSgTisoiZLzH5vrwHBMAXLC5nvND2ffcqqDtejMg12rEVrUMeP5R",
-		"channel_address_private_key":"cTBs2yp9DFeJhsJmg9ChFDuC694oiVjSakmU7s6CFr35dfhcko1V"
+		"temporary_channel_id":[68,9,34,176,221,163,195,216,120,239,152,94,138,101,252,83,99,125,195,221,146,3,0,128,166,224,203,99,101,48,20,164],		"funding_tx_hex":"0200000001e47f333e4a377c9877ee8aedccca476dd5a6bf7aae2116923c937ebfbd173df1010000006a47304402205d721941d28ec7a6a427d0da51cf89e70772548d0829b627919a3ebf8722e96a02207658e909db233dfa6d4ca4f1a3a08fc0325c045c519d2e0e8f6af56ea6e334f00121029cf4b150da0065d5c08bf088e8a5367d35ff72e4e79b39efb401530d19fa3f3cffffffff03a6b50e00000000001976a91499ee096d15bc8ae4ac8856a918ff2c4572877fa488ac0000000000000000166a146f6d6e690000000000000079000000012a05f2001c0200000000000017a914f64403be27af8af0a8abc21aed584b06f80adf308700000000",	
+        "temp_address_pub_key":"0380874d124f259b31ee8cf3256d784f0269ae9cf3b577e5c271c452572f8b28e5","temp_address_private_key":"cVBFoaRumDJYntRRV244KUj7kyrGauGhT6bZcf15xfhGCh9mAbVp",		"channel_address_private_key":"cToieuvo3JjkEUKa3tjd6J98RXKDTo1d2hUSVgKpZ1KwBvGhQFL8"
 	}
 }
 ```
@@ -615,39 +655,39 @@ Bob replies he knows this deposit, and then OBD creates commitment transaction, 
 {
 	"type":-35,
 	"data":{
-		"channel_id":[57,159,232,132,132,93,250,172,70,142,32,20,166,122,3,122,103,229,167,237,216,106,165,110,218,28,177,99,87,63,92,226],
-		"fundee_channel_address_private_key":"cUC9UsuybBiS7ZBFBhEFaeuhBXbPSm6yUBZVaMSD2DqS3aiBouvS",
-		"attitude":true
-    	}
-    }
+		"channel_id":[174,36,154,103,145,76,58,237,32,61,201,81,17,156,135,216,66,28,83,203,251,152,138,102,158,113,131,32,241,229,43,75],		"fundee_channel_address_private_key":"cTr7SHQ7FR6Ej8ZU8vDpbt3y9GuF3hnBqn81Tv9Tdi5TeakqKavt",
+		"approval":true
+	}
+}
 ```
 
 OBD sends a message to both Alice and Bob, reporting the status(true or false) of all the internal transactions:
 
 ```json
 {
-	"type":-35,
-	"status":true,
-	"sender":"bob",
-	"result":
-	{
-		"amount_a":0.001,
-		"amount_b":0,
-		"channel_id":[57,159,232,132,132,93,250,172,70,142,32,20,166,122,3,122,103,229,167,237,216,106,165,110,218,28,177,99,87,63,92,226],
-		"channel_info_id":1,
-		"create_at":"2019-09-10T17:39:04.5786763+08:00",
-		"create_by":"alice",
-		"curr_state":20,
-		"fundee_sign_at":"2019-09-10T17:39:19.8482475+08:00",
-		"funder_pub_key_2_for_commitment":"03ea01f8b137df5744ec2b0b91bc46139cabf228403264df65f6233bd7f0cbd17d",
-		"funding_output_index":0,
-		"funding_tx_hex":"02000000014eba4c789910f6a37455eda8da82517992e1e28a69a5b1d82233a8cc364ee0a4010000006a47304402207f1c6a788846bad8d1bc1f4a785dcb8c83aa8c90dc132e0bb5059b26b1a31c640220435a70c37cba9c9464e03f395588385253c2a73320a820da6e87dcfd0450b5fd01210389cc1a24ee6aa7e9b8133df08b60ee2fc41ea2a37e50ebafb4392d313594f1c0ffffffff02a08601000000000017a91475138ee96bf42cec92a6815d4fd47b821fbdeceb8799fe0100000000001976a91492c53581aa6f00960c4a1a50039c00ffdbe9e74a88ac00000000",
-		"funding_txid":"e25c3f5763b11cda6ea56ad8eda7e5677a037aa614208e46acfa5d8484e89f39",
-		"id":1,
-		"peer_id_a":"alice",
-		"peer_id_b":"bob",
-		"property_id":0
-	}
+    "type":-35,
+    "status":true,
+    "from":"<user_id>",
+    "to":"<user_id>",
+    "result":{
+        "amount_a":50,
+        "amount_b":0,
+        "channel_id":[174,36,154,103,145,76,58,237,32,61,201,81,17,156,135,216,66,28,83,203,251,152,138,102,158,113,131,32,241,229,43,75],
+        "channel_info_id":1,
+        "create_at":"2019-11-04T13:17:15.1972409+08:00",
+        "create_by":"<user_id>",
+        "curr_state":20,
+        "fundee_sign_at":"2019-11-04T13:18:19.6544966+08:00",
+        "funder_address":"muYrqVWTKnkaVAMuqn59Ta6GL912ixpxit",
+        "funder_pub_key_2_for_commitment":"0380874d124f259b31ee8cf3256d784f0269ae9cf3b577e5c271c452572f8b28e5",
+        "funding_output_index":2,
+        "funding_tx_hex":"0200000001e47f333e4a377c9877ee8aedccca476dd5a6bf7aae2116923c937ebfbd173df1010000006a47304402205d721941d28ec7a6a427d0da51cf89e70772548d0829b627919a3ebf8722e96a02207658e909db233dfa6d4ca4f1a3a08fc0325c045c519d2e0e8f6af56ea6e334f00121029cf4b150da0065d5c08bf088e8a5367d35ff72e4e79b39efb401530d19fa3f3cffffffff03a6b50e00000000001976a91499ee096d15bc8ae4ac8856a918ff2c4572877fa488ac0000000000000000166a146f6d6e690000000000000079000000012a05f2001c0200000000000017a914f64403be27af8af0a8abc21aed584b06f80adf308700000000",
+        "funding_txid":"492be5f12083719e668a98fbcb531c42d8879c1151c93d20ed3a4c91679a24ae",
+        "id":1,
+        "peer_id_a":"<user_id>",
+        "peer_id_b":"<user_id>",
+        "property_id":121
+    }
 }
 ```
 
