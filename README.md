@@ -575,7 +575,7 @@ This is the place that OBD differs from LND or other lightning implementation, s
 
 *It is not finalized yet.*
 
-Alice(`mkb9Muc1Qjt2XT5onkqwf3NWAP6BerDwsG`) deposits 0.01 btc to the channel (`2NFSDbQx3xCunJXixqp9KLSvuK6k7VTmVNu`), where fee is 0.00001, and then abtains the transaction ID:
+Alice(`mkb9Muc1Qjt2XT5onkqwf3NWAP6BerDwsG`) deposits 0.001 btc to the channel (`2NFSDbQx3xCunJXixqp9KLSvuK6k7VTmVNu`), where fee is 0.00001, and then abtains the transaction ID:
 
 **request**
 ```json
