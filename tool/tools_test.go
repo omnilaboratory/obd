@@ -8,6 +8,12 @@ import (
 	"testing"
 )
 
+func TestDemo3(t *testing.T) {
+	se, err := AesEncrypt("aes-20170416-30-1000", "abc")
+	fmt.Println(se, err)
+	sd, err := AesDecrypt2(se, "abc")
+	fmt.Println(sd)
+}
 func TestDemo2(t *testing.T) {
 	format := VerifyEmailFormat("254698@163.com")
 	log.Println(format)
@@ -22,11 +28,6 @@ func TestGetAddress(t *testing.T) {
 	aa := fmt.Sprintf("%x", hash.Sum(nil))
 	log.Println(aa)
 	return
-
-	se, err := AesEncrypt("aes-20170416-30-1000")
-	fmt.Println(se, err)
-	sd, err := AesDecrypt2(se)
-	fmt.Println(sd)
 }
 
 func TestDemo1(t *testing.T) {

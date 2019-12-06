@@ -27,10 +27,14 @@ func SetAesAndIV(key string, myIv string) {
 }
 
 // cbc mode
-func AesEncrypt(encodeStr string) (string, error) {
+func AesEncrypt(encodeStr string, psw string) (string, error) {
 	if CheckIsString(&encodeStr) == false {
 		return "", errors.New("empty data")
 	}
+
+	md5Psw := SignMsgWithMd5([]byte(psw))
+	commonKey = []byte(md5Psw)
+	iv = string(commonKey[0:16])
 	block, err := aes.NewCipher(commonKey)
 	if err != nil {
 		return "", err
@@ -47,7 +51,7 @@ func AesEncrypt(encodeStr string) (string, error) {
 	return base64.StdEncoding.EncodeToString(crypted), nil
 }
 
-func AesDecrypt2(cryted string) (string, error) {
+func AesDecrypt2(cryted string, psw string) (string, error) {
 	if CheckIsString(&cryted) == false {
 		return "", errors.New("empty data")
 	}
@@ -55,6 +59,10 @@ func AesDecrypt2(cryted string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	md5Psw := SignMsgWithMd5([]byte(psw))
+	commonKey = []byte(md5Psw)
+	iv = string(commonKey[0:16])
+
 	block, err := aes.NewCipher(commonKey)
 	if err != nil {
 		return "", err
