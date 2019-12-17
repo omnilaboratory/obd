@@ -15,7 +15,7 @@ var (
 	WriteTimeout = 10 * time.Second
 
 	//0.13 omnicore
-	ChainNode_Host = "62.234.216.108:18332"
+	ChainNode_Host = "62.234.216.108:18334"
 	//0.18 omnicore
 	ChainNode_Type = "test"
 	//ChainNode_Host = "62.234.216.108:18334"

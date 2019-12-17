@@ -96,6 +96,11 @@ func RandBytes(size int) (string, error) {
 	return base64.StdEncoding.EncodeToString(arr), nil
 }
 
+func CheckPsw(psw string) (flag bool) {
+	reg := regexp.MustCompile("^[a-zA-Z0-9]{6,32}$")
+	return reg.MatchString(psw)
+}
+
 func GetHtlcFee() float64 {
 	return 1
 }
