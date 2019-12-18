@@ -78,20 +78,14 @@ func createTx() {
 
 	// 2. 构造输入
 	prevTxHash := "7c07ab6c3a0201e6189a3ec3fd3cea67d92125de2a3b69558a0549cd12f3ec11"
-	prevPkScriptHex := "76a914f0b65ff8057ad051c768c7d2d0f7ca9cb480349488ac"
+	prevPkScriptHex := "528776a914b5407cec767317d41442aab35bad2712626e17ca88ac"
 	prevTxOutputN := uint32(0)
 
 	hash, _ := chainhash.NewHashFromStr(prevTxHash) // tx hash
 	//lockin, err := txscript.NewScriptBuilder().AddOp(txscript.OP_0).AddInt64(100).AddData(pkScript).AddOp(txscript.OP_0).Script()
 	outPoint := wire.NewOutPoint(hash, prevTxOutputN) // 第几个输出
-	txIn := wire.NewTxIn(outPoint, []byte{txscript.OP_0, txscript.OP_0}, nil)
-
-	temp := "483045022100829e7bd378cffbaf31701499432476a408492084ba549909f6b784c5bb6d6be002202963508a6d6abd346bf9eb031fd00dd8b5048cd0375a12f6d7c634029a83f54b01410483307216ef2b4fa4a149573fca3bd10fe6291257a1857ef03bc4dda3018c602c3415374316e33abbe35880d2532bcde1d2d827528ca5f82d1d0389e9cfda1bf7"
-	result, _ := rpcClient.DecodeScript(temp)
-	log.Println(result)
-	temp = "483045022100829e7bd378cffbaf31701499432476a408492084ba549909f6b784c5bb6d6be002202963508a6d6abd346bf9eb031fd00dd8b5048cd0375a12f6d7c634029a83f54b01410483307216ef2b4fa4a149573fca3bd10fe6291257a1857ef03bc4dda3018c602c3415374316e33abbe35880d2532bcde1d2d827528ca5f82d1d0389e9cfda1bf7"
-	result, _ = rpcClient.DecodeScript(temp)
-	log.Println(result)
+	script, _ := txscript.NewScriptBuilder().AddInt64(2).Script()
+	txIn := wire.NewTxIn(outPoint, script, nil)
 
 	inputs := []*wire.TxIn{txIn}
 
@@ -110,10 +104,8 @@ func createTx() {
 	log.Println(pubKeyHash)
 
 	lock, _ := txscript.NewScriptBuilder().
-		AddInt64(1).
-		AddOp(txscript.OP_ADD).
-		AddInt64(1).
-		AddOp(txscript.OP_EQUAL).
+		//AddInt64(2).
+		//AddOp(txscript.OP_EQUAL).
 		AddOp(txscript.OP_DUP).
 		AddOp(txscript.OP_HASH160).
 		AddData(pubKeyHash).
@@ -163,7 +155,7 @@ func sign(tx *wire.MsgTx, privKeyStr string, prevPkScripts [][]byte) {
 	for i := range inputs {
 		pkScript := prevPkScripts[i]
 		var script []byte
-		script, err = txscript.SignatureScript(tx, i, pkScript, txscript.SigHashAll, privKey, false)
+		script, err = txscript.SignatureScript(tx, i, pkScript, txscript.SigHashAll, privKey, true)
 		inputs[i].SignatureScript = script
 	}
 }
@@ -193,7 +185,10 @@ func buildRawTx() *wire.MsgTx {
 
 	//构建第二个Input，指向一个1.1BTC的UTXO，第二个参数是解锁脚本，现在是nil
 
-	tx.AddTxIn(wire.NewTxIn(&point2, nil, nil))
+	script, _ := txscript.NewScriptBuilder().AddInt64(2).Script()
+
+	tx.AddTxIn(wire.NewTxIn(&point2, script, nil))
+	//tx.AddTxIn(wire.NewTxIn(&point2, script, nil))
 
 	//找零的地址（这里是16进制形式，变成Base58格式就是 mx3KrUjRzzqYTcsyyvWBiHBncLrrTPXnkV ）
 
@@ -243,6 +238,12 @@ func buildRawTx() *wire.MsgTx {
 
 	fmt.Println("hex", txHex)
 	decodeHex, err := rpcClient.DecodeRawTransaction(txHex)
+	log.Println(decodeHex)
+	log.Println(err)
+
+	signHex, err := rpcClient.SignRawTransactionWithKey(txHex, []string{"91pBTxREWnCHkQkRNJLVxHP2JHg6TSwuP9natL4QEKTmaKkZqZ7"}, nil, "ALL")
+	log.Println(signHex)
+	decodeHex, err = rpcClient.DecodeRawTransaction(signHex)
 	log.Println(decodeHex)
 	log.Println(err)
 	return tx
@@ -352,4 +353,161 @@ func createTx3() {
 	builder.AddOp(txscript.OP_EQUAL)
 	builder.AddOp(txscript.OP_CHECKSIG)
 	builder.AddOp(txscript.OP_ENDIF)
+}
+
+//第二次 ab49456042bc098d16ed760623b70e45e2a457b529592a1542d4f640b758c924
+func createMyTx() {
+	tx := wire.NewMsgTx(1)
+
+	utxoHash, _ := chainhash.NewHashFromStr("627ecb077945492f2aa2b302d1b5cd9d307f2200fd9ae82601852401fbd60f67")
+	point := wire.OutPoint{Hash: *utxoHash, Index: 0}
+	//构建第一个Input，指向一个0.4BTC的UTXO，第二个参数是解锁脚本，现在是nil
+	tx.AddTxIn(wire.NewTxIn(&point, nil, nil))
+
+	//一共有0.00100000，也即：89000  给新的地址5000 给自己留下 80000 3000 miner fee
+	//一共有0.00100000，也即：80000  给新的地址5000 给自己留下 73000 3000 miner fee
+	//一共有0.00100000，也即：73000  给新的地址5000 给自己留下 70000 1000 miner fee
+	changeAddr := "mp2CSq75LdESK3NFUik7ZAbh1efgXYbnzM"
+	// 1.1 输出1, 给自己转剩下的钱
+	addr, _ := btcutil.DecodeAddress(changeAddr, &chaincfg.TestNet3Params)
+	pkScript, _ := txscript.PayToAddrScript(addr)
+	tx.AddTxOut(wire.NewTxOut(70000, pkScript))
+
+	//第二个地址
+	address := "mtRoRNpVYhMRYPjoz8u9Eqnmm5LqyDzXgh"
+	addr, _ = btcutil.DecodeAddress(address, &chaincfg.TestNet3Params)
+	pubKeyHash := addr.ScriptAddress()
+
+	lock, _ := txscript.NewScriptBuilder().
+		AddInt64(1).
+		AddOp(txscript.OP_EQUAL).
+		AddOp(txscript.OP_DUP).
+		AddOp(txscript.OP_HASH160).
+		AddData(pubKeyHash).
+		AddOp(txscript.OP_EQUALVERIFY).
+		AddOp(txscript.OP_CHECKSIG).
+		Script()
+
+	lockScript, err := WitnessScriptHash(lock)
+	if err != nil {
+		log.Println(err)
+	}
+	//0.0003
+	tx.AddTxOut(wire.NewTxOut(2000, lockScript))
+
+	// 3. 签名
+	prevPkScriptHex := "76a9145d48e1d03e4f8c690bf43d97d25f68ef6f36896d88ac"
+	prevPkScript, _ := hex.DecodeString(prevPkScriptHex)
+	prevPkScripts := make([][]byte, 1)
+	prevPkScripts[0] = prevPkScript
+
+	privKey := "cRuSwcDrc1gwoeaCvr4qFR9sgHB8wFxHzeqW1Bueo885S6RSYYxH" // 私钥
+	sign(tx, privKey, prevPkScripts)
+	txHex, _ := getTxHex(tx)
+
+	result, err := rpcClient.SendRawTransaction(txHex)
+	log.Println(err)
+	log.Println(result)
+}
+
+func WitnessScriptHash(witnessScript []byte) ([]byte, error) {
+	bldr := txscript.NewScriptBuilder()
+	bldr.AddOp(txscript.OP_0)
+	scriptHash := sha256.Sum256(witnessScript)
+	bldr.AddData(scriptHash[:])
+	return bldr.Script()
+}
+
+//第一次交易 txid 3f09645ed5781a3126e1fee968a94e3e8f2c921ce50c87efb113624b2e6f640f 2019年12月18日 16:07:29
+func createMyTx2() {
+
+	var balance int64 = 100000               // 余额
+	var fee int64 = 0.00001 * 1e8            // 交易费
+	var outAmount int64 = 0.0001 * 1e8       // 交易费
+	var leftToMe = balance - fee - outAmount // 余额-交易费就是剩下再给我的
+
+	// 1. 构造输出
+	outputs := []*wire.TxOut{}
+
+	// 1.1 输出1, 给自己转剩下的钱
+	address := "mp2CSq75LdESK3NFUik7ZAbh1efgXYbnzM"
+	addr, _ := btcutil.DecodeAddress(address, &chaincfg.TestNet3Params)
+	pkScript, _ := txscript.PayToAddrScript(addr)
+	outputs = append(outputs, wire.NewTxOut(leftToMe, pkScript))
+
+	// 1.2 输出2, 给新的地址 mtRoRNpVYhMRYPjoz8u9Eqnmm5LqyDzXgh
+	address = "mtRoRNpVYhMRYPjoz8u9Eqnmm5LqyDzXgh"
+	addr, _ = btcutil.DecodeAddress(address, &chaincfg.TestNet3Params)
+	pkScript, _ = txscript.PayToAddrScript(addr)
+	outputs = append(outputs, wire.NewTxOut(outAmount, pkScript))
+
+	// 2. 构造输入
+	prevTxHash := "2deec7c6121500d6877570f31d6f477a35d120776f51b9fc8bb0741d67f97b8b"
+	prevTxOutputN := uint32(1)
+	hash, _ := chainhash.NewHashFromStr(prevTxHash) // tx hash
+	//lockin, err := txscript.NewScriptBuilder().AddOp(txscript.OP_0).AddInt64(100).AddData(pkScript).AddOp(txscript.OP_0).Script()
+	outPoint := wire.NewOutPoint(hash, prevTxOutputN) // 第几个输出
+	txIn := wire.NewTxIn(outPoint, nil, nil)
+
+	inputs := []*wire.TxIn{txIn}
+
+	prevPkScriptHex := "76a9145d48e1d03e4f8c690bf43d97d25f68ef6f36896d88ac"
+	prevPkScript, _ := hex.DecodeString(prevPkScriptHex)
+	prevPkScripts := make([][]byte, 1)
+	prevPkScripts[0] = prevPkScript
+
+	tx := &wire.MsgTx{
+		Version:  wire.TxVersion,
+		TxIn:     inputs,
+		TxOut:    outputs,
+		LockTime: 0,
+	}
+
+	buf := bytes.NewBuffer(make([]byte, 0, tx.SerializeSize()))
+	if err := tx.Serialize(buf); err != nil {
+	}
+	txHex := hex.EncodeToString(buf.Bytes())
+	fmt.Println("hex", txHex)
+
+	decodeHex, err := rpcClient.DecodeRawTransaction(txHex)
+	log.Println(decodeHex)
+
+	// 3. 签名
+	privKey := "cRuSwcDrc1gwoeaCvr4qFR9sgHB8wFxHzeqW1Bueo885S6RSYYxH" // 私钥
+	sign(tx, privKey, prevPkScripts)
+
+	// 4. 输出Hex
+	buf = bytes.NewBuffer(make([]byte, 0, tx.SerializeSize()))
+	if err := tx.Serialize(buf); err != nil {
+	}
+	txHex = hex.EncodeToString(buf.Bytes())
+	fmt.Println("hex", txHex)
+
+	decodeHex, err = rpcClient.DecodeRawTransaction(txHex)
+	log.Println(decodeHex)
+
+	result, err := rpcClient.SendRawTransaction(txHex)
+	log.Println(err)
+	log.Println(result)
+}
+
+func printTx(tx *wire.MsgTx) {
+	txHex, err := getTxHex(tx)
+	decodeHex, err := rpcClient.DecodeRawTransaction(txHex)
+	if err != nil {
+		log.Println(err)
+	} else {
+		log.Println(decodeHex)
+	}
+}
+
+func getTxHex(tx *wire.MsgTx) (string, error) {
+	buf := bytes.NewBuffer(make([]byte, 0, tx.SerializeSize()))
+	err := tx.Serialize(buf)
+	if err != nil {
+		log.Println(err)
+		return "", err
+	}
+	txHex := hex.EncodeToString(buf.Bytes())
+	return txHex, err
 }
