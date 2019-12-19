@@ -4,6 +4,8 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/btcsuite/btcd/chaincfg"
+	"github.com/btcsuite/btcutil"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"log"
 	"testing"
@@ -11,6 +13,14 @@ import (
 
 func TestMyTx(t *testing.T) {
 	createMyTx()
+}
+func TestSpendTx(t *testing.T) {
+	CreateCustomSpendTx()
+}
+func TestMyTx2(t *testing.T) {
+	result, err := rpcClient.DecodeScript("4c500100000000000000000000000000000000000000000000000000000000000000000000003ba3edfd7a7b12b27ac72c3e67768f617fc81bc3888a51323a9fb8aa4b1e5e4a29ab5f49ffff001d1dac2b7c")
+	log.Println(result)
+	log.Println(err)
 }
 func TestMyTxList(t *testing.T) {
 	result, err := rpcClient.ListUnspent("mp2CSq75LdESK3NFUik7ZAbh1efgXYbnzM")
@@ -51,8 +61,10 @@ func TestCreateTx3(t *testing.T) {
 	createTx3()
 }
 func TestCreateTx32(t *testing.T) {
-	temp := "c1"
-	log.Println([]byte(temp))
+	address := "3P14159f73E4gFr7JterCCQh9QjiTjiZrG"
+	addr, _ := btcutil.DecodeAddress(address, &chaincfg.MainNetParams)
+	pubKeyHash := addr.ScriptAddress()
+	log.Println(hex.EncodeToString(pubKeyHash))
 }
 func TestCreateTx4(t *testing.T) {
 
