@@ -1,6 +1,7 @@
 package service
 
 import (
+	"LightningOnOmni/tool"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -11,8 +12,34 @@ import (
 	"testing"
 )
 
-func TestMyTx(t *testing.T) {
+func TestMyTx22(t *testing.T) {
 	createMyTx()
+}
+func TestMyTx23(t *testing.T) {
+	CreateCustomSpendTxForScriptHash()
+}
+
+func TestMyTx(t *testing.T) {
+	pubA := "029cf4b150da0065d5c08bf088e8a5367d35ff72e4e79b39efb401530d19fa3f3c"
+	pubB := "03da1b78a5ab4a5e4e13515e5104dbfc1d2d349d89039c15eda9c0118b7edaa91f"
+	apub, err := hex.DecodeString(pubA)
+	log.Println(err)
+	bpub, err := hex.DecodeString(pubB)
+	log.Println(err)
+	bytes, err := GenMultiSigScript(apub, bpub)
+	log.Println(hex.EncodeToString(bytes))
+
+	//create multisig address
+	hash, err := btcutil.NewAddressScriptHash(bytes, &chaincfg.TestNet3Params)
+	log.Println(hash)
+
+}
+func TestCreateHashTx(t *testing.T) {
+	ripemd160 := tool.SignMsgWithRipemd160([]byte("abc"))
+	bytes, _ := hex.DecodeString(ripemd160)
+	log.Println(bytes)
+	hash160 := btcutil.Hash160(bytes)
+	log.Println(hex.EncodeToString(hash160))
 }
 func TestSpendTx(t *testing.T) {
 	CreateCustomSpendTx()

@@ -1,6 +1,7 @@
 package service
 
 import (
+	"LightningOnOmni/tool"
 	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
@@ -13,6 +14,32 @@ import (
 	"github.com/btcsuite/btcutil"
 	"log"
 )
+
+func GenMultiSigScript(aPub, bPub []byte) ([]byte, error) {
+	if len(aPub) != 33 || len(bPub) != 33 {
+		return nil, fmt.Errorf("Pubkey size error. Compressed pubkeys only")
+	}
+
+	// Swap to sort pubkeys if needed. Keys are sorted in lexicographical
+	// order. The signatures within the scriptSig must also adhere to the
+	// order, ensuring that the signatures for each public key appears in
+	// the proper order on the stack.
+	if bytes.Compare(aPub, bPub) == 1 {
+		aPub, bPub = bPub, aPub
+	}
+
+	//ripemd160 := tool.SignMsgWithRipemd160([]byte("abc"))
+	//bytes, _ := hex.DecodeString(ripemd160)
+
+	bldr := txscript.NewScriptBuilder()
+	bldr.AddOp(txscript.OP_2)
+	bldr.AddData(aPub) // Add both pubkeys (sorted).
+	bldr.AddData(bPub)
+	bldr.AddOp(txscript.OP_2)
+	bldr.AddOp(txscript.OP_CHECKMULTISIG)
+	//bldr.AddData(bytes)
+	return bldr.Script()
+}
 
 //https://ibz.bz/2018/01/29/76b8e2e8c60716e70db281c6347bd9b9.html  使用golang一步步教你在比特币上刻字
 
@@ -376,16 +403,21 @@ func createMyTx() {
 	tx.AddTxOut(wire.NewTxOut(66000, pkScript))
 
 	//第二个地址
-	address := "3P14159f73E4gFr7JterCCQh9QjiTjiZrG"
-	addr, _ = btcutil.DecodeAddress(address, &chaincfg.MainNetParams)
+	address := "mtRoRNpVYhMRYPjoz8u9Eqnmm5LqyDzXgh"
+	address = "2N5NiNgsyLaQrXGJb5g6zXLnarTqfKt5Znb"
+	addr, _ = btcutil.DecodeAddress(address, &chaincfg.TestNet3Params)
 	pubKeyHash := addr.ScriptAddress()
 
+	//pubKeyHash ,_= hex.DecodeString("705655d302793524d7907c29ad715b999dddc587")
 	lock, _ := txscript.NewScriptBuilder().
-		//AddInt64(1).
-		//AddOp(txscript.OP_EQUAL).
 		AddOp(txscript.OP_HASH160).
 		AddData(pubKeyHash).
 		AddOp(txscript.OP_EQUAL).
+		//AddOp(txscript.OP_DUP).
+		//AddOp(txscript.OP_HASH160).
+		//AddData(pubKeyHash).
+		//AddOp(txscript.OP_EQUALVERIFY).
+		//AddOp(txscript.OP_CHECKSIG).
 		Script()
 
 	tx.AddTxOut(wire.NewTxOut(500, lock))
@@ -399,10 +431,10 @@ func createMyTx() {
 	privKey := "cRuSwcDrc1gwoeaCvr4qFR9sgHB8wFxHzeqW1Bueo885S6RSYYxH" // 私钥
 	sign(tx, privKey, prevPkScripts)
 	printTx(tx)
-	//txHex, _ := getTxHex(tx)
-	//result, err := rpcClient.SendRawTransaction(txHex)
-	//log.Println(err)
-	//log.Println(result)
+	txHex, _ := getTxHex(tx)
+	result, err := rpcClient.SendRawTransaction(txHex)
+	log.Println(err)
+	log.Println(result)
 }
 
 func WitnessScriptHash(witnessScript []byte) ([]byte, error) {
@@ -585,6 +617,48 @@ func CreateCustomSpendTx() {
 
 	// 3. 签名
 	prevPkScriptHex := "5187"
+	prevPkScript, _ := hex.DecodeString(prevPkScriptHex)
+	prevPkScripts := make([][]byte, 1)
+	prevPkScripts[0] = prevPkScript
+
+	//privKey := "cRuSwcDrc1gwoeaCvr4qFR9sgHB8wFxHzeqW1Bueo885S6RSYYxH" // 私钥
+	//sign(tx, privKey, prevPkScripts)
+	printTx(tx)
+	txHex, _ := getTxHex(tx)
+	result, err := rpcClient.SendRawTransaction(txHex)
+	log.Println(err)
+	log.Println(result)
+	//	67a7903399d70b6898a1e001ede096e3a3645d79a52447a7655c4d8e2e50076c
+}
+func CreateCustomSpendTxForScriptHash() {
+	tx := wire.NewMsgTx(2)
+
+	utxoHash, _ := chainhash.NewHashFromStr("8b2d1636c0fa3825428a651f93e38ee4b862fa3bcc7cac2e18d957edf41ab7ae")
+	point := wire.OutPoint{Hash: *utxoHash, Index: 1}
+
+	ripemd160 := tool.SignMsgWithRipemd160([]byte("abc"))
+	bytes, _ := hex.DecodeString(ripemd160)
+
+	unlock, _ := txscript.NewScriptBuilder().
+		AddData(bytes).
+		Script()
+	tx.AddTxIn(wire.NewTxIn(&point, unlock, nil))
+
+	address := "mtRoRNpVYhMRYPjoz8u9Eqnmm5LqyDzXgh"
+	addr, _ := btcutil.DecodeAddress(address, &chaincfg.TestNet3Params)
+	pubKeyHash := addr.ScriptAddress()
+	lock, _ := txscript.NewScriptBuilder().
+		AddOp(txscript.OP_DUP).
+		AddOp(txscript.OP_HASH160).
+		AddData(pubKeyHash).
+		AddOp(txscript.OP_EQUALVERIFY).
+		AddOp(txscript.OP_CHECKSIG).
+		Script()
+
+	tx.AddTxOut(wire.NewTxOut(300, lock))
+
+	// 3. 签名
+	prevPkScriptHex := "a914850c1de782e157e9b23f069209cce66341350ba387"
 	prevPkScript, _ := hex.DecodeString(prevPkScriptHex)
 	prevPkScripts := make([][]byte, 1)
 	prevPkScripts[0] = prevPkScript
