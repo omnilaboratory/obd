@@ -8,6 +8,19 @@ import (
 	"testing"
 )
 
+func TestDemo4(t *testing.T) {
+	path := AStarPathFind{}
+	path.initData(10, 10)
+	path.drawMap(path.road)
+	path.findPath(1, 100)
+	if len(path.road) == 0 {
+		log.Println("no way")
+	} else {
+		path.drawMap(path.road)
+		log.Println(path.road)
+	}
+}
+
 func TestDemo3(t *testing.T) {
 	se, err := AesEncrypt("aes-20170416-30-1000", "abc")
 	fmt.Println(se, err)

@@ -6,6 +6,8 @@ import (
 	"log"
 )
 
+//storm  doc  https://github.com/asdine/storm#getting-started
+
 type dbManager struct {
 	Db *storm.DB //db
 }

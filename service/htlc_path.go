@@ -6,9 +6,9 @@ import (
 	"errors"
 	"github.com/asdine/storm/q"
 	"log"
+	"strings"
 )
 
-//
 type TreeNode struct {
 	parentNode     *TreeNode
 	level          int
@@ -22,12 +22,13 @@ type TreeNode struct {
 }
 
 type PathNode struct {
-	ParentNode     *PathNode            `json:"parent_node"`
-	Level          int                  `json:"level"`
-	CurrNodePeerId string               `json:"curr_node_peer_id"`
-	IsRoot         bool                 `json:"is_root"`
-	IsTarget       bool                 `json:"is_target"`
-	PeerMap        map[string]*PathNode `json:"child_map"`
+	ParentNode     int    `json:"parent_node"`
+	PathNames      string `json:"path_indexes"`
+	PathIdArr      []int  `json:"path_peers"`
+	Level          int    `json:"level"`
+	CurrNodePeerId string `json:"curr_node_peer_id"`
+	IsRoot         bool   `json:"is_root"`
+	IsTarget       bool   `json:"is_target"`
 }
 
 type PathBranchInfo struct {
@@ -36,91 +37,97 @@ type PathBranchInfo struct {
 	Channel   *dao.ChannelInfo `json:"channel"`
 }
 
-type pathManager struct{}
+type pathManager struct {
+	openList []*PathNode
+}
 
 var PathService = pathManager{}
 
-func (p *pathManager) CreateDemoChannelNetwork(realSenderPeerId, realReceiverPeerId string, amount float64, currNode *PathNode, tree *PathNode, nodeMap map[string]*PathNode, branchMap map[string]*PathBranchInfo) {
-	if nodeMap == nil {
-		nodeMap = make(map[string]*PathNode)
+func (this *pathManager) CreateDemoChannelNetwork(realSenderPeerId, currReceiverPeerId string, amount float64, currNode *PathNode, tree *PathNode) {
+	if this.openList == nil {
+		this.openList = make([]*PathNode, 0)
 	}
 	if currNode == nil {
 		currNode = tree
-		nodeMap[realReceiverPeerId] = currNode
+		this.openList = append(this.openList, currNode)
+	}
+	if strings.Contains(currNode.PathNames, currNode.CurrNodePeerId) {
+		return
 	}
 
-	amount += float64(currNode.Level) * 1.0
+	if currNode.Level > 0 {
+		amount += tool.GetHtlcFee()
+	}
+
+	currNodeIndex := 0
+	for key, tempNode := range this.openList {
+		if tempNode == currNode {
+			currNodeIndex = key
+			break
+		}
+	}
+
+	pathIds := currNode.PathNames + "," + currNode.CurrNodePeerId
+	pathIdArr := currNode.PathIdArr
+	if currNode.PathNames == "" {
+		pathIds = currNode.CurrNodePeerId
+		pathIdArr = make([]int, 0)
+	}
+	pathIdArr = append(pathIdArr, currNodeIndex)
+
 	var nodes []dao.DemoChannelInfo
-	err := db.Select(q.Eq("PeerIdB", realReceiverPeerId)).Find(&nodes)
+	err := db.Select(q.Eq("PeerIdB", currReceiverPeerId)).Find(&nodes)
 	if err == nil {
 		for _, item := range nodes {
-			if item.AmountA > amount {
+			if item.AmountA >= amount {
 				interSender := item.PeerIdA
-				peer2Peer := item.PeerIdA + "2" + item.PeerIdB
-				if branchMap[peer2Peer] == nil {
-					branchInfo := PathBranchInfo{
-						Peer2Peer: peer2Peer,
-						Amount:    item.AmountA,
-					}
-					branchMap[peer2Peer] = &branchInfo
-				} else {
-					continue
+
+				newNode := PathNode{
+					ParentNode:     currNodeIndex,
+					PathNames:      pathIds,
+					PathIdArr:      pathIdArr,
+					Level:          currNode.Level + 1,
+					CurrNodePeerId: interSender,
+					IsRoot:         false,
 				}
+				this.openList = append(this.openList, &newNode)
 
-				if nodeMap[interSender] == nil {
-					newNode := PathNode{
-						ParentNode:     currNode,
-						Level:          currNode.Level + 1,
-						CurrNodePeerId: interSender,
-						IsRoot:         false,
-						PeerMap:        make(map[string]*PathNode),
-					}
-					nodeMap[interSender] = &newNode
-					currNode.PeerMap[interSender] = &newNode
-
-					if interSender == realSenderPeerId {
-						newNode.IsTarget = true
+				if interSender == realSenderPeerId {
+					newNode.IsTarget = true
+					return
+				} else {
+					if newNode.Level > 6 {
 						return
-					} else {
-						p.CreateDemoChannelNetwork(realSenderPeerId, interSender, amount, currNode, tree, nodeMap, branchMap)
 					}
+					this.CreateDemoChannelNetwork(realSenderPeerId, interSender, amount, &newNode, tree)
 				}
 			}
 		}
 	}
 	nodes = make([]dao.DemoChannelInfo, 0)
-	err = db.Select(q.Eq("PeerIdA", realReceiverPeerId)).Find(&nodes)
+	err = db.Select(q.Eq("PeerIdA", currReceiverPeerId)).Find(&nodes)
 	if err == nil {
 		for _, item := range nodes {
-			if item.AmountB > amount {
+			if item.AmountB >= amount {
 				interSender := item.PeerIdB
-				peer2Peer := item.PeerIdB + "2" + item.PeerIdA
-				if branchMap[peer2Peer] == nil {
-					branchInfo := PathBranchInfo{
-						Peer2Peer: peer2Peer,
-						Amount:    item.AmountB,
-					}
-					branchMap[peer2Peer] = &branchInfo
-				} else {
-					continue
+				newNode := PathNode{
+					ParentNode:     currNodeIndex,
+					PathNames:      pathIds,
+					PathIdArr:      pathIdArr,
+					Level:          currNode.Level + 1,
+					CurrNodePeerId: interSender,
+					IsRoot:         false,
 				}
-				if nodeMap[interSender] == nil {
-					newNode := PathNode{
-						ParentNode:     currNode,
-						Level:          currNode.Level + 1,
-						CurrNodePeerId: interSender,
-						IsRoot:         false,
-						PeerMap:        make(map[string]*PathNode),
-					}
-					nodeMap[interSender] = &newNode
-					currNode.PeerMap[interSender] = &newNode
+				this.openList = append(this.openList, &newNode)
 
-					if interSender == realSenderPeerId {
-						newNode.IsTarget = true
+				if interSender == realSenderPeerId {
+					newNode.IsTarget = true
+					return
+				} else {
+					if newNode.Level > 6 {
 						return
-					} else {
-						p.CreateDemoChannelNetwork(realSenderPeerId, interSender, amount, currNode, tree, nodeMap, branchMap)
 					}
+					this.CreateDemoChannelNetwork(realSenderPeerId, interSender, amount, &newNode, tree)
 				}
 			}
 		}
@@ -135,18 +142,6 @@ func (p *pathManager) findDemoPath(realSenderPeerId, interSenderPeerId, realRece
 	if path == nil {
 		path = make([]*PathNode, 0)
 		path = append(path, nodeMap[realSenderPeerId])
-	}
-
-	currNode := nodeMap[interSenderPeerId]
-	childPeers := currNode.PeerMap
-	for key, node := range childPeers {
-		if key == realReceiverPeerId {
-			path = append(path, node)
-			return nil, path
-		} else {
-			interSenderPeerId = key
-
-		}
 	}
 
 	return nil, path
@@ -236,13 +231,11 @@ func (p *pathManager) dealNodeFromReceiver(currChannel dao.ChannelInfo, commitme
 	if commitmentTxInfo.AmountToRSMC > needReceiveAmount {
 		needReceiveAmount += tool.GetHtlcFee() * float64(parentNode.Level)
 		newNode := &PathNode{
-			ParentNode:     parentNode,
+			//ParentNode:     len(openList) - 1,
 			CurrNodePeerId: interSenderPeerId,
 			Level:          parentNode.Level + 1,
 			IsRoot:         false,
-			PeerMap:        make(map[string]*PathNode, 0),
 		}
-		parentNode.PeerMap[interSenderPeerId] = newNode
 		nodeMap[interSenderPeerId] = newNode
 		if interSenderPeerId == realSenderPeerId {
 			newNode.IsTarget = true

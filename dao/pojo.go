@@ -29,10 +29,10 @@ type ChannelInfo struct {
 	bean.OpenChannelInfo
 	Id                         int            `storm:"id,increment" json:"id"`
 	ChannelId                  bean.ChannelID `json:"channel_id"`
-	PeerIdA                    string         `json:"peer_id_a"`
+	PeerIdA                    string         `storm:"index" json:"peer_id_a"`
 	PubKeyA                    string         `json:"pub_key_a"`
 	AddressA                   string         `json:"address_a"`
-	PeerIdB                    string         `json:"peer_id_b"`
+	PeerIdB                    string         `storm:"index" json:"peer_id_b"`
 	PubKeyB                    string         `json:"pub_key_b"`
 	AddressB                   string         `json:"address_b"`
 	ChannelAddress             string         `json:"channel_address"`

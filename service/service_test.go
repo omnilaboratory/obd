@@ -13,82 +13,88 @@ func TestDemoChannelTreeData(t *testing.T) {
 
 	var tree *PathNode
 	tree = &PathNode{
-		ParentNode:     nil,
+		ParentNode:     -1,
 		CurrNodePeerId: "E",
+		PathNames:      "",
+		PathIdArr:      make([]int, 0),
 		Level:          0,
 		IsRoot:         true,
 		IsTarget:       false,
-		PeerMap:        make(map[string]*PathNode),
 	}
-	var nodeMap = make(map[string]*PathNode)
-	var branchMap = make(map[string]*PathBranchInfo)
-	PathService.CreateDemoChannelNetwork("A", "E", 10, nil, tree, nodeMap, branchMap)
-	for key, value := range branchMap {
-		log.Println(key, value)
+	PathService.CreateDemoChannelNetwork("A", "E", 10, nil, tree)
+
+	for index, node := range PathService.openList {
+		log.Println(index, node)
 	}
+	log.Println()
+
+	for _, node := range PathService.openList {
+		if node.IsTarget {
+			log.Println(node)
+		}
+	}
+	//for key, node := range branchMap {
+	//	log.Println(key, node)
+	//}
 
 }
 
-func TestDemoChannelInfoData(t *testing.T) {
+func TestDelDemoChannelInfoData(t *testing.T) {
+	deleteStruct := db.Drop(&dao.DemoChannelInfo{})
+	log.Println(deleteStruct)
+}
+func TestGetDemoChannelInfoData(t *testing.T) {
+	var nodes []dao.DemoChannelInfo
+	db.All(&nodes)
+	for _, value := range nodes {
+		log.Println(value)
+	}
+}
 
-	//var nodes []dao.DemoChannelInfo
-	//db.All(&nodes)
-	//log.Println(nodes)
-	//return
-
+func TestCreateDemoChannelInfoData(t *testing.T) {
 	node := &dao.DemoChannelInfo{
 		PeerIdA: "A",
-		AmountA: 20,
+		AmountA: 25,
 		PeerIdB: "B",
 		AmountB: 0,
 	}
 	db.Save(node)
+
 	node = &dao.DemoChannelInfo{
 		PeerIdA: "B",
-		AmountA: 18,
+		AmountA: 15,
 		PeerIdB: "C",
+		AmountB: 0,
+	}
+	db.Save(node)
+
+	node = &dao.DemoChannelInfo{
+		PeerIdA: "B",
+		AmountA: 20,
+		PeerIdB: "D",
+		AmountB: 0,
+	}
+	db.Save(node)
+
+	node = &dao.DemoChannelInfo{
+		PeerIdA: "C",
+		AmountA: 21,
+		PeerIdB: "D",
+		AmountB: 20,
+	}
+	db.Save(node)
+
+	node = &dao.DemoChannelInfo{
+		PeerIdA: "D",
+		AmountA: 13,
+		PeerIdB: "E",
 		AmountB: 0,
 	}
 	db.Save(node)
 	node = &dao.DemoChannelInfo{
 		PeerIdA: "C",
-		AmountA: 17,
-		PeerIdB: "D",
-		AmountB: 0,
-	}
-	db.Save(node)
-	node = &dao.DemoChannelInfo{
-		PeerIdA: "D",
-		AmountA: 16,
-		PeerIdB: "E",
-		AmountB: 0,
-	}
-	db.Save(node)
-	node = &dao.DemoChannelInfo{
-		PeerIdA: "B",
-		AmountA: 19,
-		PeerIdB: "D",
-		AmountB: 0,
-	}
-	db.Save(node)
-	node = &dao.DemoChannelInfo{
-		PeerIdA: "D",
 		AmountA: 15,
-		PeerIdB: "B",
-		AmountB: 0,
-	}
-	db.Save(node)
-	node = &dao.DemoChannelInfo{
-		PeerIdA: "A",
-		AmountA: 11,
 		PeerIdB: "E",
-		AmountB: 0,
-	}
-	db.Save(node)
-	node = &dao.DemoChannelInfo{
-		PeerIdA: "E",
-		AmountA: 12,
-		PeerIdB: "A",
 		AmountB: 0,
 	}
 	db.Save(node)
@@ -96,7 +102,7 @@ func TestDemoChannelInfoData(t *testing.T) {
 }
 
 func TestPathManager_GetPath(t *testing.T) {
-	targetNode, nodes, err := PathService.GetPath("alice", "carol", 10, nil)
+	targetNode, nodes, err := PathService.GetPath("A", "C", 10, nil)
 	log.Println(err)
 	log.Println(targetNode)
 	bytes, err := json.Marshal(nodes)
