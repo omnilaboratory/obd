@@ -81,7 +81,6 @@ func (this *pathManager) CreateDemoChannelNetwork(realSenderPeerId, currReceiver
 		for _, item := range nodes {
 			if item.AmountA >= amount {
 				interSender := item.PeerIdA
-
 				newNode := PathNode{
 					ParentNode:     currNodeIndex,
 					PathNames:      pathIds,
@@ -94,10 +93,9 @@ func (this *pathManager) CreateDemoChannelNetwork(realSenderPeerId, currReceiver
 
 				if interSender == realSenderPeerId {
 					newNode.IsTarget = true
-					return
 				} else {
-					if newNode.Level > 6 {
-						return
+					if newNode.Level >= 5 {
+						continue
 					}
 					this.CreateDemoChannelNetwork(realSenderPeerId, interSender, amount, &newNode, tree)
 				}
@@ -122,10 +120,9 @@ func (this *pathManager) CreateDemoChannelNetwork(realSenderPeerId, currReceiver
 
 				if interSender == realSenderPeerId {
 					newNode.IsTarget = true
-					return
 				} else {
-					if newNode.Level > 6 {
-						return
+					if newNode.Level >= 5 {
+						continue
 					}
 					this.CreateDemoChannelNetwork(realSenderPeerId, interSender, amount, &newNode, tree)
 				}
