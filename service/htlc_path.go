@@ -23,9 +23,10 @@ type TreeNode struct {
 
 type PathNode struct {
 	ParentNode     int    `json:"parent_node"`
-	PathNames      string `json:"path_indexes"`
+	PathNames      string `json:"path_names"`
 	PathIdArr      []int  `json:"path_peers"`
-	Level          int    `json:"level"`
+	ChannelId      int    `json:"channel_id"`
+	Level          uint16 `json:"level"`
 	CurrNodePeerId string `json:"curr_node_peer_id"`
 	IsRoot         bool   `json:"is_root"`
 	IsTarget       bool   `json:"is_target"`
@@ -43,13 +44,23 @@ type pathManager struct {
 
 var PathService = pathManager{}
 
-func (this *pathManager) CreateDemoChannelNetwork(realSenderPeerId, currReceiverPeerId string, amount float64, currNode *PathNode, tree *PathNode) {
-	if this.openList == nil {
+func (this *pathManager) CreateDemoChannelNetwork(realSenderPeerId, currReceiverPeerId string, amount float64, currNode *PathNode, isBegin bool) {
+	if isBegin {
 		this.openList = make([]*PathNode, 0)
+		realReceiverNode := &PathNode{
+			ParentNode:     -1,
+			CurrNodePeerId: currReceiverPeerId,
+			PathNames:      "",
+			PathIdArr:      make([]int, 0),
+			Level:          0,
+			IsRoot:         true,
+			IsTarget:       false,
+		}
+		this.openList = append(this.openList, realReceiverNode)
 	}
+
 	if currNode == nil {
-		currNode = tree
-		this.openList = append(this.openList, currNode)
+		currNode = this.openList[0]
 	}
 	if strings.Contains(currNode.PathNames, currNode.CurrNodePeerId) {
 		return
@@ -94,10 +105,9 @@ func (this *pathManager) CreateDemoChannelNetwork(realSenderPeerId, currReceiver
 				if interSender == realSenderPeerId {
 					newNode.IsTarget = true
 				} else {
-					if newNode.Level >= 5 {
-						continue
+					if newNode.Level < 6 {
+						this.CreateDemoChannelNetwork(realSenderPeerId, interSender, amount, &newNode, false)
 					}
-					this.CreateDemoChannelNetwork(realSenderPeerId, interSender, amount, &newNode, tree)
 				}
 			}
 		}
@@ -121,10 +131,122 @@ func (this *pathManager) CreateDemoChannelNetwork(realSenderPeerId, currReceiver
 				if interSender == realSenderPeerId {
 					newNode.IsTarget = true
 				} else {
-					if newNode.Level >= 5 {
-						continue
+					if newNode.Level < 6 {
+						this.CreateDemoChannelNetwork(realSenderPeerId, interSender, amount, &newNode, false)
 					}
-					this.CreateDemoChannelNetwork(realSenderPeerId, interSender, amount, &newNode, tree)
+				}
+			}
+		}
+	}
+}
+
+//查找出与自己相关所有通道
+func (this *pathManager) GetPath(realSenderPeerId, currReceiverPeerId string, amount float64, currNode *PathNode, isBegin bool) {
+	online := FindUserIsOnline(currReceiverPeerId)
+	if online != nil {
+		return
+	}
+	if isBegin {
+		this.openList = make([]*PathNode, 0)
+		realReceiverNode := &PathNode{
+			ParentNode:     -1,
+			CurrNodePeerId: currReceiverPeerId,
+			PathNames:      "",
+			PathIdArr:      make([]int, 0),
+			Level:          0,
+			IsRoot:         true,
+			IsTarget:       false,
+		}
+		this.openList = append(this.openList, realReceiverNode)
+	}
+
+	if currNode == nil {
+		currNode = this.openList[0]
+	}
+
+	if strings.Contains(currNode.PathNames, currNode.CurrNodePeerId) {
+		return
+	}
+
+	if currNode.Level > 0 {
+		amount += tool.GetHtlcFee()
+	}
+
+	currNodeIndex := 0
+	for key, tempNode := range this.openList {
+		if tempNode == currNode {
+			currNodeIndex = key
+			break
+		}
+	}
+
+	pathIds := currNode.PathNames + "," + currNode.CurrNodePeerId
+	pathIdArr := currNode.PathIdArr
+	if currNode.PathNames == "" {
+		pathIds = currNode.CurrNodePeerId
+		pathIdArr = make([]int, 0)
+	}
+	pathIdArr = append(pathIdArr, currNodeIndex)
+
+	var nodes []dao.ChannelInfo
+	//当当前接收者作为sideB
+	err := db.Select(q.Eq("PeerIdB", currReceiverPeerId)).Find(&nodes)
+	if err == nil {
+		for _, item := range nodes {
+			commitmentTxInfo, err := getLatestCommitmentTx(item.ChannelId, currReceiverPeerId)
+			if err == nil {
+				if commitmentTxInfo.AmountToRSMC >= amount {
+					interSender := item.PeerIdA
+					newNode := PathNode{
+						ParentNode:     currNodeIndex,
+						ChannelId:      item.Id,
+						PathNames:      pathIds,
+						PathIdArr:      pathIdArr,
+						Level:          currNode.Level + 1,
+						CurrNodePeerId: interSender,
+						IsRoot:         false,
+					}
+					this.openList = append(this.openList, &newNode)
+
+					if interSender == realSenderPeerId {
+						newNode.IsTarget = true
+					} else {
+						if newNode.Level < 6 {
+							this.GetPath(realSenderPeerId, interSender, amount, &newNode, false)
+						}
+					}
+				}
+			}
+		}
+	}
+
+	//当当前接收者作为sideA
+	nodes = make([]dao.ChannelInfo, 0)
+	err = db.Select(q.Eq("PeerIdA", currReceiverPeerId)).Find(&nodes)
+	if err == nil {
+		for _, item := range nodes {
+			commitmentTxInfo, err := getLatestCommitmentTx(item.ChannelId, currReceiverPeerId)
+			if err == nil {
+				if commitmentTxInfo.AmountToRSMC >= amount {
+					interSender := item.PeerIdB
+					newNode := PathNode{
+						ParentNode:     currNodeIndex,
+						PathNames:      pathIds,
+						ChannelId:      item.Id,
+						PathIdArr:      pathIdArr,
+						Level:          currNode.Level + 1,
+						CurrNodePeerId: interSender,
+						IsRoot:         false,
+					}
+					this.openList = append(this.openList, &newNode)
+
+					if interSender == realSenderPeerId {
+						newNode.IsTarget = true
+					} else {
+						if newNode.Level < 6 {
+							this.GetPath(realSenderPeerId, interSender, amount, &newNode, false)
+						}
+					}
 				}
 			}
 		}
@@ -399,69 +521,6 @@ func findNextLevelValidBobs(fromPeerId string, targetPeerId string, amount float
 		}
 	}
 	return false
-}
-
-//查找出与自己相关所有通道
-func (p *pathManager) GetPath(fromPeerId, toPeerId string, amount float64, path []dao.ChannelInfo) (targetNode *dao.ChannelInfo, nodes []dao.ChannelInfo, err error) {
-	if nodes == nil {
-		log.Println("make nodes array")
-		nodes = make([]dao.ChannelInfo, 0)
-	}
-	if path == nil {
-		log.Println("make path array")
-		nodes = make([]dao.ChannelInfo, 0)
-	}
-	// if parentPeerId is PeerIdA in channel
-	// then get the PeerIdB
-	var tempBNodes []dao.ChannelInfo
-	err = db.Select(q.Eq("PeerIdA", fromPeerId), q.Eq("CurrState", dao.ChannelState_Accept)).Find(&tempBNodes)
-	if err != nil {
-		log.Println(err)
-	}
-
-	//如果找到目标对象
-	if tempBNodes != nil && len(tempBNodes) > 0 {
-		for _, node := range tempBNodes {
-			if node.PeerIdB == toPeerId {
-				path = append(path, node)
-				return &node, nil, nil
-			}
-		}
-
-		//如果没有找到目标对象，就找中间商，中间商的下个通道的钱是否足够
-		for _, node := range tempBNodes {
-			//查找bob的通道满足余额大于需要额度的列表
-			getValidBobs(fromPeerId, amount, node, nodes, path)
-		}
-	}
-
-	var tempANodes []dao.ChannelInfo
-	err = db.Select(q.Eq("PeerIdB", fromPeerId), q.Eq("CurrState", dao.ChannelState_Accept)).Find(&tempANodes)
-	if err != nil {
-		log.Println(err)
-	}
-
-	if tempANodes != nil && len(tempANodes) > 0 {
-		for _, node := range tempANodes {
-			if node.PeerIdA == toPeerId {
-				path = append(path, node)
-				return &node, nil, nil
-			}
-		}
-		for _, node := range tempANodes {
-			getValidBobs(fromPeerId, amount, node, nodes, path)
-		}
-	}
-
-	for _, nextChannnel := range nodes {
-		nextFromPeerId := nextChannnel.PeerIdB
-		if nextFromPeerId == fromPeerId {
-			nextFromPeerId = nextChannnel.PeerIdA
-		}
-		return p.GetPath(nextFromPeerId, toPeerId, amount, path)
-	}
-	return nil, nil, errors.New("not found path")
-	//return nil, nil
 }
 
 func getValidBobs(fromPeerId string, amount float64, currChannel dao.ChannelInfo, nodes []dao.ChannelInfo, path []dao.ChannelInfo) {

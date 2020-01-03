@@ -2,7 +2,6 @@ package service
 
 import (
 	"LightningOnOmni/dao"
-	"encoding/json"
 	"github.com/asdine/storm/q"
 	"log"
 	"testing"
@@ -10,19 +9,7 @@ import (
 )
 
 func TestDemoChannelTreeData(t *testing.T) {
-
-	var tree *PathNode
-	endName := "F"
-	tree = &PathNode{
-		ParentNode:     -1,
-		CurrNodePeerId: endName,
-		PathNames:      "",
-		PathIdArr:      make([]int, 0),
-		Level:          0,
-		IsRoot:         true,
-		IsTarget:       false,
-	}
-	PathService.CreateDemoChannelNetwork("B", endName, 8, nil, tree)
+	PathService.CreateDemoChannelNetwork("A", "F", 6, nil, true)
 
 	for index, node := range PathService.openList {
 		log.Println(index, node)
@@ -31,9 +18,10 @@ func TestDemoChannelTreeData(t *testing.T) {
 
 	for index, node := range PathService.openList {
 		if node.IsTarget {
-			log.Println(index, node)
+			log.Println("findPath:", index, node)
 		}
 	}
+
 	//for key, node := range branchMap {
 	//	log.Println(key, node)
 	//}
@@ -63,9 +51,9 @@ func TestGetDemoChannelInfoData(t *testing.T) {
 func TestCreateDemoChannelInfoDataSingle(t *testing.T) {
 	node := &dao.DemoChannelInfo{
 		PeerIdA: "D",
-		AmountA: 9,
+		AmountA: 10,
 		PeerIdB: "F",
-		AmountB: 0,
+		AmountB: 18,
 	}
 	db.Save(node)
 }
@@ -73,22 +61,50 @@ func TestCreateDemoChannelInfoDataSingle(t *testing.T) {
 func TestCreateDemoChannelInfoData(t *testing.T) {
 	node := &dao.DemoChannelInfo{
 		PeerIdA: "A",
-		AmountA: 12,
+		AmountA: 18,
 		PeerIdB: "B",
 		AmountB: 0,
 	}
 	db.Save(node)
 	node = &dao.DemoChannelInfo{
 		PeerIdA: "B",
-		AmountA: 9,
+		AmountA: 16,
+		PeerIdB: "C",
+		AmountB: 0,
+	}
+	db.Save(node)
+	node = &dao.DemoChannelInfo{
+		PeerIdA: "C",
+		AmountA: 14,
+		PeerIdB: "D",
+		AmountB: 0,
+	}
+	db.Save(node)
+	node = &dao.DemoChannelInfo{
+		PeerIdA: "D",
+		AmountA: 12,
 		PeerIdB: "E",
 		AmountB: 0,
 	}
 	db.Save(node)
 	node = &dao.DemoChannelInfo{
 		PeerIdA: "E",
-		AmountA: 8,
+		AmountA: 10,
 		PeerIdB: "F",
+		AmountB: 0,
+	}
+	db.Save(node)
+	node = &dao.DemoChannelInfo{
+		PeerIdA: "F",
+		AmountA: 8,
+		PeerIdB: "G",
+		AmountB: 0,
+	}
+	db.Save(node)
+	node = &dao.DemoChannelInfo{
+		PeerIdA: "G",
+		AmountA: 6,
+		PeerIdB: "H",
 		AmountB: 0,
 	}
 	db.Save(node)
@@ -96,11 +112,30 @@ func TestCreateDemoChannelInfoData(t *testing.T) {
 }
 
 func TestPathManager_GetPath(t *testing.T) {
-	targetNode, nodes, err := PathService.GetPath("A", "C", 10, nil)
-	log.Println(err)
-	log.Println(targetNode)
-	bytes, err := json.Marshal(nodes)
-	log.Println(string(bytes))
+	PathService.GetPath("alice", "carol", 5, nil, true)
+	miniPathLength := 7
+	var miniPathNode *PathNode
+
+	for _, node := range PathService.openList {
+		if node.IsTarget {
+			if int(node.Level) < miniPathLength {
+				miniPathLength = int(node.Level)
+				miniPathNode = node
+			}
+		}
+	}
+	if miniPathNode != nil {
+		log.Println(miniPathNode)
+		channelCount := miniPathNode.Level
+		channelIdArr := make([]int, 0)
+		for i := 1; i < int(channelCount); i++ {
+			channelIdArr = append(channelIdArr, PathService.openList[miniPathNode.PathIdArr[i]].ChannelId)
+		}
+		channelIdArr = append(channelIdArr, miniPathNode.ChannelId)
+		log.Println(channelIdArr)
+	} else {
+		log.Println("no path find")
+	}
 }
 
 func TestChannelManager_AliceOpenChannel(t *testing.T) {

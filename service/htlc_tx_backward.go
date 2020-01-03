@@ -94,9 +94,9 @@ func (service *htlcBackwardTxManager) SendRToPreviousNode(msgData string,
 	}
 
 	// Currently solution is Alice to Bob to Carol.
-	if pathInfo.CurrStep < 2 {
+	if pathInfo.CurrStep < int(pathInfo.TotalStep/2) {
 		return nil, "", errors.New("The transfer H has not completed yet.")
-	} else if pathInfo.CurrStep > 3 {
+	} else if pathInfo.CurrStep > (int(pathInfo.TotalStep/2) + 1) {
 		return nil, "", errors.New("The transfer R has completed.")
 	}
 

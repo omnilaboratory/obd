@@ -210,6 +210,19 @@ func checkIfHtlcCanBeLaunched(creator *bean.User, htlcHRequest *bean.HtlcHReques
 		}
 	}
 
+	//find the path from transaction creator to the receiver
+	PathService.GetPath(creator.PeerId, htlcHRequest.RecipientPeerId, htlcHRequest.Amount, nil, true)
+	hasPath := false
+	for _, node := range PathService.openList {
+		if node.IsTarget {
+			hasPath = true
+		}
+	}
+	if hasPath {
+		return nil
+	}
+	return errors.New("There is NOT a middleman, CAN NOT launch HTLC.")
+
 	// Case 2. There is NOT a middleman, CAN NOT launch HTLC.
 	// Get all channels of Carol.
 	channelsOfCarol := getAllChannels(htlcHRequest.RecipientPeerId)

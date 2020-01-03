@@ -60,10 +60,34 @@ func (service *htlcForwardTxManager) AliceFindPathOfSingleHopAndSendToBob(msgDat
 		return nil, "", errors.New("recipient's channel not found")
 	}
 
-	bob, aliceChannel, carlChannel := getTwoChannelOfSingleHop(*rAndHInfo, channelAliceInfos, channelCarlInfos)
-	if tool.CheckIsString(&bob) == false {
+	//bob, aliceChannel, carlChannel := getTwoChannelOfSingleHop(*rAndHInfo, channelAliceInfos, channelCarlInfos)
+	//if tool.CheckIsString(&bob) == false {
+	//	return nil, "", errors.New("no inter channel can use")
+	//}
+
+	//find the path from transaction creator to the receiver
+	PathService.GetPath(rAndHInfo.SenderPeerId, rAndHInfo.RecipientPeerId, rAndHInfo.Amount, nil, true)
+	miniPathLength := 7
+	var miniPathNode *PathNode
+
+	for _, node := range PathService.openList {
+		if node.IsTarget {
+			if int(node.Level) < miniPathLength {
+				miniPathLength = int(node.Level)
+				miniPathNode = node
+			}
+		}
+	}
+	if miniPathNode == nil {
 		return nil, "", errors.New("no inter channel can use")
 	}
+
+	channelCount := miniPathNode.Level
+	channelIdArr := make([]int, 0)
+	for i := 1; i < int(channelCount); i++ {
+		channelIdArr = append(channelIdArr, PathService.openList[miniPathNode.PathIdArr[i]].ChannelId)
+	}
+	channelIdArr = append(channelIdArr, miniPathNode.ChannelId)
 
 	currBlockHeight, err := rpcClient.GetBlockCount()
 	if err != nil {
@@ -71,12 +95,8 @@ func (service *htlcForwardTxManager) AliceFindPathOfSingleHopAndSendToBob(msgDat
 	}
 
 	// operate db
-	channelCount := 2
 	pathInfo := &dao.HtlcSingleHopPathInfo{}
-	pathInfo.ChannelIdArr = make([]int, channelCount)
-	pathInfo.ChannelIdArr[0] = aliceChannel.Id
-	pathInfo.ChannelIdArr[1] = carlChannel.Id
-	pathInfo.InterNodePeerId = bob
+	pathInfo.ChannelIdArr = channelIdArr
 	pathInfo.HAndRInfoRequestHash = rAndHInfo.RequestHash
 	pathInfo.H = rAndHInfo.H
 	pathInfo.CurrState = dao.SingleHopPathInfoState_Created
@@ -109,8 +129,8 @@ func (service *htlcForwardTxManager) SendH(msgData string, user bean.User) (data
 		return nil, "", err
 	}
 
-	htlcSingleHopPathInfo := &dao.HtlcSingleHopPathInfo{}
-	err = db.Select(q.Eq("HAndRInfoRequestHash", reqData.HAndRInfoRequestHash)).First(htlcSingleHopPathInfo)
+	pathInfo := &dao.HtlcSingleHopPathInfo{}
+	err = db.Select(q.Eq("HAndRInfoRequestHash", reqData.HAndRInfoRequestHash)).First(pathInfo)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, "", err
@@ -123,27 +143,27 @@ func (service *htlcForwardTxManager) SendH(msgData string, user bean.User) (data
 		return nil, "", err
 	}
 
-	currChannelIndex := htlcSingleHopPathInfo.CurrStep
-	if currChannelIndex < -1 || currChannelIndex > len(htlcSingleHopPathInfo.ChannelIdArr) {
+	currChannelIndex := pathInfo.CurrStep
+	if currChannelIndex < -1 || currChannelIndex > len(pathInfo.ChannelIdArr) {
 		return nil, "", errors.New("err channel id")
 	}
-	carlChannel := &dao.ChannelInfo{}
+	currChannel := &dao.ChannelInfo{}
 	err = db.Select(
-		q.Eq("Id", htlcSingleHopPathInfo.ChannelIdArr[currChannelIndex]),
+		q.Eq("Id", pathInfo.ChannelIdArr[currChannelIndex]),
 		q.Or(
 			q.Eq("PeerIdA", user.PeerId),
-			q.Eq("PeerIdB", user.PeerId))).First(carlChannel)
+			q.Eq("PeerIdB", user.PeerId))).First(currChannel)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, "", err
 	}
 
-	targetUserId = carlChannel.PeerIdB
-	if user.PeerId == carlChannel.PeerIdB {
-		targetUserId = carlChannel.PeerIdA
+	targetUserId = currChannel.PeerIdB
+	if user.PeerId == currChannel.PeerIdB {
+		targetUserId = currChannel.PeerIdA
 	}
 	data = make(map[string]interface{})
-	data["request_hash"] = htlcSingleHopPathInfo.HAndRInfoRequestHash
+	data["request_hash"] = pathInfo.HAndRInfoRequestHash
 	data["h"] = rAndHInfo.H
 	return data, targetUserId, nil
 }
@@ -204,7 +224,7 @@ func (service *htlcForwardTxManager) SignGetH(msgData string, user bean.User) (d
 		return nil, "", err
 	}
 
-	if pathInfo.CurrStep > 2 {
+	if pathInfo.CurrStep > int(pathInfo.TotalStep/2) {
 		return nil, "", errors.New("error step")
 	}
 
@@ -319,7 +339,7 @@ func (service *htlcForwardTxManager) SenderBeginCreateHtlcCommitmentTx(msgData s
 		return nil, "", err
 	}
 
-	if pathInfo.CurrStep > 2 {
+	if pathInfo.CurrStep > int(pathInfo.TotalStep/2) {
 		return nil, "", errors.New("error step")
 	}
 
