@@ -202,11 +202,11 @@ func checkIfHtlcCanBeLaunched(creator *bean.User, htlcHRequest *bean.HtlcHReques
 	// If Yes, NO need to launch HTLC.
 	for _, item := range channelsOfAlice {
 		if item.PeerIdA == creator.PeerId && item.PeerIdB == htlcHRequest.RecipientPeerId {
-			return errors.New("There is a direct channel between Alice and Carol.")
+			return errors.New("There is a direct channel between " + item.PeerIdA + " and " + item.PeerIdB + ".")
 		}
 
 		if item.PeerIdB == creator.PeerId && item.PeerIdA == htlcHRequest.RecipientPeerId {
-			return errors.New("There is a direct channel between Alice and Carol.")
+			return errors.New("There is a direct channel between " + item.PeerIdA + " and " + item.PeerIdB + ".")
 		}
 	}
 	//find the path from transaction creator to the receiver
