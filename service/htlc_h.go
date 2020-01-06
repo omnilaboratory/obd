@@ -223,6 +223,7 @@ func checkIfHtlcCanBeLaunched(creator *bean.User, htlcHRequest *bean.HtlcHReques
 	}
 	return errors.New("There is NOT a middleman, CAN NOT launch HTLC.")
 
+	// region can delete
 	// Case 2. There is NOT a middleman, CAN NOT launch HTLC.
 	// Get all channels of Carol.
 	channelsOfCarol := getAllChannels(htlcHRequest.RecipientPeerId)
@@ -331,6 +332,7 @@ func checkIfHtlcCanBeLaunched(creator *bean.User, htlcHRequest *bean.HtlcHReques
 	}
 
 	return nil
+	// endregion can delete
 }
 
 // GetChannelInfoByTwoPeerID
