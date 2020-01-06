@@ -209,13 +209,13 @@ func checkIfHtlcCanBeLaunched(creator *bean.User, htlcHRequest *bean.HtlcHReques
 			return errors.New("There is a direct channel between Alice and Carol.")
 		}
 	}
-
 	//find the path from transaction creator to the receiver
 	PathService.GetPath(creator.PeerId, htlcHRequest.RecipientPeerId, htlcHRequest.Amount, nil, true)
 	hasPath := false
 	for _, node := range PathService.openList {
 		if node.IsTarget {
 			hasPath = true
+			break
 		}
 	}
 	if hasPath {
