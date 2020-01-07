@@ -12,11 +12,17 @@ import (
 	"testing"
 )
 
+func TestCreateMuiltAddress(t *testing.T) {
+	CreateMuiltAddress()
+}
 func TestMyTx22(t *testing.T) {
-	createMyTx()
+	CreateP2SHTx()
 }
 func TestMyTx23(t *testing.T) {
-	CreateCustomSpendTxForScriptHash()
+	CreateP2SHSpendTx()
+}
+func TestMyTx232(t *testing.T) {
+	rpcSendMulti()
 }
 
 func TestMyTx(t *testing.T) {

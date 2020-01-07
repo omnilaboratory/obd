@@ -15,11 +15,13 @@ import (
 )
 
 type Wallet struct {
-	Index      int    `json:"index"`
-	Address    string `json:"address"`
-	PubKey     string `json:"pub_key"`
-	PrivateKey string `json:"private_key"`
-	Wif        string `json:"wif"`
+	Index         int    `json:"index"`
+	Address       string `json:"address"`
+	PubKey        string `json:"pub_key"`
+	PrivateKey    string `json:"private_key"`
+	Wif           string `json:"wif"`
+	Wifobj        *btcutil.WIF
+	PrivateKeyObj *btcec.PrivateKey
 }
 
 type hdWalletManager struct {
@@ -59,8 +61,11 @@ func getWalletObj(addrIndexExtKey *bip32.Key, wallet *Wallet) (err error) {
 	wallet.PrivateKey = hex.EncodeToString(addrIndexExtKey.Key)
 
 	privKey, _ := btcec.PrivKeyFromBytes(btcec.S256(), addrIndexExtKey.Key)
+
 	wallet.PrivateKey = hex.EncodeToString(privKey.Serialize())
 	wif, _ := btcutil.NewWIF(privKey, net, true)
+	wallet.Wifobj = wif
+	wallet.PrivateKeyObj = privKey
 	wallet.Wif = wif.String()
 
 	return nil

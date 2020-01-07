@@ -15,11 +15,9 @@ func Test_Demo3(t *testing.T) {
 
 }
 func Test_Demo2(t *testing.T) {
-	mnemonic := "admit glad merge wool melody wagon absurd antenna cricket clap moment universe"
-	mnemonic = "unfold tortoise zoo hand sausage project boring corn test same elevator mansion bargain coffee brick tilt forum purpose hundred embody weapon ripple when narrow"
+	mnemonic := "unfold tortoise zoo hand sausage project boring corn test same elevator mansion bargain coffee brick tilt forum purpose hundred embody weapon ripple when narrow"
 	userId := tool.SignMsgWithSha256([]byte(mnemonic))
 
-	mnemonic, _ = HDWalletService.Bip39GenMnemonic(256)
 	changeExtKey, _ := HDWalletService.CreateChangeExtKey(mnemonic)
 	user := &bean.User{}
 	user.CurrAddrIndex = 0
@@ -27,7 +25,7 @@ func Test_Demo2(t *testing.T) {
 	user.Mnemonic = mnemonic
 	user.PeerId = userId
 
-	for i := 0; i < 2; i++ {
+	for i := 0; i < 4; i++ {
 		wallet, _ := HDWalletService.GetAddressByIndex(user, uint32(i))
 		bytes, _ := json.Marshal(wallet)
 		log.Println(string(bytes))
