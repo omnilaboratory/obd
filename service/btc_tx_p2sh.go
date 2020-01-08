@@ -114,17 +114,17 @@ func CreateP2SHTx() {
 
 func CreateP2SHSpendTx() {
 	tx := wire.NewMsgTx(2)
-	utxoHash, _ := chainhash.NewHashFromStr("c964397cb990751e84b4c0e1044b026b0985b987d5a7e03fc33b28c0ac964c9e")
+	utxoHash, _ := chainhash.NewHashFromStr("1461e784816ef87771edbdb99f6183e522d168438467aefeb6ce89266097cd61")
 	point := wire.OutPoint{Hash: *utxoHash, Index: 1}
 	//构建第一个Input，指向一个0.4BTC的UTXO，第二个参数是解锁脚本，现在是nil
 	tx.AddTxIn(wire.NewTxIn(&point, nil, nil))
 
-	amount := 10000
+	amount := 2000
 	// 支付给对方
 	changeAddr := "mp2CSq75LdESK3NFUik7ZAbh1efgXYbnzM"
 	addr, _ := btcutil.DecodeAddress(changeAddr, &chaincfg.TestNet3Params)
 	pkScript, _ := txscript.PayToAddrScript(addr)
-	tx.AddTxOut(wire.NewTxOut(int64(1000), pkScript))
+	tx.AddTxOut(wire.NewTxOut(int64(500), pkScript))
 
 	//找零
 	address := "2N68VtKEQZLaot4Q97Q2EW5wSiyYZbVoSBq"
@@ -135,7 +135,7 @@ func CreateP2SHSpendTx() {
 		AddData(pubKeyHash).
 		AddOp(txscript.OP_EQUAL).
 		Script()
-	tx.AddTxOut(wire.NewTxOut(int64(amount-1000-3000), lock))
+	tx.AddTxOut(wire.NewTxOut(int64(amount-500-500), lock))
 
 	wif0, err := btcutil.DecodeWIF("cRaLt58h5xv5nfw9vqNJ6jtopsa5SWMhA7eCmhBuyTBviiZ8dx6N")
 	wif1, err := btcutil.DecodeWIF("cV1Sot9e8pb2Ern5DCtbMRDfd74dFbRhM6dhxDtg7CmdEVu7CtyD")
@@ -158,9 +158,10 @@ func CreateP2SHSpendTx() {
 	scriptPkScript, err := txscript.PayToAddrScript(scriptAddr1)
 	if err != nil {
 	}
+	log.Println(addr0.EncodeAddress())
 	sigScript, err := txscript.SignTxOutput(&chaincfg.TestNet3Params, tx, 0, scriptPkScript, txscript.SigHashAll, mkGetKey(map[string]addressToKey{
-		wif0.String(): {wif0.PrivKey, true},
-		wif1.String(): {wif1.PrivKey, true},
+		addr0.EncodeAddress(): {wif0.PrivKey, true},
+		addr1.EncodeAddress(): {wif1.PrivKey, true},
 	}), mkGetScript(map[string][]byte{
 		scriptAddr1.EncodeAddress(): pkScript1,
 	}), nil)
