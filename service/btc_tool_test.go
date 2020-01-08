@@ -18,6 +18,9 @@ func TestCreateMuiltAddress(t *testing.T) {
 func TestMyTx22(t *testing.T) {
 	CreateP2SHTx()
 }
+func TestCreateP2SHSpendTxByRawTxInSignature(t *testing.T) {
+	CreateP2SHSpendTxByRawTxInSignature()
+}
 func TestMyTx23(t *testing.T) {
 	CreateP2SHSpendTx()
 }
