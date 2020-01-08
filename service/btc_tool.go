@@ -190,7 +190,6 @@ func signMulti(tx *wire.MsgTx, privKeyStr string, prevPkScripts [][]byte) {
 
 	for i, _ := range inputs {
 		sig, err := txscript.RawTxInSignature(tx, i, prevPkScripts[i], txscript.SigHashAll, privKey)
-		log.Println(hex.EncodeToString(sig))
 		if err != nil {
 			log.Println(err)
 			continue
