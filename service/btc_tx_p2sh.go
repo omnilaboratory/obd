@@ -158,7 +158,6 @@ func CreateP2SHSpendTx() {
 	scriptPkScript, err := txscript.PayToAddrScript(scriptAddr1)
 	if err != nil {
 	}
-	log.Println(addr0.EncodeAddress())
 	sigScript, err := txscript.SignTxOutput(&chaincfg.TestNet3Params, tx, 0, scriptPkScript, txscript.SigHashAll, mkGetKey(map[string]addressToKey{
 		addr0.EncodeAddress(): {wif0.PrivKey, true},
 		addr1.EncodeAddress(): {wif1.PrivKey, true},

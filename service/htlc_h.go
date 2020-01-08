@@ -67,6 +67,7 @@ func (service *htlcHMessageManager) DealHtlcRequest(jsonData string,
 	rAndHInfo.RecipientPeerId = htlcHRequest.RecipientPeerId
 	rAndHInfo.PropertyId = htlcHRequest.PropertyId
 	rAndHInfo.Amount = htlcHRequest.Amount
+	rAndHInfo.Memo = htlcHRequest.Memo
 	rAndHInfo.CurrState = dao.NS_Create
 	rAndHInfo.CreateAt = time.Now()
 	rAndHInfo.CreateBy = creator.PeerId

@@ -96,6 +96,7 @@ type HtlcRAndHInfo struct {
 	CreateAt        time.Time   `json:"create_at"`
 	SignAt          time.Time   `json:"sign_at"`
 	SignBy          string      `json:"sign_by"`
+	Memo            string      `json:"memo"`
 }
 
 type HtlcSingleHopPathInfoState int

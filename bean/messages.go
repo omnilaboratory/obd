@@ -191,6 +191,7 @@ type HtlcHRequest struct {
 	PropertyId      int     `json:"property_id"`
 	Amount          float64 `json:"amount"`
 	RecipientPeerId string  `json:"recipient_peer_id"`
+	Memo            string  `json:"memo"`
 }
 
 //type -41: carl tell alice the H,and he ca
