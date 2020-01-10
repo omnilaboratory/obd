@@ -16,16 +16,13 @@ func TestCreateMuiltAddress(t *testing.T) {
 	CreateMuiltAddress()
 }
 func TestMyTx22(t *testing.T) {
-	CreateP2SHTx()
-}
-func TestCreateP2SHSpendTxByRawTxInSignature(t *testing.T) {
-	CreateP2SHSpendTxByRawTxInSignature()
+	CreateCustomP2SHTx()
 }
 func TestMyTx23(t *testing.T) {
 	CreateP2SHSpendTx()
 }
 func TestMyTx232(t *testing.T) {
-	rpcSendMulti()
+	CreateCustomP2SHSpendTx()
 }
 
 func TestMyTx(t *testing.T) {
