@@ -13,7 +13,7 @@ import (
 )
 
 func TestCreateMuiltAddress(t *testing.T) {
-	CreateMuiltAddress()
+	CreateCustomMuiltAddress()
 }
 func TestMyTx22(t *testing.T) {
 	CreateCustomP2SHTx()
