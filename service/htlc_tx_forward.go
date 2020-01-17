@@ -658,8 +658,6 @@ func (service *htlcForwardTxManager) htlcCreateBobSideTxs(dbTx storm.Node, chann
 			return nil, err
 		}
 		log.Println(htrdTransaction)
-
-		//HEDa 如果Alice拿到了R，就需要构建HTLC Execution Delivery 交易，把钱给Alice，这个交易的拥有着是Alice
 	}
 
 	// 当前创建的是Bob这一方的交易，给bob的钱就需要rsmc的再锁定，给alice的钱就直接给出去
