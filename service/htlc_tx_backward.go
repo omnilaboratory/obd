@@ -452,7 +452,7 @@ func htlcCreateExecutionDelivery(tx storm.Node, channelInfo dao.ChannelInfo, fun
 	}
 
 	txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionUseUnsendInput(
-		commitmentTxInfo.HTLCMultiAddress,
+		henxTx.OutputAddress,
 		[]string{
 			reqData.R,
 			reqData.CurrHtlcTempAddressForHed1aOfHPrivateKey,
@@ -465,7 +465,7 @@ func htlcCreateExecutionDelivery(tx storm.Node, channelInfo dao.ChannelInfo, fun
 		he1x.OutAmount,
 		0,
 		0,
-		&commitmentTxInfo.HTLCRedeemScript)
+		&henxTx.RedeemScript)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -517,7 +517,7 @@ func createHtlcExecution(tx storm.Node, channelInfo dao.ChannelInfo, fundingTran
 	}
 
 	txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionUseUnsendInput(
-		commitmentTxInfo.HTLCMultiAddress,
+		henxTx.OutputAddress,
 		[]string{
 			reqData.R,
 			reqData.ChannelAddressPrivateKey,
@@ -530,7 +530,7 @@ func createHtlcExecution(tx storm.Node, channelInfo dao.ChannelInfo, fundingTran
 		he1x.RSMCOutAmount,
 		0,
 		he1x.Timeout,
-		&commitmentTxInfo.HTLCRedeemScript)
+		&henxTx.RedeemScript)
 	if err != nil {
 		log.Println(err)
 		return nil, err
