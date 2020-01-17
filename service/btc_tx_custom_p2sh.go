@@ -153,10 +153,13 @@ func CreateCustomP2SHSpendTx() {
 	address = "2N68VtKEQZLaot4Q97Q2EW5wSiyYZbVoSBq"
 	addr, _ = btcutil.DecodeAddress(address, &chaincfg.TestNet3Params)
 	//得到输出脚本
-	scriptPkScriptOutput, err := txscript.PayToAddrScript(addr)
+	scriptPkScript, err := txscript.PayToAddrScript(addr)
 	if err != nil {
 	}
-	log.Println(hex.EncodeToString(scriptPkScriptOutput))
+	log.Println(hex.EncodeToString(scriptPkScript))
+
+	prevPkScriptHex := "a914937a069c34e2d88983f890999a4699170c11f4e587"
+	scriptPkScript, _ = hex.DecodeString(prevPkScriptHex)
 
 	testHdSeed := chainhash.Hash{
 		0xb7, 0x94, 0x38, 0x5f, 0x2d, 0x1e, 0xf7, 0xab,
@@ -179,7 +182,7 @@ func CreateCustomP2SHSpendTx() {
 		log.Println("unable to create p2wsh htlc script: ", err)
 	}
 
-	sigScript, err := txscript.SignTxOutput(&chaincfg.TestNet3Params, tx, 0, scriptPkScriptOutput, txscript.SigHashAll, mkGetKey(map[string]addressToKey{
+	sigScript, err := txscript.SignTxOutput(&chaincfg.TestNet3Params, tx, 0, scriptPkScript, txscript.SigHashAll, mkGetKey(map[string]addressToKey{
 		addr0.EncodeAddress(): {wif0.PrivKey, true},
 		addr1.EncodeAddress(): {wif1.PrivKey, true},
 	}), mkGetScript(map[string][]byte{

@@ -1252,7 +1252,7 @@ func (service *htlcCloseTxManager) SignCloseChannel(msgData string, user bean.Us
 		// 如果已经得到R，直接广播HED1a
 		if latestCommitmentTx.CurrState == dao.TxInfoState_Htlc_GetR {
 			isRsmcTx = false
-			hednx := &dao.HTLCExecutionDelivery{}
+			hednx := &dao.HTLCExecutionDeliveryOfR{}
 			err = tx.Select(q.Eq("CommitmentTxId", latestCommitmentTx.Id), q.Eq("CurrState", dao.TxInfoState_CreateAndSign), q.Eq("Owner", closeOpStarter)).First(hednx)
 			if err == nil {
 				if tool.CheckIsString(&hednx.TxHash) {

@@ -174,7 +174,7 @@ func (client *Client) htlcTxModule(msg bean.RequestMessage) (enum.SendTargetType
 	data := ""
 	switch msg.Type {
 	case enum.MsgType_HTLC_FindPathAndSendH_N42:
-		respond, bob, err := service.HtlcForwardTxService.AliceFindPathOfSingleHopAndSendToBob(msg.Data, *client.User)
+		respond, bob, err := service.HtlcForwardTxService.AliceFindPathAndSendToBob(msg.Data, *client.User)
 		if err != nil {
 			data = err.Error()
 		} else {

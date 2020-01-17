@@ -146,15 +146,18 @@ func (service *htlcHMessageManager) DealHtlcResponse(jsonData string,
 		//  * R is <preimage_R>
 		//  * H is <hash_of_preimage_R>
 
-		s, _ := tool.RandBytes(32)
-		temp := append([]byte(rAndHInfo.RequestHash), s...)
-		temp = append(temp, user.PeerId...)
+		//s, _ := tool.RandBytes(32)
+		//temp := append([]byte(rAndHInfo.RequestHash), s...)
+		//temp = append(temp, user.PeerId...)
+		//
+		//r := tool.SignMsgWithRipemd160(temp)
+		//h := tool.SignMsgWithSha256([]byte(r))
 
-		r := tool.SignMsgWithRipemd160(temp)
-		h := tool.SignMsgWithSha256([]byte(r))
+		rAndHInfo.H = htlcHRespond.H
+		rAndHInfo.R = htlcHRespond.R
 
-		rAndHInfo.R = r
-		rAndHInfo.H = h
+		//rAndHInfo.H = h
+		//rAndHInfo.R = r
 		rAndHInfo.CurrState = dao.NS_Finish
 	}
 

@@ -50,7 +50,7 @@ func (service *htlcQueryManager) GetPathInfoByH(msgData string, user bean.User) 
 		return nil, errors.New("error input data")
 	}
 
-	pathInfoFromDb := &dao.HtlcSingleHopPathInfo{}
+	pathInfoFromDb := &dao.HtlcPathInfo{}
 	err = db.Select(q.Eq("H", msgData)).First(pathInfoFromDb)
 	if err != nil {
 		log.Println(err)

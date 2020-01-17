@@ -51,8 +51,36 @@ type HTLCTimeoutDeliveryTxB struct {
 	CreateBy       string         `json:"create_by"`
 }
 
-//HED1a 如果bob返回了正确的R，就可以完成签名，标识这次的htlc可以成功了
-type HTLCExecutionDelivery struct {
+//HED1a when get H , alice 得到H（公钥），生成三签地址，锁住给中间节点的钱，当得到R（私钥）的时候，完成三签地址的签名，生成最终支付交易
+type HTLCExecutionDeliveryOfH struct {
+	Id                     int            `storm:"id,increment" json:"id" `
+	ChannelId              bean.ChannelID `json:"channel_id"`
+	PropertyId             int64          `json:"property_id"`
+	CommitmentTxId         int            `json:"commitment_tx_id"`
+	InputHex               string         `json:"input_hex"`
+	InputTxid              string         `json:"input_txid"`   // input txid  from commitTx aliceTempHtlc&bob multtaddr, so need  sign of aliceTempHtlc and bob
+	InputVout              uint32         `json:"input_vout"`   // input vout
+	InputAmount            float64        `json:"input_amount"` // input amount
+	HtlcH                  string         `json:"htlc_h"`       // H(公钥，三签地址之一)
+	OwnerTempAddressPubKey string         `json:"temp_address_pub_key"`
+	OtherSideChannelPubKey string         `json:"other_side_channel_pub_key"`
+	OutputAddress          string         `json:"output_address"` // 三签地址 锁定支付资金
+	RedeemScript           string         `json:"redeem_script"`  // 三签地址对应的赎回脚本
+	ScriptPubKey           string         `json:"script_pub_key"`
+	OutAmount              float64        `json:"out_amount"`
+	Timeout                int            `json:"timeout"`
+	TxHash                 string         `json:"tx_hash"`
+	Txid                   string         `json:"txid"`
+	CurrState              TxInfoState    `json:"curr_state"`
+	Owner                  string         `json:"owner"`
+	IsEnable               bool           `json:"is_enable"`
+	CreateAt               time.Time      `json:"create_at"`
+	SendAt                 time.Time      `json:"send_at"`
+	CreateBy               string         `json:"create_by"`
+}
+
+//HED1a when get R 如果bob返回了正确的R，就可以完成签名，标识这次的htlc可以成功了
+type HTLCExecutionDeliveryOfR struct {
 	Id             int         `storm:"id,increment" json:"id" `
 	CommitmentTxId int         `json:"commitment_tx_id"`
 	InputTxid      string      `json:"input_txid"`   // input txid  from commitTx aliceTempHtlc&bob multtaddr, so need  sign of aliceTempHtlc and bob
@@ -68,11 +96,11 @@ type HTLCExecutionDelivery struct {
 	IsEnable       bool        `json:"is_enable"`
 	CreateAt       time.Time   `json:"create_at"`
 	SendAt         time.Time   `json:"send_at"`
-	CreateBy       time.Time   `json:"create_by"`
+	CreateBy       string      `json:"create_by"`
 }
 
 //HE1b 如果bob获得了正确的R，就可以完成签名，标识这次的htlc可以成功了
-type HTLCExecutionB HTLCExecutionDelivery
+type HTLCExecutionB HTLCExecutionDeliveryOfR
 
 type NormalState int
 
@@ -88,8 +116,8 @@ type HtlcRAndHInfo struct {
 	RecipientPeerId string      `json:"recipient_peer_id"`
 	PropertyId      int         `json:"property_id"`
 	Amount          float64     `json:"amount"`
-	R               string      `json:"r"`
 	H               string      `json:"h"`
+	R               string      `json:"r"`
 	CurrState       NormalState `json:"curr_state"`
 	RequestHash     string      `json:"request_hash"`
 	CreateBy        string      `json:"create_by"`
@@ -99,29 +127,30 @@ type HtlcRAndHInfo struct {
 	Memo            string      `json:"memo"`
 }
 
-type HtlcSingleHopPathInfoState int
+type HtlcPathInfoState int
 
 const (
-	SingleHopPathInfoState_Created            HtlcSingleHopPathInfoState = 0
-	SingleHopPathInfoState_StepBegin          HtlcSingleHopPathInfoState = 10
-	SingleHopPathInfoState_StepFinish         HtlcSingleHopPathInfoState = 11
-	SingleHopPathInfoState_RefusedByInterNode HtlcSingleHopPathInfoState = -1
+	HtlcPathInfoState_Created            HtlcPathInfoState = 0
+	HtlcPathInfoState_StepBegin          HtlcPathInfoState = 10
+	HtlcPathInfoState_StepFinish         HtlcPathInfoState = 11
+	HtlcPathInfoState_RefusedByInterNode HtlcPathInfoState = -1
 )
 
-type HtlcSingleHopPathInfo struct {
-	Id                           int                        `storm:"id,increment" json:"id" `
-	HAndRInfoRequestHash         string                     `json:"h_and_r_info_request_hash"`
-	H                            string                     `json:"h"`
-	ChannelIdArr                 []int                      `json:"channel_id_arr"`
-	CurrState                    HtlcSingleHopPathInfoState `json:"curr_state"`
-	BeginBlockHeight             int                        `json:"begin_block_height"`
-	TotalStep                    int                        `json:"total_step"`
-	CurrStep                     int                        `json:"curr_step"`
-	CreateBy                     string                     `json:"create_by"`
-	CreateAt                     time.Time                  `json:"create_at"`
-	BobCurrRsmcTempPubKey        string                     `json:"bob_curr_rsmc_temp_pub_key"`          // for cnb output1 temp data
-	BobCurrHtlcTempPubKey        string                     `json:"bob_curr_htlc_temp_pub_key"`          // for cnb output2 temp data
-	BobCurrHtlcTempForHt1bPubKey string                     `json:"bob_curr_htlc_temp_for_ht1b_pub_key"` // for he1b  temp data
+type HtlcPathInfo struct {
+	Id                           int               `storm:"id,increment" json:"id" `
+	HAndRInfoRequestHash         string            `json:"h_and_r_info_request_hash"`
+	H                            string            `json:"h"`
+	ChannelIdArr                 []int             `json:"channel_id_arr"`
+	CurrState                    HtlcPathInfoState `json:"curr_state"`
+	BeginBlockHeight             int               `json:"begin_block_height"`
+	TotalStep                    int               `json:"total_step"`
+	CurrStep                     int               `json:"curr_step"`
+	CreateBy                     string            `json:"create_by"`
+	CreateAt                     time.Time         `json:"create_at"`
+	CurrRsmcTempPubKey           string            `json:"curr_rsmc_temp_pub_key"`              // for cnb output1 temp data
+	CurrHtlcTempPubKey           string            `json:"curr_htlc_temp_pub_key"`              // for cnb output2 temp data
+	CurrHtlcTempForHe1bOfHPubKey string            `json:"curr_htlc_temp_for_he1b_ofh_pub_key"` // temp data when get h for he1b
+	CurrHtlcTempForHe1bPubKey    string            `json:"curr_htlc_temp_for_he1b_pub_key"`     // temp data when get r for he1b
 }
 
 // 为记录-48的关闭htlc的请求数据

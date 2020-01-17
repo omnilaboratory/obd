@@ -166,6 +166,9 @@ func CreateP2SHSpendTx() {
 	}
 	log.Println(hex.EncodeToString(scriptPkScript))
 
+	prevPkScriptHex := "a914937a069c34e2d88983f890999a4699170c11f4e587"
+	scriptPkScript, _ = hex.DecodeString(prevPkScriptHex)
+
 	sigScript, err := txscript.SignTxOutput(&chaincfg.TestNet3Params, tx, 0, scriptPkScript, txscript.SigHashAll, mkGetKey(map[string]addressToKey{
 		addr0.EncodeAddress(): {wif0.PrivKey, true},
 		addr1.EncodeAddress(): {wif1.PrivKey, true},
