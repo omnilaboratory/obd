@@ -70,18 +70,30 @@ func (service *htlcBackwardTxManager) SendRToPreviousNode(msgData string,
 		log.Println(err)
 		return nil, "", err
 	}
+
+	if tool.CheckIsString(&reqData.R) == false {
+		err = errors.New("r is empty")
+		log.Println(err)
+		return nil, "", err
+	}
 	// endregion
 
 	// region Check out if the input R is correct.
 	rAndHInfo := &dao.HtlcRAndHInfo{}
 	err = db.Select(
 		q.Eq("RequestHash", reqData.RequestHash),
-		q.Eq("R", reqData.R), // R from websocket client of sender
 		q.Eq("CurrState", dao.NS_Finish)).First(rAndHInfo)
 
 	if err != nil {
 		log.Println(err.Error())
 		return nil, "", err
+	}
+	if tool.CheckIsString(&rAndHInfo.R) {
+		if rAndHInfo.R != reqData.R {
+			err = errors.New("r is wrong")
+			log.Println(err)
+			return nil, "", err
+		}
 	}
 	// endregion
 
@@ -191,7 +203,7 @@ func (service *htlcBackwardTxManager) SendRToPreviousNode(msgData string,
 	responseData := make(map[string]interface{})
 	responseData["id"] = rAndHInfo.Id
 	responseData["request_hash"] = rAndHInfo.RequestHash
-	responseData["r"] = rAndHInfo.R
+	responseData["r"] = reqData.R
 
 	return responseData, previousNode, nil
 }
@@ -245,7 +257,6 @@ func (service *htlcBackwardTxManager) CheckRAndCreateTxs(msgData string, user be
 	rAndHInfo := &dao.HtlcRAndHInfo{}
 	err = db.Select(
 		q.Eq("RequestHash", reqData.RequestHash),
-		q.Eq("R", reqData.R),
 		q.Eq("CurrState", dao.NS_Finish)).First(rAndHInfo)
 
 	if err != nil {
@@ -379,11 +390,11 @@ func (service *htlcBackwardTxManager) CheckRAndCreateTxs(msgData string, user be
 	log.Println(herd1x)
 	//endregion
 
-	commitmentTransaction.HtlcR = rAndHInfo.R
+	commitmentTransaction.HtlcR = reqData.R
 	commitmentTransaction.CurrState = dao.TxInfoState_Htlc_GetR
 	commitmentTransaction.LastEditTime = time.Now()
 	_ = dbTx.Update(&commitmentTransaction)
-	commitmentTransactionB.HtlcR = rAndHInfo.R
+	commitmentTransactionB.HtlcR = reqData.R
 	commitmentTransactionB.CurrState = dao.TxInfoState_Htlc_GetR
 	commitmentTransactionB.LastEditTime = time.Now()
 	_ = dbTx.Update(&commitmentTransactionB)
@@ -391,6 +402,11 @@ func (service *htlcBackwardTxManager) CheckRAndCreateTxs(msgData string, user be
 	pathInfo.CurrStep += 1
 	pathInfo.CurrState = dao.HtlcPathInfoState_StepFinish
 	err = dbTx.Update(&pathInfo)
+
+	if tool.CheckIsString(&rAndHInfo.R) == false {
+		rAndHInfo.R = reqData.R
+		_ = dbTx.Update(rAndHInfo)
+	}
 
 	err = dbTx.Commit()
 	if err != nil {

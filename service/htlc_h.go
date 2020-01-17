@@ -141,6 +141,9 @@ func (service *htlcHMessageManager) DealHtlcResponse(jsonData string,
 	// Carol approved the request from Alice.
 	if htlcHRespond.Approval {
 
+		if tool.CheckIsString(&htlcHRespond.H) == false {
+			return nil, nil, errors.New("empty h")
+		}
 		// Generate the R and H.
 		// For temp solution currently, the R and H save to database.
 		//  * R is <preimage_R>
@@ -154,7 +157,6 @@ func (service *htlcHMessageManager) DealHtlcResponse(jsonData string,
 		//h := tool.SignMsgWithSha256([]byte(r))
 
 		rAndHInfo.H = htlcHRespond.H
-		rAndHInfo.R = htlcHRespond.R
 
 		//rAndHInfo.H = h
 		//rAndHInfo.R = r
