@@ -291,18 +291,18 @@ func htlcBobAbortLastRsmcCommitmentTx(tx storm.Node, channelInfo dao.ChannelInfo
 }
 
 func htlcCreateExecutionDeliveryOfHForAlice(tx storm.Node, aliceIsSender bool, pathInfo dao.HtlcPathInfo, owner string, channelInfo dao.ChannelInfo, propertyId int64, commitmentTxInfo dao.CommitmentTransaction, requestData bean.HtlcRequestOpen, operator bean.User, h string) (hednx *dao.HTLCExecutionDeliveryOfH, err error) {
-	otherSideChannelPubKey := channelInfo.PubKeyB
+	//hed1a for h
 	ownerTempPubKey := requestData.CurrHtlcTempAddressForHed1aOfHPubKey
-	otherSideHtlcTempAddressPrivateKey := requestData.CurrHtlcTempAddressPrivateKey
+	ownerHtlcTempAddressPrivateKey := requestData.CurrHtlcTempAddressPrivateKey
 	if aliceIsSender == false {
-		otherSideChannelPubKey = channelInfo.PubKeyA
+		//he1a for h
 		ownerTempPubKey = pathInfo.CurrHtlcTempForHe1bOfHPubKey
-		otherSideHtlcTempAddressPrivateKey = tempAddrPrivateKeyMap[pathInfo.CurrHtlcTempPubKey]
+		ownerHtlcTempAddressPrivateKey = tempAddrPrivateKeyMap[pathInfo.CurrHtlcTempPubKey]
 	}
 
 	outputBean := make(map[string]interface{})
 	outputBean["amount"] = commitmentTxInfo.AmountToHtlc
-	outputBean["otherSideChannelPubKey"] = otherSideChannelPubKey
+	outputBean["otherSideChannelPubKey"] = channelInfo.PubKeyB
 	outputBean["ownerTempPubKey"] = ownerTempPubKey
 
 	hednx, err = createHtlcExecutionDeliveryTxObj(tx, owner, channelInfo, h, commitmentTxInfo, outputBean, 0, operator)
@@ -320,8 +320,8 @@ func htlcCreateExecutionDeliveryOfHForAlice(tx storm.Node, aliceIsSender bool, p
 	txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionUseUnsendInput(
 		commitmentTxInfo.HTLCMultiAddress,
 		[]string{
-			otherSideHtlcTempAddressPrivateKey,
-			tempAddrPrivateKeyMap[otherSideChannelPubKey],
+			ownerHtlcTempAddressPrivateKey,
+			tempAddrPrivateKeyMap[channelInfo.PubKeyB],
 		},
 		inputs,
 		hednx.OutputAddress,
@@ -349,18 +349,18 @@ func htlcCreateExecutionDeliveryOfHForAlice(tx storm.Node, aliceIsSender bool, p
 }
 
 func htlcCreateExecutionDeliveryOfHForBob(tx storm.Node, aliceIsSender bool, owner string, pathInfo dao.HtlcPathInfo, channelInfo dao.ChannelInfo, propertyId int64, commitmentTxInfo dao.CommitmentTransaction, requestData bean.HtlcRequestOpen, operator bean.User, h string) (henx *dao.HTLCExecutionDeliveryOfH, err error) {
-	otherSideChannelPubKey := channelInfo.PubKeyA
+	//he1b for h
 	ownerTempPubKey := pathInfo.CurrHtlcTempForHe1bOfHPubKey
-	otherSideHtlcTempAddressPrivateKey := tempAddrPrivateKeyMap[pathInfo.CurrHtlcTempPubKey]
+	ownerHtlcTempAddressPrivateKey := tempAddrPrivateKeyMap[pathInfo.CurrHtlcTempPubKey]
 	if aliceIsSender == false {
-		otherSideChannelPubKey = channelInfo.PubKeyB
+		//hed1b for h
 		ownerTempPubKey = requestData.CurrHtlcTempAddressForHed1aOfHPubKey
-		otherSideHtlcTempAddressPrivateKey = requestData.CurrHtlcTempAddressPrivateKey
+		ownerHtlcTempAddressPrivateKey = requestData.CurrHtlcTempAddressPrivateKey
 	}
 
 	outputBean := make(map[string]interface{})
 	outputBean["amount"] = commitmentTxInfo.AmountToHtlc
-	outputBean["otherSideChannelPubKey"] = otherSideChannelPubKey
+	outputBean["otherSideChannelPubKey"] = channelInfo.PubKeyA
 	outputBean["ownerTempPubKey"] = ownerTempPubKey
 
 	henx, err = createHtlcExecutionDeliveryTxObj(tx, owner, channelInfo, h, commitmentTxInfo, outputBean, 0, operator)
@@ -378,8 +378,8 @@ func htlcCreateExecutionDeliveryOfHForBob(tx storm.Node, aliceIsSender bool, own
 	txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionUseUnsendInput(
 		commitmentTxInfo.HTLCMultiAddress,
 		[]string{
-			otherSideHtlcTempAddressPrivateKey,
-			tempAddrPrivateKeyMap[otherSideChannelPubKey],
+			ownerHtlcTempAddressPrivateKey,
+			tempAddrPrivateKeyMap[channelInfo.PubKeyA],
 		},
 		inputs,
 		henx.OutputAddress,

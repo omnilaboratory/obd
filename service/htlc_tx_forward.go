@@ -600,9 +600,9 @@ func (service *htlcForwardTxManager) htlcCreateBobSideTxs(dbTx storm.Node, chann
 	pathInfo dao.HtlcPathInfo, hAndRInfo dao.HtlcRAndHInfo) (*dao.CommitmentTransaction, error) {
 
 	owner := channelInfo.PeerIdB
-	bobIsInterNodeSoAliceSend2Bob := true
+	aliceIsSender := true
 	if operator.PeerId == channelInfo.PeerIdB {
-		bobIsInterNodeSoAliceSend2Bob = false
+		aliceIsSender = false
 	}
 
 	var lastCommitmentBTx = &dao.CommitmentTransaction{}
@@ -611,7 +611,7 @@ func (service *htlcForwardTxManager) htlcCreateBobSideTxs(dbTx storm.Node, chann
 		lastCommitmentBTx = nil
 	}
 	// create Cnb dbTx
-	commitmentTxInfo, err := htlcCreateCnb(dbTx, channelInfo, operator, fundingTransaction, requestData, pathInfo, hAndRInfo, bobIsInterNodeSoAliceSend2Bob, lastCommitmentBTx, owner)
+	commitmentTxInfo, err := htlcCreateCnb(dbTx, channelInfo, operator, fundingTransaction, requestData, pathInfo, hAndRInfo, aliceIsSender, lastCommitmentBTx, owner)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -620,7 +620,7 @@ func (service *htlcForwardTxManager) htlcCreateBobSideTxs(dbTx storm.Node, chann
 	// create rsmc RDnb dbTx
 	_, err = htlcCreateRDOfRsmc(
 		dbTx, channelInfo, operator, fundingTransaction, requestData,
-		pathInfo, bobIsInterNodeSoAliceSend2Bob, commitmentTxInfo, owner)
+		pathInfo, aliceIsSender, commitmentTxInfo, owner)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -628,7 +628,7 @@ func (service *htlcForwardTxManager) htlcCreateBobSideTxs(dbTx storm.Node, chann
 	timeout := (pathInfo.TotalStep/2 - pathInfo.CurrStep + 1) * singleHopPerHopDuration
 	// htlc txs
 	// output2,给htlc创建的交易，如何处理output2里面的钱
-	if bobIsInterNodeSoAliceSend2Bob {
+	if aliceIsSender {
 		// 如是通道中的Alice转账给Bob，bob作为中间节点  创建HTD1b ，Alice的钱在超时的情况下，可以返回到Alice账号
 		// 当前操作的请求者是Alice
 		// create HTD1b 当超时的情况，Alice赎回自己的钱的交易
@@ -652,7 +652,7 @@ func (service *htlcForwardTxManager) htlcCreateBobSideTxs(dbTx storm.Node, chann
 		log.Println(htlcTimeoutTxB)
 
 		// 继续创建htrd
-		htrdTransaction, err := createHtlcRD(dbTx, channelInfo, operator, fundingTransaction, requestData, bobIsInterNodeSoAliceSend2Bob, htlcTimeoutTxB, owner)
+		htrdTransaction, err := createHtlcRD(dbTx, channelInfo, operator, fundingTransaction, requestData, aliceIsSender, htlcTimeoutTxB, owner)
 		if err != nil {
 			log.Println(err)
 			return nil, err
@@ -663,9 +663,9 @@ func (service *htlcForwardTxManager) htlcCreateBobSideTxs(dbTx storm.Node, chann
 	}
 
 	// 当前创建的是Bob这一方的交易，给bob的钱就需要rsmc的再锁定，给alice的钱就直接给出去
-	// 情况1：当前操作人是alice，而bob 作为中间商，资金支付的接收者，需要把to htlc的钱用三签地址锁住 也即创建he1b 因为
-	// 情况2：当前操作人是bob ,alice是中间商，Alice是资金接收者，bob这边就应该创建Hed1b
-	hena, err := htlcCreateExecutionDeliveryOfHForBob(dbTx, bobIsInterNodeSoAliceSend2Bob, owner, pathInfo, channelInfo, fundingTransaction.PropertyId, *commitmentTxInfo, requestData, operator, hAndRInfo.H)
+	// 情况1：aliceIsSender = true 当前操作人是alice，而bob 作为中间商，资金支付的接收者，需要把to htlc的钱用三签地址锁住 也即创建he1b 因为
+	// 情况2：aliceIsSender = false  当前操作人是bob ,alice是中间商，Alice是资金接收者，bob这边就应该创建Hed1b
+	hena, err := htlcCreateExecutionDeliveryOfHForBob(dbTx, aliceIsSender, owner, pathInfo, channelInfo, fundingTransaction.PropertyId, *commitmentTxInfo, requestData, operator, hAndRInfo.H)
 	if err != nil {
 		log.Println(err)
 		return nil, err
