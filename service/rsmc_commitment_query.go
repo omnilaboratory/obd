@@ -21,7 +21,7 @@ func (service *commitmentTxManager) GetLatestCommitmentTxByChannelId(jsonData st
 		return nil, err
 	}
 
-	if bean.ChannelIdService.IsEmpty(reqData.ChannelId) {
+	if tool.CheckIsString(&reqData.ChannelId) == false {
 		return nil, errors.New("wrong channelId")
 	}
 

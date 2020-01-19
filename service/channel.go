@@ -63,7 +63,7 @@ func (c *channelManager) BobAcceptChannel(jsonData string, peerIdB string) (chan
 		return nil, err
 	}
 
-	if chainhash.IsEmpty(reqData.TemporaryChannelId) {
+	if tool.CheckIsString(&reqData.TemporaryChannelId) == false {
 		return nil, errors.New("wrong TemporaryChannelId")
 	}
 
@@ -115,20 +115,14 @@ func (c *channelManager) BobAcceptChannel(jsonData string, peerIdB string) (chan
 
 // GetChannelByTemporaryChanId
 func (c *channelManager) GetChannelByTemporaryChanId(jsonData string) (node *dao.ChannelInfo, err error) {
-	array := gjson.Parse(jsonData).Array()
-	if len(array) != 32 {
+	if tool.CheckIsString(&jsonData) == false {
 		return nil, errors.New("wrong TemporaryChannelId")
 	}
-
-	var tempChanId chainhash.Hash
-	for index, value := range array {
-		tempChanId[index] = byte(value.Num)
-	}
-	return c.GetChannelByTemporaryChanIdArray(tempChanId)
+	return c.GetChannelByTemporaryChanIdArray(jsonData)
 }
 
 // GetChannelByTemporaryChanIdArray
-func (c *channelManager) GetChannelByTemporaryChanIdArray(chanId chainhash.Hash) (node *dao.ChannelInfo, err error) {
+func (c *channelManager) GetChannelByTemporaryChanIdArray(chanId string) (node *dao.ChannelInfo, err error) {
 	node = &dao.ChannelInfo{}
 	err = db.Select(q.Eq("TemporaryChannelId", chanId)).First(node)
 	return node, err
@@ -202,7 +196,7 @@ func (c *channelManager) ForceCloseChannel(jsonData string, user *bean.User) (in
 		return nil, err
 	}
 
-	if bean.ChannelIdService.IsEmpty(reqData.ChannelId) {
+	if tool.CheckIsString(&reqData.ChannelId) == false {
 		return nil, errors.New("wrong channelId")
 	}
 
@@ -303,7 +297,7 @@ func (c *channelManager) SendBreachRemedyTransaction(jsonData string, user *bean
 		return nil, err
 	}
 
-	if bean.ChannelIdService.IsEmpty(reqData.ChannelId) {
+	if tool.CheckIsString(&reqData.ChannelId) == false {
 		return nil, errors.New("wrong channelId")
 	}
 
@@ -402,7 +396,7 @@ func (c *channelManager) CloseChannelSign(jsonData string, user *bean.User) (int
 		return nil, nil, err
 	}
 
-	if bean.ChannelIdService.IsEmpty(reqData.ChannelId) {
+	if tool.CheckIsString(&reqData.ChannelId) == false {
 		err = errors.New("empty channel_id")
 		log.Println(err)
 		return nil, nil, err

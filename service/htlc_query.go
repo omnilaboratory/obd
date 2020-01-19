@@ -26,7 +26,7 @@ func (service *htlcQueryManager) GetRFromCommitmentTx(msgData string, user bean.
 	if err != nil {
 		return r, err
 	}
-	if bean.ChannelIdService.IsEmpty(reqData.ChannelId) {
+	if tool.CheckIsString(&reqData.ChannelId) == false {
 		return r, errors.New("error ChannelId ")
 	}
 

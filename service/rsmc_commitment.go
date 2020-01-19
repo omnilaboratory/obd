@@ -30,7 +30,7 @@ func (service *commitmentTxManager) CreateNewCommitmentTxRequest(jsonData string
 	if err != nil {
 		return nil, nil, err
 	}
-	if bean.ChannelIdService.IsEmpty(data.ChannelId) {
+	if tool.CheckIsString(&data.ChannelId) == false {
 		return nil, nil, errors.New("wrong channel_id")
 	}
 
@@ -150,7 +150,7 @@ func (service *commitmentTxSignedManager) CommitmentTxSign(jsonData string, sign
 		return nil, nil, nil, err
 	}
 
-	if bean.ChannelIdService.IsEmpty(data.ChannelId) {
+	if tool.CheckIsString(&data.ChannelId) == false {
 		err = errors.New("wrong ChannelId")
 		log.Println(err)
 		return nil, nil, nil, err

@@ -13,3 +13,7 @@ type OmniSendRequest struct {
 	BtcSendRequest
 	PropertyId int64 `json:"property_id"`
 }
+type CreateMultiSigRequest struct {
+	MiniSignCount int      `json:"mini_sign_count"`
+	PubKeys       []string `json:"pub_keys"`
+}

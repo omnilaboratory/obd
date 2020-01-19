@@ -125,6 +125,21 @@ func (client *Client) omniCoreModule(msg bean.RequestMessage) (enum.SendTargetTy
 		}
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
+	case enum.MsgType_Core_OmniOmniGetbalance_1011:
+		address := gjson.Get(msg.Data, "address").String()
+		if tool.CheckIsString(&address) {
+			result, err := rpcClient.OmniGetAllBalancesForAddress(address)
+			if err != nil {
+				data = err.Error()
+			} else {
+				data = result
+				status = true
+			}
+		} else {
+			data = "error address"
+		}
+		client.sendToMyself(msg.Type, status, data)
+		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_Core_BtcCreateAndSignRawTransaction_1009:
 		sendInfo := &bean.BtcSendRequest{}
 		err := json.Unmarshal([]byte(msg.Data), sendInfo)
@@ -152,6 +167,27 @@ func (client *Client) omniCoreModule(msg bean.RequestMessage) (enum.SendTargetTy
 				}
 			} else {
 				data = "error address"
+			}
+		}
+		client.sendToMyself(msg.Type, status, data)
+		sendType = enum.SendTargetType_SendToSomeone
+	case enum.MsgType_Core_BtcCreateMultiSig_1010:
+		reqData := &bean.CreateMultiSigRequest{}
+		err := json.Unmarshal([]byte(msg.Data), reqData)
+		if err != nil {
+			data = "error data: " + err.Error()
+		} else {
+			result, err := rpcClient.CreateMultiSig(reqData.MiniSignCount, reqData.PubKeys)
+			if err == nil {
+				parse := gjson.Parse(string(result))
+				node := make(map[string]interface{})
+				node["txid"] = parse.Get("address")
+				node["hex"] = parse.Get("redeemScript")
+				bytes, _ := json.Marshal(node)
+				data = string(bytes)
+				status = true
+			} else {
+				data = "error data"
 			}
 		}
 		client.sendToMyself(msg.Type, status, data)

@@ -43,7 +43,7 @@ type User struct {
 //type = -32
 type OpenChannelInfo struct {
 	ChainHash                chainhash.ChainHash `json:"chain_hash"`
-	TemporaryChannelId       chainhash.Hash      `json:"temporary_channel_id"`
+	TemporaryChannelId       string              `json:"temporary_channel_id"`
 	FundingSatoshis          uint64              `json:"funding_satoshis"`
 	PushMsat                 uint64              `json:"push_msat"`
 	DustLimitSatoshis        uint64              `json:"dust_limit_satoshis"`
@@ -69,53 +69,53 @@ type AcceptChannelInfo struct {
 
 //type: -38 (close_channel)
 type CloseChannel struct {
-	ChannelId ChannelID `json:"channel_id"`
+	ChannelId string `json:"channel_id"`
 }
 
 //type: -39 (close_channel_sign)
 type CloseChannelSign struct {
-	ChannelId               ChannelID `json:"channel_id"`
-	RequestCloseChannelHash string    `json:"request_close_channel_hash"`
-	Approval                bool      `json:"approval"` // true agree false disagree
+	ChannelId               string `json:"channel_id"`
+	RequestCloseChannelHash string `json:"request_close_channel_hash"`
+	Approval                bool   `json:"approval"` // true agree false disagree
 }
 
 //type: -35107 (SendBreachRemedyTransaction)
 type SendBreachRemedyTransaction struct {
-	ChannelId                ChannelID `json:"channel_id"`
-	ChannelAddressPrivateKey string    `json:"channel_address_private_key"` // openChannel address
+	ChannelId                string `json:"channel_id"`
+	ChannelAddressPrivateKey string `json:"channel_address_private_key"` // openChannel address
 }
 
 //type: -34 (funding_created)
 type FundingCreated struct {
-	TemporaryChannelId       chainhash.Hash `json:"temporary_channel_id"`
-	PropertyId               int64          `json:"property_id"`
-	MaxAssets                float64        `json:"max_assets"`
-	AmountA                  float64        `json:"amount_a"`
-	FundingTxHex             string         `json:"funding_tx_hex"`
-	TempAddressPubKey        string         `json:"temp_address_pub_key"`
-	TempAddressPrivateKey    string         `json:"temp_address_private_key"`
-	ChannelAddressPrivateKey string         `json:"channel_address_private_key"`
+	TemporaryChannelId       string  `json:"temporary_channel_id"`
+	PropertyId               int64   `json:"property_id"`
+	MaxAssets                float64 `json:"max_assets"`
+	AmountA                  float64 `json:"amount_a"`
+	FundingTxHex             string  `json:"funding_tx_hex"`
+	TempAddressPubKey        string  `json:"temp_address_pub_key"`
+	TempAddressPrivateKey    string  `json:"temp_address_private_key"`
+	ChannelAddressPrivateKey string  `json:"channel_address_private_key"`
 }
 
 //type: -3400 (FundingBtcCreated)
 type FundingBtcCreated struct {
-	TemporaryChannelId       chainhash.Hash `json:"temporary_channel_id"`
-	Amount                   float64        `json:"amount_a"`
-	FundingTxHex             string         `json:"funding_tx_hex"`
-	ChannelAddressPrivateKey string         `json:"channel_address_private_key"`
+	TemporaryChannelId       string  `json:"temporary_channel_id"`
+	Amount                   float64 `json:"amount_a"`
+	FundingTxHex             string  `json:"funding_tx_hex"`
+	ChannelAddressPrivateKey string  `json:"channel_address_private_key"`
 }
 
 //type: -3500 (FundingBtcSigned)
 type FundingBtcSigned struct {
-	TemporaryChannelId       chainhash.Hash `json:"temporary_channel_id"`
-	FundingTxid              string         `json:"funding_txid"`
-	ChannelAddressPrivateKey string         `json:"channel_address_private_key"`
-	Approval                 bool           `json:"approval"`
+	TemporaryChannelId       string `json:"temporary_channel_id"`
+	FundingTxid              string `json:"funding_txid"`
+	ChannelAddressPrivateKey string `json:"channel_address_private_key"`
+	Approval                 bool   `json:"approval"`
 }
 
 //type: -35 (funding_signed)
 type FundingSigned struct {
-	ChannelId ChannelID `json:"channel_id"`
+	ChannelId string `json:"channel_id"`
 	//the omni address of funder Alice
 	FunderPubKey string `json:"funder_pub_key"`
 	// the id of the Omni asset
@@ -137,31 +137,31 @@ type FundingSigned struct {
 
 //type: -351 (commitment_tx)
 type CommitmentTx struct {
-	ChannelId                 ChannelID `json:"channel_id"` //the global channel id.
-	RequestCommitmentHash     string    `json:"request_commitment_hash"`
-	PropertyId                int       `json:"property_id"` //the id of the Omni asset
-	Amount                    float64   `json:"amount"`      //amount of the payment
-	ChannelAddressPrivateKey  string    `json:"channel_address_private_key"`
-	LastTempAddressPrivateKey string    `json:"last_temp_address_private_key"`
-	CurrTempAddressPubKey     string    `json:"curr_temp_address_pub_key"`
-	CurrTempAddressPrivateKey string    `json:"curr_temp_address_private_key"`
+	ChannelId                 string  `json:"channel_id"` //the global channel id.
+	RequestCommitmentHash     string  `json:"request_commitment_hash"`
+	PropertyId                int     `json:"property_id"` //the id of the Omni asset
+	Amount                    float64 `json:"amount"`      //amount of the payment
+	ChannelAddressPrivateKey  string  `json:"channel_address_private_key"`
+	LastTempAddressPrivateKey string  `json:"last_temp_address_private_key"`
+	CurrTempAddressPubKey     string  `json:"curr_temp_address_pub_key"`
+	CurrTempAddressPrivateKey string  `json:"curr_temp_address_private_key"`
 }
 
 //type: -352 (commitment_tx_signed)
 type CommitmentTxSigned struct {
-	ChannelId                 ChannelID `json:"channel_id"`
-	RequestCommitmentHash     string    `json:"request_commitment_hash"`
-	ChannelAddressPrivateKey  string    `json:"channel_address_private_key"`   // bob private key
-	LastTempAddressPrivateKey string    `json:"last_temp_address_private_key"` // bob2's private key
-	CurrTempAddressPubKey     string    `json:"curr_temp_address_pub_key"`     // bob3 or alice3
-	CurrTempAddressPrivateKey string    `json:"curr_temp_address_private_key"`
-	Approval                  bool      `json:"approval"` // true agree false disagree
+	ChannelId                 string `json:"channel_id"`
+	RequestCommitmentHash     string `json:"request_commitment_hash"`
+	ChannelAddressPrivateKey  string `json:"channel_address_private_key"`   // bob private key
+	LastTempAddressPrivateKey string `json:"last_temp_address_private_key"` // bob2's private key
+	CurrTempAddressPubKey     string `json:"curr_temp_address_pub_key"`     // bob3 or alice3
+	CurrTempAddressPrivateKey string `json:"curr_temp_address_private_key"`
+	Approval                  bool   `json:"approval"` // true agree false disagree
 }
 
 //type: -353 (get_balance_request)
 type GetBalanceRequest struct {
 	//the global channel id.
-	ChannelId ChannelID `json:"channel_id"`
+	ChannelId string `json:"channel_id"`
 	//the p2sh address generated in funding_signed message.
 	P2shAddress string `json:"p2sh_address"`
 	// the channel owner, Alice or Bob, can query the balance.
@@ -173,7 +173,7 @@ type GetBalanceRequest struct {
 //type: -354 (get_balance_respond)
 type GetBalanceRespond struct {
 	//the global channel id.
-	ChannelId ChannelID `json:"channel_id"`
+	ChannelId string `json:"channel_id"`
 	//the asset id generated by Omnilayer protocol.
 	PropertyId int `json:"property_id"`
 	//the name of the asset.
@@ -273,13 +273,13 @@ type HtlcCheckRAndCreateTx struct {
 
 //type -48: user wanna close htlc tx when tx is on getH state
 type HtlcRequestCloseCurrTx struct {
-	ChannelId                            ChannelID `json:"channel_id"`
-	ChannelAddressPrivateKey             string    `json:"channel_address_private_key"` //	开通通道用到的私钥
-	LastRsmcTempAddressPrivateKey        string    `json:"last_rsmc_temp_address_private_key"`
-	LastHtlcTempAddressPrivateKey        string    `json:"last_htlc_temp_address_private_key"`
-	LastHtlcTempAddressForHtnxPrivateKey string    `json:"last_htlc_temp_address_for_htnx_private_key"`
-	CurrRsmcTempAddressPubKey            string    `json:"curr_rsmc_temp_address_pub_key"`
-	CurrRsmcTempAddressPrivateKey        string    `json:"curr_rsmc_temp_address_private_key"`
+	ChannelId                            string `json:"channel_id"`
+	ChannelAddressPrivateKey             string `json:"channel_address_private_key"` //	开通通道用到的私钥
+	LastRsmcTempAddressPrivateKey        string `json:"last_rsmc_temp_address_private_key"`
+	LastHtlcTempAddressPrivateKey        string `json:"last_htlc_temp_address_private_key"`
+	LastHtlcTempAddressForHtnxPrivateKey string `json:"last_htlc_temp_address_for_htnx_private_key"`
+	CurrRsmcTempAddressPubKey            string `json:"curr_rsmc_temp_address_pub_key"`
+	CurrRsmcTempAddressPrivateKey        string `json:"curr_rsmc_temp_address_private_key"`
 }
 
 //type -49: receiver sign the close request

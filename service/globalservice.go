@@ -309,7 +309,7 @@ func getInputsForNextTxByParseTxHashVout(hex string, toAddress, scriptPubKey str
 	return nil, errors.New("no inputs")
 }
 
-func getLatestCommitmentTx(channelId bean.ChannelID, owner string) (commitmentTxInfo *dao.CommitmentTransaction, err error) {
+func getLatestCommitmentTx(channelId string, owner string) (commitmentTxInfo *dao.CommitmentTransaction, err error) {
 	commitmentTxInfo = &dao.CommitmentTransaction{}
 	err = db.Select(q.Eq("ChannelId", channelId),
 		//q.Eq("CurrState", dao.TxInfoState_CreateAndSign),

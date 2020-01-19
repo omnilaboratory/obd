@@ -37,7 +37,7 @@ func (service *htlcCloseTxManager) RequestCloseHtlc(msgData string, user bean.Us
 	}
 
 	// region check data
-	if bean.ChannelIdService.IsEmpty(reqData.ChannelId) {
+	if tool.CheckIsString(&reqData.ChannelId) == false {
 		err = errors.New("wrong channel Id")
 		log.Println(err)
 		return nil, "", err
@@ -1139,7 +1139,7 @@ func (service *htlcCloseTxManager) SignCloseChannel(msgData string, user bean.Us
 	}
 
 	// region check input data
-	if bean.ChannelIdService.IsEmpty(reqData.ChannelId) {
+	if tool.CheckIsString(&reqData.ChannelId) == false {
 		err = errors.New("empty channel_id")
 		log.Println(err)
 		return nil, "", err

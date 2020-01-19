@@ -22,7 +22,7 @@ var HtlcHMessageService htlcHMessageManager
 //
 // Process type -40: Alice start a request to transfer to Carol.
 func (service *htlcHMessageManager) DealHtlcRequest(jsonData string,
-	creator *bean.User) (data *bean.HtlcHRespond, err error) {
+	creator *bean.User) (data map[string]interface{}, err error) {
 
 	//------------
 	// ** We will launch a HTLC transfer for testing purpose. **
@@ -102,10 +102,10 @@ func (service *htlcHMessageManager) DealHtlcRequest(jsonData string,
 	// Generate response message.
 	// If no error, the response data is displayed in websocket client of Carol.
 	// Otherwise, it is displayed in websocket client of Alice.
-	data = &bean.HtlcHRespond{}
-	data.PropertyId = htlcHRequest.PropertyId
-	data.Amount = htlcHRequest.Amount
-	data.RequestHash = msgHash
+	data = make(map[string]interface{})
+	data["propertyId"] = htlcHRequest.PropertyId
+	data["amount"] = htlcHRequest.Amount
+	data["requestHash"] = msgHash
 
 	return data, nil
 }

@@ -1067,7 +1067,7 @@ func createHtlcRDTxObj(owner string, channelInfo *dao.ChannelInfo, htlcTimeoutTx
 	return htrd, nil
 }
 
-func getHtlcLatestCommitmentTx(channelId bean.ChannelID, owner string) (commitmentTxInfo *dao.CommitmentTransaction, err error) {
+func getHtlcLatestCommitmentTx(channelId string, owner string) (commitmentTxInfo *dao.CommitmentTransaction, err error) {
 	commitmentTxInfo = &dao.CommitmentTransaction{}
 	err = db.Select(q.Eq("ChannelId", channelId), q.Eq("Owner", owner)).OrderBy("CreateAt").Reverse().First(commitmentTxInfo)
 	if err == nil && commitmentTxInfo.TxType != dao.CommitmentTransactionType_Htlc {

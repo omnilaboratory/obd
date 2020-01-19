@@ -193,10 +193,10 @@ func (this *pathManager) GetPath(realSenderPeerId, currReceiverPeerId string, am
 	err := db.Select(q.Eq("PeerIdB", currReceiverPeerId)).Find(&nodes)
 	if err == nil {
 		for _, item := range nodes {
-			commitmentTxInfo, err := getLatestCommitmentTx(item.ChannelId, currReceiverPeerId)
+			interSender := item.PeerIdA
+			commitmentTxInfo, err := getLatestCommitmentTx(item.ChannelId, interSender)
 			if err == nil {
 				if commitmentTxInfo.AmountToRSMC >= amount {
-					interSender := item.PeerIdA
 					newNode := PathNode{
 						ParentNode:     currNodeIndex,
 						ChannelId:      item.Id,
@@ -225,10 +225,10 @@ func (this *pathManager) GetPath(realSenderPeerId, currReceiverPeerId string, am
 	err = db.Select(q.Eq("PeerIdA", currReceiverPeerId)).Find(&nodes)
 	if err == nil {
 		for _, item := range nodes {
-			commitmentTxInfo, err := getLatestCommitmentTx(item.ChannelId, currReceiverPeerId)
+			interSender := item.PeerIdB
+			commitmentTxInfo, err := getLatestCommitmentTx(item.ChannelId, interSender)
 			if err == nil {
 				if commitmentTxInfo.AmountToRSMC >= amount {
-					interSender := item.PeerIdB
 					newNode := PathNode{
 						ParentNode:     currNodeIndex,
 						PathNames:      pathIds,

@@ -29,8 +29,11 @@ func TestDemoChannelTreeData(t *testing.T) {
 }
 
 func TestDelDemoChannelInfoData(t *testing.T) {
-	deleteStruct := db.Drop(&dao.DemoChannelInfo{})
-	log.Println(deleteStruct)
+	//{
+	//	"address":"muYrqVWTKnkaVAMuqn59Ta6GL912ixpxit",
+	//	"pub_key":"029cf4b150da0065d5c08bf088e8a5367d35ff72e4e79b39efb401530d19fa3f3c",
+	//	"wif":"cToieuvo3JjkEUKa3tjd6J98RXKDTo1d2hUSVgKpZ1KwBvGhQFL8"
+	//}
 }
 
 func TestDelDemoChannelInfoOne(t *testing.T) {

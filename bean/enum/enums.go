@@ -25,6 +25,8 @@ const (
 	MsgType_Core_ListUnspent_1007                      MsgType = 1007
 	MsgType_Core_BalanceByAddress_1008                 MsgType = 1008
 	MsgType_Core_BtcCreateAndSignRawTransaction_1009   MsgType = 1009
+	MsgType_Core_BtcCreateMultiSig_1010                MsgType = 1010
+	MsgType_Core_OmniOmniGetbalance_1011               MsgType = 1011
 	MsgType_Core_Omni_CreateAndSignRawTransaction_2001 MsgType = 2001
 
 	MsgType_GetMnemonic_101                MsgType = 101

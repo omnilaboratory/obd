@@ -32,7 +32,7 @@ func (service *fundingTransactionManager) CreateFundingBtcTxRequest(jsonData str
 		return nil, "", err
 	}
 
-	if chainhash.IsEmpty(reqData.TemporaryChannelId) {
+	if tool.CheckIsString(&reqData.TemporaryChannelId) == false {
 		err = errors.New("wrong TemporaryChannelId ")
 		log.Println(err)
 		return nil, "", err
@@ -122,7 +122,7 @@ func (service *fundingTransactionManager) FundingBtcTxSign(jsonData string, sign
 		return nil, "", err
 	}
 
-	if chainhash.IsEmpty(reqData.TemporaryChannelId) {
+	if tool.CheckIsString(&reqData.TemporaryChannelId) == false {
 		err = errors.New("wrong TemporaryChannelId ")
 		log.Println(err)
 		return nil, "", err
@@ -196,6 +196,7 @@ func (service *fundingTransactionManager) FundingBtcTxSign(jsonData string, sign
 	}
 	log.Println(result)
 
+	// 创建一个btc赎回交易
 	minerFeeRedeemTransaction := &dao.MinerFeeRedeemTransaction{}
 	txid, hex, err := rpcClient.BtcCreateAndSignRawTransactionForUnsendInputTx(
 		channelInfo.ChannelAddress,
@@ -239,7 +240,7 @@ func (service *fundingTransactionManager) CreateFundingOmniTxRequest(jsonData st
 		return nil, err
 	}
 
-	if chainhash.IsEmpty(reqData.TemporaryChannelId) {
+	if tool.CheckIsString(&reqData.TemporaryChannelId) == false {
 		err = errors.New("wrong TemporaryChannelId ")
 		log.Println(err)
 		return nil, err
@@ -285,7 +286,7 @@ func (service *fundingTransactionManager) CreateFundingOmniTxRequest(jsonData st
 
 	fundingTransaction = &dao.FundingTransaction{}
 	count := 0
-	if bean.ChannelIdService.IsEmpty(channelInfo.ChannelId) == false {
+	if tool.CheckIsString(&channelInfo.ChannelId) == false {
 		count, _ = db.Select(q.Eq("ChannelId", channelInfo.ChannelId)).Count(fundingTransaction)
 	}
 	if count == 0 {
@@ -306,7 +307,7 @@ func (service *fundingTransactionManager) CreateFundingOmniTxRequest(jsonData st
 		service.operateFlag.Lock()
 		defer service.operateFlag.Unlock()
 
-		if bean.ChannelIdService.IsEmpty(channelInfo.ChannelId) == false {
+		if tool.CheckIsString(&channelInfo.ChannelId) {
 			err = errors.New("channel is used, can not funding again")
 			log.Println(err)
 			return nil, err
@@ -443,7 +444,7 @@ func (service *fundingTransactionManager) FundingOmniTxSign(jsonData string, sig
 		return nil, err
 	}
 
-	if bean.ChannelIdService.IsEmpty(reqData.ChannelId) {
+	if tool.CheckIsString(&reqData.ChannelId) == false {
 		return nil, errors.New("wrong ChannelId")
 	}
 
