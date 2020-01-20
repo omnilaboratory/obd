@@ -84,10 +84,10 @@ func (service *htlcForwardTxManager) AliceFindPathAndSendToBob(msgData string, u
 
 	channelCount := miniPathNode.Level
 	channelIdArr := make([]int, 0)
-	for i := 1; i < int(channelCount); i++ {
+	channelIdArr = append(channelIdArr, miniPathNode.ChannelId)
+	for i := int(channelCount) - 1; i > 0; i-- {
 		channelIdArr = append(channelIdArr, PathService.openList[miniPathNode.PathIdArr[i]].ChannelId)
 	}
-	channelIdArr = append(channelIdArr, miniPathNode.ChannelId)
 
 	currBlockHeight, err := rpcClient.GetBlockCount()
 	if err != nil {
