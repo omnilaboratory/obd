@@ -426,11 +426,11 @@ func htlcCreateExecutionDelivery(tx storm.Node, channelInfo dao.ChannelInfo, fun
 
 	otherSideChannelAddress := channelInfo.AddressB
 	otherSideChannelPubKey := channelInfo.PubKeyB
-	owner := channelInfo.PeerIdB
+	owner := channelInfo.PeerIdA
 	if aliceIsSender == false {
 		otherSideChannelAddress = channelInfo.AddressA
 		otherSideChannelPubKey = channelInfo.PubKeyA
-		owner = channelInfo.PeerIdA
+		owner = channelInfo.PeerIdB
 	}
 
 	he1x = &dao.HTLCExecutionDeliveryOfR{}
@@ -440,7 +440,7 @@ func htlcCreateExecutionDelivery(tx storm.Node, channelInfo dao.ChannelInfo, fun
 
 	henxTx := &dao.HTLCExecutionDeliveryOfH{}
 	err = tx.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("CommitmentTxId", commitmentTxInfo.Id), q.Eq("Owner", owner)).First(henxTx)
-	if err == nil {
+	if err != nil {
 		log.Println(err)
 		return nil, err
 	}
@@ -505,7 +505,7 @@ func createHtlcExecution(tx storm.Node, channelInfo dao.ChannelInfo, fundingTran
 
 	henxTx := &dao.HTLCExecutionDeliveryOfH{}
 	err = tx.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("CommitmentTxId", commitmentTxInfo.Id), q.Eq("Owner", owner)).First(henxTx)
-	if err == nil {
+	if err != nil {
 		log.Println(err)
 		return nil, err
 	}

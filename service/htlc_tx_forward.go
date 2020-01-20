@@ -35,6 +35,10 @@ func (service *htlcForwardTxManager) AliceFindPathAndSendToBob(msgData string, u
 		return nil, "", err
 	}
 
+	if tool.CheckIsString(&reqData.H) == false {
+		return nil, "", errors.New("empty h")
+	}
+
 	rAndHInfo := &dao.HtlcRAndHInfo{}
 	err = db.Select(q.Eq("CreateBy", user.PeerId), q.Eq("CurrState", dao.NS_Finish), q.Eq("H", reqData.H)).First(rAndHInfo)
 	if err != nil {
@@ -93,7 +97,17 @@ func (service *htlcForwardTxManager) AliceFindPathAndSendToBob(msgData string, u
 	if err != nil {
 		return nil, "", errors.New("fail to get blockHeight ,please try again later")
 	}
-
+	channel := &dao.ChannelInfo{}
+	err = db.Select(q.Eq("Id", channelIdArr[0])).First(channel)
+	if err != nil {
+		err = errors.New("fail to find currChannel")
+		log.Println(err)
+		return nil, "", err
+	}
+	bob = channel.PeerIdB
+	if channel.PeerIdB == user.PeerId {
+		bob = channel.PeerIdA
+	}
 	// operate db
 	pathInfo := &dao.HtlcPathInfo{}
 	pathInfo.ChannelIdArr = channelIdArr
@@ -285,12 +299,12 @@ func (service *htlcForwardTxManager) SignGetH(msgData string, user bean.User) (d
 			}
 			tempAddrPrivateKeyMap[bobLatestCommitmentTx.RSMCTempAddressPubKey] = requestData.LastTempAddressPrivateKey
 		}
-		tempAddrPrivateKeyMap[pathInfo.CurrRsmcTempPubKey] = requestData.CurrRsmcTempAddressPrivateKey
-		tempAddrPrivateKeyMap[pathInfo.CurrHtlcTempPubKey] = requestData.CurrHtlcTempAddressPrivateKey
-
 		pathInfo.CurrRsmcTempPubKey = requestData.CurrRsmcTempAddressPubKey
 		pathInfo.CurrHtlcTempPubKey = requestData.CurrHtlcTempAddressPubKey
 		pathInfo.CurrHtlcTempForHe1bOfHPubKey = requestData.CurrHtlcTempAddressHe1bOfHPubKey
+
+		tempAddrPrivateKeyMap[pathInfo.CurrRsmcTempPubKey] = requestData.CurrRsmcTempAddressPrivateKey
+		tempAddrPrivateKeyMap[pathInfo.CurrHtlcTempPubKey] = requestData.CurrHtlcTempAddressPrivateKey
 	}
 	if requestData.Approval == false {
 		pathInfo.CurrState = dao.HtlcPathInfoState_RefusedByInterNode
@@ -633,7 +647,7 @@ func (service *htlcForwardTxManager) htlcCreateBobSideTxs(dbTx storm.Node, chann
 		// 当前操作的请求者是Alice
 		// create HTD1b 当超时的情况，Alice赎回自己的钱的交易
 		privateKeys := make([]string, 0)
-		privateKeys = append(privateKeys, tempAddrPrivateKeyMap[pathInfo.CurrHtlcTempForHe1bOfHPubKey])
+		privateKeys = append(privateKeys, requestData.CurrHtlcTempAddressPrivateKey)
 		privateKeys = append(privateKeys, tempAddrPrivateKeyMap[channelInfo.PubKeyA])
 		htlcTimeoutDeliveryTxB, err := createHtlcTimeoutDeliveryTx(dbTx, channelInfo.PeerIdA, channelInfo.AddressA, timeout, channelInfo, fundingTransaction, *commitmentTxInfo, privateKeys, operator)
 		if err != nil {

@@ -503,6 +503,9 @@ func (client *Client) OmniCreateAndSignRawTransactionUseUnsendInput(fromBitCoinA
 	if ismine, _ := client.ValidateAddress(toBitCoinAddress); ismine == false {
 		err = client.ImportAddress(toBitCoinAddress)
 	}
+	if ismine, _ := client.ValidateAddress(changeToAddress); ismine == false {
+		err = client.ImportAddress(changeToAddress)
+	}
 
 	inputs := make([]map[string]interface{}, 0, 0)
 	for _, item := range inputItems {
@@ -550,6 +553,11 @@ func (client *Client) OmniCreateAndSignRawTransactionUseUnsendInput(fromBitCoinA
 	}
 
 	log.Println("3 createrawtransactionStr", createrawtransactionStr)
+	result, err := client.DecodeRawTransaction(createrawtransactionStr)
+	if err != nil {
+		return "", "", err
+	}
+	log.Println(result)
 
 	//4.Omni_createrawtx_opreturn
 	opreturn, err := client.omniCreateRawtxOpreturn(createrawtransactionStr, payload)
@@ -565,6 +573,11 @@ func (client *Client) OmniCreateAndSignRawTransactionUseUnsendInput(fromBitCoinA
 	}
 	log.Println("5 reference", reference)
 
+	result, err = client.DecodeRawTransaction(reference)
+	if err != nil {
+		return "", "", err
+	}
+	log.Println(result)
 	//6.Omni_createrawtx_change
 	prevtxs := make([]map[string]interface{}, 0, 0)
 	for _, item := range inputItems {
@@ -578,11 +591,17 @@ func (client *Client) OmniCreateAndSignRawTransactionUseUnsendInput(fromBitCoinA
 		}
 		prevtxs = append(prevtxs, node)
 	}
-	change, err := client.omniCreateRawtxChange(reference, prevtxs, changeToAddress, out)
+	change, err := client.omniCreateRawtxChange(reference, prevtxs, changeToAddress, minerFee)
 	if err != nil {
 		return "", "", err
 	}
 	log.Println("6 change", change)
+
+	result, err = client.DecodeRawTransaction(change)
+	if err != nil {
+		return "", "", err
+	}
+	log.Println(result)
 
 	if privkeys == nil || len(privkeys) == 0 {
 		privkeys = nil

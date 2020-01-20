@@ -161,7 +161,7 @@ func (client *Client) send(method string, params []interface{}) (result string, 
 }
 
 func GetMinerFee() float64 {
-	return 0.00003
+	return 0.00001
 }
 
 func GetOmniDustBtc() float64 {
