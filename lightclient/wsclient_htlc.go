@@ -38,9 +38,7 @@ func (client *Client) htlcHDealModule(msg bean.RequestMessage) (enum.SendTargetT
 				}
 			}
 		}
-		if status == false {
-			client.sendToMyself(msg.Type, status, data)
-		}
+		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_HTLC_CreatedRAndHInfoList_N4001:
 		respond, err := service.HtlcHMessageService.GetHtlcCreatedRandHInfoList(client.User)
@@ -187,9 +185,7 @@ func (client *Client) htlcTxModule(msg bean.RequestMessage) (enum.SendTargetType
 				_ = client.sendToSomeone(msg.Type, status, bob, data)
 			}
 		}
-		if status == false {
-			client.sendToMyself(msg.Type, status, data)
-		}
+		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_HTLC_SendH_N43:
 		respond, bob, err := service.HtlcForwardTxService.SendH(msg.Data, *client.User)
@@ -205,9 +201,7 @@ func (client *Client) htlcTxModule(msg bean.RequestMessage) (enum.SendTargetType
 				_ = client.sendToSomeone(msg.Type, status, bob, data)
 			}
 		}
-		if status == false {
-			client.sendToMyself(msg.Type, status, data)
-		}
+		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_HTLC_SignGetH_N44:
 		respond, senderPeerId, err := service.HtlcForwardTxService.SignGetH(msg.Data, *client.User)
@@ -239,9 +233,7 @@ func (client *Client) htlcTxModule(msg bean.RequestMessage) (enum.SendTargetType
 				_ = client.sendToSomeone(msg.Type, status, senderPeerId, data)
 			}
 		}
-		if status == false {
-			client.sendToMyself(msg.Type, status, data)
-		}
+		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 
 	// Coding by Kevin 2019-10-28
@@ -261,9 +253,7 @@ func (client *Client) htlcTxModule(msg bean.RequestMessage) (enum.SendTargetType
 				_ = client.sendToSomeone(msg.Type, status, senderPeerId, data)
 			}
 		}
-		if status == false {
-			client.sendToMyself(msg.Type, status, data)
-		}
+		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_HTLC_SignGetR_N47:
 		respond, senderPeerId, err :=
@@ -281,9 +271,7 @@ func (client *Client) htlcTxModule(msg bean.RequestMessage) (enum.SendTargetType
 				_ = client.sendToSomeone(msg.Type, status, senderPeerId, data)
 			}
 		}
-		if status == false {
-			client.sendToMyself(msg.Type, status, data)
-		}
+		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	}
 	return sendType, []byte(data), status

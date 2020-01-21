@@ -245,9 +245,7 @@ func (client *Client) commitmentTxSignModule(msg bean.RequestMessage) (enum.Send
 				_ = client.sendToSomeone(msg.Type, status, ca.PeerIdB, data)
 			}
 		}
-		if status == false {
-			client.sendToMyself(msg.Type, status, data)
-		}
+		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_CommitmentTxSigned_ItemByChanId_N35201:
 		nodes, count, err := service.CommitmentTxSignedService.GetItemsByChannelId(msg.Data)

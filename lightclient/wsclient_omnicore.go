@@ -225,7 +225,6 @@ func (client *Client) omniCoreModule(msg bean.RequestMessage) (enum.SendTargetTy
 				}
 			}
 		}
-
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 

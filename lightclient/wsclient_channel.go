@@ -37,6 +37,7 @@ func (client *Client) channelModule(msg bean.RequestMessage) (enum.SendTargetTyp
 			}
 		}
 		_ = client.sendToSomeone(msg.Type, status, msg.RecipientPeerId, data)
+		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_ChannelOpen_ItemByTempId_N3201:
 		node, err := service.ChannelService.GetChannelByTemporaryChanId(msg.Data)
