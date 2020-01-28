@@ -2057,7 +2057,7 @@ Join us in [OmniBOLT slack channel](https://join.slack.com/t/omnibolt/shared_inv
 
 # Current Features
 
-* Generate user OBD(OmniBOLT Daemon) address.  
+* Generate OBD(OmniBOLT Daemon) addresss for users.  
 * Open Poon-Dryja Channel.  
 * BTC and Omni assets in funding and transaction.  
 * fund and close channel.  
@@ -2067,13 +2067,14 @@ Join us in [OmniBOLT slack channel](https://join.slack.com/t/omnibolt/shared_inv
 * List all the breach remedy transactions in a channel.
 * Surveil the broadcasting commitment transactions and revockable delivery transactions.
 * Execute penelty. 
+* HTL contracts, supported by HED, BR, RD, HT, HTRD transactions.
+* Multiple channel management for one OBD, scaling out in performance.
+* Multi hop payment across multiple channels using HTLC.
 
 # Comming Features
 
-* HTL contracts, supported by HED, BR, RD, HT, HTRD transactions.
-* Multiple channel management for one OBD, scaling out in performance.
-* Payment across multiple channels.
-* OBD communication.
+* Invoice system. 
+* Network modeul for OBD communication.
 * Light client implementation.
 * Balance and transaction history.
 * to be updated, pursuant to the development of OmniBOLT specification.
