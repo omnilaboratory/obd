@@ -2068,7 +2068,7 @@ Join us in [OmniBOLT slack channel](https://join.slack.com/t/omnibolt/shared_inv
 * Surveil the broadcasting commitment transactions and revockable delivery transactions.
 * Execute penelty. 
 * HTL contracts, supported by HED, BR, RD, HT, HTRD transactions.
-* Multiple channel management for a single OBD, scaling out in performance.
+* Multiple channel management for a single OBD instance, scaling out in performance.
 * Multi hop payment using HTLC.
 
 # Comming Features
