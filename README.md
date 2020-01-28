@@ -2069,7 +2069,7 @@ Join us in [OmniBOLT slack channel](https://join.slack.com/t/omnibolt/shared_inv
 * Execute penelty. 
 * HTL contracts, supported by HED, BR, RD, HT, HTRD transactions.
 * Multiple channel management for one OBD, scaling out in performance.
-* Multi hop payment across multiple channels using HTLC.
+* Multi hop payment using HTLC.
 
 # Comming Features
 
