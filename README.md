@@ -2038,7 +2038,7 @@ This document is not completed yet, and will be updated during our programming.
 Please visit OBD [online API documentation](https://api.omnilab.online) for the lastest update.
 
 # How to Contribute
-OmniBOLT Daemon is MIT licensed open source software. Hopefully you can get started by doing the above steps, but Lightning network is not that easy to develop. Anyone is welcome to join this journey, and please be nice to each other, don't bring any illegal/private stuff, abuse or racial into our community.
+OmniBOLT Daemon is MIT licensed open source software. Hopefully you can get started by going through the above steps, but Lightning network is not that easy to develop. Anyone is welcome to join us in this journey, and please be nice to each other, don't bring any illegal/private stuff, abuse or racial into our community.
 
 Please submit issues to this repo or help us with those open ones.
 
