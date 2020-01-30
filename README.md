@@ -2055,7 +2055,7 @@ Guidelines:
 
 Join us in [OmniBOLT slack channel](https://join.slack.com/t/omnibolt/shared_invite/enQtNzY2MDIzNzY0MzU5LTFlZTNlZjJhMzQxZTU2M2NhYmFjYjc1ZGZmODYwMWE3YmM0YjNhZWQyMDU2Y2VlMWIxYWFjN2YwMjlmYjUxNzA)
 
-# Current Features
+# Current Features (Jan 28, 2020)
 
 * Generate OBD(OmniBOLT Daemon) addresss for users.  
 * Open Poon-Dryja Channel.  
@@ -2063,21 +2063,26 @@ Join us in [OmniBOLT slack channel](https://join.slack.com/t/omnibolt/shared_inv
 * fund and close channel.  
 * Commitment Transaction within a channel.  
 * List latest commitment transaction in a channel.   
-* List all commmitment trsactions in a channel.
-* List all the breach remedy transactions in a channel.
-* Surveil the broadcasting commitment transactions and revockable delivery transactions.
-* Execute penelty. 
-* HTL contracts, supported by HED, BR, RD, HT, HTRD transactions.
-* Multiple channel management for a single OBD instance, scaling out in performance.
-* Multi hop payment using HTLC.
+* List all commmitment trsactions in a channel.  
+* List all the breach remedy transactions in a channel.  
+* Surveil the broadcasting commitment transactions and revockable delivery transactions.  
+* Execute penalty.   
+* HTL contracts, supported by RSMC, HED, BR, RD, HT, HTRD transactions.  
+* Multiple channel management for a single OBD instance, scaling out in performance.  
+* Multi hop payment using HTLC.  
 
 # Comming Features
 
-* Invoice system. 
-* Network modeul for OBD communication.
+* Invoice system.   
+* Network modeul for OBD communication.  
 * Light client implementation.
 * Balance and transaction history.
 * to be updated, pursuant to the development of OmniBOLT specification.
+
+# Experimental Features
+
+* Smart Contract System on top of OBD channel. 
+* "Payment is Settlement" theory.
 
 
 # Related projects: 
