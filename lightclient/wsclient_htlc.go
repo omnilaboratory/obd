@@ -15,6 +15,7 @@ func (client *Client) htlcHDealModule(msg bean.RequestMessage) (enum.SendTargetT
 
 	switch msg.Type {
 	case enum.MsgType_HTLC_RequestH_N40:
+	case enum.MsgType_HTLC_Invoice_N4003:
 		htlcHRequest := &bean.HtlcHRequest{}
 		err := json.Unmarshal([]byte(msg.Data), htlcHRequest)
 		if err != nil {
