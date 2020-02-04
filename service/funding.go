@@ -24,7 +24,7 @@ type fundingTransactionManager struct {
 
 var FundingTransactionService fundingTransactionManager
 
-func (service *fundingTransactionManager) CreateFundingBtcTxRequest(jsonData string, user *bean.User) (fundingTransaction map[string]interface{}, targetUser string, err error) {
+func (service *fundingTransactionManager) BTCFundingCreated(jsonData string, user *bean.User) (fundingTransaction map[string]interface{}, targetUser string, err error) {
 	reqData := &bean.FundingBtcCreated{}
 	err = json.Unmarshal([]byte(jsonData), reqData)
 	if err != nil {
@@ -232,7 +232,7 @@ func (service *fundingTransactionManager) FundingBtcTxSign(jsonData string, sign
 }
 
 //funder request to fund to the multiAddr (channel)
-func (service *fundingTransactionManager) CreateFundingOmniTxRequest(jsonData string, user *bean.User) (fundingTransaction *dao.FundingTransaction, err error) {
+func (service *fundingTransactionManager) AssetFundingCreated(jsonData string, user *bean.User) (fundingTransaction *dao.FundingTransaction, err error) {
 	reqData := &bean.FundingCreated{}
 	err = json.Unmarshal([]byte(jsonData), reqData)
 	if err != nil {
@@ -437,7 +437,7 @@ func checkBtcFundFinish(address string) error {
 	return nil
 }
 
-func (service *fundingTransactionManager) FundingOmniTxSign(jsonData string, signer *bean.User) (signed *dao.FundingTransaction, err error) {
+func (service *fundingTransactionManager) AssetFundingSigned(jsonData string, signer *bean.User) (signed *dao.FundingTransaction, err error) {
 	reqData := &bean.FundingSigned{}
 	err = json.Unmarshal([]byte(jsonData), reqData)
 	if err != nil {

@@ -140,7 +140,7 @@ func (client *Client) omniCoreModule(msg bean.RequestMessage) (enum.SendTargetTy
 		}
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
-	case enum.MsgType_Core_BtcCreateAndSignRawTransaction_1009:
+	case enum.MsgType_Core_FundingBTC_1009:
 		sendInfo := &bean.BtcSendRequest{}
 		err := json.Unmarshal([]byte(msg.Data), sendInfo)
 		if err != nil {
@@ -192,7 +192,7 @@ func (client *Client) omniCoreModule(msg bean.RequestMessage) (enum.SendTargetTy
 		}
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
-	case enum.MsgType_Core_Omni_CreateAndSignRawTransaction_2001:
+	case enum.MsgType_Core_Omni_FundingAsset_2001:
 		sendInfo := &bean.OmniSendRequest{}
 		err := json.Unmarshal([]byte(msg.Data), sendInfo)
 		if err != nil {

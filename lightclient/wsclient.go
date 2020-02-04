@@ -141,26 +141,26 @@ func (client *Client) Read() {
 						break
 					}
 					//-34 -3400 -3401 -3402 -3403 -3404
-					if strings.HasPrefix(typeStr, strconv.Itoa(int(enum.MsgType_FundingCreate_OmniCreate_N34))) {
+					if strings.HasPrefix(typeStr, strconv.Itoa(int(enum.MsgType_FundingCreate_AssetFundingCreated_N34))) {
 						sendType, dataOut, status = client.fundingTransactionModule(msg)
 						break
 					}
 
 					//-35 -3500
-					if msg.Type == enum.MsgType_FundingSign_OmniSign_N35 ||
+					if msg.Type == enum.MsgType_FundingSign_AssetFundingSigned_N35 ||
 						msg.Type == enum.MsgType_FundingSign_BtcSign_N3500 {
 						sendType, dataOut, status = client.fundingSignModule(msg)
 						break
 					}
 
-					if strings.HasPrefix(typeStr, strconv.Itoa(int(enum.MsgType_FundingSign_OmniSign_N35))) {
+					if strings.HasPrefix(typeStr, strconv.Itoa(int(enum.MsgType_FundingSign_AssetFundingSigned_N35))) {
 						//-351 -35101 -35102 -35103 -35104
-						if strings.HasPrefix(typeStr, strconv.Itoa(int(enum.MsgType_CommitmentTx_Create_N351))) {
+						if strings.HasPrefix(typeStr, strconv.Itoa(int(enum.MsgType_CommitmentTx_CommitmentTransactionCreated_N351))) {
 							sendType, dataOut, status = client.commitmentTxModule(msg)
 							break
 						}
 						//-352 -35201 -35202 -35203 -35204
-						if strings.HasPrefix(typeStr, strconv.Itoa(int(enum.MsgType_CommitmentTxSigned_Sign_N352))) {
+						if strings.HasPrefix(typeStr, strconv.Itoa(int(enum.MsgType_CommitmentTxSigned_RevokeAndAcknowledgeCommitmentTransaction_N352))) {
 							sendType, dataOut, status = client.commitmentTxSignModule(msg)
 							break
 						}
@@ -184,20 +184,20 @@ func (client *Client) Read() {
 					}
 
 					//-40 -41
-					if strings.HasPrefix(typeStr, strconv.Itoa(int(enum.MsgType_HTLC_RequestH_N40))) ||
-						strings.HasPrefix(typeStr, strconv.Itoa(int(enum.MsgType_HTLC_RespondH_N41))) {
+					if strings.HasPrefix(typeStr, strconv.Itoa(int(enum.MsgType_HTLC_AddHTLC_N40))) ||
+						strings.HasPrefix(typeStr, strconv.Itoa(int(enum.MsgType_HTLC_AddHTLCSigned_N41))) {
 						sendType, dataOut, status = client.htlcHDealModule(msg)
 						break
 					}
 
 					//-42 -43 -44 -45 -46 -47
-					if msg.Type <= enum.MsgType_HTLC_FindPathAndSendH_N42 && msg.Type >= enum.MsgType_HTLC_SignGetR_N47 {
+					if msg.Type <= enum.MsgType_HTLC_FindPathAndSendH_N42 && msg.Type >= enum.MsgType_HTLC_VerifyR_N47 {
 						sendType, dataOut, status = client.htlcTxModule(msg)
 						break
 					}
 
 					// -48
-					if msg.Type <= enum.MsgType_HTLC_RequestCloseCurrTx_N48 && msg.Type >= enum.MsgType_HTLC_SignCloseChannel_N51 {
+					if msg.Type <= enum.MsgType_HTLC_RequestCloseCurrTx_N48 && msg.Type >= enum.MsgType_HTLC_CloseChannelSigned_N51 {
 						sendType, dataOut, status = client.htlcCloseModule(msg)
 						break
 					}

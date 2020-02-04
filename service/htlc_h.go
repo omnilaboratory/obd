@@ -21,7 +21,7 @@ var HtlcHMessageService htlcHMessageManager
 // DealHtlcRequest
 //
 // Process type -40: Alice start a request to transfer to Carol.
-func (service *htlcHMessageManager) DealHtlcRequest(jsonData string,
+func (service *htlcHMessageManager) AddHTLC(jsonData string,
 	creator *bean.User) (data map[string]interface{}, err error) {
 
 	//------------
@@ -114,7 +114,7 @@ func (service *htlcHMessageManager) DealHtlcRequest(jsonData string,
 //
 // Process type -41: Carol response to transfer H to Alice.
 //  * H is <hash_of_preimage_R>
-func (service *htlcHMessageManager) DealHtlcResponse(jsonData string,
+func (service *htlcHMessageManager) AddHTLCSigned(jsonData string,
 	user *bean.User) (data interface{}, senderPeerId *string, err error) {
 
 	// [jsonData] is content inputed from [Carol] websocket client.

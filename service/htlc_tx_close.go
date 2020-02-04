@@ -129,7 +129,7 @@ func (service *htlcCloseTxManager) RequestCloseHtlc(msgData string, user bean.Us
 }
 
 // -49 close htlc
-func (service *htlcCloseTxManager) SignCloseHtlc(msgData string, user bean.User) (outData map[string]interface{}, targetUser string, err error) {
+func (service *htlcCloseTxManager) CloseHTLCSigned(msgData string, user bean.User) (outData map[string]interface{}, targetUser string, err error) {
 	if tool.CheckIsString(&msgData) == false {
 		return nil, "", errors.New("empty json data")
 	}
@@ -1127,7 +1127,7 @@ func (service *htlcCloseTxManager) RequestCloseChannel(msgData string, user bean
 }
 
 // -51 对通道关闭进行表态 谁请求，就以谁的身份关闭通道
-func (service *htlcCloseTxManager) SignCloseChannel(msgData string, user bean.User) (outData interface{}, closeOpStarter string, err error) {
+func (service *htlcCloseTxManager) CloseHtlcChannelSigned(msgData string, user bean.User) (outData interface{}, closeOpStarter string, err error) {
 	if tool.CheckIsString(&msgData) == false {
 		return nil, "", errors.New("empty inputData")
 	}

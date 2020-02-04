@@ -21,7 +21,7 @@ type commitmentTxManager struct {
 
 var CommitmentTxService commitmentTxManager
 
-func (service *commitmentTxManager) CreateNewCommitmentTxRequest(jsonData string, creator *bean.User) (data *bean.CommitmentTx, targetUser *string, err error) {
+func (service *commitmentTxManager) CommitmentTransactionCreated(jsonData string, creator *bean.User) (data *bean.CommitmentTx, targetUser *string, err error) {
 	if tool.CheckIsString(&jsonData) == false {
 		return nil, nil, errors.New("empty json data")
 	}
@@ -130,7 +130,7 @@ type commitmentTxSignedManager struct {
 
 var CommitmentTxSignedService commitmentTxSignedManager
 
-func (service *commitmentTxSignedManager) CommitmentTxSign(jsonData string, signer *bean.User) (*dao.CommitmentTransaction, *dao.CommitmentTransaction, *string, error) {
+func (service *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction(jsonData string, signer *bean.User) (*dao.CommitmentTransaction, *dao.CommitmentTransaction, *string, error) {
 	if tool.CheckIsString(&jsonData) == false {
 		err := errors.New("empty json data")
 		log.Println(err)

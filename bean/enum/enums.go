@@ -16,18 +16,18 @@ const (
 	MsgType_UserLogin_1  MsgType = 1
 	MsgType_UserLogout_2 MsgType = 2
 
-	MsgType_Core_GetNewAddress_1001                    MsgType = 1001
-	MsgType_Core_GetMiningInfo_1002                    MsgType = 1002
-	MsgType_Core_GetNetworkInfo_1003                   MsgType = 1003
-	MsgType_Core_SignMessageWithPrivKey_1004           MsgType = 1004
-	MsgType_Core_VerifyMessage_1005                    MsgType = 1005
-	MsgType_Core_DumpPrivKey_1006                      MsgType = 1006
-	MsgType_Core_ListUnspent_1007                      MsgType = 1007
-	MsgType_Core_BalanceByAddress_1008                 MsgType = 1008
-	MsgType_Core_BtcCreateAndSignRawTransaction_1009   MsgType = 1009
-	MsgType_Core_BtcCreateMultiSig_1010                MsgType = 1010
-	MsgType_Core_OmniOmniGetbalance_1011               MsgType = 1011
-	MsgType_Core_Omni_CreateAndSignRawTransaction_2001 MsgType = 2001
+	MsgType_Core_GetNewAddress_1001          MsgType = 1001
+	MsgType_Core_GetMiningInfo_1002          MsgType = 1002
+	MsgType_Core_GetNetworkInfo_1003         MsgType = 1003
+	MsgType_Core_SignMessageWithPrivKey_1004 MsgType = 1004
+	MsgType_Core_VerifyMessage_1005          MsgType = 1005
+	MsgType_Core_DumpPrivKey_1006            MsgType = 1006
+	MsgType_Core_ListUnspent_1007            MsgType = 1007
+	MsgType_Core_BalanceByAddress_1008       MsgType = 1008
+	MsgType_Core_FundingBTC_1009             MsgType = 1009
+	MsgType_Core_BtcCreateMultiSig_1010      MsgType = 1010
+	MsgType_Core_OmniOmniGetbalance_1011     MsgType = 1011
+	MsgType_Core_Omni_FundingAsset_2001      MsgType = 2001
 
 	MsgType_GetMnemonic_101                MsgType = 101
 	MsgType_Mnemonic_CreateAddress_N200    MsgType = -200
@@ -44,18 +44,18 @@ const (
 
 	MsgType_ChannelAccept_N33 MsgType = -33
 
-	MsgType_FundingCreate_OmniCreate_N34     MsgType = -34
-	MsgType_FundingCreate_BtcCreate_N3400    MsgType = -3400
-	MsgType_FundingCreate_ItemByTempId_N3401 MsgType = -3401
-	MsgType_FundingCreate_ItemById_N3402     MsgType = -3402
-	MsgType_FundingCreate_ALlItem_N3403      MsgType = -3403
-	MsgType_FundingCreate_Count_N3404        MsgType = -3404
-	MsgType_FundingCreate_DelById_N3405      MsgType = -3405
+	MsgType_FundingCreate_AssetFundingCreated_N34 MsgType = -34
+	MsgType_FundingCreate_BtcCreate_N3400         MsgType = -3400
+	MsgType_FundingCreate_ItemByTempId_N3401      MsgType = -3401
+	MsgType_FundingCreate_ItemById_N3402          MsgType = -3402
+	MsgType_FundingCreate_ALlItem_N3403           MsgType = -3403
+	MsgType_FundingCreate_Count_N3404             MsgType = -3404
+	MsgType_FundingCreate_DelById_N3405           MsgType = -3405
 
-	MsgType_FundingSign_OmniSign_N35  MsgType = -35
-	MsgType_FundingSign_BtcSign_N3500 MsgType = -3500
+	MsgType_FundingSign_AssetFundingSigned_N35 MsgType = -35
+	MsgType_FundingSign_BtcSign_N3500          MsgType = -3500
 
-	MsgType_CommitmentTx_Create_N351                       MsgType = -351
+	MsgType_CommitmentTx_CommitmentTransactionCreated_N351 MsgType = -351
 	MsgType_CommitmentTx_ItemsByChanId_N35101              MsgType = -35101
 	MsgType_CommitmentTx_ItemById_N35102                   MsgType = -35102
 	MsgType_CommitmentTx_Count_N35103                      MsgType = -35103
@@ -69,10 +69,10 @@ const (
 	MsgType_CommitmentTx_GetBroadcastRDTx_N35111           MsgType = -35111
 	MsgType_CommitmentTx_GetBroadcastBRTx_N35112           MsgType = -35112
 
-	MsgType_CommitmentTxSigned_Sign_N352           MsgType = -352
-	MsgType_CommitmentTxSigned_ItemByChanId_N35201 MsgType = -35201
-	MsgType_CommitmentTxSigned_ItemById_N35202     MsgType = -35202
-	MsgType_CommitmentTxSigned_Count_N35203        MsgType = -35203
+	MsgType_CommitmentTxSigned_RevokeAndAcknowledgeCommitmentTransaction_N352 MsgType = -352
+	MsgType_CommitmentTxSigned_ItemByChanId_N35201                            MsgType = -35201
+	MsgType_CommitmentTxSigned_ItemById_N35202                                MsgType = -35202
+	MsgType_CommitmentTxSigned_Count_N35203                                   MsgType = -35203
 
 	MsgType_GetBalanceRequest_N353 MsgType = -353
 	MsgType_GetBalanceRespond_N354 MsgType = -354
@@ -81,10 +81,10 @@ const (
 	MsgType_CloseChannelSign_N39    MsgType = -39
 
 	MsgType_HTLC_Invoice_N4003              MsgType = -4003
-	MsgType_HTLC_RequestH_N40               MsgType = -40
+	MsgType_HTLC_AddHTLC_N40                MsgType = -40
 	MsgType_HTLC_CreatedRAndHInfoList_N4001 MsgType = -4001
 	MsgType_HTLC_CreatedRAndHInfoItem_N4002 MsgType = -4002
-	MsgType_HTLC_RespondH_N41               MsgType = -41
+	MsgType_HTLC_AddHTLCSigned_N41          MsgType = -41
 	MsgType_HTLC_SignedRAndHInfoList_N4101  MsgType = -4101
 	MsgType_HTLC_SignedRAndHInfoItem_N4102  MsgType = -4102
 	MsgType_HTLC_GetRFromLCommitTx_N4103    MsgType = -4103
@@ -95,9 +95,9 @@ const (
 	MsgType_HTLC_SignGetH_N44               MsgType = -44
 	MsgType_HTLC_CreateCommitmentTx_N45     MsgType = -45
 	MsgType_HTLC_SendR_N46                  MsgType = -46
-	MsgType_HTLC_SignGetR_N47               MsgType = -47
+	MsgType_HTLC_VerifyR_N47                MsgType = -47
 	MsgType_HTLC_RequestCloseCurrTx_N48     MsgType = -48
-	MsgType_HTLC_SignCloseCurrTx_N49        MsgType = -49
+	MsgType_HTLC_CloseSigned_N49            MsgType = -49
 	MsgType_HTLC_RequestCloseChannel_N50    MsgType = -50
-	MsgType_HTLC_SignCloseChannel_N51       MsgType = -51
+	MsgType_HTLC_CloseChannelSigned_N51     MsgType = -51
 )

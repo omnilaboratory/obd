@@ -16,8 +16,8 @@ func (client *Client) commitmentTxModule(msg bean.RequestMessage) (enum.SendTarg
 	var sendType = enum.SendTargetType_SendToNone
 	data := ""
 	switch msg.Type {
-	case enum.MsgType_CommitmentTx_Create_N351:
-		node, targetUser, err := service.CommitmentTxService.CreateNewCommitmentTxRequest(msg.Data, client.User)
+	case enum.MsgType_CommitmentTx_CommitmentTransactionCreated_N351:
+		node, targetUser, err := service.CommitmentTxService.CommitmentTransactionCreated(msg.Data, client.User)
 		if err != nil {
 			data = err.Error()
 		} else {
@@ -223,8 +223,8 @@ func (client *Client) commitmentTxSignModule(msg bean.RequestMessage) (enum.Send
 	data := ""
 
 	switch msg.Type {
-	case enum.MsgType_CommitmentTxSigned_Sign_N352:
-		ca, cb, _, err := service.CommitmentTxSignedService.CommitmentTxSign(msg.Data, client.User)
+	case enum.MsgType_CommitmentTxSigned_RevokeAndAcknowledgeCommitmentTransaction_N352:
+		ca, cb, _, err := service.CommitmentTxSignedService.RevokeAndAcknowledgeCommitmentTransaction(msg.Data, client.User)
 		if err != nil {
 			data = err.Error()
 		} else {

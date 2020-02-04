@@ -213,7 +213,7 @@ func (service *htlcBackwardTxManager) SendRToPreviousNode(msgData string,
 // Process type -47: Middleman node Check out if R is correct
 // and create commitment transactions.
 //  * R is <Preimage_R>
-func (service *htlcBackwardTxManager) CheckRAndCreateTxs(msgData string, user bean.User) (data map[string]interface{}, recipientUser string, err error) {
+func (service *htlcBackwardTxManager) VerifyRAndCreateTxs(msgData string, user bean.User) (data map[string]interface{}, recipientUser string, err error) {
 
 	// region Parse data inputed from websocket client of middleman node.
 	if tool.CheckIsString(&msgData) == false {

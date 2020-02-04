@@ -13,7 +13,7 @@ type httpService struct{}
 var HttpService httpService
 
 func (s httpService) TestBd(context *gin.Context) {
-	node, err := FundingTransactionService.CreateFundingOmniTxRequest("", nil)
+	node, err := FundingTransactionService.AssetFundingCreated("", nil)
 	if err != nil {
 		context.JSON(http.StatusOK, gin.H{
 			"msg":  "userInfo",
