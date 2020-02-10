@@ -11,7 +11,7 @@ import (
 )
 
 func init() {
-	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
+	log.SetFlags(log.Ldate | log.Ltime | log.Llongfile)
 }
 
 // gox compile  https://blog.csdn.net/han0373/article/details/81391455

@@ -22,6 +22,108 @@ func (client *Client) OmniSend(fromAddress string, toAddress string, propertyId 
 	return client.send("omni_send", []interface{}{fromAddress, toAddress, propertyId, amount})
 }
 
+//Create new tokens with manageable supply. https://github.com/OmniLayer/omnicore/blob/master/src/omnicore/doc/rpc-api.md#omni_sendissuancemanaged
+func (client *Client) OmniSendIssuanceFixed(fromAddress string, ecosystem int, divisibleType int, name string, data string, amount float64) (result string, err error) {
+	if tool.CheckIsString(&fromAddress) == false {
+		return "", errors.New("error fromAddress")
+	}
+	if tool.CheckIsString(&name) == false {
+		return "", errors.New("error name")
+	}
+	if ecosystem != 1 && ecosystem != 2 {
+		return "", errors.New("error ecosystem")
+	}
+	if divisibleType != 1 && divisibleType != 2 {
+		return "", errors.New("error divisibleType")
+	}
+	if amount < 0 {
+		return "", errors.New("error amount")
+	}
+	amoutStr := strconv.FormatFloat(amount, 'f', 8, 64)
+	if divisibleType == 1 {
+		amoutStr = strconv.FormatFloat(amount, 'f', 0, 64)
+	}
+	if tool.CheckIsString(&data) == false {
+		data = ""
+	}
+	return client.send("omni_sendissuancefixed", []interface{}{fromAddress, ecosystem, divisibleType, 0, "", "", name, "", data, amoutStr})
+}
+
+//Create new tokens with manageable supply. https://github.com/OmniLayer/omnicore/blob/master/src/omnicore/doc/rpc-api.md#omni_sendissuancemanaged
+func (client *Client) OmniSendIssuanceManaged(fromAddress string, ecosystem int, divisibleType int, name string, data string) (result string, err error) {
+	if tool.CheckIsString(&fromAddress) == false {
+		return "", errors.New("error fromAddress")
+	}
+	if tool.CheckIsString(&name) == false {
+		return "", errors.New("error name")
+	}
+	if ecosystem != 1 && ecosystem != 2 {
+		return "", errors.New("error ecosystem")
+	}
+	if divisibleType != 1 && divisibleType != 2 {
+		return "", errors.New("error divisibleType")
+	}
+	if tool.CheckIsString(&data) == false {
+		data = ""
+	}
+	return client.send("omni_sendissuancemanaged", []interface{}{fromAddress, ecosystem, divisibleType, 0, "", "", name, "", data})
+}
+
+// Issue or grant new units of managed tokens. https://github.com/OmniLayer/omnicore/blob/master/src/omnicore/doc/rpc-api.md#omni_sendgrant
+func (client *Client) OmniSendGrant(fromAddress string, propertyId int64, amount float64, memo string) (result string, err error) {
+	if tool.CheckIsString(&fromAddress) == false {
+		return "", errors.New("error fromAddress")
+	}
+	if propertyId < 0 {
+		return "", errors.New("error propertyId")
+	}
+
+	s, err := client.OmniGetProperty(propertyId)
+	if err != nil {
+		return "", err
+	}
+	if amount < 0 {
+		return "", errors.New("error amout")
+	}
+	amoutStr := strconv.FormatFloat(amount, 'f', 0, 64)
+	divisible := gjson.Get(s, "divisible").Bool()
+	if divisible {
+		amoutStr = strconv.FormatFloat(amount, 'f', 8, 64)
+	}
+	if tool.CheckIsString(&memo) == false {
+		memo = ""
+	}
+	return client.send("omni_sendgrant", []interface{}{fromAddress, "", propertyId, amoutStr, memo})
+}
+
+// Revoke units of managed tokens. https://github.com/OmniLayer/omnicore/blob/master/src/omnicore/doc/rpc-api.md#omni_sendrevoke
+func (client *Client) OmniSendRevoke(fromAddress string, propertyId int64, amount float64, memo string) (result string, err error) {
+	if tool.CheckIsString(&fromAddress) == false {
+		return "", errors.New("error fromAddress")
+	}
+	if propertyId < 0 {
+		return "", errors.New("error propertyId")
+	}
+	if amount < 0 {
+		return "", errors.New("error amout")
+	}
+
+	s, err := client.OmniGetProperty(propertyId)
+	if err != nil {
+		return "", err
+	}
+	amoutStr := strconv.FormatFloat(amount, 'f', 0, 64)
+	divisible := gjson.Get(s, "divisible").Bool()
+	if divisible {
+		amoutStr = strconv.FormatFloat(amount, 'f', 8, 64)
+	}
+
+	if tool.CheckIsString(&memo) == false {
+		memo = ""
+	}
+	return client.send("omni_sendrevoke", []interface{}{fromAddress, propertyId, amoutStr, memo})
+}
+
 func (client *Client) OmniGetbalance(address string, propertyId int) (result string, err error) {
 	return client.send("omni_getbalance", []interface{}{address, propertyId})
 }

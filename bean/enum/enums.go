@@ -16,18 +16,26 @@ const (
 	MsgType_UserLogin_1  MsgType = 1
 	MsgType_UserLogout_2 MsgType = 2
 
-	MsgType_Core_GetNewAddress_1001          MsgType = 1001
-	MsgType_Core_GetMiningInfo_1002          MsgType = 1002
-	MsgType_Core_GetNetworkInfo_1003         MsgType = 1003
-	MsgType_Core_SignMessageWithPrivKey_1004 MsgType = 1004
-	MsgType_Core_VerifyMessage_1005          MsgType = 1005
-	MsgType_Core_DumpPrivKey_1006            MsgType = 1006
-	MsgType_Core_ListUnspent_1007            MsgType = 1007
-	MsgType_Core_BalanceByAddress_1008       MsgType = 1008
-	MsgType_Core_FundingBTC_1009             MsgType = 1009
-	MsgType_Core_BtcCreateMultiSig_1010      MsgType = 1010
-	MsgType_Core_OmniOmniGetbalance_1011     MsgType = 1011
-	MsgType_Core_Omni_FundingAsset_2001      MsgType = 2001
+	MsgType_Core_GetNewAddress_1001                    MsgType = 1001
+	MsgType_Core_GetMiningInfo_1002                    MsgType = 1002
+	MsgType_Core_GetNetworkInfo_1003                   MsgType = 1003
+	MsgType_Core_SignMessageWithPrivKey_1004           MsgType = 1004
+	MsgType_Core_VerifyMessage_1005                    MsgType = 1005
+	MsgType_Core_DumpPrivKey_1006                      MsgType = 1006
+	MsgType_Core_ListUnspent_1007                      MsgType = 1007
+	MsgType_Core_BalanceByAddress_1008                 MsgType = 1008
+	MsgType_Core_FundingBTC_1009                       MsgType = 1009
+	MsgType_Core_BtcCreateMultiSig_1010                MsgType = 1010
+	MsgType_Core_Btc_ImportPrivKey_1011                MsgType = 1011
+	MsgType_Core_Omni_Getbalance_1200                  MsgType = 1200
+	MsgType_Core_Omni_CreateNewTokenFixed_1201         MsgType = 1201
+	MsgType_Core_Omni_CreateNewTokenManaged_1202       MsgType = 1202
+	MsgType_Core_Omni_GrantNewUnitsOfManagedToken_1203 MsgType = 1203
+	MsgType_Core_Omni_RevokeUnitsOfManagedToken_1204   MsgType = 1204
+	MsgType_Core_Omni_ListProperties_1205              MsgType = 1205
+	MsgType_Core_Omni_GetTransaction_1206              MsgType = 1206
+
+	MsgType_Core_Omni_FundingAsset_2001 MsgType = 2001
 
 	MsgType_GetMnemonic_101                MsgType = 101
 	MsgType_Mnemonic_CreateAddress_N200    MsgType = -200

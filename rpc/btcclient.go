@@ -137,6 +137,10 @@ func importAddress(address string) {
 	client.send("importaddress", []interface{}{address, "", false})
 }
 
+func (client *Client) ImportPrivKey(privkey string) (result string, err error) {
+	return client.send("importprivkey", []interface{}{privkey, "", false})
+}
+
 func (client *Client) ImportAddress(address string) (err error) {
 	result, err := client.send("importaddress", []interface{}{address, nil, false})
 	if err != nil {

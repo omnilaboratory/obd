@@ -17,3 +17,23 @@ type CreateMultiSigRequest struct {
 	MiniSignCount int      `json:"mini_sign_count"`
 	PubKeys       []string `json:"pub_keys"`
 }
+
+type OmniSendIssuanceManaged struct {
+	FromAddress   string `json:"from_address"`
+	Name          string `json:"name"`
+	Ecosystem     int    `json:"ecosystem"`
+	DivisibleType int    `json:"divisible_type"`
+	Data          string `json:"data"`
+}
+type OmniSendIssuanceFixed struct {
+	OmniSendIssuanceManaged
+	Amount float64 `json:"amount"`
+}
+
+type OmniSendGrant struct {
+	FromAddress string  `json:"from_address"`
+	PropertyId  int64   `json:"property_id"`
+	Amount      float64 `json:"amount"`
+	Memo        string  `json:"memo"`
+}
+type OmniSendRevoke OmniSendGrant
