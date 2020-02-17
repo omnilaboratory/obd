@@ -79,7 +79,7 @@ func (client *Client) Read() {
 		if tool.CheckIsString(&msg.RecipientPeerId) {
 			_, err := client.FindUser(&msg.RecipientPeerId)
 			if err != nil {
-				client.sendToMyself(msg.Type, true, "can not find target user")
+				client.sendToMyself(msg.Type, false, "can not find target user")
 				continue
 			}
 		}

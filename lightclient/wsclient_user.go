@@ -27,7 +27,8 @@ func (client *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, 
 				service.OnlineUserMap[user.PeerId] = true
 				data = user.PeerId + " login"
 				status = true
-				sendType = enum.SendTargetType_SendToAll
+				client.sendToMyself(msg.Type, status, "login success")
+				sendType = enum.SendTargetType_SendToExceptMe
 			} else {
 				client.sendToMyself(msg.Type, status, err.Error())
 				sendType = enum.SendTargetType_SendToSomeone

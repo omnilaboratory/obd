@@ -261,7 +261,7 @@ func (client *Client) omniCoreModule(msg bean.RequestMessage) (enum.SendTargetTy
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_Core_FundingBTC_1009:
-		sendInfo := &bean.BtcSendRequest{}
+		sendInfo := &bean.FundingBtc{}
 		err := json.Unmarshal([]byte(msg.Data), sendInfo)
 		if err != nil {
 			data = "error data: " + err.Error()
@@ -313,7 +313,7 @@ func (client *Client) omniCoreModule(msg bean.RequestMessage) (enum.SendTargetTy
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_Core_Omni_FundingAsset_2001:
-		sendInfo := &bean.OmniSendRequest{}
+		sendInfo := &bean.FundingAsset{}
 		err := json.Unmarshal([]byte(msg.Data), sendInfo)
 		if err != nil {
 			data = "error data"
