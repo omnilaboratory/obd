@@ -71,7 +71,7 @@ func (service *htlcQueryManager) GetPathInfoByH(msgData string, user bean.User) 
 }
 
 //R创建者通过H获取R
-func (service *htlcQueryManager) GetRByHOfOwner(msgData string, user bean.User) (r string, err error) {
+func (service *htlcQueryManager) GetRByHOfReceiver(msgData string, user bean.User) (r string, err error) {
 	if tool.CheckIsString(&msgData) == false {
 		return "", errors.New("error input data")
 	}

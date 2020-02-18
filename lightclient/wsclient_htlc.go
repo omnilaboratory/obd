@@ -148,7 +148,7 @@ func (client *Client) htlcHDealModule(msg bean.RequestMessage) (enum.SendTargetT
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_HTLC_GetRInfoByHOfOwner_N4105:
-		respond, err := service.HtlcQueryService.GetRByHOfOwner(msg.Data, *client.User)
+		respond, err := service.HtlcQueryService.GetRByHOfReceiver(msg.Data, *client.User)
 		if err != nil {
 			data = err.Error()
 		} else {
