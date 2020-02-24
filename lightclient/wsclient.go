@@ -213,7 +213,7 @@ func (client *Client) Read() {
 		//broadcast except me
 		if sendType == enum.SendTargetType_SendToExceptMe {
 			for itemClient := range GlobalWsClientManager.ClientsMap {
-				if itemClient != itemClient {
+				if itemClient != client {
 					jsonMessage := getReplyObj(string(dataOut), msg.Type, status, client, itemClient)
 					itemClient.SendChannel <- jsonMessage
 				}
