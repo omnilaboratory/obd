@@ -37,13 +37,14 @@ func (client *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, 
 	case enum.MsgType_UserLogout_2:
 		if client.User != nil {
 			data = client.User.PeerId + " logout"
-			sendType = enum.SendTargetType_SendToAll
+			status = true
+			client.sendToMyself(msg.Type, status, "logout success")
 			if client.User != nil {
 				delete(GlobalWsClientManager.OnlineUserMap, client.User.PeerId)
 				delete(service.OnlineUserMap, client.User.PeerId)
 			}
+			sendType = enum.SendTargetType_SendToExceptMe
 			client.User = nil
-			status = true
 		} else {
 			client.sendToMyself(msg.Type, status, "please login")
 			sendType = enum.SendTargetType_SendToSomeone
