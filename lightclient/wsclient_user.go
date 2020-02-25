@@ -4,6 +4,8 @@ import (
 	"LightningOnOmni/bean"
 	"LightningOnOmni/bean/enum"
 	"LightningOnOmni/service"
+	"LightningOnOmni/tool"
+	"errors"
 	"github.com/tidwall/gjson"
 )
 
@@ -20,7 +22,13 @@ func (client *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, 
 			user := bean.User{
 				Mnemonic: gjson.Get(msg.Data, "mnemonic").String(),
 			}
-			err := service.UserService.UserLogin(&user)
+			var err error = nil
+			peerId := tool.SignMsgWithSha256([]byte(user.Mnemonic))
+			if GlobalWsClientManager.OnlineUserMap[peerId] != nil {
+				err = errors.New("user has login")
+			} else {
+				err = service.UserService.UserLogin(&user)
+			}
 			if err == nil {
 				client.User = &user
 				GlobalWsClientManager.OnlineUserMap[user.PeerId] = client

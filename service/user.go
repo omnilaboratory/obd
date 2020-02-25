@@ -52,6 +52,7 @@ func (service *UserManager) UserLogin(user *bean.User) error {
 	if tool.CheckIsString(&user.Mnemonic) == false || bip39.IsMnemonicValid(user.Mnemonic) == false {
 		return errors.New("err Mnemonic")
 	}
+
 	changeExtKey, err := HDWalletService.CreateChangeExtKey(user.Mnemonic)
 	if err != nil {
 		return err
