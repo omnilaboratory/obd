@@ -7,6 +7,7 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcutil"
@@ -65,7 +66,7 @@ func GetAddressFromPubKey(pubKey string) (address string, err error) {
 	serializedPubKey, err := hex.DecodeString(pubKey)
 	if err != nil {
 		log.Println(err)
-		return "", err
+		return "", errors.New("invalid pubkey")
 	}
 	// test TestNet3Params
 	// main MainNetParams
@@ -78,7 +79,7 @@ func GetAddressFromPubKey(pubKey string) (address string, err error) {
 	netAddr, err := btcutil.NewAddressPubKey(serializedPubKey, net)
 	if err != nil {
 		log.Println(err)
-		return "", err
+		return "", errors.New("invalid pubkey")
 	}
 	netAddr.SetFormat(btcutil.PKFCompressed)
 	address = netAddr.EncodeAddress()
