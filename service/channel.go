@@ -68,6 +68,10 @@ func (c *channelManager) BobAcceptChannel(jsonData string, peerIdB string) (chan
 	}
 
 	if reqData.Approval {
+		if tool.CheckIsString(&reqData.FundingPubKey) == false {
+			return nil, errors.New("wrong FundingPubKey")
+		}
+
 		reqData.FundingAddress, err = getAddressFromPubKey(reqData.FundingPubKey)
 		if err != nil {
 			return nil, err
