@@ -85,6 +85,10 @@ func (c *channelManager) BobAcceptChannel(jsonData string, peerIdB string) (chan
 		return nil, errors.New("can not find the channel " + reqData.TemporaryChannelId)
 	}
 
+	if channelInfo.PeerIdB != peerIdB {
+		return nil, errors.New("you are not the peerIdB")
+	}
+
 	if reqData.Approval {
 		channelInfo.PubKeyB = reqData.FundingPubKey
 		channelInfo.AddressB = reqData.FundingAddress
