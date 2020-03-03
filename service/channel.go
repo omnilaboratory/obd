@@ -82,7 +82,7 @@ func (c *channelManager) BobAcceptChannel(jsonData string, peerIdB string) (chan
 	err = db.Select(q.Eq("TemporaryChannelId", reqData.TemporaryChannelId), q.Eq("PeerIdB", peerIdB), q.Eq("CurrState", dao.ChannelState_Create)).First(channelInfo)
 	if err != nil {
 		log.Println(err)
-		return nil, errors.New("can not find the channel " + reqData.TemporaryChannelId)
+		return nil, errors.New("can not find the channel " + reqData.TemporaryChannelId + " on Create state")
 	}
 
 	if channelInfo.PeerIdB != peerIdB {

@@ -14,20 +14,23 @@ import (
 //https://bitcoin.org/en/developer-reference#bitcoin-core-apis
 func (client *Client) CreateMultiSig(minSignNum int, keys []string) (result string, err error) {
 	for _, item := range keys {
-		importAddress(item)
+		_, _ = client.ValidateAddress(item)
 	}
 	return client.send("createmultisig", []interface{}{minSignNum, keys})
 }
 
 func (client *Client) AddMultiSigAddress(minSignNum int, keys []string) (result string, err error) {
 	for _, item := range keys {
-		importAddress(item)
+		_, _ = client.ValidateAddress(item)
 	}
 	return client.send("addmultisigaddress", []interface{}{minSignNum, keys})
 }
 
 func (client *Client) DumpPrivKey(address string) (result string, err error) {
-	importAddress(address)
+	_, err = client.ValidateAddress(address)
+	if err != nil {
+		return "", err
+	}
 	return client.send("dumpprivkey", []interface{}{address})
 }
 
@@ -44,10 +47,10 @@ func (client *Client) GetNewAddress(label string) (address string, err error) {
 }
 
 func (client *Client) ListUnspent(address string) (result string, err error) {
-	if tool.CheckIsString(&address) == false {
-		return "", errors.New("address not exist")
+	_, err = client.ValidateAddress(address)
+	if err != nil {
+		return "", err
 	}
-	importAddress(address)
 	return client.send("listunspent", []interface{}{0, math.MaxInt32, []string{address}})
 }
 func (client *Client) GetBalanceByAddress(address string) (balance decimal.Decimal, err error) {
@@ -108,7 +111,10 @@ func (client *Client) SignMessageWithPrivKey(privkey string, message string) (re
 }
 
 func (client *Client) VerifyMessage(address string, signature string, message string) (result string, err error) {
-	importAddress(address)
+	_, err = client.ValidateAddress(address)
+	if err != nil {
+		return "", err
+	}
 	return client.send("verifymessage", []interface{}{address, signature, message})
 }
 func (client *Client) DecodeScript(hexString string) (result string, err error) {
@@ -116,16 +122,24 @@ func (client *Client) DecodeScript(hexString string) (result string, err error) 
 }
 
 func (client *Client) ValidateAddress(address string) (isValid bool, err error) {
-	importAddress(address)
+	if tool.CheckIsString(&address) == false {
+		return false, errors.New("address not exist")
+	}
 	result, err := client.send("validateaddress", []interface{}{address})
 	if err != nil {
 		return false, err
+	}
+	if gjson.Get(result, "isvalid").Bool() == false {
+		_, _ = client.send("importaddress", []interface{}{address, "", false})
 	}
 	log.Println(result)
 	return gjson.Get(result, "isvalid").Bool(), nil
 }
 func (client *Client) GetAddressInfo(address string) (json string, err error) {
-	importAddress(address)
+	_, err = client.ValidateAddress(address)
+	if err != nil {
+		return "", err
+	}
 	result, err := client.send("getaddressinfo", []interface{}{address})
 	if err != nil {
 		return "", err
@@ -133,21 +147,8 @@ func (client *Client) GetAddressInfo(address string) (json string, err error) {
 	return result, nil
 }
 
-func importAddress(address string) {
-	client.send("importaddress", []interface{}{address, "", false})
-}
-
 func (client *Client) ImportPrivKey(privkey string) (result string, err error) {
 	return client.send("importprivkey", []interface{}{privkey, "", false})
-}
-
-func (client *Client) ImportAddress(address string) (err error) {
-	result, err := client.send("importaddress", []interface{}{address, nil, false})
-	if err != nil {
-		return err
-	}
-	log.Println(result)
-	return nil
 }
 
 type TransactionOutputItem struct {
@@ -168,6 +169,11 @@ func (client *Client) BtcCreateAndSignRawTransaction(fromBitCoinAddress string, 
 	}
 	if len(outputItems) < 1 {
 		return "", "", errors.New("toBitCoinAddress is empty")
+	}
+
+	_, err = client.ValidateAddress(fromBitCoinAddress)
+	if err != nil {
+		return "", "", err
 	}
 
 	if minerFee <= 0 {
@@ -292,6 +298,11 @@ func (client *Client) BtcCreateAndSignRawTransactionForUnsendInputTx(fromBitCoin
 	}
 	if len(outputItems) < 1 {
 		return "", "", errors.New("toBitCoinAddress is empty")
+	}
+
+	_, err = client.ValidateAddress(fromBitCoinAddress)
+	if err != nil {
+		return "", "", err
 	}
 
 	if minerFee <= config.Dust {

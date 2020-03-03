@@ -419,7 +419,7 @@ func checkBtcFundFinish(address string) error {
 	if len(array) == 0 {
 		return errors.New("empty balance")
 	}
-	if len(array) < 2 {
+	if len(array) < 3 {
 		return errors.New("btc fund have been not finished")
 	}
 	log.Println("listunspent", array)

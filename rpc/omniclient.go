@@ -19,6 +19,14 @@ func (client *Client) OmniGetinfo() (result string, err error) {
 
 //Create and broadcast a simple send transaction.
 func (client *Client) OmniSend(fromAddress string, toAddress string, propertyId int, amount float64) (result string, err error) {
+	_, err = client.ValidateAddress(fromAddress)
+	if err != nil {
+		return "", err
+	}
+	_, err = client.ValidateAddress(toAddress)
+	if err != nil {
+		return "", err
+	}
 	return client.send("omni_send", []interface{}{fromAddress, toAddress, propertyId, amount})
 }
 
@@ -46,6 +54,9 @@ func (client *Client) OmniSendIssuanceFixed(fromAddress string, ecosystem int, d
 	if tool.CheckIsString(&data) == false {
 		data = ""
 	}
+
+	_, _ = client.ValidateAddress(fromAddress)
+
 	return client.send("omni_sendissuancefixed", []interface{}{fromAddress, ecosystem, divisibleType, 0, "", "", name, "", data, amoutStr})
 }
 
@@ -66,6 +77,7 @@ func (client *Client) OmniSendIssuanceManaged(fromAddress string, ecosystem int,
 	if tool.CheckIsString(&data) == false {
 		data = ""
 	}
+	_, _ = client.ValidateAddress(fromAddress)
 	return client.send("omni_sendissuancemanaged", []interface{}{fromAddress, ecosystem, divisibleType, 0, "", "", name, "", data})
 }
 
@@ -121,10 +133,17 @@ func (client *Client) OmniSendRevoke(fromAddress string, propertyId int64, amoun
 	if tool.CheckIsString(&memo) == false {
 		memo = ""
 	}
+
+	_, _ = client.ValidateAddress(fromAddress)
+
 	return client.send("omni_sendrevoke", []interface{}{fromAddress, propertyId, amoutStr, memo})
 }
 
 func (client *Client) OmniGetbalance(address string, propertyId int) (result string, err error) {
+	_, err = client.ValidateAddress(address)
+	if err != nil {
+		return "", err
+	}
 	return client.send("omni_getbalance", []interface{}{address, propertyId})
 }
 
@@ -144,6 +163,11 @@ func (client *Client) OmniListProperties() (result string, err error) {
 }
 
 func (client *Client) OmniGetAllBalancesForAddress(address string) (result string, err error) {
+	_, err = client.ValidateAddress(address)
+	if err != nil {
+		return "", err
+	}
+
 	return client.send("omni_getallbalancesforaddress ", []interface{}{address})
 }
 
@@ -202,14 +226,8 @@ func (client *Client) OmniCreateAndSignRawTransaction(fromBitCoinAddress string,
 		minerFee = 0.00003
 	}
 
-	if ismine, _ := client.ValidateAddress(fromBitCoinAddress); ismine == false {
-		err = client.ImportAddress(fromBitCoinAddress)
-	}
-
-	if ismine, _ := client.ValidateAddress(toBitCoinAddress); ismine == false {
-		err = client.ImportAddress(toBitCoinAddress)
-	}
-
+	_, _ = client.ValidateAddress(fromBitCoinAddress)
+	_, _ = client.ValidateAddress(fromBitCoinAddress)
 	resultListUnspent, err := client.ListUnspent(fromBitCoinAddress)
 	if err != nil {
 		return "", "", err
@@ -598,16 +616,9 @@ func (client *Client) OmniCreateAndSignRawTransactionUseUnsendInput(fromBitCoinA
 		minerFee = GetMinerFee()
 	}
 
-	if ismine, _ := client.ValidateAddress(fromBitCoinAddress); ismine == false {
-		err = client.ImportAddress(fromBitCoinAddress)
-	}
-
-	if ismine, _ := client.ValidateAddress(toBitCoinAddress); ismine == false {
-		err = client.ImportAddress(toBitCoinAddress)
-	}
-	if ismine, _ := client.ValidateAddress(changeToAddress); ismine == false {
-		err = client.ImportAddress(changeToAddress)
-	}
+	_, _ = client.ValidateAddress(fromBitCoinAddress)
+	_, _ = client.ValidateAddress(toBitCoinAddress)
+	_, _ = client.ValidateAddress(changeToAddress)
 
 	inputs := make([]map[string]interface{}, 0, 0)
 	for _, item := range inputItems {
