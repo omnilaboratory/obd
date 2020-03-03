@@ -266,11 +266,13 @@ func (client *Client) sendToMyself(msgType enum.MsgType, status bool, data strin
 
 func (client *Client) sendToSomeone(msgType enum.MsgType, status bool, recipientPeerId string, data string) error {
 	if tool.CheckIsString(&recipientPeerId) {
-		itemClient := GlobalWsClientManager.OnlineUserMap[recipientPeerId]
-		if itemClient != nil && itemClient.User != nil {
-			jsonMessage := getReplyObj(data, msgType, status, client, itemClient)
-			itemClient.SendChannel <- jsonMessage
-			return nil
+		if _, err := client.FindUser(&recipientPeerId); err == nil {
+			itemClient := GlobalWsClientManager.OnlineUserMap[recipientPeerId]
+			if itemClient != nil && itemClient.User != nil {
+				jsonMessage := getReplyObj(data, msgType, status, client, itemClient)
+				itemClient.SendChannel <- jsonMessage
+				return nil
+			}
 		}
 	}
 	return errors.New("recipient not exist or online")

@@ -69,7 +69,7 @@ func (client *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.Se
 					status = true
 				}
 			}
-			if node != nil {
+			if node != nil && status {
 				peerId := node.PeerIdA
 				if peerId == client.User.PeerId {
 					peerId = node.PeerIdB
@@ -178,7 +178,7 @@ func (client *Client) fundingSignModule(msg bean.RequestMessage) (enum.SendTarge
 				status = true
 			}
 		}
-		if tool.CheckIsString(&funder) {
+		if tool.CheckIsString(&funder) && status {
 			_ = client.sendToSomeone(msg.Type, status, funder, data)
 		}
 		client.sendToMyself(msg.Type, status, data)
