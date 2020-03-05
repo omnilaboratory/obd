@@ -100,7 +100,7 @@ type FundingCreated struct {
 //type: -3400 (FundingBtcCreated)
 type FundingBtcCreated struct {
 	TemporaryChannelId       string  `json:"temporary_channel_id"`
-	Amount                   float64 `json:"amount_a"`
+	Amount                   float64 `json:"amount"`
 	FundingTxHex             string  `json:"funding_tx_hex"`
 	ChannelAddressPrivateKey string  `json:"channel_address_private_key"`
 }
@@ -189,10 +189,8 @@ type GetBalanceRespond struct {
 //type -40: alice tell carl ,she wanna transfer some money to Carl
 type HtlcHRequest struct {
 	PropertyId      int     `json:"property_id"`
-	H               string  `json:"h"`
 	Amount          float64 `json:"amount"`
 	RecipientPeerId string  `json:"recipient_peer_id"`
-	Memo            string  `json:"memo"`
 }
 
 //type -41: carl tell alice the H,and he ca
@@ -207,7 +205,11 @@ type HtlcHRespond struct {
 
 //type -42: alice request ask bob whether agree to be the interNode
 type HtlcRequestFindPathAndSendH struct {
-	H string `json:"h"`
+	H               string  `json:"h"`
+	RecipientPeerId string  `json:"recipient_peer_id"`
+	PropertyId      int     `json:"property_id"`
+	Amount          float64 `json:"amount"`
+	Memo            string  `json:"memo"`
 }
 
 //type -43: bob send h to carl

@@ -281,7 +281,7 @@ func (p *pathManager) CreateTreeFromReceiver(realSenderPeerId, receiverPeerId st
 
 	//PeerIdA 作为sender PeerIdB 作为receiver
 	var tempPeerAChannels []dao.ChannelInfo
-	err := db.Select(q.Eq("PeerIdB", receiverPeerId), q.Eq("CurrState", dao.ChannelState_Accept)).Find(&tempPeerAChannels)
+	err := db.Select(q.Eq("PeerIdB", receiverPeerId), q.Eq("CurrState", dao.ChannelState_CanUse)).Find(&tempPeerAChannels)
 	if err != nil {
 		log.Println(err)
 	}
@@ -313,7 +313,7 @@ func (p *pathManager) CreateTreeFromReceiver(realSenderPeerId, receiverPeerId st
 
 	//PeerIdB 作为sender PeerIdA 作为receiver
 	var tempBNodes []dao.ChannelInfo
-	err = db.Select(q.Eq("PeerIdA", receiverPeerId), q.Eq("CurrState", dao.ChannelState_Accept)).Find(&tempBNodes)
+	err = db.Select(q.Eq("PeerIdA", receiverPeerId), q.Eq("CurrState", dao.ChannelState_CanUse)).Find(&tempBNodes)
 	if err != nil {
 		log.Println(err)
 	}
@@ -370,7 +370,7 @@ func (p *pathManager) dealNodeFromReceiver(currChannel dao.ChannelInfo, commitme
 
 func findNextLevelValidAlices(currChannel dao.ChannelInfo, interSenderPeerId string, amount float64, nodeMap map[string]*PathNode) bool {
 	var nextTempANodes []dao.ChannelInfo
-	err := db.Select(q.Not(q.Eq("Id", currChannel.Id)), q.Eq("PeerIdB", interSenderPeerId), q.Eq("CurrState", dao.ChannelState_Accept)).Find(&nextTempANodes)
+	err := db.Select(q.Not(q.Eq("Id", currChannel.Id)), q.Eq("PeerIdB", interSenderPeerId), q.Eq("CurrState", dao.ChannelState_CanUse)).Find(&nextTempANodes)
 	if err == nil {
 		for _, nextNode := range nextTempANodes {
 			tempCurrSender := nextNode.PeerIdA
@@ -386,7 +386,7 @@ func findNextLevelValidAlices(currChannel dao.ChannelInfo, interSenderPeerId str
 		}
 	}
 	var nextTempBNodes []dao.ChannelInfo
-	err = db.Select(q.Not(q.Eq("Id", currChannel.Id)), q.Eq("PeerIdA", interSenderPeerId), q.Eq("CurrState", dao.ChannelState_Accept)).Find(&nextTempBNodes)
+	err = db.Select(q.Not(q.Eq("Id", currChannel.Id)), q.Eq("PeerIdA", interSenderPeerId), q.Eq("CurrState", dao.ChannelState_CanUse)).Find(&nextTempBNodes)
 	if err == nil {
 		for _, nextNode := range nextTempBNodes {
 			tempCurrSender := nextNode.PeerIdB
@@ -409,7 +409,7 @@ func (p *pathManager) CreateTree(senderPeerId, receiverPeerId string, amount flo
 		nodeMap = make(map[string]TreeNode)
 	}
 	var tempBNodes []dao.ChannelInfo
-	err = db.Select(q.Eq("PeerIdA", senderPeerId), q.Eq("CurrState", dao.ChannelState_Accept)).Find(&tempBNodes)
+	err = db.Select(q.Eq("PeerIdA", senderPeerId), q.Eq("CurrState", dao.ChannelState_CanUse)).Find(&tempBNodes)
 	if err != nil {
 		log.Println(err)
 	}
@@ -422,7 +422,7 @@ func (p *pathManager) CreateTree(senderPeerId, receiverPeerId string, amount flo
 	}
 
 	var tempANodes []dao.ChannelInfo
-	err = db.Select(q.Eq("PeerIdB", senderPeerId), q.Eq("CurrState", dao.ChannelState_Accept)).Find(&tempANodes)
+	err = db.Select(q.Eq("PeerIdB", senderPeerId), q.Eq("CurrState", dao.ChannelState_CanUse)).Find(&tempANodes)
 	if err != nil {
 		log.Println(err)
 	}
@@ -490,7 +490,7 @@ func (p *pathManager) dealNode(node dao.ChannelInfo, fromPeerId, targetUser, toP
 
 func findNextLevelValidBobs(fromPeerId string, targetPeerId string, amount float64, currChannel dao.ChannelInfo, tree *TreeNode) bool {
 	var nextTempBNodes []dao.ChannelInfo
-	err := db.Select(q.Not(q.Eq("PeerIdB", fromPeerId)), q.Eq("PeerIdA", targetPeerId), q.Eq("CurrState", dao.ChannelState_Accept)).Find(&nextTempBNodes)
+	err := db.Select(q.Not(q.Eq("PeerIdB", fromPeerId)), q.Eq("PeerIdA", targetPeerId), q.Eq("CurrState", dao.ChannelState_CanUse)).Find(&nextTempBNodes)
 	if err == nil {
 		for _, nextNode := range nextTempBNodes {
 			//1、排除已经存在的节点
@@ -507,7 +507,7 @@ func findNextLevelValidBobs(fromPeerId string, targetPeerId string, amount float
 	}
 	//当bob是PeerIdB的时候
 	var nextTempANodes []dao.ChannelInfo
-	err = db.Select(q.Not(q.Eq("PeerIdA", fromPeerId)), q.Eq("PeerIdB", targetPeerId), q.Eq("CurrState", dao.ChannelState_Accept)).Find(&nextTempANodes)
+	err = db.Select(q.Not(q.Eq("PeerIdA", fromPeerId)), q.Eq("PeerIdB", targetPeerId), q.Eq("CurrState", dao.ChannelState_CanUse)).Find(&nextTempANodes)
 	if err == nil {
 		for _, nextNode := range nextTempANodes {
 			//获取余额
@@ -526,7 +526,7 @@ func findNextLevelValidBobs(fromPeerId string, targetPeerId string, amount float
 func getValidBobs(fromPeerId string, amount float64, currChannel dao.ChannelInfo, nodes []dao.ChannelInfo, path []dao.ChannelInfo) {
 	currPeerBob := currChannel.PeerIdB
 	var nextTempBNodes []dao.ChannelInfo
-	err := db.Select(q.Not(q.Eq("PeerIdB", fromPeerId)), q.Eq("PeerIdA", currPeerBob), q.Eq("CurrState", dao.ChannelState_Accept)).Find(&nextTempBNodes)
+	err := db.Select(q.Not(q.Eq("PeerIdB", fromPeerId)), q.Eq("PeerIdA", currPeerBob), q.Eq("CurrState", dao.ChannelState_CanUse)).Find(&nextTempBNodes)
 	if err == nil {
 		for _, nextNode := range nextTempBNodes {
 			//获取余额
@@ -541,7 +541,7 @@ func getValidBobs(fromPeerId string, amount float64, currChannel dao.ChannelInfo
 	}
 	//当bob是PeerIdB的时候
 	var nextTempANodes []dao.ChannelInfo
-	err = db.Select(q.Not(q.Eq("PeerIdA", fromPeerId)), q.Eq("PeerIdB", currPeerBob), q.Eq("CurrState", dao.ChannelState_Accept)).Find(&nextTempANodes)
+	err = db.Select(q.Not(q.Eq("PeerIdA", fromPeerId)), q.Eq("PeerIdB", currPeerBob), q.Eq("CurrState", dao.ChannelState_CanUse)).Find(&nextTempANodes)
 	if err == nil {
 		for _, nextNode := range nextTempANodes {
 			//获取余额

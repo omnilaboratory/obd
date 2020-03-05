@@ -261,7 +261,7 @@ func (service *htlcCloseTxManager) CloseHTLCSigned(msgData string, user bean.Use
 	log.Println(newCommitmentTxInfoB)
 	// endregion
 
-	channelInfo.CurrState = dao.ChannelState_Accept
+	channelInfo.CurrState = dao.ChannelState_CanUse
 	_ = dbTx.Update(&channelInfo)
 
 	dataFromCloseOpStarter.CurrState = dao.NS_Finish

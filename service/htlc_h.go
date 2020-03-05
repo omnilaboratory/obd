@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/asdine/storm/q"
-	"log"
 	"sync"
 	"time"
 )
@@ -51,71 +50,27 @@ func (service *htlcHMessageManager) AddHTLC(jsonData string,
 		return nil, err
 	}
 
-	// Record the request data to database.
-	tx, err := db.Begin(true)
-	if err != nil {
-		log.Println(err)
-		return nil, err
-	}
-
-	// If there is an error, roll back the database.
-	defer tx.Rollback()
-
-	// [HtlcRAndHInfo] struct object save the base data about HTLC flow.
-	rAndHInfo := &dao.HtlcRAndHInfo{}
-	rAndHInfo.SenderPeerId = creator.PeerId
-	rAndHInfo.RecipientPeerId = htlcHRequest.RecipientPeerId
-	rAndHInfo.PropertyId = htlcHRequest.PropertyId
-	rAndHInfo.Amount = htlcHRequest.Amount
-	rAndHInfo.Memo = htlcHRequest.Memo
-	rAndHInfo.CurrState = dao.NS_Create
-	rAndHInfo.CreateAt = time.Now()
-	rAndHInfo.CreateBy = creator.PeerId
-
-	// Cache data. DO NOT write to database actually.
-	err = tx.Save(rAndHInfo)
-	if err != nil {
-		log.Println(err)
-		return nil, err
-	}
-
-	// Generate a request hash for HTLC Request every time.
-	// The [RequestHash] is used to uniquely identify each HTLC request.
-	bytes, err := json.Marshal(rAndHInfo)
-	msgHash := tool.SignMsgWithSha256(bytes)
-	rAndHInfo.RequestHash = msgHash
-
-	// Update the cache data. DO NOT write to database actually.
-	err = tx.Update(rAndHInfo)
-	if err != nil {
-		log.Println(err)
-		return nil, err
-	}
-
-	// Commit transaction. Write to database actually.
-	err = tx.Commit()
-	if err != nil {
-		log.Println(err)
-		return nil, err
-	}
-
 	// Generate response message.
 	// If no error, the response data is displayed in websocket client of Carol.
 	// Otherwise, it is displayed in websocket client of Alice.
 	data = make(map[string]interface{})
 	data["propertyId"] = htlcHRequest.PropertyId
 	data["amount"] = htlcHRequest.Amount
-	data["requestHash"] = msgHash
+	data["recipient_peer_id"] = htlcHRequest.RecipientPeerId
+	data["msg"] = "has the path, can create transaction"
 
 	return data, nil
 }
 
 // DealHtlcResponse
-//
 // Process type -41: Carol response to transfer H to Alice.
 //  * H is <hash_of_preimage_R>
+
+// Deprecated: h and r create by transfer, do not need tell the receiver
 func (service *htlcHMessageManager) AddHTLCSigned(jsonData string,
 	user *bean.User) (data interface{}, senderPeerId *string, err error) {
+
+	return nil, nil, errors.New("not necessary")
 
 	// [jsonData] is content inputed from [Carol] websocket client.
 	if tool.CheckIsString(&jsonData) == false {
@@ -208,11 +163,13 @@ func checkIfHtlcCanBeLaunched(creator *bean.User, htlcHRequest *bean.HtlcHReques
 	// If Yes, NO need to launch HTLC.
 	for _, item := range channelsOfAlice {
 		if item.PeerIdA == creator.PeerId && item.PeerIdB == htlcHRequest.RecipientPeerId {
-			return errors.New("There is a direct channel between " + item.PeerIdA + " and " + item.PeerIdB + ".")
+			//return errors.New("There is a direct channel between " + item.PeerIdA + " and " + item.PeerIdB + ".")
+			return nil
 		}
 
 		if item.PeerIdB == creator.PeerId && item.PeerIdA == htlcHRequest.RecipientPeerId {
-			return errors.New("There is a direct channel between " + item.PeerIdA + " and " + item.PeerIdB + ".")
+			//return errors.New("There is a direct channel between " + item.PeerIdA + " and " + item.PeerIdB + ".")
+			return nil
 		}
 	}
 	//find the path from transaction creator to the receiver
@@ -346,7 +303,7 @@ func checkIfHtlcCanBeLaunched(creator *bean.User, htlcHRequest *bean.HtlcHReques
 // Get a channel info by two peer ID.
 func GetChannelInfoByTwoPeerID(peerIdA string, peerIdB string) (channelInfo *dao.ChannelInfo, err error) {
 	channelInfo = &dao.ChannelInfo{}
-	err = db.Select(q.Eq("CurrState", dao.ChannelState_Accept),
+	err = db.Select(q.Eq("CurrState", dao.ChannelState_CanUse),
 		q.Or(q.And(q.Eq("PeerIdA", peerIdA), q.Eq("PeerIdB", peerIdB)),
 			q.And(q.Eq("PeerIdA", peerIdB), q.Eq("PeerIdB", peerIdA)))).First(channelInfo)
 

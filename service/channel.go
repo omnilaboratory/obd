@@ -108,7 +108,7 @@ func (c *channelManager) BobAcceptChannel(jsonData string, peerIdB string) (chan
 		channelInfo.ChannelAddressScriptPubKey = gjson.Parse(addrInfoStr).Get("scriptPubKey").String()
 	}
 	if reqData.Approval {
-		channelInfo.CurrState = dao.ChannelState_Accept
+		channelInfo.CurrState = dao.ChannelState_CanUse
 	} else {
 		channelInfo.CurrState = dao.ChannelState_OpenChannelDefuse
 	}
@@ -209,7 +209,7 @@ func (c *channelManager) ForceCloseChannel(jsonData string, user *bean.User) (in
 	}
 
 	channelInfo := &dao.ChannelInfo{}
-	err = db.Select(q.Eq("ChannelId", reqData.ChannelId), q.Eq("CurrState", dao.ChannelState_Accept)).First(channelInfo)
+	err = db.Select(q.Eq("ChannelId", reqData.ChannelId), q.Eq("CurrState", dao.ChannelState_CanUse)).First(channelInfo)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -354,7 +354,7 @@ func (c *channelManager) RequestCloseChannel(jsonData string, user *bean.User) (
 	}
 
 	channelInfo := &dao.ChannelInfo{}
-	err = db.Select(q.Eq("ChannelId", reqData.ChannelId), q.Eq("CurrState", dao.ChannelState_Accept)).First(channelInfo)
+	err = db.Select(q.Eq("ChannelId", reqData.ChannelId), q.Eq("CurrState", dao.ChannelState_CanUse)).First(channelInfo)
 	if err != nil {
 		log.Println(err)
 		return nil, nil, err
@@ -424,7 +424,7 @@ func (c *channelManager) CloseChannelSign(jsonData string, user *bean.User) (int
 	}
 
 	channelInfo := &dao.ChannelInfo{}
-	err = db.Select(q.Eq("ChannelId", reqData.ChannelId), q.Eq("CurrState", dao.ChannelState_Accept)).First(channelInfo)
+	err = db.Select(q.Eq("ChannelId", reqData.ChannelId), q.Eq("CurrState", dao.ChannelState_CanUse)).First(channelInfo)
 	if err != nil {
 		log.Println(err)
 		return nil, nil, err

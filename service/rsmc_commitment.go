@@ -35,7 +35,7 @@ func (service *commitmentTxManager) CommitmentTransactionCreated(jsonData string
 	}
 
 	channelInfo := &dao.ChannelInfo{}
-	err = db.Select(q.Eq("ChannelId", data.ChannelId), q.Eq("CurrState", dao.ChannelState_Accept)).First(channelInfo)
+	err = db.Select(q.Eq("ChannelId", data.ChannelId), q.Eq("CurrState", dao.ChannelState_CanUse)).First(channelInfo)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -157,7 +157,7 @@ func (service *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransact
 	}
 
 	channelInfo := &dao.ChannelInfo{}
-	err = db.Select(q.Eq("ChannelId", data.ChannelId), q.Eq("CurrState", dao.ChannelState_Accept)).First(channelInfo)
+	err = db.Select(q.Eq("ChannelId", data.ChannelId), q.Eq("CurrState", dao.ChannelState_CanUse)).First(channelInfo)
 	if err != nil {
 		log.Println(err)
 		return nil, nil, nil, err

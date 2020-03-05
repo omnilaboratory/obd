@@ -67,7 +67,7 @@ func getCarlChannelHasInterNodeBob(htlcRAndHInfo dao.HtlcRAndHInfo, aliceChannel
 
 func getAllChannels(peerId string) (channelInfos []dao.ChannelInfo) {
 	channelInfos = make([]dao.ChannelInfo, 0)
-	_ = db.Select(q.Or(q.Eq("PeerIdA", peerId), q.Eq("PeerIdB", peerId)), q.Eq("CurrState", dao.ChannelState_Accept)).Find(&channelInfos)
+	_ = db.Select(q.Or(q.Eq("PeerIdA", peerId), q.Eq("PeerIdB", peerId)), q.Eq("CurrState", dao.ChannelState_CanUse)).Find(&channelInfos)
 	return channelInfos
 }
 

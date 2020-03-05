@@ -51,7 +51,7 @@ func (service *fundingTransactionManager) BTCFundingCreated(jsonData string, use
 	}
 
 	channelInfo := &dao.ChannelInfo{}
-	err = db.Select(q.Eq("TemporaryChannelId", reqData.TemporaryChannelId), q.Eq("CurrState", dao.ChannelState_Accept), q.Or(q.Eq("PeerIdA", user.PeerId), q.Eq("PeerIdB", user.PeerId))).OrderBy("CreateAt").Reverse().First(channelInfo)
+	err = db.Select(q.Eq("TemporaryChannelId", reqData.TemporaryChannelId), q.Eq("CurrState", dao.ChannelState_CanUse), q.Or(q.Eq("PeerIdA", user.PeerId), q.Eq("PeerIdB", user.PeerId))).OrderBy("CreateAt").Reverse().First(channelInfo)
 	if err != nil {
 		log.Println(err)
 		return nil, "", err
@@ -114,7 +114,7 @@ func (service *fundingTransactionManager) BTCFundingCreated(jsonData string, use
 	return node, targetUser, nil
 }
 
-func (service *fundingTransactionManager) FundingBtcTxSign(jsonData string, signer *bean.User) (outData interface{}, funder string, err error) {
+func (service *fundingTransactionManager) FundingBtcTxSigned(jsonData string, signer *bean.User) (outData interface{}, funder string, err error) {
 	reqData := &bean.FundingBtcSigned{}
 	err = json.Unmarshal([]byte(jsonData), reqData)
 	if err != nil {
@@ -127,19 +127,22 @@ func (service *fundingTransactionManager) FundingBtcTxSign(jsonData string, sign
 		log.Println(err)
 		return nil, "", err
 	}
-	if tool.CheckIsString(&reqData.ChannelAddressPrivateKey) == false {
-		err = errors.New("wrong ChannelAddressPrivateKey ")
-		log.Println(err)
-		return nil, "", err
-	}
-	if tool.CheckIsString(&reqData.FundingTxid) == false {
-		err = errors.New("wrong FundingTxid ")
-		log.Println(err)
-		return nil, "", err
+
+	if reqData.Approval {
+		if tool.CheckIsString(&reqData.ChannelAddressPrivateKey) == false {
+			err = errors.New("wrong ChannelAddressPrivateKey ")
+			log.Println(err)
+			return nil, "", err
+		}
+		if tool.CheckIsString(&reqData.FundingTxid) == false {
+			err = errors.New("wrong FundingTxid ")
+			log.Println(err)
+			return nil, "", err
+		}
 	}
 
 	channelInfo := &dao.ChannelInfo{}
-	err = db.Select(q.Eq("TemporaryChannelId", reqData.TemporaryChannelId), q.Eq("CurrState", dao.ChannelState_Accept), q.Or(q.Eq("PeerIdA", signer.PeerId), q.Eq("PeerIdB", signer.PeerId))).OrderBy("CreateAt").Reverse().First(channelInfo)
+	err = db.Select(q.Eq("TemporaryChannelId", reqData.TemporaryChannelId), q.Eq("CurrState", dao.ChannelState_CanUse), q.Or(q.Eq("PeerIdA", signer.PeerId), q.Eq("PeerIdB", signer.PeerId))).OrderBy("CreateAt").Reverse().First(channelInfo)
 	if err != nil {
 		log.Println(err)
 		return nil, "", err
@@ -156,7 +159,7 @@ func (service *fundingTransactionManager) FundingBtcTxSign(jsonData string, sign
 
 	funderPrivateKey := tempAddrPrivateKeyMap[funderPubKey]
 	delete(tempAddrPrivateKeyMap, funderPubKey)
-	if tool.CheckIsString(&funderPrivateKey) == false {
+	if tool.CheckIsString(&funderPrivateKey) == false && reqData.Approval {
 		err = errors.New("wrong funderPrivateKey ")
 		log.Println(err)
 		return nil, "", err
@@ -264,7 +267,7 @@ func (service *fundingTransactionManager) AssetFundingCreated(jsonData string, u
 	}
 
 	channelInfo := &dao.ChannelInfo{}
-	err = db.Select(q.Eq("TemporaryChannelId", reqData.TemporaryChannelId), q.Eq("CurrState", dao.ChannelState_Accept), q.Or(q.Eq("PeerIdA", user.PeerId), q.Eq("PeerIdB", user.PeerId))).OrderBy("CreateAt").Reverse().First(channelInfo)
+	err = db.Select(q.Eq("TemporaryChannelId", reqData.TemporaryChannelId), q.Eq("CurrState", dao.ChannelState_CanUse), q.Or(q.Eq("PeerIdA", user.PeerId), q.Eq("PeerIdB", user.PeerId))).OrderBy("CreateAt").Reverse().First(channelInfo)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -449,7 +452,7 @@ func (service *fundingTransactionManager) AssetFundingSigned(jsonData string, si
 	}
 
 	channelInfo := &dao.ChannelInfo{}
-	err = db.Select(q.Eq("ChannelId", reqData.ChannelId), q.Eq("CurrState", dao.ChannelState_Accept)).First(channelInfo)
+	err = db.Select(q.Eq("ChannelId", reqData.ChannelId), q.Eq("CurrState", dao.ChannelState_CanUse)).First(channelInfo)
 	if err != nil {
 		log.Println("channel not find")
 		return nil, err
