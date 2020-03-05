@@ -99,10 +99,9 @@ type FundingCreated struct {
 
 //type: -3400 (FundingBtcCreated)
 type FundingBtcCreated struct {
-	TemporaryChannelId       string  `json:"temporary_channel_id"`
-	Amount                   float64 `json:"amount"`
-	FundingTxHex             string  `json:"funding_tx_hex"`
-	ChannelAddressPrivateKey string  `json:"channel_address_private_key"`
+	TemporaryChannelId       string `json:"temporary_channel_id"`
+	FundingTxHex             string `json:"funding_tx_hex"`
+	ChannelAddressPrivateKey string `json:"channel_address_private_key"`
 }
 
 //type: -3500 (FundingBtcSigned)
