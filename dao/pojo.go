@@ -241,3 +241,18 @@ type BreachRemedyTransaction struct {
 	LastEditTime       time.Time   `json:"last_edit_time"`
 	Owner              string      `json:"owner"`
 }
+
+type AtomicSwapInfo struct {
+	bean.AtomicSwapRequest
+	Id           int       `storm:"id,increment" json:"id" `
+	CreateBy     string    `json:"create_by"`
+	CreateAt     time.Time `json:"create_at"`
+	LatestEditAt time.Time `json:"latest_edit_at"`
+}
+type AtomicSwapAcceptedInfo struct {
+	bean.AtomicSwapAccepted
+	Id           int       `storm:"id,increment" json:"id" `
+	CreateBy     string    `json:"create_by"`
+	CreateAt     time.Time `json:"create_at"`
+	LatestEditAt time.Time `json:"latest_edit_at"`
+}

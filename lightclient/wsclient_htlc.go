@@ -349,3 +349,43 @@ func (client *Client) htlcCloseModule(msg bean.RequestMessage) (enum.SendTargetT
 	}
 	return sendType, []byte(data), status
 }
+func (client *Client) atomicSwapModule(msg bean.RequestMessage) (enum.SendTargetType, []byte, bool) {
+	status := false
+	var sendType = enum.SendTargetType_SendToNone
+	data := ""
+	switch msg.Type {
+	case enum.MsgType_Atomic_Swap_N80:
+		outData, targetUser, err := service.AtomicSwapService.AtomicSwap(msg.Data, *client.User)
+		if err != nil {
+			data = err.Error()
+		} else {
+			bytes, err := json.Marshal(outData)
+			if err != nil {
+				data = err.Error()
+			} else {
+				data = string(bytes)
+				status = true
+				_ = client.sendToSomeone(msg.Type, status, targetUser, data)
+			}
+		}
+		client.sendToMyself(msg.Type, status, data)
+		break
+	case enum.MsgType_Atomic_Swap_Accept_N81:
+		outData, targetUser, err := service.AtomicSwapService.AtomicSwapAccepted(msg.Data, *client.User)
+		if err != nil {
+			data = err.Error()
+		} else {
+			bytes, err := json.Marshal(outData)
+			if err != nil {
+				data = err.Error()
+			} else {
+				data = string(bytes)
+				status = true
+				_ = client.sendToSomeone(msg.Type, status, targetUser, data)
+			}
+		}
+		client.sendToMyself(msg.Type, status, data)
+		break
+	}
+	return sendType, []byte(data), status
+}

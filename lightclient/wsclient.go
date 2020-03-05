@@ -201,6 +201,12 @@ func (client *Client) Read() {
 						sendType, dataOut, status = client.htlcCloseModule(msg)
 						break
 					}
+					// -80 -81
+					if msg.Type == enum.MsgType_Atomic_Swap_Accept_N81 ||
+						msg.Type == enum.MsgType_Atomic_Swap_N80 {
+						sendType, dataOut, status = client.atomicSwapModule(msg)
+						break
+					}
 					break
 				}
 			}

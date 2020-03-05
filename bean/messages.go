@@ -189,6 +189,7 @@ type GetBalanceRespond struct {
 //type -40: alice tell carl ,she wanna transfer some money to Carl
 type HtlcHRequest struct {
 	PropertyId      int     `json:"property_id"`
+	H               string  `json:"h"`
 	Amount          float64 `json:"amount"`
 	RecipientPeerId string  `json:"recipient_peer_id"`
 	Memo            string  `json:"memo"`
@@ -296,3 +297,22 @@ type HtlcSignCloseCurrTx struct {
 type HtlcCloseChannelReq CloseChannel
 type HtlcCloseChannelSign CloseChannelSign
 type ChannelIdReq CloseChannel
+
+//type -80: MsgType_Atomic_Swap_N80
+type AtomicSwapRequest struct {
+	ChannelIdFrom    string  `json:"channel_id_from"`
+	ChannelIdTo      string  `json:"channel_id_to"`
+	RecipientPeerId  string  `json:"recipient_peer_id"`
+	PropertySent     int64   `json:"property_sent"`
+	Amount           float64 `json:"amount"`
+	ExchangeRate     float64 `json:"exchange_rate"`
+	PropertyReceived int64   `json:"property_received"`
+	TransactionId    string  `json:"transaction_id"`
+	TimeLocker       uint32  `json:"time_locker"`
+}
+
+//type -81: MsgType_Atomic_Swap_Accept_N81
+type AtomicSwapAccepted struct {
+	AtomicSwapRequest
+	TargetTransactionId string `json:"target_transaction_id"` // 针对的目标交易id
+}
