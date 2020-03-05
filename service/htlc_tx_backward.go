@@ -80,20 +80,10 @@ func (service *htlcBackwardTxManager) SendRToPreviousNode(msgData string,
 
 	// region Check out if the input R is correct.
 	rAndHInfo := &dao.HtlcRAndHInfo{}
-	err = db.Select(
-		q.Eq("RequestHash", reqData.RequestHash),
-		q.Eq("CurrState", dao.NS_Finish)).First(rAndHInfo)
-
+	err = db.Select(q.Eq("RequestHash", reqData.RequestHash)).First(rAndHInfo)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, "", err
-	}
-	if tool.CheckIsString(&rAndHInfo.R) {
-		if rAndHInfo.R != reqData.R {
-			err = errors.New("r is wrong")
-			log.Println(err)
-			return nil, "", err
-		}
 	}
 	// endregion
 
@@ -112,6 +102,23 @@ func (service *htlcBackwardTxManager) SendRToPreviousNode(msgData string,
 		return nil, "", errors.New("The transfer R has completed.")
 	}
 
+	//最后收款方（发货人），输入R，写入数据库
+	if pathInfo.CurrStep == int(pathInfo.TotalStep/2) {
+		rAndHInfo.R = reqData.R
+		err = db.Update(rAndHInfo)
+		if err != nil {
+			err = errors.New("fail to save r to db")
+			log.Println(err)
+			return nil, "", err
+		}
+	} else {
+		if rAndHInfo.R != reqData.R {
+			err = errors.New("r is wrong")
+			log.Println(err)
+			return nil, "", err
+		}
+	}
+
 	currBlockHeight, err := rpcClient.GetBlockCount()
 	if err != nil {
 		return nil, "", errors.New("fail to get blockHeight ,please try again later")
@@ -122,7 +129,6 @@ func (service *htlcBackwardTxManager) SendRToPreviousNode(msgData string,
 		return nil, "", errors.New("timeout, can't transfer the R")
 	}
 
-	// If CurrStep = 2, that indicate the transfer H has completed.
 	currChannelIndex := pathInfo.TotalStep - pathInfo.CurrStep - 1
 	if currChannelIndex < -1 || currChannelIndex > len(pathInfo.ChannelIdArr) {
 		return nil, "", errors.New("err channel id")
@@ -174,26 +180,17 @@ func (service *htlcBackwardTxManager) SendRToPreviousNode(msgData string,
 	}
 
 	if commitmentTxInfo.TxType != dao.CommitmentTransactionType_Htlc {
-		return nil, "", errors.New("error tx type")
+		return nil, "", errors.New("wrong tx type")
 	}
 	tempAddrPrivateKeyMap[pathInfo.CurrHtlcTempForHe1bOfHPubKey] = reqData.CurrHtlcTempAddressHe1bOfHPrivateKey
 
 	// Save pubkey to database.
-	dataChange := false
 	pathInfo.CurrHtlcTempForHe1bPubKey = reqData.CurrHtlcTempAddressForHE1bPubKey
-	dataChange = true
-
-	if pathInfo.CurrState != dao.HtlcPathInfoState_StepBegin {
-		pathInfo.CurrState = dao.HtlcPathInfoState_StepBegin
-		dataChange = true
-	}
-
-	if dataChange {
-		err = db.Update(&pathInfo)
-		if err != nil {
-			log.Println(err.Error())
-			return nil, "", err
-		}
+	pathInfo.CurrState = dao.HtlcPathInfoState_Forward
+	err = db.Update(&pathInfo)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, "", err
 	}
 	// endregion
 
@@ -255,9 +252,7 @@ func (service *htlcBackwardTxManager) VerifyRAndCreateTxs(msgData string, user b
 
 	// region Check out if the request hash is correct.
 	rAndHInfo := &dao.HtlcRAndHInfo{}
-	err = db.Select(
-		q.Eq("RequestHash", reqData.RequestHash),
-		q.Eq("CurrState", dao.NS_Finish)).First(rAndHInfo)
+	err = db.Select(q.Eq("RequestHash", reqData.RequestHash)).First(rAndHInfo)
 
 	if err != nil {
 		log.Println(err.Error())
@@ -400,7 +395,7 @@ func (service *htlcBackwardTxManager) VerifyRAndCreateTxs(msgData string, user b
 	_ = dbTx.Update(&commitmentTransactionB)
 
 	pathInfo.CurrStep += 1
-	pathInfo.CurrState = dao.HtlcPathInfoState_StepFinish
+	pathInfo.CurrState = dao.HtlcPathInfoState_Backward
 	err = dbTx.Update(&pathInfo)
 
 	if tool.CheckIsString(&rAndHInfo.R) == false {

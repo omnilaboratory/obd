@@ -49,51 +49,30 @@ func (service *htlcForwardTxManager) AliceFindPathAndSendToBob(msgData string, u
 		return nil, "", errors.New("wrong amount")
 	}
 
-	rAndHInfo := &dao.HtlcRAndHInfo{}
-	err = db.Select(
-		q.Eq("H", reqData.H),
-		q.Eq("SenderPeerId", user.PeerId),
-		q.Eq("RecipientPeerId", reqData.RecipientPeerId),
-		q.Eq("PropertyId", reqData.Amount),
-		q.Eq("Amount", reqData.Amount)).
-		First(rAndHInfo)
-	if err != nil {
-		return nil, "", errors.New("transaction has been running")
-	}
-
-	rAndHInfo.SenderPeerId = user.PeerId
-	rAndHInfo.RecipientPeerId = reqData.RecipientPeerId
-	rAndHInfo.PropertyId = reqData.PropertyId
-	rAndHInfo.Amount = reqData.Amount
-	rAndHInfo.Memo = reqData.Memo
-	rAndHInfo.H = reqData.H
-	rAndHInfo.CurrState = dao.NS_Create
-	rAndHInfo.CreateAt = time.Now()
-	rAndHInfo.CreateBy = user.PeerId
-
-	bytes, err := json.Marshal(rAndHInfo)
-	msgHash := tool.SignMsgWithSha256(bytes)
-	rAndHInfo.RequestHash = msgHash
-	err = db.Save(rAndHInfo)
-	if err != nil {
-		log.Println(err.Error())
-		return nil, "", err
-	}
-
-	channelAliceInfos := getAllChannels(rAndHInfo.SenderPeerId)
+	//find  path
+	channelAliceInfos := getAllChannels(user.PeerId)
 	if len(channelAliceInfos) == 0 {
 		return nil, "", errors.New("sender's channel not found")
 	}
 	//if has the channel direct
 	var directChannel dao.ChannelInfo
 	for _, item := range channelAliceInfos {
-		if item.PeerIdA == rAndHInfo.SenderPeerId && item.PeerIdB == rAndHInfo.RecipientPeerId {
-			directChannel = item
-			break
+		flag := false
+		if item.PeerIdA == user.PeerId && item.PeerIdB == reqData.RecipientPeerId {
+			flag = true
 		}
-		if item.PeerIdB == rAndHInfo.SenderPeerId && item.PeerIdA == rAndHInfo.RecipientPeerId {
-			directChannel = item
-			break
+		if item.PeerIdB == user.PeerId && item.PeerIdA == reqData.RecipientPeerId {
+			flag = true
+		}
+		if flag {
+			commitmentTxInfo, err := getLatestCommitmentTx(item.ChannelId, user.PeerId)
+			if err == nil {
+				if commitmentTxInfo.PropertyId == reqData.PropertyId &&
+					commitmentTxInfo.AmountToRSMC >= reqData.Amount {
+					directChannel = item
+					break
+				}
+			}
 		}
 	}
 
@@ -102,13 +81,12 @@ func (service *htlcForwardTxManager) AliceFindPathAndSendToBob(msgData string, u
 		log.Println("has direct channel")
 		channelIdArr = append(channelIdArr, directChannel.Id)
 	} else {
-		channelCarlInfos := getAllChannels(rAndHInfo.RecipientPeerId)
+		channelCarlInfos := getAllChannels(reqData.RecipientPeerId)
 		if len(channelCarlInfos) == 0 {
 			return nil, "", errors.New("recipient's channel not found")
 		}
-
 		//find the path from transaction creator to the receiver
-		PathService.GetPath(rAndHInfo.SenderPeerId, rAndHInfo.RecipientPeerId, rAndHInfo.Amount, nil, true)
+		PathService.GetPath(user.PeerId, reqData.RecipientPeerId, reqData.PropertyId, reqData.Amount, nil, true)
 		miniPathLength := 7
 		var miniPathNode *PathNode
 
@@ -128,6 +106,36 @@ func (service *htlcForwardTxManager) AliceFindPathAndSendToBob(msgData string, u
 		for i := int(channelCount) - 1; i > 0; i-- {
 			channelIdArr = append(channelIdArr, PathService.openList[miniPathNode.PathIdArr[i]].ChannelId)
 		}
+	}
+
+	rAndHInfo := &dao.HtlcRAndHInfo{}
+	err = db.Select(
+		q.Eq("H", reqData.H),
+		q.Eq("SenderPeerId", user.PeerId),
+		q.Eq("RecipientPeerId", reqData.RecipientPeerId),
+		q.Eq("PropertyId", reqData.Amount),
+		q.Eq("Amount", reqData.Amount)).
+		First(rAndHInfo)
+	if err != nil {
+		return nil, "", errors.New("transaction has been running")
+	}
+
+	rAndHInfo.SenderPeerId = user.PeerId
+	rAndHInfo.RecipientPeerId = reqData.RecipientPeerId
+	rAndHInfo.PropertyId = reqData.PropertyId
+	rAndHInfo.Amount = reqData.Amount
+	rAndHInfo.Memo = reqData.Memo
+	rAndHInfo.H = reqData.H
+	rAndHInfo.CreateAt = time.Now()
+	rAndHInfo.CreateBy = user.PeerId
+
+	bytes, err := json.Marshal(rAndHInfo)
+	msgHash := tool.SignMsgWithSha256(bytes)
+	rAndHInfo.RequestHash = msgHash
+	err = db.Save(rAndHInfo)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, "", err
 	}
 
 	currBlockHeight, err := rpcClient.GetBlockCount()
@@ -301,7 +309,7 @@ func (service *htlcForwardTxManager) SignGetH(msgData string, user bean.User) (d
 	// region temp store data
 	if requestData.Approval {
 		//锁定所有借道通道
-		if pathInfo.CurrStep == 0 && pathInfo.CurrState != dao.HtlcPathInfoState_StepBegin {
+		if pathInfo.CurrStep == 0 && pathInfo.CurrState != dao.HtlcPathInfoState_Forward {
 			for _, id := range pathInfo.ChannelIdArr {
 				channelInfo := &dao.ChannelInfo{}
 				err := tx.One("Id", id, channelInfo)
@@ -353,7 +361,7 @@ func (service *htlcForwardTxManager) SignGetH(msgData string, user bean.User) (d
 
 		tempAddrPrivateKeyMap[pathInfo.CurrRsmcTempPubKey] = requestData.CurrRsmcTempAddressPrivateKey
 		tempAddrPrivateKeyMap[pathInfo.CurrHtlcTempPubKey] = requestData.CurrHtlcTempAddressPrivateKey
-		pathInfo.CurrState = dao.HtlcPathInfoState_StepBegin
+		pathInfo.CurrState = dao.HtlcPathInfoState_Forward
 	} else {
 		pathInfo.CurrState = dao.HtlcPathInfoState_RefusedByInterNode
 	}
@@ -553,7 +561,7 @@ func (service *htlcForwardTxManager) SenderBeginCreateHtlcCommitmentTx(msgData s
 
 	//endregion
 
-	pathInfo.CurrState = dao.HtlcPathInfoState_StepFinish
+	pathInfo.CurrState = dao.HtlcPathInfoState_Backward
 	err = dbTx.Update(&pathInfo)
 	if err != nil {
 		log.Println(err)

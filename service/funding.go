@@ -51,7 +51,14 @@ func (service *fundingTransactionManager) BTCFundingCreated(jsonData string, use
 	}
 
 	channelInfo := &dao.ChannelInfo{}
-	err = db.Select(q.Eq("TemporaryChannelId", reqData.TemporaryChannelId), q.Eq("CurrState", dao.ChannelState_CanUse), q.Or(q.Eq("PeerIdA", user.PeerId), q.Eq("PeerIdB", user.PeerId))).OrderBy("CreateAt").Reverse().First(channelInfo)
+	err = db.Select(
+		q.Eq("TemporaryChannelId", reqData.TemporaryChannelId),
+		q.Eq("CurrState", dao.ChannelState_CanUse),
+		q.Or(
+			q.Eq("PeerIdA", user.PeerId),
+			q.Eq("PeerIdB", user.PeerId))).
+		OrderBy("CreateAt").Reverse().
+		First(channelInfo)
 	if err != nil {
 		log.Println(err)
 		return nil, "", err
@@ -72,7 +79,13 @@ func (service *fundingTransactionManager) BTCFundingCreated(jsonData string, use
 	}
 
 	fundingBtcRequest := &dao.FundingBtcRequest{}
-	count, _ := db.Select(q.Eq("TemporaryChannelId", reqData.TemporaryChannelId), q.Eq("TxId", fundingTxid), q.Eq("Owner", user.PeerId), q.Eq("IsEnable", true), q.Eq("IsFinish", true)).Count(fundingBtcRequest)
+	count, _ := db.Select(
+		q.Eq("TemporaryChannelId", reqData.TemporaryChannelId),
+		q.Eq("TxId", fundingTxid),
+		q.Eq("Owner", user.PeerId),
+		q.Eq("IsEnable", true),
+		q.Eq("IsFinish", true)).
+		Count(fundingBtcRequest)
 	if count != 0 {
 		err = errors.New("have funding btc fee")
 		log.Println(err)
@@ -87,7 +100,12 @@ func (service *fundingTransactionManager) BTCFundingCreated(jsonData string, use
 	}
 	tempAddrPrivateKeyMap[pubKey] = reqData.ChannelAddressPrivateKey
 
-	err = db.Select(q.Eq("TemporaryChannelId", reqData.TemporaryChannelId), q.Eq("TxId", fundingTxid), q.Eq("Owner", user.PeerId), q.Eq("IsEnable", true)).First(fundingBtcRequest)
+	err = db.Select(
+		q.Eq("TemporaryChannelId", reqData.TemporaryChannelId),
+		q.Eq("TxId", fundingTxid),
+		q.Eq("Owner", user.PeerId),
+		q.Eq("IsEnable", true)).
+		First(fundingBtcRequest)
 	if err != nil {
 		log.Println(err)
 	}
@@ -142,7 +160,15 @@ func (service *fundingTransactionManager) FundingBtcTxSigned(jsonData string, si
 	}
 
 	channelInfo := &dao.ChannelInfo{}
-	err = db.Select(q.Eq("TemporaryChannelId", reqData.TemporaryChannelId), q.Eq("CurrState", dao.ChannelState_CanUse), q.Or(q.Eq("PeerIdA", signer.PeerId), q.Eq("PeerIdB", signer.PeerId))).OrderBy("CreateAt").Reverse().First(channelInfo)
+	err = db.Select(
+		q.Eq("TemporaryChannelId", reqData.TemporaryChannelId),
+		q.Eq("CurrState", dao.ChannelState_CanUse),
+		q.Or(
+			q.Eq("PeerIdA", signer.PeerId),
+			q.Eq("PeerIdB", signer.PeerId))).
+		OrderBy("CreateAt").
+		Reverse().
+		First(channelInfo)
 	if err != nil {
 		log.Println(err)
 		return nil, "", err
@@ -160,13 +186,19 @@ func (service *fundingTransactionManager) FundingBtcTxSigned(jsonData string, si
 	funderPrivateKey := tempAddrPrivateKeyMap[funderPubKey]
 	delete(tempAddrPrivateKeyMap, funderPubKey)
 	if tool.CheckIsString(&funderPrivateKey) == false && reqData.Approval {
-		err = errors.New("wrong funderPrivateKey ")
+		err = errors.New("FunderPrivateKey is not exist, please send the -3400 msg again")
 		log.Println(err)
 		return nil, "", err
 	}
 
 	fundingBtcRequest := &dao.FundingBtcRequest{}
-	err = db.Select(q.Eq("TemporaryChannelId", reqData.TemporaryChannelId), q.Eq("TxId", reqData.FundingTxid), q.Eq("Owner", funder), q.Eq("IsEnable", true), q.Eq("IsFinish", false)).First(fundingBtcRequest)
+	err = db.Select(
+		q.Eq("TemporaryChannelId", reqData.TemporaryChannelId),
+		q.Eq("TxId", reqData.FundingTxid),
+		q.Eq("Owner", funder),
+		q.Eq("IsEnable", true),
+		q.Eq("IsFinish", false)).
+		First(fundingBtcRequest)
 	if err != nil {
 		log.Println(err)
 		return nil, "", err
@@ -267,7 +299,14 @@ func (service *fundingTransactionManager) AssetFundingCreated(jsonData string, u
 	}
 
 	channelInfo := &dao.ChannelInfo{}
-	err = db.Select(q.Eq("TemporaryChannelId", reqData.TemporaryChannelId), q.Eq("CurrState", dao.ChannelState_CanUse), q.Or(q.Eq("PeerIdA", user.PeerId), q.Eq("PeerIdB", user.PeerId))).OrderBy("CreateAt").Reverse().First(channelInfo)
+	err = db.Select(
+		q.Eq("TemporaryChannelId", reqData.TemporaryChannelId),
+		q.Eq("CurrState", dao.ChannelState_CanUse),
+		q.Or(
+			q.Eq("PeerIdA", user.PeerId),
+			q.Eq("PeerIdB", user.PeerId))).
+		OrderBy("CreateAt").Reverse().
+		First(channelInfo)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -290,7 +329,9 @@ func (service *fundingTransactionManager) AssetFundingCreated(jsonData string, u
 	fundingTransaction = &dao.FundingTransaction{}
 	count := 0
 	if tool.CheckIsString(&channelInfo.ChannelId) == false {
-		count, _ = db.Select(q.Eq("ChannelId", channelInfo.ChannelId)).Count(fundingTransaction)
+		count, _ = db.Select(
+			q.Eq("ChannelId", channelInfo.ChannelId)).
+			Count(fundingTransaction)
 	}
 	if count == 0 {
 		if tool.CheckIsString(&reqData.FundingTxHex) == false {
@@ -661,13 +702,11 @@ func (service *fundingTransactionManager) AssetFundingSigned(jsonData string, si
 			return nil, err
 		}
 	}
-
-	if reqData.Approval == false {
-		err = tx.Update(channelInfo)
-		if err != nil {
-			log.Println(err)
-			return nil, err
-		}
+	channelInfo.PropertyId = fundingTransaction.PropertyId
+	err = tx.Update(channelInfo)
+	if err != nil {
+		log.Println(err)
+		return nil, err
 	}
 
 	err = tx.Update(fundingTransaction)
@@ -704,7 +743,11 @@ func (service *fundingTransactionManager) ItemByTempIdArray(tempId chainhash.Has
 
 func (service *fundingTransactionManager) AllItem(peerId string) (node []dao.FundingTransaction, err error) {
 	var data []dao.FundingTransaction
-	err = db.Select(q.Or(q.Eq("PeerIdB", peerId), q.Eq("PeerIdA", peerId))).OrderBy("CreateAt").Reverse().Find(&data)
+	err = db.Select(
+		q.Or(q.Eq("PeerIdB", peerId),
+			q.Eq("PeerIdA", peerId))).
+		OrderBy("CreateAt").Reverse().
+		Find(&data)
 	if err != nil {
 		return nil, err
 	}
@@ -734,5 +777,9 @@ func (service *fundingTransactionManager) Del(id int) (err error) {
 	return err
 }
 func (service *fundingTransactionManager) TotalCount(peerId string) (count int, err error) {
-	return db.Select(q.Or(q.Eq("PeerIdA", peerId), q.Eq("PeerIdB", peerId))).Count(&dao.FundingTransaction{})
+	return db.Select(
+		q.Or(
+			q.Eq("PeerIdA", peerId),
+			q.Eq("PeerIdB", peerId))).
+		Count(&dao.FundingTransaction{})
 }

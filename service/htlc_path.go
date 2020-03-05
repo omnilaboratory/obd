@@ -141,7 +141,9 @@ func (this *pathManager) CreateDemoChannelNetwork(realSenderPeerId, currReceiver
 }
 
 //查找出与自己相关所有通道
-func (this *pathManager) GetPath(realSenderPeerId, currReceiverPeerId string, amount float64, currNode *PathNode, isBegin bool) {
+func (this *pathManager) GetPath(realSenderPeerId, currReceiverPeerId string,
+	propertyId int64, amount float64,
+	currNode *PathNode, isBegin bool) {
 	online := FindUserIsOnline(currReceiverPeerId)
 	if online != nil {
 		return
@@ -196,7 +198,8 @@ func (this *pathManager) GetPath(realSenderPeerId, currReceiverPeerId string, am
 			interSender := item.PeerIdA
 			commitmentTxInfo, err := getLatestCommitmentTx(item.ChannelId, interSender)
 			if err == nil {
-				if commitmentTxInfo.AmountToRSMC >= amount {
+				if commitmentTxInfo.PropertyId == propertyId &&
+					commitmentTxInfo.AmountToRSMC >= amount {
 					newNode := PathNode{
 						ParentNode:     currNodeIndex,
 						ChannelId:      item.Id,
@@ -212,7 +215,7 @@ func (this *pathManager) GetPath(realSenderPeerId, currReceiverPeerId string, am
 						newNode.IsTarget = true
 					} else {
 						if newNode.Level < 6 {
-							this.GetPath(realSenderPeerId, interSender, amount, &newNode, false)
+							this.GetPath(realSenderPeerId, interSender, propertyId, amount, &newNode, false)
 						}
 					}
 				}
@@ -244,7 +247,7 @@ func (this *pathManager) GetPath(realSenderPeerId, currReceiverPeerId string, am
 						newNode.IsTarget = true
 					} else {
 						if newNode.Level < 6 {
-							this.GetPath(realSenderPeerId, interSender, amount, &newNode, false)
+							this.GetPath(realSenderPeerId, interSender, propertyId, amount, &newNode, false)
 						}
 					}
 				}

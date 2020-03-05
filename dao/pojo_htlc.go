@@ -110,28 +110,25 @@ const (
 )
 
 type HtlcRAndHInfo struct {
-	Id              int         `storm:"id,increment" json:"id" `
-	SenderPeerId    string      `json:"sender_peer_id"`
-	RecipientPeerId string      `json:"recipient_peer_id"`
-	PropertyId      int         `json:"property_id"`
-	Amount          float64     `json:"amount"`
-	H               string      `json:"h"`
-	R               string      `json:"r"`
-	CurrState       NormalState `json:"curr_state"`
-	RequestHash     string      `json:"request_hash"`
-	CreateBy        string      `json:"create_by"`
-	CreateAt        time.Time   `json:"create_at"`
-	SignAt          time.Time   `json:"sign_at"`
-	SignBy          string      `json:"sign_by"`
-	Memo            string      `json:"memo"`
+	Id              int       `storm:"id,increment" json:"id" `
+	SenderPeerId    string    `json:"sender_peer_id"`
+	RecipientPeerId string    `json:"recipient_peer_id"`
+	PropertyId      int64     `json:"property_id"`
+	Amount          float64   `json:"amount"`
+	H               string    `json:"h"`
+	R               string    `json:"r"`
+	RequestHash     string    `json:"request_hash"`
+	CreateBy        string    `json:"create_by"`
+	CreateAt        time.Time `json:"create_at"`
+	Memo            string    `json:"memo"`
 }
 
 type HtlcPathInfoState int
 
 const (
 	HtlcPathInfoState_Created            HtlcPathInfoState = 0
-	HtlcPathInfoState_StepBegin          HtlcPathInfoState = 10
-	HtlcPathInfoState_StepFinish         HtlcPathInfoState = 11
+	HtlcPathInfoState_Forward            HtlcPathInfoState = 10
+	HtlcPathInfoState_Backward           HtlcPathInfoState = 11
 	HtlcPathInfoState_RefusedByInterNode HtlcPathInfoState = -1
 )
 

@@ -8,7 +8,6 @@ import (
 	"errors"
 	"github.com/asdine/storm/q"
 	"sync"
-	"time"
 )
 
 type htlcHMessageManager struct {
@@ -91,8 +90,6 @@ func (service *htlcHMessageManager) AddHTLCSigned(jsonData string,
 		return nil, nil, err
 	}
 
-	rAndHInfo.CurrState = dao.NS_Refuse
-
 	// Carol approved the request from Alice.
 	if htlcHRespond.Approval {
 
@@ -115,11 +112,8 @@ func (service *htlcHMessageManager) AddHTLCSigned(jsonData string,
 
 		//rAndHInfo.H = h
 		//rAndHInfo.R = r
-		rAndHInfo.CurrState = dao.NS_Finish
 	}
 
-	rAndHInfo.SignAt = time.Now()
-	rAndHInfo.SignBy = user.PeerId
 	err = db.Update(rAndHInfo)
 	if err != nil {
 		return nil, &rAndHInfo.SenderPeerId, err
@@ -162,18 +156,25 @@ func checkIfHtlcCanBeLaunched(creator *bean.User, htlcHRequest *bean.HtlcHReques
 	// Check out if there is a direct channel between Alice and Carol.
 	// If Yes, NO need to launch HTLC.
 	for _, item := range channelsOfAlice {
+		flag := false
 		if item.PeerIdA == creator.PeerId && item.PeerIdB == htlcHRequest.RecipientPeerId {
-			//return errors.New("There is a direct channel between " + item.PeerIdA + " and " + item.PeerIdB + ".")
-			return nil
+			flag = true
 		}
-
 		if item.PeerIdB == creator.PeerId && item.PeerIdA == htlcHRequest.RecipientPeerId {
-			//return errors.New("There is a direct channel between " + item.PeerIdA + " and " + item.PeerIdB + ".")
-			return nil
+			flag = true
+		}
+		if flag {
+			commitmentTxInfo, err := getLatestCommitmentTx(item.ChannelId, creator.PeerId)
+			if err == nil {
+				if commitmentTxInfo.PropertyId == htlcHRequest.PropertyId &&
+					commitmentTxInfo.AmountToRSMC >= htlcHRequest.Amount {
+					return nil
+				}
+			}
 		}
 	}
 	//find the path from transaction creator to the receiver
-	PathService.GetPath(creator.PeerId, htlcHRequest.RecipientPeerId, htlcHRequest.Amount, nil, true)
+	PathService.GetPath(creator.PeerId, htlcHRequest.RecipientPeerId, htlcHRequest.PropertyId, htlcHRequest.Amount, nil, true)
 	hasPath := false
 	for _, node := range PathService.openList {
 		if node.IsTarget {

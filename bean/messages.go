@@ -187,12 +187,13 @@ type GetBalanceRespond struct {
 
 //type -40: alice tell carl ,she wanna transfer some money to Carl
 type HtlcHRequest struct {
-	PropertyId      int     `json:"property_id"`
+	PropertyId      int64   `json:"property_id"`
 	Amount          float64 `json:"amount"`
 	RecipientPeerId string  `json:"recipient_peer_id"`
 }
 
 //type -41: carl tell alice the H,and he ca
+// Deprecated: h and r create by transfer, do not need tell the receiver
 type HtlcHRespond struct {
 	RequestHash string  `json:"request_hash"`
 	Approval    bool    `json:"approval"` // true agree false disagree
@@ -206,7 +207,7 @@ type HtlcHRespond struct {
 type HtlcRequestFindPathAndSendH struct {
 	H               string  `json:"h"`
 	RecipientPeerId string  `json:"recipient_peer_id"`
-	PropertyId      int     `json:"property_id"`
+	PropertyId      int64   `json:"property_id"`
 	Amount          float64 `json:"amount"`
 	Memo            string  `json:"memo"`
 }

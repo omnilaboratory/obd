@@ -37,6 +37,7 @@ type ChannelInfo struct {
 	ChannelAddress             string       `json:"channel_address"`
 	ChannelAddressRedeemScript string       `json:"channel_address_redeem_script"`
 	ChannelAddressScriptPubKey string       `json:"channel_address_script_pub_key"`
+	PropertyId                 int64        `json:"property_id"`
 	CurrState                  ChannelState `json:"curr_state"`
 	CreateBy                   string       `json:"create_by"`
 	CreateAt                   time.Time    `json:"create_at"`
