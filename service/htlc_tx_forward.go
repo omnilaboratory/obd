@@ -134,6 +134,7 @@ func (service *htlcForwardTxManager) AliceFindPathAndSendToBob(msgData string, u
 		q.Eq("SenderPeerId", user.PeerId),
 		q.Eq("RecipientPeerId", reqData.RecipientPeerId),
 		q.Eq("PropertyId", reqData.PropertyId),
+		q.Eq("CurrState", dao.NS_Create),
 		q.Eq("Amount", reqData.Amount)).
 		First(rAndHInfo)
 
@@ -146,6 +147,7 @@ func (service *htlcForwardTxManager) AliceFindPathAndSendToBob(msgData string, u
 		rAndHInfo.Amount = reqData.Amount
 		rAndHInfo.Memo = reqData.Memo
 		rAndHInfo.H = reqData.H
+		rAndHInfo.CurrState = dao.NS_Create
 		rAndHInfo.CreateAt = time.Now()
 		rAndHInfo.CreateBy = user.PeerId
 		bytes, err := json.Marshal(rAndHInfo)
@@ -179,8 +181,13 @@ func (service *htlcForwardTxManager) AliceFindPathAndSendToBob(msgData string, u
 		}
 	}
 
+	msgHash := MessageService.saveMsg(user.PeerId, bob, rAndHInfo.RequestHash)
+	if tool.CheckIsString(&msgHash) == false {
+		return nil, "", errors.New("fail to save msgHash")
+	}
+
 	data = make(map[string]interface{})
-	data["request_hash"] = rAndHInfo.RequestHash
+	data["request_hash"] = msgHash
 	data["h"] = rAndHInfo.H
 	return data, bob, nil
 }
@@ -238,8 +245,14 @@ func (service *htlcForwardTxManager) SendH(msgData string, user bean.User) (data
 	if user.PeerId == currChannel.PeerIdB {
 		targetUserId = currChannel.PeerIdA
 	}
+
+	msgHash := MessageService.saveMsg(user.PeerId, targetUserId, pathInfo.HAndRInfoRequestHash)
+	if tool.CheckIsString(&msgHash) == false {
+		return nil, "", errors.New("fail to save msgHash")
+	}
+
 	data = make(map[string]interface{})
-	data["request_hash"] = pathInfo.HAndRInfoRequestHash
+	data["request_hash"] = msgHash
 	data["h"] = rAndHInfo.H
 	return data, targetUserId, nil
 }
@@ -260,6 +273,15 @@ func (service *htlcForwardTxManager) SignGetH(msgData string, user bean.User) (d
 	if tool.CheckIsString(&requestData.RequestHash) == false {
 		return nil, "", errors.New("request_hash is empty")
 	}
+
+	message, err := MessageService.getMsg(requestData.RequestHash)
+	if err != nil {
+		return nil, "", errors.New("wrong request_hash")
+	}
+	if message.Receiver != user.PeerId {
+		return nil, "", errors.New("you are not the operator")
+	}
+	requestData.RequestHash = message.Data
 
 	// region check input data
 	if requestData.Approval {
@@ -330,6 +352,13 @@ func (service *htlcForwardTxManager) SignGetH(msgData string, user bean.User) (d
 		return nil, "", err
 	}
 
+	//判断是否是正确的操作者
+	if user.PeerId != currChannel.PeerIdA && user.PeerId != currChannel.PeerIdB {
+		err = errors.New("you are not the operator")
+		log.Println(err.Error())
+		return nil, "", err
+	}
+
 	if currChannel.PeerIdB == user.PeerId {
 		targetUser = currChannel.PeerIdA
 	} else {
@@ -393,9 +422,15 @@ func (service *htlcForwardTxManager) SignGetH(msgData string, user bean.User) (d
 		log.Println(err.Error())
 		return nil, "", err
 	}
+
+	msgHash := MessageService.saveMsg(user.PeerId, targetUser, requestData.RequestHash)
+	if tool.CheckIsString(&msgHash) == false {
+		return nil, "", errors.New("fail to save msgHash")
+	}
+
 	data = make(map[string]interface{})
 	data["approval"] = requestData.Approval
-	data["request_hash"] = requestData.RequestHash
+	data["request_hash"] = msgHash
 	return data, targetUser, nil
 }
 
@@ -418,6 +453,15 @@ func (service *htlcForwardTxManager) SenderBeginCreateHtlcCommitmentTx(msgData s
 		log.Println(err)
 		return nil, "", err
 	}
+
+	message, err := MessageService.getMsg(requestData.RequestHash)
+	if err != nil {
+		return nil, "", errors.New("wrong request_hash")
+	}
+	if message.Receiver != user.PeerId {
+		return nil, "", errors.New("you are not the operator")
+	}
+	requestData.RequestHash = message.Data
 
 	pathInfo := dao.HtlcPathInfo{}
 	err = db.Select(q.Eq("HAndRInfoRequestHash", requestData.RequestHash)).First(&pathInfo)

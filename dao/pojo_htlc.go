@@ -110,17 +110,18 @@ const (
 )
 
 type HtlcRAndHInfo struct {
-	Id              int       `storm:"id,increment" json:"id" `
-	SenderPeerId    string    `json:"sender_peer_id"`
-	RecipientPeerId string    `json:"recipient_peer_id"`
-	PropertyId      int64     `json:"property_id"`
-	Amount          float64   `json:"amount"`
-	H               string    `json:"h"`
-	R               string    `json:"r"`
-	RequestHash     string    `json:"request_hash"`
-	CreateBy        string    `json:"create_by"`
-	CreateAt        time.Time `json:"create_at"`
-	Memo            string    `json:"memo"`
+	Id              int         `storm:"id,increment" json:"id" `
+	SenderPeerId    string      `json:"sender_peer_id"`
+	RecipientPeerId string      `json:"recipient_peer_id"`
+	PropertyId      int64       `json:"property_id"`
+	Amount          float64     `json:"amount"`
+	H               string      `json:"h"`
+	R               string      `json:"r"`
+	RequestHash     string      `json:"request_hash"`
+	CurrState       NormalState `json:"curr_state"`
+	CreateBy        string      `json:"create_by"`
+	CreateAt        time.Time   `json:"create_at"`
+	Memo            string      `json:"memo"`
 }
 
 type HtlcPathInfoState int

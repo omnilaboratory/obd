@@ -623,12 +623,14 @@ func createAliceSideBRTxs(tx storm.Node, channelInfo dao.ChannelInfo, isAliceExe
 		q.Eq("Owner", owner),
 	).First(&htOrHeTx)
 	if err != nil {
+		err = errors.New("not found HT1a from db")
 		log.Println(err)
 		return nil, err
 	}
 	htrd := &dao.RevocableDeliveryTransaction{}
 	err = tx.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("CommitmentTxId", htOrHeTx.Id), q.Eq("Owner", owner), q.Eq("RDType", 1)).First(htrd)
 	if err != nil {
+		err = errors.New("not found HTRD1a from db")
 		log.Println(err)
 		return nil, err
 	}
@@ -637,6 +639,7 @@ func createAliceSideBRTxs(tx storm.Node, channelInfo dao.ChannelInfo, isAliceExe
 	count, _ := tx.Select(q.Eq("CommitmentTxId", lastCommitmentTxInfo.Id), q.Eq("Owner", owner)).Count(&dao.BreachRemedyTransaction{})
 	if count > 0 {
 		err = errors.New("already exist BreachRemedyTransaction ")
+		log.Println(err)
 		return nil, err
 	}
 
@@ -703,6 +706,7 @@ func createAliceSideBRTxs(tx storm.Node, channelInfo dao.ChannelInfo, isAliceExe
 	}
 	hbr, err := createHtlcBRTx(brOwner, &channelInfo, lastCommitmentTxInfo, &user)
 	if err != nil {
+		err = errors.New("fail to create the HtlcBR")
 		log.Println(err)
 		return nil, err
 	}
@@ -713,7 +717,7 @@ func createAliceSideBRTxs(tx storm.Node, channelInfo dao.ChannelInfo, isAliceExe
 		if isAliceExecutionCloseOp {
 			lastTempAddressPrivateKey = reqData.LastHtlcTempAddressPrivateKey
 		} else {
-			// 如果当前操作用户是PeerIdB方，而我们现在正在处理Alice方，所以我们要取另一方的数据
+			// 如果当前操作用户是PeerIdB方(概念中bob方)，而我们现在正在处理Alice方，所以我们要取另一方（alice）的数据
 			lastTempAddressPrivateKey = tempAddrPrivateKeyMap[lastCommitmentTxInfo.HTLCTempAddressPubKey]
 		}
 		if tool.CheckIsString(&lastTempAddressPrivateKey) == false {

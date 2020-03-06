@@ -106,6 +106,7 @@ func (service *htlcBackwardTxManager) SendRToPreviousNode(msgData string,
 	//最后收款方（发货人），输入R，写入数据库
 	if pathInfo.CurrStep == int(pathInfo.TotalStep/2) {
 		rAndHInfo.R = reqData.R
+
 		err = db.Update(rAndHInfo)
 		if err != nil {
 			err = errors.New("fail to save r to db")
@@ -200,9 +201,15 @@ func (service *htlcBackwardTxManager) SendRToPreviousNode(msgData string,
 	// Generate response message.
 	// If no error, the response data is displayed in websocket client of previous node.
 	// Otherwise, it is displayed in websocket client of myself.
+
+	msgHash := MessageService.saveMsg(user.PeerId, previousNode, rAndHInfo.RequestHash)
+	if tool.CheckIsString(&msgHash) == false {
+		return nil, "", errors.New("fail to save msgHash")
+	}
+
 	responseData := make(map[string]interface{})
 	responseData["id"] = rAndHInfo.Id
-	responseData["request_hash"] = rAndHInfo.RequestHash
+	responseData["request_hash"] = msgHash
 	responseData["r"] = reqData.R
 
 	return responseData, previousNode, nil
@@ -234,6 +241,15 @@ func (service *htlcBackwardTxManager) VerifyRAndCreateTxs(msgData string, user b
 		log.Println(err)
 		return nil, "", err
 	}
+
+	message, err := MessageService.getMsg(reqData.RequestHash)
+	if err != nil {
+		return nil, "", errors.New("wrong request_hash")
+	}
+	if message.Receiver != user.PeerId {
+		return nil, "", errors.New("you are not the operator")
+	}
+	reqData.RequestHash = message.Data
 
 	if tool.CheckIsString(&reqData.ChannelAddressPrivateKey) == false {
 		err = errors.New("channel_address_private_key is empty")
@@ -401,9 +417,12 @@ func (service *htlcBackwardTxManager) VerifyRAndCreateTxs(msgData string, user b
 	pathInfo.CurrState = dao.HtlcPathInfoState_Backward
 	err = dbTx.Update(&pathInfo)
 
-	if tool.CheckIsString(&rAndHInfo.R) == false {
-		rAndHInfo.R = reqData.R
-		_ = dbTx.Update(rAndHInfo)
+	if (int)(pathInfo.CurrState) == pathInfo.TotalStep {
+		if tool.CheckIsString(&rAndHInfo.R) == false {
+			rAndHInfo.R = reqData.R
+		}
+		rAndHInfo.CurrState = dao.NS_Finish
+		_ = db.Update(rAndHInfo)
 	}
 
 	err = dbTx.Commit()
