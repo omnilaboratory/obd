@@ -63,7 +63,6 @@ func SignMsgWithMd5(msg []byte) string {
 }
 
 func GetAddressFromPubKey(pubKey string) (address string, err error) {
-	log.Println(pubKey)
 	serializedPubKey, err := hex.DecodeString(pubKey)
 	if err != nil {
 		log.Println(err)
@@ -87,6 +86,18 @@ func GetAddressFromPubKey(pubKey string) (address string, err error) {
 	log.Println("BitCoin Address:", address)
 
 	return address, nil
+}
+
+func GetPubKeyFromWifAndCheck(privKeyHex string, pubKey string) (pubKeyFromWif string, err error) {
+	wif, err := btcutil.DecodeWIF(privKeyHex)
+	if err != nil {
+		return "", errors.New("wrong private key")
+	}
+	pubKeyFromWif = hex.EncodeToString(wif.PrivKey.PubKey().SerializeCompressed())
+	if pubKeyFromWif != pubKey {
+		return "", errors.New("private key and pubkey are not parent relationship")
+	}
+	return pubKeyFromWif, nil
 }
 
 func RandBytes(size int) (string, error) {

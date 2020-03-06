@@ -64,6 +64,15 @@ func (service *fundingTransactionManager) BTCFundingCreated(jsonData string, use
 		return nil, "", err
 	}
 
+	myPubKey := channelInfo.PubKeyA
+	if user.PeerId == channelInfo.PeerIdB {
+		myPubKey = channelInfo.PubKeyB
+	}
+	_, err = tool.GetPubKeyFromWifAndCheck(reqData.ChannelAddressPrivateKey, myPubKey)
+	if err != nil {
+		return nil, "", err
+	}
+
 	//get btc miner Fee data from transaction
 	fundingTxid, amount, _, err := checkBtcTxHex(btcFeeTxHexDecode, channelInfo, user.PeerId)
 	if err != nil {
@@ -152,6 +161,7 @@ func (service *fundingTransactionManager) FundingBtcTxSigned(jsonData string, si
 			log.Println(err)
 			return nil, "", err
 		}
+
 		if tool.CheckIsString(&reqData.FundingTxid) == false {
 			err = errors.New("wrong FundingTxid ")
 			log.Println(err)
@@ -177,10 +187,17 @@ func (service *fundingTransactionManager) FundingBtcTxSigned(jsonData string, si
 	redeemToAddress := channelInfo.AddressA
 	funder = channelInfo.PeerIdA
 	funderPubKey := channelInfo.PubKeyA
+	myPubKey := channelInfo.PubKeyB
 	if signer.PeerId == channelInfo.PeerIdA {
 		funder = channelInfo.PeerIdB
 		funderPubKey = channelInfo.PubKeyB
+		myPubKey = channelInfo.PubKeyA
 		redeemToAddress = channelInfo.AddressB
+	}
+
+	_, err = tool.GetPubKeyFromWifAndCheck(reqData.ChannelAddressPrivateKey, myPubKey)
+	if err != nil {
+		return nil, "", err
 	}
 
 	funderPrivateKey := tempAddrPrivateKeyMap[funderPubKey]
@@ -300,6 +317,11 @@ func (service *fundingTransactionManager) AssetFundingCreated(jsonData string, u
 		return nil, err
 	}
 
+	_, err = tool.GetPubKeyFromWifAndCheck(reqData.ChannelAddressPrivateKey, reqData.TempAddressPrivateKey)
+	if err != nil {
+		return nil, err
+	}
+
 	channelInfo := &dao.ChannelInfo{}
 	err = db.Select(
 		q.Eq("TemporaryChannelId", reqData.TemporaryChannelId),
@@ -314,10 +336,12 @@ func (service *fundingTransactionManager) AssetFundingCreated(jsonData string, u
 		return nil, err
 	}
 
-	//防止多次充值
-	//do not fund asset again
-	if channelInfo.PropertyId > 0 {
-		log.Println("do not fund asset again ")
+	myPubKey := channelInfo.PubKeyA
+	if user.PeerId == channelInfo.PeerIdB {
+		myPubKey = channelInfo.PubKeyB
+	}
+	_, err = tool.GetPubKeyFromWifAndCheck(reqData.ChannelAddressPrivateKey, myPubKey)
+	if err != nil {
 		return nil, err
 	}
 
@@ -508,16 +532,12 @@ func (service *fundingTransactionManager) AssetFundingSigned(jsonData string, si
 		return nil, err
 	}
 
-	//防止多次充值
-	if channelInfo.PropertyId > 0 {
-		log.Println("do not fund asset again ")
-		return nil, err
-	}
-
 	// default if alice launch the funding,signer is bob
 	var owner = channelInfo.PeerIdA
+	myPubKey := channelInfo.PubKeyB
 	if signer.PeerId == channelInfo.PeerIdA {
 		owner = channelInfo.PeerIdB
+		myPubKey = channelInfo.PubKeyA
 	}
 
 	var fundingTransaction = &dao.FundingTransaction{}
@@ -534,6 +554,12 @@ func (service *fundingTransactionManager) AssetFundingSigned(jsonData string, si
 		if tool.CheckIsString(&reqData.FundeeChannelAddressPrivateKey) == false {
 			return nil, errors.New("wrong FundeeChannelAddressPrivateKey")
 		}
+
+		_, err = tool.GetPubKeyFromWifAndCheck(reqData.FundeeChannelAddressPrivateKey, myPubKey)
+		if err != nil {
+			return nil, err
+		}
+
 		fundingTransaction.CurrState = dao.FundingTransactionState_Accept
 		channelInfo.CurrState = dao.ChannelState_CanUse
 	} else {

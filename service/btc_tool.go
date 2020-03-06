@@ -188,7 +188,7 @@ func signMulti(tx *wire.MsgTx, privKeyStr string, prevPkScripts [][]byte) {
 	fmt.Println("wif err", err)
 	privKey := wif.PrivKey
 
-	for i, _ := range inputs {
+	for i := range inputs {
 		sig, err := txscript.RawTxInSignature(tx, i, prevPkScripts[i], txscript.SigHashAll, privKey)
 		if err != nil {
 			log.Println(err)
@@ -199,7 +199,7 @@ func signMulti(tx *wire.MsgTx, privKeyStr string, prevPkScripts [][]byte) {
 }
 func addRedeemScriptOfMulti(tx *wire.MsgTx, sigs [][]byte, redeemScript []byte) {
 	inputs := tx.TxIn
-	for i, _ := range inputs {
+	for i := range inputs {
 		script, err := txscript.NewScriptBuilder().AddOp(txscript.OP_0).AddData(inputs[i].SignatureScript).AddData(redeemScript).Script()
 		if err != nil {
 			continue
@@ -218,7 +218,7 @@ func signN(tx *wire.MsgTx, privKey string, pkScripts [][]byte) error {
 	/* lookupKey := func(a btcutil.Address) (*btcec.PrivateKey, bool, error) {
 		return wif.PrivKey, false, nil
 	} */
-	for i, _ := range tx.TxIn {
+	for i := range tx.TxIn {
 		script, err := txscript.SignatureScript(tx, i, pkScripts[i], txscript.SigHashAll, wif.PrivKey, true)
 		//script, err := txscript.SignTxOutput(&chaincfg.RegressionNetParams, tx, i, pkScripts[i], txscript.SigHashAll, txscript.KeyClosure(lookupKey), nil, nil)
 		if err != nil {

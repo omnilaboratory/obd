@@ -8,6 +8,10 @@ import (
 	"testing"
 )
 
+func TestDemo5(t *testing.T) {
+
+}
+
 func TestDemo4(t *testing.T) {
 	path := AStarPathFind{}
 	path.initData(10, 10)
