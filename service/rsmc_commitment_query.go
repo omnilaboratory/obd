@@ -32,7 +32,14 @@ func (service *commitmentTxManager) GetLatestCommitmentTxByChannelId(jsonData st
 	}
 
 	node = &dao.CommitmentTransaction{}
-	err = db.Select(q.Eq("ChannelId", reqData.ChannelId), q.Eq("Owner", user.PeerId), q.Or(q.Eq("PeerIdA", user.PeerId), q.Eq("PeerIdB", user.PeerId))).OrderBy("CreateAt").Reverse().First(node)
+	err = db.Select(
+		q.Eq("ChannelId", reqData.ChannelId),
+		q.Eq("Owner", user.PeerId),
+		q.Or(
+			q.Eq("PeerIdA", user.PeerId),
+			q.Eq("PeerIdB", user.PeerId))).
+		OrderBy("CreateAt").Reverse().
+		First(node)
 	return node, err
 }
 
@@ -61,7 +68,11 @@ func (service *commitmentTxManager) GetBroadcastCommitmentTxByChannelId(jsonData
 	}
 
 	node = &dao.CommitmentTransaction{}
-	err = db.Select(q.Eq("ChannelId", reqData.ChannelId), q.Eq("CurrState", dao.TxInfoState_SendHex), q.Eq("Owner", user.PeerId)).First(node)
+	err = db.Select(
+		q.Eq("ChannelId", reqData.ChannelId),
+		q.Eq("CurrState", dao.TxInfoState_SendHex),
+		q.Eq("Owner", user.PeerId)).
+		First(node)
 	return node, err
 }
 
@@ -73,7 +84,11 @@ func (service *commitmentTxManager) GetBroadcastRDTxByChannelId(jsonData string,
 	}
 
 	node = &dao.RevocableDeliveryTransaction{}
-	err = db.Select(q.Eq("CommitmentTxId", commitmentTx.Id), q.Eq("CurrState", dao.TxInfoState_SendHex), q.Eq("Owner", user.PeerId)).First(node)
+	err = db.Select(
+		q.Eq("CommitmentTxId", commitmentTx.Id),
+		q.Eq("CurrState", dao.TxInfoState_SendHex),
+		q.Eq("Owner", user.PeerId)).
+		First(node)
 	return node, err
 }
 func (service *commitmentTxManager) GetBroadcastBRTxByChannelId(jsonData string, user *bean.User) (node interface{}, err error) {
@@ -105,7 +120,11 @@ func (service *commitmentTxManager) GetLatestRDTxByChannelId(jsonData string, us
 	}
 
 	node = &dao.RevocableDeliveryTransaction{}
-	err = db.Select(q.Eq("ChannelId", chanId), q.Eq("Owner", user.PeerId)).OrderBy("CreateAt").Reverse().First(node)
+	err = db.Select(
+		q.Eq("ChannelId", chanId),
+		q.Eq("Owner", user.PeerId)).
+		OrderBy("CreateAt").Reverse().
+		First(node)
 	return node, err
 }
 
@@ -126,7 +145,11 @@ func (service *commitmentTxManager) GetLatestAllRDByChannelId(jsonData string, u
 	}
 
 	nodes = []dao.RevocableDeliveryTransaction{}
-	err = db.Select(q.Eq("ChannelId", chanId), q.Eq("Owner", user.PeerId)).OrderBy("CreateAt").Reverse().Find(&nodes)
+	err = db.Select(
+		q.Eq("ChannelId", chanId),
+		q.Eq("Owner", user.PeerId)).
+		OrderBy("CreateAt").Reverse().
+		Find(&nodes)
 	return nodes, err
 }
 
@@ -147,7 +170,11 @@ func (service *commitmentTxManager) GetLatestBRTxByChannelId(jsonData string, us
 	}
 
 	node = &dao.BreachRemedyTransaction{}
-	err = db.Select(q.Eq("ChannelId", chanId), q.Eq("Owner", user.PeerId)).OrderBy("CreateAt").Reverse().First(node)
+	err = db.Select(
+		q.Eq("ChannelId", chanId),
+		q.Eq("Owner", user.PeerId)).
+		OrderBy("CreateAt").Reverse().
+		First(node)
 	return node, err
 }
 
@@ -168,7 +195,11 @@ func (service *commitmentTxManager) GetLatestAllBRByChannelId(jsonData string, u
 	}
 
 	nodes = []dao.BreachRemedyTransaction{}
-	err = db.Select(q.Eq("ChannelId", chanId), q.Eq("Owner", user.PeerId)).OrderBy("CreateAt").Reverse().Find(&nodes)
+	err = db.Select(
+		q.Eq("ChannelId", chanId),
+		q.Eq("Owner", user.PeerId)).
+		OrderBy("CreateAt").Reverse().
+		Find(&nodes)
 	return nodes, err
 }
 
@@ -205,12 +236,21 @@ func (service *commitmentTxManager) GetItemsByChannelId(jsonData string, user *b
 	}
 
 	nodes = []dao.CommitmentTransaction{}
-	tempCount, err := db.Select(q.Eq("ChannelId", chanId), q.Eq("Owner", user.PeerId)).Count(&dao.CommitmentTransaction{})
+	tempCount, err := db.Select(
+		q.Eq("ChannelId", chanId),
+		q.Eq("Owner", user.PeerId)).
+		Count(&dao.CommitmentTransaction{})
 	if err != nil {
 		return nil, nil, err
 	}
 	count = &tempCount
-	err = db.Select(q.Eq("ChannelId", chanId), q.Eq("Owner", user.PeerId)).OrderBy("CreateAt").Reverse().Skip(int(skip)).Limit(int(pageSize)).Find(&nodes)
+	err = db.Select(
+		q.Eq("ChannelId", chanId),
+		q.Eq("Owner", user.PeerId)).
+		OrderBy("CreateAt").Reverse().
+		Skip(int(skip)).
+		Limit(int(pageSize)).
+		Find(&nodes)
 	return nodes, count, err
 }
 

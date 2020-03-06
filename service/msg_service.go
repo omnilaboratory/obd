@@ -16,6 +16,7 @@ type Message struct {
 	Data      string          `json:"data"`
 	CurrState dao.NormalState `json:"curr_state"`
 	CreateAt  time.Time       `json:"create_at"`
+	ReadAt    time.Time       `json:"read_at"`
 }
 
 type messageManage struct {
@@ -48,6 +49,7 @@ func (this *messageManage) getMsg(hashValue string) (*Message, error) {
 	err := db.Select(q.Eq("HashValue", hashValue)).First(msg)
 	if err == nil {
 		msg.CurrState = dao.NS_Finish
+		msg.ReadAt = time.Now()
 		_ = db.Update(msg)
 		return msg, nil
 	}

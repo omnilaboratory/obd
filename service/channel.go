@@ -79,7 +79,11 @@ func (c *channelManager) BobAcceptChannel(jsonData string, peerIdB string) (chan
 	}
 
 	channelInfo = &dao.ChannelInfo{}
-	err = db.Select(q.Eq("TemporaryChannelId", reqData.TemporaryChannelId), q.Eq("PeerIdB", peerIdB), q.Eq("CurrState", dao.ChannelState_Create)).First(channelInfo)
+	err = db.Select(
+		q.Eq("TemporaryChannelId", reqData.TemporaryChannelId),
+		q.Eq("PeerIdB", peerIdB),
+		q.Eq("CurrState", dao.ChannelState_Create)).
+		First(channelInfo)
 	if err != nil {
 		log.Println(err)
 		return nil, errors.New("can not find the channel " + reqData.TemporaryChannelId + " on Create state")
@@ -159,7 +163,12 @@ func (c *channelManager) DelChannelByTemporaryChanId(jsonData string) (node *dao
 // AllItem
 func (c *channelManager) AllItem(peerId string) (data []dao.ChannelInfo, err error) {
 	var infos []dao.ChannelInfo
-	err = db.Select(q.Or(q.Eq("PeerIdA", peerId), q.Eq("PeerIdB", peerId))).OrderBy("CreateAt").Reverse().Find(&infos)
+	err = db.Select(
+		q.Or(
+			q.Eq("PeerIdA", peerId),
+			q.Eq("PeerIdB", peerId))).
+		OrderBy("CreateAt").Reverse().
+		Find(&infos)
 	return infos, err
 }
 func (c *channelManager) GetChannelInfoByChannelId(jsonData string, peerId string) (info *dao.ChannelInfo, err error) {
@@ -173,7 +182,12 @@ func (c *channelManager) GetChannelInfoByChannelId(jsonData string, peerId strin
 		channelId[index] = byte(value.Num)
 	}
 	info = &dao.ChannelInfo{}
-	err = db.Select(q.Eq("ChannelId", channelId), q.Or(q.Eq("PeerIdA", peerId), q.Eq("PeerIdB", peerId))).First(info)
+	err = db.Select(
+		q.Eq("ChannelId", channelId),
+		q.Or(
+			q.Eq("PeerIdA", peerId),
+			q.Eq("PeerIdB", peerId))).
+		First(info)
 	return info, err
 }
 func (c *channelManager) GetChannelInfoById(jsonData string, peerId string) (info *dao.ChannelInfo, err error) {
@@ -182,7 +196,12 @@ func (c *channelManager) GetChannelInfoById(jsonData string, peerId string) (inf
 		return nil, err
 	}
 	info = &dao.ChannelInfo{}
-	err = db.Select(q.Eq("Id", id), q.Or(q.Eq("PeerIdA", peerId), q.Eq("PeerIdB", peerId))).First(info)
+	err = db.Select(
+		q.Eq("Id", id),
+		q.Or(
+			q.Eq("PeerIdA", peerId),
+			q.Eq("PeerIdB", peerId))).
+		First(info)
 	return info, err
 }
 
@@ -209,7 +228,10 @@ func (c *channelManager) ForceCloseChannel(jsonData string, user *bean.User) (in
 	}
 
 	channelInfo := &dao.ChannelInfo{}
-	err = db.Select(q.Eq("ChannelId", reqData.ChannelId), q.Eq("CurrState", dao.ChannelState_CanUse)).First(channelInfo)
+	err = db.Select(
+		q.Eq("ChannelId", reqData.ChannelId),
+		q.Eq("CurrState", dao.ChannelState_CanUse)).
+		First(channelInfo)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -243,7 +265,11 @@ func (c *channelManager) ForceCloseChannel(jsonData string, user *bean.User) (in
 	}
 
 	lastRevocableDeliveryTx := &dao.RevocableDeliveryTransaction{}
-	err = db.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("Owner", user.PeerId)).OrderBy("CreateAt").Reverse().First(lastRevocableDeliveryTx)
+	err = db.Select(
+		q.Eq("ChannelId", channelInfo.ChannelId),
+		q.Eq("Owner", user.PeerId)).
+		OrderBy("CreateAt").Reverse().
+		First(lastRevocableDeliveryTx)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -313,14 +339,22 @@ func (c *channelManager) SendBreachRemedyTransaction(jsonData string, user *bean
 	}
 
 	channelInfo := &dao.ChannelInfo{}
-	err = db.Select(q.Eq("ChannelId", reqData.ChannelId), q.Eq("CurrState", dao.ChannelState_Close)).First(channelInfo)
+	err = db.Select(
+		q.Eq("ChannelId", reqData.ChannelId),
+		q.Eq("CurrState", dao.ChannelState_Close)).
+		First(channelInfo)
 	if err != nil {
 		log.Println(err)
 		return nil, err
 	}
 
 	lastBRTx := &dao.BreachRemedyTransaction{}
-	err = db.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("CurrState", dao.TxInfoState_CreateAndSign), q.Eq("Owner", user.PeerId)).OrderBy("CreateAt").Reverse().First(lastBRTx)
+	err = db.Select(
+		q.Eq("ChannelId", channelInfo.ChannelId),
+		q.Eq("CurrState", dao.TxInfoState_CreateAndSign),
+		q.Eq("Owner", user.PeerId)).
+		OrderBy("CreateAt").Reverse().
+		First(lastBRTx)
 	if err != nil {
 		err = errors.New("not found the latest br")
 		log.Println(err)
@@ -357,7 +391,10 @@ func (c *channelManager) RequestCloseChannel(jsonData string, user *bean.User) (
 	}
 
 	channelInfo := &dao.ChannelInfo{}
-	err = db.Select(q.Eq("ChannelId", reqData.ChannelId), q.Eq("CurrState", dao.ChannelState_CanUse)).First(channelInfo)
+	err = db.Select(
+		q.Eq("ChannelId", reqData.ChannelId),
+		q.Eq("CurrState", dao.ChannelState_CanUse)).
+		First(channelInfo)
 	if err != nil {
 		log.Println(err)
 		return nil, nil, err
@@ -423,14 +460,21 @@ func (c *channelManager) CloseChannelSign(jsonData string, user *bean.User) (int
 	}
 
 	closeChannelStarterData := &dao.CloseChannel{}
-	err = db.Select(q.Eq("ChannelId", reqData.ChannelId), q.Eq("CurrState", 0), q.Eq("RequestHex", reqData.RequestCloseChannelHash)).First(closeChannelStarterData)
+	err = db.Select(
+		q.Eq("ChannelId", reqData.ChannelId),
+		q.Eq("CurrState", 0),
+		q.Eq("RequestHex", reqData.RequestCloseChannelHash)).
+		First(closeChannelStarterData)
 	if err != nil {
 		log.Println(err)
 		return nil, nil, err
 	}
 
 	channelInfo := &dao.ChannelInfo{}
-	err = db.Select(q.Eq("ChannelId", reqData.ChannelId), q.Eq("CurrState", dao.ChannelState_CanUse)).First(channelInfo)
+	err = db.Select(
+		q.Eq("ChannelId", reqData.ChannelId),
+		q.Eq("CurrState", dao.ChannelState_CanUse)).
+		First(channelInfo)
 	if err != nil {
 		log.Println(err)
 		return nil, nil, err
@@ -473,7 +517,11 @@ func (c *channelManager) CloseChannelSign(jsonData string, user *bean.User) (int
 	}
 
 	lastRevocableDeliveryTx := &dao.RevocableDeliveryTransaction{}
-	err = db.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("Owner", targetUser)).OrderBy("CreateAt").Reverse().First(lastRevocableDeliveryTx)
+	err = db.Select(
+		q.Eq("ChannelId", channelInfo.ChannelId),
+		q.Eq("Owner", targetUser)).
+		OrderBy("CreateAt").Reverse().
+		First(lastRevocableDeliveryTx)
 	if err != nil {
 		log.Println(err)
 		return nil, nil, err

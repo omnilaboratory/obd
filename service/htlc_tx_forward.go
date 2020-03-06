@@ -580,7 +580,11 @@ func (service *htlcForwardTxManager) SenderBeginCreateHtlcCommitmentTx(msgData s
 
 	// get the funding transaction
 	var fundingTransaction = &dao.FundingTransaction{}
-	err = dbTx.Select(q.Eq("ChannelId", currChannelInfo.ChannelId), q.Eq("CurrState", dao.FundingTransactionState_Accept)).OrderBy("CreateAt").Reverse().First(fundingTransaction)
+	err = dbTx.Select(
+		q.Eq("ChannelId", currChannelInfo.ChannelId),
+		q.Eq("CurrState", dao.FundingTransactionState_Accept)).
+		OrderBy("CreateAt").Reverse().
+		First(fundingTransaction)
 	if err != nil {
 		log.Println(err)
 		return nil, "", err
@@ -657,7 +661,11 @@ func (service *htlcForwardTxManager) htlcCreateAliceSideTxs(tx storm.Node, chann
 
 	//当前的承诺交易已经作废，因为上一步已经为他创建了各种BR
 	var lastCommitmentATx = &dao.CommitmentTransaction{}
-	err := tx.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("Owner", owner)).OrderBy("CreateAt").Reverse().First(lastCommitmentATx)
+	err := tx.Select(
+		q.Eq("ChannelId", channelInfo.ChannelId),
+		q.Eq("Owner", owner)).
+		OrderBy("CreateAt").Reverse().
+		First(lastCommitmentATx)
 	if err != nil {
 		log.Println(err)
 		return nil, err

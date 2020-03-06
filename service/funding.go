@@ -493,9 +493,18 @@ func (service *fundingTransactionManager) AssetFundingSigned(jsonData string, si
 	}
 
 	channelInfo := &dao.ChannelInfo{}
-	err = db.Select(q.Eq("ChannelId", reqData.ChannelId), q.Eq("CurrState", dao.ChannelState_CanUse)).First(channelInfo)
+	err = db.Select(
+		q.Eq("ChannelId", reqData.ChannelId),
+		q.Eq("CurrState", dao.ChannelState_CanUse)).
+		First(channelInfo)
 	if err != nil {
 		log.Println("channel not find")
+		return nil, err
+	}
+
+	//防止多次充值
+	if channelInfo.PropertyId > 0 {
+		log.Println("do not fund asset again ")
 		return nil, err
 	}
 
@@ -506,7 +515,10 @@ func (service *fundingTransactionManager) AssetFundingSigned(jsonData string, si
 	}
 
 	var fundingTransaction = &dao.FundingTransaction{}
-	err = db.Select(q.Eq("ChannelId", reqData.ChannelId), q.Eq("CurrState", dao.FundingTransactionState_Create)).First(fundingTransaction)
+	err = db.Select(
+		q.Eq("ChannelId", reqData.ChannelId),
+		q.Eq("CurrState", dao.FundingTransactionState_Create)).
+		First(fundingTransaction)
 	if err != nil {
 		log.Println(err)
 		return nil, err

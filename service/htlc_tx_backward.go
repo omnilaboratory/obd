@@ -456,7 +456,11 @@ func htlcCreateExecutionDelivery(tx storm.Node, channelInfo dao.ChannelInfo, fun
 	he1x.OutAmount = commitmentTxInfo.AmountToHtlc
 
 	henxTx := &dao.HTLCExecutionDeliveryOfH{}
-	err = tx.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("CommitmentTxId", commitmentTxInfo.Id), q.Eq("Owner", owner)).First(henxTx)
+	err = tx.Select(
+		q.Eq("ChannelId", channelInfo.ChannelId),
+		q.Eq("CommitmentTxId", commitmentTxInfo.Id),
+		q.Eq("Owner", owner)).
+		First(henxTx)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -521,7 +525,11 @@ func createHtlcExecution(tx storm.Node, channelInfo dao.ChannelInfo, fundingTran
 	}
 
 	henxTx := &dao.HTLCExecutionDeliveryOfH{}
-	err = tx.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("CommitmentTxId", commitmentTxInfo.Id), q.Eq("Owner", owner)).First(henxTx)
+	err = tx.Select(
+		q.Eq("ChannelId", channelInfo.ChannelId),
+		q.Eq("CommitmentTxId", commitmentTxInfo.Id),
+		q.Eq("Owner", owner)).
+		First(henxTx)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -577,7 +585,12 @@ func createHtlcRDForR(tx storm.Node, channelInfo dao.ChannelInfo,
 		outAddress = channelInfo.AddressA
 	}
 
-	count, _ := tx.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("CommitmentTxId", he1x.Id), q.Eq("Owner", owner), q.Eq("RDType", 1)).Count(&dao.RevocableDeliveryTransaction{})
+	count, _ := tx.Select(
+		q.Eq("ChannelId", channelInfo.ChannelId),
+		q.Eq("CommitmentTxId", he1x.Id),
+		q.Eq("Owner", owner),
+		q.Eq("RDType", 1)).
+		Count(&dao.RevocableDeliveryTransaction{})
 	if count > 0 {
 		return nil, errors.New("already create")
 	}

@@ -125,6 +125,13 @@ func (service *htlcCloseTxManager) RequestCloseHtlc(msgData string, user bean.Us
 			return nil, "", err
 		}
 	}
+
+	msgHash := MessageService.saveMsg(user.PeerId, targetUser, info.RequestHash)
+	if tool.CheckIsString(&msgHash) == false {
+		return nil, "", errors.New("fail to save msgHash")
+	}
+	info.RequestHash = msgHash
+
 	return info, targetUser, nil
 }
 
@@ -143,37 +150,47 @@ func (service *htlcCloseTxManager) CloseHTLCSigned(msgData string, user bean.Use
 
 	// region check data
 	if tool.CheckIsString(&reqData.RequestCloseHtlcHash) == false {
-		err = errors.New("empty RequestCloseHtlcHash")
+		err = errors.New("empty request_close_htlc_hash")
 		log.Println(err)
 		return nil, "", err
 	}
+
+	message, err := MessageService.getMsg(reqData.RequestCloseHtlcHash)
+	if err != nil {
+		return nil, "", errors.New("wrong request_close_htlc_hash")
+	}
+	if message.Receiver != user.PeerId {
+		return nil, "", errors.New("you are not the operator")
+	}
+	reqData.RequestCloseHtlcHash = message.Data
+
 	if tool.CheckIsString(&reqData.CurrRsmcTempAddressPubKey) == false {
-		err = errors.New("empty CurrRsmcTempAddressPubKey")
+		err = errors.New("empty curr_rsmc_temp_address_pub_key")
 		log.Println(err)
 		return nil, "", err
 	}
 	if tool.CheckIsString(&reqData.CurrRsmcTempAddressPrivateKey) == false {
-		err = errors.New("empty CurrRsmcTempAddressPrivateKey")
+		err = errors.New("empty curr_rsmc_temp_address_private_key")
 		log.Println(err)
 		return nil, "", err
 	}
 	if tool.CheckIsString(&reqData.LastHtlcTempAddressForHtnxPrivateKey) == false {
-		err = errors.New("empty LastHtlcTempAddressForHtnxPrivateKey")
+		err = errors.New("empty last_htlc_temp_address_for_htnx_private_key")
 		log.Println(err)
 		return nil, "", err
 	}
 	if tool.CheckIsString(&reqData.LastHtlcTempAddressPrivateKey) == false {
-		err = errors.New("empty LastHtlcTempAddressPrivateKey")
+		err = errors.New("empty last_htlc_temp_address_private_key")
 		log.Println(err)
 		return nil, "", err
 	}
 	if tool.CheckIsString(&reqData.LastRsmcTempAddressPrivateKey) == false {
-		err = errors.New("empty LastRsmcTempAddressPrivateKey")
+		err = errors.New("empty last_rsmc_temp_address_private_key")
 		log.Println(err)
 		return nil, "", err
 	}
 	if tool.CheckIsString(&reqData.ChannelAddressPrivateKey) == false {
-		err = errors.New("empty ChannelAddressPrivateKey")
+		err = errors.New("empty channel_address_private_key")
 		log.Println(err)
 		return nil, "", err
 	}
@@ -181,7 +198,10 @@ func (service *htlcCloseTxManager) CloseHTLCSigned(msgData string, user bean.Use
 
 	// region query data
 	dataFromCloseOpStarter := dao.HtlcRequestCloseCurrTxInfo{}
-	err = db.Select(q.Eq("RequestHash", reqData.RequestCloseHtlcHash), q.Eq("CurrState", dao.NS_Create)).First(&dataFromCloseOpStarter)
+	err = db.Select(
+		q.Eq("RequestHash", reqData.RequestCloseHtlcHash),
+		q.Eq("CurrState", dao.NS_Create)).
+		First(&dataFromCloseOpStarter)
 	if err != nil {
 		log.Println(err)
 		return nil, "", err
@@ -194,7 +214,10 @@ func (service *htlcCloseTxManager) CloseHTLCSigned(msgData string, user bean.Use
 	}
 
 	channelInfo := dao.ChannelInfo{}
-	err = db.Select(q.Eq("ChannelId", commitmentTxInfo.ChannelId), q.Eq("CurrState", dao.ChannelState_HtlcBegin)).First(&channelInfo)
+	err = db.Select(
+		q.Eq("ChannelId", commitmentTxInfo.ChannelId),
+		q.Eq("CurrState", dao.ChannelState_HtlcBegin)).
+		First(&channelInfo)
 	if err != nil {
 		log.Println(err)
 		return nil, "", err
@@ -202,14 +225,22 @@ func (service *htlcCloseTxManager) CloseHTLCSigned(msgData string, user bean.Use
 
 	// get the funding transaction
 	var fundingTransaction = &dao.FundingTransaction{}
-	err = db.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("CurrState", dao.FundingTransactionState_Accept)).OrderBy("CreateAt").Reverse().First(fundingTransaction)
+	err = db.Select(
+		q.Eq("ChannelId", channelInfo.ChannelId),
+		q.Eq("CurrState", dao.FundingTransactionState_Accept)).
+		OrderBy("CreateAt").Reverse().
+		First(fundingTransaction)
 	if err != nil {
 		log.Println(err)
 		return nil, "", err
 	}
 
 	ht1aOrHe1b := dao.HTLCTimeoutTxForAAndExecutionForB{}
-	err = db.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("CommitmentTxId", commitmentTxInfo.Id), q.Eq("Owner", user.PeerId)).First(&ht1aOrHe1b)
+	err = db.Select(
+		q.Eq("ChannelId", channelInfo.ChannelId),
+		q.Eq("CommitmentTxId", commitmentTxInfo.Id),
+		q.Eq("Owner", user.PeerId)).
+		First(&ht1aOrHe1b)
 	if err != nil {
 		log.Println(err)
 		return nil, "", err
@@ -611,7 +642,13 @@ func createAliceSideBRTxs(tx storm.Node, channelInfo dao.ChannelInfo, isAliceExe
 	}
 
 	lastRDTransaction := &dao.RevocableDeliveryTransaction{}
-	err = tx.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("Owner", owner), q.Eq("CommitmentTxId", lastCommitmentTxInfo.Id), q.Eq("CurrState", dao.TxInfoState_CreateAndSign)).OrderBy("CreateAt").Reverse().First(lastRDTransaction)
+	err = tx.Select(
+		q.Eq("ChannelId", channelInfo.ChannelId),
+		q.Eq("Owner", owner),
+		q.Eq("CommitmentTxId", lastCommitmentTxInfo.Id),
+		q.Eq("CurrState", dao.TxInfoState_CreateAndSign)).
+		OrderBy("CreateAt").Reverse().
+		First(lastRDTransaction)
 	if err != nil {
 		lastRDTransaction = nil
 	}
@@ -628,7 +665,12 @@ func createAliceSideBRTxs(tx storm.Node, channelInfo dao.ChannelInfo, isAliceExe
 		return nil, err
 	}
 	htrd := &dao.RevocableDeliveryTransaction{}
-	err = tx.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("CommitmentTxId", htOrHeTx.Id), q.Eq("Owner", owner), q.Eq("RDType", 1)).First(htrd)
+	err = tx.Select(
+		q.Eq("ChannelId", channelInfo.ChannelId),
+		q.Eq("CommitmentTxId", htOrHeTx.Id),
+		q.Eq("Owner", owner),
+		q.Eq("RDType", 1)).
+		First(htrd)
 	if err != nil {
 		err = errors.New("not found HTRD1a from db")
 		log.Println(err)
@@ -636,7 +678,10 @@ func createAliceSideBRTxs(tx storm.Node, channelInfo dao.ChannelInfo, isAliceExe
 	}
 
 	// region create BR1a
-	count, _ := tx.Select(q.Eq("CommitmentTxId", lastCommitmentTxInfo.Id), q.Eq("Owner", owner)).Count(&dao.BreachRemedyTransaction{})
+	count, _ := tx.Select(
+		q.Eq("CommitmentTxId", lastCommitmentTxInfo.Id),
+		q.Eq("Owner", owner)).
+		Count(&dao.BreachRemedyTransaction{})
 	if count > 0 {
 		err = errors.New("already exist BreachRemedyTransaction ")
 		log.Println(err)
@@ -699,7 +744,10 @@ func createAliceSideBRTxs(tx storm.Node, channelInfo dao.ChannelInfo, isAliceExe
 	// endregion
 
 	// region create HBR1a
-	count, _ = tx.Select(q.Eq("CommitmentTxId", lastCommitmentTxInfo.Id), q.Eq("Owner", owner)).Count(&dao.HTLCBreachRemedyTransaction{})
+	count, _ = tx.Select(
+		q.Eq("CommitmentTxId", lastCommitmentTxInfo.Id),
+		q.Eq("Owner", owner)).
+		Count(&dao.HTLCBreachRemedyTransaction{})
 	if count > 0 {
 		err = errors.New("already create HTLCBreachRemedyTransaction")
 		return nil, err
@@ -862,7 +910,13 @@ func createBobSideBRTxs(tx storm.Node, channelInfo dao.ChannelInfo, isAliceExecu
 	}
 
 	lastRDTransaction := &dao.RevocableDeliveryTransaction{}
-	err = tx.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("Owner", owner), q.Eq("CommitmentTxId", lastCommitmentTxInfo.Id), q.Eq("CurrState", dao.TxInfoState_CreateAndSign)).OrderBy("CreateAt").Reverse().First(lastRDTransaction)
+	err = tx.Select(
+		q.Eq("ChannelId", channelInfo.ChannelId),
+		q.Eq("Owner", owner),
+		q.Eq("CommitmentTxId", lastCommitmentTxInfo.Id),
+		q.Eq("CurrState", dao.TxInfoState_CreateAndSign)).
+		OrderBy("CreateAt").Reverse().
+		First(lastRDTransaction)
 	if err != nil {
 		lastRDTransaction = nil
 	}
@@ -878,7 +932,12 @@ func createBobSideBRTxs(tx storm.Node, channelInfo dao.ChannelInfo, isAliceExecu
 		return nil, err
 	}
 	htrd := &dao.RevocableDeliveryTransaction{}
-	err = tx.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("CommitmentTxId", htOrHeTx.Id), q.Eq("Owner", owner), q.Eq("RDType", 1)).First(htrd)
+	err = tx.Select(
+		q.Eq("ChannelId", channelInfo.ChannelId),
+		q.Eq("CommitmentTxId", htOrHeTx.Id),
+		q.Eq("Owner", owner),
+		q.Eq("RDType", 1)).
+		First(htrd)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -887,7 +946,10 @@ func createBobSideBRTxs(tx storm.Node, channelInfo dao.ChannelInfo, isAliceExecu
 	// region create BR1b
 
 	//如果已经创建过了，return
-	count, _ := tx.Select(q.Eq("CommitmentTxId", lastCommitmentTxInfo.Id), q.Eq("Owner", owner)).Count(&dao.BreachRemedyTransaction{})
+	count, _ := tx.Select(
+		q.Eq("CommitmentTxId", lastCommitmentTxInfo.Id),
+		q.Eq("Owner", owner)).
+		Count(&dao.BreachRemedyTransaction{})
 	if count > 0 {
 		err = errors.New("already create BreachRemedyTransaction ")
 		return nil, err
@@ -950,7 +1012,10 @@ func createBobSideBRTxs(tx storm.Node, channelInfo dao.ChannelInfo, isAliceExecu
 	// endregion
 
 	// region create HBR1b
-	count, _ = tx.Select(q.Eq("CommitmentTxId", lastCommitmentTxInfo.Id), q.Eq("Owner", owner)).Count(&dao.HTLCBreachRemedyTransaction{})
+	count, _ = tx.Select(
+		q.Eq("CommitmentTxId", lastCommitmentTxInfo.Id),
+		q.Eq("Owner", owner)).
+		Count(&dao.HTLCBreachRemedyTransaction{})
 	if count > 0 {
 		err = errors.New("already create HTLCBreachRemedyTransaction")
 		return nil, err
@@ -1103,7 +1168,10 @@ func (service *htlcCloseTxManager) RequestCloseChannel(msgData string, user bean
 	}
 
 	channelInfo := &dao.ChannelInfo{}
-	err = db.Select(q.Eq("ChannelId", reqData.ChannelId), q.Eq("CurrState", dao.ChannelState_HtlcBegin)).First(channelInfo)
+	err = db.Select(
+		q.Eq("ChannelId", reqData.ChannelId),
+		q.Eq("CurrState", dao.ChannelState_HtlcBegin)).
+		First(channelInfo)
 	if err != nil {
 		log.Println(err)
 		return nil, "", err
@@ -1115,7 +1183,12 @@ func (service *htlcCloseTxManager) RequestCloseChannel(msgData string, user bean
 	}
 
 	lastCommitmentTx := &dao.CommitmentTransaction{}
-	err = db.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("TxType", dao.CommitmentTransactionType_Htlc), q.Eq("Owner", user.PeerId)).OrderBy("CreateAt").Reverse().First(lastCommitmentTx)
+	err = db.Select(
+		q.Eq("ChannelId", channelInfo.ChannelId),
+		q.Eq("TxType", dao.CommitmentTransactionType_Htlc),
+		q.Eq("Owner", user.PeerId)).
+		OrderBy("CreateAt").Reverse().
+		First(lastCommitmentTx)
 	if err != nil {
 		log.Println(err)
 		return nil, "", err
@@ -1125,7 +1198,11 @@ func (service *htlcCloseTxManager) RequestCloseChannel(msgData string, user bean
 	closeChannel.ChannelId = reqData.ChannelId
 	closeChannel.Owner = user.PeerId
 	closeChannel.CurrState = 0
-	count, _ := db.Select(q.Eq("ChannelId", closeChannel.ChannelId), q.Eq("Owner", closeChannel.Owner), q.Eq("CurrState", closeChannel.CurrState)).Count(closeChannel)
+	count, _ := db.Select(
+		q.Eq("ChannelId", closeChannel.ChannelId),
+		q.Eq("Owner", closeChannel.Owner),
+		q.Eq("CurrState", closeChannel.CurrState)).
+		Count(closeChannel)
 	if count == 0 {
 		dataBytes, _ := json.Marshal(closeChannel)
 		closeChannel.RequestHex = tool.SignMsgWithSha256(dataBytes)
@@ -1171,14 +1248,21 @@ func (service *htlcCloseTxManager) CloseHtlcChannelSigned(msgData string, user b
 
 	//region query data from db
 	closeOpStaterReqData := &dao.CloseChannel{}
-	err = db.Select(q.Eq("ChannelId", reqData.ChannelId), q.Eq("CurrState", 0), q.Eq("RequestHex", reqData.RequestCloseChannelHash)).First(closeOpStaterReqData)
+	err = db.Select(
+		q.Eq("ChannelId", reqData.ChannelId),
+		q.Eq("CurrState", 0),
+		q.Eq("RequestHex", reqData.RequestCloseChannelHash)).
+		First(closeOpStaterReqData)
 	if err != nil {
 		log.Println(err)
 		return nil, "", err
 	}
 
 	channelInfo := &dao.ChannelInfo{}
-	err = db.Select(q.Eq("ChannelId", reqData.ChannelId), q.Eq("CurrState", dao.ChannelState_HtlcBegin)).First(channelInfo)
+	err = db.Select(
+		q.Eq("ChannelId", reqData.ChannelId),
+		q.Eq("CurrState", dao.ChannelState_HtlcBegin)).
+		First(channelInfo)
 	if err != nil {
 		log.Println(err)
 		return nil, "", err
@@ -1270,7 +1354,11 @@ func (service *htlcCloseTxManager) CloseHtlcChannelSigned(msgData string, user b
 		if latestCommitmentTx.CurrState == dao.TxInfoState_Htlc_GetR {
 			isRsmcTx = false
 			hednx := &dao.HTLCExecutionDeliveryOfR{}
-			err = tx.Select(q.Eq("CommitmentTxId", latestCommitmentTx.Id), q.Eq("CurrState", dao.TxInfoState_CreateAndSign), q.Eq("Owner", closeOpStarter)).First(hednx)
+			err = tx.Select(
+				q.Eq("CommitmentTxId", latestCommitmentTx.Id),
+				q.Eq("CurrState", dao.TxInfoState_CreateAndSign),
+				q.Eq("Owner", closeOpStarter)).
+				First(hednx)
 			if err == nil {
 				if tool.CheckIsString(&hednx.TxHash) {
 					_, err := rpcClient.SendRawTransaction(hednx.TxHash)
@@ -1289,7 +1377,11 @@ func (service *htlcCloseTxManager) CloseHtlcChannelSigned(msgData string, user b
 		if latestCommitmentTx.CurrState == dao.TxInfoState_Htlc_GetH {
 			isRsmcTx = false
 			htdnx := &dao.HTLCTimeoutDeliveryTxB{}
-			err = tx.Select(q.Eq("CommitmentTxId", latestCommitmentTx.Id), q.Eq("CurrState", dao.TxInfoState_CreateAndSign), q.Eq("Owner", closeOpStarter)).First(htdnx)
+			err = tx.Select(
+				q.Eq("CommitmentTxId", latestCommitmentTx.Id),
+				q.Eq("CurrState", dao.TxInfoState_CreateAndSign),
+				q.Eq("Owner", closeOpStarter)).
+				First(htdnx)
 			if err == nil {
 				if tool.CheckIsString(&htdnx.TxHash) {
 					_, err := rpcClient.SendRawTransaction(htdnx.TxHash)
@@ -1312,10 +1404,19 @@ func (service *htlcCloseTxManager) CloseHtlcChannelSigned(msgData string, user b
 	//如果转账方在超时后还没有得到R,或者接收方得到R后想直接提现
 	if isRsmcTx {
 		htnx := &dao.HTLCTimeoutTxForAAndExecutionForB{}
-		err = tx.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("CommitmentTxId", latestCommitmentTx.Id), q.Eq("Owner", closeOpStarter), q.Eq("CurrState", dao.TxInfoState_CreateAndSign)).First(htnx)
+		err = tx.Select(
+			q.Eq("ChannelId", channelInfo.ChannelId),
+			q.Eq("CommitmentTxId", latestCommitmentTx.Id),
+			q.Eq("Owner", closeOpStarter),
+			q.Eq("CurrState", dao.TxInfoState_CreateAndSign)).
+			First(htnx)
 		if err == nil {
 			htrd := &dao.RevocableDeliveryTransaction{}
-			err = tx.Select(q.Eq("CommitmentTxId", htnx.Id), q.Eq("Owner", closeOpStarter), q.Eq("RDType", 1), q.Eq("CurrState", dao.TxInfoState_CreateAndSign)).First(htrd)
+			err = tx.Select(
+				q.Eq("CommitmentTxId", htnx.Id),
+				q.Eq("Owner", closeOpStarter), q.Eq("RDType", 1),
+				q.Eq("CurrState", dao.TxInfoState_CreateAndSign)).
+				First(htrd)
 			if err == nil {
 				if tool.CheckIsString(&htnx.RSMCTxHash) {
 					_, err := rpcClient.SendRawTransaction(htnx.RSMCTxHash)
@@ -1393,7 +1494,9 @@ func (service *htlcCloseTxManager) CloseHtlcChannelSigned(msgData string, user b
 
 func addHT1aTxToWaitDB(tx storm.Node, htnx *dao.HTLCTimeoutTxForAAndExecutionForB, htrd *dao.RevocableDeliveryTransaction) error {
 	node := &dao.RDTxWaitingSend{}
-	count, err := tx.Select(q.Eq("TransactionHex", htnx.RSMCTxHash)).Count(node)
+	count, err := tx.Select(
+		q.Eq("TransactionHex", htnx.RSMCTxHash)).
+		Count(node)
 	if err == nil {
 		return err
 	}
@@ -1430,7 +1533,9 @@ func addHTRD1aTxToWaitDB(htnxIdAndHtnxRdId []int) error {
 	}
 
 	node := &dao.RDTxWaitingSend{}
-	count, err := db.Select(q.Eq("TransactionHex", htrd.TxHash)).Count(node)
+	count, err := db.Select(
+		q.Eq("TransactionHex", htrd.TxHash)).
+		Count(node)
 	if err == nil {
 		return err
 	}
@@ -1457,7 +1562,9 @@ func addHTRD1aTxToWaitDB(htnxIdAndHtnxRdId []int) error {
 //htlc timeout Delivery 1b
 func addHTDnxTxToWaitDB(tx storm.Node, txInfo *dao.HTLCTimeoutDeliveryTxB) (err error) {
 	node := &dao.RDTxWaitingSend{}
-	count, err := tx.Select(q.Eq("TransactionHex", txInfo.TxHash)).Count(node)
+	count, err := tx.Select(
+		q.Eq("TransactionHex", txInfo.TxHash)).
+		Count(node)
 	if err == nil {
 		return err
 	}
