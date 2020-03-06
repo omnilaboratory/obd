@@ -332,6 +332,7 @@ func (service *fundingTransactionManager) AssetFundingCreated(jsonData string, u
 		OrderBy("CreateAt").Reverse().
 		First(channelInfo)
 	if err != nil {
+		err = errors.New("not found the channelInfo " + reqData.TemporaryChannelId)
 		log.Println(err)
 		return nil, err
 	}
@@ -361,11 +362,12 @@ func (service *fundingTransactionManager) AssetFundingCreated(jsonData string, u
 
 	fundingTransaction = &dao.FundingTransaction{}
 	count := 0
-	if tool.CheckIsString(&channelInfo.ChannelId) == false {
+	if tool.CheckIsString(&channelInfo.ChannelId) {
 		count, _ = db.Select(
 			q.Eq("ChannelId", channelInfo.ChannelId)).
 			Count(fundingTransaction)
 	}
+
 	if count == 0 {
 		if tool.CheckIsString(&reqData.FundingTxHex) == false {
 			err = errors.New("wrong TxHash ")
@@ -766,7 +768,7 @@ func (service *fundingTransactionManager) AssetFundingSigned(jsonData string, si
 		return nil, err
 	}
 
-	return fundingTransaction, err
+	return fundingTransaction, nil
 }
 
 func (service *fundingTransactionManager) ItemByTempId(jsonData string) (node *dao.FundingTransaction, err error) {
