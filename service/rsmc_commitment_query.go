@@ -26,7 +26,9 @@ func (service *commitmentTxManager) GetLatestCommitmentTxByChannelId(jsonData st
 	}
 
 	channelInfo := &dao.ChannelInfo{}
-	err = db.Select(q.Eq("ChannelId", reqData.ChannelId)).First(channelInfo)
+	err = db.Select(
+		q.Eq("ChannelId", reqData.ChannelId)).
+		First(channelInfo)
 	if err != nil {
 		return nil, err
 	}
@@ -62,7 +64,9 @@ func (service *commitmentTxManager) GetBroadcastCommitmentTxByChannelId(jsonData
 	}
 
 	channelInfo := &dao.ChannelInfo{}
-	err = db.Select(q.Eq("ChannelId", reqData.ChannelId)).First(channelInfo)
+	err = db.Select(
+		q.Eq("ChannelId", reqData.ChannelId)).
+		First(channelInfo)
 	if err != nil {
 		return nil, err
 	}
@@ -99,7 +103,9 @@ func (service *commitmentTxManager) GetBroadcastBRTxByChannelId(jsonData string,
 	}
 
 	node = &dao.BreachRemedyTransaction{}
-	err = db.Select(q.Eq("CommitmentTxId", commitmentTx.Id)).First(node)
+	err = db.Select(
+		q.Eq("CommitmentTxId", commitmentTx.Id)).
+		First(node)
 	return node, err
 }
 
@@ -114,7 +120,9 @@ func (service *commitmentTxManager) GetLatestRDTxByChannelId(jsonData string, us
 	}
 
 	channelInfo := &dao.ChannelInfo{}
-	err = db.Select(q.Eq("ChannelId", chanId)).First(channelInfo)
+	err = db.Select(
+		q.Eq("ChannelId", chanId)).
+		First(channelInfo)
 	if err != nil {
 		return nil, err
 	}
@@ -139,7 +147,9 @@ func (service *commitmentTxManager) GetLatestAllRDByChannelId(jsonData string, u
 	}
 
 	channelInfo := &dao.ChannelInfo{}
-	err = db.Select(q.Eq("ChannelId", chanId)).First(channelInfo)
+	err = db.Select(
+		q.Eq("ChannelId", chanId)).
+		First(channelInfo)
 	if err != nil {
 		return nil, err
 	}
@@ -164,7 +174,9 @@ func (service *commitmentTxManager) GetLatestBRTxByChannelId(jsonData string, us
 	}
 
 	channelInfo := &dao.ChannelInfo{}
-	err = db.Select(q.Eq("ChannelId", chanId)).First(channelInfo)
+	err = db.Select(
+		q.Eq("ChannelId", chanId)).
+		First(channelInfo)
 	if err != nil {
 		return nil, err
 	}
@@ -189,7 +201,9 @@ func (service *commitmentTxManager) GetLatestAllBRByChannelId(jsonData string, u
 	}
 
 	channelInfo := &dao.ChannelInfo{}
-	err = db.Select(q.Eq("ChannelId", chanId)).First(channelInfo)
+	err = db.Select(
+		q.Eq("ChannelId", chanId)).
+		First(channelInfo)
 	if err != nil {
 		return nil, err
 	}
@@ -215,7 +229,9 @@ func (service *commitmentTxManager) GetItemsByChannelId(jsonData string, user *b
 	}
 
 	channelInfo := &dao.ChannelInfo{}
-	err = db.Select(q.Eq("ChannelId", chanId)).First(channelInfo)
+	err = db.Select(
+		q.Eq("ChannelId", chanId)).
+		First(channelInfo)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -260,7 +276,9 @@ func (service *commitmentTxManager) GetItemById(id int) (node *dao.CommitmentTra
 		return nil, err
 	}
 	node = &dao.CommitmentTransaction{}
-	err = db.Select(q.Eq("Id", id)).First(node)
+	err = db.Select(
+		q.Eq("Id", id)).
+		First(node)
 	return node, nil
 }
 
@@ -315,13 +333,19 @@ func (service *commitmentTxSignedManager) GetItemsByChannelId(jsonData string) (
 	}
 
 	nodes = []dao.CommitmentTransaction{}
-	tempCount, err := db.Select(q.Eq("ChannelId", chanId)).Count(&dao.CommitmentTransaction{})
+	tempCount, err := db.Select(
+		q.Eq("ChannelId", chanId)).
+		Count(&dao.CommitmentTransaction{})
 	if err != nil {
 		log.Println(err)
 		return nil, nil, err
 	}
 	count = &tempCount
-	err = db.Select(q.Eq("ChannelId", chanId)).Skip(int(skip)).Limit(int(pageSize)).Find(&nodes)
+	err = db.Select(
+		q.Eq("ChannelId", chanId)).
+		Skip(int(skip)).
+		Limit(int(pageSize)).
+		Find(&nodes)
 	return nodes, count, err
 }
 
@@ -332,7 +356,9 @@ func (service *commitmentTxSignedManager) GetItemById(id int) (node *dao.Commitm
 		return nil, err
 	}
 	node = &dao.CommitmentTransaction{}
-	err = db.Select(q.Eq("Id", id)).First(node)
+	err = db.Select(
+		q.Eq("Id", id)).
+		First(node)
 	return node, nil
 }
 

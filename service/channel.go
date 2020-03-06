@@ -136,7 +136,9 @@ func (c *channelManager) GetChannelByTemporaryChanId(jsonData string) (node *dao
 // GetChannelByTemporaryChanIdArray
 func (c *channelManager) GetChannelByTemporaryChanIdArray(chanId string) (node *dao.ChannelInfo, err error) {
 	node = &dao.ChannelInfo{}
-	err = db.Select(q.Eq("TemporaryChannelId", chanId)).First(node)
+	err = db.Select(
+		q.Eq("TemporaryChannelId", chanId)).
+		First(node)
 	return node, err
 }
 
@@ -153,7 +155,9 @@ func (c *channelManager) DelChannelByTemporaryChanId(jsonData string) (node *dao
 		tempChanId[index] = byte(value.Num)
 	}
 	node = &dao.ChannelInfo{}
-	err = db.Select(q.Eq("TemporaryChannelId", tempChanId)).First(node)
+	err = db.Select(
+		q.Eq("TemporaryChannelId", tempChanId)).
+		First(node)
 	if err == nil {
 		err = db.DeleteStruct(node)
 	}
@@ -207,7 +211,11 @@ func (c *channelManager) GetChannelInfoById(jsonData string, peerId string) (inf
 
 // TotalCount
 func (c *channelManager) TotalCount(peerId string) (count int, err error) {
-	return db.Select(q.Or(q.Eq("PeerIdA", peerId), q.Eq("PeerIdB", peerId))).Count(&dao.ChannelInfo{})
+	return db.Select(
+		q.Or(
+			q.Eq("PeerIdA", peerId),
+			q.Eq("PeerIdB", peerId))).
+		Count(&dao.ChannelInfo{})
 }
 
 //ForceCloseChannel
@@ -579,7 +587,9 @@ func (c *channelManager) CloseChannelSign(jsonData string, user *bean.User) (int
 
 func addRDTxToWaitDB(tx storm.Node, lastRevocableDeliveryTx *dao.RevocableDeliveryTransaction) (err error) {
 	node := &dao.RDTxWaitingSend{}
-	count, err := tx.Select(q.Eq("TransactionHex", lastRevocableDeliveryTx.TxHash)).Count(node)
+	count, err := tx.Select(
+		q.Eq("TransactionHex", lastRevocableDeliveryTx.TxHash)).
+		Count(node)
 	if err == nil {
 		return err
 	}

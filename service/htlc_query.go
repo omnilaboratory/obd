@@ -51,7 +51,9 @@ func (service *htlcQueryManager) GetPathInfoByH(msgData string, user bean.User) 
 	}
 
 	pathInfoFromDb := &dao.HtlcPathInfo{}
-	err = db.Select(q.Eq("H", msgData)).First(pathInfoFromDb)
+	err = db.Select(
+		q.Eq("H", msgData)).
+		First(pathInfoFromDb)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -77,7 +79,10 @@ func (service *htlcQueryManager) GetRByHOfReceiver(msgData string, user bean.Use
 	}
 
 	info := &dao.HtlcRAndHInfo{}
-	err = db.Select(q.Eq("H", msgData), q.Eq("SignBy", user.PeerId)).First(info)
+	err = db.Select(
+		q.Eq("H", msgData),
+		q.Eq("SignBy", user.PeerId)).
+		First(info)
 	if err != nil {
 		log.Println(err)
 		return "", err
@@ -88,7 +93,11 @@ func (service *htlcQueryManager) GetRByHOfReceiver(msgData string, user bean.Use
 //转账发起方获取H列表
 func (service *htlcHMessageManager) GetHtlcCreatedRandHInfoList(user *bean.User) (data interface{}, err error) {
 	var rAndHInfoList []dao.HtlcRAndHInfo
-	err = db.Select(q.Eq("CreateBy", user.PeerId)).OrderBy("CreateAt").Reverse().Find(&rAndHInfoList)
+	err = db.Select(
+		q.Eq("CreateBy", user.PeerId)).
+		OrderBy("CreateAt").
+		Reverse().
+		Find(&rAndHInfoList)
 	if err != nil {
 		return nil, err
 	}
@@ -106,7 +115,10 @@ func (service *htlcHMessageManager) GetHtlcCreatedRandHInfoItemById(msgData stri
 		return nil, err
 	}
 	var rAndHInfo dao.HtlcRAndHInfo
-	err = db.Select(q.Eq("Id", id), q.Eq("CreateBy", user.PeerId)).First(&rAndHInfo)
+	err = db.Select(
+		q.Eq("Id", id),
+		q.Eq("CreateBy", user.PeerId)).
+		First(&rAndHInfo)
 	if err != nil {
 		return nil, err
 	}
@@ -117,7 +129,12 @@ func (service *htlcHMessageManager) GetHtlcCreatedRandHInfoItemById(msgData stri
 //htlc最终收款方获取HR的结构体列表
 func (service *htlcHMessageManager) GetHtlcSignedRandHInfoList(user *bean.User) (data interface{}, err error) {
 	var rAndHInfoList []dao.HtlcRAndHInfo
-	err = db.Select(q.Eq("RecipientPeerId", user.PeerId), q.Eq("SignBy", user.PeerId)).OrderBy("CreateAt").Reverse().Find(&rAndHInfoList)
+	err = db.Select(
+		q.Eq("RecipientPeerId", user.PeerId),
+		q.Eq("SignBy", user.PeerId)).
+		OrderBy("CreateAt").
+		Reverse().
+		Find(&rAndHInfoList)
 	if err != nil {
 		return nil, err
 	}
@@ -132,7 +149,10 @@ func (service *htlcHMessageManager) GetHtlcSignedRandHInfoItem(msgData string, u
 		return nil, err
 	}
 	var rAndHInfo dao.HtlcRAndHInfo
-	err = db.Select(q.Eq("Id", id), q.Eq("SignBy", user.PeerId)).First(&rAndHInfo)
+	err = db.Select(
+		q.Eq("Id", id),
+		q.Eq("SignBy", user.PeerId)).
+		First(&rAndHInfo)
 	if err != nil {
 		return nil, err
 	}

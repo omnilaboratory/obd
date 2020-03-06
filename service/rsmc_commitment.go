@@ -35,7 +35,10 @@ func (service *commitmentTxManager) CommitmentTransactionCreated(jsonData string
 	}
 
 	channelInfo := &dao.ChannelInfo{}
-	err = db.Select(q.Eq("ChannelId", data.ChannelId), q.Eq("CurrState", dao.ChannelState_CanUse)).First(channelInfo)
+	err = db.Select(
+		q.Eq("ChannelId", data.ChannelId),
+		q.Eq("CurrState", dao.ChannelState_CanUse)).
+		First(channelInfo)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -47,7 +50,12 @@ func (service *commitmentTxManager) CommitmentTransactionCreated(jsonData string
 	}
 
 	lastCommitmentTxInfo := &dao.CommitmentTransaction{}
-	err = db.Select(q.Eq("ChannelId", data.ChannelId), q.Eq("CurrState", dao.TxInfoState_CreateAndSign), q.Eq("Owner", creator.PeerId)).OrderBy("CreateAt").Reverse().First(lastCommitmentTxInfo)
+	err = db.Select(
+		q.Eq("ChannelId", data.ChannelId),
+		q.Eq("CurrState", dao.TxInfoState_CreateAndSign),
+		q.Eq("Owner", creator.PeerId)).OrderBy("CreateAt").
+		Reverse().
+		First(lastCommitmentTxInfo)
 	if err != nil {
 		return nil, nil, errors.New("not find the lastCommitmentTxInfo")
 	}
@@ -105,7 +113,11 @@ func (service *commitmentTxManager) CommitmentTransactionCreated(jsonData string
 
 	// store the request data for -352
 	var tempInfo = &dao.CommitmentTxRequestInfo{}
-	_ = db.Select(q.Eq("ChannelId", data.ChannelId), q.Eq("UserId", creator.PeerId), q.Eq("IsEnable", true)).First(tempInfo)
+	_ = db.Select(
+		q.Eq("ChannelId", data.ChannelId),
+		q.Eq("UserId", creator.PeerId),
+		q.Eq("IsEnable", true)).
+		First(tempInfo)
 	tempInfo.CommitmentTx = *data
 	tempInfo.LastTempAddressPubKey = lastCommitmentTxInfo.RSMCTempAddressPubKey
 	if tempInfo.Id == 0 {
@@ -157,7 +169,10 @@ func (service *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransact
 	}
 
 	channelInfo := &dao.ChannelInfo{}
-	err = db.Select(q.Eq("ChannelId", data.ChannelId), q.Eq("CurrState", dao.ChannelState_CanUse)).First(channelInfo)
+	err = db.Select(
+		q.Eq("ChannelId", data.ChannelId),
+		q.Eq("CurrState", dao.ChannelState_CanUse)).
+		First(channelInfo)
 	if err != nil {
 		log.Println(err)
 		return nil, nil, nil, err
@@ -187,7 +202,12 @@ func (service *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransact
 	defer service.operationFlag.Unlock()
 
 	var dataFromCreator = &dao.CommitmentTxRequestInfo{}
-	err = db.Select(q.Eq("ChannelId", data.ChannelId), q.Eq("UserId", targetUser), q.Eq("IsEnable", true)).OrderBy("CreateAt").Reverse().First(dataFromCreator)
+	err = db.Select(
+		q.Eq("ChannelId", data.ChannelId),
+		q.Eq("UserId", targetUser),
+		q.Eq("IsEnable", true)).
+		OrderBy("CreateAt").Reverse().
+		First(dataFromCreator)
 	if err != nil {
 		log.Println(err)
 		return nil, nil, &targetUser, err
@@ -200,14 +220,25 @@ func (service *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransact
 	}
 
 	var requestCommitmentTx = &dao.CommitmentTransaction{}
-	err = db.Select(q.Eq("ChannelId", data.ChannelId), q.Eq("CurrHash", data.RequestCommitmentHash), q.Eq("Owner", targetUser), q.Eq("CurrState", dao.TxInfoState_CreateAndSign)).OrderBy("CreateAt").Reverse().First(requestCommitmentTx)
+	err = db.Select(
+		q.Eq("ChannelId", data.ChannelId),
+		q.Eq("CurrHash", data.RequestCommitmentHash),
+		q.Eq("Owner", targetUser),
+		q.Eq("CurrState", dao.TxInfoState_CreateAndSign)).
+		OrderBy("CreateAt").
+		Reverse().
+		First(requestCommitmentTx)
 	if err != nil {
 		err = errors.New("not found the requested commitment tx")
 		log.Println(err)
 		return nil, nil, nil, err
 	}
 
-	dealCount, err := db.Select(q.Eq("ChannelId", data.ChannelId), q.Eq("LastHash", data.RequestCommitmentHash), q.Eq("Owner", targetUser)).Count(&dao.CommitmentTransaction{})
+	dealCount, err := db.Select(
+		q.Eq("ChannelId", data.ChannelId),
+		q.Eq("LastHash", data.RequestCommitmentHash),
+		q.Eq("Owner", targetUser)).
+		Count(&dao.CommitmentTransaction{})
 	if err != nil {
 		log.Println(err)
 		return nil, nil, &targetUser, err
@@ -288,7 +319,12 @@ func (service *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransact
 
 	// get the funding transaction
 	var fundingTransaction = &dao.FundingTransaction{}
-	err = tx.Select(q.Eq("ChannelId", data.ChannelId), q.Eq("CurrState", dao.FundingTransactionState_Accept)).OrderBy("CreateAt").Reverse().First(fundingTransaction)
+	err = tx.Select(
+		q.Eq("ChannelId", data.ChannelId),
+		q.Eq("CurrState", dao.FundingTransactionState_Accept)).
+		OrderBy("CreateAt").
+		Reverse().
+		First(fundingTransaction)
 	if err != nil {
 		log.Println(err)
 		return nil, nil, &targetUser, err
@@ -346,7 +382,9 @@ func createAliceSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFr
 	}
 
 	if lastCommitmentTx != nil {
-		count, _ := tx.Select(q.Eq("CommitmentTxId", lastCommitmentTx.Id)).Count(&dao.BreachRemedyTransaction{})
+		count, _ := tx.Select(
+			q.Eq("CommitmentTxId", lastCommitmentTx.Id)).
+			Count(&dao.BreachRemedyTransaction{})
 		if count > 0 {
 			err = errors.New("already exist BreachRemedyTransaction ")
 			return nil, err
@@ -404,7 +442,14 @@ func createAliceSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFr
 		}
 
 		lastRDTransaction := &dao.RevocableDeliveryTransaction{}
-		err = tx.Select(q.Eq("ChannelId", signData.ChannelId), q.Eq("Owner", owner), q.Eq("CommitmentTxId", lastCommitmentTx.Id), q.Eq("CurrState", dao.TxInfoState_CreateAndSign)).OrderBy("CreateAt").Reverse().First(lastRDTransaction)
+		err = tx.Select(
+			q.Eq("ChannelId", signData.ChannelId),
+			q.Eq("Owner", owner),
+			q.Eq("CommitmentTxId", lastCommitmentTx.Id),
+			q.Eq("CurrState", dao.TxInfoState_CreateAndSign)).
+			OrderBy("CreateAt").
+			Reverse().
+			First(lastRDTransaction)
 		if err != nil {
 			log.Println(err)
 			return nil, err
@@ -607,7 +652,9 @@ func createBobSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFrom
 	//So during funding procedure, on Bob side, he has no commitment transaction and revockable delivery transaction.
 	if lastCommitmentTx != nil {
 
-		count, _ := tx.Select(q.Eq("CommitmentTxId", lastCommitmentTx.Id)).Count(&dao.BreachRemedyTransaction{})
+		count, _ := tx.Select(
+			q.Eq("CommitmentTxId", lastCommitmentTx.Id)).
+			Count(&dao.BreachRemedyTransaction{})
 		if count > 0 {
 			err = errors.New("already exist BreachRemedyTransaction ")
 			return nil, err
@@ -666,7 +713,14 @@ func createBobSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFrom
 		}
 
 		lastRDTransaction := &dao.RevocableDeliveryTransaction{}
-		err = tx.Select(q.Eq("ChannelId", signData.ChannelId), q.Eq("Owner", owner), q.Eq("CommitmentTxId", lastCommitmentTx.Id), q.Eq("CurrState", dao.TxInfoState_CreateAndSign)).OrderBy("CreateAt").Reverse().First(lastRDTransaction)
+		err = tx.Select(
+			q.Eq("ChannelId", signData.ChannelId),
+			q.Eq("Owner", owner),
+			q.Eq("CommitmentTxId", lastCommitmentTx.Id),
+			q.Eq("CurrState", dao.TxInfoState_CreateAndSign)).
+			OrderBy("CreateAt").
+			Reverse().
+			First(lastRDTransaction)
 		if err != nil {
 			log.Println(err)
 			return nil, err

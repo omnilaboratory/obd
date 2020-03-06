@@ -82,7 +82,10 @@ func (service *htlcCloseTxManager) RequestCloseHtlc(msgData string, user bean.Us
 	}
 
 	channelInfo := dao.ChannelInfo{}
-	err = db.Select(q.Eq("ChannelId", commitmentTxInfo.ChannelId), q.Eq("CurrState", dao.ChannelState_HtlcBegin)).First(&channelInfo)
+	err = db.Select(
+		q.Eq("ChannelId", commitmentTxInfo.ChannelId),
+		q.Eq("CurrState", dao.ChannelState_HtlcBegin)).
+		First(&channelInfo)
 	if err != nil {
 		log.Println(err)
 		return nil, "", err
@@ -90,7 +93,11 @@ func (service *htlcCloseTxManager) RequestCloseHtlc(msgData string, user bean.Us
 	log.Println(channelInfo)
 
 	ht1aOrHe1b := dao.HTLCTimeoutTxForAAndExecutionForB{}
-	err = db.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("CommitmentTxId", commitmentTxInfo.Id), q.Eq("Owner", user.PeerId)).First(&ht1aOrHe1b)
+	err = db.Select(
+		q.Eq("ChannelId", channelInfo.ChannelId),
+		q.Eq("CommitmentTxId", commitmentTxInfo.Id),
+		q.Eq("Owner", user.PeerId)).
+		First(&ht1aOrHe1b)
 	if err != nil {
 		log.Println(err)
 		return nil, "", err
@@ -117,7 +124,11 @@ func (service *htlcCloseTxManager) RequestCloseHtlc(msgData string, user bean.Us
 	requestHash := tool.SignMsgWithSha256(infoBytes)
 	info.CreateAt = time.Now()
 	info.RequestHash = requestHash
-	count, _ := db.Select(q.Eq("ChannelId", info.ChannelId), q.Eq("CreateBy", info.CreateBy), q.Eq("CurrState", info.CurrState)).Count(&dao.HtlcRequestCloseCurrTxInfo{})
+	count, _ := db.Select(
+		q.Eq("ChannelId", info.ChannelId),
+		q.Eq("CreateBy", info.CreateBy),
+		q.Eq("CurrState", info.CurrState)).
+		Count(&dao.HtlcRequestCloseCurrTxInfo{})
 	if count == 0 {
 		err = db.Save(&info)
 		if err != nil {

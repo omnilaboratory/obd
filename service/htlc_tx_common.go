@@ -67,7 +67,12 @@ func getCarlChannelHasInterNodeBob(htlcRAndHInfo dao.HtlcRAndHInfo, aliceChannel
 
 func getAllChannels(peerId string) (channelInfos []dao.ChannelInfo) {
 	channelInfos = make([]dao.ChannelInfo, 0)
-	_ = db.Select(q.Or(q.Eq("PeerIdA", peerId), q.Eq("PeerIdB", peerId)), q.Eq("CurrState", dao.ChannelState_CanUse)).Find(&channelInfos)
+	_ = db.Select(
+		q.Or(
+			q.Eq("PeerIdA", peerId),
+			q.Eq("PeerIdB", peerId)),
+		q.Eq("CurrState", dao.ChannelState_CanUse)).
+		Find(&channelInfos)
 	return channelInfos
 }
 
@@ -83,7 +88,12 @@ func htlcAliceAbortLastRsmcCommitmentTx(tx storm.Node, channelInfo dao.ChannelIn
 
 	//针对的是Cna
 	var lastCommitmentATx = &dao.CommitmentTransaction{}
-	err := tx.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("Owner", owner)).OrderBy("CreateAt").Reverse().First(lastCommitmentATx)
+	err := tx.Select(
+		q.Eq("ChannelId", channelInfo.ChannelId),
+		q.Eq("Owner", owner)).
+		OrderBy("CreateAt").
+		Reverse().
+		First(lastCommitmentATx)
 	if err != nil {
 		return err
 	}
@@ -91,14 +101,23 @@ func htlcAliceAbortLastRsmcCommitmentTx(tx storm.Node, channelInfo dao.ChannelIn
 	// （惩罚交易：如果Alice广播这次作废的交易，因为BR交易的存在（bob才能广播），就会失去自己的钱，这个时候，对应的RD交易还需要等待1000个区块高度才能广播）
 	if lastCommitmentATx != nil {
 		//如果已经创建过了，return
-		count, _ := tx.Select(q.Eq("CommitmentTxId", lastCommitmentATx.Id)).Count(&dao.BreachRemedyTransaction{})
+		count, _ := tx.Select(
+			q.Eq("CommitmentTxId", lastCommitmentATx.Id)).
+			Count(&dao.BreachRemedyTransaction{})
 		if count > 0 {
 			err = errors.New("already exist BreachRemedyTransaction ")
 			return err
 		}
 
 		lastRDTransaction := &dao.RevocableDeliveryTransaction{}
-		err = tx.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("Owner", owner), q.Eq("CommitmentTxId", lastCommitmentATx.Id), q.Eq("CurrState", dao.TxInfoState_CreateAndSign)).OrderBy("CreateAt").Reverse().First(lastRDTransaction)
+		err = tx.Select(
+			q.Eq("ChannelId", channelInfo.ChannelId),
+			q.Eq("Owner", owner),
+			q.Eq("CommitmentTxId", lastCommitmentATx.Id),
+			q.Eq("CurrState", dao.TxInfoState_CreateAndSign)).
+			OrderBy("CreateAt").
+			Reverse().
+			First(lastRDTransaction)
 		if err != nil {
 			log.Println(err)
 			return err
@@ -192,7 +211,12 @@ func htlcBobAbortLastRsmcCommitmentTx(tx storm.Node, channelInfo dao.ChannelInfo
 
 	//针对的是Cnb
 	var lastCommitmentBTx = &dao.CommitmentTransaction{}
-	err := tx.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("Owner", owner)).OrderBy("CreateAt").Reverse().First(lastCommitmentBTx)
+	err := tx.Select(
+		q.Eq("ChannelId", channelInfo.ChannelId),
+		q.Eq("Owner", owner)).
+		OrderBy("CreateAt").
+		Reverse().
+		First(lastCommitmentBTx)
 	if err != nil {
 		lastCommitmentBTx = nil
 	}
@@ -200,7 +224,9 @@ func htlcBobAbortLastRsmcCommitmentTx(tx storm.Node, channelInfo dao.ChannelInfo
 	// （惩罚交易：如果Bob广播这次作废的交易，因为BR交易的存在（alice才能广播），bob就会失去自己的钱，这个时候，对应的RD交易还需要等待1000个区块高度才能广播）
 	if lastCommitmentBTx != nil {
 		//如果已经创建过了，return
-		count, _ := tx.Select(q.Eq("CommitmentTxId", lastCommitmentBTx.Id)).Count(&dao.BreachRemedyTransaction{})
+		count, _ := tx.Select(
+			q.Eq("CommitmentTxId", lastCommitmentBTx.Id)).
+			Count(&dao.BreachRemedyTransaction{})
 		if count > 0 {
 			err = errors.New("already exist BreachRemedyTransaction ")
 			return err
@@ -211,7 +237,14 @@ func htlcBobAbortLastRsmcCommitmentTx(tx storm.Node, channelInfo dao.ChannelInfo
 		// 如果有了新的承诺交易，而某人想耍赖，不承认新的交易，而去广播之前的交易，因为等待的1000个10分钟，通过BR就能让违反规则的人血本无归
 		// 如果没有新的交易，当前操作者也能取回自己的钱，虽然要等待1000个区块，但是也不会让自己的钱丢失
 		lastRDTransaction := &dao.RevocableDeliveryTransaction{}
-		err = tx.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("Owner", owner), q.Eq("CommitmentTxId", lastCommitmentBTx.Id), q.Eq("CurrState", dao.TxInfoState_CreateAndSign)).OrderBy("CreateAt").Reverse().First(lastRDTransaction)
+		err = tx.Select(
+			q.Eq("ChannelId", channelInfo.ChannelId),
+			q.Eq("Owner", owner),
+			q.Eq("CommitmentTxId", lastCommitmentBTx.Id),
+			q.Eq("CurrState", dao.TxInfoState_CreateAndSign)).
+			OrderBy("CreateAt").
+			Reverse().
+			First(lastRDTransaction)
 		if err != nil {
 			log.Println(err)
 			return err
@@ -413,7 +446,11 @@ func createHtlcExecutionDeliveryTxObj(tx storm.Node, owner string, channelInfo d
 	henxTx.CommitmentTxId = commitmentTxInfo.Id
 	henxTx.PropertyId = commitmentTxInfo.PropertyId
 	henxTx.Owner = owner
-	count, err := tx.Select(q.Eq("ChannelId", henxTx.ChannelId), q.Eq("CommitmentTxId", henxTx.CommitmentTxId), q.Eq("Owner", owner)).Count(henxTx)
+	count, err := tx.Select(
+		q.Eq("ChannelId", henxTx.ChannelId),
+		q.Eq("CommitmentTxId", henxTx.CommitmentTxId),
+		q.Eq("Owner", owner)).
+		Count(henxTx)
 	if err == nil {
 		if count > 0 {
 			return nil, errors.New("already exist")
@@ -593,7 +630,11 @@ func createHtlcTimeoutTxObj(tx storm.Node, owner string, channelInfo dao.Channel
 	htlcTimeoutTx.CommitmentTxId = commitmentTxInfo.Id
 	htlcTimeoutTx.PropertyId = commitmentTxInfo.PropertyId
 	htlcTimeoutTx.Owner = owner
-	count, err := tx.Select(q.Eq("ChannelId", htlcTimeoutTx.ChannelId), q.Eq("CommitmentTxId", htlcTimeoutTx.CommitmentTxId), q.Eq("Owner", owner)).Count(htlcTimeoutTx)
+	count, err := tx.Select(
+		q.Eq("ChannelId", htlcTimeoutTx.ChannelId),
+		q.Eq("CommitmentTxId", htlcTimeoutTx.CommitmentTxId),
+		q.Eq("Owner", owner)).
+		Count(htlcTimeoutTx)
 	if err == nil {
 		if count > 0 {
 			return nil, errors.New("already exist")
@@ -986,7 +1027,12 @@ func createHtlcRD(tx storm.Node, channelInfo dao.ChannelInfo, operator bean.User
 		outAddress = channelInfo.AddressB
 	}
 
-	count, _ := tx.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("CommitmentTxId", htlcTimeoutTx.Id), q.Eq("Owner", owner), q.Eq("RDType", 1)).Count(&dao.RevocableDeliveryTransaction{})
+	count, _ := tx.Select(
+		q.Eq("ChannelId", channelInfo.ChannelId),
+		q.Eq("CommitmentTxId", htlcTimeoutTx.Id),
+		q.Eq("Owner", owner),
+		q.Eq("RDType", 1)).
+		Count(&dao.RevocableDeliveryTransaction{})
 	if count > 0 {
 		return nil, errors.New("already create")
 	}
@@ -1069,7 +1115,12 @@ func createHtlcRDTxObj(owner string, channelInfo *dao.ChannelInfo, htlcTimeoutTx
 
 func getHtlcLatestCommitmentTx(channelId string, owner string) (commitmentTxInfo *dao.CommitmentTransaction, err error) {
 	commitmentTxInfo = &dao.CommitmentTransaction{}
-	err = db.Select(q.Eq("ChannelId", channelId), q.Eq("Owner", owner)).OrderBy("CreateAt").Reverse().First(commitmentTxInfo)
+	err = db.Select(
+		q.Eq("ChannelId", channelId),
+		q.Eq("Owner", owner)).
+		OrderBy("CreateAt").
+		Reverse().
+		First(commitmentTxInfo)
 	if err == nil && commitmentTxInfo.TxType != dao.CommitmentTransactionType_Htlc {
 		err = errors.New("error tx type")
 	}
