@@ -325,7 +325,7 @@ func (service *fundingTransactionManager) AssetFundingCreated(jsonData string, u
 	channelInfo := &dao.ChannelInfo{}
 	err = db.Select(
 		q.Eq("TemporaryChannelId", reqData.TemporaryChannelId),
-		//q.Eq("CurrState", dao.ChannelState_WaitFundAsset),
+		q.Eq("CurrState", dao.ChannelState_WaitFundAsset),
 		q.Or(
 			q.Eq("PeerIdA", user.PeerId),
 			q.Eq("PeerIdB", user.PeerId))).
