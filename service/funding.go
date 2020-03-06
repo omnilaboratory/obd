@@ -317,7 +317,7 @@ func (service *fundingTransactionManager) AssetFundingCreated(jsonData string, u
 		return nil, err
 	}
 
-	_, err = tool.GetPubKeyFromWifAndCheck(reqData.ChannelAddressPrivateKey, reqData.TempAddressPrivateKey)
+	_, err = tool.GetPubKeyFromWifAndCheck(reqData.ChannelAddressPrivateKey, reqData.TempAddressPubKey)
 	if err != nil {
 		return nil, err
 	}
