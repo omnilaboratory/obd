@@ -53,7 +53,7 @@ func (service *fundingTransactionManager) BTCFundingCreated(jsonData string, use
 	channelInfo := &dao.ChannelInfo{}
 	err = db.Select(
 		q.Eq("TemporaryChannelId", reqData.TemporaryChannelId),
-		q.Eq("CurrState", dao.ChannelState_CanUse),
+		q.Eq("CurrState", dao.ChannelState_WaitFundAsset),
 		q.Or(
 			q.Eq("PeerIdA", user.PeerId),
 			q.Eq("PeerIdB", user.PeerId))).
@@ -162,7 +162,7 @@ func (service *fundingTransactionManager) FundingBtcTxSigned(jsonData string, si
 	channelInfo := &dao.ChannelInfo{}
 	err = db.Select(
 		q.Eq("TemporaryChannelId", reqData.TemporaryChannelId),
-		q.Eq("CurrState", dao.ChannelState_CanUse),
+		q.Eq("CurrState", dao.ChannelState_WaitFundAsset),
 		q.Or(
 			q.Eq("PeerIdA", signer.PeerId),
 			q.Eq("PeerIdB", signer.PeerId))).
@@ -301,7 +301,7 @@ func (service *fundingTransactionManager) AssetFundingCreated(jsonData string, u
 	channelInfo := &dao.ChannelInfo{}
 	err = db.Select(
 		q.Eq("TemporaryChannelId", reqData.TemporaryChannelId),
-		q.Eq("CurrState", dao.ChannelState_CanUse),
+		q.Eq("CurrState", dao.ChannelState_WaitFundAsset),
 		q.Or(
 			q.Eq("PeerIdA", user.PeerId),
 			q.Eq("PeerIdB", user.PeerId))).
@@ -502,7 +502,7 @@ func (service *fundingTransactionManager) AssetFundingSigned(jsonData string, si
 	channelInfo := &dao.ChannelInfo{}
 	err = db.Select(
 		q.Eq("ChannelId", reqData.ChannelId),
-		q.Eq("CurrState", dao.ChannelState_CanUse)).
+		q.Eq("CurrState", dao.ChannelState_WaitFundAsset)).
 		First(channelInfo)
 	if err != nil {
 		log.Println("channel not find")
@@ -536,6 +536,7 @@ func (service *fundingTransactionManager) AssetFundingSigned(jsonData string, si
 			return nil, errors.New("wrong FundeeChannelAddressPrivateKey")
 		}
 		fundingTransaction.CurrState = dao.FundingTransactionState_Accept
+		channelInfo.CurrState = dao.ChannelState_CanUse
 	} else {
 		fundingTransaction.CurrState = dao.FundingTransactionState_Defuse
 		channelInfo.CurrState = dao.ChannelState_FundingDefuse

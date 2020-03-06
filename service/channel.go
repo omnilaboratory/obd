@@ -112,7 +112,7 @@ func (c *channelManager) BobAcceptChannel(jsonData string, peerIdB string) (chan
 		channelInfo.ChannelAddressScriptPubKey = gjson.Parse(addrInfoStr).Get("scriptPubKey").String()
 	}
 	if reqData.Approval {
-		channelInfo.CurrState = dao.ChannelState_CanUse
+		channelInfo.CurrState = dao.ChannelState_WaitFundAsset
 	} else {
 		channelInfo.CurrState = dao.ChannelState_OpenChannelDefuse
 	}

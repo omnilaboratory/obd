@@ -43,7 +43,7 @@ func (this *atomicSwapManager) AtomicSwap(msgData string, user bean.User) (outDa
 	}
 	err = db.Select(
 		q.Eq("ChannelId", reqData.ChannelIdFrom),
-		q.Eq("", dao.ChannelState_CanUse),
+		q.Eq("CurrState", dao.ChannelState_CanUse),
 		q.Or(
 			q.Eq("PeerIdA", user.PeerId),
 			q.Eq("PeerIdB", user.PeerId))).
@@ -129,7 +129,7 @@ func (this *atomicSwapManager) AtomicSwapAccepted(msgData string, user bean.User
 	}
 	err = db.Select(
 		q.Eq("ChannelId", reqData.ChannelIdFrom),
-		q.Eq("", dao.ChannelState_CanUse),
+		q.Eq("CurrState", dao.ChannelState_CanUse),
 		q.Or(
 			q.Eq("PeerIdA", user.PeerId),
 			q.Eq("PeerIdB", user.PeerId))).

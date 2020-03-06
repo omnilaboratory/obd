@@ -17,6 +17,7 @@ type ChannelState int
 
 const (
 	ChannelState_Create            ChannelState = 10
+	ChannelState_WaitFundAsset     ChannelState = 11
 	ChannelState_CanUse            ChannelState = 20
 	ChannelState_Close             ChannelState = 21
 	ChannelState_HtlcBegin         ChannelState = 22
