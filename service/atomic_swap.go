@@ -34,16 +34,32 @@ func (this *atomicSwapManager) AtomicSwap(msgData string, user bean.User) (outDa
 	if tool.CheckIsString(&reqData.RecipientPeerId) == false {
 		return nil, "", errors.New("error recipient_peer_id")
 	}
+
+	if reqData.TimeLocker < 10 {
+		return nil, "", errors.New("error time_locker")
+	}
+
 	err = FindUserIsOnline(reqData.RecipientPeerId)
 	if err != nil {
 		return nil, "", err
 	}
+
+	if reqData.RecipientPeerId == user.PeerId {
+		return nil, "", errors.New("you should not send msg to yourself")
+	}
+
 	if tool.CheckIsString(&reqData.ChannelIdFrom) == false {
 		return nil, "", errors.New("error channel_id_from")
 	}
+
+	if reqData.PropertySent < 0 {
+		return nil, "", errors.New("error property_sent")
+	}
+
 	err = db.Select(
 		q.Eq("ChannelId", reqData.ChannelIdFrom),
 		q.Eq("CurrState", dao.ChannelState_CanUse),
+		q.Eq("PropertyId", reqData.PropertySent),
 		q.Or(
 			q.Eq("PeerIdA", user.PeerId),
 			q.Eq("PeerIdB", user.PeerId))).
@@ -53,9 +69,6 @@ func (this *atomicSwapManager) AtomicSwap(msgData string, user bean.User) (outDa
 	}
 	if tool.CheckIsString(&reqData.ChannelIdTo) == false {
 		return nil, "", errors.New("error channel_id_to")
-	}
-	if reqData.PropertySent < 0 {
-		return nil, "", errors.New("error property_sent")
 	}
 	if reqData.PropertyReceived < 0 {
 		return nil, "", errors.New("error property_received")
@@ -68,19 +81,31 @@ func (this *atomicSwapManager) AtomicSwap(msgData string, user bean.User) (outDa
 	}
 
 	err = db.Select(
+		q.Eq("ChannelId", reqData.ChannelIdTo),
+		q.Eq("CurrState", dao.ChannelState_CanUse),
+		q.Eq("PropertyId", reqData.PropertyReceived),
+		q.Or(
+			q.Eq("PeerIdA", reqData.RecipientPeerId),
+			q.Eq("PeerIdB", reqData.RecipientPeerId))).
+		First(&dao.ChannelInfo{})
+	if err != nil {
+		return nil, "", errors.New("not found this channel_id_to")
+	}
+
+	err = db.Select(
 		q.Eq("CurrHash", reqData.TransactionId),
 		q.Eq("TxType", dao.CommitmentTransactionType_Htlc),
+		q.Eq("CurrState", dao.TxInfoState_Htlc_GetH),
 		q.Eq("ChannelId", reqData.ChannelIdFrom),
-		q.Eq("Owner", user.PeerId)).First(&dao.CommitmentTransaction{})
+		q.Eq("Owner", user.PeerId)).
+		First(&dao.CommitmentTransaction{})
 	if err != nil {
 		return nil, "", errors.New("error transaction_id")
-	}
-	if reqData.TimeLocker < 10 {
-		return nil, "", errors.New("error time_locker")
 	}
 
 	swapInfo := &dao.AtomicSwapInfo{}
 
+	//check if have send the same info
 	err = db.Select(
 		q.Eq("TransactionId", reqData.TransactionId),
 		q.Eq("ChannelIdFrom", reqData.ChannelIdFrom),
@@ -120,16 +145,32 @@ func (this *atomicSwapManager) AtomicSwapAccepted(msgData string, user bean.User
 	if tool.CheckIsString(&reqData.RecipientPeerId) == false {
 		return nil, "", errors.New("error recipient_peer_id")
 	}
+
+	if reqData.TimeLocker < 10 {
+		return nil, "", errors.New("error time_locker")
+	}
+
 	err = FindUserIsOnline(reqData.RecipientPeerId)
 	if err != nil {
 		return nil, "", err
 	}
+
+	if reqData.RecipientPeerId == user.PeerId {
+		return nil, "", errors.New("you should not send msg to yourself")
+	}
+
 	if tool.CheckIsString(&reqData.ChannelIdFrom) == false {
 		return nil, "", errors.New("error channel_id_from")
 	}
+
+	if reqData.PropertySent < 0 {
+		return nil, "", errors.New("error property_sent")
+	}
+
 	err = db.Select(
 		q.Eq("ChannelId", reqData.ChannelIdFrom),
 		q.Eq("CurrState", dao.ChannelState_CanUse),
+		q.Eq("PropertyId", reqData.PropertySent),
 		q.Or(
 			q.Eq("PeerIdA", user.PeerId),
 			q.Eq("PeerIdB", user.PeerId))).
@@ -137,12 +178,11 @@ func (this *atomicSwapManager) AtomicSwapAccepted(msgData string, user bean.User
 	if err != nil {
 		return nil, "", errors.New("not found this channel_id_from")
 	}
+
 	if tool.CheckIsString(&reqData.ChannelIdTo) == false {
 		return nil, "", errors.New("error channel_id_to")
 	}
-	if reqData.PropertySent < 0 {
-		return nil, "", errors.New("error property_sent")
-	}
+
 	if reqData.PropertyReceived < 0 {
 		return nil, "", errors.New("error property_received")
 	}
@@ -157,16 +197,26 @@ func (this *atomicSwapManager) AtomicSwapAccepted(msgData string, user bean.User
 	}
 
 	err = db.Select(
+		q.Eq("ChannelId", reqData.ChannelIdTo),
+		q.Eq("CurrState", dao.ChannelState_CanUse),
+		q.Eq("PropertyId", reqData.PropertyReceived),
+		q.Or(
+			q.Eq("PeerIdA", reqData.RecipientPeerId),
+			q.Eq("PeerIdB", reqData.RecipientPeerId))).
+		First(&dao.ChannelInfo{})
+	if err != nil {
+		return nil, "", errors.New("not found this channel_id_to")
+	}
+
+	err = db.Select(
 		q.Eq("CurrHash", reqData.TransactionId),
 		q.Eq("TxType", dao.CommitmentTransactionType_Htlc),
+		q.Eq("CurrState", dao.TxInfoState_Htlc_GetH),
 		q.Eq("ChannelId", reqData.ChannelIdFrom),
 		q.Eq("Owner", user.PeerId)).
 		First(&dao.CommitmentTransaction{})
 	if err != nil {
 		return nil, "", errors.New("error transaction_id")
-	}
-	if reqData.TimeLocker < 10 {
-		return nil, "", errors.New("error time_locker")
 	}
 
 	targetTx := &dao.AtomicSwapInfo{}
