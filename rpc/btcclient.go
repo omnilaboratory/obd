@@ -125,21 +125,19 @@ func (client *Client) ValidateAddress(address string) (isValid bool, err error) 
 	if tool.CheckIsString(&address) == false {
 		return false, errors.New("address not exist")
 	}
-	result, err := client.send("validateaddress", []interface{}{address})
+	result, err := client.GetAddressInfo(address)
 	if err != nil {
 		return false, err
 	}
-	if gjson.Get(result, "isvalid").Bool() == false {
+	if gjson.Get(result, "iswatchonly").Bool() == false {
 		_, _ = client.send("importaddress", []interface{}{address, "", false})
 	}
+
 	log.Println(result)
-	return gjson.Get(result, "isvalid").Bool(), nil
+
+	return gjson.Get(result, "iswatchonly").Bool(), nil
 }
 func (client *Client) GetAddressInfo(address string) (json string, err error) {
-	_, err = client.ValidateAddress(address)
-	if err != nil {
-		return "", err
-	}
 	result, err := client.send("getaddressinfo", []interface{}{address})
 	if err != nil {
 		return "", err

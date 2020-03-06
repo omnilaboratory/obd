@@ -493,10 +493,10 @@ func checkBtcFundFinish(address string) error {
 		return err
 	}
 	array := gjson.Parse(result).Array()
+	log.Println("listunspent", array)
 	if len(array) < 3 {
 		return errors.New("btc fund have been not finished")
 	}
-	log.Println("listunspent", array)
 
 	pMoney := rpc.GetOmniDustBtc()
 	out, _ := decimal.NewFromFloat(rpc.GetMinerFee()).Add(decimal.NewFromFloat(pMoney)).Float64()

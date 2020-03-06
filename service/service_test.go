@@ -29,6 +29,7 @@ func TestDemoChannelTreeData(t *testing.T) {
 }
 
 func TestDelDemoChannelInfoData(t *testing.T) {
+	checkBtcFundFinish("2NFh1BGVH2qvnxyRRDnQGbYe2gKBi8XhV2t")
 	//{
 	//	"address":"muYrqVWTKnkaVAMuqn59Ta6GL912ixpxit",
 	//	"pub_key":"029cf4b150da0065d5c08bf088e8a5367d35ff72e4e79b39efb401530d19fa3f3c",
@@ -115,30 +116,30 @@ func TestCreateDemoChannelInfoData(t *testing.T) {
 }
 
 func TestPathManager_GetPath(t *testing.T) {
-	PathService.GetPath("alice", "carol", 5, nil, true)
-	miniPathLength := 7
-	var miniPathNode *PathNode
-
-	for _, node := range PathService.openList {
-		if node.IsTarget {
-			if int(node.Level) < miniPathLength {
-				miniPathLength = int(node.Level)
-				miniPathNode = node
-			}
-		}
-	}
-	if miniPathNode != nil {
-		log.Println(miniPathNode)
-		channelCount := miniPathNode.Level
-		channelIdArr := make([]int, 0)
-		for i := 1; i < int(channelCount); i++ {
-			channelIdArr = append(channelIdArr, PathService.openList[miniPathNode.PathIdArr[i]].ChannelId)
-		}
-		channelIdArr = append(channelIdArr, miniPathNode.ChannelId)
-		log.Println(channelIdArr)
-	} else {
-		log.Println("no path find")
-	}
+	//PathService.GetPath("alice", "carol", 5, nil, true)
+	//miniPathLength := 7
+	//var miniPathNode *PathNode
+	//
+	//for _, node := range PathService.openList {
+	//	if node.IsTarget {
+	//		if int(node.Level) < miniPathLength {
+	//			miniPathLength = int(node.Level)
+	//			miniPathNode = node
+	//		}
+	//	}
+	//}
+	//if miniPathNode != nil {
+	//	log.Println(miniPathNode)
+	//	channelCount := miniPathNode.Level
+	//	channelIdArr := make([]int, 0)
+	//	for i := 1; i < int(channelCount); i++ {
+	//		channelIdArr = append(channelIdArr, PathService.openList[miniPathNode.PathIdArr[i]].ChannelId)
+	//	}
+	//	channelIdArr = append(channelIdArr, miniPathNode.ChannelId)
+	//	log.Println(channelIdArr)
+	//} else {
+	//	log.Println("no path find")
+	//}
 }
 
 func TestChannelManager_AliceOpenChannel(t *testing.T) {
