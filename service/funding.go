@@ -312,6 +312,13 @@ func (service *fundingTransactionManager) AssetFundingCreated(jsonData string, u
 		return nil, err
 	}
 
+	//防止多次充值
+	//do not fund asset again
+	if channelInfo.PropertyId > 0 {
+		log.Println("do not fund asset again ")
+		return nil, err
+	}
+
 	err = checkBtcFundFinish(channelInfo.ChannelAddress)
 	if err != nil {
 		log.Println(err)
