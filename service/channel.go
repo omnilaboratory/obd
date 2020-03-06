@@ -215,11 +215,14 @@ func (c *channelManager) ForceCloseChannel(jsonData string, user *bean.User) (in
 		return nil, err
 	}
 
-	lastCommitmentTx := &dao.CommitmentTransaction{}
-	err = db.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("Owner", user.PeerId)).OrderBy("CreateAt").Reverse().First(lastCommitmentTx)
+	lastCommitmentTx, err := getLatestCommitmentTx(channelInfo.ChannelId, user.PeerId)
 	if err != nil {
 		log.Println(err)
 		return nil, err
+	}
+
+	if lastCommitmentTx.CurrState != dao.TxInfoState_Htlc_GetR && lastCommitmentTx.CurrState != dao.TxInfoState_CreateAndSign {
+		return nil, errors.New("latest commnitmennt tx state is wrong")
 	}
 
 	if tool.CheckIsString(&lastCommitmentTx.RSMCTxHash) {
@@ -365,11 +368,14 @@ func (c *channelManager) RequestCloseChannel(jsonData string, user *bean.User) (
 		targetUser = channelInfo.PeerIdA
 	}
 
-	lastCommitmentTx := &dao.CommitmentTransaction{}
-	err = db.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("TxType", dao.CommitmentTransactionType_Rsmc), q.Eq("Owner", user.PeerId)).OrderBy("CreateAt").Reverse().First(lastCommitmentTx)
+	lastCommitmentTx, err := getLatestCommitmentTx(channelInfo.ChannelId, user.PeerId)
 	if err != nil {
 		log.Println(err)
 		return nil, nil, err
+	}
+
+	if lastCommitmentTx.CurrState != dao.TxInfoState_Htlc_GetR && lastCommitmentTx.CurrState != dao.TxInfoState_CreateAndSign {
+		return nil, nil, errors.New("latest commitment tx state is wrong")
 	}
 
 	dbData := &dao.CloseChannel{}
@@ -440,11 +446,13 @@ func (c *channelManager) CloseChannelSign(jsonData string, user *bean.User) (int
 		return nil, &targetUser, errors.New("disagree close channel")
 	}
 
-	lastCommitmentTx := &dao.CommitmentTransaction{}
-	err = db.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("TxType", dao.CommitmentTransactionType_Rsmc), q.Eq("Owner", targetUser)).OrderBy("CreateAt").Reverse().First(lastCommitmentTx)
+	lastCommitmentTx, err := getLatestCommitmentTx(channelInfo.ChannelId, targetUser)
 	if err != nil {
 		log.Println(err)
 		return nil, nil, err
+	}
+	if lastCommitmentTx.CurrState != dao.TxInfoState_Htlc_GetR && lastCommitmentTx.CurrState != dao.TxInfoState_CreateAndSign {
+		return nil, nil, errors.New("latest commitment tx state is wrong")
 	}
 
 	if tool.CheckIsString(&lastCommitmentTx.RSMCTxHash) {

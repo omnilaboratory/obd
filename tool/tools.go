@@ -23,7 +23,8 @@ func CheckIsString(str *string) bool {
 	if str == nil {
 		return false
 	}
-	if len(strings.Trim(*str, " ")) == 0 {
+	*str = strings.Trim(*str, " ")
+	if len(*str) == 0 {
 		return false
 	}
 	return true

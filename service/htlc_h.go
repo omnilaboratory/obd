@@ -2,6 +2,7 @@ package service
 
 import (
 	"LightningOnOmni/bean"
+	"LightningOnOmni/config"
 	"LightningOnOmni/dao"
 	"LightningOnOmni/tool"
 	"encoding/json"
@@ -43,6 +44,18 @@ func (service *htlcHMessageManager) AddHTLC(jsonData string,
 		return nil, err
 	}
 
+	if tool.CheckIsString(&htlcHRequest.RecipientPeerId) == false {
+		return nil, errors.New("empty recipient_peer_id")
+	}
+
+	if _, err = rpcClient.OmniGetProperty(htlcHRequest.PropertyId); err != nil {
+		return nil, err
+	}
+
+	if htlcHRequest.Amount <= config.Dust {
+		return nil, errors.New("wrong amount")
+	}
+
 	// Check out if the HTLC can be launched.
 	err = checkIfHtlcCanBeLaunched(creator, htlcHRequest)
 	if err != nil { // CAN NOT launch HTLC.
@@ -56,7 +69,7 @@ func (service *htlcHMessageManager) AddHTLC(jsonData string,
 	data["propertyId"] = htlcHRequest.PropertyId
 	data["amount"] = htlcHRequest.Amount
 	data["recipient_peer_id"] = htlcHRequest.RecipientPeerId
-	data["msg"] = "has the path, can create transaction"
+	data["msg"] = "have the path, can create transaction"
 
 	return data, nil
 }
@@ -167,6 +180,7 @@ func checkIfHtlcCanBeLaunched(creator *bean.User, htlcHRequest *bean.HtlcHReques
 			commitmentTxInfo, err := getLatestCommitmentTx(item.ChannelId, creator.PeerId)
 			if err == nil {
 				if commitmentTxInfo.PropertyId == htlcHRequest.PropertyId &&
+					commitmentTxInfo.CurrState == dao.TxInfoState_CreateAndSign &&
 					commitmentTxInfo.AmountToRSMC >= htlcHRequest.Amount {
 					return nil
 				}

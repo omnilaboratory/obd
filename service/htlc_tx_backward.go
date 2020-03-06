@@ -2,6 +2,7 @@ package service
 
 import (
 	"LightningOnOmni/bean"
+	"LightningOnOmni/config"
 	"LightningOnOmni/dao"
 	"LightningOnOmni/tool"
 	"encoding/json"
@@ -125,8 +126,10 @@ func (service *htlcBackwardTxManager) SendRToPreviousNode(msgData string,
 	}
 	needDayCount := (pathInfo.CurrStep + 1) - int(pathInfo.TotalStep/2)
 	maxHeight := pathInfo.BeginBlockHeight + needDayCount*singleHopPerHopDuration
-	if currBlockHeight > maxHeight {
-		return nil, "", errors.New("timeout, can't transfer the R")
+	if config.ChainNode_Type == "mainnet" {
+		if currBlockHeight > maxHeight {
+			return nil, "", errors.New("timeout, can't transfer the R")
+		}
 	}
 
 	currChannelIndex := pathInfo.TotalStep - pathInfo.CurrStep - 1

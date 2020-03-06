@@ -199,6 +199,7 @@ func (this *pathManager) GetPath(realSenderPeerId, currReceiverPeerId string,
 			commitmentTxInfo, err := getLatestCommitmentTx(item.ChannelId, interSender)
 			if err == nil {
 				if commitmentTxInfo.PropertyId == propertyId &&
+					commitmentTxInfo.CurrState == dao.TxInfoState_CreateAndSign &&
 					commitmentTxInfo.AmountToRSMC >= amount {
 					newNode := PathNode{
 						ParentNode:     currNodeIndex,
@@ -231,7 +232,9 @@ func (this *pathManager) GetPath(realSenderPeerId, currReceiverPeerId string,
 			interSender := item.PeerIdB
 			commitmentTxInfo, err := getLatestCommitmentTx(item.ChannelId, interSender)
 			if err == nil {
-				if commitmentTxInfo.AmountToRSMC >= amount {
+				if commitmentTxInfo.PropertyId == propertyId &&
+					commitmentTxInfo.CurrState == dao.TxInfoState_CreateAndSign &&
+					commitmentTxInfo.AmountToRSMC >= amount {
 					newNode := PathNode{
 						ParentNode:     currNodeIndex,
 						PathNames:      pathIds,

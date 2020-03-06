@@ -329,13 +329,23 @@ func createAliceSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFr
 	}
 
 	var lastCommitmentTx = &dao.CommitmentTransaction{}
-	err := tx.Select(q.Eq("ChannelId", signData.ChannelId), q.Eq("Owner", owner), q.Eq("CurrState", dao.TxInfoState_CreateAndSign)).OrderBy("CreateAt").Reverse().First(lastCommitmentTx)
+	err := tx.Select(
+		q.Eq("ChannelId", signData.ChannelId),
+		q.Eq("Owner", owner),
+		q.Or(
+			q.Eq("PeerIdA", signer.PeerId),
+			q.Eq("PeerIdB", signer.PeerId))).
+		OrderBy("CreateAt").Reverse().
+		First(lastCommitmentTx)
 	if err != nil {
 		lastCommitmentTx = nil
 	}
 
-	if lastCommitmentTx != nil {
+	if lastCommitmentTx.CurrState != dao.TxInfoState_CreateAndSign {
+		return nil, errors.New("latest commitment tx state is wrong")
+	}
 
+	if lastCommitmentTx != nil {
 		count, _ := tx.Select(q.Eq("CommitmentTxId", lastCommitmentTx.Id)).Count(&dao.BreachRemedyTransaction{})
 		if count > 0 {
 			err = errors.New("already exist BreachRemedyTransaction ")
@@ -577,10 +587,22 @@ func createBobSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFrom
 	}
 
 	var lastCommitmentTx = &dao.CommitmentTransaction{}
-	err := tx.Select(q.Eq("ChannelId", signData.ChannelId), q.Eq("Owner", owner), q.Eq("CurrState", dao.TxInfoState_CreateAndSign), q.Or(q.Eq("PeerIdA", signer.PeerId), q.Eq("PeerIdB", signer.PeerId))).OrderBy("CreateAt").Reverse().First(lastCommitmentTx)
+	err := tx.Select(
+		q.Eq("ChannelId", signData.ChannelId),
+		q.Eq("Owner", owner),
+		q.Or(
+			q.Eq("PeerIdA", signer.PeerId),
+			q.Eq("PeerIdB", signer.PeerId))).
+		OrderBy("CreateAt").Reverse().
+		First(lastCommitmentTx)
 	if err != nil {
 		lastCommitmentTx = nil
 	}
+
+	if lastCommitmentTx.CurrState != dao.TxInfoState_CreateAndSign {
+		return nil, errors.New("latest commitment tx state is wrong")
+	}
+
 	//In unilataral funding mode, only Alice is required to fund the channel.
 	//So during funding procedure, on Bob side, he has no commitment transaction and revockable delivery transaction.
 	if lastCommitmentTx != nil {

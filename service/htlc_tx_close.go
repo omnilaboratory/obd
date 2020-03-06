@@ -597,10 +597,17 @@ func createAliceSideBRTxs(tx storm.Node, channelInfo dao.ChannelInfo, isAliceExe
 	owner := channelInfo.PeerIdA
 	brOwner := channelInfo.PeerIdB
 	lastCommitmentTxInfo = &dao.CommitmentTransaction{}
-	err = tx.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("Owner", owner), q.Eq("CurrState", dao.TxInfoState_Htlc_GetR)).OrderBy("CreateAt").Reverse().First(lastCommitmentTxInfo)
+	err = tx.Select(
+		q.Eq("ChannelId", channelInfo.ChannelId),
+		q.Eq("Owner", owner)).
+		OrderBy("CreateAt").Reverse().
+		First(lastCommitmentTxInfo)
 	if err != nil {
 		log.Println(err)
 		return nil, err
+	}
+	if lastCommitmentTxInfo.TxType != dao.CommitmentTransactionType_Htlc {
+		return nil, errors.New("latest commitment tx type is wrong")
 	}
 
 	lastRDTransaction := &dao.RevocableDeliveryTransaction{}
@@ -837,12 +844,18 @@ func createBobSideBRTxs(tx storm.Node, channelInfo dao.ChannelInfo, isAliceExecu
 	owner := channelInfo.PeerIdB
 	brOwner := channelInfo.PeerIdA
 	lastCommitmentTxInfo = &dao.CommitmentTransaction{}
-	err = tx.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("Owner", owner), q.Eq("CurrState", dao.TxInfoState_Htlc_GetR)).OrderBy("CreateAt").Reverse().First(lastCommitmentTxInfo)
+	err = tx.Select(
+		q.Eq("ChannelId", channelInfo.ChannelId),
+		q.Eq("Owner", owner)).
+		OrderBy("CreateAt").Reverse().
+		First(lastCommitmentTxInfo)
 	if err != nil {
 		log.Println(err)
 		return nil, err
 	}
-	log.Println(lastCommitmentTxInfo)
+	if lastCommitmentTxInfo.TxType != dao.CommitmentTransactionType_Htlc {
+		return nil, errors.New("latest commitment tx type is wrong")
+	}
 
 	lastRDTransaction := &dao.RevocableDeliveryTransaction{}
 	err = tx.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("Owner", owner), q.Eq("CommitmentTxId", lastCommitmentTxInfo.Id), q.Eq("CurrState", dao.TxInfoState_CreateAndSign)).OrderBy("CreateAt").Reverse().First(lastRDTransaction)
