@@ -467,9 +467,6 @@ func checkBtcFundFinish(address string) error {
 		return err
 	}
 	array := gjson.Parse(result).Array()
-	if len(array) == 0 {
-		return errors.New("empty balance")
-	}
 	if len(array) < 3 {
 		return errors.New("btc fund have been not finished")
 	}
