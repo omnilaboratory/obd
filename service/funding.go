@@ -223,14 +223,6 @@ func (service *fundingTransactionManager) FundingBtcTxSigned(jsonData string, si
 		return nil, funder, err
 	}
 
-	result, err := rpcClient.SendRawTransaction(fundingBtcRequest.TxHash)
-	if err != nil {
-		if strings.Contains(err.Error(), "Transaction already in block chain") == false {
-			return nil, funder, err
-		}
-	}
-	log.Println(result)
-
 	// 创建一个btc赎回交易
 	minerFeeRedeemTransaction := &dao.MinerFeeRedeemTransaction{}
 	txid, hex, err := rpcClient.BtcCreateAndSignRawTransactionForUnsendInputTx(
@@ -256,6 +248,16 @@ func (service *fundingTransactionManager) FundingBtcTxSigned(jsonData string, si
 	if err != nil {
 		return nil, funder, err
 	}
+
+	//赎回交易创建成功后，广播交易
+	result, err := rpcClient.SendRawTransaction(fundingBtcRequest.TxHash)
+	if err != nil {
+		if strings.Contains(err.Error(), "Transaction already in block chain") == false {
+			return nil, funder, err
+		}
+	}
+	log.Println(result)
+
 	minerFeeRedeemTransaction.Txid = txid
 	minerFeeRedeemTransaction.TxHash = hex
 	minerFeeRedeemTransaction.CreateAt = time.Now()
