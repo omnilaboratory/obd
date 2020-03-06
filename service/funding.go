@@ -325,7 +325,7 @@ func (service *fundingTransactionManager) AssetFundingCreated(jsonData string, u
 	channelInfo := &dao.ChannelInfo{}
 	err = db.Select(
 		q.Eq("TemporaryChannelId", reqData.TemporaryChannelId),
-		q.Eq("CurrState", dao.ChannelState_WaitFundAsset),
+		//q.Eq("CurrState", dao.ChannelState_WaitFundAsset),
 		q.Or(
 			q.Eq("PeerIdA", user.PeerId),
 			q.Eq("PeerIdB", user.PeerId))).
@@ -360,6 +360,26 @@ func (service *fundingTransactionManager) AssetFundingCreated(jsonData string, u
 	}
 	tempAddrPrivateKeyMap[reqData.TempAddressPubKey] = reqData.TempAddressPrivateKey
 
+	if tool.CheckIsString(&reqData.FundingTxHex) == false {
+		err = errors.New("wrong TxHash ")
+		log.Println(err)
+		return nil, err
+	}
+
+	fundingTxHexDecode, err := rpcClient.OmniDecodeTransaction(reqData.FundingTxHex)
+	if err != nil {
+		err = errors.New("TxHash  parse fail " + err.Error())
+		log.Println(err)
+		return nil, err
+	}
+
+	fundingTxid, amountA, propertyId, err := checkOmniTxHex(fundingTxHexDecode, channelInfo, user)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	log.Println(fundingTxid)
+
 	fundingTransaction = &dao.FundingTransaction{}
 	count := 0
 	if tool.CheckIsString(&channelInfo.ChannelId) {
@@ -369,37 +389,17 @@ func (service *fundingTransactionManager) AssetFundingCreated(jsonData string, u
 	}
 
 	if count == 0 {
-		if tool.CheckIsString(&reqData.FundingTxHex) == false {
-			err = errors.New("wrong TxHash ")
-			log.Println(err)
-			return nil, err
-		}
-
-		fundingTxHexDecode, err := rpcClient.OmniDecodeTransaction(reqData.FundingTxHex)
-		if err != nil {
-			err = errors.New("TxHash  parse fail " + err.Error())
-			log.Println(err)
-			return nil, err
-		}
-
 		// sync locker
 		service.operateFlag.Lock()
 		defer service.operateFlag.Unlock()
 
-		fundingTxid, amountA, propertyId, err := checkOmniTxHex(fundingTxHexDecode, channelInfo, user)
-		if err != nil {
-			log.Println(err)
-			return nil, err
-		}
-
 		reqData.PropertyId = propertyId
 		// getProperty from omnicore
-		result, err := rpcClient.OmniGetProperty(reqData.PropertyId)
+		_, err := rpcClient.OmniGetProperty(reqData.PropertyId)
 		if err != nil {
 			log.Println(err)
 			return nil, err
 		}
-		log.Println(result)
 
 		btcTxHashDecode, err := rpcClient.DecodeRawTransaction(reqData.FundingTxHex)
 		if err != nil {
@@ -449,7 +449,7 @@ func (service *fundingTransactionManager) AssetFundingCreated(jsonData string, u
 		fundingTransaction.FundingTxid = fundingTxid
 		fundingTransaction.FundingOutputIndex = fundingOutputIndex
 		fundingTransaction.FunderPubKey2ForCommitment = reqData.TempAddressPubKey
-		tempAddrPrivateKeyMap[fundingTransaction.FunderPubKey2ForCommitment] = reqData.TempAddressPrivateKey
+		//tempAddrPrivateKeyMap[fundingTransaction.FunderPubKey2ForCommitment] = reqData.TempAddressPrivateKey
 
 		tx, err := db.Begin(true)
 		if err != nil {
