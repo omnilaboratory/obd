@@ -25,7 +25,7 @@ var MessageService messageManage
 
 func (this *messageManage) saveMsg(sender, receiver, data string) string {
 	tool.CheckIsString(&data)
-	msg := Message{
+	msg := &Message{
 		Sender:    sender,
 		Receiver:  receiver,
 		Data:      data,
