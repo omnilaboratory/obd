@@ -386,12 +386,6 @@ func (service *fundingTransactionManager) AssetFundingCreated(jsonData string, u
 		service.operateFlag.Lock()
 		defer service.operateFlag.Unlock()
 
-		if tool.CheckIsString(&channelInfo.ChannelId) {
-			err = errors.New("channel is used, can not funding again")
-			log.Println(err)
-			return nil, err
-		}
-
 		fundingTxid, amountA, propertyId, err := checkOmniTxHex(fundingTxHexDecode, channelInfo, user)
 		if err != nil {
 			log.Println(err)
