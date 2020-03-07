@@ -184,18 +184,26 @@ func (client *Client) fundingSignModule(msg bean.RequestMessage) (enum.SendTarge
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_FundingSign_AssetFundingSigned_N35: //get openChannelReq from funder then send to fundee  create a funding tx
-		signed, err := service.FundingTransactionService.AssetFundingSigned(msg.Data, client.User)
+		node, err := service.FundingTransactionService.AssetFundingSigned(msg.Data, client.User)
 		if err != nil {
 			data = err.Error()
 		}
 
-		bytes, err := json.Marshal(signed)
+		bytes, err := json.Marshal(node)
 		if err != nil {
 			data = err.Error()
 		}
 		if len(data) == 0 {
 			data = string(bytes)
 			status = true
+		}
+
+		if node != nil && status {
+			peerId := node.PeerIdA
+			if peerId == client.User.PeerId {
+				peerId = node.PeerIdB
+			}
+			_ = client.sendToSomeone(msg.Type, status, peerId, data)
 		}
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
