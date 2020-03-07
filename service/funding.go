@@ -337,18 +337,18 @@ func (service *fundingTransactionManager) AssetFundingCreated(jsonData string, u
 		return nil, err
 	}
 
+	err = checkBtcFundFinish(channelInfo.ChannelAddress)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
 	myPubKey := channelInfo.PubKeyA
 	if user.PeerId == channelInfo.PeerIdB {
 		myPubKey = channelInfo.PubKeyB
 	}
 	_, err = tool.GetPubKeyFromWifAndCheck(reqData.ChannelAddressPrivateKey, myPubKey)
 	if err != nil {
-		return nil, err
-	}
-
-	err = checkBtcFundFinish(channelInfo.ChannelAddress)
-	if err != nil {
-		log.Println(err)
 		return nil, err
 	}
 

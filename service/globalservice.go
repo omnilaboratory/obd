@@ -58,12 +58,9 @@ func getAddressFromPubKey(pubKey string) (address string, err error) {
 	if err != nil {
 		return "", err
 	}
-	isValid, err := rpcClient.ValidateAddress(address)
+	_, err = rpcClient.ValidateAddress(address)
 	if err != nil {
 		return "", err
-	}
-	if isValid == false {
-		return "", errors.New("invalid pubKey")
 	}
 	return address, nil
 }
