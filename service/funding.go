@@ -87,14 +87,13 @@ func (service *fundingTransactionManager) BTCFundingCreated(jsonData string, use
 		return nil, "", err
 	}
 
-	fundingBtcRequest := &dao.FundingBtcRequest{}
 	count, _ := db.Select(
 		q.Eq("TemporaryChannelId", reqData.TemporaryChannelId),
 		q.Eq("TxId", fundingTxid),
 		q.Eq("Owner", user.PeerId),
 		q.Eq("IsEnable", true),
 		q.Eq("IsFinish", true)).
-		Count(fundingBtcRequest)
+		Count(&dao.FundingBtcRequest{})
 	if count != 0 {
 		err = errors.New("have funding btc fee")
 		log.Println(err)
@@ -109,6 +108,7 @@ func (service *fundingTransactionManager) BTCFundingCreated(jsonData string, use
 	}
 	tempAddrPrivateKeyMap[pubKey] = reqData.ChannelAddressPrivateKey
 
+	fundingBtcRequest := &dao.FundingBtcRequest{}
 	err = db.Select(
 		q.Eq("TemporaryChannelId", reqData.TemporaryChannelId),
 		q.Eq("TxId", fundingTxid),
@@ -118,6 +118,7 @@ func (service *fundingTransactionManager) BTCFundingCreated(jsonData string, use
 	if err != nil {
 		log.Println(err)
 	}
+
 	if fundingBtcRequest.Id == 0 {
 		fundingBtcRequest = &dao.FundingBtcRequest{}
 		fundingBtcRequest.Owner = user.PeerId
@@ -274,6 +275,10 @@ func (service *fundingTransactionManager) FundingBtcTxSigned(jsonData string, si
 		}
 	}
 	log.Println(result)
+
+	fundingBtcRequest.FinishAt = time.Now()
+	_ = db.UpdateField(fundingBtcRequest, "IsFinish", true)
+	_ = db.Update(fundingBtcRequest)
 
 	minerFeeRedeemTransaction.Txid = txid
 	minerFeeRedeemTransaction.TxHash = hex
