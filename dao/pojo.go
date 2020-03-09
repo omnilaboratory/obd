@@ -102,8 +102,9 @@ type FundingBtcRequest struct {
 	TxId               string    `json:"tx_id"`
 	Amount             float64   `json:"amount"`
 	CreateAt           time.Time `json:"create_at"`
+	SignAt             time.Time `json:"sign_at"`
+	SignApproval       bool      `json:"sign_approval"`
 	FinishAt           time.Time `json:"finish_at"`
-	IsEnable           bool      `json:"is_enable"`
 	IsFinish           bool      `json:"is_finish"`
 }
 

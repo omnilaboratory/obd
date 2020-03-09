@@ -63,15 +63,17 @@ func (service *fundingTransactionManager) BTCFundingCreated(jsonData string, use
 		log.Println(err)
 		return nil, "", err
 	}
-
-	myPubKey := channelInfo.PubKeyA
+	targetUser = channelInfo.PeerIdB
+	pubKey := channelInfo.PubKeyA
 	if user.PeerId == channelInfo.PeerIdB {
-		myPubKey = channelInfo.PubKeyB
+		pubKey = channelInfo.PubKeyB
+		targetUser = channelInfo.PeerIdA
 	}
-	_, err = tool.GetPubKeyFromWifAndCheck(reqData.ChannelAddressPrivateKey, myPubKey)
+	_, err = tool.GetPubKeyFromWifAndCheck(reqData.ChannelAddressPrivateKey, pubKey)
 	if err != nil {
 		return nil, "", err
 	}
+	tempAddrPrivateKeyMap[pubKey] = reqData.ChannelAddressPrivateKey
 
 	//get btc miner Fee data from transaction
 	fundingTxid, amount, _, err := checkBtcTxHex(btcFeeTxHexDecode, channelInfo, user.PeerId)
@@ -91,29 +93,20 @@ func (service *fundingTransactionManager) BTCFundingCreated(jsonData string, use
 		q.Eq("TemporaryChannelId", reqData.TemporaryChannelId),
 		q.Eq("TxId", fundingTxid),
 		q.Eq("Owner", user.PeerId),
-		q.Eq("IsEnable", true),
 		q.Eq("IsFinish", true)).
 		Count(&dao.FundingBtcRequest{})
 	if count != 0 {
-		err = errors.New("have funding btc fee")
+		err = errors.New("the tx have been send")
 		log.Println(err)
 		return nil, "", err
 	}
-
-	targetUser = channelInfo.PeerIdB
-	pubKey := channelInfo.PubKeyA
-	if user.PeerId == channelInfo.PeerIdB {
-		pubKey = channelInfo.PubKeyB
-		targetUser = channelInfo.PeerIdA
-	}
-	tempAddrPrivateKeyMap[pubKey] = reqData.ChannelAddressPrivateKey
 
 	fundingBtcRequest := &dao.FundingBtcRequest{}
 	err = db.Select(
 		q.Eq("TemporaryChannelId", reqData.TemporaryChannelId),
 		q.Eq("TxId", fundingTxid),
 		q.Eq("Owner", user.PeerId),
-		q.Eq("IsEnable", true)).
+		q.Eq("IsFinish", false)).
 		First(fundingBtcRequest)
 	if err != nil {
 		log.Println(err)
@@ -125,7 +118,6 @@ func (service *fundingTransactionManager) BTCFundingCreated(jsonData string, use
 		fundingBtcRequest.TemporaryChannelId = reqData.TemporaryChannelId
 		fundingBtcRequest.TxHash = reqData.FundingTxHex
 		fundingBtcRequest.TxId = fundingTxid
-		fundingBtcRequest.IsEnable = true
 		fundingBtcRequest.CreateAt = time.Now()
 		fundingBtcRequest.Amount = amount
 		fundingBtcRequest.IsFinish = false
@@ -156,15 +148,15 @@ func (service *fundingTransactionManager) FundingBtcTxSigned(jsonData string, si
 		return nil, "", err
 	}
 
+	if tool.CheckIsString(&reqData.FundingTxid) == false {
+		err = errors.New("wrong FundingTxid ")
+		log.Println(err)
+		return nil, "", err
+	}
+
 	if reqData.Approval {
 		if tool.CheckIsString(&reqData.ChannelAddressPrivateKey) == false {
 			err = errors.New("wrong ChannelAddressPrivateKey ")
-			log.Println(err)
-			return nil, "", err
-		}
-
-		if tool.CheckIsString(&reqData.FundingTxid) == false {
-			err = errors.New("wrong FundingTxid ")
 			log.Println(err)
 			return nil, "", err
 		}
@@ -196,6 +188,26 @@ func (service *fundingTransactionManager) FundingBtcTxSigned(jsonData string, si
 		redeemToAddress = channelInfo.AddressB
 	}
 
+	fundingBtcRequest := &dao.FundingBtcRequest{}
+	err = db.Select(
+		q.Eq("TemporaryChannelId", reqData.TemporaryChannelId),
+		q.Eq("TxId", reqData.FundingTxid),
+		q.Eq("Owner", funder),
+		q.Eq("IsFinish", false)).
+		First(fundingBtcRequest)
+	if err != nil {
+		err = errors.New("not found the btc fund tx")
+		log.Println(err)
+		return nil, "", err
+	}
+
+	fundingBtcRequest.SignApproval = reqData.Approval
+	if reqData.Approval == false {
+		fundingBtcRequest.SignAt = time.Now()
+		_ = db.Update(fundingBtcRequest)
+		return nil, funder, errors.New("fundee do not agree the fund")
+	}
+
 	_, err = tool.GetPubKeyFromWifAndCheck(reqData.ChannelAddressPrivateKey, myPubKey)
 	if err != nil {
 		return nil, "", err
@@ -207,26 +219,6 @@ func (service *fundingTransactionManager) FundingBtcTxSigned(jsonData string, si
 		err = errors.New("FunderPrivateKey is not exist, please send the -3400 msg again")
 		log.Println(err)
 		return nil, "", err
-	}
-
-	fundingBtcRequest := &dao.FundingBtcRequest{}
-	err = db.Select(
-		q.Eq("TemporaryChannelId", reqData.TemporaryChannelId),
-		q.Eq("TxId", reqData.FundingTxid),
-		q.Eq("Owner", funder),
-		q.Eq("IsEnable", true),
-		q.Eq("IsFinish", false)).
-		First(fundingBtcRequest)
-	if err != nil {
-		log.Println(err)
-		return nil, "", err
-	}
-	if reqData.Approval == false {
-		fundingBtcRequest.FinishAt = time.Now()
-		_ = db.UpdateField(fundingBtcRequest, "IsFinish", true)
-		_ = db.UpdateField(fundingBtcRequest, "IsEnable", false)
-		_ = db.Update(fundingBtcRequest)
-		return fundingBtcRequest, funder, nil
 	}
 
 	btcFeeTxHexDecode, err := rpcClient.DecodeRawTransaction(fundingBtcRequest.TxHash)
@@ -277,7 +269,7 @@ func (service *fundingTransactionManager) FundingBtcTxSigned(jsonData string, si
 	log.Println(result)
 
 	fundingBtcRequest.FinishAt = time.Now()
-	_ = db.UpdateField(fundingBtcRequest, "IsFinish", true)
+	fundingBtcRequest.IsFinish = true
 	_ = db.Update(fundingBtcRequest)
 
 	minerFeeRedeemTransaction.Txid = txid
