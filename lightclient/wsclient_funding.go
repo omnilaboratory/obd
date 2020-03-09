@@ -41,22 +41,6 @@ func (client *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.Se
 		if err != nil {
 			data = err.Error()
 		} else {
-			node, err := service.ChannelService.GetChannelByTemporaryChanIdArray(fundingInfo.TemporaryChannelId)
-			if node != nil {
-				peerId := node.PeerIdA
-				if peerId == client.User.PeerId {
-					peerId = node.PeerIdB
-				}
-				_, err := client.FindUser(&peerId)
-				if err != nil {
-					data = err.Error()
-				}
-			} else {
-				data = err.Error()
-			}
-		}
-
-		if data == "" {
 			node, err := service.FundingTransactionService.AssetFundingCreated(msg.Data, client.User)
 			if err != nil {
 				data = err.Error()
@@ -77,6 +61,7 @@ func (client *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.Se
 				_ = client.sendToSomeone(msg.Type, status, peerId, data)
 			}
 		}
+
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_FundingCreate_ItemByTempId_N3401:

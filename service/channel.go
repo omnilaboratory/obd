@@ -130,11 +130,11 @@ func (c *channelManager) GetChannelByTemporaryChanId(jsonData string) (node *dao
 	if tool.CheckIsString(&jsonData) == false {
 		return nil, errors.New("wrong TemporaryChannelId")
 	}
-	return c.GetChannelByTemporaryChanIdArray(jsonData)
+	return c.GetChannelByTemporaryChannelId(jsonData)
 }
 
-// GetChannelByTemporaryChanIdArray
-func (c *channelManager) GetChannelByTemporaryChanIdArray(chanId string) (node *dao.ChannelInfo, err error) {
+// GetChannelByTemporaryChannelId
+func (c *channelManager) GetChannelByTemporaryChannelId(chanId string) (node *dao.ChannelInfo, err error) {
 	node = &dao.ChannelInfo{}
 	err = db.Select(
 		q.Eq("TemporaryChannelId", chanId)).
