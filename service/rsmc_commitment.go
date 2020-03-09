@@ -34,9 +34,16 @@ func (service *commitmentTxManager) CommitmentTransactionCreated(jsonData string
 		return nil, nil, errors.New("wrong channel_id")
 	}
 
+	if data.Amount <= 0 {
+		return nil, nil, errors.New("wrong payment amount")
+	}
+
 	channelInfo := &dao.ChannelInfo{}
 	err = db.Select(
 		q.Eq("ChannelId", data.ChannelId),
+		q.Or(
+			q.Eq("PeerIdA", creator.PeerId),
+			q.Eq("PeerIdB", creator.PeerId)),
 		q.Eq("CurrState", dao.ChannelState_CanUse)).
 		First(channelInfo)
 	if err != nil {
@@ -49,16 +56,14 @@ func (service *commitmentTxManager) CommitmentTransactionCreated(jsonData string
 		return nil, nil, err
 	}
 
-	lastCommitmentTxInfo := &dao.CommitmentTransaction{}
-	err = db.Select(
-		q.Eq("ChannelId", data.ChannelId),
-		q.Eq("CurrState", dao.TxInfoState_CreateAndSign),
-		q.Eq("Owner", creator.PeerId)).OrderBy("CreateAt").
-		Reverse().
-		First(lastCommitmentTxInfo)
+	lastCommitmentTxInfo, err := getLatestCommitmentTx(data.ChannelId, creator.PeerId)
 	if err != nil {
 		return nil, nil, errors.New("not find the lastCommitmentTxInfo")
 	}
+	if lastCommitmentTxInfo.TxType != dao.CommitmentTransactionType_Rsmc && lastCommitmentTxInfo.CurrState != dao.TxInfoState_CreateAndSign {
+		return nil, nil, errors.New("not find the lastCommitmentTxInfo")
+	}
+
 	balance := lastCommitmentTxInfo.AmountToRSMC
 	if balance < 0 {
 		return nil, nil, errors.New("not enough balance")
@@ -76,6 +81,10 @@ func (service *commitmentTxManager) CommitmentTransactionCreated(jsonData string
 		return nil, nil, errors.New("wrong LastTempAddressPrivateKey")
 	}
 
+	if _, err := tool.GetPubKeyFromWifAndCheck(data.LastTempAddressPrivateKey, lastCommitmentTxInfo.RSMCTempAddressPubKey); err != nil {
+		return nil, nil, errors.New(data.LastTempAddressPrivateKey + " is wrong private key for the RSMCTempAddressPubKey")
+	}
+
 	if _, err := getAddressFromPubKey(data.CurrTempAddressPubKey); err != nil {
 		return nil, nil, errors.New("wrong CurrTempAddressPubKey")
 	}
@@ -84,33 +93,32 @@ func (service *commitmentTxManager) CommitmentTransactionCreated(jsonData string
 		return nil, nil, errors.New("wrong CurrTempAddressPrivateKey")
 	}
 
-	if data.Amount <= 0 {
-		return nil, nil, errors.New("wrong payment amount")
+	if _, err := tool.GetPubKeyFromWifAndCheck(data.CurrTempAddressPrivateKey, data.CurrTempAddressPubKey); err != nil {
+		return nil, nil, errors.New(data.CurrTempAddressPrivateKey + " and " + data.CurrTempAddressPubKey + " not the pair key")
 	}
 
-	isAliceCreateTransfer := true
 	targetUser = &channelInfo.PeerIdB
+	senderPubKey := channelInfo.PubKeyA
 	if creator.PeerId == channelInfo.PeerIdB {
-		isAliceCreateTransfer = false
+		senderPubKey = channelInfo.PubKeyB
 		targetUser = &channelInfo.PeerIdA
+	}
+
+	if _, err := tool.GetPubKeyFromWifAndCheck(data.ChannelAddressPrivateKey, senderPubKey); err != nil {
+		return nil, nil, errors.New(data.ChannelAddressPrivateKey + " is wrong private key for the funder address")
 	}
 
 	//store the privateKey of last temp addr
 	// if alice transfer to bob, alice is the creator
-	if isAliceCreateTransfer {
-		tempAddrPrivateKeyMap[channelInfo.PubKeyA] = data.ChannelAddressPrivateKey
-	} else {
-		tempAddrPrivateKeyMap[channelInfo.PubKeyB] = data.ChannelAddressPrivateKey
-	}
-
+	tempAddrPrivateKeyMap[senderPubKey] = data.ChannelAddressPrivateKey
 	tempAddrPrivateKeyMap[lastCommitmentTxInfo.RSMCTempAddressPubKey] = data.LastTempAddressPrivateKey
 	tempAddrPrivateKeyMap[data.CurrTempAddressPubKey] = data.CurrTempAddressPrivateKey
 	data.ChannelAddressPrivateKey = ""
 	data.LastTempAddressPrivateKey = ""
 	data.CurrTempAddressPrivateKey = ""
 
+	data.PropertyId = channelInfo.PropertyId
 	data.RequestCommitmentHash = lastCommitmentTxInfo.CurrHash
-
 	// store the request data for -352
 	var tempInfo = &dao.CommitmentTxRequestInfo{}
 	_ = db.Select(
@@ -118,6 +126,7 @@ func (service *commitmentTxManager) CommitmentTransactionCreated(jsonData string
 		q.Eq("UserId", creator.PeerId),
 		q.Eq("IsEnable", true)).
 		First(tempInfo)
+
 	tempInfo.CommitmentTx = *data
 	tempInfo.LastTempAddressPubKey = lastCommitmentTxInfo.RSMCTempAddressPubKey
 	if tempInfo.Id == 0 {
@@ -133,6 +142,10 @@ func (service *commitmentTxManager) CommitmentTransactionCreated(jsonData string
 		log.Println(err)
 		return nil, nil, err
 	}
+
+	msgHash := MessageService.saveMsg(creator.PeerId, *targetUser, lastCommitmentTxInfo.CurrHash)
+	data.RequestCommitmentHash = msgHash
+
 	return data, targetUser, err
 }
 
@@ -144,25 +157,36 @@ var CommitmentTxSignedService commitmentTxSignedManager
 
 func (service *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction(jsonData string, signer *bean.User) (*dao.CommitmentTransaction, *dao.CommitmentTransaction, *string, error) {
 	if tool.CheckIsString(&jsonData) == false {
-		err := errors.New("empty json data")
+		err := errors.New("empty json reqData")
 		log.Println(err)
 		return nil, nil, nil, err
 	}
 
-	data := &bean.CommitmentTxSigned{}
-	err := json.Unmarshal([]byte(jsonData), data)
+	reqData := &bean.CommitmentTxSigned{}
+	err := json.Unmarshal([]byte(jsonData), reqData)
 	if err != nil {
 		log.Println(err)
 		return nil, nil, nil, err
 	}
 
-	if tool.CheckIsString(&data.RequestCommitmentHash) == false {
+	if tool.CheckIsString(&reqData.RequestCommitmentHash) == false {
 		err = errors.New("wrong RequestCommitmentHash")
 		log.Println(err)
 		return nil, nil, nil, err
 	}
 
-	if tool.CheckIsString(&data.ChannelId) == false {
+	//region 确认是给自己的信息
+	message, err := MessageService.getMsg(reqData.RequestCommitmentHash)
+	if err != nil {
+		return nil, nil, nil, errors.New("wrong request_hash")
+	}
+	if message.Receiver != signer.PeerId {
+		return nil, nil, nil, errors.New("you are not the operator")
+	}
+	reqData.RequestCommitmentHash = message.Data
+	//endregion
+
+	if tool.CheckIsString(&reqData.ChannelId) == false {
 		err = errors.New("wrong ChannelId")
 		log.Println(err)
 		return nil, nil, nil, err
@@ -170,7 +194,10 @@ func (service *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransact
 
 	channelInfo := &dao.ChannelInfo{}
 	err = db.Select(
-		q.Eq("ChannelId", data.ChannelId),
+		q.Eq("ChannelId", reqData.ChannelId),
+		q.Or(
+			q.Eq("PeerIdA", signer.PeerId),
+			q.Eq("PeerIdB", signer.PeerId)),
 		q.Eq("CurrState", dao.ChannelState_CanUse)).
 		First(channelInfo)
 	if err != nil {
@@ -194,7 +221,7 @@ func (service *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransact
 		targetUser = channelInfo.PeerIdB
 	}
 
-	if data.Approval == false {
+	if reqData.Approval == false {
 		return nil, nil, &targetUser, errors.New("signer disagree transaction")
 	}
 
@@ -203,7 +230,7 @@ func (service *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransact
 
 	var dataFromCreator = &dao.CommitmentTxRequestInfo{}
 	err = db.Select(
-		q.Eq("ChannelId", data.ChannelId),
+		q.Eq("ChannelId", reqData.ChannelId),
 		q.Eq("UserId", targetUser),
 		q.Eq("IsEnable", true)).
 		OrderBy("CreateAt").Reverse().
@@ -213,18 +240,11 @@ func (service *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransact
 		return nil, nil, &targetUser, err
 	}
 
-	if dataFromCreator.RequestCommitmentHash != data.RequestCommitmentHash {
-		err = errors.New("error RequestCommitmentHash")
-		log.Println(err)
-		return nil, nil, nil, err
-	}
-
 	var requestCommitmentTx = &dao.CommitmentTransaction{}
 	err = db.Select(
-		q.Eq("ChannelId", data.ChannelId),
-		q.Eq("CurrHash", data.RequestCommitmentHash),
-		q.Eq("Owner", targetUser),
-		q.Eq("CurrState", dao.TxInfoState_CreateAndSign)).
+		q.Eq("ChannelId", reqData.ChannelId),
+		q.Eq("CurrHash", reqData.RequestCommitmentHash),
+		q.Eq("Owner", targetUser)).
 		OrderBy("CreateAt").
 		Reverse().
 		First(requestCommitmentTx)
@@ -234,9 +254,15 @@ func (service *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransact
 		return nil, nil, nil, err
 	}
 
+	if requestCommitmentTx.TxType != dao.CommitmentTransactionType_Rsmc && requestCommitmentTx.CurrState != dao.TxInfoState_CreateAndSign {
+		err = errors.New("not found the requested commitment tx")
+		log.Println(err)
+		return nil, nil, nil, err
+	}
+
 	dealCount, err := db.Select(
-		q.Eq("ChannelId", data.ChannelId),
-		q.Eq("LastHash", data.RequestCommitmentHash),
+		q.Eq("ChannelId", reqData.ChannelId),
+		q.Eq("LastHash", reqData.RequestCommitmentHash),
 		q.Eq("Owner", targetUser)).
 		Count(&dao.CommitmentTransaction{})
 	if err != nil {
@@ -250,42 +276,46 @@ func (service *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransact
 	}
 
 	//for c rd br
-	if tool.CheckIsString(&data.ChannelAddressPrivateKey) == false {
+	if tool.CheckIsString(&reqData.ChannelAddressPrivateKey) == false {
 		err = errors.New("fail to get the signer's channel address private key")
 		log.Println(err)
 		return nil, nil, nil, err
 	}
-	if signer.PeerId == channelInfo.PeerIdB {
-		tempAddrPrivateKeyMap[channelInfo.PubKeyB] = data.ChannelAddressPrivateKey
-		defer delete(tempAddrPrivateKeyMap, channelInfo.PubKeyB)
-	} else {
-		tempAddrPrivateKeyMap[channelInfo.PubKeyA] = data.ChannelAddressPrivateKey
-		defer delete(tempAddrPrivateKeyMap, channelInfo.PubKeyA)
+
+	bobChannelPubKey := channelInfo.PubKeyB
+	aliceChannelPubKey := channelInfo.PubKeyA
+	if signer.PeerId == channelInfo.PeerIdA {
+		aliceChannelPubKey = channelInfo.PubKeyB
+		bobChannelPubKey = channelInfo.PubKeyA
 	}
+	if _, err := tool.GetPubKeyFromWifAndCheck(reqData.ChannelAddressPrivateKey, bobChannelPubKey); err != nil {
+		return nil, nil, nil, errors.New(reqData.ChannelAddressPrivateKey + " is wrong private key for the fund address")
+	}
+	tempAddrPrivateKeyMap[bobChannelPubKey] = reqData.ChannelAddressPrivateKey
+	defer delete(tempAddrPrivateKeyMap, bobChannelPubKey)
 
 	//for c rd
-	if _, err := getAddressFromPubKey(data.CurrTempAddressPubKey); err != nil {
+	if _, err := getAddressFromPubKey(reqData.CurrTempAddressPubKey); err != nil {
 		err = errors.New("fail to get the signer's curr temp address pub key")
 		log.Println(err)
 		return nil, nil, nil, err
 	}
 	//for c rd
-	if tool.CheckIsString(&data.CurrTempAddressPrivateKey) == false {
+	if tool.CheckIsString(&reqData.CurrTempAddressPrivateKey) == false {
 		err = errors.New("fail to get the signer's curr temp address private key")
 		log.Println(err)
 		return nil, nil, nil, err
 	}
 
+	if _, err := tool.GetPubKeyFromWifAndCheck(reqData.CurrTempAddressPrivateKey, reqData.CurrTempAddressPubKey); err != nil {
+		return nil, nil, nil, errors.New(reqData.CurrTempAddressPrivateKey + " and " + reqData.CurrTempAddressPubKey + " not the pair key")
+	}
+
 	//check the starter's private key
 	// for c rd br
-	creatorChannelAddressPrivateKey := ""
-	if signer.PeerId == channelInfo.PeerIdB {
-		creatorChannelAddressPrivateKey = tempAddrPrivateKeyMap[channelInfo.PubKeyA]
-		defer delete(tempAddrPrivateKeyMap, channelInfo.PubKeyA)
-	} else {
-		creatorChannelAddressPrivateKey = tempAddrPrivateKeyMap[channelInfo.PubKeyB]
-		defer delete(tempAddrPrivateKeyMap, channelInfo.PubKeyB)
-	}
+
+	creatorChannelAddressPrivateKey := tempAddrPrivateKeyMap[aliceChannelPubKey]
+	defer delete(tempAddrPrivateKeyMap, aliceChannelPubKey)
 	if tool.CheckIsString(&creatorChannelAddressPrivateKey) == false {
 		err = errors.New("fail to get the starter's channel private key")
 		log.Println(err)
@@ -320,7 +350,7 @@ func (service *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransact
 	// get the funding transaction
 	var fundingTransaction = &dao.FundingTransaction{}
 	err = tx.Select(
-		q.Eq("ChannelId", data.ChannelId),
+		q.Eq("ChannelId", reqData.ChannelId),
 		q.Eq("CurrState", dao.FundingTransactionState_Accept)).
 		OrderBy("CreateAt").
 		Reverse().
@@ -329,13 +359,13 @@ func (service *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransact
 		log.Println(err)
 		return nil, nil, &targetUser, err
 	}
-	commitmentATxInfo, err := createAliceSideTxs(tx, data, *dataFromCreator, channelInfo, fundingTransaction, signer)
+	commitmentATxInfo, err := createAliceSideTxs(tx, reqData, *dataFromCreator, channelInfo, fundingTransaction, signer)
 	if err != nil {
 		log.Println(err)
 		return nil, nil, nil, err
 	}
 
-	commitmentBTxInfo, err := createBobSideTxs(tx, data, *dataFromCreator, channelInfo, fundingTransaction, signer)
+	commitmentBTxInfo, err := createBobSideTxs(tx, reqData, *dataFromCreator, channelInfo, fundingTransaction, signer)
 	if err != nil {
 		log.Println(err)
 		return nil, nil, nil, err
@@ -408,6 +438,10 @@ func createAliceSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFr
 				err = errors.New("fail to get the lastTempAddressPrivateKey")
 				log.Println(err)
 				return nil, err
+			}
+
+			if _, err := tool.GetPubKeyFromWifAndCheck(lastTempAddressPrivateKey, lastCommitmentTx.RSMCTempAddressPubKey); err != nil {
+				return nil, errors.New(lastTempAddressPrivateKey + " is wrong private key for RSMCTempAddressPubKey")
 			}
 
 			inputs, err := getInputsForNextTxByParseTxHashVout(lastCommitmentTx.RSMCTxHash, lastCommitmentTx.RSMCMultiAddress, lastCommitmentTx.RSMCRedeemScript)
@@ -644,13 +678,13 @@ func createBobSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFrom
 		lastCommitmentTx = nil
 	}
 
-	if lastCommitmentTx.CurrState != dao.TxInfoState_CreateAndSign {
-		return nil, errors.New("latest commitment tx state is wrong")
-	}
-
 	//In unilataral funding mode, only Alice is required to fund the channel.
 	//So during funding procedure, on Bob side, he has no commitment transaction and revockable delivery transaction.
 	if lastCommitmentTx != nil {
+
+		if lastCommitmentTx.CurrState != dao.TxInfoState_CreateAndSign {
+			return nil, errors.New("latest commitment tx state is wrong")
+		}
 
 		count, _ := tx.Select(
 			q.Eq("CommitmentTxId", lastCommitmentTx.Id)).
@@ -679,6 +713,10 @@ func createBobSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFrom
 				err = errors.New("fail to get the lastTempAddressPrivateKey")
 				log.Println(err)
 				return nil, err
+			}
+
+			if _, err := tool.GetPubKeyFromWifAndCheck(lastTempAddressPrivateKey, lastCommitmentTx.RSMCTempAddressPubKey); err != nil {
+				return nil, errors.New(lastTempAddressPrivateKey + " is wrong private key for RSMCTempAddressPubKey")
 			}
 
 			inputs, err := getInputsForNextTxByParseTxHashVout(lastCommitmentTx.RSMCTxHash, lastCommitmentTx.RSMCMultiAddress, lastCommitmentTx.RSMCMultiAddressScriptPubKey)

@@ -138,7 +138,7 @@ type FundingSigned struct {
 type CommitmentTx struct {
 	ChannelId                 string  `json:"channel_id"` //the global channel id.
 	RequestCommitmentHash     string  `json:"request_commitment_hash"`
-	PropertyId                int     `json:"property_id"` //the id of the Omni asset
+	PropertyId                int64   `json:"property_id"` //the id of the Omni asset
 	Amount                    float64 `json:"amount"`      //amount of the payment
 	ChannelAddressPrivateKey  string  `json:"channel_address_private_key"`
 	LastTempAddressPrivateKey string  `json:"last_temp_address_private_key"`

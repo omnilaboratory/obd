@@ -364,11 +364,7 @@ func (service *fundingTransactionManager) AssetFundingCreated(jsonData string, u
 	}
 
 	// if alice launch funding
-	if user.PeerId == channelInfo.PeerIdA {
-		tempAddrPrivateKeyMap[myPubKey] = reqData.ChannelAddressPrivateKey
-	} else { // if bob launch funding
-		tempAddrPrivateKeyMap[myPubKey] = reqData.ChannelAddressPrivateKey
-	}
+	tempAddrPrivateKeyMap[myPubKey] = reqData.ChannelAddressPrivateKey
 	tempAddrPrivateKeyMap[reqData.TempAddressPubKey] = reqData.TempAddressPrivateKey
 
 	fundingTxHexDecode, err := rpcClient.OmniDecodeTransaction(reqData.FundingTxHex)

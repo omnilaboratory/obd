@@ -224,7 +224,7 @@ func (client *Client) commitmentTxSignModule(msg bean.RequestMessage) (enum.Send
 
 	switch msg.Type {
 	case enum.MsgType_CommitmentTxSigned_RevokeAndAcknowledgeCommitmentTransaction_N352:
-		ca, cb, _, err := service.CommitmentTxSignedService.RevokeAndAcknowledgeCommitmentTransaction(msg.Data, client.User)
+		ca, cb, targetUser, err := service.CommitmentTxSignedService.RevokeAndAcknowledgeCommitmentTransaction(msg.Data, client.User)
 		if err != nil {
 			data = err.Error()
 		} else {
@@ -242,10 +242,17 @@ func (client *Client) commitmentTxSignModule(msg bean.RequestMessage) (enum.Send
 			} else {
 				data = string(bytes)
 				status = true
-				_ = client.sendToSomeone(msg.Type, status, ca.PeerIdB, data)
+				if targetUser != nil {
+					_ = client.sendToSomeone(msg.Type, status, cb.PeerIdB, data)
+				}
 			}
 		}
-		client.sendToMyself(msg.Type, status, data)
+		if status == false {
+			client.sendToMyself(msg.Type, status, data)
+			if targetUser != nil {
+				_ = client.sendToSomeone(msg.Type, status, *targetUser, data)
+			}
+		}
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_CommitmentTxSigned_ItemByChanId_N35201:
 		nodes, count, err := service.CommitmentTxSignedService.GetItemsByChannelId(msg.Data)
