@@ -4,7 +4,6 @@ import (
 	"LightningOnOmni/dao"
 	"LightningOnOmni/tool"
 	"encoding/json"
-	"errors"
 	"github.com/asdine/storm/q"
 	"time"
 )
@@ -49,9 +48,6 @@ func (this *messageManage) getMsg(hashValue string) (*Message, error) {
 	msg := &Message{}
 	err := db.Select(q.Eq("HashValue", hashValue)).First(msg)
 	if err == nil {
-		if msg.CurrState == dao.NS_Finish {
-			return nil, errors.New("wrong msg")
-		}
 		msg.CurrState = dao.NS_Finish
 		msg.ReadAt = time.Now()
 		_ = db.Update(msg)

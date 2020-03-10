@@ -212,6 +212,15 @@ func (service *htlcForwardTxManager) SendH(msgData string, user bean.User) (data
 		return nil, "", errors.New("wrong h_and_r_info_request_hash")
 	}
 
+	message, err := MessageService.getMsg(reqData.HAndRInfoRequestHash)
+	if err != nil {
+		return nil, "", errors.New("wrong request_hash")
+	}
+	if message.Receiver != user.PeerId {
+		return nil, "", errors.New("you are not the operator")
+	}
+	reqData.HAndRInfoRequestHash = message.Data
+
 	pathInfo := &dao.HtlcPathInfo{}
 	err = db.Select(q.Eq("HAndRInfoRequestHash", reqData.HAndRInfoRequestHash)).First(pathInfo)
 	if err != nil {
@@ -300,9 +309,9 @@ func (service *htlcForwardTxManager) SignGetH(msgData string, user bean.User) (d
 		if tool.CheckIsString(&requestData.CurrHtlcTempAddressPrivateKey) == false {
 			return nil, "", errors.New("curr_htlc_temp_address_private_key is empty")
 		}
-		if tool.CheckIsString(&requestData.CurrHtlcTempAddressHe1bOfHPubKey) == false {
-			return nil, "", errors.New("curr_htlc_temp_address_he1b_ofh_pub_key is empty")
-		}
+		//if tool.CheckIsString(&requestData.CurrHtlcTempAddressHe1bOfHPubKey) == false {
+		//	return nil, "", errors.New("curr_htlc_temp_address_he1b_ofh_pub_key is empty")
+		//}
 	}
 	// endregion
 
@@ -359,16 +368,10 @@ func (service *htlcForwardTxManager) SignGetH(msgData string, user bean.User) (d
 		return nil, "", err
 	}
 
-	if currChannel.PeerIdB == user.PeerId {
-		targetUser = currChannel.PeerIdA
-	} else {
-		targetUser = currChannel.PeerIdB
-	}
-
 	// region temp store data
 	if requestData.Approval {
 		//锁定所有借道通道
-		if pathInfo.CurrStep == 0 && pathInfo.CurrState != dao.HtlcPathInfoState_Forward {
+		if pathInfo.CurrStep == 0 && pathInfo.CurrState == dao.HtlcPathInfoState_Created {
 			for _, id := range pathInfo.ChannelIdArr {
 				channelInfo := &dao.ChannelInfo{}
 				err := tx.One("Id", id, channelInfo)
@@ -388,21 +391,39 @@ func (service *htlcForwardTxManager) SignGetH(msgData string, user bean.User) (d
 			}
 		}
 
+		currNodePubKey := currChannel.PubKeyA
 		if currChannel.PeerIdB == user.PeerId {
-			tempAddrPrivateKeyMap[currChannel.PubKeyB] = requestData.ChannelAddressPrivateKey
-		} else {
-			tempAddrPrivateKeyMap[currChannel.PubKeyA] = requestData.ChannelAddressPrivateKey
+			currNodePubKey = currChannel.PubKeyB
 		}
+		tempAddrPrivateKeyMap[currNodePubKey] = requestData.ChannelAddressPrivateKey
+		_, err := tool.GetPubKeyFromWifAndCheck(requestData.ChannelAddressPrivateKey, currNodePubKey)
+		if err != nil {
+			return nil, "", errors.New("ChannelAddressPrivateKey is wrong")
+		}
+
 		bobLatestCommitmentTx, err := getLatestCommitmentTx(currChannel.ChannelId, user.PeerId)
 		if err == nil {
 			if tool.CheckIsString(&requestData.LastTempAddressPrivateKey) == false {
 				return nil, "", errors.New("last_temp_address_private_key is empty")
 			}
+			_, err := tool.GetPubKeyFromWifAndCheck(requestData.LastTempAddressPrivateKey, bobLatestCommitmentTx.RSMCTempAddressPubKey)
+			if err != nil {
+				return nil, "", errors.New("LastTempAddressPrivateKey is wrong")
+			}
 			tempAddrPrivateKeyMap[bobLatestCommitmentTx.RSMCTempAddressPubKey] = requestData.LastTempAddressPrivateKey
 		}
 		pathInfo.CurrRsmcTempPubKey = requestData.CurrRsmcTempAddressPubKey
+		_, err = tool.GetPubKeyFromWifAndCheck(requestData.CurrRsmcTempAddressPubKey, requestData.CurrRsmcTempAddressPrivateKey)
+		if err != nil {
+			return nil, "", errors.New("CurrRsmcTempAddressPubKey is wrong")
+		}
+
 		pathInfo.CurrHtlcTempPubKey = requestData.CurrHtlcTempAddressPubKey
-		pathInfo.CurrHtlcTempForHe1bOfHPubKey = requestData.CurrHtlcTempAddressHe1bOfHPubKey
+		_, err = tool.GetPubKeyFromWifAndCheck(requestData.CurrHtlcTempAddressPubKey, requestData.CurrHtlcTempAddressPrivateKey)
+		if err != nil {
+			return nil, "", errors.New("CurrHtlcTempAddressPubKey is wrong")
+		}
+		//pathInfo.CurrHtlcTempForHe1bOfHPubKey = requestData.CurrHtlcTempAddressHe1bOfHPubKey
 
 		tempAddrPrivateKeyMap[pathInfo.CurrRsmcTempPubKey] = requestData.CurrRsmcTempAddressPrivateKey
 		tempAddrPrivateKeyMap[pathInfo.CurrHtlcTempPubKey] = requestData.CurrHtlcTempAddressPrivateKey
@@ -423,12 +444,19 @@ func (service *htlcForwardTxManager) SignGetH(msgData string, user bean.User) (d
 		return nil, "", err
 	}
 
+	if currChannel.PeerIdB == user.PeerId {
+		targetUser = currChannel.PeerIdA
+	} else {
+		targetUser = currChannel.PeerIdB
+	}
 	msgHash := MessageService.saveMsg(user.PeerId, targetUser, requestData.RequestHash)
 	if tool.CheckIsString(&msgHash) == false {
 		return nil, "", errors.New("fail to save msgHash")
 	}
 
 	data = make(map[string]interface{})
+	data["channelId"] = currChannel.ChannelId
+	data["sender"] = targetUser
 	data["approval"] = requestData.Approval
 	data["request_hash"] = msgHash
 	return data, targetUser, nil
@@ -494,6 +522,7 @@ func (service *htlcForwardTxManager) SenderBeginCreateHtlcCommitmentTx(msgData s
 		log.Println(err)
 		return nil, "", err
 	}
+
 	if tool.CheckIsString(&requestData.CurrRsmcTempAddressPubKey) == false {
 		err = errors.New("curr_rsmc_temp_address_pub_key is empty")
 		log.Println(err)
@@ -504,6 +533,26 @@ func (service *htlcForwardTxManager) SenderBeginCreateHtlcCommitmentTx(msgData s
 		log.Println(err)
 		return nil, "", err
 	}
+	_, err = tool.GetPubKeyFromWifAndCheck(requestData.CurrRsmcTempAddressPrivateKey, requestData.CurrRsmcTempAddressPubKey)
+	if err != nil {
+		return nil, "", errors.New("CurrRsmcTempAddressPrivateKey is wrong")
+	}
+
+	if tool.CheckIsString(&requestData.CurrHtlcTempAddressPrivateKey) == false {
+		err = errors.New("CurrHtlcTempAddressPrivateKey is empty")
+		log.Println(err)
+		return nil, "", err
+	}
+	if tool.CheckIsString(&requestData.CurrHtlcTempAddressPubKey) == false {
+		err = errors.New("CurrHtlcTempAddressPubKey is empty")
+		log.Println(err)
+		return nil, "", err
+	}
+	_, err = tool.GetPubKeyFromWifAndCheck(requestData.CurrHtlcTempAddressPrivateKey, requestData.CurrHtlcTempAddressPubKey)
+	if err != nil {
+		return nil, "", errors.New("CurrHtlcTempAddressPrivateKey is wrong")
+	}
+
 	if tool.CheckIsString(&requestData.CurrHtlcTempAddressForHt1aPubKey) == false {
 		err = errors.New("curr_htlc_temp_address_for_ht1a_pub_key is empty")
 		log.Println(err)
@@ -514,12 +563,16 @@ func (service *htlcForwardTxManager) SenderBeginCreateHtlcCommitmentTx(msgData s
 		log.Println(err)
 		return nil, "", err
 	}
-
-	if tool.CheckIsString(&requestData.CurrHtlcTempAddressForHed1aOfHPubKey) == false {
-		err = errors.New("curr_htlc_temp_address_for_hed1a_ofh_pub_key is empty")
-		log.Println(err)
-		return nil, "", err
+	_, err = tool.GetPubKeyFromWifAndCheck(requestData.CurrHtlcTempAddressForHt1aPrivateKey, requestData.CurrHtlcTempAddressForHt1aPubKey)
+	if err != nil {
+		return nil, "", errors.New("CurrHtlcTempAddressForHt1aPrivateKey is wrong")
 	}
+
+	//if tool.CheckIsString(&requestData.CurrHtlcTempAddressForHed1aOfHPubKey) == false {
+	//	err = errors.New("curr_htlc_temp_address_for_hed1a_ofh_pub_key is empty")
+	//	log.Println(err)
+	//	return nil, "", err
+	//}
 	// endregion
 
 	//1、上一个交易必然是RSMC交易，所以需要结算上一个交易，为其创建BR交易
@@ -567,15 +620,24 @@ func (service *htlcForwardTxManager) SenderBeginCreateHtlcCommitmentTx(msgData s
 		}
 	}
 
+	currNodePubKey := ""
 	//当前操作者是Alice Alice转账给Bob
 	if user.PeerId == currChannelInfo.PeerIdA {
 		targetUser = currChannelInfo.PeerIdB
-		tempAddrPrivateKeyMap[currChannelInfo.PubKeyA] = requestData.ChannelAddressPrivateKey
-		defer delete(tempAddrPrivateKeyMap, currChannelInfo.PubKeyA)
+		currNodePubKey = currChannelInfo.PubKeyA
 	} else { //当前操作者是Bob Bob转账给Alice
 		targetUser = currChannelInfo.PeerIdA
-		tempAddrPrivateKeyMap[currChannelInfo.PubKeyB] = requestData.ChannelAddressPrivateKey
-		defer delete(tempAddrPrivateKeyMap, currChannelInfo.PubKeyB)
+		currNodePubKey = currChannelInfo.PubKeyB
+	}
+	tempAddrPrivateKeyMap[currNodePubKey] = requestData.ChannelAddressPrivateKey
+	_, err = tool.GetPubKeyFromWifAndCheck(requestData.ChannelAddressPrivateKey, currNodePubKey)
+	if err != nil {
+		return nil, "", errors.New("ChannelAddressPrivateKey is wrong")
+	}
+	defer delete(tempAddrPrivateKeyMap, currChannelInfo.PubKeyB)
+	_, err = tool.GetPubKeyFromWifAndCheck(requestData.LastTempAddressPrivateKey, lastCommitmentTxOfSender.RSMCTempAddressPubKey)
+	if err != nil {
+		return nil, "", errors.New("ChannelAddressPrivateKey is wrong")
 	}
 
 	// get the funding transaction
@@ -638,9 +700,10 @@ func (service *htlcForwardTxManager) SenderBeginCreateHtlcCommitmentTx(msgData s
 		return nil, "", err
 	}
 
+	msgHash := MessageService.saveMsg(user.PeerId, targetUser, hAndRInfo.RequestHash)
 	data := make(map[string]interface{})
 	data["h"] = hAndRInfo.H
-	data["request_hash"] = hAndRInfo.RequestHash
+	data["request_hash"] = msgHash
 	return data, targetUser, nil
 }
 

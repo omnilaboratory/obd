@@ -48,17 +48,26 @@ func (service *htlcBackwardTxManager) SendRToPreviousNode(msgData string,
 		return nil, "", err
 	}
 
+	message, err := MessageService.getMsg(reqData.RequestHash)
+	if err != nil {
+		return nil, "", errors.New("wrong request_hash")
+	}
+	if message.Receiver != user.PeerId {
+		return nil, "", errors.New("you are not the operator")
+	}
+	reqData.RequestHash = message.Data
+
 	if tool.CheckIsString(&reqData.ChannelAddressPrivateKey) == false {
 		err = errors.New("channel_address_private_key is empty")
 		log.Println(err)
 		return nil, "", err
 	}
 
-	if tool.CheckIsString(&reqData.CurrHtlcTempAddressHe1bOfHPrivateKey) == false {
-		err = errors.New("curr_htlc_temp_address_he1b_ofh_private_key is empty")
-		log.Println(err)
-		return nil, "", err
-	}
+	//if tool.CheckIsString(&reqData.CurrHtlcTempAddressHe1bOfHPrivateKey) == false {
+	//	err = errors.New("curr_htlc_temp_address_he1b_ofh_private_key is empty")
+	//	log.Println(err)
+	//	return nil, "", err
+	//}
 
 	if tool.CheckIsString(&reqData.CurrHtlcTempAddressForHE1bPubKey) == false {
 		err = errors.New("curr_htlc_temp_address_for_he1b_pub_key is empty")
@@ -71,12 +80,17 @@ func (service *htlcBackwardTxManager) SendRToPreviousNode(msgData string,
 		log.Println(err)
 		return nil, "", err
 	}
+	_, err = tool.GetPubKeyFromWifAndCheck(reqData.CurrHtlcTempAddressForHE1bPrivateKey, reqData.CurrHtlcTempAddressForHE1bPubKey)
+	if err != nil {
+		return nil, "", errors.New("CurrHtlcTempAddressForHE1bPrivateKey is wrong")
+	}
 
 	if tool.CheckIsString(&reqData.R) == false {
 		err = errors.New("r is empty")
 		log.Println(err)
 		return nil, "", err
 	}
+
 	// endregion
 
 	// region Check out if the input R is correct.
@@ -94,6 +108,11 @@ func (service *htlcBackwardTxManager) SendRToPreviousNode(msgData string,
 	if err != nil {
 		log.Println(err)
 		return nil, "", err
+	}
+
+	_, err = tool.GetPubKeyFromWifAndCheck(reqData.R, pathInfo.H)
+	if err != nil {
+		return nil, "", errors.New("R is wrong, can not pair to the H: " + pathInfo.H)
 	}
 
 	// Currently solution is Alice to Bob to Carol.
@@ -171,11 +190,18 @@ func (service *htlcBackwardTxManager) SendRToPreviousNode(msgData string,
 	//
 	// Example: When Bob transfer R to Alice, Bob is the sender.
 	// Alice create HED1a need the private key of Bob for sign that.
+	currNodePubKey := ""
 	if user.PeerId == currChannel.PeerIdA {
-		tempAddrPrivateKeyMap[currChannel.PubKeyA] = reqData.ChannelAddressPrivateKey
+		currNodePubKey = currChannel.PubKeyA
 	} else { // PeerIdB is the sender of transfer R.
-		tempAddrPrivateKeyMap[currChannel.PubKeyB] = reqData.ChannelAddressPrivateKey
+		currNodePubKey = currChannel.PubKeyB
 	}
+	_, err = tool.GetPubKeyFromWifAndCheck(reqData.ChannelAddressPrivateKey, currNodePubKey)
+	if err != nil {
+		return nil, "", errors.New("ChannelAddressPrivateKey is wrong")
+	}
+
+	tempAddrPrivateKeyMap[currNodePubKey] = reqData.ChannelAddressPrivateKey
 	tempAddrPrivateKeyMap[reqData.CurrHtlcTempAddressForHE1bPubKey] = reqData.CurrHtlcTempAddressForHE1bPrivateKey
 
 	commitmentTxInfo, err := getLatestCommitmentTx(currChannel.ChannelId, user.PeerId)
@@ -186,7 +212,7 @@ func (service *htlcBackwardTxManager) SendRToPreviousNode(msgData string,
 	if commitmentTxInfo.TxType != dao.CommitmentTransactionType_Htlc {
 		return nil, "", errors.New("wrong tx type")
 	}
-	tempAddrPrivateKeyMap[pathInfo.CurrHtlcTempForHe1bOfHPubKey] = reqData.CurrHtlcTempAddressHe1bOfHPrivateKey
+	//tempAddrPrivateKeyMap[pathInfo.CurrHtlcTempForHe1bOfHPubKey] = reqData.CurrHtlcTempAddressHe1bOfHPrivateKey
 
 	// Save pubkey to database.
 	pathInfo.CurrHtlcTempForHe1bPubKey = reqData.CurrHtlcTempAddressForHE1bPubKey
@@ -262,11 +288,11 @@ func (service *htlcBackwardTxManager) VerifyRAndCreateTxs(msgData string, user b
 		return nil, "", err
 	}
 
-	if tool.CheckIsString(&reqData.CurrHtlcTempAddressForHed1aOfHPrivateKey) == false {
-		err = errors.New("CurrHtlcTempAddressForHed1aOfHPrivateKey is empty")
-		log.Println(err)
-		return nil, "", err
-	}
+	//if tool.CheckIsString(&reqData.CurrHtlcTempAddressForHed1aOfHPrivateKey) == false {
+	//	err = errors.New("CurrHtlcTempAddressForHed1aOfHPrivateKey is empty")
+	//	log.Println(err)
+	//	return nil, "", err
+	//}
 	// endregion
 
 	// region Check out if the request hash is correct.
@@ -302,27 +328,34 @@ func (service *htlcBackwardTxManager) VerifyRAndCreateTxs(msgData string, user b
 		return nil, "", errors.New("err channel id")
 	}
 
-	channelInfo := dao.ChannelInfo{}
-	err = dbTx.One("Id", pathInfo.ChannelIdArr[currChannelIndex], &channelInfo)
+	currChannelInfo := dao.ChannelInfo{}
+	err = dbTx.One("Id", pathInfo.ChannelIdArr[currChannelIndex], &currChannelInfo)
 	if err != nil {
 		log.Println(err)
 		return nil, "", err
 	}
 
-	if user.PeerId == channelInfo.PeerIdA {
-		tempAddrPrivateKeyMap[channelInfo.PubKeyA] = reqData.ChannelAddressPrivateKey
+	currNodePubKey := ""
+	if user.PeerId == currChannelInfo.PeerIdA {
+		currNodePubKey = currChannelInfo.PubKeyA
 	} else {
-		tempAddrPrivateKeyMap[channelInfo.PubKeyB] = reqData.ChannelAddressPrivateKey
+		currNodePubKey = currChannelInfo.PubKeyB
 	}
-	defer delete(tempAddrPrivateKeyMap, channelInfo.PubKeyA)
-	defer delete(tempAddrPrivateKeyMap, channelInfo.PubKeyB)
+	_, err = tool.GetPubKeyFromWifAndCheck(reqData.ChannelAddressPrivateKey, currNodePubKey)
+	if err != nil {
+		return nil, "", errors.New("ChannelAddressPrivateKey is wrong")
+	}
+
+	tempAddrPrivateKeyMap[currNodePubKey] = reqData.ChannelAddressPrivateKey
+	defer delete(tempAddrPrivateKeyMap, currChannelInfo.PubKeyA)
+	defer delete(tempAddrPrivateKeyMap, currChannelInfo.PubKeyB)
 	defer delete(tempAddrPrivateKeyMap, pathInfo.CurrHtlcTempForHe1bPubKey)
 
 	// 判断自己是否有作为发送方的交易
 	// 只有每个通道的转账发送方才能去创建关于R的交易
 	commitmentTransaction := dao.CommitmentTransaction{}
 	err = dbTx.Select(
-		q.Eq("ChannelId", channelInfo.ChannelId),
+		q.Eq("ChannelId", currChannelInfo.ChannelId),
 		q.Eq("TxType", dao.CommitmentTransactionType_Htlc),
 		q.Eq("HtlcH", rAndHInfo.H),
 		q.Eq("HtlcSender", user.PeerId),
@@ -337,7 +370,7 @@ func (service *htlcBackwardTxManager) VerifyRAndCreateTxs(msgData string, user b
 	// get the funding transaction
 	var fundingTransaction = &dao.FundingTransaction{}
 	err = dbTx.Select(
-		q.Eq("ChannelId", channelInfo.ChannelId),
+		q.Eq("ChannelId", currChannelInfo.ChannelId),
 		q.Eq("CurrState", dao.FundingTransactionState_Accept)).
 		OrderBy("CreateAt").
 		Reverse().
@@ -351,12 +384,12 @@ func (service *htlcBackwardTxManager) VerifyRAndCreateTxs(msgData string, user b
 
 	var aliceIsSender bool
 	// 如果通道的PeerIdA（概念中的Alice）作为发送方
-	if channelInfo.PeerIdA == user.PeerId {
+	if currChannelInfo.PeerIdA == user.PeerId {
 		aliceIsSender = true
-		recipientUser = channelInfo.PeerIdB
+		recipientUser = currChannelInfo.PeerIdB
 	} else {
 		aliceIsSender = false
-		recipientUser = channelInfo.PeerIdA
+		recipientUser = currChannelInfo.PeerIdA
 	}
 
 	// 如果转账发送方是PeerIdA（Alice），也就是Alice转账给bob，
@@ -366,18 +399,18 @@ func (service *htlcBackwardTxManager) VerifyRAndCreateTxs(msgData string, user b
 	// Alice作为收款方，她得到的钱就需要RSMC锁定;
 	// HED1b：bob是发送方，他这边给Alice的钱是不需要锁定
 
-	// region	HED1x
-	_, err = htlcCreateExecutionDelivery(dbTx, channelInfo, *fundingTransaction, commitmentTransaction, *reqData, aliceIsSender)
+	// region	HED1x for alice 从三签地址支付锁定的htlc资金
+	_, err = htlcCreateExecutionDelivery(dbTx, currChannelInfo, *fundingTransaction, commitmentTransaction, *reqData, aliceIsSender)
 	if err != nil {
 		log.Println(err)
 		return nil, "", err
 	}
 	// endregion
 
-	// region 对方的两个交易 he1x herd1x
+	// region 对方的两个交易 he1x herd1x 一个新的Rsmc for bob
 	commitmentTransactionB := dao.CommitmentTransaction{}
 	err = dbTx.Select(
-		q.Eq("ChannelId", channelInfo.ChannelId),
+		q.Eq("ChannelId", currChannelInfo.ChannelId),
 		q.Eq("TxType", dao.CommitmentTransactionType_Htlc),
 		q.Eq("HtlcH", rAndHInfo.H),
 		q.Eq("HtlcSender", user.PeerId),
@@ -388,15 +421,15 @@ func (service *htlcBackwardTxManager) VerifyRAndCreateTxs(msgData string, user b
 		return nil, "", err
 	}
 
-	// HE1x 一个新的Rsmc
-	he1x, err := createHtlcExecution(dbTx, channelInfo, *fundingTransaction, commitmentTransactionB, *reqData, pathInfo, aliceIsSender, user)
+	//he1x
+	he1x, err := createHtlcExecution(dbTx, currChannelInfo, *fundingTransaction, commitmentTransactionB, *reqData, pathInfo, aliceIsSender, user)
 	if err != nil {
 		log.Println(err)
 		return nil, "", err
 	}
 
 	// htrd1x
-	herd1x, err := createHtlcRDForR(dbTx, channelInfo, *fundingTransaction, he1x, pathInfo, *reqData, aliceIsSender, user)
+	herd1x, err := createHtlcRDForR(dbTx, currChannelInfo, *fundingTransaction, he1x, pathInfo, *reqData, aliceIsSender, user)
 	if err != nil {
 		log.Println(err)
 		return nil, "", err
@@ -437,7 +470,7 @@ func (service *htlcBackwardTxManager) VerifyRAndCreateTxs(msgData string, user b
 	return data, recipientUser, nil
 }
 
-//创建hed1a  从锁定的三签地址中输出
+//创建hed1a  从锁定的地址中输出
 func htlcCreateExecutionDelivery(tx storm.Node, channelInfo dao.ChannelInfo, fundingTransaction dao.FundingTransaction,
 	commitmentTxInfo dao.CommitmentTransaction, reqData bean.HtlcCheckRAndCreateTx, aliceIsSender bool) (he1x *dao.HTLCExecutionDeliveryOfR, err error) {
 
@@ -476,7 +509,7 @@ func htlcCreateExecutionDelivery(tx storm.Node, channelInfo dao.ChannelInfo, fun
 		henxTx.OutputAddress,
 		[]string{
 			reqData.R,
-			reqData.CurrHtlcTempAddressForHed1aOfHPrivateKey,
+			//reqData.CurrHtlcTempAddressForHed1aOfHPrivateKey,
 			tempAddrPrivateKeyMap[otherSideChannelPubKey],
 		},
 		inputs,
@@ -546,7 +579,7 @@ func createHtlcExecution(tx storm.Node, channelInfo dao.ChannelInfo, fundingTran
 		[]string{
 			reqData.R,
 			reqData.ChannelAddressPrivateKey,
-			tempAddrPrivateKeyMap[pathInfo.CurrHtlcTempForHe1bOfHPubKey],
+			//tempAddrPrivateKeyMap[pathInfo.CurrHtlcTempForHe1bOfHPubKey],
 		},
 		inputs,
 		he1x.RSMCMultiAddress,

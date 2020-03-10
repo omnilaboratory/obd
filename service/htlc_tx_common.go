@@ -325,18 +325,18 @@ func htlcBobAbortLastRsmcCommitmentTx(tx storm.Node, channelInfo dao.ChannelInfo
 
 func htlcCreateExecutionDeliveryOfHForAlice(tx storm.Node, aliceIsSender bool, pathInfo dao.HtlcPathInfo, owner string, channelInfo dao.ChannelInfo, propertyId int64, commitmentTxInfo dao.CommitmentTransaction, requestData bean.HtlcRequestOpen, operator bean.User, h string) (hednx *dao.HTLCExecutionDeliveryOfH, err error) {
 	//hed1a for h
-	ownerTempPubKey := requestData.CurrHtlcTempAddressForHed1aOfHPubKey
+	//ownerTempPubKey := requestData.CurrHtlcTempAddressForHed1aOfHPubKey
 	ownerHtlcTempAddressPrivateKey := requestData.CurrHtlcTempAddressPrivateKey
 	if aliceIsSender == false {
 		//he1a for h
-		ownerTempPubKey = pathInfo.CurrHtlcTempForHe1bOfHPubKey
+		//ownerTempPubKey = pathInfo.CurrHtlcTempForHe1bOfHPubKey
 		ownerHtlcTempAddressPrivateKey = tempAddrPrivateKeyMap[pathInfo.CurrHtlcTempPubKey]
 	}
 
 	outputBean := make(map[string]interface{})
 	outputBean["amount"] = commitmentTxInfo.AmountToHtlc
 	outputBean["otherSideChannelPubKey"] = channelInfo.PubKeyB
-	outputBean["ownerTempPubKey"] = ownerTempPubKey
+	//outputBean["ownerTempPubKey"] = ownerTempPubKey
 
 	hednx, err = createHtlcExecutionDeliveryTxObj(tx, owner, channelInfo, h, commitmentTxInfo, outputBean, 0, operator)
 	if err != nil {
@@ -383,18 +383,18 @@ func htlcCreateExecutionDeliveryOfHForAlice(tx storm.Node, aliceIsSender bool, p
 
 func htlcCreateExecutionDeliveryOfHForBob(tx storm.Node, aliceIsSender bool, owner string, pathInfo dao.HtlcPathInfo, channelInfo dao.ChannelInfo, propertyId int64, commitmentTxInfo dao.CommitmentTransaction, requestData bean.HtlcRequestOpen, operator bean.User, h string) (henx *dao.HTLCExecutionDeliveryOfH, err error) {
 	//he1b for h
-	ownerTempPubKey := pathInfo.CurrHtlcTempForHe1bOfHPubKey
+	//ownerTempPubKey := pathInfo.CurrHtlcTempForHe1bOfHPubKey
 	ownerHtlcTempAddressPrivateKey := tempAddrPrivateKeyMap[pathInfo.CurrHtlcTempPubKey]
 	if aliceIsSender == false {
 		//hed1b for h
-		ownerTempPubKey = requestData.CurrHtlcTempAddressForHed1aOfHPubKey
+		//ownerTempPubKey = requestData.CurrHtlcTempAddressForHed1aOfHPubKey
 		ownerHtlcTempAddressPrivateKey = requestData.CurrHtlcTempAddressPrivateKey
 	}
 
 	outputBean := make(map[string]interface{})
 	outputBean["amount"] = commitmentTxInfo.AmountToHtlc
 	outputBean["otherSideChannelPubKey"] = channelInfo.PubKeyA
-	outputBean["ownerTempPubKey"] = ownerTempPubKey
+	//outputBean["ownerTempPubKey"] = ownerTempPubKey
 
 	henx, err = createHtlcExecutionDeliveryTxObj(tx, owner, channelInfo, h, commitmentTxInfo, outputBean, 0, operator)
 	if err != nil {
@@ -459,9 +459,10 @@ func createHtlcExecutionDeliveryTxObj(tx storm.Node, owner string, channelInfo d
 	//input
 	henxTx.InputHex = commitmentTxInfo.HtlcTxHash
 
-	henxTx.OwnerTempAddressPubKey = outputBean["ownerTempPubKey"].(string)
+	//henxTx.OwnerTempAddressPubKey = outputBean["ownerTempPubKey"].(string)
 	henxTx.OtherSideChannelPubKey = outputBean["otherSideChannelPubKey"].(string)
-	multiAddr, err := rpcClient.CreateMultiSig(3, []string{h, henxTx.OwnerTempAddressPubKey, henxTx.OtherSideChannelPubKey})
+	//multiAddr, err := rpcClient.CreateMultiSig(3, []string{h, henxTx.OwnerTempAddressPubKey, henxTx.OtherSideChannelPubKey})
+	multiAddr, err := rpcClient.CreateMultiSig(2, []string{h, henxTx.OtherSideChannelPubKey})
 	if err != nil {
 		return nil, err
 	}

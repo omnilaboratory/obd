@@ -220,29 +220,29 @@ type HtlcSendH struct {
 
 //type -44: bob sign the request for the interNode
 type HtlcSignGetH struct {
-	RequestHash                      string `json:"request_hash"`
-	Approval                         bool   `json:"approval"`                                // true agree false disagree ,最后的收款节点，必须是true
-	ChannelAddressPrivateKey         string `json:"channel_address_private_key"`             //	开通通道用到的私钥
-	LastTempAddressPrivateKey        string `json:"last_temp_address_private_key"`           //	上个RSMC委托交易用到的临时私钥
-	CurrRsmcTempAddressPubKey        string `json:"curr_rsmc_temp_address_pub_key"`          //	创建Cnx中的toRsmc的部分使用的临时地址的公钥
-	CurrRsmcTempAddressPrivateKey    string `json:"curr_rsmc_temp_address_private_key"`      //	创建Cnx中的toRsmc的部分使用的临时地址的私钥
-	CurrHtlcTempAddressPubKey        string `json:"curr_htlc_temp_address_pub_key"`          //	创建Cnx中的toHtlc的部分使用的临时地址的公钥
-	CurrHtlcTempAddressPrivateKey    string `json:"curr_htlc_temp_address_private_key"`      //	创建Cnx中的toHtlc的部分使用的临时地址的私钥
-	CurrHtlcTempAddressHe1bOfHPubKey string `json:"curr_htlc_temp_address_he1b_ofh_pub_key"` //	创建he1b,锁住支付资金的三签地址临时地址的公钥
+	RequestHash                   string `json:"request_hash"`
+	Approval                      bool   `json:"approval"`                           // true agree false disagree ,最后的收款节点，必须是true
+	ChannelAddressPrivateKey      string `json:"channel_address_private_key"`        //	开通通道用到的私钥
+	LastTempAddressPrivateKey     string `json:"last_temp_address_private_key"`      //	上个RSMC委托交易用到的临时私钥
+	CurrRsmcTempAddressPubKey     string `json:"curr_rsmc_temp_address_pub_key"`     //	创建Cnx中的toRsmc的部分使用的临时地址的公钥
+	CurrRsmcTempAddressPrivateKey string `json:"curr_rsmc_temp_address_private_key"` //	创建Cnx中的toRsmc的部分使用的临时地址的私钥
+	CurrHtlcTempAddressPubKey     string `json:"curr_htlc_temp_address_pub_key"`     //	创建Cnx中的toHtlc的部分使用的临时地址的公钥
+	CurrHtlcTempAddressPrivateKey string `json:"curr_htlc_temp_address_private_key"` //	创建Cnx中的toHtlc的部分使用的临时地址的私钥
+	//CurrHtlcTempAddressHe1bOfHPubKey string `json:"curr_htlc_temp_address_he1b_ofh_pub_key"` //	创建he1b,锁住支付资金的三签地址临时地址的公钥
 }
 
 //type -45: sender request obd  to open htlc tx
 type HtlcRequestOpen struct {
 	RequestHash                          string `json:"request_hash"`
-	ChannelAddressPrivateKey             string `json:"channel_address_private_key"`                  //	开通通道用到的私钥
-	LastTempAddressPrivateKey            string `json:"last_temp_address_private_key"`                //	上个RSMC委托交易用到的临时地址的私钥
-	CurrRsmcTempAddressPubKey            string `json:"curr_rsmc_temp_address_pub_key"`               //	创建Cnx中的toRsmc的部分使用的临时地址的公钥
-	CurrRsmcTempAddressPrivateKey        string `json:"curr_rsmc_temp_address_private_key"`           //	创建Cnx中的toRsmc的部分使用的临时地址的私钥
-	CurrHtlcTempAddressPubKey            string `json:"curr_htlc_temp_address_pub_key"`               //	创建Cnx中的toHtlc的部分使用的临时地址的公钥
-	CurrHtlcTempAddressPrivateKey        string `json:"curr_htlc_temp_address_private_key"`           //	创建Cnx中的toHtlc的部分使用的临时地址的私钥
-	CurrHtlcTempAddressForHt1aPubKey     string `json:"curr_htlc_temp_address_for_ht1a_pub_key"`      //	创建Ht1a中生成ht1a的输出的Rmsc的临时地址的公钥
-	CurrHtlcTempAddressForHt1aPrivateKey string `json:"curr_htlc_temp_address_for_ht1a_private_key"`  //	创建Ht1a中生成ht1a的输出的Rmsc的临时地址的私钥
-	CurrHtlcTempAddressForHed1aOfHPubKey string `json:"curr_htlc_temp_address_for_hed1a_ofh_pub_key"` //	创建hed1a,锁住支付资金的三签地址临时地址的公钥
+	ChannelAddressPrivateKey             string `json:"channel_address_private_key"`                 //	开通通道用到的私钥
+	LastTempAddressPrivateKey            string `json:"last_temp_address_private_key"`               //	上个RSMC委托交易用到的临时地址的私钥
+	CurrRsmcTempAddressPubKey            string `json:"curr_rsmc_temp_address_pub_key"`              //	创建Cnx中的toRsmc的部分使用的临时地址的公钥
+	CurrRsmcTempAddressPrivateKey        string `json:"curr_rsmc_temp_address_private_key"`          //	创建Cnx中的toRsmc的部分使用的临时地址的私钥
+	CurrHtlcTempAddressPubKey            string `json:"curr_htlc_temp_address_pub_key"`              //	创建Cnx中的toHtlc的部分使用的临时地址的公钥
+	CurrHtlcTempAddressPrivateKey        string `json:"curr_htlc_temp_address_private_key"`          //	创建Cnx中的toHtlc的部分使用的临时地址的私钥
+	CurrHtlcTempAddressForHt1aPubKey     string `json:"curr_htlc_temp_address_for_ht1a_pub_key"`     //	创建Ht1a中生成ht1a的输出的Rmsc的临时地址的公钥
+	CurrHtlcTempAddressForHt1aPrivateKey string `json:"curr_htlc_temp_address_for_ht1a_private_key"` //	创建Ht1a中生成ht1a的输出的Rmsc的临时地址的私钥
+	//CurrHtlcTempAddressForHed1aOfHPubKey string `json:"curr_htlc_temp_address_for_hed1a_ofh_pub_key"` //	创建hed1a,锁住支付资金的三签地址临时地址的公钥
 }
 
 //type -46: Send R to previous node.
@@ -254,7 +254,7 @@ type HtlcSendR struct {
 	ChannelAddressPrivateKey string `json:"channel_address_private_key"`
 
 	// The key of Cnb NO.3 output. Example Bob send R to Alice, that is Bob2's.
-	CurrHtlcTempAddressHe1bOfHPrivateKey string `json:"curr_htlc_temp_address_he1b_ofh_private_key"`
+	//CurrHtlcTempAddressHe1bOfHPrivateKey string `json:"curr_htlc_temp_address_he1b_ofh_private_key"`
 
 	// These keys of HE1b output. Example Bob send R to Alice, these is Bob3's.
 	CurrHtlcTempAddressForHE1bPubKey     string `json:"curr_htlc_temp_address_for_he1b_pub_key"`
@@ -271,7 +271,7 @@ type HtlcCheckRAndCreateTx struct {
 	ChannelAddressPrivateKey string `json:"channel_address_private_key"`
 
 	// The key of Cna NO.3 output. Example Bob send R to Alice, that is Alice2's.
-	CurrHtlcTempAddressForHed1aOfHPrivateKey string `json:"curr_htlc_temp_address_for_hed1a_ofh_private_key"`
+	//CurrHtlcTempAddressForHed1aOfHPrivateKey string `json:"curr_htlc_temp_address_for_hed1a_ofh_private_key"`
 }
 
 //type -48: user wanna close htlc tx when tx is on getH state

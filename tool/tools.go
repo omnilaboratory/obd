@@ -89,6 +89,13 @@ func GetAddressFromPubKey(pubKey string) (address string, err error) {
 }
 
 func GetPubKeyFromWifAndCheck(privKeyHex string, pubKey string) (pubKeyFromWif string, err error) {
+	if CheckIsString(&privKeyHex) == false {
+		return "", errors.New("wrong private key")
+	}
+	if CheckIsString(&pubKey) == false {
+		return "", errors.New("wrong pubKey")
+	}
+
 	wif, err := btcutil.DecodeWIF(privKeyHex)
 	if err != nil {
 		return "", errors.New("wrong private key")

@@ -52,16 +52,16 @@ type HTLCTimeoutDeliveryTxB struct {
 
 //HED1a when get H , alice 得到H（公钥），生成三签地址，锁住给中间节点的钱，当得到R（私钥）的时候，完成三签地址的签名，生成最终支付交易
 type HTLCExecutionDeliveryOfH struct {
-	Id                     int         `storm:"id,increment" json:"id" `
-	ChannelId              string      `json:"channel_id"`
-	PropertyId             int64       `json:"property_id"`
-	CommitmentTxId         int         `json:"commitment_tx_id"`
-	InputHex               string      `json:"input_hex"`
-	InputTxid              string      `json:"input_txid"`   // input txid  from commitTx aliceTempHtlc&bob multtaddr, so need  sign of aliceTempHtlc and bob
-	InputVout              uint32      `json:"input_vout"`   // input vout
-	InputAmount            float64     `json:"input_amount"` // input amount
-	HtlcH                  string      `json:"htlc_h"`       // H(公钥，三签地址之一)
-	OwnerTempAddressPubKey string      `json:"temp_address_pub_key"`
+	Id             int     `storm:"id,increment" json:"id" `
+	ChannelId      string  `json:"channel_id"`
+	PropertyId     int64   `json:"property_id"`
+	CommitmentTxId int     `json:"commitment_tx_id"`
+	InputHex       string  `json:"input_hex"`
+	InputTxid      string  `json:"input_txid"`   // input txid  from commitTx aliceTempHtlc&bob multtaddr, so need  sign of aliceTempHtlc and bob
+	InputVout      uint32  `json:"input_vout"`   // input vout
+	InputAmount    float64 `json:"input_amount"` // input amount
+	HtlcH          string  `json:"htlc_h"`       // H(公钥，三签地址之一)
+	//OwnerTempAddressPubKey string      `json:"temp_address_pub_key"`
 	OtherSideChannelPubKey string      `json:"other_side_channel_pub_key"`
 	OutputAddress          string      `json:"output_address"` // 三签地址 锁定支付资金
 	RedeemScript           string      `json:"redeem_script"`  // 三签地址对应的赎回脚本
@@ -134,20 +134,20 @@ const (
 )
 
 type HtlcPathInfo struct {
-	Id                           int               `storm:"id,increment" json:"id" `
-	HAndRInfoRequestHash         string            `json:"h_and_r_info_request_hash"`
-	H                            string            `json:"h"`
-	ChannelIdArr                 []int             `json:"channel_id_arr"`
-	CurrState                    HtlcPathInfoState `json:"curr_state"`
-	BeginBlockHeight             int               `json:"begin_block_height"`
-	TotalStep                    int               `json:"total_step"`
-	CurrStep                     int               `json:"curr_step"`
-	CreateBy                     string            `json:"create_by"`
-	CreateAt                     time.Time         `json:"create_at"`
-	CurrRsmcTempPubKey           string            `json:"curr_rsmc_temp_pub_key"`              // for cnb output1 temp data
-	CurrHtlcTempPubKey           string            `json:"curr_htlc_temp_pub_key"`              // for cnb output2 temp data
-	CurrHtlcTempForHe1bOfHPubKey string            `json:"curr_htlc_temp_for_he1b_ofh_pub_key"` // temp data when get h for he1b
-	CurrHtlcTempForHe1bPubKey    string            `json:"curr_htlc_temp_for_he1b_pub_key"`     // temp data when get r for he1b
+	Id                   int               `storm:"id,increment" json:"id" `
+	HAndRInfoRequestHash string            `json:"h_and_r_info_request_hash"`
+	H                    string            `json:"h"`
+	ChannelIdArr         []int             `json:"channel_id_arr"`
+	CurrState            HtlcPathInfoState `json:"curr_state"`
+	BeginBlockHeight     int               `json:"begin_block_height"`
+	TotalStep            int               `json:"total_step"`
+	CurrStep             int               `json:"curr_step"`
+	CreateBy             string            `json:"create_by"`
+	CreateAt             time.Time         `json:"create_at"`
+	CurrRsmcTempPubKey   string            `json:"curr_rsmc_temp_pub_key"` // for cnb output1 temp data
+	CurrHtlcTempPubKey   string            `json:"curr_htlc_temp_pub_key"` // for cnb output2 temp data
+	//CurrHtlcTempForHe1bOfHPubKey string            `json:"curr_htlc_temp_for_he1b_ofh_pub_key"` // temp data when get h for he1b  那个变通交易，用H锁住
+	CurrHtlcTempForHe1bPubKey string `json:"curr_htlc_temp_for_he1b_pub_key"` // temp data when get r for he1b
 }
 
 // 为记录-48的关闭htlc的请求数据
