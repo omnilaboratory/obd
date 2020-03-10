@@ -336,11 +336,20 @@ func (service *htlcBackwardTxManager) VerifyRAndCreateTxs(msgData string, user b
 	}
 
 	currNodePubKey := ""
+	otherSideChannelPubKey := ""
 	if user.PeerId == currChannelInfo.PeerIdA {
 		currNodePubKey = currChannelInfo.PubKeyA
+		otherSideChannelPubKey = currChannelInfo.PubKeyB
 	} else {
 		currNodePubKey = currChannelInfo.PubKeyB
+		otherSideChannelPubKey = currChannelInfo.PubKeyA
 	}
+
+	otherSideChannelPrivateKey := tempAddrPrivateKeyMap[otherSideChannelPubKey]
+	if tool.CheckIsString(&otherSideChannelPrivateKey) == false {
+		return nil, "", errors.New("sender private key is miss,send 46 again")
+	}
+
 	_, err = tool.GetPubKeyFromWifAndCheck(reqData.ChannelAddressPrivateKey, currNodePubKey)
 	if err != nil {
 		return nil, "", errors.New("ChannelAddressPrivateKey is wrong")

@@ -226,6 +226,7 @@ func (service *htlcCloseTxManager) CloseHTLCSigned(msgData string, user bean.Use
 		log.Println(err)
 		return nil, "", err
 	}
+
 	if tool.CheckIsString(&reqData.ChannelAddressPrivateKey) == false {
 		err = errors.New("empty channel_address_private_key")
 		log.Println(err)
@@ -308,12 +309,27 @@ func (service *htlcCloseTxManager) CloseHTLCSigned(msgData string, user bean.Use
 	}
 	// endregion
 
+	currNodeChannelPubKey := ""
+	otherSideChannelPubKey := ""
 	if channelInfo.PeerIdA == user.PeerId {
-		tempAddrPrivateKeyMap[channelInfo.PubKeyA] = reqData.ChannelAddressPrivateKey
+		currNodeChannelPubKey = channelInfo.PubKeyA
+		otherSideChannelPubKey = channelInfo.PubKeyB
 	} else {
-		tempAddrPrivateKeyMap[channelInfo.PubKeyB] = reqData.ChannelAddressPrivateKey
+		currNodeChannelPubKey = channelInfo.PubKeyB
+		otherSideChannelPubKey = channelInfo.PubKeyA
 	}
 
+	otherSideChannelPrivateKey := tempAddrPrivateKeyMap[otherSideChannelPubKey]
+	if tool.CheckIsString(&otherSideChannelPrivateKey) == false {
+		return nil, targetUser, errors.New("sender private key is miss,send 48 again")
+	}
+
+	_, err = tool.GetPubKeyFromWifAndCheck(reqData.ChannelAddressPrivateKey, currNodeChannelPubKey)
+	if err != nil {
+		return nil, "", errors.New("ChannelAddressPrivateKey is wrong")
+	}
+
+	tempAddrPrivateKeyMap[currNodeChannelPubKey] = reqData.ChannelAddressPrivateKey
 	dbTx, err := db.Begin(true)
 	if err != nil {
 		return nil, "", err

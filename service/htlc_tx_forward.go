@@ -395,11 +395,11 @@ func (service *htlcForwardTxManager) SignGetH(msgData string, user bean.User) (d
 		if currChannel.PeerIdB == user.PeerId {
 			currNodePubKey = currChannel.PubKeyB
 		}
-		tempAddrPrivateKeyMap[currNodePubKey] = requestData.ChannelAddressPrivateKey
 		_, err := tool.GetPubKeyFromWifAndCheck(requestData.ChannelAddressPrivateKey, currNodePubKey)
 		if err != nil {
 			return nil, "", errors.New("ChannelAddressPrivateKey is wrong")
 		}
+		tempAddrPrivateKeyMap[currNodePubKey] = requestData.ChannelAddressPrivateKey
 
 		bobLatestCommitmentTx, err := getLatestCommitmentTx(currChannel.ChannelId, user.PeerId)
 		if err == nil {
@@ -413,13 +413,13 @@ func (service *htlcForwardTxManager) SignGetH(msgData string, user bean.User) (d
 			tempAddrPrivateKeyMap[bobLatestCommitmentTx.RSMCTempAddressPubKey] = requestData.LastTempAddressPrivateKey
 		}
 		pathInfo.CurrRsmcTempPubKey = requestData.CurrRsmcTempAddressPubKey
-		_, err = tool.GetPubKeyFromWifAndCheck(requestData.CurrRsmcTempAddressPubKey, requestData.CurrRsmcTempAddressPrivateKey)
+		_, err = tool.GetPubKeyFromWifAndCheck(requestData.CurrRsmcTempAddressPrivateKey, requestData.CurrRsmcTempAddressPubKey)
 		if err != nil {
 			return nil, "", errors.New("CurrRsmcTempAddressPubKey is wrong")
 		}
 
 		pathInfo.CurrHtlcTempPubKey = requestData.CurrHtlcTempAddressPubKey
-		_, err = tool.GetPubKeyFromWifAndCheck(requestData.CurrHtlcTempAddressPubKey, requestData.CurrHtlcTempAddressPrivateKey)
+		_, err = tool.GetPubKeyFromWifAndCheck(requestData.CurrHtlcTempAddressPrivateKey, requestData.CurrHtlcTempAddressPubKey)
 		if err != nil {
 			return nil, "", errors.New("CurrHtlcTempAddressPubKey is wrong")
 		}
@@ -621,20 +621,29 @@ func (service *htlcForwardTxManager) SenderBeginCreateHtlcCommitmentTx(msgData s
 	}
 
 	currNodePubKey := ""
+	otherSideChannelPubKey := ""
 	//当前操作者是Alice Alice转账给Bob
 	if user.PeerId == currChannelInfo.PeerIdA {
 		targetUser = currChannelInfo.PeerIdB
 		currNodePubKey = currChannelInfo.PubKeyA
+		otherSideChannelPubKey = currChannelInfo.PubKeyB
 	} else { //当前操作者是Bob Bob转账给Alice
 		targetUser = currChannelInfo.PeerIdA
 		currNodePubKey = currChannelInfo.PubKeyB
+		otherSideChannelPubKey = currChannelInfo.PubKeyA
 	}
+
+	otherSideChannelPrivateKey := tempAddrPrivateKeyMap[otherSideChannelPubKey]
+	if tool.CheckIsString(&otherSideChannelPrivateKey) == false {
+		return nil, targetUser, errors.New("sender private key is miss,send 44 again")
+	}
+
 	tempAddrPrivateKeyMap[currNodePubKey] = requestData.ChannelAddressPrivateKey
 	_, err = tool.GetPubKeyFromWifAndCheck(requestData.ChannelAddressPrivateKey, currNodePubKey)
 	if err != nil {
 		return nil, "", errors.New("ChannelAddressPrivateKey is wrong")
 	}
-	defer delete(tempAddrPrivateKeyMap, currChannelInfo.PubKeyB)
+	defer delete(tempAddrPrivateKeyMap, currNodePubKey)
 	_, err = tool.GetPubKeyFromWifAndCheck(requestData.LastTempAddressPrivateKey, lastCommitmentTxOfSender.RSMCTempAddressPubKey)
 	if err != nil {
 		return nil, "", errors.New("ChannelAddressPrivateKey is wrong")

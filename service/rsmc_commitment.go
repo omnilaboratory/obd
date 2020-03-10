@@ -282,17 +282,23 @@ func (service *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransact
 		return nil, nil, nil, err
 	}
 
-	bobChannelPubKey := channelInfo.PubKeyB
-	aliceChannelPubKey := channelInfo.PubKeyA
+	currNodeChannelPubKey := channelInfo.PubKeyB
+	otherSideChannelPubKey := channelInfo.PubKeyA
 	if signer.PeerId == channelInfo.PeerIdA {
-		aliceChannelPubKey = channelInfo.PubKeyB
-		bobChannelPubKey = channelInfo.PubKeyA
+		otherSideChannelPubKey = channelInfo.PubKeyB
+		currNodeChannelPubKey = channelInfo.PubKeyA
 	}
-	if _, err := tool.GetPubKeyFromWifAndCheck(reqData.ChannelAddressPrivateKey, bobChannelPubKey); err != nil {
+
+	otherSideChannelPrivateKey := tempAddrPrivateKeyMap[otherSideChannelPubKey]
+	if tool.CheckIsString(&otherSideChannelPrivateKey) == false {
+		return nil, nil, nil, errors.New("sender private key is miss,send 351 again")
+	}
+
+	if _, err := tool.GetPubKeyFromWifAndCheck(reqData.ChannelAddressPrivateKey, currNodeChannelPubKey); err != nil {
 		return nil, nil, nil, errors.New(reqData.ChannelAddressPrivateKey + " is wrong private key for the fund address")
 	}
-	tempAddrPrivateKeyMap[bobChannelPubKey] = reqData.ChannelAddressPrivateKey
-	defer delete(tempAddrPrivateKeyMap, bobChannelPubKey)
+	tempAddrPrivateKeyMap[currNodeChannelPubKey] = reqData.ChannelAddressPrivateKey
+	defer delete(tempAddrPrivateKeyMap, currNodeChannelPubKey)
 
 	//for c rd
 	if _, err := getAddressFromPubKey(reqData.CurrTempAddressPubKey); err != nil {
@@ -314,8 +320,8 @@ func (service *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransact
 	//check the starter's private key
 	// for c rd br
 
-	creatorChannelAddressPrivateKey := tempAddrPrivateKeyMap[aliceChannelPubKey]
-	defer delete(tempAddrPrivateKeyMap, aliceChannelPubKey)
+	creatorChannelAddressPrivateKey := tempAddrPrivateKeyMap[otherSideChannelPubKey]
+	defer delete(tempAddrPrivateKeyMap, otherSideChannelPubKey)
 	if tool.CheckIsString(&creatorChannelAddressPrivateKey) == false {
 		err = errors.New("fail to get the starter's channel private key")
 		log.Println(err)
