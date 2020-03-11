@@ -99,7 +99,7 @@ func (service *htlcCloseTxManager) RequestCloseHtlc(msgData string, user bean.Us
 	channelInfo := dao.ChannelInfo{}
 	err = db.Select(
 		q.Eq("ChannelId", commitmentTxInfo.ChannelId),
-		q.Eq("CurrState", dao.ChannelState_HtlcBegin)).
+		q.Eq("CurrState", dao.ChannelState_HtlcTx)).
 		First(&channelInfo)
 	if err != nil {
 		log.Println(err)
@@ -263,7 +263,7 @@ func (service *htlcCloseTxManager) CloseHTLCSigned(msgData string, user bean.Use
 	channelInfo := dao.ChannelInfo{}
 	err = db.Select(
 		q.Eq("ChannelId", commitmentTxInfo.ChannelId),
-		q.Eq("CurrState", dao.ChannelState_HtlcBegin)).
+		q.Eq("CurrState", dao.ChannelState_HtlcTx)).
 		First(&channelInfo)
 	if err != nil {
 		log.Println(err)
@@ -1224,74 +1224,8 @@ func createBobSideBRTxs(tx storm.Node, channelInfo dao.ChannelInfo, isAliceExecu
 	return lastCommitmentTxInfo, nil
 }
 
-// -50 请求关闭通道
-func (service *htlcCloseTxManager) RequestCloseChannel(msgData string, user bean.User) (outData map[string]interface{}, targetUser string, err error) {
-
-	if tool.CheckIsString(&msgData) == false {
-		return nil, "", errors.New("empty inputData")
-	}
-	reqData := &bean.HtlcCloseChannelReq{}
-	err = json.Unmarshal([]byte(msgData), reqData)
-	if err != nil {
-		log.Println(err)
-		return nil, "", err
-	}
-
-	channelInfo := &dao.ChannelInfo{}
-	err = db.Select(
-		q.Eq("ChannelId", reqData.ChannelId),
-		q.Eq("CurrState", dao.ChannelState_HtlcBegin)).
-		First(channelInfo)
-	if err != nil {
-		log.Println(err)
-		return nil, "", err
-	}
-
-	targetUser = channelInfo.PeerIdB
-	if user.PeerId == channelInfo.PeerIdB {
-		targetUser = channelInfo.PeerIdA
-	}
-
-	lastCommitmentTx := &dao.CommitmentTransaction{}
-	err = db.Select(
-		q.Eq("ChannelId", channelInfo.ChannelId),
-		q.Eq("TxType", dao.CommitmentTransactionType_Htlc),
-		q.Eq("Owner", user.PeerId)).
-		OrderBy("CreateAt").Reverse().
-		First(lastCommitmentTx)
-	if err != nil {
-		log.Println(err)
-		return nil, "", err
-	}
-
-	closeChannel := &dao.CloseChannel{}
-	closeChannel.ChannelId = reqData.ChannelId
-	closeChannel.Owner = user.PeerId
-	closeChannel.CurrState = 0
-	count, _ := db.Select(
-		q.Eq("ChannelId", closeChannel.ChannelId),
-		q.Eq("Owner", closeChannel.Owner),
-		q.Eq("CurrState", closeChannel.CurrState)).
-		Count(closeChannel)
-	if count == 0 {
-		dataBytes, _ := json.Marshal(closeChannel)
-		closeChannel.RequestHex = tool.SignMsgWithSha256(dataBytes)
-		closeChannel.CreateAt = time.Now()
-		err = db.Save(closeChannel)
-		if err != nil {
-			log.Println(err)
-			return nil, "", err
-		}
-	}
-
-	outData = make(map[string]interface{})
-	outData["channel_id"] = reqData.ChannelId
-	outData["request_close_channel_hash"] = closeChannel.RequestHex
-	return outData, targetUser, nil
-}
-
-// -51 对通道关闭进行表态 谁请求，就以谁的身份关闭通道
-func (service *htlcCloseTxManager) CloseHtlcChannelSigned(msgData string, user bean.User) (outData interface{}, closeOpStarter string, err error) {
+//  htlc  when getH close channel
+func (service *htlcCloseTxManager) CloseHtlcChannelSigned1(msgData string, user bean.User) (outData interface{}, closeOpStarter string, err error) {
 	if tool.CheckIsString(&msgData) == false {
 		return nil, "", errors.New("empty inputData")
 	}
@@ -1331,7 +1265,7 @@ func (service *htlcCloseTxManager) CloseHtlcChannelSigned(msgData string, user b
 	channelInfo := &dao.ChannelInfo{}
 	err = db.Select(
 		q.Eq("ChannelId", reqData.ChannelId),
-		q.Eq("CurrState", dao.ChannelState_HtlcBegin)).
+		q.Eq("CurrState", dao.ChannelState_HtlcTx)).
 		First(channelInfo)
 	if err != nil {
 		log.Println(err)
@@ -1559,7 +1493,7 @@ func (service *htlcCloseTxManager) CloseHtlcChannelSigned(msgData string, user b
 	if err != nil {
 		return nil, "", err
 	}
-	return nil, closeOpStarter, nil
+	return channelInfo, closeOpStarter, nil
 }
 
 func addHT1aTxToWaitDB(tx storm.Node, htnx *dao.HTLCTimeoutTxForAAndExecutionForB, htrd *dao.RevocableDeliveryTransaction) error {

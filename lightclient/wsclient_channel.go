@@ -197,7 +197,9 @@ func (client *Client) channelModule(msg bean.RequestMessage) (enum.SendTargetTyp
 			}
 		}
 		if status {
-			_ = client.sendToSomeone(msg.Type, status, *targetUser, data)
+			if targetUser != "" {
+				_ = client.sendToSomeone(msg.Type, status, targetUser, data)
+			}
 		}
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone

@@ -20,7 +20,7 @@ const (
 	ChannelState_WaitFundAsset     ChannelState = 11
 	ChannelState_CanUse            ChannelState = 20
 	ChannelState_Close             ChannelState = 21
-	ChannelState_HtlcBegin         ChannelState = 22
+	ChannelState_HtlcTx            ChannelState = 22
 	ChannelState_OpenChannelDefuse ChannelState = 30
 	ChannelState_FundingDefuse     ChannelState = 31
 )

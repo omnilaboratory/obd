@@ -312,38 +312,6 @@ func (client *Client) htlcCloseModule(msg bean.RequestMessage) (enum.SendTargetT
 		}
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
-	case enum.MsgType_HTLC_RequestCloseChannel_N50:
-		outData, targetUser, err := service.HtlcCloseTxService.RequestCloseChannel(msg.Data, *client.User)
-		if err != nil {
-			data = err.Error()
-		} else {
-			bytes, err := json.Marshal(outData)
-			if err != nil {
-				data = err.Error()
-			} else {
-				data = string(bytes)
-				status = true
-				_ = client.sendToSomeone(msg.Type, status, targetUser, data)
-			}
-		}
-		client.sendToMyself(msg.Type, status, data)
-		sendType = enum.SendTargetType_SendToSomeone
-	case enum.MsgType_HTLC_CloseChannelSigned_N51:
-		outData, targetUser, err := service.HtlcCloseTxService.CloseHtlcChannelSigned(msg.Data, *client.User)
-		if err != nil {
-			data = err.Error()
-		} else {
-			bytes, err := json.Marshal(outData)
-			if err != nil {
-				data = err.Error()
-			} else {
-				data = string(bytes)
-				status = true
-				_ = client.sendToSomeone(msg.Type, status, targetUser, data)
-			}
-		}
-		client.sendToMyself(msg.Type, status, data)
-		sendType = enum.SendTargetType_SendToSomeone
 	}
 	return sendType, []byte(data), status
 }

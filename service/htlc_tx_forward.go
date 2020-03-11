@@ -382,7 +382,7 @@ func (service *htlcForwardTxManager) SignGetH(msgData string, user bean.User) (d
 				if channelInfo.CurrState != dao.ChannelState_CanUse {
 					return nil, "", errors.New("channel is busy :" + channelInfo.ChannelId)
 				}
-				channelInfo.CurrState = dao.ChannelState_HtlcBegin
+				channelInfo.CurrState = dao.ChannelState_HtlcTx
 				err = tx.Update(channelInfo)
 				if err != nil {
 					log.Println(err.Error())
