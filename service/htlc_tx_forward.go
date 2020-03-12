@@ -186,19 +186,10 @@ func (service *htlcForwardTxManager) AliceFindPathAndSendToBob(msgData string, u
 		return nil, "", errors.New("fail to save msgHash")
 	}
 
-	htlcPath := make([]string, 0)
-	for _, id := range channelIdArr {
-		err = db.Select(q.Eq("Id", id)).First(currChannel)
-		if err != nil {
-			return nil, "", errors.New("fail to get channelId ")
-		}
-		htlcPath = append(htlcPath, currChannel.ChannelId)
-	}
-
 	data = make(map[string]interface{})
 	data["request_hash"] = msgHash
 	data["h"] = rAndHInfo.H
-	data["htlcPath"] = htlcPath
+	data["channelId"] = currChannel.ChannelId
 	return data, bob, nil
 }
 
