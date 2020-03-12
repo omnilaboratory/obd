@@ -8,6 +8,9 @@ import (
 	"testing"
 )
 
+func TestDemo6(t *testing.T) {
+}
+
 func TestDemo5(t *testing.T) {
 
 	GetPubKeyFromWifAndCheck("cRDNaaWrSc1quTLZ1FSnH2s5etPuMMAG89JaEBx27vVod9jyJAwP", "02879d678702fe5dff220b6cb41b266c9c39305372ea189a65c246ea31603753cd")
