@@ -323,8 +323,13 @@ func (service *htlcBackwardTxManager) VerifyRAndCreateTxs(msgData string, user b
 		return nil, "", err
 	}
 
+	_, err = tool.GetPubKeyFromWifAndCheck(reqData.R, pathInfo.H)
+	if err != nil {
+		return nil, "", errors.New("R is wrong, can not pair to the H: " + pathInfo.H)
+	}
+
 	currChannelIndex := pathInfo.TotalStep - pathInfo.CurrStep - 1
-	if currChannelIndex < -1 || currChannelIndex > len(pathInfo.ChannelIdArr) {
+	if currChannelIndex < 0 || currChannelIndex >= len(pathInfo.ChannelIdArr) {
 		return nil, "", errors.New("err channel id")
 	}
 
