@@ -237,7 +237,7 @@ func (service *htlcForwardTxManager) SendH(msgData string, user bean.User) (data
 	}
 
 	currChannelIndex := pathInfo.CurrStep
-	if currChannelIndex < -1 || currChannelIndex > len(pathInfo.ChannelIdArr) {
+	if currChannelIndex < 0 || currChannelIndex >= len(pathInfo.ChannelIdArr) {
 		return nil, "", errors.New("err channel id")
 	}
 	currChannel := &dao.ChannelInfo{}
@@ -352,7 +352,7 @@ func (service *htlcForwardTxManager) SignGetH(msgData string, user bean.User) (d
 	//endregion
 
 	currChannelIndex := pathInfo.CurrStep
-	if currChannelIndex < -1 || currChannelIndex > len(pathInfo.ChannelIdArr) {
+	if currChannelIndex < 0 || currChannelIndex >= len(pathInfo.ChannelIdArr) {
 		return nil, "", errors.New("err channel id")
 	}
 	currChannel := &dao.ChannelInfo{}
@@ -593,7 +593,7 @@ func (service *htlcForwardTxManager) SenderBeginCreateHtlcCommitmentTx(msgData s
 
 	// region prepare the data
 	currChannelIndex := pathInfo.CurrStep - 1
-	if currChannelIndex < -1 || currChannelIndex > len(pathInfo.ChannelIdArr) {
+	if currChannelIndex < 0 || currChannelIndex >= len(pathInfo.ChannelIdArr) {
 		return nil, "", errors.New("err channel id")
 	}
 

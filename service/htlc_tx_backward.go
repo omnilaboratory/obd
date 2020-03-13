@@ -153,7 +153,7 @@ func (service *htlcBackwardTxManager) SendRToPreviousNode(msgData string,
 	}
 
 	currChannelIndex := pathInfo.TotalStep - pathInfo.CurrStep - 1
-	if currChannelIndex < -1 || currChannelIndex > len(pathInfo.ChannelIdArr) {
+	if currChannelIndex < 0 || currChannelIndex >= len(pathInfo.ChannelIdArr) {
 		return nil, "", errors.New("err channel id")
 	}
 
