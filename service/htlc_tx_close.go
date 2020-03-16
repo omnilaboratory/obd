@@ -130,6 +130,12 @@ func (service *htlcCloseTxManager) RequestCloseHtlc(msgData string, user bean.Us
 		tempAddrPrivateKeyMap[channelInfo.PubKeyB] = reqData.ChannelAddressPrivateKey
 		targetUser = channelInfo.PeerIdA
 	}
+
+	err = FindUserIsOnline(targetUser)
+	if err != nil {
+		return nil, "", err
+	}
+
 	tempAddrPrivateKeyMap[commitmentTxInfo.RSMCTempAddressPubKey] = reqData.LastRsmcTempAddressPrivateKey
 	tempAddrPrivateKeyMap[commitmentTxInfo.HTLCTempAddressPubKey] = reqData.LastHtlcTempAddressPrivateKey
 	tempAddrPrivateKeyMap[ht1aOrHe1b.RSMCTempAddressPubKey] = reqData.LastHtlcTempAddressForHtnxPrivateKey

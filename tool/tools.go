@@ -100,7 +100,10 @@ func GetPubKeyFromWifAndCheck(privKeyHex string, pubKey string) (pubKeyFromWif s
 	if err != nil {
 		return "", errors.New("wrong private key")
 	}
+	log.Println(privKeyHex)
+	log.Println(pubKey)
 	pubKeyFromWif = hex.EncodeToString(wif.PrivKey.PubKey().SerializeCompressed())
+	log.Println(pubKeyFromWif)
 	if pubKeyFromWif != pubKey {
 		return "", errors.New("private key and pubkey are not parent relationship")
 	}

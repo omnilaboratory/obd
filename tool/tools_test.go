@@ -9,11 +9,13 @@ import (
 )
 
 func TestDemo6(t *testing.T) {
+	pubKeyFromWif, err := GetPubKeyFromWifAndCheck("cRnyhRgABgJ7EeYGvvpxRvzbXCL5AFurwxRZgpc5C2FBd8mYY6Qi", "02cf5a20cf48e65b6da0c68af100219e394e5aef533439cb3ec199e170910d828b")
+	log.Println(err)
+	log.Println(pubKeyFromWif)
 }
 
 func TestDemo5(t *testing.T) {
 
-	GetPubKeyFromWifAndCheck("cRDNaaWrSc1quTLZ1FSnH2s5etPuMMAG89JaEBx27vVod9jyJAwP", "02879d678702fe5dff220b6cb41b266c9c39305372ea189a65c246ea31603753cd")
 }
 
 func TestDemo4(t *testing.T) {

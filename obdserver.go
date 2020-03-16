@@ -3,6 +3,7 @@ package main
 import (
 	"LightningOnOmni/config"
 	"LightningOnOmni/lightclient"
+	"LightningOnOmni/p2p"
 	"LightningOnOmni/service"
 	"google.golang.org/grpc"
 	"log"
@@ -23,6 +24,9 @@ func main() {
 	//conn := startupGRPCClient()
 	//defer conn.Close()
 	//routersInit := routers.InitRouter(conn)
+
+	p2p.StartP2PServer()
+
 	routersInit := lightclient.InitRouter(nil)
 	addr := ":" + strconv.Itoa(config.ServerPort)
 	server := &http.Server{

@@ -426,12 +426,13 @@ func (this *channelManager) RequestCloseChannel(jsonData string, user *bean.User
 	closeChannel.ChannelId = reqData.ChannelId
 	closeChannel.Owner = user.PeerId
 	closeChannel.CurrState = 0
-	count, _ := db.Select(
+	_ = db.Select(
 		q.Eq("ChannelId", closeChannel.ChannelId),
 		q.Eq("Owner", closeChannel.Owner),
 		q.Eq("CurrState", closeChannel.CurrState)).
-		Count(closeChannel)
-	if count == 0 {
+		Find(closeChannel)
+
+	if closeChannel.Id == 0 {
 		closeChannel.CreateAt = time.Now()
 		dataBytes, _ := json.Marshal(closeChannel)
 		closeChannel.RequestHex = tool.SignMsgWithSha256(dataBytes)
