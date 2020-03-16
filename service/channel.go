@@ -407,6 +407,10 @@ func (this *channelManager) RequestCloseChannel(jsonData string, user *bean.User
 		return nil, nil, err
 	}
 
+	if channelInfo.CurrState != dao.ChannelState_CanUse && channelInfo.CurrState != dao.ChannelState_HtlcTx {
+		return nil, nil, errors.New("wrong channel state " + strconv.Itoa(int(channelInfo.CurrState)))
+	}
+
 	targetUser := channelInfo.PeerIdB
 	if user.PeerId == channelInfo.PeerIdB {
 		targetUser = channelInfo.PeerIdA
