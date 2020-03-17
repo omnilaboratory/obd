@@ -57,7 +57,12 @@ func (client *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, 
 			client.sendToMyself(msg.Type, status, "please login")
 			sendType = enum.SendTargetType_SendToSomeone
 		}
-
+	case enum.MsgType_p2p_ConnectServer_3:
+		ConnP2PServer(msg.Data)
+	case enum.MsgType_p2p_SendDataToServer_4:
+		ClientSendMsg(msg.Data)
+	case enum.MsgType_p2p_SendDataToClient_5:
+		ServerSendMsg(msg.Data)
 	// Added by Kevin 2019-11-25
 	// Process GetMnemonic
 	case enum.MsgType_GetMnemonic_101:

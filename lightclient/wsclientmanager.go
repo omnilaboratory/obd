@@ -18,6 +18,7 @@ type ClientManager struct {
 	Broadcast     chan []byte
 	Connected     chan *Client
 	Disconnected  chan *Client
+	P2PData       chan []byte
 	ClientsMap    map[*Client]bool
 	OnlineUserMap map[string]*Client
 }
@@ -26,6 +27,7 @@ var GlobalWsClientManager = ClientManager{
 	Broadcast:     make(chan []byte),
 	Connected:     make(chan *Client),
 	Disconnected:  make(chan *Client),
+	P2PData:       make(chan []byte),
 	ClientsMap:    make(map[*Client]bool),
 	OnlineUserMap: make(map[string]*Client),
 }
@@ -46,6 +48,8 @@ func (clientManager *ClientManager) Start() {
 				log.Println("socket has disconnected.")
 				clientManager.Send(jsonMessage, conn)
 			}
+		case P2PData := <-clientManager.P2PData:
+			log.Println(string(P2PData))
 		case orderMessage := <-clientManager.Broadcast:
 			for conn := range clientManager.ClientsMap {
 				select {
