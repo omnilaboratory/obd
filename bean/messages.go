@@ -7,12 +7,14 @@ import (
 )
 
 type RequestMessage struct {
-	Type            enum.MsgType `json:"type"`
-	SenderPeerId    string       `json:"sender_peer_id"`
-	RecipientPeerId string       `json:"recipient_peer_id"`
-	Data            string       `json:"data"`
-	PubKey          string       `json:"pub_key"`
-	Signature       string       `json:"signature"`
+	Type               enum.MsgType `json:"type"`
+	SenderPeerId       string       `json:"sender_peer_id"`
+	RecipientPeerId    string       `json:"recipient_peer_id"`
+	RecipientP2PPeerId string       `json:"recipient_p2p_peer_id"`
+	Data               string       `json:"data"`
+	RawData            string       `json:"raw_data"`
+	PubKey             string       `json:"pub_key"`
+	Signature          string       `json:"signature"`
 }
 type ReplyMessage struct {
 	Type   enum.MsgType `json:"type"`
@@ -32,11 +34,12 @@ const (
 
 //type = 1
 type User struct {
-	PeerId        string    `json:"peer_id"`
-	Mnemonic      string    `json:"mnemonic"`
-	State         UserState `json:"state"`
-	ChangeExtKey  *bip32.Key
-	CurrAddrIndex int `json:"curr_addr_index"`
+	P2PLocalAddress string    `json:"p2p_local_address"`
+	PeerId          string    `json:"peer_id"`
+	Mnemonic        string    `json:"mnemonic"`
+	State           UserState `json:"state"`
+	ChangeExtKey    *bip32.Key
+	CurrAddrIndex   int `json:"curr_addr_index"`
 }
 
 //https://github.com/LightningOnOmnilayer/Omni-BOLT-spec/blob/master/OmniBOLT-03-RSMC-and-OmniLayer-Transactions.md

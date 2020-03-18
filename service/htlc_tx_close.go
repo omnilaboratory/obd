@@ -10,7 +10,6 @@ import (
 	"github.com/asdine/storm/q"
 	"github.com/shopspring/decimal"
 	"log"
-	"strings"
 	"sync"
 	"time"
 )
@@ -123,13 +122,20 @@ func (service *htlcCloseTxManager) RequestCloseHtlc(msgData string, user bean.Us
 		return nil, "", errors.New("LastHtlcTempAddressForHtnxPrivateKey is wrong")
 	}
 
+	currNodeChannelPubKey := ""
 	if user.PeerId == channelInfo.PeerIdA {
-		tempAddrPrivateKeyMap[channelInfo.PubKeyA] = reqData.ChannelAddressPrivateKey
+		currNodeChannelPubKey = channelInfo.PubKeyA
 		targetUser = channelInfo.PeerIdB
 	} else {
-		tempAddrPrivateKeyMap[channelInfo.PubKeyB] = reqData.ChannelAddressPrivateKey
+		currNodeChannelPubKey = channelInfo.PubKeyB
 		targetUser = channelInfo.PeerIdA
 	}
+
+	_, err = tool.GetPubKeyFromWifAndCheck(reqData.ChannelAddressPrivateKey, currNodeChannelPubKey)
+	if err != nil {
+		return nil, "", errors.New("ChannelAddressPrivateKey is wrong")
+	}
+	tempAddrPrivateKeyMap[currNodeChannelPubKey] = reqData.ChannelAddressPrivateKey
 
 	err = FindUserIsOnline(targetUser)
 	if err != nil {
@@ -1228,278 +1234,6 @@ func createBobSideBRTxs(tx storm.Node, channelInfo dao.ChannelInfo, isAliceExecu
 	_ = tx.Update(htrd)
 
 	return lastCommitmentTxInfo, nil
-}
-
-//  htlc  when getH close channel
-func (service *htlcCloseTxManager) CloseHtlcChannelSigned1(msgData string, user bean.User) (outData interface{}, closeOpStarter string, err error) {
-	if tool.CheckIsString(&msgData) == false {
-		return nil, "", errors.New("empty inputData")
-	}
-	reqData := &bean.HtlcCloseChannelSign{}
-	err = json.Unmarshal([]byte(msgData), reqData)
-	if err != nil {
-		log.Println(err)
-		return nil, "", err
-	}
-
-	// region check input data
-	if tool.CheckIsString(&reqData.ChannelId) == false {
-		err = errors.New("empty channel_id")
-		log.Println(err)
-		return nil, "", err
-	}
-
-	if tool.CheckIsString(&reqData.RequestCloseChannelHash) == false {
-		err = errors.New("empty request_close_channel_hash")
-		log.Println(err)
-		return nil, "", err
-	}
-	// endregion
-
-	//region query data from db
-	closeOpStaterReqData := &dao.CloseChannel{}
-	err = db.Select(
-		q.Eq("ChannelId", reqData.ChannelId),
-		q.Eq("CurrState", 0),
-		q.Eq("RequestHex", reqData.RequestCloseChannelHash)).
-		First(closeOpStaterReqData)
-	if err != nil {
-		log.Println(err)
-		return nil, "", err
-	}
-
-	channelInfo := &dao.ChannelInfo{}
-	err = db.Select(
-		q.Eq("ChannelId", reqData.ChannelId),
-		q.Eq("CurrState", dao.ChannelState_HtlcTx)).
-		First(channelInfo)
-	if err != nil {
-		log.Println(err)
-		return nil, "", err
-	}
-	// endregion
-
-	//region Cnx RDnx
-
-	// 提现操作的发起者
-	closeOpStarter = channelInfo.PeerIdB
-	if user.PeerId == channelInfo.PeerIdB {
-		closeOpStarter = channelInfo.PeerIdA
-	}
-
-	latestCommitmentTx, err := getHtlcLatestCommitmentTx(channelInfo.ChannelId, user.PeerId)
-	if err != nil {
-		log.Println(err)
-		return nil, "", err
-	}
-
-	if tool.CheckIsString(&latestCommitmentTx.RSMCTxHash) {
-		commitmentTxid, err := rpcClient.SendRawTransaction(latestCommitmentTx.RSMCTxHash)
-		if err != nil {
-			log.Println(err)
-			return nil, "", err
-		}
-		log.Println(commitmentTxid)
-	}
-
-	if tool.CheckIsString(&latestCommitmentTx.ToOtherTxHash) {
-		commitmentTxidToBob, err := rpcClient.SendRawTransaction(latestCommitmentTx.ToOtherTxHash)
-		if err != nil {
-			log.Println(err)
-			return nil, "", err
-		}
-		log.Println(commitmentTxidToBob)
-	}
-
-	latestRsmcRD := &dao.RevocableDeliveryTransaction{}
-	err = db.Select(
-		q.Eq("ChannelId", channelInfo.ChannelId),
-		q.Eq("CommitmentTxId", latestCommitmentTx.Id),
-		q.Eq("RDType", 0),
-		q.Eq("Owner", closeOpStarter)).
-		OrderBy("CreateAt").Reverse().
-		First(latestRsmcRD)
-	if err != nil {
-		log.Println(err)
-		return nil, "", err
-	}
-
-	latestRsmcRDTxid, err := rpcClient.SendRawTransaction(latestRsmcRD.TxHash)
-	if err != nil {
-		log.Println(err)
-		msg := err.Error()
-		if strings.Contains(msg, "non-BIP68-final (code 64)") == false {
-			return nil, "", err
-		}
-	}
-	log.Println(latestRsmcRDTxid)
-
-	if tool.CheckIsString(&latestCommitmentTx.HtlcTxHash) {
-		commitmentTxidToHtlc, err := rpcClient.SendRawTransaction(latestCommitmentTx.HtlcTxHash)
-		if err != nil {
-			log.Println(err)
-			return nil, "", err
-		}
-		log.Println(commitmentTxidToHtlc)
-	}
-
-	// endregion
-
-	// 提现人是否是这次htlc的转账发起者
-	var withdrawerIsHtlcSender bool
-	if latestCommitmentTx.HtlcSender == closeOpStarter {
-		withdrawerIsHtlcSender = true
-	} else {
-		withdrawerIsHtlcSender = false
-	}
-
-	tx, err := db.Begin(true)
-	defer tx.Rollback()
-
-	// region htlc的相关交易广播
-	isRsmcTx := true
-	// 提现人是这次htlc的转账发起者
-	if withdrawerIsHtlcSender {
-		// 如果已经得到R，直接广播HED1a
-		if latestCommitmentTx.CurrState == dao.TxInfoState_Htlc_GetR {
-			isRsmcTx = false
-			hednx := &dao.HTLCExecutionDeliveryOfR{}
-			err = tx.Select(
-				q.Eq("CommitmentTxId", latestCommitmentTx.Id),
-				q.Eq("CurrState", dao.TxInfoState_CreateAndSign),
-				q.Eq("Owner", closeOpStarter)).
-				First(hednx)
-			if err == nil {
-				if tool.CheckIsString(&hednx.TxHash) {
-					_, err := rpcClient.SendRawTransaction(hednx.TxHash)
-					if err != nil {
-						log.Println(err)
-						return nil, "", err
-					}
-					hednx.CurrState = dao.TxInfoState_SendHex
-					hednx.SendAt = time.Now()
-					_ = tx.Update(hednx)
-				}
-			}
-		}
-	} else { // 提现人是这次htlc的转账接收者
-		//如果还没有获取到R 执行HTD1b
-		if latestCommitmentTx.CurrState == dao.TxInfoState_Htlc_GetH {
-			isRsmcTx = false
-			htdnx := &dao.HTLCTimeoutDeliveryTxB{}
-			err = tx.Select(
-				q.Eq("CommitmentTxId", latestCommitmentTx.Id),
-				q.Eq("CurrState", dao.TxInfoState_CreateAndSign),
-				q.Eq("Owner", closeOpStarter)).
-				First(htdnx)
-			if err == nil {
-				if tool.CheckIsString(&htdnx.TxHash) {
-					_, err := rpcClient.SendRawTransaction(htdnx.TxHash)
-					if err != nil {
-						log.Println(err)
-						msg := err.Error()
-						if strings.Contains(msg, "non-BIP68-final (code 64)") == false {
-							return nil, "", err
-						}
-					}
-					_ = addHTDnxTxToWaitDB(tx, htdnx)
-					htdnx.CurrState = dao.TxInfoState_SendHex
-					htdnx.SendAt = time.Now()
-					_ = tx.Update(htdnx)
-				}
-			}
-		}
-	}
-
-	//如果转账方在超时后还没有得到R,或者接收方得到R后想直接提现
-	if isRsmcTx {
-		htnx := &dao.HTLCTimeoutTxForAAndExecutionForB{}
-		err = tx.Select(
-			q.Eq("ChannelId", channelInfo.ChannelId),
-			q.Eq("CommitmentTxId", latestCommitmentTx.Id),
-			q.Eq("Owner", closeOpStarter),
-			q.Eq("CurrState", dao.TxInfoState_CreateAndSign)).
-			First(htnx)
-		if err == nil {
-			htrd := &dao.RevocableDeliveryTransaction{}
-			err = tx.Select(
-				q.Eq("CommitmentTxId", htnx.Id),
-				q.Eq("Owner", closeOpStarter), q.Eq("RDType", 1),
-				q.Eq("CurrState", dao.TxInfoState_CreateAndSign)).
-				First(htrd)
-			if err == nil {
-				if tool.CheckIsString(&htnx.RSMCTxHash) {
-					_, err := rpcClient.SendRawTransaction(htnx.RSMCTxHash)
-					if err == nil { //如果已经超时
-						if tool.CheckIsString(&htrd.TxHash) {
-							_, err = rpcClient.SendRawTransaction(htrd.TxHash)
-							if err != nil {
-								log.Println(err)
-								msg := err.Error()
-								if strings.Contains(msg, "non-BIP68-final (code 64)") == false {
-									return nil, "", err
-								}
-							}
-							_ = addRDTxToWaitDB(tx, htrd)
-							htnx.CurrState = dao.TxInfoState_SendHex
-							htnx.SendAt = time.Now()
-							_ = tx.Update(htnx)
-						}
-					} else {
-						if err != nil { // 如果是超时内的正常提现
-							log.Println(err)
-							if htnx.Timeout == 0 {
-								return nil, "", err
-							}
-							msg := err.Error()
-							if strings.Contains(msg, "non-BIP68-final (code 64)") == false {
-								return nil, "", err
-							}
-						}
-						_ = addHT1aTxToWaitDB(tx, htnx, htrd)
-					}
-				}
-			}
-		}
-	}
-	// endregion
-
-	// region update obj state to db
-	latestCommitmentTx.CurrState = dao.TxInfoState_SendHex
-	latestCommitmentTx.SendAt = time.Now()
-	err = tx.Update(latestCommitmentTx)
-	if err != nil {
-		return nil, "", err
-	}
-
-	latestRsmcRD.CurrState = dao.TxInfoState_SendHex
-	latestRsmcRD.SendAt = time.Now()
-	err = tx.Update(latestRsmcRD)
-	if err != nil {
-		return nil, "", err
-	}
-
-	err = addRDTxToWaitDB(tx, latestRsmcRD)
-	if err != nil {
-		return nil, "", err
-	}
-
-	channelInfo.CurrState = dao.ChannelState_Close
-	channelInfo.CloseAt = time.Now()
-	err = tx.Update(channelInfo)
-	if err != nil {
-		return nil, "", err
-	}
-
-	closeOpStaterReqData.CurrState = 1
-	_ = tx.Update(closeOpStaterReqData)
-	//endregion
-
-	err = tx.Commit()
-	if err != nil {
-		return nil, "", err
-	}
-	return channelInfo, closeOpStarter, nil
 }
 
 func addHT1aTxToWaitDB(tx storm.Node, htnx *dao.HTLCTimeoutTxForAAndExecutionForB, htrd *dao.RevocableDeliveryTransaction) error {

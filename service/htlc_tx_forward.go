@@ -647,7 +647,7 @@ func (service *htlcForwardTxManager) SenderBeginCreateHtlcCommitmentTx(msgData s
 	defer delete(tempAddrPrivateKeyMap, currNodePubKey)
 	_, err = tool.GetPubKeyFromWifAndCheck(requestData.LastTempAddressPrivateKey, lastCommitmentTxOfSender.RSMCTempAddressPubKey)
 	if err != nil {
-		return nil, "", errors.New("ChannelAddressPrivateKey is wrong")
+		return nil, "", errors.New("LastTempAddressPrivateKey is wrong")
 	}
 
 	// get the funding transaction

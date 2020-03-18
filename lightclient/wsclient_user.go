@@ -16,11 +16,13 @@ func (client *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, 
 	switch msg.Type {
 	case enum.MsgType_UserLogin_1:
 		if client.User != nil {
-			client.sendToMyself(msg.Type, true, "already login")
+			data = client.User.PeerId + " already login@" + client.User.P2PLocalAddress
+			client.sendToMyself(msg.Type, true, data)
 			sendType = enum.SendTargetType_SendToSomeone
 		} else {
 			user := bean.User{
-				Mnemonic: gjson.Get(msg.Data, "mnemonic").String(),
+				Mnemonic:        gjson.Get(msg.Data, "mnemonic").String(),
+				P2PLocalAddress: localServerDest,
 			}
 			var err error = nil
 			peerId := tool.SignMsgWithSha256([]byte(user.Mnemonic))
@@ -33,9 +35,9 @@ func (client *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, 
 				client.User = &user
 				GlobalWsClientManager.OnlineUserMap[user.PeerId] = client
 				service.OnlineUserMap[user.PeerId] = true
-				data = user.PeerId + " login"
+				data = user.PeerId + " login@" + user.P2PLocalAddress
 				status = true
-				client.sendToMyself(msg.Type, status, "login success")
+				client.sendToMyself(msg.Type, status, data)
 				sendType = enum.SendTargetType_SendToExceptMe
 			} else {
 				client.sendToMyself(msg.Type, status, err.Error())
@@ -60,9 +62,8 @@ func (client *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, 
 	case enum.MsgType_p2p_ConnectServer_3:
 		ConnP2PServer(msg.Data)
 	case enum.MsgType_p2p_SendDataToServer_4:
-		ClientSendMsg(msg.Data)
-	case enum.MsgType_p2p_SendDataToClient_5:
-		ServerSendMsg(msg.Data)
+		SendP2PMsg(msg.RecipientP2PPeerId, msg.Data)
+
 	// Added by Kevin 2019-11-25
 	// Process GetMnemonic
 	case enum.MsgType_GetMnemonic_101:

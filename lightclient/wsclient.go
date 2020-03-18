@@ -70,8 +70,10 @@ func (client *Client) Read() {
 
 		msg.Type = enum.MsgType(parse.Get("type").Int())
 		msg.Data = parse.Get("data").String()
+		msg.RawData = string(dataReq)
 		msg.SenderPeerId = parse.Get("sender_peer_id").String()
 		msg.RecipientPeerId = parse.Get("recipient_peer_id").String()
+		msg.RecipientP2PPeerId = parse.Get("recipient_p2p_peer_id").String()
 		msg.PubKey = parse.Get("pub_key").String()
 		msg.Signature = parse.Get("signature").String()
 
@@ -79,8 +81,10 @@ func (client *Client) Read() {
 		if tool.CheckIsString(&msg.RecipientPeerId) {
 			_, err := client.FindUser(&msg.RecipientPeerId)
 			if err != nil {
-				client.sendToMyself(msg.Type, false, "can not find target user")
-				continue
+				if tool.CheckIsString(&msg.RecipientP2PPeerId) == false {
+					client.sendToMyself(msg.Type, false, "can not find target user")
+					continue
+				}
 			}
 		}
 

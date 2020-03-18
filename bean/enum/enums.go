@@ -18,7 +18,6 @@ const (
 
 	MsgType_p2p_ConnectServer_3    MsgType = 3
 	MsgType_p2p_SendDataToServer_4 MsgType = 4
-	MsgType_p2p_SendDataToClient_5 MsgType = 5
 
 	MsgType_Core_GetNewAddress_1001                    MsgType = 1001
 	MsgType_Core_GetMiningInfo_1002                    MsgType = 1002
