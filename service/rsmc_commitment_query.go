@@ -46,7 +46,7 @@ func (service *commitmentTxManager) GetLatestCommitmentTxByChannelId(jsonData st
 }
 
 type RequestGetBroadcastCommitmentTx struct {
-	ChannelId bean.ChannelID `json:"channel_id"`
+	ChannelId string `json:"channel_id"`
 }
 
 func (service *commitmentTxManager) GetBroadcastCommitmentTxByChannelId(jsonData string, user *bean.User) (node *dao.CommitmentTransaction, err error) {
@@ -59,7 +59,7 @@ func (service *commitmentTxManager) GetBroadcastCommitmentTxByChannelId(jsonData
 		return nil, err
 	}
 
-	if bean.ChannelIdService.IsEmpty(reqData.ChannelId) {
+	if tool.CheckIsString(&reqData.ChannelId) == false {
 		return nil, errors.New("wrong channelId")
 	}
 
@@ -110,13 +110,9 @@ func (service *commitmentTxManager) GetBroadcastBRTxByChannelId(jsonData string,
 }
 
 func (service *commitmentTxManager) GetLatestRDTxByChannelId(jsonData string, user *bean.User) (node *dao.RevocableDeliveryTransaction, err error) {
-	var chanId bean.ChannelID
-	array := gjson.Get(jsonData, "channel_id").Array()
-	if len(array) != 32 {
+	chanId := gjson.Get(jsonData, "channel_id").String()
+	if tool.CheckIsString(&chanId) == false {
 		return nil, errors.New("wrong channel_id")
-	}
-	for index, value := range array {
-		chanId[index] = byte(value.Num)
 	}
 
 	channelInfo := &dao.ChannelInfo{}
@@ -137,13 +133,9 @@ func (service *commitmentTxManager) GetLatestRDTxByChannelId(jsonData string, us
 }
 
 func (service *commitmentTxManager) GetLatestAllRDByChannelId(jsonData string, user *bean.User) (nodes []dao.RevocableDeliveryTransaction, err error) {
-	var chanId bean.ChannelID
-	array := gjson.Get(jsonData, "channel_id").Array()
-	if len(array) != 32 {
+	chanId := gjson.Get(jsonData, "channel_id").String()
+	if tool.CheckIsString(&chanId) == false {
 		return nil, errors.New("wrong channel_id")
-	}
-	for index, value := range array {
-		chanId[index] = byte(value.Num)
 	}
 
 	channelInfo := &dao.ChannelInfo{}
@@ -164,13 +156,9 @@ func (service *commitmentTxManager) GetLatestAllRDByChannelId(jsonData string, u
 }
 
 func (service *commitmentTxManager) GetLatestBRTxByChannelId(jsonData string, user *bean.User) (node *dao.BreachRemedyTransaction, err error) {
-	var chanId bean.ChannelID
-	array := gjson.Get(jsonData, "channel_id").Array()
-	if len(array) != 32 {
+	chanId := gjson.Get(jsonData, "channel_id").String()
+	if tool.CheckIsString(&chanId) == false {
 		return nil, errors.New("wrong channel_id")
-	}
-	for index, value := range array {
-		chanId[index] = byte(value.Num)
 	}
 
 	channelInfo := &dao.ChannelInfo{}
@@ -191,13 +179,9 @@ func (service *commitmentTxManager) GetLatestBRTxByChannelId(jsonData string, us
 }
 
 func (service *commitmentTxManager) GetLatestAllBRByChannelId(jsonData string, user *bean.User) (nodes []dao.BreachRemedyTransaction, err error) {
-	var chanId bean.ChannelID
-	array := gjson.Get(jsonData, "channel_id").Array()
-	if len(array) != 32 {
+	chanId := gjson.Get(jsonData, "channel_id").String()
+	if tool.CheckIsString(&chanId) == false {
 		return nil, errors.New("wrong channel_id")
-	}
-	for index, value := range array {
-		chanId[index] = byte(value.Num)
 	}
 
 	channelInfo := &dao.ChannelInfo{}
@@ -218,19 +202,14 @@ func (service *commitmentTxManager) GetLatestAllBRByChannelId(jsonData string, u
 }
 
 func (service *commitmentTxManager) GetItemsByChannelId(jsonData string, user *bean.User) (nodes []dao.CommitmentTransaction, count *int, err error) {
-	var chanId bean.ChannelID
-
-	array := gjson.Get(jsonData, "channel_id").Array()
-	if len(array) != 32 {
+	channelId := gjson.Get(jsonData, "channel_id").String()
+	if tool.CheckIsString(&channelId) == false {
 		return nil, nil, errors.New("wrong channel_id")
-	}
-	for index, value := range array {
-		chanId[index] = byte(value.Num)
 	}
 
 	channelInfo := &dao.ChannelInfo{}
 	err = db.Select(
-		q.Eq("ChannelId", chanId)).
+		q.Eq("ChannelId", channelId)).
 		First(channelInfo)
 	if err != nil {
 		return nil, nil, err
@@ -253,7 +232,7 @@ func (service *commitmentTxManager) GetItemsByChannelId(jsonData string, user *b
 
 	nodes = []dao.CommitmentTransaction{}
 	tempCount, err := db.Select(
-		q.Eq("ChannelId", chanId),
+		q.Eq("ChannelId", channelId),
 		q.Eq("Owner", user.PeerId)).
 		Count(&dao.CommitmentTransaction{})
 	if err != nil {
@@ -261,7 +240,7 @@ func (service *commitmentTxManager) GetItemsByChannelId(jsonData string, user *b
 	}
 	count = &tempCount
 	err = db.Select(
-		q.Eq("ChannelId", chanId),
+		q.Eq("ChannelId", channelId),
 		q.Eq("Owner", user.PeerId)).
 		OrderBy("CreateAt").Reverse().
 		Skip(int(skip)).
@@ -306,14 +285,9 @@ func (service *commitmentTxManager) Del(id int) (node *dao.CommitmentTransaction
 }
 
 func (service *commitmentTxSignedManager) GetItemsByChannelId(jsonData string) (nodes []dao.CommitmentTransaction, count *int, err error) {
-	var chanId bean.ChannelID
-	array := gjson.Get(jsonData, "channel_id").Array()
-
-	if len(array) != 32 {
+	chanId := gjson.Get(jsonData, "channel_id").String()
+	if tool.CheckIsString(&chanId) == false {
 		return nil, nil, errors.New("wrong channel_id")
-	}
-	for index, value := range array {
-		chanId[index] = byte(value.Num)
 	}
 
 	pageIndex := gjson.Get(jsonData, "page_index").Int()

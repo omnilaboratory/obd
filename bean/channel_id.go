@@ -66,12 +66,3 @@ func (service *channelIdManager) NextTemporaryChanID() string {
 	temp := nextChanID[:]
 	return hex.EncodeToString(temp)
 }
-
-func (service *channelIdManager) IsEmpty(channelId ChannelID) bool {
-	for _, item := range channelId {
-		if item != 0 {
-			return false
-		}
-	}
-	return true
-}

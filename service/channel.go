@@ -176,15 +176,11 @@ func (this *channelManager) AllItem(peerId string) (data []dao.ChannelInfo, err 
 	return infos, err
 }
 func (this *channelManager) GetChannelInfoByChannelId(jsonData string, peerId string) (info *dao.ChannelInfo, err error) {
-	array := gjson.Parse(jsonData).Array()
-	if len(array) != 32 {
+	channelId := gjson.Parse(jsonData).String()
+	if tool.CheckIsString(&channelId) == false {
 		return nil, errors.New("wrong ChannelId")
 	}
 
-	var channelId bean.ChannelID
-	for index, value := range array {
-		channelId[index] = byte(value.Num)
-	}
 	info = &dao.ChannelInfo{}
 	err = db.Select(
 		q.Eq("ChannelId", channelId),
