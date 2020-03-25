@@ -1,7 +1,6 @@
 package service
 
 import (
-	"LightningOnOmni/rpc"
 	"encoding/hex"
 	"errors"
 	"github.com/btcsuite/btcd/btcec"
@@ -12,6 +11,7 @@ import (
 	"github.com/btcsuite/btcutil"
 	"github.com/tidwall/gjson"
 	"log"
+	"obd/rpc"
 )
 
 // addrtool_mnemonic_test.go的Test_Demo2生成

@@ -1,9 +1,6 @@
 package lightclient
 
 import (
-	"LightningOnOmni/bean"
-	"LightningOnOmni/config"
-	"LightningOnOmni/tool"
 	"bufio"
 	"context"
 	"encoding/json"
@@ -16,6 +13,9 @@ import (
 	"github.com/libp2p/go-libp2p-core/peerstore"
 	"log"
 	mrand "math/rand"
+	"obd/bean"
+	"obd/config"
+	"obd/tool"
 	"strings"
 
 	"github.com/multiformats/go-multiaddr"

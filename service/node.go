@@ -1,8 +1,8 @@
 package service
 
 import (
-	"LightningOnOmni/dao"
 	"fmt"
+	"obd/dao"
 	"time"
 )
 

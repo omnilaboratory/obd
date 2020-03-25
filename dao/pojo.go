@@ -1,7 +1,7 @@
 package dao
 
 import (
-	"LightningOnOmni/bean"
+	"obd/bean"
 	"time"
 )
 

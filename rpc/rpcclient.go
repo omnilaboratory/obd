@@ -1,13 +1,13 @@
 package rpc
 
 import (
-	"LightningOnOmni/config"
 	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"obd/config"
 	"strings"
 	"sync/atomic"
 

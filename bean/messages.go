@@ -1,10 +1,10 @@
 package bean
 
 import (
-	"LightningOnOmni/bean/chainhash"
-	"LightningOnOmni/bean/enum"
 	"github.com/asdine/storm"
 	"github.com/tyler-smith/go-bip32"
+	"obd/bean/chainhash"
+	"obd/bean/enum"
 )
 
 type RequestMessage struct {
@@ -45,7 +45,7 @@ type User struct {
 	Db              *storm.DB //db
 }
 
-//https://github.com/LightningOnOmnilayer/Omni-BOLT-spec/blob/master/OmniBOLT-03-RSMC-and-OmniLayer-Transactions.md
+//https://github.com/obdlayer/Omni-BOLT-spec/blob/master/OmniBOLT-03-RSMC-and-OmniLayer-Transactions.md
 //type = -32
 type OpenChannelInfo struct {
 	ChainHash                chainhash.ChainHash `json:"chain_hash"`

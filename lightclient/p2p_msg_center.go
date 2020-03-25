@@ -1,10 +1,10 @@
 package lightclient
 
 import (
-	"LightningOnOmni/bean"
-	"LightningOnOmni/bean/enum"
-	"LightningOnOmni/service"
 	"errors"
+	"obd/bean"
+	"obd/bean/enum"
+	"obd/service"
 )
 
 func routerOfSameNode(msgType enum.MsgType, data string, user *bean.User) (err error) {

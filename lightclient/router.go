@@ -1,16 +1,16 @@
 package lightclient
 
 import (
-	"LightningOnOmni/grpcpack"
-	pb "LightningOnOmni/grpcpack/pb"
-	"LightningOnOmni/service"
 	"log"
 	"net/http"
+	"obd/grpcpack"
+	pb "obd/grpcpack/pb"
+	"obd/service"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
-	uuid "github.com/satori/go.uuid"
+	"github.com/satori/go.uuid"
 	"github.com/tidwall/gjson"
 	"google.golang.org/grpc"
 )

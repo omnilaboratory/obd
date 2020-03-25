@@ -1,11 +1,11 @@
 package lightclient
 
 import (
-	"LightningOnOmni/bean"
-	"LightningOnOmni/bean/enum"
-	"LightningOnOmni/service"
 	"encoding/json"
 	"log"
+	"obd/bean"
+	"obd/bean/enum"
+	"obd/service"
 	"strconv"
 
 	"github.com/tidwall/gjson"

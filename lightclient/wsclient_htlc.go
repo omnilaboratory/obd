@@ -1,10 +1,10 @@
 package lightclient
 
 import (
-	"LightningOnOmni/bean"
-	"LightningOnOmni/bean/enum"
-	"LightningOnOmni/service"
 	"encoding/json"
+	"obd/bean"
+	"obd/bean/enum"
+	"obd/service"
 )
 
 //htlc h module

@@ -1,7 +1,6 @@
 package service
 
 import (
-	"LightningOnOmni/tool"
 	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
@@ -13,6 +12,7 @@ import (
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
 	"log"
+	"obd/tool"
 )
 
 func GenMultiSigScript(aPub, bPub []byte) ([]byte, error) {

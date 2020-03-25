@@ -1,14 +1,14 @@
 package grpcpack
 
 import (
-	pb "LightningOnOmni/grpcpack/pb"
-	"LightningOnOmni/rpc"
 	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"github.com/tidwall/gjson"
 	"golang.org/x/net/context"
 	"log"
 	"net/http"
+	pb "obd/grpcpack/pb"
+	"obd/rpc"
 )
 
 type grpcService struct {

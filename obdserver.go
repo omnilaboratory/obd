@@ -1,12 +1,12 @@
 package main
 
 import (
-	"LightningOnOmni/config"
-	"LightningOnOmni/lightclient"
-	"LightningOnOmni/service"
 	"google.golang.org/grpc"
 	"log"
 	"net/http"
+	"obd/config"
+	"obd/lightclient"
+	"obd/service"
 	"strconv"
 )
 

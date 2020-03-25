@@ -1,10 +1,6 @@
 package service
 
 import (
-	"LightningOnOmni/bean"
-	"LightningOnOmni/config"
-	"LightningOnOmni/dao"
-	"LightningOnOmni/tool"
 	"encoding/hex"
 	"errors"
 	"github.com/btcsuite/btcd/btcec"
@@ -12,6 +8,10 @@ import (
 	"github.com/btcsuite/btcutil"
 	"github.com/tyler-smith/go-bip32"
 	"github.com/tyler-smith/go-bip39"
+	"obd/bean"
+	"obd/config"
+	"obd/dao"
+	"obd/tool"
 )
 
 type Wallet struct {

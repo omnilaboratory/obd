@@ -1,7 +1,6 @@
 package tool
 
 import (
-	"LightningOnOmni/config"
 	"crypto/md5"
 	"crypto/rand"
 	"crypto/sha256"
@@ -15,6 +14,7 @@ import (
 	"golang.org/x/crypto/ripemd160"
 	"io"
 	"log"
+	"obd/config"
 	"os"
 	"regexp"
 	"strings"

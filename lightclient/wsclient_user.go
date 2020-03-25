@@ -1,12 +1,12 @@
 package lightclient
 
 import (
-	"LightningOnOmni/bean"
-	"LightningOnOmni/bean/enum"
-	"LightningOnOmni/service"
-	"LightningOnOmni/tool"
 	"errors"
 	"github.com/tidwall/gjson"
+	"obd/bean"
+	"obd/bean/enum"
+	"obd/service"
+	"obd/tool"
 )
 
 func (client *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, []byte, bool) {

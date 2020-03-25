@@ -1,10 +1,10 @@
 package lightclient
 
 import (
-	"LightningOnOmni/bean"
 	"encoding/json"
 	"github.com/gorilla/websocket"
 	"log"
+	"obd/bean"
 )
 
 type Client struct {

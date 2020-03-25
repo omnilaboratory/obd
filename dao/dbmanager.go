@@ -1,10 +1,10 @@
 package dao
 
 import (
-	"LightningOnOmni/config"
-	"LightningOnOmni/tool"
 	"github.com/asdine/storm"
 	"log"
+	"obd/config"
+	"obd/tool"
 )
 
 //storm  doc  https://github.com/asdine/storm#getting-started

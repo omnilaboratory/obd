@@ -1,10 +1,10 @@
 package service
 
 import (
-	"LightningOnOmni/bean"
 	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"obd/bean"
 	"strconv"
 )
 
