@@ -33,7 +33,7 @@ func (service *fundingTransactionManager) BTCFundingCreated(data bean.RequestMes
 	}
 
 	if tool.CheckIsString(&reqData.TemporaryChannelId) == false {
-		err = errors.New("wrong TemporaryChannelId ")
+		err = errors.New("wrong TemporaryChannelId")
 		log.Println(err)
 		return nil, "", err
 	}
