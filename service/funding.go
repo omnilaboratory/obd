@@ -24,9 +24,9 @@ type fundingTransactionManager struct {
 
 var FundingTransactionService fundingTransactionManager
 
-func (service *fundingTransactionManager) BTCFundingCreated(jsonData string, user *bean.User) (fundingTransaction map[string]interface{}, targetUser string, err error) {
+func (service *fundingTransactionManager) BTCFundingCreated(data bean.RequestMessage, user *bean.User) (fundingTransaction map[string]interface{}, targetUser string, err error) {
 	reqData := &bean.FundingBtcCreated{}
-	err = json.Unmarshal([]byte(jsonData), reqData)
+	err = json.Unmarshal([]byte(data.Data), reqData)
 	if err != nil {
 		log.Println(err)
 		return nil, "", err
@@ -50,8 +50,15 @@ func (service *fundingTransactionManager) BTCFundingCreated(jsonData string, use
 		return nil, "", err
 	}
 
+	tx, err := user.Db.Begin(true)
+	if err != nil {
+		log.Println(err)
+		return nil, "", err
+	}
+	defer tx.Rollback()
+
 	channelInfo := &dao.ChannelInfo{}
-	err = db.Select(
+	err = tx.Select(
 		q.Eq("TemporaryChannelId", reqData.TemporaryChannelId),
 		q.Eq("CurrState", dao.ChannelState_WaitFundAsset),
 		q.Or(
@@ -63,20 +70,27 @@ func (service *fundingTransactionManager) BTCFundingCreated(jsonData string, use
 		log.Println(err)
 		return nil, "", err
 	}
+
 	targetUser = channelInfo.PeerIdB
 	pubKey := channelInfo.PubKeyA
+	redeemToAddress := channelInfo.AddressA
 	if user.PeerId == channelInfo.PeerIdB {
 		pubKey = channelInfo.PubKeyB
+		redeemToAddress = channelInfo.AddressB
 		targetUser = channelInfo.PeerIdA
 	}
+
+	if data.RecipientPeerId != targetUser {
+		return nil, "", errors.New("error RecipientPeerId")
+	}
+
 	_, err = tool.GetPubKeyFromWifAndCheck(reqData.ChannelAddressPrivateKey, pubKey)
 	if err != nil {
 		return nil, "", err
 	}
-	tempAddrPrivateKeyMap[pubKey] = reqData.ChannelAddressPrivateKey
 
 	//get btc miner Fee data from transaction
-	fundingTxid, amount, _, err := checkBtcTxHex(btcFeeTxHexDecode, channelInfo, user.PeerId)
+	fundingTxid, amount, vout, err := checkBtcTxHex(btcFeeTxHexDecode, channelInfo, user.PeerId)
 	if err != nil {
 		log.Println(err)
 		return nil, "", err
@@ -89,11 +103,12 @@ func (service *fundingTransactionManager) BTCFundingCreated(jsonData string, use
 		return nil, "", err
 	}
 
-	count, _ := db.Select(
+	count, _ := tx.Select(
 		q.Eq("TemporaryChannelId", reqData.TemporaryChannelId),
 		q.Eq("TxId", fundingTxid),
 		q.Eq("Owner", user.PeerId),
-		q.Eq("IsFinish", true)).
+		q.Eq("IsFinish", true),
+		q.Eq("SignApproval", true)).
 		Count(&dao.FundingBtcRequest{})
 	if count != 0 {
 		err = errors.New("the tx have been send")
@@ -102,16 +117,19 @@ func (service *fundingTransactionManager) BTCFundingCreated(jsonData string, use
 	}
 
 	fundingBtcRequest := &dao.FundingBtcRequest{}
-	err = db.Select(
+	_ = tx.Select(
 		q.Eq("TemporaryChannelId", reqData.TemporaryChannelId),
 		q.Eq("TxId", fundingTxid),
 		q.Eq("Owner", user.PeerId),
-		q.Eq("IsFinish", false)).
+		q.Or(
+			q.Eq("IsFinish", false),
+			q.And(
+				q.Eq("IsFinish", true),
+				q.Eq("SignApproval", false)))).
 		First(fundingBtcRequest)
-	if err != nil {
-		log.Println(err)
-	}
 
+	minerFeeRedeemTransaction := &dao.MinerFeeRedeemTransaction{}
+	//如果这个交易是第一次请求，那就创建，并且创建一个赎回交易
 	if fundingBtcRequest.Id == 0 {
 		fundingBtcRequest = &dao.FundingBtcRequest{}
 		fundingBtcRequest.Owner = user.PeerId
@@ -121,20 +139,178 @@ func (service *fundingTransactionManager) BTCFundingCreated(jsonData string, use
 		fundingBtcRequest.CreateAt = time.Now()
 		fundingBtcRequest.Amount = amount
 		fundingBtcRequest.IsFinish = false
-		err = db.Save(fundingBtcRequest)
+		err = tx.Save(fundingBtcRequest)
 		if err != nil {
 			log.Println(err)
 			return nil, "", err
 		}
+
+		// 创建一个btc赎回交易 ，alice首先签名
+		txid, hex, err := rpcClient.BtcCreateAndSignRawTransactionForUnsendInputTx(
+			channelInfo.ChannelAddress,
+			[]string{
+				reqData.ChannelAddressPrivateKey},
+			[]rpc.TransactionInputItem{
+				{
+					Txid:         fundingBtcRequest.TxId,
+					Vout:         vout,
+					Amount:       amount,
+					ScriptPubKey: channelInfo.ChannelAddressScriptPubKey},
+			},
+			[]rpc.TransactionOutputItem{
+				{
+					ToBitCoinAddress: redeemToAddress,
+					Amount:           fundingBtcRequest.Amount},
+			},
+			0,
+			0,
+			&channelInfo.ChannelAddressRedeemScript)
+		if err != nil {
+			return nil, "", err
+		}
+
+		minerFeeRedeemTransaction.Txid = txid
+		minerFeeRedeemTransaction.Hex = hex
+		minerFeeRedeemTransaction.FundingTxId = fundingTxid
+		minerFeeRedeemTransaction.CreateAt = time.Now()
+		minerFeeRedeemTransaction.Owner = user.PeerId
+		minerFeeRedeemTransaction.TemporaryChannelId = reqData.TemporaryChannelId
+		_ = tx.Save(minerFeeRedeemTransaction)
+	} else {
+		if fundingBtcRequest.IsFinish {
+			fundingBtcRequest.IsFinish = false
+			tx.Update(fundingBtcRequest)
+		}
+
+		err := tx.Select(
+			q.Eq("TemporaryChannelId", reqData.TemporaryChannelId),
+			q.Eq("FundingTxId", fundingTxid),
+		).First(minerFeeRedeemTransaction)
+		if err != nil {
+			return nil, "", err
+		}
 	}
+
+	err = tx.Commit()
+	if err != nil {
+		log.Println(err.Error())
+		return nil, "", err
+	}
+
 	node := make(map[string]interface{})
 	node["temporary_channel_id"] = reqData.TemporaryChannelId
-	node["amount"] = amount
 	node["funding_txid"] = fundingTxid
+	node["funding_btc_hex"] = reqData.FundingTxHex
+	node["funding_redeem_hex"] = minerFeeRedeemTransaction.Hex
 	return node, targetUser, nil
 }
 
-func (service *fundingTransactionManager) FundingBtcTxSigned(jsonData string, signer *bean.User) (outData interface{}, funder string, err error) {
+//bob签收btc充值之前的obd的操作
+func (service *fundingTransactionManager) BeforeBobSignBtcFunding(data string, user *bean.User) (outData interface{}, err error) {
+	jsonObj := gjson.Parse(data)
+	temporaryChannelId := jsonObj.Get("temporary_channel_id").String()
+	fundingBtcHex := jsonObj.Get("funding_btc_hex").String()
+	fundingRedeemHex := jsonObj.Get("funding_redeem_hex").String()
+	if tool.CheckIsString(&temporaryChannelId) == false {
+		err = errors.New("wrong temporaryChannelId ")
+		log.Println(err)
+		return nil, err
+	}
+	if tool.CheckIsString(&fundingBtcHex) == false {
+		err = errors.New("wrong fundingBtcHex ")
+		log.Println(err)
+		return nil, err
+	}
+	if tool.CheckIsString(&fundingRedeemHex) == false {
+		err = errors.New("wrong fundingRedeemHex ")
+		log.Println(err)
+		return nil, err
+	}
+
+	tx, err := user.Db.Begin(true)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	defer tx.Rollback()
+
+	channelInfo := &dao.ChannelInfo{}
+	err = tx.Select(
+		q.Eq("TemporaryChannelId", temporaryChannelId),
+		q.Eq("CurrState", dao.ChannelState_WaitFundAsset),
+		q.Or(
+			q.Eq("PeerIdA", user.PeerId),
+			q.Eq("PeerIdB", user.PeerId))).
+		OrderBy("CreateAt").Reverse().
+		First(channelInfo)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	funder := channelInfo.PeerIdA
+	if user.PeerId == channelInfo.PeerIdA {
+		funder = channelInfo.PeerIdB
+	}
+
+	btcFeeTxHexDecode, err := rpcClient.DecodeRawTransaction(fundingBtcHex)
+	if err != nil {
+		err = errors.New("BtcFeeTxHex  parse fail " + err.Error())
+		log.Println(err)
+		return nil, err
+	}
+	//get btc miner Fee data from transaction
+	fundingTxid, amount, _, err := checkBtcTxHex(btcFeeTxHexDecode, channelInfo, funder)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	fundingBtcRequest := &dao.FundingBtcRequest{}
+	_ = tx.Select(
+		q.Eq("TemporaryChannelId", temporaryChannelId),
+		q.Eq("TxId", fundingTxid),
+		q.Eq("Owner", funder),
+		q.Or(
+			q.Eq("IsFinish", false),
+			q.And(
+				q.Eq("IsFinish", true),
+				q.Eq("SignApproval", false)))).
+		First(fundingBtcRequest)
+
+	//如果这个交易是第一次请求，那就创建，并且创建一个赎回交易
+	if fundingBtcRequest.Id == 0 {
+		fundingBtcRequest = &dao.FundingBtcRequest{}
+		fundingBtcRequest.Owner = funder
+		fundingBtcRequest.TemporaryChannelId = temporaryChannelId
+		fundingBtcRequest.TxHash = fundingBtcHex
+		fundingBtcRequest.RedeemHex = fundingRedeemHex
+		fundingBtcRequest.TxId = fundingTxid
+		fundingBtcRequest.CreateAt = time.Now()
+		fundingBtcRequest.Amount = amount
+		fundingBtcRequest.IsFinish = false
+		err = tx.Save(fundingBtcRequest)
+		if err != nil {
+			log.Println(err)
+			return nil, err
+		}
+	} else {
+		if fundingBtcRequest.IsFinish {
+			fundingBtcRequest.IsFinish = false
+			tx.Update(fundingBtcRequest)
+		}
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+
+	return nil, nil
+}
+
+func (service *fundingTransactionManager) FundingBtcTxSigned(jsonData string, user *bean.User) (outData interface{}, funder string, err error) {
 	reqData := &bean.FundingBtcSigned{}
 	err = json.Unmarshal([]byte(jsonData), reqData)
 	if err != nil {
@@ -162,13 +338,20 @@ func (service *fundingTransactionManager) FundingBtcTxSigned(jsonData string, si
 		}
 	}
 
+	tx, err := user.Db.Begin(true)
+	if err != nil {
+		log.Println(err)
+		return nil, "", err
+	}
+	defer tx.Rollback()
+
 	channelInfo := &dao.ChannelInfo{}
-	err = db.Select(
+	err = tx.Select(
 		q.Eq("TemporaryChannelId", reqData.TemporaryChannelId),
 		q.Eq("CurrState", dao.ChannelState_WaitFundAsset),
 		q.Or(
-			q.Eq("PeerIdA", signer.PeerId),
-			q.Eq("PeerIdB", signer.PeerId))).
+			q.Eq("PeerIdA", user.PeerId),
+			q.Eq("PeerIdB", user.PeerId))).
 		OrderBy("CreateAt").
 		Reverse().
 		First(channelInfo)
@@ -177,19 +360,15 @@ func (service *fundingTransactionManager) FundingBtcTxSigned(jsonData string, si
 		return nil, "", err
 	}
 
-	redeemToAddress := channelInfo.AddressA
 	funder = channelInfo.PeerIdA
-	funderPubKey := channelInfo.PubKeyA
 	myPubKey := channelInfo.PubKeyB
-	if signer.PeerId == channelInfo.PeerIdA {
+	if user.PeerId == channelInfo.PeerIdA {
 		funder = channelInfo.PeerIdB
-		funderPubKey = channelInfo.PubKeyB
 		myPubKey = channelInfo.PubKeyA
-		redeemToAddress = channelInfo.AddressB
 	}
 
 	fundingBtcRequest := &dao.FundingBtcRequest{}
-	err = db.Select(
+	err = tx.Select(
 		q.Eq("TemporaryChannelId", reqData.TemporaryChannelId),
 		q.Eq("TxId", reqData.FundingTxid),
 		q.Eq("Owner", funder),
@@ -201,23 +380,20 @@ func (service *fundingTransactionManager) FundingBtcTxSigned(jsonData string, si
 		return nil, "", err
 	}
 
+	node := make(map[string]interface{})
+	node["temporary_channel_id"] = fundingBtcRequest.TemporaryChannelId
+	node["funding_txid"] = fundingBtcRequest.TxId
+	node["approval"] = reqData.Approval
+
 	fundingBtcRequest.SignApproval = reqData.Approval
+	fundingBtcRequest.SignAt = time.Now()
 	if reqData.Approval == false {
-		fundingBtcRequest.SignAt = time.Now()
-		_ = db.Update(fundingBtcRequest)
-		return nil, funder, errors.New("fundee do not agree the fund")
+		_ = tx.Update(fundingBtcRequest)
+		return node, funder, nil
 	}
 
 	_, err = tool.GetPubKeyFromWifAndCheck(reqData.ChannelAddressPrivateKey, myPubKey)
 	if err != nil {
-		return nil, "", err
-	}
-
-	funderPrivateKey := tempAddrPrivateKeyMap[funderPubKey]
-	delete(tempAddrPrivateKeyMap, funderPubKey)
-	if tool.CheckIsString(&funderPrivateKey) == false && reqData.Approval {
-		err = errors.New("FunderPrivateKey is not exist, please send the -3400 msg again")
-		log.Println(err)
 		return nil, "", err
 	}
 
@@ -227,39 +403,25 @@ func (service *fundingTransactionManager) FundingBtcTxSigned(jsonData string, si
 		log.Println(err)
 		return nil, funder, err
 	}
-	_, amount, vout, err := checkBtcTxHex(btcFeeTxHexDecode, channelInfo, funder)
+	fundingTxid, amount, vout, err := checkBtcTxHex(btcFeeTxHexDecode, channelInfo, funder)
 	if err != nil {
 		log.Println(err)
 		return nil, funder, err
 	}
 
-	// 创建一个btc赎回交易
-	minerFeeRedeemTransaction := &dao.MinerFeeRedeemTransaction{}
-	txid, hex, err := rpcClient.BtcCreateAndSignRawTransactionForUnsendInputTx(
-		channelInfo.ChannelAddress,
-		[]string{
-			funderPrivateKey,
-			reqData.ChannelAddressPrivateKey},
-		[]rpc.TransactionInputItem{
-			{
-				Txid:         fundingBtcRequest.TxId,
-				Vout:         vout,
-				Amount:       amount,
-				ScriptPubKey: channelInfo.ChannelAddressScriptPubKey},
-		},
-		[]rpc.TransactionOutputItem{
-			{
-				ToBitCoinAddress: redeemToAddress,
-				Amount:           fundingBtcRequest.Amount},
-		},
-		0,
-		0,
-		&channelInfo.ChannelAddressRedeemScript)
+	// 二次签名
+	inputItems := make([]rpc.TransactionInputItem, 0)
+	inputItems = append(inputItems, rpc.TransactionInputItem{
+		Txid:         fundingTxid,
+		ScriptPubKey: channelInfo.ChannelAddressScriptPubKey,
+		Vout:         vout,
+		Amount:       amount})
+	_, signedHex, err := rpcClient.BtcSignRawTransactionForUnsend(fundingBtcRequest.RedeemHex, inputItems, reqData.ChannelAddressPrivateKey)
 	if err != nil {
 		return nil, funder, err
 	}
 
-	//赎回交易创建成功后，广播交易
+	//赎回交易签名成功后，广播交易
 	result, err := rpcClient.SendRawTransaction(fundingBtcRequest.TxHash)
 	if err != nil {
 		if strings.Contains(err.Error(), "Transaction already in block chain") == false {
@@ -270,16 +432,121 @@ func (service *fundingTransactionManager) FundingBtcTxSigned(jsonData string, si
 
 	fundingBtcRequest.FinishAt = time.Now()
 	fundingBtcRequest.IsFinish = true
-	_ = db.Update(fundingBtcRequest)
+	_ = tx.Update(fundingBtcRequest)
 
-	minerFeeRedeemTransaction.Txid = txid
-	minerFeeRedeemTransaction.TxHash = hex
-	minerFeeRedeemTransaction.CreateAt = time.Now()
-	minerFeeRedeemTransaction.Owner = funder
-	minerFeeRedeemTransaction.TemporaryChannelId = reqData.TemporaryChannelId
-	_ = db.Save(minerFeeRedeemTransaction)
+	err = tx.Commit()
+	if err != nil {
+		log.Println(err.Error())
+		return nil, "", err
+	}
+	node["funding_redeem_hex"] = signedHex
+	return node, funder, nil
+}
 
-	return minerFeeRedeemTransaction, funder, nil
+//alice 所在的节点 bob签名完成，返回到alice的obd节点，需要先对alice的数据进行更新
+func (service *fundingTransactionManager) AfterBobSignBtcFunding(data string, user *bean.User) (outData interface{}, err error) {
+	jsonObj := gjson.Parse(data)
+	temporaryChannelId := jsonObj.Get("temporary_channel_id").String()
+	approval := jsonObj.Get("approval").Bool()
+	fundingTxid := jsonObj.Get("funding_txid").String()
+	fundingRedeemHex := ""
+
+	if &approval == nil {
+		err = errors.New("wrong approval ")
+		log.Println(err)
+		return nil, err
+	}
+	if approval {
+		fundingRedeemHex = jsonObj.Get("funding_redeem_hex").String()
+		if tool.CheckIsString(&fundingRedeemHex) == false {
+			err = errors.New("wrong fundingRedeemHex ")
+			log.Println(err)
+			return nil, err
+		}
+	}
+
+	if tool.CheckIsString(&temporaryChannelId) == false {
+		err = errors.New("wrong temporaryChannelId ")
+		log.Println(err)
+		return nil, err
+	}
+
+	if tool.CheckIsString(&fundingTxid) == false {
+		err = errors.New("wrong fundingTxid ")
+		log.Println(err)
+		return nil, err
+	}
+
+	tx, err := user.Db.Begin(true)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	defer tx.Rollback()
+
+	channelInfo := &dao.ChannelInfo{}
+	err = tx.Select(
+		q.Eq("TemporaryChannelId", temporaryChannelId),
+		q.Eq("CurrState", dao.ChannelState_WaitFundAsset),
+		q.Or(
+			q.Eq("PeerIdA", user.PeerId),
+			q.Eq("PeerIdB", user.PeerId))).
+		OrderBy("CreateAt").Reverse().
+		First(channelInfo)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	funder := channelInfo.PeerIdA
+	if user.PeerId == channelInfo.PeerIdB {
+		funder = channelInfo.PeerIdB
+	}
+
+	fundingBtcRequest := &dao.FundingBtcRequest{}
+	err = tx.Select(
+		q.Eq("TemporaryChannelId", temporaryChannelId),
+		q.Eq("TxId", fundingTxid),
+		q.Eq("Owner", funder),
+		q.Eq("IsFinish", false)).
+		First(fundingBtcRequest)
+	if err != nil {
+		log.Println(err)
+	}
+
+	node := make(map[string]interface{})
+	node["temporary_channel_id"] = fundingBtcRequest.TemporaryChannelId
+	node["funding_txid"] = fundingBtcRequest.TxId
+	node["approval"] = approval
+
+	fundingBtcRequest.SignApproval = approval
+	fundingBtcRequest.SignAt = time.Now()
+	fundingBtcRequest.FinishAt = time.Now()
+	fundingBtcRequest.IsFinish = true
+	_ = tx.Update(fundingBtcRequest)
+
+	if approval {
+		minerFeeRedeemTransaction := &dao.MinerFeeRedeemTransaction{}
+		err = tx.Select(
+			q.Eq("TemporaryChannelId", temporaryChannelId),
+			q.Eq("FundingTxId", fundingTxid),
+		).First(minerFeeRedeemTransaction)
+		if err != nil {
+			return nil, err
+		}
+		minerFeeRedeemTransaction.Hex = fundingRedeemHex
+		err = tx.Update(minerFeeRedeemTransaction)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	return fundingBtcRequest, nil
 }
 
 //funder request to fund to the multiAddr (channel)

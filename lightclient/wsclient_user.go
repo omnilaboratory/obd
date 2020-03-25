@@ -60,9 +60,17 @@ func (client *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, 
 			sendType = enum.SendTargetType_SendToSomeone
 		}
 	case enum.MsgType_p2p_ConnectServer_3:
-		ConnP2PServer(msg.Data)
+		localP2PAddress, err := ConnP2PServer(msg.Data)
+		if err != nil {
+			data = err.Error()
+		} else {
+			status = true
+			data = localP2PAddress
+		}
+		client.sendToMyself(msg.Type, status, data)
+		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_p2p_SendDataToServer_4:
-		SendP2PMsg(msg.RecipientP2PPeerId, msg.Data)
+		SendP2PMsg(msg.RecipientP2PPeerId, msg.RawData)
 
 	// Added by Kevin 2019-11-25
 	// Process GetMnemonic

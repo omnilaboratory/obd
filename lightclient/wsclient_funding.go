@@ -16,7 +16,7 @@ func (client *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.Se
 	data := ""
 	switch msg.Type {
 	case enum.MsgType_FundingCreate_BtcCreate_N3400:
-		node, targetUser, err := service.FundingTransactionService.BTCFundingCreated(msg.Data, client.User)
+		node, _, err := service.FundingTransactionService.BTCFundingCreated(msg, client.User)
 		if err != nil {
 			data = err.Error()
 		} else {
@@ -29,7 +29,7 @@ func (client *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.Se
 			}
 		}
 		if status {
-			_ = client.sendToSomeone(msg.Type, status, targetUser, data)
+			_ = client.sendDataToSomeone(msg, status, data)
 		}
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
@@ -165,7 +165,7 @@ func (client *Client) fundingSignModule(msg bean.RequestMessage) (enum.SendTarge
 		}
 
 		if tool.CheckIsString(&funder) {
-			_ = client.sendToSomeone(msg.Type, status, funder, data)
+			_ = client.sendDataToSomeone(msg, status, data)
 		}
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone

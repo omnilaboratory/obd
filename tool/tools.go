@@ -15,6 +15,7 @@ import (
 	"golang.org/x/crypto/ripemd160"
 	"io"
 	"log"
+	"os"
 	"regexp"
 	"strings"
 )
@@ -117,6 +118,21 @@ func RandBytes(size int) (string, error) {
 	}
 	log.Println(arr)
 	return base64.StdEncoding.EncodeToString(arr), nil
+}
+
+// 判断文件夹是否存在,如果不存在，则创建
+func PathExistsAndCreate(path string) error {
+	_, err := os.Stat(path)
+	if os.IsNotExist(err) {
+		err := os.Mkdir(path, os.ModePerm)
+		if err != nil {
+			log.Println(err)
+			return err
+		}
+	} else {
+		return nil
+	}
+	return errors.New("fail to create")
 }
 
 func CheckPsw(psw string) (flag bool) {

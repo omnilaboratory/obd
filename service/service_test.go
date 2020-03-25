@@ -2,6 +2,7 @@ package service
 
 import (
 	"LightningOnOmni/dao"
+	"LightningOnOmni/rpc"
 	"github.com/asdine/storm/q"
 	"log"
 	"testing"
@@ -29,12 +30,28 @@ func TestDemoChannelTreeData(t *testing.T) {
 }
 
 func TestDelDemoChannelInfoData(t *testing.T) {
-	checkBtcFundFinish("2NFh1BGVH2qvnxyRRDnQGbYe2gKBi8XhV2t")
-	//{
-	//	"address":"muYrqVWTKnkaVAMuqn59Ta6GL912ixpxit",
-	//	"pub_key":"029cf4b150da0065d5c08bf088e8a5367d35ff72e4e79b39efb401530d19fa3f3c",
-	//	"wif":"cToieuvo3JjkEUKa3tjd6J98RXKDTo1d2hUSVgKpZ1KwBvGhQFL8"
-	//}
+	inputItems := make([]rpc.TransactionInputItem, 0)
+	inputItems = append(inputItems, rpc.TransactionInputItem{Txid: "4d2d78dc88b8761101b7dd6476511e4e9322b11a642c7377df11a015ae9c3e35",
+		ScriptPubKey: "a914983d3728e4b686987a7b0c4f77c7cc421ed1ff0087", Vout: 0, Amount: 0.0001})
+	outputItems := make([]rpc.TransactionOutputItem, 0)
+	outputItems = append(outputItems, rpc.TransactionOutputItem{ToBitCoinAddress: "msbtApWsDVihfJwDv3AF2u4hfbfmi59BtB", Amount: 0.0001})
+	redeemScript := "522103f1603966fc3986d7681a7bf7a1e6b8b44c6009939c28da21f065c1b991aeff12210216847047b926a1ff88e97fb0ebed8d0482c69521e9f8bc499c06b108a4972b8252ae"
+
+	_, hex1, err := rpcClient.BtcCreateAndSignRawTransactionForUnsendInputTx("2N78C2mTvRQxPMV5zMv8tjPprfauM6YUzXX",
+		[]string{"cSyJChW5xdhhWCwdSFvWuNC5SgwYqgpWwbVXXKE5gs293BwnM4q5"}, inputItems, outputItems, 0, 0, &redeemScript)
+
+	//hex2 := "0200000001353e9cae15a011df77732c641ab122934e1e517664ddb7011176b888dc782d4d000000009200473044022032acbbd924a6760a9d26548548207c46a547cab6e8c79029d61bf4fa218e6dda02206d56d7ec0619e78228f3d09bf11d07104368761324f6ca0bbde5e196074337e2010047522103f1603966fc3986d7681a7bf7a1e6b8b44c6009939c28da21f065c1b991aeff12210216847047b926a1ff88e97fb0ebed8d0482c69521e9f8bc499c06b108a4972b8252aeffffffff01581b0000000000001976a91484902564ba3ce47952d86a0d53c17402b3cce96588ac00000000"
+	//checkBtcFundFinish("2NFh1BGVH2qvnxyRRDnQGbYe2gKBi8XhV2t")
+	result, err := rpcClient.DecodeRawTransaction(hex1)
+	log.Println(err)
+	log.Println(result)
+	_, hex, err := rpcClient.BtcSignRawTransactionForUnsend(hex1, inputItems, "cPidpqgUiUyLq7WtBVmYyjLA6JHPszU4kyaorwUcLCmZvXeYzXAX")
+	result, err = rpcClient.DecodeRawTransaction(hex)
+	log.Println(err)
+	log.Println(result)
+	//result, err = rpcClient.SendRawTransaction(hex)
+	//log.Println(err)
+	//log.Println(result)
 }
 
 func TestDelDemoChannelInfoOne(t *testing.T) {

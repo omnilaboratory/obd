@@ -76,9 +76,17 @@ func (service *UserManager) UserLogin(user *bean.User) error {
 	if err != nil {
 		return err
 	}
+
+	userDB, err := dao.DBService.GetUserDB(user.PeerId)
+	if err != nil {
+		return err
+	}
+	user.Db = userDB
+
 	user.State = node.State
 	user.CurrAddrIndex = node.CurrAddrIndex
 	user.ChangeExtKey = changeExtKey
+
 	return nil
 }
 

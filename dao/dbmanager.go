@@ -2,6 +2,7 @@ package dao
 
 import (
 	"LightningOnOmni/config"
+	"LightningOnOmni/tool"
 	"github.com/asdine/storm"
 	"log"
 )
@@ -26,4 +27,17 @@ func (manager dbManager) GetDB() (*storm.DB, error) {
 		DBService.Db = db
 	}
 	return DBService.Db, nil
+}
+
+func (manager dbManager) GetUserDB(peerId string) (*storm.DB, error) {
+
+	_dir := "dbdata"
+	_ = tool.PathExistsAndCreate(_dir)
+
+	db, e := storm.Open(_dir + "/user_" + peerId + ".db")
+	if e != nil {
+		log.Println("open db fail")
+		return nil, e
+	}
+	return db, nil
 }

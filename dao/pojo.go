@@ -99,6 +99,7 @@ type FundingBtcRequest struct {
 	Owner              string    `json:"owner"`
 	TemporaryChannelId string    `json:"temporary_channel_id"`
 	TxHash             string    `json:"tx_hash"`
+	RedeemHex          string    `json:"redeem_hex"`
 	TxId               string    `json:"tx_id"`
 	Amount             float64   `json:"amount"`
 	CreateAt           time.Time `json:"create_at"`
@@ -114,7 +115,8 @@ type MinerFeeRedeemTransaction struct {
 	Owner              string    `json:"owner"`
 	TemporaryChannelId string    `json:"temporary_channel_id"`
 	ChannelId          string    `json:"channel_id"`
-	TxHash             string    `json:"tx_hash"`
+	FundingTxId        string    `json:"funding_tx_id"`
+	Hex                string    `json:"hex"`
 	Txid               string    `json:"txid"`
 	CreateAt           time.Time `json:"create_at"`
 }

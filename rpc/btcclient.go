@@ -290,6 +290,7 @@ func (client *Client) BtcCreateAndSignRawTransaction(fromBitCoinAddress string, 
 	return txid, hex, err
 }
 
+//创建btc的raw交易：输入为未广播的预交易,输出为交易hex，支持单签和多签，如果是单签，就需要后续步骤再签名
 func (client *Client) BtcCreateAndSignRawTransactionForUnsendInputTx(fromBitCoinAddress string, privkeys []string, inputItems []TransactionInputItem, outputItems []TransactionOutputItem, minerFee float64, sequence int, redeemScript *string) (txid string, hex string, err error) {
 	if len(fromBitCoinAddress) < 1 {
 		return "", "", errors.New("fromBitCoinAddress is empty")
@@ -406,6 +407,44 @@ func (client *Client) BtcCreateAndSignRawTransactionForUnsendInputTx(fromBitCoin
 	log.Println("SignRawTransactionWithKey DecodeRawTransaction", decodeHex)
 	return txid, hex, err
 }
+
+func (client *Client) BtcSignRawTransactionForUnsend(hex string, inputItems []TransactionInputItem, privKey string) (string, string, error) {
+
+	var inputs []map[string]interface{}
+	for _, item := range inputItems {
+		node := make(map[string]interface{})
+		node["txid"] = item.Txid
+		node["vout"] = item.Vout
+		node["scriptPubKey"] = item.ScriptPubKey
+		inputs = append(inputs, node)
+	}
+	signHex, err := client.SignRawTransactionWithKey(hex, []string{privKey}, inputs, "ALL")
+	if err != nil {
+		return "", "", err
+	}
+	hex = gjson.Get(signHex, "hex").String()
+	decodeHex, err := client.DecodeRawTransaction(hex)
+	txId := gjson.Get(decodeHex, "txid").String()
+	if err != nil {
+		return "", hex, err
+	}
+	return txId, hex, nil
+}
+
+func (client *Client) BtcSignRawTransaction(hex string, privKey string) (string, string, error) {
+	signHex, err := client.SignRawTransactionWithKey(hex, []string{privKey}, nil, "ALL")
+	if err != nil {
+		return "", "", err
+	}
+	hex = gjson.Get(signHex, "hex").String()
+	decodeHex, err := client.DecodeRawTransaction(hex)
+	txId := gjson.Get(decodeHex, "txid").String()
+	if err != nil {
+		return "", hex, err
+	}
+	return txId, hex, nil
+}
+
 func (client *Client) BtcSignAndSendRawTransaction(hex string, privKey string) (string, string, error) {
 	signHex, err := client.SignRawTransactionWithKey(hex, []string{privKey}, nil, "ALL")
 	if err != nil {

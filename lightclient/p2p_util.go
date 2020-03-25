@@ -1,10 +1,13 @@
 package lightclient
 
 import (
+	"LightningOnOmni/bean"
 	"LightningOnOmni/config"
 	"LightningOnOmni/tool"
 	"bufio"
 	"context"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p-core/crypto"
@@ -19,8 +22,10 @@ import (
 )
 
 type P2PChannel struct {
-	stream network.Stream
-	rw     *bufio.ReadWriter
+	IsLocalChannel bool
+	Address        string
+	stream         network.Stream
+	rw             *bufio.ReadWriter
 }
 
 const pid = "/chat/1.0.0"
@@ -63,16 +68,22 @@ func StartP2PServer() {
 	p2pChannelMap = make(map[string]*P2PChannel)
 	P2PLocalPeerId = host.ID().Pretty()
 
-	host.SetStreamHandler(pid, handleStream)
-
 	localServerDest = fmt.Sprintf("/ip4/127.0.0.1/tcp/%v/p2p/%s", config.P2P_sourcePort, host.ID().Pretty())
 	log.Println(localServerDest)
+
+	//把自己也作为终点放进去，阻止自己连接自己
+	p2pChannelMap[P2PLocalPeerId] = &P2PChannel{
+		IsLocalChannel: true,
+		Address:        localServerDest,
+	}
+	host.SetStreamHandler(pid, handleStream)
+
 }
 
-func ConnP2PServer(dest string) {
+func ConnP2PServer(dest string) (string, error) {
 	if tool.CheckIsString(&dest) == false {
 		log.Println("wrong dest address")
-		return
+		return "", errors.New("wrong dest address")
 	}
 
 	sourceMultiAddr, _ := multiaddr.NewMultiaddr(fmt.Sprintf("/ip4/0.0.0.0/tcp/%d", config.P2P_sourcePort))
@@ -86,28 +97,33 @@ func ConnP2PServer(dest string) {
 
 	if err != nil {
 		log.Println(err)
-		return
+		return "", err
 	}
 	maddr, err := multiaddr.NewMultiaddr(dest)
 	if err != nil {
-		log.Fatalln(err)
+		log.Println(err)
+		return "", err
 	}
+
 	info, err := peer.AddrInfoFromP2pAddr(maddr)
 	if err != nil {
-		log.Fatalln(err)
+		log.Println(err)
+		return "", err
 	}
+
 	if p2pChannelMap[info.ID.Pretty()] != nil {
 		log.Println("p2p channel has connect")
-		return
+		return "", errors.New("p2p channel has connect")
 	}
 	host.Peerstore().AddAddrs(info.ID, info.Addrs, peerstore.PermanentAddrTTL)
 	s, err := host.NewStream(context.Background(), info.ID, pid)
 	if err != nil {
 		log.Println(err)
-		return
+		return "", err
 	}
 	rw := addP2PChannel(s)
 	go readData(s, rw)
+	return localServerDest, nil
 }
 
 func handleStream(s network.Stream) {
@@ -121,19 +137,22 @@ func handleStream(s network.Stream) {
 }
 func readData(s network.Stream, rw *bufio.ReadWriter) {
 	for {
-		str, err := rw.ReadString('$')
+		str, err := rw.ReadString('~')
 		if err != nil {
-			log.Println(s.Conn().RemotePeer(), err)
 			delete(p2pChannelMap, s.Conn().RemotePeer().Pretty())
 			return
 		}
 		if str == "" {
 			return
 		}
-		if str != "\n" {
+		if str != "" {
 			log.Println(s.Conn())
-			str = strings.TrimSuffix(str, "$")
-			GlobalWsClientManager.P2PData <- []byte(str)
+			str = strings.TrimSuffix(str, "~")
+			reqData := &bean.RequestMessage{}
+			err := json.Unmarshal([]byte(str), reqData)
+			if err == nil {
+				_ = getDataFromP2PSomeone(*reqData)
+			}
 		}
 	}
 }
@@ -141,26 +160,27 @@ func readData(s network.Stream, rw *bufio.ReadWriter) {
 func addP2PChannel(stream network.Stream) *bufio.ReadWriter {
 	rw := bufio.NewReadWriter(bufio.NewReader(stream), bufio.NewWriter(stream))
 	node := &P2PChannel{
-		stream: stream,
-		rw:     rw,
+		Address: stream.Conn().RemoteMultiaddr().String() + "/" + stream.Conn().RemotePeer().String(),
+		stream:  stream,
+		rw:      rw,
 	}
 	p2pChannelMap[stream.Conn().RemotePeer().Pretty()] = node
 	return rw
 }
 
-func SendP2PMsg(remoteP2PPeerId string, msg string) {
+func SendP2PMsg(remoteP2PPeerId string, msg string) error {
 	if tool.CheckIsString(&remoteP2PPeerId) == false {
-		log.Println("empty remoteP2PPeerId")
-		return
+		return errors.New("empty remoteP2PPeerId")
 	}
 	if remoteP2PPeerId == P2PLocalPeerId {
-		log.Println("remoteP2PPeerId is self,can not send msg to yourself")
-		return
+		return errors.New("remoteP2PPeerId is self,can not send msg to yourself")
 	}
 
 	channel := p2pChannelMap[remoteP2PPeerId]
 	if channel != nil {
+		msg = msg + "~"
 		_, _ = channel.rw.WriteString(msg)
 		_ = channel.rw.Flush()
 	}
+	return nil
 }

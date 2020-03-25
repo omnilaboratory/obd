@@ -3,11 +3,13 @@ package bean
 import (
 	"LightningOnOmni/bean/chainhash"
 	"LightningOnOmni/bean/enum"
+	"github.com/asdine/storm"
 	"github.com/tyler-smith/go-bip32"
 )
 
 type RequestMessage struct {
 	Type               enum.MsgType `json:"type"`
+	SenderP2PPeerId    string       `json:"sender_p2p_peer_id"`
 	SenderPeerId       string       `json:"sender_peer_id"`
 	RecipientPeerId    string       `json:"recipient_peer_id"`
 	RecipientP2PPeerId string       `json:"recipient_p2p_peer_id"`
@@ -39,7 +41,8 @@ type User struct {
 	Mnemonic        string    `json:"mnemonic"`
 	State           UserState `json:"state"`
 	ChangeExtKey    *bip32.Key
-	CurrAddrIndex   int `json:"curr_addr_index"`
+	CurrAddrIndex   int       `json:"curr_addr_index"`
+	Db              *storm.DB //db
 }
 
 //https://github.com/LightningOnOmnilayer/Omni-BOLT-spec/blob/master/OmniBOLT-03-RSMC-and-OmniLayer-Transactions.md

@@ -4,7 +4,6 @@ import (
 	"LightningOnOmni/bean"
 	"LightningOnOmni/bean/enum"
 	"LightningOnOmni/service"
-	"LightningOnOmni/tool"
 	"encoding/json"
 	"strconv"
 )
@@ -16,28 +15,24 @@ func (client *Client) channelModule(msg bean.RequestMessage) (enum.SendTargetTyp
 	switch msg.Type {
 	//get openChannelReq from funder then send to fundee
 	case enum.MsgType_ChannelOpen_N32:
-		if tool.CheckIsString(&msg.RecipientPeerId) == false {
-			data = "no target user"
+		if msg.RecipientPeerId == client.User.PeerId {
+			data = "can not open channel to yourself"
 		} else {
-			if msg.RecipientPeerId == client.User.PeerId {
-				data = "can not open channel to yourself"
+			node, err := service.ChannelService.AliceOpenChannel(msg, client.User)
+			if err != nil {
+				data = err.Error()
 			} else {
-				node, err := service.ChannelService.AliceOpenChannel(msg, client.User.PeerId)
+				bytes, err := json.Marshal(node)
 				if err != nil {
 					data = err.Error()
 				} else {
-					bytes, err := json.Marshal(node)
-					if err != nil {
-						data = err.Error()
-					} else {
-						data = string(bytes)
-						status = true
-					}
+					data = string(bytes)
+					status = true
 				}
 			}
 		}
 		if status {
-			_ = client.sendToSomeone(msg.Type, status, msg.RecipientPeerId, data)
+			_ = client.sendDataToSomeone(msg, status, data)
 		}
 
 		client.sendToMyself(msg.Type, status, data)
@@ -147,7 +142,7 @@ func (client *Client) channelModule(msg bean.RequestMessage) (enum.SendTargetTyp
 		sendType = enum.SendTargetType_SendToSomeone
 	//get acceptChannelReq from fundee then send to funder
 	case enum.MsgType_ChannelAccept_N33:
-		node, err := service.ChannelService.BobAcceptChannel(msg.Data, client.User.PeerId)
+		node, err := service.ChannelService.BobAcceptChannel(msg.Data, client.User)
 		if err != nil {
 			data = err.Error()
 		} else {
@@ -160,7 +155,7 @@ func (client *Client) channelModule(msg bean.RequestMessage) (enum.SendTargetTyp
 			}
 		}
 		if status {
-			_ = client.sendToSomeone(msg.Type, status, node.PeerIdA, data)
+			_ = client.sendDataToSomeone(msg, status, data)
 		}
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone

@@ -16,6 +16,7 @@ func init() {
 
 // gox compile  https://blog.csdn.net/han0373/article/details/81391455
 // gox -os "windows linux darwin" -arch amd64
+// gox -os "windows" -arch amd64
 func main() {
 
 	// grpc
@@ -23,7 +24,6 @@ func main() {
 	//conn := startupGRPCClient()
 	//defer conn.Close()
 	//routersInit := routers.InitRouter(conn)
-
 	lightclient.StartP2PServer()
 
 	routersInit := lightclient.InitRouter(nil)

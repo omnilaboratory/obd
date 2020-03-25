@@ -22,40 +22,64 @@ type channelManager struct{}
 var ChannelService = channelManager{}
 
 // AliceOpenChannel init ChannelInfo
-func (this *channelManager) AliceOpenChannel(msg bean.RequestMessage, peerIdA string) (data *bean.OpenChannelInfo, err error) {
+func (this *channelManager) AliceOpenChannel(msg bean.RequestMessage, user *bean.User) (channelInfo *dao.ChannelInfo, err error) {
 	if tool.CheckIsString(&msg.Data) == false {
 		return nil, errors.New("empty inputData")
 	}
 
-	data = &bean.OpenChannelInfo{}
-	err = json.Unmarshal([]byte(msg.Data), &data)
+	reqData := &bean.OpenChannelInfo{}
+	err = json.Unmarshal([]byte(msg.Data), &reqData)
 	if err != nil {
 		return nil, err
 	}
 
-	data.FundingAddress, err = getAddressFromPubKey(data.FundingPubKey)
+	reqData.FundingAddress, err = getAddressFromPubKey(reqData.FundingPubKey)
 	if err != nil {
 		return nil, err
 	}
 
-	data.ChainHash = config.Init_node_chain_hash
-	data.TemporaryChannelId = bean.ChannelIdService.NextTemporaryChanID()
+	reqData.ChainHash = config.Init_node_chain_hash
+	reqData.TemporaryChannelId = bean.ChannelIdService.NextTemporaryChanID()
 
-	channelInfo := &dao.ChannelInfo{}
-	channelInfo.OpenChannelInfo = *data
-	channelInfo.PeerIdA = peerIdA
+	channelInfo = &dao.ChannelInfo{}
+	channelInfo.OpenChannelInfo = *reqData
+	channelInfo.PeerIdA = user.PeerId
 	channelInfo.PeerIdB = msg.RecipientPeerId
-	channelInfo.PubKeyA = data.FundingPubKey
-	channelInfo.AddressA = data.FundingAddress
+	channelInfo.PubKeyA = reqData.FundingPubKey
+	channelInfo.AddressA = reqData.FundingAddress
 	channelInfo.CurrState = dao.ChannelState_Create
 	channelInfo.CreateAt = time.Now()
-	channelInfo.CreateBy = peerIdA
+	channelInfo.CreateBy = user.PeerId
 
-	err = db.Save(channelInfo)
-	return data, err
+	err = user.Db.Save(channelInfo)
+	return channelInfo, err
 }
 
-func (this *channelManager) BobAcceptChannel(jsonData string, peerIdB string) (channelInfo *dao.ChannelInfo, err error) {
+// obd init ChannelInfo for Bob
+func (this *channelManager) BeforeBobOpenChannel(msg string, user *bean.User) (err error) {
+	if tool.CheckIsString(&msg) == false {
+		return errors.New("empty inputData")
+	}
+
+	aliceChannelInfo := &dao.ChannelInfo{}
+	err = json.Unmarshal([]byte(msg), &aliceChannelInfo)
+	if err != nil {
+		return err
+	}
+	channelInfo := &dao.ChannelInfo{}
+	channelInfo.OpenChannelInfo = aliceChannelInfo.OpenChannelInfo
+	channelInfo.PeerIdA = aliceChannelInfo.PeerIdA
+	channelInfo.PeerIdB = user.PeerId
+	channelInfo.PubKeyA = aliceChannelInfo.FundingPubKey
+	channelInfo.AddressA = aliceChannelInfo.FundingAddress
+	channelInfo.CurrState = dao.ChannelState_Create
+	channelInfo.CreateAt = time.Now()
+	channelInfo.CreateBy = user.PeerId
+	err = user.Db.Save(channelInfo)
+	return err
+}
+
+func (this *channelManager) BobAcceptChannel(jsonData string, user *bean.User) (channelInfo *dao.ChannelInfo, err error) {
 	reqData := &bean.AcceptChannelInfo{}
 	err = json.Unmarshal([]byte(jsonData), &reqData)
 
@@ -79,9 +103,9 @@ func (this *channelManager) BobAcceptChannel(jsonData string, peerIdB string) (c
 	}
 
 	channelInfo = &dao.ChannelInfo{}
-	err = db.Select(
+	err = user.Db.Select(
 		q.Eq("TemporaryChannelId", reqData.TemporaryChannelId),
-		q.Eq("PeerIdB", peerIdB),
+		q.Eq("PeerIdB", user.PeerId),
 		q.Eq("CurrState", dao.ChannelState_Create)).
 		First(channelInfo)
 	if err != nil {
@@ -89,7 +113,7 @@ func (this *channelManager) BobAcceptChannel(jsonData string, peerIdB string) (c
 		return nil, errors.New("can not find the channel " + reqData.TemporaryChannelId + " on Create state")
 	}
 
-	if channelInfo.PeerIdB != peerIdB {
+	if channelInfo.PeerIdB != user.PeerId {
 		return nil, errors.New("you are not the peerIdB")
 	}
 
@@ -110,14 +134,53 @@ func (this *channelManager) BobAcceptChannel(jsonData string, peerIdB string) (c
 			return nil, err
 		}
 		channelInfo.ChannelAddressScriptPubKey = gjson.Parse(addrInfoStr).Get("scriptPubKey").String()
+		channelInfo.CurrState = dao.ChannelState_WaitFundAsset
+	} else {
+		channelInfo.CurrState = dao.ChannelState_OpenChannelDefuse
 	}
-	if reqData.Approval {
+
+	channelInfo.AcceptAt = time.Now()
+	err = user.Db.Update(channelInfo)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	return channelInfo, err
+}
+
+//当bob操作完，发送信息到Alice所在的obd，obd处理先从bob得到发给alice的信息，然后再发给Alice的轻客户端
+func (this *channelManager) AfterBobAcceptChannel(jsonData string, user *bean.User) (channelInfo *dao.ChannelInfo, err error) {
+	bobChannelInfo := &dao.ChannelInfo{}
+	err = json.Unmarshal([]byte(jsonData), &bobChannelInfo)
+
+	if err != nil {
+		return nil, err
+	}
+
+	channelInfo = &dao.ChannelInfo{}
+	err = user.Db.Select(
+		q.Eq("TemporaryChannelId", bobChannelInfo.TemporaryChannelId),
+		q.Eq("PeerIdA", user.PeerId),
+		q.Eq("PeerIdB", bobChannelInfo.PeerIdB),
+		q.Eq("CurrState", dao.ChannelState_Create)).
+		First(channelInfo)
+	if err != nil {
+		log.Println(err)
+		return nil, errors.New("can not find the channel " + bobChannelInfo.TemporaryChannelId + " on Create state")
+	}
+
+	if bobChannelInfo.CurrState == dao.ChannelState_WaitFundAsset {
+		channelInfo.PubKeyB = bobChannelInfo.FundingPubKey
+		channelInfo.AddressB = bobChannelInfo.FundingAddress
+		channelInfo.ChannelAddress = bobChannelInfo.ChannelAddress
+		channelInfo.ChannelAddressRedeemScript = bobChannelInfo.ChannelAddressRedeemScript
+		channelInfo.ChannelAddressScriptPubKey = bobChannelInfo.ChannelAddressScriptPubKey
 		channelInfo.CurrState = dao.ChannelState_WaitFundAsset
 	} else {
 		channelInfo.CurrState = dao.ChannelState_OpenChannelDefuse
 	}
 	channelInfo.AcceptAt = time.Now()
-	err = db.Update(channelInfo)
+	err = user.Db.Update(channelInfo)
 	if err != nil {
 		log.Println(err)
 		return nil, err

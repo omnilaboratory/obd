@@ -120,12 +120,38 @@ func (client *Client) Read() {
 			needLogin = false
 		}
 
+		if msg.Type == enum.MsgType_ChannelOpen_N32 || msg.Type == enum.MsgType_ChannelAccept_N33 ||
+			msg.Type == enum.MsgType_FundingCreate_BtcCreate_N3400 || msg.Type == enum.MsgType_FundingSign_BtcSign_N3500 ||
+			msg.Type == enum.MsgType_FundingCreate_AssetFundingCreated_N34 || msg.Type == enum.MsgType_FundingSign_AssetFundingSigned_N35 ||
+			msg.Type == enum.MsgType_CommitmentTxSigned_RevokeAndAcknowledgeCommitmentTransaction_N352 ||
+			msg.Type == enum.MsgType_CommitmentTx_CommitmentTransactionCreated_N351 ||
+			msg.Type == enum.MsgType_CloseChannelRequest_N38 || msg.Type == enum.MsgType_CloseChannelSign_N39 ||
+			msg.Type == enum.MsgType_HTLC_FindPathAndSendH_N42 || msg.Type == enum.MsgType_HTLC_SendH_N43 ||
+			msg.Type == enum.MsgType_HTLC_SignGetH_N44 || msg.Type == enum.MsgType_HTLC_CreateCommitmentTx_N45 ||
+			msg.Type == enum.MsgType_HTLC_SendR_N46 || msg.Type == enum.MsgType_HTLC_VerifyR_N47 ||
+			msg.Type == enum.MsgType_HTLC_RequestCloseCurrTx_N48 || msg.Type == enum.MsgType_HTLC_CloseSigned_N49 ||
+			msg.Type == enum.MsgType_Atomic_Swap_N80 || msg.Type == enum.MsgType_Atomic_Swap_Accept_N81 {
+			if tool.CheckIsString(&msg.RecipientPeerId) == false {
+				client.sendToMyself(msg.Type, false, "error RecipientPeerId")
+				continue
+			}
+			if tool.CheckIsString(&msg.RecipientP2PPeerId) == false {
+				client.sendToMyself(msg.Type, false, "error RecipientP2PPeerId")
+				continue
+			}
+			if p2pChannelMap[msg.RecipientP2PPeerId] == nil {
+				client.sendToMyself(msg.Type, false, "not connect channelRecipientP2PPeerId")
+				continue
+			}
+		}
+
 		if needLogin {
 			//not login
 			if client.User == nil {
 				client.sendToMyself(msg.Type, false, "please login")
 				continue
 			} else { // already login
+				msg.SenderPeerId = client.User.PeerId
 				for {
 					typeStr := strconv.Itoa(int(msg.Type))
 					//-200 -201
@@ -254,6 +280,26 @@ func getReplyObj(data string, msgType enum.MsgType, status bool, fromClient, toC
 		}
 	}
 
+	if strings.Contains(fromId, "@/") == false {
+		fromId = fromId + "@" + localServerDest
+	}
+	node := make(map[string]interface{})
+	err := json.Unmarshal([]byte(data), &node)
+	if err == nil {
+		parse := gjson.Parse(data)
+		jsonMessage, _ = json.Marshal(&bean.ReplyMessage{Type: msgType, Status: status, From: fromId, To: toClientId, Result: parse.Value()})
+	} else {
+		if strings.Contains(err.Error(), " array into Go value of type map") {
+			parse := gjson.Parse(data)
+			jsonMessage, _ = json.Marshal(&bean.ReplyMessage{Type: msgType, Status: status, From: fromId, To: toClientId, Result: parse.Value()})
+		} else {
+			jsonMessage, _ = json.Marshal(&bean.ReplyMessage{Type: msgType, Status: status, From: fromId, To: toClientId, Result: data})
+		}
+	}
+	return jsonMessage
+}
+func getP2PReplyObj(data string, msgType enum.MsgType, status bool, fromId, toClientId string) []byte {
+	var jsonMessage []byte
 	node := make(map[string]interface{})
 	err := json.Unmarshal([]byte(data), &node)
 	if err == nil {
@@ -288,7 +334,83 @@ func (client *Client) sendToSomeone(msgType enum.MsgType, status bool, recipient
 	}
 	return errors.New("recipient not exist or online")
 }
+
+//发送消息给对方，分为同节点和不同节点的两种情况
+func (client *Client) sendDataToSomeone(msg bean.RequestMessage, status bool, data string) error {
+	msg.SenderPeerId = client.User.PeerId
+	if tool.CheckIsString(&msg.RecipientPeerId) && tool.CheckIsString(&msg.RecipientP2PPeerId) {
+		//如果是同一个obd节点
+		if msg.RecipientP2PPeerId == P2PLocalPeerId {
+			if _, err := FindUserOnLine(&msg.RecipientPeerId); err == nil {
+				itemClient := GlobalWsClientManager.OnlineUserMap[msg.RecipientPeerId]
+				if itemClient != nil && itemClient.User != nil {
+					//因为数据库，分库，需要对特定的消息进行处理
+					if status {
+						err := routerOfSameNode(msg.Type, data, itemClient.User)
+						if err != nil {
+							return err
+						}
+					}
+					fromId := msg.SenderPeerId + "@" + p2pChannelMap[P2PLocalPeerId].Address
+					toId := msg.RecipientPeerId + "@" + p2pChannelMap[msg.RecipientP2PPeerId].Address
+					jsonMessage := getP2PReplyObj(data, msg.Type, status, fromId, toId)
+					itemClient.SendChannel <- jsonMessage
+					return nil
+				}
+			}
+		} else { //不通的p2p的节点 需要转发到对方的节点
+			msgToOther := bean.RequestMessage{}
+			msgToOther.Type = msg.Type
+			msgToOther.SenderP2PPeerId = P2PLocalPeerId
+			msgToOther.SenderPeerId = msg.SenderPeerId
+			msgToOther.RecipientPeerId = msg.RecipientPeerId
+			msgToOther.RecipientP2PPeerId = msg.RecipientP2PPeerId
+			msgToOther.Data = data
+			bytes, err := json.Marshal(msgToOther)
+			if err == nil {
+				return SendP2PMsg(msg.RecipientP2PPeerId, string(bytes))
+			}
+		}
+	}
+	return errors.New("recipient not exist or online")
+}
+
+//当p2p收到消息后
+func getDataFromP2PSomeone(msg bean.RequestMessage) error {
+	client := &Client{}
+	client.Id = msg.SenderPeerId
+	if tool.CheckIsString(&msg.RecipientPeerId) && tool.CheckIsString(&msg.RecipientP2PPeerId) {
+		if msg.RecipientP2PPeerId == P2PLocalPeerId {
+			if _, err := FindUserOnLine(&msg.RecipientPeerId); err == nil {
+				itemClient := GlobalWsClientManager.OnlineUserMap[msg.RecipientPeerId]
+				if itemClient != nil && itemClient.User != nil {
+					//收到数据后，需要对其进行加工
+					err := routerOfSameNode(msg.Type, msg.Data, itemClient.User)
+					if err != nil {
+						return err
+					}
+					fromId := msg.SenderPeerId + "@" + p2pChannelMap[msg.SenderP2PPeerId].Address
+					toId := msg.RecipientPeerId + "@" + p2pChannelMap[msg.RecipientP2PPeerId].Address
+					jsonMessage := getP2PReplyObj(msg.Data, msg.Type, true, fromId, toId)
+					itemClient.SendChannel <- jsonMessage
+					return nil
+				}
+			}
+		}
+	}
+	return errors.New("recipient not exist or online")
+}
+
 func (client *Client) FindUser(peerId *string) (*Client, error) {
+	if tool.CheckIsString(peerId) {
+		itemClient := GlobalWsClientManager.OnlineUserMap[*peerId]
+		if itemClient != nil && itemClient.User != nil {
+			return itemClient, nil
+		}
+	}
+	return nil, errors.New("user not exist or online")
+}
+func FindUserOnLine(peerId *string) (*Client, error) {
 	if tool.CheckIsString(peerId) {
 		itemClient := GlobalWsClientManager.OnlineUserMap[*peerId]
 		if itemClient != nil && itemClient.User != nil {
