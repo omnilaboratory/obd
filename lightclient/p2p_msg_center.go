@@ -12,22 +12,32 @@ func routerOfSameNode(msgType enum.MsgType, data string, user *bean.User) (err e
 	status := false
 	switch msgType {
 	case enum.MsgType_ChannelOpen_N32:
-		err := service.ChannelService.BeforeBobOpenChannel(data, user)
+		err := service.ChannelService.BeforeBobOpenChannelAtBobSide(data, user)
 		if err == nil {
 			status = true
 		}
 	case enum.MsgType_ChannelAccept_N33:
-		_, err := service.ChannelService.AfterBobAcceptChannel(data, user)
+		_, err := service.ChannelService.AfterBobAcceptChannelAtAliceSide(data, user)
 		if err == nil {
 			status = true
 		}
 	case enum.MsgType_FundingCreate_BtcCreate_N3400:
-		_, err := service.FundingTransactionService.BeforeBobSignBtcFunding(data, user)
+		_, err := service.FundingTransactionService.BeforeBobSignBtcFundingAtBobSide(data, user)
 		if err == nil {
 			status = true
 		}
 	case enum.MsgType_FundingSign_BtcSign_N3500:
-		_, err := service.FundingTransactionService.AfterBobSignBtcFunding(data, user)
+		_, err := service.FundingTransactionService.AfterBobSignBtcFundingAtAliceSide(data, user)
+		if err == nil {
+			status = true
+		}
+	case enum.MsgType_FundingCreate_AssetFundingCreated_N34:
+		_, err := service.FundingTransactionService.BeforeBobSignOmniFundingAtBobSide(data, user)
+		if err == nil {
+			status = true
+		}
+	case enum.MsgType_FundingSign_AssetFundingSigned_N35:
+		_, err := service.FundingTransactionService.AfterBobSignOmniFundingAtAilceSide(data, user)
 		if err == nil {
 			status = true
 		}

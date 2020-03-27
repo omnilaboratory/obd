@@ -1,10 +1,9 @@
 package service
 
 import (
-	"LightningOnOmni/dao"
-	"LightningOnOmni/rpc"
 	"github.com/asdine/storm/q"
 	"log"
+	"obd/dao"
 	"testing"
 	"time"
 )
@@ -30,28 +29,6 @@ func TestDemoChannelTreeData(t *testing.T) {
 }
 
 func TestDelDemoChannelInfoData(t *testing.T) {
-	inputItems := make([]rpc.TransactionInputItem, 0)
-	inputItems = append(inputItems, rpc.TransactionInputItem{Txid: "4d2d78dc88b8761101b7dd6476511e4e9322b11a642c7377df11a015ae9c3e35",
-		ScriptPubKey: "a914983d3728e4b686987a7b0c4f77c7cc421ed1ff0087", Vout: 0, Amount: 0.0001})
-	outputItems := make([]rpc.TransactionOutputItem, 0)
-	outputItems = append(outputItems, rpc.TransactionOutputItem{ToBitCoinAddress: "msbtApWsDVihfJwDv3AF2u4hfbfmi59BtB", Amount: 0.0001})
-	redeemScript := "522103f1603966fc3986d7681a7bf7a1e6b8b44c6009939c28da21f065c1b991aeff12210216847047b926a1ff88e97fb0ebed8d0482c69521e9f8bc499c06b108a4972b8252ae"
-
-	_, hex1, err := rpcClient.BtcCreateAndSignRawTransactionForUnsendInputTx("2N78C2mTvRQxPMV5zMv8tjPprfauM6YUzXX",
-		[]string{"cSyJChW5xdhhWCwdSFvWuNC5SgwYqgpWwbVXXKE5gs293BwnM4q5"}, inputItems, outputItems, 0, 0, &redeemScript)
-
-	//hex2 := "0200000001353e9cae15a011df77732c641ab122934e1e517664ddb7011176b888dc782d4d000000009200473044022032acbbd924a6760a9d26548548207c46a547cab6e8c79029d61bf4fa218e6dda02206d56d7ec0619e78228f3d09bf11d07104368761324f6ca0bbde5e196074337e2010047522103f1603966fc3986d7681a7bf7a1e6b8b44c6009939c28da21f065c1b991aeff12210216847047b926a1ff88e97fb0ebed8d0482c69521e9f8bc499c06b108a4972b8252aeffffffff01581b0000000000001976a91484902564ba3ce47952d86a0d53c17402b3cce96588ac00000000"
-	//checkBtcFundFinish("2NFh1BGVH2qvnxyRRDnQGbYe2gKBi8XhV2t")
-	result, err := rpcClient.DecodeRawTransaction(hex1)
-	log.Println(err)
-	log.Println(result)
-	_, hex, err := rpcClient.BtcSignRawTransactionForUnsend(hex1, inputItems, "cPidpqgUiUyLq7WtBVmYyjLA6JHPszU4kyaorwUcLCmZvXeYzXAX")
-	result, err = rpcClient.DecodeRawTransaction(hex)
-	log.Println(err)
-	log.Println(result)
-	//result, err = rpcClient.SendRawTransaction(hex)
-	//log.Println(err)
-	//log.Println(result)
 }
 
 func TestDelDemoChannelInfoOne(t *testing.T) {
@@ -167,10 +144,11 @@ func TestChannelManager_AliceOpenChannel(t *testing.T) {
 }
 
 func TestDecodeTx(t *testing.T) {
-	result, err := rpcClient.OmniDecodeTransaction("02000000017840e4bd98a8d022d3ca359239127922eb7329edd21e206637173af427e5e57a010000006a47304402202d5c989ab0fdb94adee355a12f417f1e17f856bb790c68d1e96a666e4ed4309502201d61614d482ec9b64bfdf5741eb30348cab512d156103c52eac3df1c087eac600121034434a59d648b5a7585182ef71dbc3ecc44236e5fa028b4c55c6adb76fd473ca1ffffffff03960b0f00000000001976a9140505ea289a01ba42c259f6608b79c3738c69aacd88ac0000000000000000166a146f6d6e690000000000000079000000003b9aca001c0200000000000017a914dff7bd260fc3ebb602f94ac21347b69e20a4847c8700000000")
+	hex := "02000000012ecd34ce812f36a876d6f5b3ab2ccb3478eea69e6af4a337fb1941ae8b8a62510000000092004730440220514b3ed6d636c69b2c936f9a57ecc248f00618c46e61bee5e8408192c4a25570022045d1c1b191a9b6c4ee56a51129baf9d79a26852d5ccbe572d8fcd961b360e8c8010047522103f1603966fc3986d7681a7bf7a1e6b8b44c6009939c28da21f065c1b991aeff12210216847047b926a1ff88e97fb0ebed8d0482c69521e9f8bc499c06b108a4972b8252aeffffffff033c1900000000000017a9140ff6b304e80589566854573a3c528ee0cb7dfbe4870000000000000000166a146f6d6e69000000000000007900000000773594001c0200000000000017a9140ff6b304e80589566854573a3c528ee0cb7dfbe48700000000"
+	result, err := rpcClient.OmniDecodeTransaction(hex)
 	log.Println(err)
 	log.Println(result)
-	result, err = rpcClient.DecodeRawTransaction("02000000017840e4bd98a8d022d3ca359239127922eb7329edd21e206637173af427e5e57a010000006a47304402202d5c989ab0fdb94adee355a12f417f1e17f856bb790c68d1e96a666e4ed4309502201d61614d482ec9b64bfdf5741eb30348cab512d156103c52eac3df1c087eac600121034434a59d648b5a7585182ef71dbc3ecc44236e5fa028b4c55c6adb76fd473ca1ffffffff03960b0f00000000001976a9140505ea289a01ba42c259f6608b79c3738c69aacd88ac0000000000000000166a146f6d6e690000000000000079000000003b9aca001c0200000000000017a914dff7bd260fc3ebb602f94ac21347b69e20a4847c8700000000")
+	result, err = rpcClient.DecodeRawTransaction(hex)
 	log.Println(err)
 	log.Println(result)
 }

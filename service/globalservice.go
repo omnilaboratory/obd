@@ -248,12 +248,12 @@ func checkBtcTxHex(btcFeeTxHexDecode string, channelInfo *dao.ChannelInfo, peerI
 	return fundingTxid, amountA, fundingOutputIndex, err
 }
 
-func checkOmniTxHex(fundingTxHexDecode string, channelInfo *dao.ChannelInfo, user *bean.User) (fundingTxid string, amountA float64, propertyId int64, err error) {
+func checkOmniTxHex(fundingTxHexDecode string, channelInfo *dao.ChannelInfo, user string) (fundingTxid string, amountA float64, propertyId int64, err error) {
 	jsonOmniTxHexDecode := gjson.Parse(fundingTxHexDecode)
 	fundingTxid = jsonOmniTxHexDecode.Get("txid").String()
 
 	funderAddress := channelInfo.AddressA
-	if user.PeerId == channelInfo.PeerIdB {
+	if user == channelInfo.PeerIdB {
 		funderAddress = channelInfo.AddressB
 	}
 
@@ -273,6 +273,41 @@ func checkOmniTxHex(fundingTxHexDecode string, channelInfo *dao.ChannelInfo, use
 	amountA = jsonOmniTxHexDecode.Get("amount").Float()
 	propertyId = jsonOmniTxHexDecode.Get("propertyid").Int()
 
+	return fundingTxid, amountA, propertyId, err
+}
+
+func checkOmniTxHexForRD(rdHex string, channelInfo *dao.ChannelInfo, fromAddress string, user *bean.User) (fundingTxid string, amountA float64, propertyId int64, err error) {
+	rdHexDecode, err := rpcClient.OmniDecodeTransaction(rdHex)
+	if err != nil {
+		err = errors.New("rdHex parse fail " + err.Error())
+		log.Println(err)
+		return "", 0, 0, err
+	}
+	log.Println(rdHexDecode)
+	jsonOmniTxHexDecode := gjson.Parse(rdHexDecode)
+	fundingTxid = jsonOmniTxHexDecode.Get("txid").String()
+
+	funderAddress := channelInfo.AddressA
+	if user.PeerId == channelInfo.PeerIdB {
+		funderAddress = channelInfo.AddressB
+	}
+
+	referenceAddress := jsonOmniTxHexDecode.Get("referenceaddress").String()
+	if referenceAddress != fromAddress {
+		err = errors.New("wrong Tx output")
+		log.Println(err)
+		return "", 0, 0, err
+	}
+
+	sendingAddress := jsonOmniTxHexDecode.Get("sendingaddress").String()
+	if sendingAddress != funderAddress {
+		err = errors.New("wrong Tx input")
+		log.Println(err)
+		return "", 0, 0, err
+	}
+
+	amountA = jsonOmniTxHexDecode.Get("amount").Float()
+	propertyId = jsonOmniTxHexDecode.Get("propertyid").Int()
 	return fundingTxid, amountA, propertyId, err
 }
 

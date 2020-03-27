@@ -333,7 +333,7 @@ func (client *Client) OmniCreateAndSignRawTransaction(fromBitCoinAddress string,
 }
 
 // From channelAddress to temp multi address, to Create CommitmentTx
-func (client *Client) OmniCreateAndSignRawTransactionUserSingleInput(txType int, fromBitCoinAddress string, privkeys []string, toBitCoinAddress string, propertyId int64, amount float64, minerFee float64, sequence int, redeemScript *string, usedTxid string) (txid, hex string, currUseTxid string, err error) {
+func (client *Client) OmniCreateAndSignRawTransactionUseSingleInput(txType int, fromBitCoinAddress string, privkeys []string, toBitCoinAddress string, propertyId int64, amount float64, minerFee float64, sequence int, redeemScript *string, usedTxid string) (txid, hex string, currUseTxid string, err error) {
 	if tool.CheckIsString(&fromBitCoinAddress) == false {
 		return "", "", "", errors.New("fromBitCoinAddress is empty")
 	}
@@ -733,4 +733,34 @@ func (client *Client) OmniCreateAndSignRawTransactionUseUnsendInput(fromBitCoinA
 	txid = gjson.Get(decodeHex, "txid").String()
 
 	return txid, hex, nil
+}
+
+func (client *Client) OmniSignRawTransactionForUnsend(hex string, inputItems []TransactionInputItem, privKey string, sequence int, redeemScript string) (string, string, error) {
+
+	var inputs []map[string]interface{}
+	for _, item := range inputItems {
+		node := make(map[string]interface{})
+		node["txid"] = item.Txid
+		node["vout"] = item.Vout
+		node["amount"] = item.Amount
+		node["scriptPubKey"] = item.ScriptPubKey
+		if sequence > 0 {
+			node["sequence"] = sequence
+		}
+		if tool.CheckIsString(&redeemScript) {
+			node["redeemScript"] = redeemScript
+		}
+		inputs = append(inputs, node)
+	}
+	signHex, err := client.SignRawTransactionWithKey(hex, []string{privKey}, inputs, "ALL")
+	if err != nil {
+		return "", "", err
+	}
+	hex = gjson.Get(signHex, "hex").String()
+	decodeHex, err := client.DecodeRawTransaction(hex)
+	txId := gjson.Get(decodeHex, "txid").String()
+	if err != nil {
+		return "", hex, err
+	}
+	return txId, hex, nil
 }

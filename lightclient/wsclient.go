@@ -120,37 +120,44 @@ func (client *Client) Read() {
 			needLogin = false
 		}
 
-		if msg.Type == enum.MsgType_ChannelOpen_N32 || msg.Type == enum.MsgType_ChannelAccept_N33 ||
-			msg.Type == enum.MsgType_FundingCreate_BtcCreate_N3400 || msg.Type == enum.MsgType_FundingSign_BtcSign_N3500 ||
-			msg.Type == enum.MsgType_FundingCreate_AssetFundingCreated_N34 || msg.Type == enum.MsgType_FundingSign_AssetFundingSigned_N35 ||
-			msg.Type == enum.MsgType_CommitmentTxSigned_RevokeAndAcknowledgeCommitmentTransaction_N352 ||
-			msg.Type == enum.MsgType_CommitmentTx_CommitmentTransactionCreated_N351 ||
-			msg.Type == enum.MsgType_CloseChannelRequest_N38 || msg.Type == enum.MsgType_CloseChannelSign_N39 ||
-			msg.Type == enum.MsgType_HTLC_FindPathAndSendH_N42 || msg.Type == enum.MsgType_HTLC_SendH_N43 ||
-			msg.Type == enum.MsgType_HTLC_SignGetH_N44 || msg.Type == enum.MsgType_HTLC_CreateCommitmentTx_N45 ||
-			msg.Type == enum.MsgType_HTLC_SendR_N46 || msg.Type == enum.MsgType_HTLC_VerifyR_N47 ||
-			msg.Type == enum.MsgType_HTLC_RequestCloseCurrTx_N48 || msg.Type == enum.MsgType_HTLC_CloseSigned_N49 ||
-			msg.Type == enum.MsgType_Atomic_Swap_N80 || msg.Type == enum.MsgType_Atomic_Swap_Accept_N81 {
-			if tool.CheckIsString(&msg.RecipientPeerId) == false {
-				client.sendToMyself(msg.Type, false, "error RecipientPeerId")
-				continue
-			}
-			if tool.CheckIsString(&msg.RecipientP2PPeerId) == false {
-				client.sendToMyself(msg.Type, false, "error RecipientP2PPeerId")
-				continue
-			}
-			if p2pChannelMap[msg.RecipientP2PPeerId] == nil {
-				client.sendToMyself(msg.Type, false, "not connect channelRecipientP2PPeerId")
-				continue
-			}
-		}
-
 		if needLogin {
 			//not login
 			if client.User == nil {
 				client.sendToMyself(msg.Type, false, "please login")
 				continue
 			} else { // already login
+
+				if msg.Type == enum.MsgType_ChannelOpen_N32 || msg.Type == enum.MsgType_ChannelAccept_N33 ||
+					msg.Type == enum.MsgType_FundingCreate_BtcCreate_N3400 || msg.Type == enum.MsgType_FundingSign_BtcSign_N3500 ||
+					msg.Type == enum.MsgType_FundingCreate_AssetFundingCreated_N34 || msg.Type == enum.MsgType_FundingSign_AssetFundingSigned_N35 ||
+					msg.Type == enum.MsgType_CommitmentTxSigned_RevokeAndAcknowledgeCommitmentTransaction_N352 ||
+					msg.Type == enum.MsgType_CommitmentTx_CommitmentTransactionCreated_N351 ||
+					msg.Type == enum.MsgType_CloseChannelRequest_N38 || msg.Type == enum.MsgType_CloseChannelSign_N39 ||
+					msg.Type == enum.MsgType_HTLC_FindPathAndSendH_N42 || msg.Type == enum.MsgType_HTLC_SendH_N43 ||
+					msg.Type == enum.MsgType_HTLC_SignGetH_N44 || msg.Type == enum.MsgType_HTLC_CreateCommitmentTx_N45 ||
+					msg.Type == enum.MsgType_HTLC_SendR_N46 || msg.Type == enum.MsgType_HTLC_VerifyR_N47 ||
+					msg.Type == enum.MsgType_HTLC_RequestCloseCurrTx_N48 || msg.Type == enum.MsgType_HTLC_CloseSigned_N49 ||
+					msg.Type == enum.MsgType_Atomic_Swap_N80 || msg.Type == enum.MsgType_Atomic_Swap_Accept_N81 {
+					if tool.CheckIsString(&msg.RecipientPeerId) == false {
+						client.sendToMyself(msg.Type, false, "error RecipientPeerId")
+						continue
+					}
+					if tool.CheckIsString(&msg.RecipientP2PPeerId) == false {
+						client.sendToMyself(msg.Type, false, "error RecipientP2PPeerId")
+						continue
+					}
+					if p2pChannelMap[msg.RecipientP2PPeerId] == nil {
+						client.sendToMyself(msg.Type, false, "not connect channelRecipientP2PPeerId")
+						continue
+					}
+					if msg.RecipientP2PPeerId == P2PLocalPeerId {
+						if _, err := FindUserOnLine(&msg.RecipientPeerId); err != nil {
+							client.sendToMyself(msg.Type, false, err.Error())
+							continue
+						}
+					}
+				}
+
 				msg.SenderPeerId = client.User.PeerId
 				for {
 					typeStr := strconv.Itoa(int(msg.Type))
@@ -417,5 +424,5 @@ func FindUserOnLine(peerId *string) (*Client, error) {
 			return itemClient, nil
 		}
 	}
-	return nil, errors.New("user not exist or online")
+	return nil, errors.New(*peerId + " not exist or online")
 }

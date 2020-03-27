@@ -1,7 +1,6 @@
 package service
 
 import (
-	"LightningOnOmni/tool"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -9,6 +8,7 @@ import (
 	"github.com/btcsuite/btcutil"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"log"
+	"obd/tool"
 	"testing"
 )
 

@@ -1,13 +1,13 @@
 package tool
 
 import (
-	"LightningOnOmni/bean"
-	"LightningOnOmni/bean/enum"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"log"
+	"obd/bean"
+	"obd/bean/enum"
 	"testing"
 )
 

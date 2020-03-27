@@ -1,8 +1,8 @@
 package bean
 
 import (
-	"LightningOnOmni/bean/chainhash"
 	"log"
+	"obd/bean/chainhash"
 	"testing"
 )
 

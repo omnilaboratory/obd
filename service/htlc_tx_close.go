@@ -440,7 +440,7 @@ func createAliceRsmcTxsForCloseHtlc(tx storm.Node, channelInfo dao.ChannelInfo, 
 	allUsedTxidTemp := ""
 	// rsmc
 	if commitmentTxInfo.AmountToRSMC > 0 {
-		txid, hex, usedTxid, err := rpcClient.OmniCreateAndSignRawTransactionUserSingleInput(
+		txid, hex, usedTxid, err := rpcClient.OmniCreateAndSignRawTransactionUseSingleInput(
 			int(commitmentTxInfo.TxType),
 			channelInfo.ChannelAddress,
 			[]string{
@@ -458,7 +458,7 @@ func createAliceRsmcTxsForCloseHtlc(tx storm.Node, channelInfo dao.ChannelInfo, 
 		}
 		allUsedTxidTemp += usedTxid
 		commitmentTxInfo.RSMCTxid = txid
-		commitmentTxInfo.RSMCTxHash = hex
+		commitmentTxInfo.RSMCTxHex = hex
 	}
 
 	//create to Bob tx
@@ -482,7 +482,7 @@ func createAliceRsmcTxsForCloseHtlc(tx storm.Node, channelInfo dao.ChannelInfo, 
 			return nil, err
 		}
 		commitmentTxInfo.ToOtherTxid = txid
-		commitmentTxInfo.ToOtherTxHash = hex
+		commitmentTxInfo.ToOtherTxHex = hex
 	}
 
 	commitmentTxInfo.SignAt = time.Now()
@@ -513,7 +513,7 @@ func createAliceRsmcTxsForCloseHtlc(tx storm.Node, channelInfo dao.ChannelInfo, 
 		currTempAddressPrivateKey = tempAddrPrivateKeyMap[dataFromCloseOpStarter.CurrRsmcTempAddressPubKey]
 	}
 
-	inputs, err := getInputsForNextTxByParseTxHashVout(commitmentTxInfo.RSMCTxHash, commitmentTxInfo.RSMCMultiAddress, commitmentTxInfo.RSMCMultiAddressScriptPubKey)
+	inputs, err := getInputsForNextTxByParseTxHashVout(commitmentTxInfo.RSMCTxHex, commitmentTxInfo.RSMCMultiAddress, commitmentTxInfo.RSMCMultiAddressScriptPubKey)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -594,7 +594,7 @@ func createBobRsmcTxsForCloseHtlc(tx storm.Node, channelInfo dao.ChannelInfo, is
 	allUsedTxidTemp := ""
 	// rsmc
 	if commitmentTxInfo.AmountToRSMC > 0 {
-		txid, hex, usedTxid, err := rpcClient.OmniCreateAndSignRawTransactionUserSingleInput(
+		txid, hex, usedTxid, err := rpcClient.OmniCreateAndSignRawTransactionUseSingleInput(
 			int(commitmentTxInfo.TxType),
 			channelInfo.ChannelAddress,
 			[]string{
@@ -612,7 +612,7 @@ func createBobRsmcTxsForCloseHtlc(tx storm.Node, channelInfo dao.ChannelInfo, is
 		}
 		allUsedTxidTemp += usedTxid
 		commitmentTxInfo.RSMCTxid = txid
-		commitmentTxInfo.RSMCTxHash = hex
+		commitmentTxInfo.RSMCTxHex = hex
 	}
 
 	//create to alice tx
@@ -636,7 +636,7 @@ func createBobRsmcTxsForCloseHtlc(tx storm.Node, channelInfo dao.ChannelInfo, is
 			return nil, err
 		}
 		commitmentTxInfo.ToOtherTxid = txid
-		commitmentTxInfo.ToOtherTxHash = hex
+		commitmentTxInfo.ToOtherTxHex = hex
 	}
 
 	commitmentTxInfo.SignAt = time.Now()
@@ -667,7 +667,7 @@ func createBobRsmcTxsForCloseHtlc(tx storm.Node, channelInfo dao.ChannelInfo, is
 		currTempAddressPrivateKey = reqData.CurrRsmcTempAddressPrivateKey
 	}
 
-	inputs, err := getInputsForNextTxByParseTxHashVout(commitmentTxInfo.RSMCTxHash, commitmentTxInfo.RSMCMultiAddress, commitmentTxInfo.RSMCMultiAddressScriptPubKey)
+	inputs, err := getInputsForNextTxByParseTxHashVout(commitmentTxInfo.RSMCTxHex, commitmentTxInfo.RSMCMultiAddress, commitmentTxInfo.RSMCMultiAddressScriptPubKey)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -789,7 +789,7 @@ func createAliceSideBRTxs(tx storm.Node, channelInfo dao.ChannelInfo, isAliceExe
 			return nil, err
 		}
 
-		inputs, err := getInputsForNextTxByParseTxHashVout(lastCommitmentTxInfo.RSMCTxHash, lastCommitmentTxInfo.RSMCMultiAddress, lastCommitmentTxInfo.RSMCRedeemScript)
+		inputs, err := getInputsForNextTxByParseTxHashVout(lastCommitmentTxInfo.RSMCTxHex, lastCommitmentTxInfo.RSMCMultiAddress, lastCommitmentTxInfo.RSMCRedeemScript)
 		if err != nil {
 			log.Println(err)
 			return nil, err
@@ -856,7 +856,7 @@ func createAliceSideBRTxs(tx storm.Node, channelInfo dao.ChannelInfo, isAliceExe
 			return nil, err
 		}
 
-		inputs, err := getInputsForNextTxByParseTxHashVout(lastCommitmentTxInfo.HtlcTxHash, lastCommitmentTxInfo.HTLCMultiAddress, lastCommitmentTxInfo.HTLCRedeemScript)
+		inputs, err := getInputsForNextTxByParseTxHashVout(lastCommitmentTxInfo.HtlcTxHex, lastCommitmentTxInfo.HTLCMultiAddress, lastCommitmentTxInfo.HTLCRedeemScript)
 		if err != nil {
 			log.Println(err)
 			return nil, err
@@ -1057,7 +1057,7 @@ func createBobSideBRTxs(tx storm.Node, channelInfo dao.ChannelInfo, isAliceExecu
 			return nil, err
 		}
 
-		inputs, err := getInputsForNextTxByParseTxHashVout(lastCommitmentTxInfo.RSMCTxHash, lastCommitmentTxInfo.RSMCMultiAddress, lastCommitmentTxInfo.RSMCRedeemScript)
+		inputs, err := getInputsForNextTxByParseTxHashVout(lastCommitmentTxInfo.RSMCTxHex, lastCommitmentTxInfo.RSMCMultiAddress, lastCommitmentTxInfo.RSMCRedeemScript)
 		if err != nil {
 			log.Println(err)
 			return nil, err
@@ -1122,7 +1122,7 @@ func createBobSideBRTxs(tx storm.Node, channelInfo dao.ChannelInfo, isAliceExecu
 			return nil, err
 		}
 
-		inputs, err := getInputsForNextTxByParseTxHashVout(lastCommitmentTxInfo.HtlcTxHash, lastCommitmentTxInfo.HTLCMultiAddress, lastCommitmentTxInfo.HTLCRedeemScript)
+		inputs, err := getInputsForNextTxByParseTxHashVout(lastCommitmentTxInfo.HtlcTxHex, lastCommitmentTxInfo.HTLCMultiAddress, lastCommitmentTxInfo.HTLCRedeemScript)
 		if err != nil {
 			log.Println(err)
 			return nil, err

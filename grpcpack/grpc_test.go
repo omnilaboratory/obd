@@ -1,11 +1,11 @@
 package grpcpack
 
 import (
-	"LightningOnOmni/config"
-	pb "LightningOnOmni/grpcpack/pb"
 	"context"
 	"google.golang.org/grpc"
 	"log"
+	"obd/config"
+	pb "obd/grpcpack/pb"
 	"strconv"
 	"testing"
 )

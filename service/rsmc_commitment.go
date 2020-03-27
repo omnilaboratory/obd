@@ -450,7 +450,7 @@ func createAliceSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFr
 				return nil, errors.New(lastTempAddressPrivateKey + " is wrong private key for RSMCTempAddressPubKey")
 			}
 
-			inputs, err := getInputsForNextTxByParseTxHashVout(lastCommitmentTx.RSMCTxHash, lastCommitmentTx.RSMCMultiAddress, lastCommitmentTx.RSMCRedeemScript)
+			inputs, err := getInputsForNextTxByParseTxHashVout(lastCommitmentTx.RSMCTxHex, lastCommitmentTx.RSMCMultiAddress, lastCommitmentTx.RSMCRedeemScript)
 			if err != nil {
 				log.Println(err)
 				return nil, err
@@ -542,7 +542,7 @@ func createAliceSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFr
 
 	usedTxidTemp := ""
 	if commitmentTxInfo.AmountToRSMC > 0 {
-		txid, hex, usedTxid, err := rpcClient.OmniCreateAndSignRawTransactionUserSingleInput(
+		txid, hex, usedTxid, err := rpcClient.OmniCreateAndSignRawTransactionUseSingleInput(
 			int(commitmentTxInfo.TxType),
 			channelInfo.ChannelAddress,
 			[]string{
@@ -561,7 +561,7 @@ func createAliceSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFr
 		log.Println(usedTxid)
 		usedTxidTemp = usedTxid
 		commitmentTxInfo.RSMCTxid = txid
-		commitmentTxInfo.RSMCTxHash = hex
+		commitmentTxInfo.RSMCTxHex = hex
 	}
 
 	//create to Bob tx
@@ -585,7 +585,7 @@ func createAliceSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFr
 			return nil, err
 		}
 		commitmentTxInfo.ToOtherTxid = txid
-		commitmentTxInfo.ToOtherTxHash = hex
+		commitmentTxInfo.ToOtherTxHex = hex
 	}
 	if lastCommitmentTx != nil {
 		commitmentTxInfo.LastCommitmentTxId = lastCommitmentTx.Id
@@ -627,7 +627,7 @@ func createAliceSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFr
 		currTempAddressPrivateKey = signData.CurrTempAddressPrivateKey
 	}
 
-	inputs, err := getInputsForNextTxByParseTxHashVout(commitmentTxInfo.RSMCTxHash, commitmentTxInfo.RSMCMultiAddress, commitmentTxInfo.RSMCMultiAddressScriptPubKey)
+	inputs, err := getInputsForNextTxByParseTxHashVout(commitmentTxInfo.RSMCTxHex, commitmentTxInfo.RSMCMultiAddress, commitmentTxInfo.RSMCMultiAddressScriptPubKey)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -725,7 +725,7 @@ func createBobSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFrom
 				return nil, errors.New(lastTempAddressPrivateKey + " is wrong private key for RSMCTempAddressPubKey")
 			}
 
-			inputs, err := getInputsForNextTxByParseTxHashVout(lastCommitmentTx.RSMCTxHash, lastCommitmentTx.RSMCMultiAddress, lastCommitmentTx.RSMCMultiAddressScriptPubKey)
+			inputs, err := getInputsForNextTxByParseTxHashVout(lastCommitmentTx.RSMCTxHex, lastCommitmentTx.RSMCMultiAddress, lastCommitmentTx.RSMCMultiAddressScriptPubKey)
 			if err != nil {
 				log.Println(err)
 				return nil, err
@@ -816,7 +816,7 @@ func createBobSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFrom
 
 	usedTxidTemp := ""
 	if commitmentTxInfo.AmountToRSMC > 0 {
-		txid, hex, usedTxid, err := rpcClient.OmniCreateAndSignRawTransactionUserSingleInput(
+		txid, hex, usedTxid, err := rpcClient.OmniCreateAndSignRawTransactionUseSingleInput(
 			int(commitmentTxInfo.TxType),
 			channelInfo.ChannelAddress,
 			[]string{
@@ -835,7 +835,7 @@ func createBobSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFrom
 		log.Println(usedTxid)
 		usedTxidTemp = usedTxid
 		commitmentTxInfo.RSMCTxid = txid
-		commitmentTxInfo.RSMCTxHash = hex
+		commitmentTxInfo.RSMCTxHex = hex
 	}
 
 	//create to alice tx
@@ -859,7 +859,7 @@ func createBobSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFrom
 			return nil, err
 		}
 		commitmentTxInfo.ToOtherTxid = txid
-		commitmentTxInfo.ToOtherTxHash = hex
+		commitmentTxInfo.ToOtherTxHex = hex
 	}
 
 	if lastCommitmentTx != nil {
@@ -900,7 +900,7 @@ func createBobSideTxs(tx storm.Node, signData *bean.CommitmentTxSigned, dataFrom
 		currTempAddressPrivateKey = tempAddrPrivateKeyMap[dataFromCreator.CurrTempAddressPubKey]
 	}
 
-	inputs, err := getInputsForNextTxByParseTxHashVout(commitmentTxInfo.RSMCTxHash, commitmentTxInfo.RSMCMultiAddress, commitmentTxInfo.RSMCMultiAddressScriptPubKey)
+	inputs, err := getInputsForNextTxByParseTxHashVout(commitmentTxInfo.RSMCTxHex, commitmentTxInfo.RSMCMultiAddress, commitmentTxInfo.RSMCMultiAddressScriptPubKey)
 	if err != nil {
 		log.Println(err)
 		return nil, err

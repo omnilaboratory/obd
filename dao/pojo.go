@@ -78,7 +78,10 @@ type FundingTransaction struct {
 	FundingTxid                string                  `json:"funding_txid"`
 	FundingOutputIndex         uint32                  `json:"funding_output_index"`
 	AmountB                    float64                 `json:"amount_b"`
+	FunderRsmcHex              string                  `json:"funder_rsmc_hex"`
+	FunderRsmcRedeemScript     string                  `json:"funder_rsmc_redeem_script"`
 	CreateBy                   string                  `json:"create_by"`
+	Owner                      string                  `json:"owner"`
 	FunderAddress              string                  `json:"funder_address"`
 	CreateAt                   time.Time               `json:"create_at"`
 	FundeeSignAt               time.Time               `json:"fundee_sign_at"`
@@ -87,6 +90,7 @@ type FundingTransaction struct {
 type TxInfoState int
 
 const (
+	TxInfoState_RsmcCreate    TxInfoState = 5
 	TxInfoState_CreateAndSign TxInfoState = 10
 	TxInfoState_Htlc_GetH     TxInfoState = 11 // 创建Htlc交易的时候的状态
 	TxInfoState_Htlc_GetR     TxInfoState = 12 // 获取到R后的状态
@@ -160,10 +164,11 @@ type CommitmentTransaction struct {
 	RSMCRedeemScript             string  `json:"rsmc_redeem_script"`
 	RSMCMultiAddressScriptPubKey string  `json:"rsmc_multi_address_script_pub_key"`
 	AmountToRSMC                 float64 `json:"amount_to_rsmc"` // amount to multiAddr
-	RSMCTxHash                   string  `json:"rsmc_tx_hash"`
+	RsmcInputTxid                string  `json:"rsmc_input_txid"`
+	RSMCTxHex                    string  `json:"rsmc_tx_hex"`
 	RSMCTxid                     string  `json:"rsmc_txid"`
 	//To other
-	ToOtherTxHash string  `json:"to_other_tx_hash"`
+	ToOtherTxHex  string  `json:"to_other_tx_hex"`
 	ToOtherTxid   string  `json:"to_other_txid"`
 	AmountToOther float64 `json:"amount_to_other"` //amount to bob(if Cna) or alice(if Cnb)
 	//htlc
@@ -172,7 +177,7 @@ type CommitmentTransaction struct {
 	HTLCRedeemScript             string  `json:"htlc_redeem_script"`
 	HTLCMultiAddressScriptPubKey string  `json:"htlc_multi_address_script_pub_key"`
 	AmountToHtlc                 float64 `json:"amount_to_htlc"`
-	HtlcTxHash                   string  `json:"htlc_tx_hash"`
+	HtlcTxHex                    string  `json:"htlc_tx_hex"`
 	HTLCTxid                     string  `json:"htlc_txid"`
 	HtlcH                        string  `json:"htlc_h"`
 	HtlcR                        string  `json:"htlc_r"`

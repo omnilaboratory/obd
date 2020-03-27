@@ -56,7 +56,7 @@ func (this *channelManager) AliceOpenChannel(msg bean.RequestMessage, user *bean
 }
 
 // obd init ChannelInfo for Bob
-func (this *channelManager) BeforeBobOpenChannel(msg string, user *bean.User) (err error) {
+func (this *channelManager) BeforeBobOpenChannelAtBobSide(msg string, user *bean.User) (err error) {
 	if tool.CheckIsString(&msg) == false {
 		return errors.New("empty inputData")
 	}
@@ -149,7 +149,7 @@ func (this *channelManager) BobAcceptChannel(jsonData string, user *bean.User) (
 }
 
 //当bob操作完，发送信息到Alice所在的obd，obd处理先从bob得到发给alice的信息，然后再发给Alice的轻客户端
-func (this *channelManager) AfterBobAcceptChannel(jsonData string, user *bean.User) (channelInfo *dao.ChannelInfo, err error) {
+func (this *channelManager) AfterBobAcceptChannelAtAliceSide(jsonData string, user *bean.User) (channelInfo *dao.ChannelInfo, err error) {
 	bobChannelInfo := &dao.ChannelInfo{}
 	err = json.Unmarshal([]byte(jsonData), &bobChannelInfo)
 
@@ -314,16 +314,16 @@ func (this *channelManager) ForceCloseChannel(jsonData string, user *bean.User) 
 		return nil, errors.New("latest commnitmennt tx state is wrong")
 	}
 
-	if tool.CheckIsString(&lastCommitmentTx.RSMCTxHash) {
-		commitmentTxid, err := rpcClient.SendRawTransaction(lastCommitmentTx.RSMCTxHash)
+	if tool.CheckIsString(&lastCommitmentTx.RSMCTxHex) {
+		commitmentTxid, err := rpcClient.SendRawTransaction(lastCommitmentTx.RSMCTxHex)
 		if err != nil {
 			log.Println(err)
 			return nil, err
 		}
 		log.Println(commitmentTxid)
 	}
-	if tool.CheckIsString(&lastCommitmentTx.ToOtherTxHash) {
-		commitmentTxidToBob, err := rpcClient.SendRawTransaction(lastCommitmentTx.ToOtherTxHash)
+	if tool.CheckIsString(&lastCommitmentTx.ToOtherTxHex) {
+		commitmentTxidToBob, err := rpcClient.SendRawTransaction(lastCommitmentTx.ToOtherTxHex)
 		if err != nil {
 			log.Println(err)
 			return nil, err
@@ -581,16 +581,16 @@ func (this *channelManager) CloseChannelSign(jsonData string, user *bean.User) (
 	}
 
 	//region 广播承诺交易 最近的rsmc的资产分配交易 因为是omni资产，承诺交易被拆分成了两个独立的交易
-	if tool.CheckIsString(&latestCommitmentTx.RSMCTxHash) {
-		commitmentTxid, err := rpcClient.SendRawTransaction(latestCommitmentTx.RSMCTxHash)
+	if tool.CheckIsString(&latestCommitmentTx.RSMCTxHex) {
+		commitmentTxid, err := rpcClient.SendRawTransaction(latestCommitmentTx.RSMCTxHex)
 		if err != nil {
 			log.Println(err)
 			return nil, targetUser, err
 		}
 		log.Println(commitmentTxid)
 	}
-	if tool.CheckIsString(&latestCommitmentTx.ToOtherTxHash) {
-		commitmentTxidToBob, err := rpcClient.SendRawTransaction(latestCommitmentTx.ToOtherTxHash)
+	if tool.CheckIsString(&latestCommitmentTx.ToOtherTxHex) {
+		commitmentTxidToBob, err := rpcClient.SendRawTransaction(latestCommitmentTx.ToOtherTxHex)
 		if err != nil {
 			log.Println(err)
 			return nil, targetUser, err
@@ -680,8 +680,8 @@ func (this *channelManager) CloseHtlcChannelSigned(channelInfo *dao.ChannelInfo,
 	}
 
 	//region 广播主承诺交易 三笔
-	if tool.CheckIsString(&latestCommitmentTx.RSMCTxHash) {
-		commitmentTxid, err := rpcClient.SendRawTransaction(latestCommitmentTx.RSMCTxHash)
+	if tool.CheckIsString(&latestCommitmentTx.RSMCTxHex) {
+		commitmentTxid, err := rpcClient.SendRawTransaction(latestCommitmentTx.RSMCTxHex)
 		if err != nil {
 			log.Println(err)
 			return nil, "", err
@@ -689,8 +689,8 @@ func (this *channelManager) CloseHtlcChannelSigned(channelInfo *dao.ChannelInfo,
 		log.Println(commitmentTxid)
 	}
 
-	if tool.CheckIsString(&latestCommitmentTx.ToOtherTxHash) {
-		commitmentTxidToBob, err := rpcClient.SendRawTransaction(latestCommitmentTx.ToOtherTxHash)
+	if tool.CheckIsString(&latestCommitmentTx.ToOtherTxHex) {
+		commitmentTxidToBob, err := rpcClient.SendRawTransaction(latestCommitmentTx.ToOtherTxHex)
 		if err != nil {
 			log.Println(err)
 			return nil, "", err
@@ -722,8 +722,8 @@ func (this *channelManager) CloseHtlcChannelSigned(channelInfo *dao.ChannelInfo,
 	log.Println(latestRsmcRDTxid)
 
 	// htlc部分
-	if tool.CheckIsString(&latestCommitmentTx.HtlcTxHash) {
-		commitmentTxidToHtlc, err := rpcClient.SendRawTransaction(latestCommitmentTx.HtlcTxHash)
+	if tool.CheckIsString(&latestCommitmentTx.HtlcTxHex) {
+		commitmentTxidToHtlc, err := rpcClient.SendRawTransaction(latestCommitmentTx.HtlcTxHex)
 		if err != nil {
 			log.Println(err)
 			return nil, "", err

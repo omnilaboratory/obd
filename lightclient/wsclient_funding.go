@@ -53,12 +53,8 @@ func (client *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.Se
 					status = true
 				}
 			}
-			if node != nil && status {
-				peerId := node.PeerIdA
-				if peerId == client.User.PeerId {
-					peerId = node.PeerIdB
-				}
-				_ = client.sendToSomeone(msg.Type, status, peerId, data)
+			if status {
+				_ = client.sendDataToSomeone(msg, status, data)
 			}
 		}
 
@@ -185,11 +181,7 @@ func (client *Client) fundingSignModule(msg bean.RequestMessage) (enum.SendTarge
 		}
 
 		if node != nil && status {
-			peerId := node.PeerIdA
-			if peerId == client.User.PeerId {
-				peerId = node.PeerIdB
-			}
-			_ = client.sendToSomeone(msg.Type, status, peerId, data)
+			_ = client.sendDataToSomeone(msg, status, data)
 		}
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone

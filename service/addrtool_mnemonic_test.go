@@ -1,13 +1,13 @@
 package service
 
 import (
-	"LightningOnOmni/bean"
-	"LightningOnOmni/tool"
 	"encoding/json"
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcutil/hdkeychain"
 	"github.com/tyler-smith/go-bip39"
 	"log"
+	"obd/bean"
+	"obd/tool"
 	"testing"
 )
 

@@ -38,6 +38,13 @@ func (client *Client) GetTransactionById(txid string) (result string, err error)
 	return client.send("gettransaction", []interface{}{txid})
 }
 
+//https://bitcoin.org/en/developer-reference#testmempoolaccept
+func (client *Client) TestMemPoolAccept(signedhex string) (result string, err error) {
+	rawtxs := make([]string, 0)
+	rawtxs = append(rawtxs, signedhex)
+	return client.send("testmempoolaccept ", []interface{}{rawtxs})
+}
+
 func (client *Client) GetTxOut(txid string, num int) (result string, err error) {
 	return client.send("gettxout", []interface{}{txid, num})
 }
