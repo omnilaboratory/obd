@@ -1327,15 +1327,15 @@ func (service *fundingTransactionManager) AfterBobSignOmniFundingAtAilceSide(dat
 		}
 	}
 
-	hexDecode, err := rpcClient.DecodeRawTransaction(signedRdHex)
+	rdHexDecode, err := rpcClient.DecodeRawTransaction(signedRdHex)
 	if err != nil {
 		return nil, err
 	}
-	if checkRdOutputAddress(hexDecode, toAddress) == false {
+	if checkRdOutputAddress(rdHexDecode, toAddress) == false {
 		return nil, errors.New("rdtx has wrong output address")
 	}
 
-	txid = gjson.Get(hexDecode, "txid").String()
+	txid = gjson.Get(rdHexDecode, "txid").String()
 	rdTransaction, err := createRDTx(owner, channelInfo, commitmentTxInfo, toAddress, user)
 	if err != nil {
 		log.Println(err)
@@ -1452,17 +1452,4 @@ func (service *fundingTransactionManager) TotalCount(peerId string) (count int, 
 			q.Eq("PeerIdA", peerId),
 			q.Eq("PeerIdB", peerId))).
 		Count(&dao.FundingTransaction{})
-}
-
-func parseBtcHexForSecondSign(txHexDecode string) (txid string, voutIndex uint32, amount float64, err error) {
-	hexJson := gjson.Parse(txHexDecode)
-	txid = hexJson.Get("vin").Array()[0].Get("txid").String()
-	voutIndex = uint32(hexJson.Get("vin").Array()[0].Get("vout").Int())
-	vouts := hexJson.Get("vout").Array()
-	tempAmount := decimal.NewFromFloat(0)
-	for _, item := range vouts {
-		tempAmount = tempAmount.Add(decimal.NewFromFloat(item.Get("value").Float()))
-	}
-	amount, _ = tempAmount.Float64()
-	return txid, voutIndex, amount, nil
 }
