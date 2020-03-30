@@ -1173,7 +1173,7 @@ func (service *fundingTransactionManager) AssetFundingSigned(jsonData string, si
 	}
 	//endregion
 
-	//channelInfo.CurrState = dao.ChannelState_CanUse
+	channelInfo.CurrState = dao.ChannelState_CanUse
 	channelInfo.PropertyId = fundingTransaction.PropertyId
 	err = tx.Update(channelInfo)
 	if err != nil {
