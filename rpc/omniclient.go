@@ -735,7 +735,7 @@ func (client *Client) OmniCreateAndSignRawTransactionUseUnsendInput(fromBitCoinA
 	return txid, hex, nil
 }
 
-func (client *Client) OmniSignRawTransactionForUnsend(hex string, inputItems []TransactionInputItem, privKey string, sequence int, redeemScript string) (string, string, error) {
+func (client *Client) OmniSignRawTransactionForUnsend(hex string, inputItems []TransactionInputItem, privKey string) (string, string, error) {
 
 	var inputs []map[string]interface{}
 	for _, item := range inputItems {
@@ -744,12 +744,6 @@ func (client *Client) OmniSignRawTransactionForUnsend(hex string, inputItems []T
 		node["vout"] = item.Vout
 		node["amount"] = item.Amount
 		node["scriptPubKey"] = item.ScriptPubKey
-		if sequence > 0 {
-			node["sequence"] = sequence
-		}
-		if tool.CheckIsString(&redeemScript) {
-			node["redeemScript"] = redeemScript
-		}
 		inputs = append(inputs, node)
 	}
 	signHex, err := client.SignRawTransactionWithKey(hex, []string{privKey}, inputs, "ALL")

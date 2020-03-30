@@ -833,7 +833,7 @@ func (service *fundingTransactionManager) AssetFundingCreated(jsonData string, u
 	node["channel_id"] = fundingTransaction.ChannelId
 	node["funding_omni_hex"] = fundingTransaction.FundingTxHex
 	node["c1a_rsmc_hex"] = commitmentTxInfo.RSMCTxHex
-	node["rsmc_redeem_script"] = commitmentTxInfo.RSMCRedeemScript
+	node["rsmc_temp_address_pub_key"] = commitmentTxInfo.RSMCTempAddressPubKey
 	return node, err
 }
 
@@ -867,7 +867,7 @@ func (service *fundingTransactionManager) BeforeBobSignOmniFundingAtBobSide(data
 	channelId := jsonObj.Get("channel_id").String()
 	fundingTxHex := jsonObj.Get("funding_omni_hex").String()
 	c1aRemcHex := jsonObj.Get("c1a_rsmc_hex").String()
-	rsmcRedeemScript := jsonObj.Get("rsmc_redeem_script").String()
+	rsmcTempAddressPubKey := jsonObj.Get("rsmc_temp_address_pub_key").String()
 	if tool.CheckIsString(&channelId) == false {
 		err = errors.New("wrong temporaryChannelId ")
 		log.Println(err)
@@ -989,8 +989,8 @@ func (service *fundingTransactionManager) BeforeBobSignOmniFundingAtBobSide(data
 		fundingTransaction.FundingTxHex = fundingTxHex
 		fundingTransaction.FundingTxid = fundingTxid
 		fundingTransaction.FundingOutputIndex = fundingOutputIndex
+		fundingTransaction.RsmcTempAddressPubKey = rsmcTempAddressPubKey
 		fundingTransaction.FunderRsmcHex = c1aRemcHex
-		fundingTransaction.FunderRsmcRedeemScript = rsmcRedeemScript
 
 		err = tx.Update(channelInfo)
 		if err != nil {
@@ -1010,6 +1010,20 @@ func (service *fundingTransactionManager) BeforeBobSignOmniFundingAtBobSide(data
 		if fundingTransaction.CurrState != dao.FundingTransactionState_Create {
 			fundingTransaction.CurrState = dao.FundingTransactionState_Create
 			_ = tx.Update(fundingTransaction)
+		}
+
+		if tool.CheckIsString(&fundingTransaction.RsmcTempAddressPubKey) == false {
+			fundingTransaction.RsmcTempAddressPubKey = rsmcTempAddressPubKey
+			_ = tx.Update(fundingTransaction)
+		}
+	}
+
+	if tool.CheckIsString(&channelInfo.ChannelId) == false {
+		channelInfo.ChannelId = fundingTransaction.ChannelId
+		err := tx.Update(channelInfo)
+		if err != nil {
+			log.Println(err)
+			return nil, err
 		}
 	}
 
@@ -1036,7 +1050,7 @@ func (service *fundingTransactionManager) AssetFundingSigned(jsonData string, si
 		return nil, errors.New("wrong ChannelId")
 	}
 
-	tx, err := db.Begin(true)
+	tx, err := signer.Db.Begin(true)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -1102,26 +1116,11 @@ func (service *fundingTransactionManager) AssetFundingSigned(jsonData string, si
 	}
 
 	//region  sign C1 tx
-	txHexDecode, err := rpcClient.DecodeRawTransaction(fundingTransaction.FunderRsmcHex)
-	if err != nil {
-		err = errors.New("TxHex  parse fail " + err.Error())
-		log.Println(err)
-		return nil, err
-	}
-	txid, voutIndex, amount, _ := parseBtcHexForSecondSign(txHexDecode)
-
 	// 二次签名
-	inputItems := make([]rpc.TransactionInputItem, 0)
-	inputItems = append(inputItems, rpc.TransactionInputItem{
-		Txid:         txid,
-		ScriptPubKey: channelInfo.ChannelAddressScriptPubKey,
-		Vout:         voutIndex,
-		Amount:       amount})
-	_, signedHex, err := rpcClient.OmniSignRawTransactionForUnsend(fundingTransaction.FunderRsmcHex, inputItems, reqData.FundeeChannelAddressPrivateKey, 0, "")
+	_, signedHex, err := rpcClient.BtcSignRawTransaction(fundingTransaction.FunderRsmcHex, reqData.FundeeChannelAddressPrivateKey)
 	if err != nil {
 		return nil, err
 	}
-
 	result, err := rpcClient.TestMemPoolAccept(signedHex)
 	if err != nil {
 		return nil, err
@@ -1133,19 +1132,30 @@ func (service *fundingTransactionManager) AssetFundingSigned(jsonData string, si
 	//endregion
 
 	//region create RD tx
-	outputAddress := channelInfo.AddressA
-	if funder == channelInfo.PeerIdB {
-		outputAddress = channelInfo.AddressB
+	multiAddr, err := rpcClient.CreateMultiSig(2, []string{fundingTransaction.RsmcTempAddressPubKey, myPubKey})
+	if err != nil {
+		return nil, err
 	}
-	alice2AndBobMultiAddress := ""
-	inputs, err := getInputsForNextTxByParseTxHashVout(signedHex, alice2AndBobMultiAddress, fundingTransaction.FunderRsmcRedeemScript)
+	rsmcMultiAddress := gjson.Get(multiAddr, "address").String()
+	rsmcRedeemScript := gjson.Get(multiAddr, "redeemScript").String()
+	json, err := rpcClient.GetAddressInfo(rsmcMultiAddress)
+	if err != nil {
+		return nil, err
+	}
+	rsmcMultiAddressScriptPubKey := gjson.Get(json, "scriptPubKey").String()
+
+	inputs, err := getInputsForNextTxByParseTxHashVout(signedHex, rsmcMultiAddress, rsmcMultiAddressScriptPubKey)
 	if err != nil {
 		log.Println(err)
 		return nil, err
 	}
 
+	outputAddress := channelInfo.AddressA
+	if funder == channelInfo.PeerIdB {
+		outputAddress = channelInfo.AddressB
+	}
 	_, hex, err := rpcClient.OmniCreateAndSignRawTransactionUseUnsendInput(
-		alice2AndBobMultiAddress,
+		rsmcMultiAddress,
 		[]string{
 			reqData.FundeeChannelAddressPrivateKey,
 		},
@@ -1156,7 +1166,7 @@ func (service *fundingTransactionManager) AssetFundingSigned(jsonData string, si
 		fundingTransaction.AmountA,
 		0,
 		1000,
-		&fundingTransaction.FunderRsmcRedeemScript)
+		&rsmcRedeemScript)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -1225,6 +1235,13 @@ func (service *fundingTransactionManager) AfterBobSignOmniFundingAtAilceSide(dat
 		return nil, err
 	}
 
+	tempPrivKey := tempAddrPrivateKeyMap[fundingTransaction.FunderPubKey2ForCommitment]
+	if tool.CheckIsString(&tempPrivKey) == false {
+		err = errors.New("not found the FunderPrivKey2ForCommitment")
+		log.Println(err)
+		return nil, err
+	}
+
 	node := make(map[string]interface{})
 	fundingTransaction.FundeeSignAt = time.Now()
 	node["temporary_channel_id"] = channelInfo.TemporaryChannelId
@@ -1237,7 +1254,7 @@ func (service *fundingTransactionManager) AfterBobSignOmniFundingAtAilceSide(dat
 
 	commitmentTxInfo := &dao.CommitmentTransaction{}
 	err = tx.Select(
-		q.Eq("ChannelId", channelInfo.Id),
+		q.Eq("ChannelId", channelInfo.ChannelId),
 		q.Or(
 			q.Eq("PeerIdA", user.PeerId),
 			q.Eq("PeerIdB", user.PeerId))).
@@ -1255,15 +1272,13 @@ func (service *fundingTransactionManager) AfterBobSignOmniFundingAtAilceSide(dat
 		return nil, err
 	}
 
-	funder := channelInfo.PeerIdA
-	if user.PeerId == channelInfo.PeerIdB {
-		funder = channelInfo.PeerIdB
-	}
-
-	txid, amountA, propertyId, err := checkOmniTxHex(fundingTxHexDecode, channelInfo, funder)
-	if err != nil {
-		log.Println(err)
-		return nil, err
+	txid := gjson.Get(fundingTxHexDecode, "txid").String()
+	amountA := gjson.Get(fundingTxHexDecode, "amount").Float()
+	propertyId := gjson.Get(fundingTxHexDecode, "propertyid").Int()
+	sendingAddress := gjson.Get(fundingTxHexDecode, "sendingaddress").String()
+	referenceAddress := gjson.Get(fundingTxHexDecode, "referenceaddress").String()
+	if sendingAddress != channelInfo.ChannelAddress && referenceAddress != commitmentTxInfo.RSMCMultiAddress {
+		return nil, errors.New("error address from signed hex")
 	}
 	if commitmentTxInfo.AmountToRSMC != amountA {
 		return nil, errors.New("error amount from signed hex")
@@ -1292,28 +1307,35 @@ func (service *fundingTransactionManager) AfterBobSignOmniFundingAtAilceSide(dat
 		toAddress = channelInfo.AddressB
 	}
 
-	txHexDecode, err := rpcClient.DecodeRawTransaction(rdHex)
+	// RD 二次签名
+	inputs, err := getInputsForNextTxByParseTxHashVout(rsmcSignedHex, commitmentTxInfo.RSMCMultiAddress, commitmentTxInfo.RSMCMultiAddressScriptPubKey)
 	if err != nil {
-		err = errors.New("rdHex  parse fail " + err.Error())
 		log.Println(err)
 		return nil, err
 	}
-	txid, voutIndex, amount, _ := parseBtcHexForSecondSign(txHexDecode)
-
-	// 二次签名
-	inputItems := make([]rpc.TransactionInputItem, 0)
-	inputItems = append(inputItems, rpc.TransactionInputItem{
-		Txid:         txid,
-		ScriptPubKey: commitmentTxInfo.RSMCMultiAddressScriptPubKey,
-		Vout:         voutIndex,
-		Amount:       amount})
-	_, signedRdHex, err := rpcClient.OmniSignRawTransactionForUnsend(rdHex, inputItems, tempAddrPrivateKeyMap[fundingTransaction.FunderPubKey2ForCommitment], 0, "")
+	_, signedRdHex, err := rpcClient.OmniSignRawTransactionForUnsend(rdHex, inputs, tempAddrPrivateKeyMap[fundingTransaction.FunderPubKey2ForCommitment])
 	if err != nil {
 		return nil, err
 	}
+	result, err := rpcClient.TestMemPoolAccept(signedRdHex)
+	if err != nil {
+		return nil, err
+	}
+	if gjson.Parse(result).Array()[0].Get("allowed").Bool() == false {
+		if gjson.Parse(result).Array()[0].Get("reject-reason").String() != "missing-inputs" {
+			return nil, errors.New(gjson.Parse(result).Array()[0].Get("reject-reason").String())
+		}
+	}
 
-	txid, _, propertyId, err = checkOmniTxHexForRD(signedRdHex, channelInfo, commitmentTxInfo.RSMCMultiAddress, user)
+	hexDecode, err := rpcClient.DecodeRawTransaction(signedRdHex)
+	if err != nil {
+		return nil, err
+	}
+	if checkRdOutputAddress(hexDecode, toAddress) == false {
+		return nil, errors.New("rdtx has wrong output address")
+	}
 
+	txid = gjson.Get(hexDecode, "txid").String()
 	rdTransaction, err := createRDTx(owner, channelInfo, commitmentTxInfo, toAddress, user)
 	if err != nil {
 		log.Println(err)
@@ -1329,7 +1351,7 @@ func (service *fundingTransactionManager) AfterBobSignOmniFundingAtAilceSide(dat
 		return nil, err
 	}
 
-	//channelInfo.CurrState = dao.ChannelState_CanUse
+	channelInfo.CurrState = dao.ChannelState_CanUse
 	err = tx.Update(channelInfo)
 	if err != nil {
 		log.Println(err)
@@ -1350,6 +1372,26 @@ func (service *fundingTransactionManager) AfterBobSignOmniFundingAtAilceSide(dat
 
 	node["channelId"] = channelInfo.ChannelId
 	return node, nil
+}
+
+func checkRdOutputAddress(hexDecode string, toAddress string) bool {
+	array := gjson.Parse(hexDecode).Get("vout").Array()
+	if len(array) == 0 {
+		return false
+	}
+
+	flag := false
+	for _, item := range array {
+		if item.Get("value").Float() > 0 {
+			address := item.Get("scriptPubKey").Get("addresses").Array()[0].String()
+			if address != toAddress {
+				return false
+			} else {
+				flag = true
+			}
+		}
+	}
+	return flag
 }
 
 func (service *fundingTransactionManager) ItemByTempId(jsonData string) (node *dao.FundingTransaction, err error) {
@@ -1417,8 +1459,10 @@ func parseBtcHexForSecondSign(txHexDecode string) (txid string, voutIndex uint32
 	txid = hexJson.Get("vin").Array()[0].Get("txid").String()
 	voutIndex = uint32(hexJson.Get("vin").Array()[0].Get("vout").Int())
 	vouts := hexJson.Get("vout").Array()
+	tempAmount := decimal.NewFromFloat(0)
 	for _, item := range vouts {
-		amount += item.Get("value").Float()
+		tempAmount = tempAmount.Add(decimal.NewFromFloat(item.Get("value").Float()))
 	}
+	amount, _ = tempAmount.Float64()
 	return txid, voutIndex, amount, nil
 }

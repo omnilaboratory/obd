@@ -331,7 +331,9 @@ func getInputsForNextTxByParseTxHashVout(hex string, toAddress, scriptPubKey str
 						node.ScriptPubKey = scriptPubKey
 						node.Vout = uint32(item.Get("n").Uint())
 						node.Amount = item.Get("value").Float()
-						inputs = append(inputs, node)
+						if node.Amount > 0 {
+							inputs = append(inputs, node)
+						}
 					}
 				}
 			}

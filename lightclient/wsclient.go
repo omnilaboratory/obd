@@ -353,9 +353,13 @@ func (client *Client) sendDataToSomeone(msg bean.RequestMessage, status bool, da
 				if itemClient != nil && itemClient.User != nil {
 					//因为数据库，分库，需要对特定的消息进行处理
 					if status {
-						err := routerOfSameNode(msg.Type, data, itemClient.User)
+						retData, err := routerOfSameNode(msg.Type, data, itemClient.User)
 						if err != nil {
 							return err
+						} else {
+							if tool.CheckIsString(&retData) {
+								data = retData
+							}
 						}
 					}
 					fromId := msg.SenderPeerId + "@" + p2pChannelMap[P2PLocalPeerId].Address
@@ -392,9 +396,13 @@ func getDataFromP2PSomeone(msg bean.RequestMessage) error {
 				itemClient := GlobalWsClientManager.OnlineUserMap[msg.RecipientPeerId]
 				if itemClient != nil && itemClient.User != nil {
 					//收到数据后，需要对其进行加工
-					err := routerOfSameNode(msg.Type, msg.Data, itemClient.User)
+					retData, err := routerOfSameNode(msg.Type, msg.Data, itemClient.User)
 					if err != nil {
 						return err
+					} else {
+						if tool.CheckIsString(&retData) {
+							msg.Data = retData
+						}
 					}
 					fromId := msg.SenderPeerId + "@" + p2pChannelMap[msg.SenderP2PPeerId].Address
 					toId := msg.RecipientPeerId + "@" + p2pChannelMap[msg.RecipientP2PPeerId].Address

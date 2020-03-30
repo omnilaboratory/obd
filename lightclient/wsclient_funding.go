@@ -29,7 +29,11 @@ func (client *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.Se
 			}
 		}
 		if status {
-			_ = client.sendDataToSomeone(msg, status, data)
+			err := client.sendDataToSomeone(msg, status, data)
+			if err != nil {
+				data = err.Error()
+				status = false
+			}
 		}
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
@@ -54,7 +58,11 @@ func (client *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.Se
 				}
 			}
 			if status {
-				_ = client.sendDataToSomeone(msg, status, data)
+				err := client.sendDataToSomeone(msg, status, data)
+				if err != nil {
+					data = err.Error()
+					status = false
+				}
 			}
 		}
 
@@ -161,7 +169,11 @@ func (client *Client) fundingSignModule(msg bean.RequestMessage) (enum.SendTarge
 		}
 
 		if tool.CheckIsString(&funder) {
-			_ = client.sendDataToSomeone(msg, status, data)
+			err = client.sendDataToSomeone(msg, status, data)
+			if err != nil {
+				data = err.Error()
+				status = false
+			}
 		}
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
@@ -181,7 +193,11 @@ func (client *Client) fundingSignModule(msg bean.RequestMessage) (enum.SendTarge
 		}
 
 		if node != nil && status {
-			_ = client.sendDataToSomeone(msg, status, data)
+			err := client.sendDataToSomeone(msg, status, data)
+			if err != nil {
+				data = err.Error()
+				status = false
+			}
 		}
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone

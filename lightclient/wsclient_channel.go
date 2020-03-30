@@ -32,7 +32,11 @@ func (client *Client) channelModule(msg bean.RequestMessage) (enum.SendTargetTyp
 			}
 		}
 		if status {
-			_ = client.sendDataToSomeone(msg, status, data)
+			err := client.sendDataToSomeone(msg, status, data)
+			if err != nil {
+				data = err.Error()
+				status = false
+			}
 		}
 
 		client.sendToMyself(msg.Type, status, data)
@@ -155,7 +159,11 @@ func (client *Client) channelModule(msg bean.RequestMessage) (enum.SendTargetTyp
 			}
 		}
 		if status {
-			_ = client.sendDataToSomeone(msg, status, data)
+			err := client.sendDataToSomeone(msg, status, data)
+			if err != nil {
+				data = err.Error()
+				status = false
+			}
 		}
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone

@@ -2,6 +2,7 @@ package service
 
 import (
 	"github.com/asdine/storm/q"
+	"github.com/tidwall/gjson"
 	"log"
 	"obd/dao"
 	"testing"
@@ -110,37 +111,22 @@ func TestCreateDemoChannelInfoData(t *testing.T) {
 }
 
 func TestPathManager_GetPath(t *testing.T) {
-	//PathService.GetPath("alice", "carol", 5, nil, true)
-	//miniPathLength := 7
-	//var miniPathNode *PathNode
-	//
-	//for _, node := range PathService.openList {
-	//	if node.IsTarget {
-	//		if int(node.Level) < miniPathLength {
-	//			miniPathLength = int(node.Level)
-	//			miniPathNode = node
-	//		}
-	//	}
-	//}
-	//if miniPathNode != nil {
-	//	log.Println(miniPathNode)
-	//	channelCount := miniPathNode.Level
-	//	channelIdArr := make([]int, 0)
-	//	for i := 1; i < int(channelCount); i++ {
-	//		channelIdArr = append(channelIdArr, PathService.openList[miniPathNode.PathIdArr[i]].ChannelId)
-	//	}
-	//	channelIdArr = append(channelIdArr, miniPathNode.ChannelId)
-	//	log.Println(channelIdArr)
-	//} else {
-	//	log.Println("no path find")
-	//}
+	multiAddr, err := rpcClient.CreateMultiSig(2, []string{"039ee94a8131ef437059383bd0bb9ca3b7fd9cae0554f9df8b7d786ebf173f1c20", "0216847047b926a1ff88e97fb0ebed8d0482c69521e9f8bc499c06b108a4972b82"})
+	rsmcMultiAddress := gjson.Get(multiAddr, "address").String()
+	rsmcRedeemScript := gjson.Get(multiAddr, "redeemScript").String()
+	json, err := rpcClient.GetAddressInfo(rsmcMultiAddress)
+	rsmcMultiAddressScriptPubKey := gjson.Get(json, "scriptPubKey").String()
+	log.Println(err)
+	log.Println(rsmcMultiAddress)
+	log.Println(rsmcRedeemScript)
+	log.Println(rsmcMultiAddressScriptPubKey)
 }
 
 func TestChannelManager_AliceOpenChannel(t *testing.T) {
-	hex := "02000000013ec76f18e3fb709436c5ee4f66c95baa7cb533c6ac975c96bb79ce0e42a7428f00000000d90047304402202c47c570fae9c4dd2e233bbeaf6baa30071b29f0b1c0fd18709163bca154c324022041539e44cc7f5796da8dde64f7a3914e005187595487182ce43250776074cb380147304402201040640a7fb04b1a4a1da22e95e2e864ba7a2efdfd08b8fb1064e5a58cba5ccf02204550dabf44d1af93b64bfcdc2a87dd720f58a3b0f000d6adb7b790068254df4001475221034434a59d648b5a7585182ef71dbc3ecc44236e5fa028b4c55c6adb76fd473ca1210373869bdf9667964b51d9a93ab92a20cd524e21be4d5f4690f51330e827379bbe52aeffffffff033c1900000000000017a91427f4ab8c95d6f4b945f88da4b0a72a3d6031c29d870000000000000000166a146f6d6e690000000000000079000000003b9aca001c0200000000000017a91427f4ab8c95d6f4b945f88da4b0a72a3d6031c29d8700000000"
-	inputs, err := getInputsForNextTxByParseTxHashVout(hex, "2MvtVSk3K2Kqn851kqJnvhKC73xdSM5Yhww", "522103ea01f8b137df5744ec2b0b91bc46139cabf228403264df65f6233bd7f0cbd17d210373869bdf9667964b51d9a93ab92a20cd524e21be4d5f4690f51330e827379bbe52ae")
+	hex := "0200000001b4d759758f719b5938d876abc0a467125f12249208535ce62db7f5b4099fe04700000000920047304402205fdd00fd5a9293b32cc7dd798ab48dff503759c4c019b89e792b628e7e796550022039692ff9fbab3f5496b628b630a8c0a23d55bcc561e05b0f215142364d232692010047522103985e8880628058da7c49b0968e4e7d2819240b60255a1c9b5f2407a4056b5f542102d93e3a855ec5603d74c6f379da184c5fcc05372ca48b4791e1afa1d6587db71552aee8030000034a0f0000000000001976a91484902564ba3ce47952d86a0d53c17402b3cce96588ac0000000000000000166a146f6d6e690000000000000079000000007735940022020000000000001976a91484902564ba3ce47952d86a0d53c17402b3cce96588ac00000000"
+	result, err := rpcClient.SendRawTransaction(hex)
 	log.Println(err)
-	log.Println(inputs)
+	log.Println(result)
 }
 
 func TestDecodeTx(t *testing.T) {
@@ -151,6 +137,15 @@ func TestDecodeTx(t *testing.T) {
 	result, err = rpcClient.DecodeRawTransaction(hex)
 	log.Println(err)
 	log.Println(result)
+	txid, hex, err := rpcClient.BtcSignRawTransaction(hex, "cTPtw7uhNXWeBroEzFur3WZQr8WgPojE4WipsxTNBqbGsruMJG33")
+	log.Println(err)
+	log.Println(txid)
+	log.Println(result)
+	hex = "02000000012ecd34ce812f36a876d6f5b3ab2ccb3478eea69e6af4a337fb1941ae8b8a625100000000d9004730440220514b3ed6d636c69b2c936f9a57ecc248f00618c46e61bee5e8408192c4a25570022045d1c1b191a9b6c4ee56a51129baf9d79a26852d5ccbe572d8fcd961b360e8c80147304402200cad5e9707d489534823a5e100e6e020d555d6ac87cab285b23c4fc706eb689402204c7d3962ad0cb27c81295dbfaed216325c26a1b099ed328eefff81212501903a0147522103f1603966fc3986d7681a7bf7a1e6b8b44c6009939c28da21f065c1b991aeff12210216847047b926a1ff88e97fb0ebed8d0482c69521e9f8bc499c06b108a4972b8252aeffffffff033c1900000000000017a9140ff6b304e80589566854573a3c528ee0cb7dfbe4870000000000000000166a146f6d6e69000000000000007900000000773594001c0200000000000017a9140ff6b304e80589566854573a3c528ee0cb7dfbe48700000000"
+	result, err = rpcClient.TestMemPoolAccept(hex)
+	log.Println(err)
+	log.Println(result)
+
 }
 
 func TestGetBalance(t *testing.T) {
@@ -168,12 +163,7 @@ func TestGetBalance(t *testing.T) {
 }
 
 func TestSend(t *testing.T) {
-	//result, err := rpcClient.SendRawTransaction("020000000258921046d2381049ceb5c83d97a4aabe93d8d4e06c32177d586e9ceed6bc2153000000006a4730440220274d9a08463987d772b3daa66cdfd337426ccb69fce5b3f8645cfbd6df35ba6f02201cf910b02bb03105cdefe78e67f30fa39d9ee6be0c90dcb6d29870a1018aee2c0121034434a59d648b5a7585182ef71dbc3ecc44236e5fa028b4c55c6adb76fd473ca1fffffffff9c98f5bccd1059b26521eb677d95d044e95bafa05d1c922a68b4234ca8f014a020000006a473044022038afbde1a2b60f528df1d292becf938e7567f82c5d8c903607839c7ab164d72d02205ae92cf56746d34d009db9b418039fc5bb41b726d48a27cebd511e90478ad4f30121034434a59d648b5a7585182ef71dbc3ecc44236e5fa028b4c55c6adb76fd473ca1ffffffff02102700000000000017a914dff7bd260fc3ebb602f94ac21347b69e20a4847c876a190f00000000001976a9140505ea289a01ba42c259f6608b79c3738c69aacd88ac00000000")
-	//log.Println(err)
-	//log.Println(result)
-	result, err := rpcClient.SendRawTransaction("02000000027e3a2539885f04f17e39feeccffdf5a1a65fb433427a6c669328f26885eee09d00000000d9004730440220641dc362f2897836f3d0fe3a12c97c5ea06d267e79bce44431110b549c641cea02206a775100fae0e5ea9af18e0219abfcbd7fd7887fdbc765df23df9106855d95130147304402203f6b4db66fa80e7d7045ef41f6f7064123e3d21e10356e029852ecc08c72074e02205e7665bf00ba6bf9e7840f705d328a53f7671e75ae7952f47b767df1f25f1a0d0147522102d9c077bd5bb97186313d74ca534584b3d290709880bc6945ab5c46799ad857302102e38f7e2ad2cb64c1822640b3f60b9edbe3a6f80a1e17f307e34a2526f4d20b1152aee80300007e3a2539885f04f17e39feeccffdf5a1a65fb433427a6c669328f26885eee09d02000000d900473044022077a3617ad4327b10bbbef0a4f9779b5d4f278299dae626cc94ee0d8f7ab96607022071820ce9f735948c4bb4d47971e958acdd30d32123b94242e7925263bb459d890147304402207e4f7b5eff63bb94464d4f551115a358672fdf29035c2a375007593f014ba854022077a175fe019aa1f0b8f848c59305e2cdc89ed8b26b5dc937d1ceaaef38e178f20147522102d9c077bd5bb97186313d74ca534584b3d290709880bc6945ab5c46799ad857302102e38f7e2ad2cb64c1822640b3f60b9edbe3a6f80a1e17f307e34a2526f4d20b1152aee803000003620b0000000000001976a914ec9c3fabfa57c7862ba594b70988a7b4f485744188ac0000000000000000166a146f6d6e6900000000000000790000000029b9270022020000000000001976a914ec9c3fabfa57c7862ba594b70988a7b4f485744188ac00000000")
-	log.Println(err)
-	log.Println(result)
+
 }
 
 func TestCreateAddress(t *testing.T) {

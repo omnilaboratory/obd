@@ -78,8 +78,8 @@ type FundingTransaction struct {
 	FundingTxid                string                  `json:"funding_txid"`
 	FundingOutputIndex         uint32                  `json:"funding_output_index"`
 	AmountB                    float64                 `json:"amount_b"`
+	RsmcTempAddressPubKey      string                  `json:"rsmc_temp_address_pub_key"`
 	FunderRsmcHex              string                  `json:"funder_rsmc_hex"`
-	FunderRsmcRedeemScript     string                  `json:"funder_rsmc_redeem_script"`
 	CreateBy                   string                  `json:"create_by"`
 	Owner                      string                  `json:"owner"`
 	FunderAddress              string                  `json:"funder_address"`

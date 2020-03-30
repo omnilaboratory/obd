@@ -152,7 +152,6 @@ func (this *channelManager) BobAcceptChannel(jsonData string, user *bean.User) (
 func (this *channelManager) AfterBobAcceptChannelAtAliceSide(jsonData string, user *bean.User) (channelInfo *dao.ChannelInfo, err error) {
 	bobChannelInfo := &dao.ChannelInfo{}
 	err = json.Unmarshal([]byte(jsonData), &bobChannelInfo)
-
 	if err != nil {
 		return nil, err
 	}
@@ -170,8 +169,8 @@ func (this *channelManager) AfterBobAcceptChannelAtAliceSide(jsonData string, us
 	}
 
 	if bobChannelInfo.CurrState == dao.ChannelState_WaitFundAsset {
-		channelInfo.PubKeyB = bobChannelInfo.FundingPubKey
-		channelInfo.AddressB = bobChannelInfo.FundingAddress
+		channelInfo.PubKeyB = bobChannelInfo.PubKeyB
+		channelInfo.AddressB = bobChannelInfo.AddressB
 		channelInfo.ChannelAddress = bobChannelInfo.ChannelAddress
 		channelInfo.ChannelAddressRedeemScript = bobChannelInfo.ChannelAddressRedeemScript
 		channelInfo.ChannelAddressScriptPubKey = bobChannelInfo.ChannelAddressScriptPubKey
