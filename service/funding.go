@@ -1072,16 +1072,6 @@ func (service *fundingTransactionManager) AssetFundingSigned(jsonData string, si
 		return nil, err
 	}
 
-	// default if alice launch the funding,signer is bob
-	var funder = channelInfo.PeerIdA
-	myPubKey := channelInfo.PubKeyB
-	changeToAddress := channelInfo.AddressA
-	if signer.PeerId == channelInfo.PeerIdA {
-		funder = channelInfo.PeerIdB
-		myPubKey = channelInfo.PubKeyA
-		changeToAddress = channelInfo.AddressB
-	}
-
 	fundingTransaction := &dao.FundingTransaction{}
 	err = tx.Select(
 		q.Eq("ChannelId", reqData.ChannelId),
@@ -1091,6 +1081,21 @@ func (service *fundingTransactionManager) AssetFundingSigned(jsonData string, si
 	if err != nil {
 		log.Println(err)
 		return nil, err
+	}
+
+	var funder = channelInfo.PeerIdA
+	myPubKey := channelInfo.PubKeyB
+	owner := channelInfo.PeerIdB
+	myAddress := channelInfo.AddressB
+	changeToAddress := channelInfo.AddressA
+	funderAmount := fundingTransaction.AmountA
+	if signer.PeerId == channelInfo.PeerIdA {
+		funder = channelInfo.PeerIdB
+		owner = channelInfo.PeerIdA
+		myPubKey = channelInfo.PubKeyA
+		myAddress = channelInfo.AddressA
+		changeToAddress = channelInfo.AddressB
+		funderAmount = fundingTransaction.AmountB
 	}
 
 	node := make(map[string]interface{})
@@ -1117,7 +1122,7 @@ func (service *fundingTransactionManager) AssetFundingSigned(jsonData string, si
 
 	//region  sign C1 tx
 	// 二次签名
-	_, signedHex, err := rpcClient.BtcSignRawTransaction(fundingTransaction.FunderRsmcHex, reqData.FundeeChannelAddressPrivateKey)
+	rsmcTxId, signedHex, err := rpcClient.BtcSignRawTransaction(fundingTransaction.FunderRsmcHex, reqData.FundeeChannelAddressPrivateKey)
 	if err != nil {
 		return nil, err
 	}
@@ -1131,7 +1136,7 @@ func (service *fundingTransactionManager) AssetFundingSigned(jsonData string, si
 
 	//endregion
 
-	//region create RD tx
+	//region create RD tx for alice
 	multiAddr, err := rpcClient.CreateMultiSig(2, []string{fundingTransaction.RsmcTempAddressPubKey, myPubKey})
 	if err != nil {
 		return nil, err
@@ -1170,6 +1175,45 @@ func (service *fundingTransactionManager) AssetFundingSigned(jsonData string, si
 	if err != nil {
 		log.Println(err)
 		return nil, err
+	}
+	//endregion fro
+
+	// region create BR1b tx  for bob
+	lastCommitmentTx := &dao.CommitmentTransaction{}
+	lastCommitmentTx.Id = -1
+	lastCommitmentTx.PropertyId = fundingTransaction.PropertyId
+	lastCommitmentTx.RSMCTxHex = signedHex
+	lastCommitmentTx.RSMCTxid = rsmcTxId
+	lastCommitmentTx.AmountToRSMC = funderAmount
+	breachRemedyTransaction, err := createBRTx(owner, channelInfo, lastCommitmentTx, signer)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	if breachRemedyTransaction.Amount > 0 {
+		txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionUseUnsendInput(
+			rsmcMultiAddress,
+			[]string{
+				reqData.FundeeChannelAddressPrivateKey,
+			},
+			inputs,
+			myAddress,
+			fundingTransaction.FunderAddress,
+			fundingTransaction.PropertyId,
+			breachRemedyTransaction.Amount,
+			0,
+			0,
+			&rsmcRedeemScript)
+		if err != nil {
+			log.Println(err)
+			return nil, err
+		}
+		breachRemedyTransaction.Txid = txid
+		breachRemedyTransaction.TransactionSignHex = hex
+		breachRemedyTransaction.SignAt = time.Now()
+		breachRemedyTransaction.CurrState = dao.TxInfoState_RsmcCreate
+		_ = tx.Save(breachRemedyTransaction)
 	}
 	//endregion
 

@@ -153,6 +153,7 @@ func createBRTx(owner string, channelInfo *dao.ChannelInfo, commitmentTxInfo *da
 	breachRemedyTransaction.Owner = owner
 
 	//input
+	breachRemedyTransaction.RsmcTxHex = commitmentTxInfo.RSMCTxHex
 	breachRemedyTransaction.InputTxid = commitmentTxInfo.RSMCTxid
 	breachRemedyTransaction.InputVout = 0
 	breachRemedyTransaction.InputAmount = commitmentTxInfo.AmountToRSMC

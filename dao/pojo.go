@@ -237,6 +237,7 @@ type BreachRemedyTransaction struct {
 	PeerIdB            string      `json:"peer_id_b"`
 	ChannelId          string      `json:"channel_id"`
 	PropertyId         int64       `json:"property_id"`
+	RsmcTxHex          string      `json:"rsmc_tx_hex"`
 	InputTxid          string      `json:"input_txid"`           //input txid  from commitTx alice2&bob multtAddr, so need  sign of alice2 and bob
 	InputVout          uint32      `json:"input_vout"`           // input vout
 	InputAmount        float64     `json:"input_amount"`         //input amount
