@@ -2,6 +2,7 @@ package service
 
 import (
 	"encoding/json"
+	"github.com/asdine/storm"
 	"github.com/asdine/storm/q"
 	"obd/dao"
 	"obd/tool"
@@ -38,6 +39,27 @@ func (this *messageManage) saveMsg(sender, receiver, data string) string {
 	if err == nil {
 		msg.HashValue = tool.SignMsgWithSha256(bytes)
 		err = db.Save(msg)
+		if err == nil {
+			return msg.HashValue
+		}
+	}
+	return ""
+}
+
+func (this *messageManage) saveMsgUseTx(tx storm.Node, sender, receiver, data string) string {
+	tool.CheckIsString(&data)
+	msg := &Message{
+		Sender:    sender,
+		Receiver:  receiver,
+		Data:      data,
+		CreateAt:  time.Now(),
+		CurrState: dao.NS_Create,
+	}
+
+	bytes, err := json.Marshal(msg)
+	if err == nil {
+		msg.HashValue = tool.SignMsgWithSha256(bytes)
+		err = tx.Save(msg)
 		if err == nil {
 			return msg.HashValue
 		}

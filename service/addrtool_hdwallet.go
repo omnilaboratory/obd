@@ -75,7 +75,7 @@ func (service *hdWalletManager) CreateNewAddress(user *bean.User) (wallet *Walle
 	changeExtKey := user.ChangeExtKey
 	//m/purpose(44)'/coinType(0)'/account(0)'/change(0)/index(0)
 	var userDb dao.User
-	err = db.One("PeerId", user.PeerId, &userDb)
+	err = user.Db.One("PeerId", user.PeerId, &userDb)
 	if err != nil {
 		return nil, err
 	}

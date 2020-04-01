@@ -13,6 +13,7 @@ import (
 	"obd/dao"
 	"obd/rpc"
 	"obd/tool"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -1057,17 +1058,14 @@ func (service *fundingTransactionManager) AssetFundingSigned(jsonData string, si
 	}
 	defer tx.Rollback()
 
-	channelInfo := &dao.ChannelInfo{}
-	err = tx.Select(
-		q.Eq("ChannelId", reqData.ChannelId),
-		q.Eq("CurrState", dao.ChannelState_WaitFundAsset),
-		q.Or(
-			q.Eq("PeerIdA", signer.PeerId),
-			q.Eq("PeerIdB", signer.PeerId))).
-		OrderBy("CreateAt").Reverse().
-		First(channelInfo)
-	if err != nil {
-		err = errors.New("not found the channel")
+	channelInfo := getChannelInfoByChannelId(tx, reqData.ChannelId, signer.PeerId)
+	if channelInfo == nil {
+		err = errors.New("not found channel " + reqData.ChannelId)
+		log.Println(err)
+		return nil, err
+	}
+	if channelInfo.CurrState != dao.ChannelState_WaitFundAsset {
+		err = errors.New("wrong channel state " + strconv.Itoa(int(channelInfo.CurrState)))
 		log.Println(err)
 		return nil, err
 	}
@@ -1085,13 +1083,11 @@ func (service *fundingTransactionManager) AssetFundingSigned(jsonData string, si
 
 	var funder = channelInfo.PeerIdA
 	myPubKey := channelInfo.PubKeyB
-	owner := channelInfo.PeerIdB
 	myAddress := channelInfo.AddressB
 	changeToAddress := channelInfo.AddressA
 	funderAmount := fundingTransaction.AmountA
 	if signer.PeerId == channelInfo.PeerIdA {
 		funder = channelInfo.PeerIdB
-		owner = channelInfo.PeerIdA
 		myPubKey = channelInfo.PubKeyA
 		myAddress = channelInfo.AddressA
 		changeToAddress = channelInfo.AddressB
@@ -1122,18 +1118,17 @@ func (service *fundingTransactionManager) AssetFundingSigned(jsonData string, si
 
 	//region  sign C1 tx
 	// 二次签名
-	rsmcTxId, signedHex, err := rpcClient.BtcSignRawTransaction(fundingTransaction.FunderRsmcHex, reqData.FundeeChannelAddressPrivateKey)
+	rsmcTxId, signedRsmcHex, err := rpcClient.BtcSignRawTransaction(fundingTransaction.FunderRsmcHex, reqData.FundeeChannelAddressPrivateKey)
 	if err != nil {
 		return nil, err
 	}
-	result, err := rpcClient.TestMemPoolAccept(signedHex)
+	result, err := rpcClient.TestMemPoolAccept(signedRsmcHex)
 	if err != nil {
 		return nil, err
 	}
 	if gjson.Parse(result).Array()[0].Get("allowed").Bool() == false {
 		return nil, errors.New(gjson.Parse(result).Array()[0].Get("reject-reason").String())
 	}
-
 	//endregion
 
 	//region create RD tx for alice
@@ -1149,7 +1144,7 @@ func (service *fundingTransactionManager) AssetFundingSigned(jsonData string, si
 	}
 	rsmcMultiAddressScriptPubKey := gjson.Get(json, "scriptPubKey").String()
 
-	inputs, err := getInputsForNextTxByParseTxHashVout(signedHex, rsmcMultiAddress, rsmcMultiAddressScriptPubKey)
+	inputs, err := getInputsForNextTxByParseTxHashVout(signedRsmcHex, rsmcMultiAddress, rsmcMultiAddressScriptPubKey)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -1176,44 +1171,21 @@ func (service *fundingTransactionManager) AssetFundingSigned(jsonData string, si
 		log.Println(err)
 		return nil, err
 	}
-	//endregion fro
+	//endregion create RD tx for alice
 
 	// region create BR1b tx  for bob
 	lastCommitmentTx := &dao.CommitmentTransaction{}
 	lastCommitmentTx.Id = -1
 	lastCommitmentTx.PropertyId = fundingTransaction.PropertyId
-	lastCommitmentTx.RSMCTxHex = signedHex
+	lastCommitmentTx.RSMCMultiAddress = rsmcMultiAddress
+	lastCommitmentTx.RSMCRedeemScript = rsmcRedeemScript
+	lastCommitmentTx.RSMCTxHex = signedRsmcHex
 	lastCommitmentTx.RSMCTxid = rsmcTxId
 	lastCommitmentTx.AmountToRSMC = funderAmount
-	breachRemedyTransaction, err := createBRTx(owner, channelInfo, lastCommitmentTx, signer)
+	err = createCurrBR(tx, channelInfo, lastCommitmentTx, inputs, myAddress, fundingTransaction.FunderAddress, reqData.FundeeChannelAddressPrivateKey, *signer)
 	if err != nil {
 		log.Println(err)
 		return nil, err
-	}
-
-	if breachRemedyTransaction.Amount > 0 {
-		txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionUseUnsendInput(
-			rsmcMultiAddress,
-			[]string{
-				reqData.FundeeChannelAddressPrivateKey,
-			},
-			inputs,
-			myAddress,
-			fundingTransaction.FunderAddress,
-			fundingTransaction.PropertyId,
-			breachRemedyTransaction.Amount,
-			0,
-			0,
-			&rsmcRedeemScript)
-		if err != nil {
-			log.Println(err)
-			return nil, err
-		}
-		breachRemedyTransaction.Txid = txid
-		breachRemedyTransaction.TransactionSignHex = hex
-		breachRemedyTransaction.SignAt = time.Now()
-		breachRemedyTransaction.CurrState = dao.TxInfoState_RsmcCreate
-		_ = tx.Save(breachRemedyTransaction)
 	}
 	//endregion
 
@@ -1238,7 +1210,7 @@ func (service *fundingTransactionManager) AssetFundingSigned(jsonData string, si
 		return nil, err
 	}
 
-	node["rsmc_signed_hex"] = signedHex
+	node["rsmc_signed_hex"] = signedRsmcHex
 	node["rd_hex"] = hex
 	return node, err
 }
@@ -1407,6 +1379,9 @@ func (service *fundingTransactionManager) AfterBobSignOmniFundingAtAilceSide(dat
 		log.Println(err)
 		return nil, err
 	}
+
+	fundingTransaction.CurrState = dao.FundingTransactionState_Accept
+	_ = tx.Update(fundingTransaction)
 
 	err = tx.Commit()
 	if err != nil {

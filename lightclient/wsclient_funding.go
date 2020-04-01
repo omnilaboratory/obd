@@ -29,7 +29,7 @@ func (client *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.Se
 			}
 		}
 		if status {
-			err := client.sendDataToSomeone(msg, status, data)
+			err := client.sendDataToP2PUser(msg, status, data)
 			if err != nil {
 				data = err.Error()
 				status = false
@@ -58,7 +58,7 @@ func (client *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.Se
 				}
 			}
 			if status {
-				err := client.sendDataToSomeone(msg, status, data)
+				err := client.sendDataToP2PUser(msg, status, data)
 				if err != nil {
 					data = err.Error()
 					status = false
@@ -169,7 +169,7 @@ func (client *Client) fundingSignModule(msg bean.RequestMessage) (enum.SendTarge
 		}
 
 		if tool.CheckIsString(&funder) {
-			err = client.sendDataToSomeone(msg, status, data)
+			err = client.sendDataToP2PUser(msg, status, data)
 			if err != nil {
 				data = err.Error()
 				status = false
@@ -193,7 +193,7 @@ func (client *Client) fundingSignModule(msg bean.RequestMessage) (enum.SendTarge
 		}
 
 		if node != nil && status {
-			err := client.sendDataToSomeone(msg, status, data)
+			err := client.sendDataToP2PUser(msg, status, data)
 			if err != nil {
 				data = err.Error()
 				status = false

@@ -427,7 +427,7 @@ func (this *channelManager) SendBreachRemedyTransaction(jsonData string, user *b
 		return nil, err
 	}
 
-	brtxid, err := rpcClient.SendRawTransaction(lastBRTx.TransactionSignHex)
+	brtxid, err := rpcClient.SendRawTransaction(lastBRTx.BrTxHex)
 	if err != nil {
 		err = errors.New("BtcSignAndSendRawTransaction: " + err.Error())
 		log.Println(err)

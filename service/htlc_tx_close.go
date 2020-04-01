@@ -814,7 +814,7 @@ func createAliceSideBRTxs(tx storm.Node, channelInfo dao.ChannelInfo, isAliceExe
 			return nil, err
 		}
 		br.Txid = txid
-		br.TransactionSignHex = hex
+		br.BrTxHex = hex
 		br.SignAt = time.Now()
 		br.CurrState = dao.TxInfoState_CreateAndSign
 		err = tx.Save(br)
@@ -881,7 +881,7 @@ func createAliceSideBRTxs(tx storm.Node, channelInfo dao.ChannelInfo, isAliceExe
 			return nil, err
 		}
 		hbr.Txid = txid
-		hbr.TransactionSignHex = hex
+		hbr.BrTxHex = hex
 		hbr.SignAt = time.Now()
 		hbr.CurrState = dao.TxInfoState_CreateAndSign
 		err = tx.Save(hbr)
@@ -1082,7 +1082,7 @@ func createBobSideBRTxs(tx storm.Node, channelInfo dao.ChannelInfo, isAliceExecu
 			return nil, err
 		}
 		br.Txid = txid
-		br.TransactionSignHex = hex
+		br.BrTxHex = hex
 		br.SignAt = time.Now()
 		br.CurrState = dao.TxInfoState_CreateAndSign
 		err = tx.Save(br)
@@ -1147,7 +1147,7 @@ func createBobSideBRTxs(tx storm.Node, channelInfo dao.ChannelInfo, isAliceExecu
 			return nil, err
 		}
 		hbr.Txid = txid
-		hbr.TransactionSignHex = hex
+		hbr.BrTxHex = hex
 		hbr.SignAt = time.Now()
 		hbr.CurrState = dao.TxInfoState_CreateAndSign
 		err = tx.Save(hbr)

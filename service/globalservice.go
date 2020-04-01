@@ -153,6 +153,8 @@ func createBRTx(owner string, channelInfo *dao.ChannelInfo, commitmentTxInfo *da
 	breachRemedyTransaction.Owner = owner
 
 	//input
+	breachRemedyTransaction.InputAddress = commitmentTxInfo.RSMCMultiAddress
+	breachRemedyTransaction.InputAddressScriptPubKey = commitmentTxInfo.RSMCMultiAddressScriptPubKey
 	breachRemedyTransaction.RsmcTxHex = commitmentTxInfo.RSMCTxHex
 	breachRemedyTransaction.InputTxid = commitmentTxInfo.RSMCTxid
 	breachRemedyTransaction.InputVout = 0
@@ -351,4 +353,46 @@ func getLatestCommitmentTx(channelId string, owner string) (commitmentTxInfo *da
 		q.Eq("Owner", owner)).
 		OrderBy("CreateAt").Reverse().First(commitmentTxInfo)
 	return commitmentTxInfo, err
+}
+
+func getLatestCommitmentTxUseDbTx(tx storm.Node, channelId string, owner string) (commitmentTxInfo *dao.CommitmentTransaction, err error) {
+	commitmentTxInfo = &dao.CommitmentTransaction{}
+	err = tx.Select(
+		q.Eq("ChannelId", channelId),
+		q.Eq("Owner", owner)).
+		OrderBy("CreateAt").Reverse().First(commitmentTxInfo)
+	return commitmentTxInfo, err
+}
+
+//根据通道id获取通道信息
+func getChannelInfoByChannelId(tx storm.Node, channelId string, userPeerId string) (channelInfo *dao.ChannelInfo) {
+	channelInfo = &dao.ChannelInfo{}
+	err := tx.Select(
+		q.Eq("ChannelId", channelId),
+		q.Or(
+			q.Eq("PeerIdA", userPeerId),
+			q.Eq("PeerIdB", userPeerId)),
+		q.Eq("CurrState", dao.ChannelState_CanUse)).
+		First(channelInfo)
+	if err != nil {
+		return nil
+	}
+	return channelInfo
+}
+
+//根据通道id获取通道信息
+func getFundingTransactionByChannelId(dbTx storm.Node, channelId string, userPeerId string) (fundingTransaction *dao.FundingTransaction) {
+	fundingTransaction = &dao.FundingTransaction{}
+	err := dbTx.Select(
+		q.Eq("ChannelId", channelId),
+		q.Eq("CurrState", dao.FundingTransactionState_Accept),
+		q.Or(
+			q.Eq("PeerIdA", userPeerId),
+			q.Eq("PeerIdB", userPeerId))).
+		OrderBy("CreateAt").
+		Reverse().First(fundingTransaction)
+	if err != nil {
+		return nil
+	}
+	return fundingTransaction
 }

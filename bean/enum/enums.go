@@ -85,8 +85,8 @@ const (
 	MsgType_CommitmentTxSigned_ItemById_N35202                                MsgType = -35202
 	MsgType_CommitmentTxSigned_Count_N35203                                   MsgType = -35203
 
-	MsgType_GetBalanceRequest_N353 MsgType = -353
-	MsgType_GetBalanceRespond_N354 MsgType = -354
+	MsgType_CommitmentTxSigned_ToAliceSign_N353     MsgType = -353
+	MsgType_CommitmentTxSigned_SecondToBobSign_N354 MsgType = -354
 
 	MsgType_CloseChannelRequest_N38 MsgType = -38
 	MsgType_CloseChannelSign_N39    MsgType = -39

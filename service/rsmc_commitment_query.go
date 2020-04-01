@@ -11,7 +11,7 @@ import (
 	"obd/tool"
 )
 
-func (service *commitmentTxManager) GetLatestCommitmentTxByChannelId(jsonData string, user *bean.User) (node *dao.CommitmentTransaction, err error) {
+func (this *commitmentTxManager) GetLatestCommitmentTxByChannelId(jsonData string, user *bean.User) (node *dao.CommitmentTransaction, err error) {
 	if tool.CheckIsString(&jsonData) == false {
 		return nil, errors.New("empty jsonData")
 	}
@@ -49,7 +49,7 @@ type RequestGetBroadcastCommitmentTx struct {
 	ChannelId string `json:"channel_id"`
 }
 
-func (service *commitmentTxManager) GetBroadcastCommitmentTxByChannelId(jsonData string, user *bean.User) (node *dao.CommitmentTransaction, err error) {
+func (this *commitmentTxManager) GetBroadcastCommitmentTxByChannelId(jsonData string, user *bean.User) (node *dao.CommitmentTransaction, err error) {
 	if tool.CheckIsString(&jsonData) == false {
 		return nil, errors.New("empty jsonData")
 	}
@@ -80,8 +80,8 @@ func (service *commitmentTxManager) GetBroadcastCommitmentTxByChannelId(jsonData
 	return node, err
 }
 
-func (service *commitmentTxManager) GetBroadcastRDTxByChannelId(jsonData string, user *bean.User) (node interface{}, err error) {
-	commitmentTx, err := service.GetBroadcastCommitmentTxByChannelId(jsonData, user)
+func (this *commitmentTxManager) GetBroadcastRDTxByChannelId(jsonData string, user *bean.User) (node interface{}, err error) {
+	commitmentTx, err := this.GetBroadcastCommitmentTxByChannelId(jsonData, user)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -95,8 +95,8 @@ func (service *commitmentTxManager) GetBroadcastRDTxByChannelId(jsonData string,
 		First(node)
 	return node, err
 }
-func (service *commitmentTxManager) GetBroadcastBRTxByChannelId(jsonData string, user *bean.User) (node interface{}, err error) {
-	commitmentTx, err := service.GetBroadcastCommitmentTxByChannelId(jsonData, user)
+func (this *commitmentTxManager) GetBroadcastBRTxByChannelId(jsonData string, user *bean.User) (node interface{}, err error) {
+	commitmentTx, err := this.GetBroadcastCommitmentTxByChannelId(jsonData, user)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -109,7 +109,7 @@ func (service *commitmentTxManager) GetBroadcastBRTxByChannelId(jsonData string,
 	return node, err
 }
 
-func (service *commitmentTxManager) GetLatestRDTxByChannelId(jsonData string, user *bean.User) (node *dao.RevocableDeliveryTransaction, err error) {
+func (this *commitmentTxManager) GetLatestRDTxByChannelId(jsonData string, user *bean.User) (node *dao.RevocableDeliveryTransaction, err error) {
 	chanId := gjson.Get(jsonData, "channel_id").String()
 	if tool.CheckIsString(&chanId) == false {
 		return nil, errors.New("wrong channel_id")
@@ -132,7 +132,7 @@ func (service *commitmentTxManager) GetLatestRDTxByChannelId(jsonData string, us
 	return node, err
 }
 
-func (service *commitmentTxManager) GetLatestAllRDByChannelId(jsonData string, user *bean.User) (nodes []dao.RevocableDeliveryTransaction, err error) {
+func (this *commitmentTxManager) GetLatestAllRDByChannelId(jsonData string, user *bean.User) (nodes []dao.RevocableDeliveryTransaction, err error) {
 	chanId := gjson.Get(jsonData, "channel_id").String()
 	if tool.CheckIsString(&chanId) == false {
 		return nil, errors.New("wrong channel_id")
@@ -155,7 +155,7 @@ func (service *commitmentTxManager) GetLatestAllRDByChannelId(jsonData string, u
 	return nodes, err
 }
 
-func (service *commitmentTxManager) GetLatestBRTxByChannelId(jsonData string, user *bean.User) (node *dao.BreachRemedyTransaction, err error) {
+func (this *commitmentTxManager) GetLatestBRTxByChannelId(jsonData string, user *bean.User) (node *dao.BreachRemedyTransaction, err error) {
 	chanId := gjson.Get(jsonData, "channel_id").String()
 	if tool.CheckIsString(&chanId) == false {
 		return nil, errors.New("wrong channel_id")
@@ -178,7 +178,7 @@ func (service *commitmentTxManager) GetLatestBRTxByChannelId(jsonData string, us
 	return node, err
 }
 
-func (service *commitmentTxManager) GetLatestAllBRByChannelId(jsonData string, user *bean.User) (nodes []dao.BreachRemedyTransaction, err error) {
+func (this *commitmentTxManager) GetLatestAllBRByChannelId(jsonData string, user *bean.User) (nodes []dao.BreachRemedyTransaction, err error) {
 	chanId := gjson.Get(jsonData, "channel_id").String()
 	if tool.CheckIsString(&chanId) == false {
 		return nil, errors.New("wrong channel_id")
@@ -201,7 +201,7 @@ func (service *commitmentTxManager) GetLatestAllBRByChannelId(jsonData string, u
 	return nodes, err
 }
 
-func (service *commitmentTxManager) GetItemsByChannelId(jsonData string, user *bean.User) (nodes []dao.CommitmentTransaction, count *int, err error) {
+func (this *commitmentTxManager) GetItemsByChannelId(jsonData string, user *bean.User) (nodes []dao.CommitmentTransaction, count *int, err error) {
 	channelId := gjson.Get(jsonData, "channel_id").String()
 	if tool.CheckIsString(&channelId) == false {
 		return nil, nil, errors.New("wrong channel_id")
@@ -249,7 +249,7 @@ func (service *commitmentTxManager) GetItemsByChannelId(jsonData string, user *b
 	return nodes, count, err
 }
 
-func (service *commitmentTxManager) GetItemById(id int) (node *dao.CommitmentTransaction, err error) {
+func (this *commitmentTxManager) GetItemById(id int) (node *dao.CommitmentTransaction, err error) {
 	db, err := dao.DBService.GetDB()
 	if err != nil {
 		return nil, err
@@ -261,7 +261,7 @@ func (service *commitmentTxManager) GetItemById(id int) (node *dao.CommitmentTra
 	return node, nil
 }
 
-func (service *commitmentTxManager) TotalCount() (count int, err error) {
+func (this *commitmentTxManager) TotalCount() (count int, err error) {
 	db, err := dao.DBService.GetDB()
 	if err != nil {
 		return 0, err
@@ -269,7 +269,7 @@ func (service *commitmentTxManager) TotalCount() (count int, err error) {
 	return db.Count(&dao.CommitmentTransaction{})
 }
 
-func (service *commitmentTxManager) Del(id int) (node *dao.CommitmentTransaction, err error) {
+func (this *commitmentTxManager) Del(id int) (node *dao.CommitmentTransaction, err error) {
 	db, err := dao.DBService.GetDB()
 	if err != nil {
 		return nil, err
@@ -284,7 +284,7 @@ func (service *commitmentTxManager) Del(id int) (node *dao.CommitmentTransaction
 	return node, err
 }
 
-func (service *commitmentTxSignedManager) GetItemsByChannelId(jsonData string) (nodes []dao.CommitmentTransaction, count *int, err error) {
+func (this *commitmentTxSignedManager) GetItemsByChannelId(jsonData string) (nodes []dao.CommitmentTransaction, count *int, err error) {
 	chanId := gjson.Get(jsonData, "channel_id").String()
 	if tool.CheckIsString(&chanId) == false {
 		return nil, nil, errors.New("wrong channel_id")
@@ -323,7 +323,7 @@ func (service *commitmentTxSignedManager) GetItemsByChannelId(jsonData string) (
 	return nodes, count, err
 }
 
-func (service *commitmentTxSignedManager) GetItemById(id int) (node *dao.CommitmentTransaction, err error) {
+func (this *commitmentTxSignedManager) GetItemById(id int) (node *dao.CommitmentTransaction, err error) {
 	db, err := dao.DBService.GetDB()
 	if err != nil {
 		log.Println(err)
@@ -336,7 +336,7 @@ func (service *commitmentTxSignedManager) GetItemById(id int) (node *dao.Commitm
 	return node, nil
 }
 
-func (service *commitmentTxSignedManager) TotalCount() (count int, err error) {
+func (this *commitmentTxSignedManager) TotalCount() (count int, err error) {
 	db, err := dao.DBService.GetDB()
 	if err != nil {
 		log.Println(err)

@@ -172,7 +172,7 @@ func htlcAliceAbortLastRsmcCommitmentTx(tx storm.Node, channelInfo dao.ChannelIn
 				return err
 			}
 			breachRemedyTransaction.Txid = txid
-			breachRemedyTransaction.TransactionSignHex = hex
+			breachRemedyTransaction.BrTxHex = hex
 			breachRemedyTransaction.SignAt = time.Now()
 			breachRemedyTransaction.CurrState = dao.TxInfoState_CreateAndSign
 			err = tx.Save(breachRemedyTransaction)
@@ -297,7 +297,7 @@ func htlcBobAbortLastRsmcCommitmentTx(tx storm.Node, channelInfo dao.ChannelInfo
 				return err
 			}
 			breachRemedyTransaction.Txid = txid
-			breachRemedyTransaction.TransactionSignHex = hex
+			breachRemedyTransaction.BrTxHex = hex
 			breachRemedyTransaction.SignAt = time.Now()
 			breachRemedyTransaction.CurrState = dao.TxInfoState_CreateAndSign
 			err = tx.Save(breachRemedyTransaction)

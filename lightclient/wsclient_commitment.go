@@ -17,11 +17,11 @@ func (client *Client) commitmentTxModule(msg bean.RequestMessage) (enum.SendTarg
 	data := ""
 	switch msg.Type {
 	case enum.MsgType_CommitmentTx_CommitmentTransactionCreated_N351:
-		node, targetUser, err := service.CommitmentTxService.CommitmentTransactionCreated(msg.Data, client.User)
+		retData, err := service.CommitmentTxService.CommitmentTransactionCreated(msg, client.User)
 		if err != nil {
 			data = err.Error()
 		} else {
-			bytes, err := json.Marshal(node)
+			bytes, err := json.Marshal(retData)
 			if err != nil {
 				data = err.Error()
 			} else {
@@ -29,8 +29,8 @@ func (client *Client) commitmentTxModule(msg bean.RequestMessage) (enum.SendTarg
 				status = true
 			}
 		}
-		if targetUser != nil && status {
-			_ = client.sendToSomeone(msg.Type, status, *targetUser, data)
+		if status {
+			_ = client.sendDataToP2PUser(msg, status, data)
 		}
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
@@ -224,34 +224,27 @@ func (client *Client) commitmentTxSignModule(msg bean.RequestMessage) (enum.Send
 
 	switch msg.Type {
 	case enum.MsgType_CommitmentTxSigned_RevokeAndAcknowledgeCommitmentTransaction_N352:
-		ca, cb, targetUser, err := service.CommitmentTxSignedService.RevokeAndAcknowledgeCommitmentTransaction(msg.Data, client.User)
+		retData, targetUser, err := service.CommitmentTxSignedService.RevokeAndAcknowledgeCommitmentTransaction(msg.Data, client.User)
 		if err != nil {
 			data = err.Error()
 		} else {
-			bytes, err := json.Marshal(ca)
+			bytes, err := json.Marshal(retData)
 			if err != nil {
 				data = err.Error()
 			} else {
 				data = string(bytes)
 				status = true
-				_ = client.sendToSomeone(msg.Type, status, ca.PeerIdA, data)
-			}
-			bytes, err = json.Marshal(cb)
-			if err != nil {
-				data = err.Error()
-			} else {
-				data = string(bytes)
-				status = true
-				if targetUser != nil {
-					_ = client.sendToSomeone(msg.Type, status, cb.PeerIdB, data)
-				}
 			}
 		}
 		if status == false {
 			client.sendToMyself(msg.Type, status, data)
-			if targetUser != nil {
-				_ = client.sendToSomeone(msg.Type, status, *targetUser, data)
+			if targetUser != "" {
+				_ = client.sendDataToP2PUser(msg, status, data)
 			}
+		} else {
+			//如果数据处理成功，就需要通过353，把数据传给alice所在的节点
+			msg.Type = enum.MsgType_CommitmentTxSigned_ToAliceSign_N353
+			_ = client.sendDataToP2PUser(msg, status, data)
 		}
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_CommitmentTxSigned_ItemByChanId_N35201:
@@ -309,7 +302,7 @@ func (client *Client) otherModule(msg bean.RequestMessage) (enum.SendTargetType,
 	var sendType = enum.SendTargetType_SendToNone
 	data := ""
 	switch msg.Type {
-	case enum.MsgType_GetBalanceRequest_N353:
+	case enum.MsgType_CommitmentTxSigned_ToAliceSign_N353:
 		node, err := service.CommitmentTxService.GetLatestCommitmentTxByChannelId(msg.Data, client.User)
 		if err != nil {
 			data = err.Error()
@@ -322,7 +315,7 @@ func (client *Client) otherModule(msg bean.RequestMessage) (enum.SendTargetType,
 				status = true
 			}
 		}
-		client.sendToMyself(enum.MsgType_GetBalanceRespond_N354, status, data)
+		client.sendToMyself(enum.MsgType_CommitmentTxSigned_SecondToBobSign_N354, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	default:
 	}

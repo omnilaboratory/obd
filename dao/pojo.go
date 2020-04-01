@@ -231,26 +231,29 @@ type RDTxWaitingSend struct {
 
 // to punish alice do not admit the latest commitment tx
 type BreachRemedyTransaction struct {
-	Id                 int         `storm:"id,increment" json:"id" `
-	CommitmentTxId     int         `json:"commitment_tx_id"` // parent commitmentTx id
-	PeerIdA            string      `json:"peer_id_a"`
-	PeerIdB            string      `json:"peer_id_b"`
-	ChannelId          string      `json:"channel_id"`
-	PropertyId         int64       `json:"property_id"`
-	RsmcTxHex          string      `json:"rsmc_tx_hex"`
-	InputTxid          string      `json:"input_txid"`           //input txid  from commitTx alice2&bob multtAddr, so need  sign of alice2 and bob
-	InputVout          uint32      `json:"input_vout"`           // input vout
-	InputAmount        float64     `json:"input_amount"`         //input amount
-	Amount             float64     `json:"amount"`               // output bob amount
-	TransactionSignHex string      `json:"transaction_sign_hex"` // first alice2 sign
-	Txid               string      `json:"txid"`
-	CurrState          TxInfoState `json:"curr_state"`
-	CreateBy           string      `json:"create_by"`
-	CreateAt           time.Time   `json:"create_at"`
-	SignAt             time.Time   `json:"sign_at"`
-	SendAt             time.Time   `json:"send_at"`
-	LastEditTime       time.Time   `json:"last_edit_time"`
-	Owner              string      `json:"owner"`
+	Id                       int         `storm:"id,increment" json:"id" `
+	CommitmentTxId           int         `json:"commitment_tx_id"` // parent commitmentTx id
+	PeerIdA                  string      `json:"peer_id_a"`
+	PeerIdB                  string      `json:"peer_id_b"`
+	ChannelId                string      `json:"channel_id"`
+	PropertyId               int64       `json:"property_id"`
+	InputAddress             string      `json:"input_address"`
+	InputAddressScriptPubKey string      `json:"input_address_script_pub_key"`
+	RsmcTxHex                string      `json:"rsmc_tx_hex"`
+	InputTxid                string      `json:"input_txid"`   //input txid  from commitTx alice2&bob multtAddr, so need  sign of alice2 and bob
+	InputVout                uint32      `json:"input_vout"`   // input vout
+	InputAmount              float64     `json:"input_amount"` //input amount
+	OutAddress               string      `json:"out_address"`
+	Amount                   float64     `json:"amount"`    // output bob amount
+	BrTxHex                  string      `json:"br_tx_hex"` // first alice2 sign
+	Txid                     string      `json:"txid"`
+	CurrState                TxInfoState `json:"curr_state"`
+	CreateBy                 string      `json:"create_by"`
+	CreateAt                 time.Time   `json:"create_at"`
+	SignAt                   time.Time   `json:"sign_at"`
+	SendAt                   time.Time   `json:"send_at"`
+	LastEditTime             time.Time   `json:"last_edit_time"`
+	Owner                    string      `json:"owner"`
 }
 
 type AtomicSwapInfo struct {
