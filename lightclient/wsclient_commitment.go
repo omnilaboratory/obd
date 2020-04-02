@@ -30,7 +30,11 @@ func (client *Client) commitmentTxModule(msg bean.RequestMessage) (enum.SendTarg
 			}
 		}
 		if status {
-			_ = client.sendDataToP2PUser(msg, status, data)
+			err = client.sendDataToP2PUser(msg, status, data)
+			if err != nil {
+				data = err.Error()
+				status = false
+			}
 		}
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
@@ -244,7 +248,12 @@ func (client *Client) commitmentTxSignModule(msg bean.RequestMessage) (enum.Send
 		} else {
 			//如果数据处理成功，就需要通过353，把数据传给alice所在的节点
 			msg.Type = enum.MsgType_CommitmentTxSigned_ToAliceSign_N353
-			_ = client.sendDataToP2PUser(msg, status, data)
+			err = client.sendDataToP2PUser(msg, status, data)
+			if err != nil {
+				status = false
+				data = err.Error()
+				client.sendToMyself(msg.Type, status, data)
+			}
 		}
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_CommitmentTxSigned_ItemByChanId_N35201:

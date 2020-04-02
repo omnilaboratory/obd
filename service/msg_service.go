@@ -77,3 +77,14 @@ func (this *messageManage) getMsg(hashValue string) (*Message, error) {
 	}
 	return nil, err
 }
+func (this *messageManage) getMsgUseTx(tx storm.Node, hashValue string) (*Message, error) {
+	msg := &Message{}
+	err := tx.Select(q.Eq("HashValue", hashValue)).First(msg)
+	if err == nil {
+		msg.CurrState = dao.NS_Finish
+		msg.ReadAt = time.Now()
+		_ = tx.Update(msg)
+		return msg, nil
+	}
+	return nil, err
+}

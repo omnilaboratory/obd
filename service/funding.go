@@ -1138,11 +1138,11 @@ func (service *fundingTransactionManager) AssetFundingSigned(jsonData string, si
 	}
 	rsmcMultiAddress := gjson.Get(multiAddr, "address").String()
 	rsmcRedeemScript := gjson.Get(multiAddr, "redeemScript").String()
-	json, err := rpcClient.GetAddressInfo(rsmcMultiAddress)
+	tempJson, err := rpcClient.GetAddressInfo(rsmcMultiAddress)
 	if err != nil {
 		return nil, err
 	}
-	rsmcMultiAddressScriptPubKey := gjson.Get(json, "scriptPubKey").String()
+	rsmcMultiAddressScriptPubKey := gjson.Get(tempJson, "scriptPubKey").String()
 
 	inputs, err := getInputsForNextTxByParseTxHashVout(signedRsmcHex, rsmcMultiAddress, rsmcMultiAddressScriptPubKey)
 	if err != nil {
@@ -1403,10 +1403,9 @@ func checkRdOutputAddress(hexDecode string, toAddress string) bool {
 	for _, item := range array {
 		if item.Get("value").Float() > 0 {
 			address := item.Get("scriptPubKey").Get("addresses").Array()[0].String()
-			if address != toAddress {
-				return false
-			} else {
+			if address == toAddress {
 				flag = true
+				break
 			}
 		}
 	}

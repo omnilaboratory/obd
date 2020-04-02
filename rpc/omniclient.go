@@ -200,6 +200,14 @@ func (client *Client) OmniRawTransaction(fromBitCoinAddress string, privkeys []s
 	if err != nil {
 		return "", err
 	}
+
+	result, err := client.OmniDecodeTransaction(hex)
+	if err == nil {
+		log.Println(result)
+	} else {
+		log.Println(err)
+	}
+
 	//8 send
 	txid, err = client.SendRawTransaction(hex)
 	if err != nil {
@@ -328,6 +336,13 @@ func (client *Client) OmniCreateAndSignRawTransaction(fromBitCoinAddress string,
 	decodeHex, _ := client.DecodeRawTransaction(hex)
 	log.Println("7 DecodeSignRawTransactionWithKey", decodeHex)
 	txid = gjson.Get(decodeHex, "txid").String()
+
+	result, err := client.OmniDecodeTransaction(hex)
+	if err == nil {
+		log.Println(result)
+	} else {
+		log.Println(err)
+	}
 
 	return txid, hex, nil
 }
@@ -463,6 +478,13 @@ func (client *Client) OmniCreateAndSignRawTransactionUseSingleInput(txType int, 
 	log.Println("7 DecodeSignRawTransactionWithKey", decodeHex)
 	txid = gjson.Get(decodeHex, "txid").String()
 
+	result, err := client.OmniDecodeTransaction(hex)
+	if err == nil {
+		log.Println(result)
+	} else {
+		log.Println(err)
+	}
+
 	return txid, hex, currUseTxid, nil
 }
 
@@ -591,6 +613,13 @@ func (client *Client) OmniCreateAndSignRawTransactionUseRestInput(txType int, fr
 	decodeHex, _ := client.DecodeRawTransaction(hex)
 	//log.Println("7 DecodeSignRawTransactionWithKey", decodeHex)
 	txid = gjson.Get(decodeHex, "txid").String()
+
+	result, err := client.OmniDecodeTransaction(hex)
+	if err == nil {
+		log.Println(result)
+	} else {
+		log.Println(err)
+	}
 
 	return txid, hex, nil
 }
@@ -732,6 +761,10 @@ func (client *Client) OmniCreateAndSignRawTransactionUseUnsendInput(fromBitCoinA
 	log.Println("7 DecodeSignRawTransactionWithKey", decodeHex)
 	txid = gjson.Get(decodeHex, "txid").String()
 
+	result, err = client.OmniDecodeTransaction(hex)
+	log.Println(result)
+	log.Println(err)
+
 	return txid, hex, nil
 }
 
@@ -752,9 +785,22 @@ func (client *Client) OmniSignRawTransactionForUnsend(hex string, inputItems []T
 	}
 	hex = gjson.Get(signHex, "hex").String()
 	decodeHex, err := client.DecodeRawTransaction(hex)
+	if err == nil {
+		log.Println(decodeHex)
+	} else {
+		log.Println(err)
+	}
 	txId := gjson.Get(decodeHex, "txid").String()
 	if err != nil {
 		return "", hex, err
 	}
+
+	result, err := client.OmniDecodeTransaction(hex)
+	if err == nil {
+		log.Println(result)
+	} else {
+		log.Println(err)
+	}
+
 	return txId, hex, nil
 }
