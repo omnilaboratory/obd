@@ -23,6 +23,7 @@ func (client *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, 
 			user := bean.User{
 				Mnemonic:        gjson.Get(msg.Data, "mnemonic").String(),
 				P2PLocalAddress: localServerDest,
+				P2PLocalPeerId:  P2PLocalPeerId,
 			}
 			var err error = nil
 			peerId := tool.SignMsgWithSha256([]byte(user.Mnemonic))

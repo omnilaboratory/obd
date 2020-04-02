@@ -37,6 +37,7 @@ const (
 //type = 1
 type User struct {
 	P2PLocalAddress string    `json:"p2p_local_address"`
+	P2PLocalPeerId  string    `json:"p2p_local_peer_id"`
 	PeerId          string    `json:"peer_id"`
 	Mnemonic        string    `json:"mnemonic"`
 	State           UserState `json:"state"`
