@@ -92,6 +92,9 @@ func (client *Client) DecodeRawTransaction(hex string) (result string, err error
 func (client *Client) OmniDecodeTransaction(hex string) (result string, err error) {
 	return client.send("omni_decodetransaction", []interface{}{hex})
 }
+func (client *Client) OmniDecodeTransactionWithPrevTxs(hex string, prevtxs []TransactionInputItem) (result string, err error) {
+	return client.send("omni_decodetransaction", []interface{}{hex, prevtxs})
+}
 
 func (client *Client) GetBlockCount() (result int, err error) {
 	height, err := client.send("getblockcount", nil)
@@ -161,10 +164,10 @@ type TransactionOutputItem struct {
 	Amount           float64
 }
 type TransactionInputItem struct {
-	Txid         string
-	ScriptPubKey string
-	Vout         uint32
-	Amount       float64
+	Txid         string  `json:"txid"`
+	ScriptPubKey string  `json:"scriptPubKey"`
+	Vout         uint32  `json:"vout"`
+	Amount       float64 `json:"value"`
 }
 
 // create a transaction and just signnature , not send to the network,get the hash of signature

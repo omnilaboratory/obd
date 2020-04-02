@@ -1342,16 +1342,10 @@ func (service *fundingTransactionManager) AfterBobSignOmniFundingAtAilceSide(dat
 			return nil, errors.New(gjson.Parse(result).Array()[0].Get("reject-reason").String())
 		}
 	}
-
-	rdHexDecode, err := rpcClient.DecodeRawTransaction(signedRdHex)
-	if err != nil {
-		return nil, err
-	}
-	if checkRdOutputAddress(rdHexDecode, toAddress) == false {
+	txid = checkRdOutputAddressFromOmniDecode(signedRdHex, inputs, toAddress)
+	if txid == "" {
 		return nil, errors.New("rdtx has wrong output address")
 	}
-
-	txid = gjson.Get(rdHexDecode, "txid").String()
 	rdTransaction, err := createRDTx(owner, channelInfo, commitmentTxInfo, toAddress, user)
 	if err != nil {
 		log.Println(err)
@@ -1393,23 +1387,15 @@ func (service *fundingTransactionManager) AfterBobSignOmniFundingAtAilceSide(dat
 	return node, nil
 }
 
-func checkRdOutputAddress(hexDecode string, toAddress string) bool {
-	array := gjson.Parse(hexDecode).Get("vout").Array()
-	if len(array) == 0 {
-		return false
+func checkRdOutputAddressFromOmniDecode(hexDecode string, inputs []rpc.TransactionInputItem, toAddress string) string {
+	result, err := rpcClient.OmniDecodeTransactionWithPrevTxs(hexDecode, inputs)
+	if err != nil {
+		return ""
 	}
-
-	flag := false
-	for _, item := range array {
-		if item.Get("value").Float() > 0 {
-			address := item.Get("scriptPubKey").Get("addresses").Array()[0].String()
-			if address == toAddress {
-				flag = true
-				break
-			}
-		}
+	if gjson.Parse(result).Get("referenceaddress").String() == toAddress {
+		return gjson.Parse(result).Get("txid").String()
 	}
-	return flag
+	return ""
 }
 
 func (service *fundingTransactionManager) ItemByTempId(jsonData string) (node *dao.FundingTransaction, err error) {

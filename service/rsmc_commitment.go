@@ -1568,14 +1568,10 @@ func signRdTx(tx storm.Node, channelInfo *dao.ChannelInfo, signedRsmcHex string,
 		}
 	}
 
-	rdHexDecode, err := rpcClient.DecodeRawTransaction(signedRdHex)
-	if err != nil {
-		return err
-	}
-	if checkRdOutputAddress(rdHexDecode, outputAddress) == false {
+	aliceRdTxid := checkRdOutputAddressFromOmniDecode(signedRdHex, inputs, outputAddress)
+	if aliceRdTxid == "" {
 		return errors.New("rdtx has wrong output address")
 	}
-	aliceRdTxid := gjson.Get(rdHexDecode, "txid").String()
 	rdTransaction, err := createRDTx(user.PeerId, channelInfo, &latestCcommitmentTxInfo, outputAddress, user)
 	if err != nil {
 		log.Println(err)
