@@ -228,7 +228,7 @@ func (client *Client) commitmentTxSignModule(msg bean.RequestMessage) (enum.Send
 
 	switch msg.Type {
 	case enum.MsgType_CommitmentTxSigned_RevokeAndAcknowledgeCommitmentTransaction_N352:
-		retData, targetUser, err := service.CommitmentTxSignedService.RevokeAndAcknowledgeCommitmentTransaction(msg.Data, client.User)
+		retData, _, err := service.CommitmentTxSignedService.RevokeAndAcknowledgeCommitmentTransaction(msg.Data, client.User)
 		if err != nil {
 			data = err.Error()
 		} else {
@@ -240,22 +240,22 @@ func (client *Client) commitmentTxSignModule(msg bean.RequestMessage) (enum.Send
 				status = true
 			}
 		}
-		if status == false {
-			client.sendToMyself(msg.Type, status, data)
-			if targetUser != "" {
-				_ = client.sendDataToP2PUser(msg, status, data)
+		if status {
+			if retData["approval"] == true {
+				msg.Type = enum.MsgType_CommitmentTxSigned_ToAliceSign_N353
 			}
-		} else {
-			//如果数据处理成功，就需要通过353，把数据传给alice所在的节点
-			msg.Type = enum.MsgType_CommitmentTxSigned_ToAliceSign_N353
 			err = client.sendDataToP2PUser(msg, status, data)
 			if err != nil {
+				msg.Type = enum.MsgType_CommitmentTxSigned_RevokeAndAcknowledgeCommitmentTransaction_N352
 				status = false
 				data = err.Error()
+			}
+			if status == false || retData["approval"] == false {
 				client.sendToMyself(msg.Type, status, data)
 			}
+		} else {
+			client.sendToMyself(msg.Type, status, data)
 		}
-		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_CommitmentTxSigned_ItemByChanId_N35201:
 		nodes, count, err := service.CommitmentTxSignedService.GetItemsByChannelId(msg.Data)
 		log.Println(*count)
@@ -275,7 +275,6 @@ func (client *Client) commitmentTxSignModule(msg bean.RequestMessage) (enum.Send
 			}
 		}
 		client.sendToMyself(msg.Type, status, data)
-		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_CommitmentTxSigned_ItemById_N35202:
 		node, err := service.CommitmentTxSignedService.GetItemById(int(gjson.Parse(msg.Data).Int()))
 		if err != nil {
@@ -290,7 +289,6 @@ func (client *Client) commitmentTxSignModule(msg bean.RequestMessage) (enum.Send
 			}
 		}
 		client.sendToMyself(msg.Type, status, data)
-		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_CommitmentTxSigned_Count_N35203:
 		count, err := service.CommitmentTxSignedService.TotalCount()
 		if err != nil {
@@ -300,9 +298,7 @@ func (client *Client) commitmentTxSignModule(msg bean.RequestMessage) (enum.Send
 			status = true
 		}
 		client.sendToMyself(msg.Type, status, data)
-		sendType = enum.SendTargetType_SendToSomeone
 	}
-
 	return sendType, []byte(data), status
 }
 

@@ -345,7 +345,7 @@ func (client *Client) sendToSomeone(msgType enum.MsgType, status bool, recipient
 //发送消息给对方，分为同节点和不同节点的两种情况
 func (client *Client) sendDataToP2PUser(msg bean.RequestMessage, status bool, data string) error {
 	msg.SenderPeerId = client.User.PeerId
-	msg.SenderP2PPeerId = P2PLocalPeerId
+	msg.SenderP2PPeerId = client.User.P2PLocalPeerId
 	if tool.CheckIsString(&msg.RecipientPeerId) && tool.CheckIsString(&msg.RecipientP2PPeerId) {
 		//如果是同一个obd节点
 		if msg.RecipientP2PPeerId == P2PLocalPeerId {
@@ -354,7 +354,7 @@ func (client *Client) sendDataToP2PUser(msg bean.RequestMessage, status bool, da
 				if itemClient != nil && itemClient.User != nil {
 					//因为数据库，分库，需要对特定的消息进行处理
 					if status {
-						retData, err := routerOfP2PNode(msg.Type, data, itemClient.User)
+						retData, err := routerOfP2PNode(msg.Type, data, itemClient)
 						if err != nil {
 							return err
 						} else {
@@ -366,10 +366,7 @@ func (client *Client) sendDataToP2PUser(msg bean.RequestMessage, status bool, da
 						//需要节点之间本身的通信 bob的节点响应352后，发送353到alice节点，353处理完成后，需要对353的结果消息进行分发
 						//当前的353消息本身是从bob发给Alice的
 						if msg.Type == enum.MsgType_CommitmentTxSigned_ToAliceSign_N353 {
-							//	1、发给alice自己的信息
-							msg.Type = enum.MsgType_CommitmentTxSigned_RevokeAndAcknowledgeCommitmentTransaction_N352
-
-							//	2、发给bob的信息
+							//	发给bob的信息
 							newMsg := bean.RequestMessage{}
 							newMsg.Type = enum.MsgType_CommitmentTxSigned_SecondToBobSign_N354
 							newMsg.SenderPeerId = itemClient.User.PeerId
@@ -378,18 +375,15 @@ func (client *Client) sendDataToP2PUser(msg bean.RequestMessage, status bool, da
 							newMsg.RecipientP2PPeerId = msg.SenderP2PPeerId
 							newMsg.Data = data
 							_ = itemClient.sendDataToP2PUser(newMsg, true, data)
+							return nil
 						}
 
-						//当354处理完成，就改成352的返回 353和354对用户是透明的
+						////当354处理完成，就改成352的返回 353和354对用户是透明的
 						if msg.Type == enum.MsgType_CommitmentTxSigned_SecondToBobSign_N354 {
-							msg.Type = enum.MsgType_CommitmentTxSigned_RevokeAndAcknowledgeCommitmentTransaction_N352
-							msg.SenderPeerId = itemClient.User.PeerId
-							msg.SenderP2PPeerId = itemClient.User.P2PLocalPeerId
-							msg.RecipientPeerId = client.User.PeerId
-							msg.RecipientP2PPeerId = client.User.P2PLocalPeerId
+							return nil
 						}
 					}
-					fromId := msg.SenderPeerId + "@" + p2pChannelMap[P2PLocalPeerId].Address
+					fromId := msg.SenderPeerId + "@" + p2pChannelMap[msg.SenderP2PPeerId].Address
 					toId := msg.RecipientPeerId + "@" + p2pChannelMap[msg.RecipientP2PPeerId].Address
 					jsonMessage := getP2PReplyObj(data, msg.Type, status, fromId, toId)
 					itemClient.SendChannel <- jsonMessage
@@ -415,14 +409,13 @@ func (client *Client) sendDataToP2PUser(msg bean.RequestMessage, status bool, da
 
 //当p2p收到消息后
 func getDataFromP2PSomeone(msg bean.RequestMessage) error {
-	client := GlobalWsClientManager.OnlineUserMap[msg.RecipientPeerId]
 	if tool.CheckIsString(&msg.RecipientPeerId) && tool.CheckIsString(&msg.RecipientP2PPeerId) {
 		if msg.RecipientP2PPeerId == P2PLocalPeerId {
 			if _, err := FindUserOnLine(&msg.RecipientPeerId); err == nil {
 				itemClient := GlobalWsClientManager.OnlineUserMap[msg.RecipientPeerId]
 				if itemClient != nil && itemClient.User != nil {
 					//收到数据后，需要对其进行加工
-					retData, err := routerOfP2PNode(msg.Type, msg.Data, itemClient.User)
+					retData, err := routerOfP2PNode(msg.Type, msg.Data, itemClient)
 					if err != nil {
 						return err
 					} else {
@@ -434,10 +427,7 @@ func getDataFromP2PSomeone(msg bean.RequestMessage) error {
 					//需要节点之间本身的通信 bob的节点响应352后，发送353到alice节点，353处理完成后，需要对353的结果消息进行分发
 					//当前的353消息本身是从bob发给Alice的
 					if msg.Type == enum.MsgType_CommitmentTxSigned_ToAliceSign_N353 {
-						//	1、发给alice自己的信息
-						msg.Type = enum.MsgType_CommitmentTxSigned_RevokeAndAcknowledgeCommitmentTransaction_N352
-
-						//	2、发给bob的信息
+						//	发给bob的信息
 						newMsg := bean.RequestMessage{}
 						newMsg.Type = enum.MsgType_CommitmentTxSigned_SecondToBobSign_N354
 						newMsg.SenderPeerId = itemClient.User.PeerId
@@ -446,15 +436,12 @@ func getDataFromP2PSomeone(msg bean.RequestMessage) error {
 						newMsg.RecipientP2PPeerId = msg.SenderP2PPeerId
 						newMsg.Data = msg.Data
 						_ = itemClient.sendDataToP2PUser(newMsg, true, msg.Data)
+						return nil
 					}
 
 					//当354处理完成，就改成352的返回 353和354对用户是透明的
 					if msg.Type == enum.MsgType_CommitmentTxSigned_SecondToBobSign_N354 {
-						msg.Type = enum.MsgType_CommitmentTxSigned_RevokeAndAcknowledgeCommitmentTransaction_N352
-						msg.SenderPeerId = itemClient.User.PeerId
-						msg.SenderP2PPeerId = itemClient.User.P2PLocalPeerId
-						msg.RecipientPeerId = client.User.PeerId
-						msg.RecipientP2PPeerId = client.User.P2PLocalPeerId
+						return nil
 					}
 
 					fromId := msg.SenderPeerId + "@" + p2pChannelMap[msg.SenderP2PPeerId].Address

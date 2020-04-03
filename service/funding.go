@@ -1175,7 +1175,7 @@ func (service *fundingTransactionManager) AssetFundingSigned(jsonData string, si
 
 	// region create BR1b tx  for bob
 	lastCommitmentTx := &dao.CommitmentTransaction{}
-	lastCommitmentTx.Id = -1
+	lastCommitmentTx.Id = 0
 	lastCommitmentTx.PropertyId = fundingTransaction.PropertyId
 	lastCommitmentTx.RSMCMultiAddress = rsmcMultiAddress
 	lastCommitmentTx.RSMCRedeemScript = rsmcRedeemScript
