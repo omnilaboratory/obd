@@ -13,7 +13,6 @@ import (
 	"obd/dao"
 	"obd/rpc"
 	"obd/tool"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -1058,14 +1057,19 @@ func (service *fundingTransactionManager) AssetFundingSigned(jsonData string, si
 	}
 	defer tx.Rollback()
 
-	channelInfo := getChannelInfoByChannelId(tx, reqData.ChannelId, signer.PeerId)
+	channelInfo := &dao.ChannelInfo{}
+	err = tx.Select(
+		q.Eq("ChannelId", reqData.ChannelId),
+		q.Or(
+			q.Eq("PeerIdA", signer.PeerId),
+			q.Eq("PeerIdB", signer.PeerId)),
+		q.Eq("CurrState", dao.ChannelState_WaitFundAsset)).
+		First(channelInfo)
+	if err != nil {
+		channelInfo = nil
+	}
 	if channelInfo == nil {
 		err = errors.New("not found channel " + reqData.ChannelId)
-		log.Println(err)
-		return nil, err
-	}
-	if channelInfo.CurrState != dao.ChannelState_WaitFundAsset {
-		err = errors.New("wrong channel state " + strconv.Itoa(int(channelInfo.CurrState)))
 		log.Println(err)
 		return nil, err
 	}
