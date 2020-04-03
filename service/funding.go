@@ -1177,6 +1177,7 @@ func (service *fundingTransactionManager) AssetFundingSigned(jsonData string, si
 	}
 	//endregion create RD tx for alice
 
+	channelInfo.PropertyId = fundingTransaction.PropertyId
 	// region create BR1b tx  for bob
 	lastCommitmentTx := &dao.CommitmentTransaction{}
 	lastCommitmentTx.Id = 0
@@ -1194,7 +1195,7 @@ func (service *fundingTransactionManager) AssetFundingSigned(jsonData string, si
 	//endregion
 
 	channelInfo.CurrState = dao.ChannelState_CanUse
-	channelInfo.PropertyId = fundingTransaction.PropertyId
+
 	err = tx.Update(channelInfo)
 	if err != nil {
 		log.Println(err)

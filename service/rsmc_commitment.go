@@ -785,7 +785,7 @@ func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction
 	//如果是本轮的第一次请求交易
 	if isFirstRequest {
 		//region 3、根据对方传过来的上一个交易的临时rsmc私钥，签名最近的BR交易，保证对方确实放弃了上一个承诺交易
-		err := signLastBR(tx, *channelInfo, signer.PeerId, aliceDataJson.Get("lastTempAddressPrivateKey").String(), latestCommitmentTxInfo.LastCommitmentTxId)
+		err := signLastBR(tx, *channelInfo, signer.PeerId, aliceDataJson.Get("lastTempAddressPrivateKey").String(), latestCommitmentTxInfo.Id)
 		if err != nil {
 			log.Println(err)
 			return nil, "", err
@@ -980,13 +980,13 @@ func signLastBR(tx storm.Node, channelInfo dao.ChannelInfo, userPeerId string, l
 	lastBreachRemedyTransaction := &dao.BreachRemedyTransaction{}
 	err = tx.Select(
 		q.Eq("ChannelId", channelInfo.ChannelId),
+		q.Eq("CommitmentTxId", lastCommitmentTxid),
 		q.Or(
 			q.Eq("PeerIdA", userPeerId),
 			q.Eq("PeerIdB", userPeerId))).
 		OrderBy("CreateAt").
 		Reverse().First(lastBreachRemedyTransaction)
-	if lastBreachRemedyTransaction != nil && lastBreachRemedyTransaction.Id > 0 &&
-		lastBreachRemedyTransaction.CommitmentTxId == lastCommitmentTxid {
+	if lastBreachRemedyTransaction != nil && lastBreachRemedyTransaction.Id > 0 {
 		inputs, err := getInputsForNextTxByParseTxHashVout(lastBreachRemedyTransaction.RsmcTxHex, lastBreachRemedyTransaction.OutAddress, lastBreachRemedyTransaction.InputAddressScriptPubKey)
 		if err != nil {
 			log.Println(err)
