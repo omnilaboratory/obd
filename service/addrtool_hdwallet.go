@@ -10,7 +10,6 @@ import (
 	"github.com/tyler-smith/go-bip39"
 	"obd/bean"
 	"obd/config"
-	"obd/dao"
 	"obd/tool"
 )
 
@@ -74,23 +73,17 @@ func (service *hdWalletManager) CreateNewAddress(user *bean.User) (wallet *Walle
 
 	changeExtKey := user.ChangeExtKey
 	//m/purpose(44)'/coinType(0)'/account(0)'/change(0)/index(0)
-	var userDb dao.User
-	err = user.Db.One("PeerId", user.PeerId, &userDb)
-	if err != nil {
-		return nil, err
-	}
 	user.CurrAddrIndex = user.CurrAddrIndex + 1
-	userDb.CurrAddrIndex = user.CurrAddrIndex
 	addrIndexExtKey, _ := changeExtKey.NewChildKey(uint32(user.CurrAddrIndex))
 
 	wallet = &Wallet{}
-	wallet.Index = userDb.CurrAddrIndex
+	wallet.Index = user.CurrAddrIndex
 
 	err = getWalletObj(addrIndexExtKey, wallet)
 	if err != nil {
 		return nil, err
 	}
-	_ = db.Update(&userDb)
+	_ = user.Db.Update(&user)
 	return wallet, nil
 }
 

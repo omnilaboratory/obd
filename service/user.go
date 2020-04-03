@@ -59,7 +59,11 @@ func (service *UserManager) UserLogin(user *bean.User) error {
 	}
 	var node dao.User
 	user.PeerId = tool.SignMsgWithSha256([]byte(user.Mnemonic))
-	err = db.Select(q.Eq("PeerId", user.PeerId)).First(&node)
+	userDB, err := dao.DBService.GetUserDB(user.PeerId)
+	if err != nil {
+		return err
+	}
+	err = userDB.Select(q.Eq("PeerId", user.PeerId)).First(&node)
 	if node.Id == 0 {
 		node = dao.User{}
 		node.PeerId = user.PeerId
@@ -67,17 +71,12 @@ func (service *UserManager) UserLogin(user *bean.User) error {
 		node.CreateAt = time.Now()
 		node.LatestLoginTime = node.CreateAt
 		node.CurrAddrIndex = -1
-		err = db.Save(&node)
+		err = userDB.Save(&node)
 	} else {
 		node.State = bean.UserState_OnLine
 		node.LatestLoginTime = time.Now()
-		err = db.Update(&node)
+		err = userDB.Update(&node)
 	}
-	if err != nil {
-		return err
-	}
-
-	userDB, err := dao.DBService.GetUserDB(user.PeerId)
 	if err != nil {
 		return err
 	}
@@ -95,7 +94,7 @@ func (service *UserManager) UserLogout(user *bean.User) error {
 		return errors.New("user is nil")
 	}
 	var node dao.User
-	err := db.Select(q.Eq("PeerId", user.PeerId)).First(&node)
+	err := user.Db.Select(q.Eq("PeerId", user.PeerId)).First(&node)
 	if err != nil {
 		return err
 	}
