@@ -82,14 +82,8 @@ const (
 	MsgType_SendBreachRemedyTransaction_N35107             MsgType = -35107
 	MsgType_CommitmentTx_AllRDByChanId_N35108              MsgType = -35108
 	MsgType_CommitmentTx_AllBRByChanId_N35109              MsgType = -35109
-	MsgType_CommitmentTx_GetBroadcastCommitmentTx_N35110   MsgType = -35110
-	MsgType_CommitmentTx_GetBroadcastRDTx_N35111           MsgType = -35111
-	MsgType_CommitmentTx_GetBroadcastBRTx_N35112           MsgType = -35112
 
 	MsgType_CommitmentTxSigned_RevokeAndAcknowledgeCommitmentTransaction_N352 MsgType = -352
-	MsgType_CommitmentTxSigned_ItemByChanId_N35201                            MsgType = -35201
-	MsgType_CommitmentTxSigned_ItemById_N35202                                MsgType = -35202
-	MsgType_CommitmentTxSigned_Count_N35203                                   MsgType = -35203
 
 	MsgType_CommitmentTxSigned_ToAliceSign_N353     MsgType = -353
 	MsgType_CommitmentTxSigned_SecondToBobSign_N354 MsgType = -354

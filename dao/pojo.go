@@ -52,6 +52,7 @@ type CloseChannel struct {
 	CommitmentTxId int       `json:"commitment_tx_id"`
 	RequestHex     string    `json:"request_hex"`
 	Owner          string    `json:"owner"`
+	Approval       bool      `json:"approval"`
 	CurrState      int       `json:"curr_state"` // 0: create 1 finish
 	CreateAt       time.Time `json:"create_at"`
 }

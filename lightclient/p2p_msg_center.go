@@ -92,6 +92,22 @@ func routerOfP2PNode(msgType enum.MsgType, data string, client *Client) (retData
 			return string(retData), nil
 		}
 		defaultErr = err
+	case enum.MsgType_CloseChannelRequest_N38:
+		node, err := service.ChannelService.BeforeBobSignCloseChannelAtBobSide(data, *client.User)
+		if err == nil {
+			status = true
+			retData, _ := json.Marshal(node)
+			return string(retData), nil
+		}
+		defaultErr = err
+	case enum.MsgType_CloseChannelSign_N39:
+		node, err := service.ChannelService.AfterBobSignCloseChannelAtAliceSide(data, *client.User)
+		if err == nil {
+			status = true
+			retData, _ := json.Marshal(node)
+			return string(retData), nil
+		}
+		defaultErr = err
 	default:
 		status = true
 	}

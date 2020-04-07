@@ -151,7 +151,12 @@ func readData(s network.Stream, rw *bufio.ReadWriter) {
 			reqData := &bean.RequestMessage{}
 			err := json.Unmarshal([]byte(str), reqData)
 			if err == nil {
-				_ = getDataFromP2PSomeone(*reqData)
+				err = getDataFromP2PSomeone(*reqData)
+				if err != nil {
+					//msg := err.Error() + "~"
+					//_, _ = rw.WriteString(msg)
+					//_ = rw.Flush()
+				}
 			}
 		}
 	}

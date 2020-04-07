@@ -192,18 +192,19 @@ func (client *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.Se
 		id, err := strconv.Atoi(msg.Data)
 		if err != nil {
 			log.Println(err)
-			break
-		}
-		node, err := service.FundingTransactionService.OmniFundingItemById(id, *client.User)
-		if err != nil {
 			data = err.Error()
 		} else {
-			bytes, err := json.Marshal(node)
+			node, err := service.FundingTransactionService.OmniFundingItemById(id, *client.User)
 			if err != nil {
 				data = err.Error()
 			} else {
-				data = string(bytes)
-				status = true
+				bytes, err := json.Marshal(node)
+				if err != nil {
+					data = err.Error()
+				} else {
+					data = string(bytes)
+					status = true
+				}
 			}
 		}
 		client.sendToMyself(msg.Type, status, data)
