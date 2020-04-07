@@ -1,6 +1,7 @@
 package lightclient
 
 import (
+	"encoding/json"
 	"errors"
 	"github.com/tidwall/gjson"
 	"obd/bean"
@@ -9,6 +10,15 @@ import (
 	"obd/tool"
 )
 
+func loginRetData(client Client) string {
+	retData := make(map[string]interface{})
+	retData["userPeerId"] = client.User.PeerId
+	retData["p2pNodePeerId"] = client.User.P2PLocalPeerId
+	retData["p2pNodeAddress"] = client.User.P2PLocalAddress
+	bytes, _ := json.Marshal(retData)
+	return string(bytes)
+}
+
 func (client *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, []byte, bool) {
 	status := false
 	var sendType = enum.SendTargetType_SendToNone
@@ -16,7 +26,7 @@ func (client *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, 
 	switch msg.Type {
 	case enum.MsgType_UserLogin_1:
 		if client.User != nil {
-			data = client.User.PeerId + " already login@" + client.User.P2PLocalAddress
+			data = loginRetData(*client)
 			client.sendToMyself(msg.Type, true, data)
 			sendType = enum.SendTargetType_SendToSomeone
 		} else {
@@ -36,7 +46,7 @@ func (client *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, 
 				client.User = &user
 				GlobalWsClientManager.OnlineUserMap[user.PeerId] = client
 				service.OnlineUserMap[user.PeerId] = true
-				data = user.PeerId + " login@" + user.P2PLocalAddress
+				data = loginRetData(*client)
 				status = true
 				client.sendToMyself(msg.Type, status, data)
 				sendType = enum.SendTargetType_SendToExceptMe
