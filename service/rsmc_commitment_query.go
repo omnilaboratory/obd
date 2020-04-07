@@ -208,7 +208,7 @@ func (this *commitmentTxManager) GetItemsByChannelId(jsonData string, user *bean
 	}
 
 	channelInfo := &dao.ChannelInfo{}
-	err = db.Select(
+	err = user.Db.Select(
 		q.Eq("ChannelId", channelId)).
 		First(channelInfo)
 	if err != nil {
@@ -225,13 +225,8 @@ func (this *commitmentTxManager) GetItemsByChannelId(jsonData string, user *bean
 	}
 	skip := (pageIndex - 1) * pageSize
 
-	db, err := dao.DBService.GetDB()
-	if err != nil {
-		return nil, nil, err
-	}
-
 	nodes = []dao.CommitmentTransaction{}
-	tempCount, err := db.Select(
+	tempCount, err := user.Db.Select(
 		q.Eq("ChannelId", channelId),
 		q.Eq("Owner", user.PeerId)).
 		Count(&dao.CommitmentTransaction{})
@@ -239,7 +234,7 @@ func (this *commitmentTxManager) GetItemsByChannelId(jsonData string, user *bean
 		return nil, nil, err
 	}
 	count = &tempCount
-	err = db.Select(
+	err = user.Db.Select(
 		q.Eq("ChannelId", channelId),
 		q.Eq("Owner", user.PeerId)).
 		OrderBy("CreateAt").Reverse().

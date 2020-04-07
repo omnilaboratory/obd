@@ -317,6 +317,14 @@ func (this *commitmentTxManager) AfterBobSignCommitmentTranctionAtAliceSide(data
 	msgHash := tool.SignMsgWithSha256(bytes)
 	latestCcommitmentTxInfo.CurrHash = msgHash
 	_ = tx.Update(latestCcommitmentTxInfo)
+
+	lastCommitmentTxInfo := dao.CommitmentTransaction{}
+	err = tx.One("Id", latestCcommitmentTxInfo.LastCommitmentTxId, &lastCommitmentTxInfo)
+	if err == nil {
+		lastCommitmentTxInfo.CurrState = dao.TxInfoState_Abord
+		_ = tx.Update(lastCommitmentTxInfo)
+	}
+
 	aliceData["latestCcommitmentTxInfo"] = latestCcommitmentTxInfo
 	//处理对方的数据
 	//签名对方传过来的rsmcHex
@@ -922,6 +930,14 @@ func (this *commitmentTxSignedManager) AfterAliceSignCommitmentTranctionAtBobSid
 	msgHash := tool.SignMsgWithSha256(bytes)
 	latestCcommitmentTxInfo.CurrHash = msgHash
 	_ = tx.Update(latestCcommitmentTxInfo)
+
+	lastCommitmentTxInfo := dao.CommitmentTransaction{}
+	err = tx.One("Id", latestCcommitmentTxInfo.LastCommitmentTxId, &lastCommitmentTxInfo)
+	if err == nil {
+		lastCommitmentTxInfo.CurrState = dao.TxInfoState_Abord
+		_ = tx.Update(lastCommitmentTxInfo)
+	}
+
 	_ = tx.Commit()
 
 	retData = make(map[string]interface{})
