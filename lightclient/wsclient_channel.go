@@ -41,38 +41,8 @@ func (client *Client) channelModule(msg bean.RequestMessage) (enum.SendTargetTyp
 
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
-	case enum.MsgType_ChannelOpen_ItemByTempId_N3201:
-		node, err := service.ChannelService.GetChannelByTemporaryChanId(msg.Data)
-		if err != nil {
-			data = err.Error()
-		} else {
-			bytes, err := json.Marshal(node)
-			if err != nil {
-				data = err.Error()
-			} else {
-				data = string(bytes)
-				status = true
-			}
-		}
-		client.sendToMyself(msg.Type, status, data)
-		sendType = enum.SendTargetType_SendToSomeone
-	case enum.MsgType_ChannelOpen_DelItemByTempId_N3204:
-		node, err := service.ChannelService.DelChannelByTemporaryChanId(msg.Data)
-		if err != nil {
-			data = err.Error()
-		} else {
-			bytes, err := json.Marshal(node)
-			if err != nil {
-				data = err.Error()
-			} else {
-				data = string(bytes)
-				status = true
-			}
-		}
-		client.sendToMyself(msg.Type, status, data)
-		sendType = enum.SendTargetType_SendToSomeone
-	case enum.MsgType_ChannelOpen_AllItem_N3202:
-		nodes, err := service.ChannelService.AllItem(client.User.PeerId)
+	case enum.MsgType_ChannelOpen_AllItem_N3201:
+		nodes, err := service.ChannelService.AllItem(*client.User)
 		if err != nil {
 			data = err.Error()
 		} else {
@@ -88,9 +58,46 @@ func (client *Client) channelModule(msg bean.RequestMessage) (enum.SendTargetTyp
 			}
 		}
 		client.sendToMyself(msg.Type, status, data)
-		sendType = enum.SendTargetType_SendToSomeone
+	case enum.MsgType_ChannelOpen_ItemByTempId_N3202:
+		node, err := service.ChannelService.GetChannelByTemporaryChanId(msg.Data, *client.User)
+		if err != nil {
+			data = err.Error()
+		} else {
+			bytes, err := json.Marshal(node)
+			if err != nil {
+				data = err.Error()
+			} else {
+				data = string(bytes)
+				status = true
+			}
+		}
+		client.sendToMyself(msg.Type, status, data)
+
+	case enum.MsgType_ChannelOpen_Count_N3203:
+		node, err := service.ChannelService.TotalCount(*client.User)
+		if err != nil {
+			data = err.Error()
+		} else {
+			data = strconv.Itoa(node)
+			status = true
+		}
+		client.sendToMyself(msg.Type, status, data)
+	case enum.MsgType_ChannelOpen_DelItemByTempId_N3204:
+		node, err := service.ChannelService.DelChannelByTemporaryChanId(msg.Data, *client.User)
+		if err != nil {
+			data = err.Error()
+		} else {
+			bytes, err := json.Marshal(node)
+			if err != nil {
+				data = err.Error()
+			} else {
+				data = string(bytes)
+				status = true
+			}
+		}
+		client.sendToMyself(msg.Type, status, data)
 	case enum.MsgType_GetChannelInfoByChanId_N3206:
-		node, err := service.ChannelService.GetChannelInfoByChannelId(msg.Data, client.User.PeerId)
+		node, err := service.ChannelService.GetChannelInfoByChannelId(msg.Data, *client.User)
 		if err != nil {
 			data = err.Error()
 		} else {
@@ -105,7 +112,7 @@ func (client *Client) channelModule(msg bean.RequestMessage) (enum.SendTargetTyp
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_GetChannelInfoByChanId_N3207:
-		node, err := service.ChannelService.GetChannelInfoById(msg.Data, client.User.PeerId)
+		node, err := service.ChannelService.GetChannelInfoById(msg.Data, *client.User)
 		if err != nil {
 			data = err.Error()
 		} else {
@@ -118,17 +125,6 @@ func (client *Client) channelModule(msg bean.RequestMessage) (enum.SendTargetTyp
 			}
 		}
 		client.sendToMyself(msg.Type, status, data)
-		sendType = enum.SendTargetType_SendToSomeone
-	case enum.MsgType_ChannelOpen_Count_N3203:
-		node, err := service.ChannelService.TotalCount(client.User.PeerId)
-		if err != nil {
-			data = err.Error()
-		} else {
-			data = strconv.Itoa(node)
-			status = true
-		}
-		client.sendToMyself(msg.Type, status, data)
-		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_ForceCloseChannel_N3205:
 		node, err := service.ChannelService.ForceCloseChannel(msg.Data, client.User)
 		if err != nil {

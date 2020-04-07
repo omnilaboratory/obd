@@ -1403,28 +1403,92 @@ func checkRdOutputAddressFromOmniDecode(hexDecode string, inputs []rpc.Transacti
 	return ""
 }
 
-func (service *fundingTransactionManager) ItemByTempId(jsonData string) (node *dao.FundingTransaction, err error) {
-	var tempChanId chainhash.Hash
-	for index, item := range gjson.Parse(jsonData).Array() {
-		tempChanId[index] = byte(item.Int())
+func (service *fundingTransactionManager) BtcFundingAllItem(user bean.User) (node []dao.FundingBtcRequest, err error) {
+	var itemes []dao.FundingBtcRequest
+	err = user.Db.Select(
+		q.Eq("Owner", user.PeerId)).
+		OrderBy("CreateAt").Reverse().
+		Find(&itemes)
+	if err != nil {
+		return nil, err
 	}
-	return service.ItemByTempIdArray(tempChanId)
+	return itemes, nil
 }
 
-func (service *fundingTransactionManager) ItemByTempIdArray(tempId chainhash.Hash) (node *dao.FundingTransaction, err error) {
-	var data = &dao.FundingTransaction{}
-	err = db.One("TemporaryChannelId", tempId, data)
+func (service *fundingTransactionManager) BtcFundingItemById(id int, user bean.User) (node *dao.FundingBtcRequest, err error) {
+	var data = &dao.FundingBtcRequest{}
+	err = user.Db.One("Id", id, data)
 	if err != nil {
 		return nil, err
 	}
 	return data, nil
 }
 
-func (service *fundingTransactionManager) AllItem(peerId string) (node []dao.FundingTransaction, err error) {
+func (service *fundingTransactionManager) BtcFundingItemByTempChannelId(tempChanId string, user bean.User) (node []dao.FundingBtcRequest, err error) {
+	var itemes []dao.FundingBtcRequest
+	err = user.Db.Select(q.Eq("TemporaryChannelId", tempChanId)).OrderBy("CreateAt").Reverse().Find(&itemes)
+	if err != nil {
+		return nil, err
+	}
+	return itemes, nil
+}
+
+func (service *fundingTransactionManager) BtcFundingRDAllItem(user bean.User) (node []dao.MinerFeeRedeemTransaction, err error) {
+	var itemes []dao.MinerFeeRedeemTransaction
+	err = user.Db.Select(
+		q.Eq("Owner", user.PeerId)).
+		OrderBy("CreateAt").Reverse().
+		Find(&itemes)
+	if err != nil {
+		return nil, err
+	}
+	return itemes, nil
+}
+
+func (service *fundingTransactionManager) BtcFundingRDItemById(id int, user bean.User) (node *dao.MinerFeeRedeemTransaction, err error) {
+	var data = &dao.MinerFeeRedeemTransaction{}
+	err = user.Db.One("Id", id, data)
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
+}
+
+func (service *fundingTransactionManager) BtcFundingItemRDByTempChannelId(tempChanId string, user bean.User) (node []dao.MinerFeeRedeemTransaction, err error) {
+	var itemes []dao.MinerFeeRedeemTransaction
+	err = user.Db.Select(q.Eq("TemporaryChannelId", tempChanId)).OrderBy("CreateAt").Reverse().Find(&itemes)
+	if err != nil {
+		return nil, err
+	}
+	return itemes, nil
+}
+
+func (service *fundingTransactionManager) BtcFundingItemRDByTempChannelIdAndFundingTxid(jsonData string, user bean.User) (node *dao.MinerFeeRedeemTransaction, err error) {
+	if tool.CheckIsString(&jsonData) == false {
+		return nil, errors.New("wrong request data")
+	}
+	var tempChanId = gjson.Parse(jsonData).Get("temporaryChannelId").String()
+	if tool.CheckIsString(&tempChanId) == false {
+		return nil, errors.New("wrong temporaryChannelId")
+	}
+	var fundingTxid = gjson.Parse(jsonData).Get("fundingTxid").String()
+	if tool.CheckIsString(&fundingTxid) == false {
+		return nil, errors.New("wrong fundingTxid")
+	}
+
+	var item = &dao.MinerFeeRedeemTransaction{}
+	err = user.Db.Select(q.Eq("TemporaryChannelId", tempChanId), q.Eq("FundingTxId", fundingTxid)).OrderBy("CreateAt").Reverse().First(item)
+	if err != nil {
+		return nil, err
+	}
+	return item, nil
+}
+
+func (service *fundingTransactionManager) OmniFundingAllItem(user bean.User) (node []dao.FundingTransaction, err error) {
 	var data []dao.FundingTransaction
-	err = db.Select(
-		q.Or(q.Eq("PeerIdB", peerId),
-			q.Eq("PeerIdA", peerId))).
+	err = user.Db.Select(
+		q.Or(q.Eq("PeerIdB", user.PeerId),
+			q.Eq("PeerIdA", user.PeerId))).
 		OrderBy("CreateAt").Reverse().
 		Find(&data)
 	if err != nil {
@@ -1433,32 +1497,28 @@ func (service *fundingTransactionManager) AllItem(peerId string) (node []dao.Fun
 	return data, nil
 }
 
-func (service *fundingTransactionManager) ItemById(id int) (node *dao.FundingTransaction, err error) {
+func (service *fundingTransactionManager) OmniFundingItemById(id int, user bean.User) (node *dao.FundingTransaction, err error) {
 	var data = &dao.FundingTransaction{}
-	err = db.One("Id", id, data)
+	err = user.Db.One("Id", id, data)
 	if err != nil {
 		return nil, err
 	}
 	return data, nil
 }
 
-func (service *fundingTransactionManager) DelAll() (err error) {
-	var data = &dao.FundingTransaction{}
-	return db.Drop(data)
+func (service *fundingTransactionManager) OmniFundingItemByChannelId(chanId string, user bean.User) (node *dao.FundingTransaction, err error) {
+	var item = &dao.FundingTransaction{}
+	err = user.Db.Select(q.Eq("ChannelId", chanId)).First(item)
+	if err != nil {
+		return nil, err
+	}
+	return item, nil
 }
 
-func (service *fundingTransactionManager) Del(id int) (err error) {
-	var data = &dao.FundingTransaction{}
-	count, err := db.Select(q.Eq("Id", id)).Count(data)
-	if err == nil && count == 1 {
-		err = db.DeleteStruct(data)
-	}
-	return err
-}
-func (service *fundingTransactionManager) TotalCount(peerId string) (count int, err error) {
-	return db.Select(
+func (service *fundingTransactionManager) OmniFundingTotalCount(user bean.User) (count int, err error) {
+	return user.Db.Select(
 		q.Or(
-			q.Eq("PeerIdA", peerId),
-			q.Eq("PeerIdB", peerId))).
+			q.Eq("PeerIdA", user.PeerId),
+			q.Eq("PeerIdB", user.PeerId))).
 		Count(&dao.FundingTransaction{})
 }

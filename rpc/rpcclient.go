@@ -3,11 +3,13 @@ package rpc
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"obd/config"
+	"strconv"
 	"strings"
 	"sync/atomic"
 
@@ -91,6 +93,27 @@ func NewClient() *Client {
 
 func (client *Client) NextID() uint64 {
 	return atomic.AddUint64(&client.id, 1)
+}
+func (client *Client) CheckVersion() error {
+	result, err := client.OmniGetinfo()
+	if err != nil {
+		return err
+	}
+
+	log.Println("omniCoreVersion: " + gjson.Get(result, "omnicoreversion").String())
+	log.Println("bitcoinCoreVersion: " + gjson.Get(result, "bitcoincoreversion").String())
+	bitcoinCoreVersion := gjson.Get(result, "bitcoincoreversion").String()
+
+	infoes := strings.Split(bitcoinCoreVersion, ".")
+	tempInt, _ := strconv.Atoi(infoes[0])
+	if tempInt >= 0 {
+		return nil
+	}
+	tempInt, _ = strconv.Atoi(infoes[1])
+	if tempInt >= 18 {
+		return nil
+	}
+	return errors.New("error bitcoinCore version " + gjson.Get(result, "bitcoincoreversion").String())
 }
 
 func (client *Client) send(method string, params []interface{}) (result string, err error) {

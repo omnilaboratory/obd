@@ -128,7 +128,7 @@ func (client *Client) Read() {
 			} else { // already login
 
 				if msg.Type == enum.MsgType_ChannelOpen_N32 || msg.Type == enum.MsgType_ChannelAccept_N33 ||
-					msg.Type == enum.MsgType_FundingCreate_BtcCreate_N3400 || msg.Type == enum.MsgType_FundingSign_BtcSign_N3500 ||
+					msg.Type == enum.MsgType_FundingCreate_BtcFundingCreated_N3400 || msg.Type == enum.MsgType_FundingSign_BtcSign_N3500 ||
 					msg.Type == enum.MsgType_FundingCreate_AssetFundingCreated_N34 || msg.Type == enum.MsgType_FundingSign_AssetFundingSigned_N35 ||
 					msg.Type == enum.MsgType_CommitmentTxSigned_RevokeAndAcknowledgeCommitmentTransaction_N352 ||
 					msg.Type == enum.MsgType_CommitmentTx_CommitmentTransactionCreated_N351 ||

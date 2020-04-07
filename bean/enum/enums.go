@@ -45,8 +45,8 @@ const (
 	MsgType_Mnemonic_GetAddressByIndex_201 MsgType = -201
 
 	MsgType_ChannelOpen_N32                   MsgType = -32
-	MsgType_ChannelOpen_ItemByTempId_N3201    MsgType = -3201
-	MsgType_ChannelOpen_AllItem_N3202         MsgType = -3202
+	MsgType_ChannelOpen_AllItem_N3201         MsgType = -3201
+	MsgType_ChannelOpen_ItemByTempId_N3202    MsgType = -3202
 	MsgType_ChannelOpen_Count_N3203           MsgType = -3203
 	MsgType_ChannelOpen_DelItemByTempId_N3204 MsgType = -3204
 	MsgType_ForceCloseChannel_N3205           MsgType = -3205
@@ -55,13 +55,19 @@ const (
 
 	MsgType_ChannelAccept_N33 MsgType = -33
 
-	MsgType_FundingCreate_AssetFundingCreated_N34 MsgType = -34
-	MsgType_FundingCreate_BtcCreate_N3400         MsgType = -3400
-	MsgType_FundingCreate_ItemByTempId_N3401      MsgType = -3401
-	MsgType_FundingCreate_ItemById_N3402          MsgType = -3402
-	MsgType_FundingCreate_ALlItem_N3403           MsgType = -3403
-	MsgType_FundingCreate_Count_N3404             MsgType = -3404
-	MsgType_FundingCreate_DelById_N3405           MsgType = -3405
+	MsgType_FundingCreate_AssetFundingCreated_N34                MsgType = -34
+	MsgType_FundingCreate_Asset_ALlItem_N3401                    MsgType = -3401
+	MsgType_FundingCreate_Asset_ItemById_N3402                   MsgType = -3402
+	MsgType_FundingCreate_Asset_ItemByChannelId_N3403            MsgType = -3403
+	MsgType_FundingCreate_Asset_Count_N3404                      MsgType = -3404
+	MsgType_FundingCreate_BtcFundingCreated_N3400                MsgType = -3400
+	MsgType_FundingCreate_Btc_ALlItem_N3451                      MsgType = -3451
+	MsgType_FundingCreate_Btc_ItemById_N3452                     MsgType = -3452
+	MsgType_FundingCreate_Btc_ItemByChannelId_N3453              MsgType = -3453
+	MsgType_FundingCreate_Btc_RDALlItem_N3461                    MsgType = -3461
+	MsgType_FundingCreate_Btc_ItemRDById_N3462                   MsgType = -3462
+	MsgType_FundingCreate_Btc_ItemRDByTempChannelId_N3463        MsgType = -3463
+	MsgType_FundingCreate_Btc_ItemRDByTempChannelIdAndTxId_N3464 MsgType = -3464
 
 	MsgType_FundingSign_AssetFundingSigned_N35 MsgType = -35
 	MsgType_FundingSign_BtcSign_N3500          MsgType = -3500

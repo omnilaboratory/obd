@@ -8,7 +8,6 @@ import (
 	"github.com/tidwall/gjson"
 	"log"
 	"obd/bean"
-	"obd/bean/chainhash"
 	"obd/config"
 	"obd/dao"
 	"obd/tool"
@@ -187,93 +186,84 @@ func (this *channelManager) AfterBobAcceptChannelAtAliceSide(jsonData string, us
 	return channelInfo, err
 }
 
+// OmniFundingAllItem
+func (this *channelManager) AllItem(user bean.User) (data []dao.ChannelInfo, err error) {
+	var infos []dao.ChannelInfo
+	err = user.Db.Select(
+		q.Or(
+			q.Eq("PeerIdA", user.PeerId),
+			q.Eq("PeerIdB", user.PeerId))).
+		OrderBy("CreateAt").Reverse().
+		Find(&infos)
+	return infos, err
+}
+
+// OmniFundingTotalCount
+func (this *channelManager) TotalCount(user bean.User) (count int, err error) {
+	return user.Db.Select(
+		q.Or(
+			q.Eq("PeerIdA", user.PeerId),
+			q.Eq("PeerIdB", user.PeerId))).
+		Count(&dao.ChannelInfo{})
+}
+
 // GetChannelByTemporaryChanId
-func (this *channelManager) GetChannelByTemporaryChanId(jsonData string) (node *dao.ChannelInfo, err error) {
+func (this *channelManager) GetChannelByTemporaryChanId(jsonData string, user bean.User) (node *dao.ChannelInfo, err error) {
 	if tool.CheckIsString(&jsonData) == false {
 		return nil, errors.New("wrong TemporaryChannelId")
 	}
-	return this.GetChannelByTemporaryChannelId(jsonData)
-}
-
-// GetChannelByTemporaryChannelId
-func (this *channelManager) GetChannelByTemporaryChannelId(chanId string) (node *dao.ChannelInfo, err error) {
 	node = &dao.ChannelInfo{}
-	err = db.Select(
-		q.Eq("TemporaryChannelId", chanId)).
+	err = user.Db.Select(
+		q.Eq("TemporaryChannelId", jsonData)).
 		First(node)
 	return node, err
 }
 
 // DelChannelByTemporaryChanId
-func (this *channelManager) DelChannelByTemporaryChanId(jsonData string) (node *dao.ChannelInfo, err error) {
-
-	array := gjson.Parse(jsonData).Array()
-	if len(array) != 32 {
+func (this *channelManager) DelChannelByTemporaryChanId(jsonData string, user bean.User) (node *dao.ChannelInfo, err error) {
+	if tool.CheckIsString(&jsonData) == false {
 		return nil, errors.New("wrong TemporaryChannelId")
 	}
-
-	var tempChanId chainhash.Hash
-	for index, value := range array {
-		tempChanId[index] = byte(value.Num)
-	}
 	node = &dao.ChannelInfo{}
-	err = db.Select(
-		q.Eq("TemporaryChannelId", tempChanId)).
+	err = user.Db.Select(
+		q.Eq("TemporaryChannelId", jsonData)).
 		First(node)
+	if tool.CheckIsString(&node.ChannelId) {
+		return nil, errors.New("can not delete the channel")
+	}
 	if err == nil {
 		err = db.DeleteStruct(node)
 	}
 	return node, err
 }
 
-// AllItem
-func (this *channelManager) AllItem(peerId string) (data []dao.ChannelInfo, err error) {
-	var infos []dao.ChannelInfo
-	err = db.Select(
-		q.Or(
-			q.Eq("PeerIdA", peerId),
-			q.Eq("PeerIdB", peerId))).
-		OrderBy("CreateAt").Reverse().
-		Find(&infos)
-	return infos, err
-}
-func (this *channelManager) GetChannelInfoByChannelId(jsonData string, peerId string) (info *dao.ChannelInfo, err error) {
-	channelId := gjson.Parse(jsonData).String()
-	if tool.CheckIsString(&channelId) == false {
+func (this *channelManager) GetChannelInfoByChannelId(jsonData string, user bean.User) (info *dao.ChannelInfo, err error) {
+	if tool.CheckIsString(&jsonData) == false {
 		return nil, errors.New("wrong ChannelId")
 	}
 
 	info = &dao.ChannelInfo{}
-	err = db.Select(
-		q.Eq("ChannelId", channelId),
+	err = user.Db.Select(
+		q.Eq("ChannelId", jsonData),
 		q.Or(
-			q.Eq("PeerIdA", peerId),
-			q.Eq("PeerIdB", peerId))).
+			q.Eq("PeerIdA", user.PeerId),
+			q.Eq("PeerIdB", user.PeerId))).
 		First(info)
 	return info, err
 }
-func (this *channelManager) GetChannelInfoById(jsonData string, peerId string) (info *dao.ChannelInfo, err error) {
+func (this *channelManager) GetChannelInfoById(jsonData string, user bean.User) (info *dao.ChannelInfo, err error) {
 	id, err := strconv.Atoi(jsonData)
 	if err != nil {
 		return nil, err
 	}
 	info = &dao.ChannelInfo{}
-	err = db.Select(
+	err = user.Db.Select(
 		q.Eq("Id", id),
 		q.Or(
-			q.Eq("PeerIdA", peerId),
-			q.Eq("PeerIdB", peerId))).
+			q.Eq("PeerIdA", user.PeerId),
+			q.Eq("PeerIdB", user.PeerId))).
 		First(info)
 	return info, err
-}
-
-// TotalCount
-func (this *channelManager) TotalCount(peerId string) (count int, err error) {
-	return db.Select(
-		q.Or(
-			q.Eq("PeerIdA", peerId),
-			q.Eq("PeerIdB", peerId))).
-		Count(&dao.ChannelInfo{})
 }
 
 //ForceCloseChannel
@@ -281,6 +271,8 @@ func (this *channelManager) ForceCloseChannel(jsonData string, user *bean.User) 
 	if tool.CheckIsString(&jsonData) == false {
 		return nil, errors.New("empty inputData")
 	}
+
+	return nil, errors.New("can not force close channel")
 
 	reqData := &bean.CloseChannel{}
 	err := json.Unmarshal([]byte(jsonData), reqData)
@@ -293,8 +285,15 @@ func (this *channelManager) ForceCloseChannel(jsonData string, user *bean.User) 
 		return nil, errors.New("wrong channelId")
 	}
 
+	tx, err := user.Db.Begin(true)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	defer tx.Rollback()
+
 	channelInfo := &dao.ChannelInfo{}
-	err = db.Select(
+	err = tx.Select(
 		q.Eq("ChannelId", reqData.ChannelId),
 		q.Eq("CurrState", dao.ChannelState_CanUse)).
 		First(channelInfo)
@@ -303,7 +302,7 @@ func (this *channelManager) ForceCloseChannel(jsonData string, user *bean.User) 
 		return nil, err
 	}
 
-	lastCommitmentTx, err := getLatestCommitmentTx(channelInfo.ChannelId, user.PeerId)
+	lastCommitmentTx, err := getLatestCommitmentTxUseDbTx(tx, channelInfo.ChannelId, user.PeerId)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -331,7 +330,7 @@ func (this *channelManager) ForceCloseChannel(jsonData string, user *bean.User) 
 	}
 
 	lastRevocableDeliveryTx := &dao.RevocableDeliveryTransaction{}
-	err = db.Select(
+	err = tx.Select(
 		q.Eq("ChannelId", channelInfo.ChannelId),
 		q.Eq("Owner", user.PeerId)).
 		OrderBy("CreateAt").Reverse().
@@ -350,9 +349,6 @@ func (this *channelManager) ForceCloseChannel(jsonData string, user *bean.User) 
 		}
 	}
 	log.Println(revocableDeliveryTxid)
-
-	tx, err := db.Begin(true)
-	defer tx.Rollback()
 
 	lastCommitmentTx.CurrState = dao.TxInfoState_SendHex
 	lastCommitmentTx.SendAt = time.Now()

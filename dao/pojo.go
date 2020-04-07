@@ -118,7 +118,6 @@ type MinerFeeRedeemTransaction struct {
 	Id                 int       `storm:"id,increment" json:"id" `
 	Owner              string    `json:"owner"`
 	TemporaryChannelId string    `json:"temporary_channel_id"`
-	ChannelId          string    `json:"channel_id"`
 	FundingTxId        string    `json:"funding_tx_id"`
 	Hex                string    `json:"hex"`
 	Txid               string    `json:"txid"`

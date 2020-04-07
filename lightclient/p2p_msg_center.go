@@ -25,7 +25,7 @@ func routerOfP2PNode(msgType enum.MsgType, data string, client *Client) (retData
 		} else {
 			defaultErr = err
 		}
-	case enum.MsgType_FundingCreate_BtcCreate_N3400:
+	case enum.MsgType_FundingCreate_BtcFundingCreated_N3400:
 		_, err := service.FundingTransactionService.BeforeBobSignBtcFundingAtBobSide(data, client.User)
 		if err == nil {
 			status = true

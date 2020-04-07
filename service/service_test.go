@@ -32,6 +32,11 @@ func TestDemoChannelTreeData(t *testing.T) {
 
 func TestDelDemoChannelInfoData(t *testing.T) {
 
+	info, err := rpcClient.OmniGetinfo()
+	log.Println(info)
+	log.Println(err)
+	return
+
 	//multiAddr, err := rpcClient.CreateMultiSig(2, []string{"03b2e7ecc5ff62feb342943a1364f555e8302f507f78c6392c82b9e12c95ccb40b", "03f1603966fc3986d7681a7bf7a1e6b8b44c6009939c28da21f065c1b991aeff12"})
 	//if err != nil {
 	//}
