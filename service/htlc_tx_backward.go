@@ -513,7 +513,7 @@ func htlcCreateExecutionDelivery(tx storm.Node, channelInfo dao.ChannelInfo, fun
 		return nil, err
 	}
 
-	inputs, err := getInputsForNextTxByParseTxHashVout(henxTx.TxHash, henxTx.OutputAddress, henxTx.ScriptPubKey)
+	inputs, err := getInputsForNextTxByParseTxHashVout(henxTx.TxHex, henxTx.OutputAddress, henxTx.ScriptPubKey)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -540,7 +540,7 @@ func htlcCreateExecutionDelivery(tx storm.Node, channelInfo dao.ChannelInfo, fun
 	}
 
 	he1x.Txid = txid
-	he1x.TxHash = hex
+	he1x.TxHex = hex
 	he1x.CreateAt = time.Now()
 	he1x.CurrState = dao.TxInfoState_CreateAndSign
 	err = tx.Save(he1x)
@@ -582,7 +582,7 @@ func createHtlcExecution(tx storm.Node, channelInfo dao.ChannelInfo, fundingTran
 		return nil, err
 	}
 
-	inputs, err := getInputsForNextTxByParseTxHashVout(henxTx.TxHash, henxTx.OutputAddress, henxTx.ScriptPubKey)
+	inputs, err := getInputsForNextTxByParseTxHashVout(henxTx.TxHex, henxTx.OutputAddress, henxTx.ScriptPubKey)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -609,7 +609,7 @@ func createHtlcExecution(tx storm.Node, channelInfo dao.ChannelInfo, fundingTran
 	}
 
 	he1x.RSMCTxid = txid
-	he1x.RSMCTxHash = hex
+	he1x.RSMCTxHex = hex
 	he1x.SignAt = time.Now()
 	he1x.CurrState = dao.TxInfoState_CreateAndSign
 	err = tx.Save(he1x)
@@ -648,7 +648,7 @@ func createHtlcRDForR(tx storm.Node, channelInfo dao.ChannelInfo,
 		return nil, err
 	}
 
-	inputs, err := getInputsForNextTxByParseTxHashVout(he1x.RSMCTxHash, he1x.RSMCMultiAddress, he1x.RSMCMultiAddressScriptPubKey)
+	inputs, err := getInputsForNextTxByParseTxHashVout(he1x.RSMCTxHex, he1x.RSMCMultiAddress, he1x.RSMCMultiAddressScriptPubKey)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -674,7 +674,7 @@ func createHtlcRDForR(tx storm.Node, channelInfo dao.ChannelInfo,
 	}
 
 	rdTransaction.Txid = txid
-	rdTransaction.TxHash = hex
+	rdTransaction.TxHex = hex
 	rdTransaction.SignAt = time.Now()
 	rdTransaction.CurrState = dao.TxInfoState_CreateAndSign
 	err = tx.Save(rdTransaction)

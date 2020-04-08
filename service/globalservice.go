@@ -43,7 +43,7 @@ type commitmentOutputBean struct {
 
 func init() {
 	var err error
-	db, err = dao.DBService.GetDB()
+	db, err = dao.DBService.GetGlobalDB()
 	if err != nil {
 		log.Println(err)
 	}

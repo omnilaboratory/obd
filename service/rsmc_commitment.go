@@ -1058,7 +1058,7 @@ func signRdTx(tx storm.Node, channelInfo *dao.ChannelInfo, signedRsmcHex string,
 		return err
 	}
 	rdTransaction.RDType = 0
-	rdTransaction.TxHash = signedRdHex
+	rdTransaction.TxHex = signedRdHex
 	rdTransaction.Txid = aliceRdTxid
 	rdTransaction.CurrState = dao.TxInfoState_CreateAndSign
 	err = tx.Save(rdTransaction)

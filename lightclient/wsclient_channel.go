@@ -43,6 +43,7 @@ func (client *Client) channelModule(msg bean.RequestMessage) (enum.SendTargetTyp
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_ChannelOpen_AllItem_N3201:
 		nodes, err := service.ChannelService.AllItem(*client.User)
+		service.ChannelService.TestDb(*client.User)
 		if err != nil {
 			data = err.Error()
 		} else {

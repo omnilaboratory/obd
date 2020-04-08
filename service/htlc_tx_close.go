@@ -539,7 +539,7 @@ func createAliceRsmcTxsForCloseHtlc(tx storm.Node, channelInfo dao.ChannelInfo, 
 	}
 
 	rdTransaction.Txid = txid
-	rdTransaction.TxHash = hex
+	rdTransaction.TxHex = hex
 	rdTransaction.SignAt = time.Now()
 	rdTransaction.CurrState = dao.TxInfoState_CreateAndSign
 	err = tx.Save(rdTransaction)
@@ -693,7 +693,7 @@ func createBobRsmcTxsForCloseHtlc(tx storm.Node, channelInfo dao.ChannelInfo, is
 	}
 
 	rdTransaction.Txid = txid
-	rdTransaction.TxHash = hex
+	rdTransaction.TxHex = hex
 	rdTransaction.SignAt = time.Now()
 	rdTransaction.CurrState = dao.TxInfoState_CreateAndSign
 	err = tx.Save(rdTransaction)
@@ -924,7 +924,7 @@ func createAliceSideBRTxs(tx storm.Node, channelInfo dao.ChannelInfo, isAliceExe
 			return nil, err
 		}
 
-		inputs, err := getInputsForNextTxByParseTxHashVout(htOrHeTx.RSMCTxHash, htOrHeTx.RSMCMultiAddress, htOrHeTx.RSMCRedeemScript)
+		inputs, err := getInputsForNextTxByParseTxHashVout(htOrHeTx.RSMCTxHex, htOrHeTx.RSMCMultiAddress, htOrHeTx.RSMCRedeemScript)
 		if err != nil {
 			log.Println(err)
 			return nil, err
@@ -949,7 +949,7 @@ func createAliceSideBRTxs(tx storm.Node, channelInfo dao.ChannelInfo, isAliceExe
 			return nil, err
 		}
 		htbr.Txid = txid
-		htbr.TxHash = hex
+		htbr.TxHex = hex
 		htbr.SignAt = time.Now()
 		htbr.CurrState = dao.TxInfoState_CreateAndSign
 		err = tx.Save(htbr)
@@ -1188,7 +1188,7 @@ func createBobSideBRTxs(tx storm.Node, channelInfo dao.ChannelInfo, isAliceExecu
 			return nil, err
 		}
 
-		inputs, err := getInputsForNextTxByParseTxHashVout(htOrHeTx.RSMCTxHash, htOrHeTx.RSMCMultiAddress, htOrHeTx.RSMCRedeemScript)
+		inputs, err := getInputsForNextTxByParseTxHashVout(htOrHeTx.RSMCTxHex, htOrHeTx.RSMCMultiAddress, htOrHeTx.RSMCRedeemScript)
 		if err != nil {
 			log.Println(err)
 			return nil, err
@@ -1213,7 +1213,7 @@ func createBobSideBRTxs(tx storm.Node, channelInfo dao.ChannelInfo, isAliceExecu
 			return nil, err
 		}
 		htbr.Txid = txid
-		htbr.TxHash = hex
+		htbr.TxHex = hex
 		htbr.SignAt = time.Now()
 		htbr.CurrState = dao.TxInfoState_CreateAndSign
 		err = tx.Save(htbr)
@@ -1239,7 +1239,7 @@ func createBobSideBRTxs(tx storm.Node, channelInfo dao.ChannelInfo, isAliceExecu
 func addHT1aTxToWaitDB(tx storm.Node, htnx *dao.HTLCTimeoutTxForAAndExecutionForB, htrd *dao.RevocableDeliveryTransaction) error {
 	node := &dao.RDTxWaitingSend{}
 	count, err := tx.Select(
-		q.Eq("TransactionHex", htnx.RSMCTxHash)).
+		q.Eq("TransactionHex", htnx.RSMCTxHex)).
 		Count(node)
 	if err == nil {
 		return err
@@ -1247,7 +1247,7 @@ func addHT1aTxToWaitDB(tx storm.Node, htnx *dao.HTLCTimeoutTxForAAndExecutionFor
 	if count > 0 {
 		return errors.New("already save")
 	}
-	node.TransactionHex = htnx.RSMCTxHash
+	node.TransactionHex = htnx.RSMCTxHex
 	node.Type = 1
 	node.IsEnable = true
 	node.CreateAt = time.Now()
@@ -1278,7 +1278,7 @@ func addHTRD1aTxToWaitDB(htnxIdAndHtnxRdId []int) error {
 
 	node := &dao.RDTxWaitingSend{}
 	count, err := db.Select(
-		q.Eq("TransactionHex", htrd.TxHash)).
+		q.Eq("TransactionHex", htrd.TxHex)).
 		Count(node)
 	if err == nil {
 		return err
@@ -1287,7 +1287,7 @@ func addHTRD1aTxToWaitDB(htnxIdAndHtnxRdId []int) error {
 		return errors.New("already save")
 	}
 
-	node.TransactionHex = htrd.TxHash
+	node.TransactionHex = htrd.TxHex
 	node.Type = 0
 	node.IsEnable = true
 	node.CreateAt = time.Now()
@@ -1307,7 +1307,7 @@ func addHTRD1aTxToWaitDB(htnxIdAndHtnxRdId []int) error {
 func addHTDnxTxToWaitDB(tx storm.Node, txInfo *dao.HTLCTimeoutDeliveryTxB) (err error) {
 	node := &dao.RDTxWaitingSend{}
 	count, err := tx.Select(
-		q.Eq("TransactionHex", txInfo.TxHash)).
+		q.Eq("TransactionHex", txInfo.TxHex)).
 		Count(node)
 	if err == nil {
 		return err
@@ -1315,7 +1315,7 @@ func addHTDnxTxToWaitDB(tx storm.Node, txInfo *dao.HTLCTimeoutDeliveryTxB) (err 
 	if count > 0 {
 		return errors.New("already save")
 	}
-	node.TransactionHex = txInfo.TxHash
+	node.TransactionHex = txInfo.TxHex
 	node.Type = 2
 	node.IsEnable = true
 	node.CreateAt = time.Now()

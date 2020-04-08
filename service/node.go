@@ -15,14 +15,14 @@ type NodeService struct {
 }
 
 func (service *NodeService) Save(node *Node) error {
-	db, e := dao.DBService.GetDB()
+	db, e := dao.DBService.GetGlobalDB()
 	if e != nil {
 		return e
 	}
 	return db.Save(node)
 }
 func (service *NodeService) Get(id interface{}) (data Node, err error) {
-	db, e := dao.DBService.GetDB()
+	db, e := dao.DBService.GetGlobalDB()
 	var node Node
 	if e != nil {
 		return node, e

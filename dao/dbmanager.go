@@ -17,9 +17,11 @@ var DBService = dbManager{
 	Db: nil,
 }
 
-func (manager dbManager) GetDB() (*storm.DB, error) {
+func (manager dbManager) GetGlobalDB() (*storm.DB, error) {
 	if DBService.Db == nil {
-		db, e := storm.Open(config.DBname)
+		_dir := "dbdata"
+		_ = tool.PathExistsAndCreate(_dir)
+		db, e := storm.Open(_dir + "/" + config.DBname)
 		if e != nil {
 			log.Println("open db fail")
 			return nil, e

@@ -20,7 +20,7 @@ type HTLCTimeoutTxForAAndExecutionForB struct {
 	RSMCRedeemScript             string      `json:"rsmc_redeem_script"`
 	RSMCMultiAddressScriptPubKey string      `json:"rsmc_multi_address_script_pub_key"`
 	RSMCOutAmount                float64     `json:"rsmc_out_amount"`
-	RSMCTxHash                   string      `json:"rsmc_tx_hash"`
+	RSMCTxHex                    string      `json:"rsmc_tx_hex"`
 	RSMCTxid                     string      `json:"rsmc_txid"`
 	CurrState                    TxInfoState `json:"curr_state"`
 	Owner                        string      `json:"owner"`
@@ -41,7 +41,7 @@ type HTLCTimeoutDeliveryTxB struct {
 	InputAmount    float64     `json:"input_amount"`   //input amount
 	OutputAddress  string      `json:"output_address"` //output Sender Alice(if alice is sender) or Bob(if bob is sender)
 	OutAmount      float64     `json:"out_amount"`
-	TxHash         string      `json:"tx_hash"`
+	TxHex          string      `json:"tx_hex"`
 	Txid           string      `json:"txid"`
 	Owner          string      `json:"owner"`
 	CurrState      TxInfoState `json:"curr_state"`
@@ -68,7 +68,7 @@ type HTLCExecutionDeliveryOfH struct {
 	ScriptPubKey           string      `json:"script_pub_key"`
 	OutAmount              float64     `json:"out_amount"`
 	Timeout                int         `json:"timeout"`
-	TxHash                 string      `json:"tx_hash"`
+	TxHex                  string      `json:"tx_hex"`
 	Txid                   string      `json:"txid"`
 	CurrState              TxInfoState `json:"curr_state"`
 	Owner                  string      `json:"owner"`
@@ -88,7 +88,7 @@ type HTLCExecutionDeliveryOfR struct {
 	HtlcR          string      `json:"htlc_r"`
 	OutputAddress  string      `json:"output_address"` //to Bob
 	OutAmount      float64     `json:"out_amount"`
-	TxHash         string      `json:"tx_hash"`
+	TxHex          string      `json:"tx_hex"`
 	Txid           string      `json:"txid"`
 	CurrState      TxInfoState `json:"curr_state"`
 	Owner          string      `json:"owner"`
@@ -169,9 +169,9 @@ type HTLCTimeoutBreachRemedyTransaction struct {
 	CommitmentTxId                      int         `json:"commitment_tx_id"` // parent commitmentTx id
 	HTLCTimeoutTxForAAndExecutionForBId int         `json:"htlc_timeout_tx_for_a_and_execution_for_b_id"`
 	PropertyId                          int64       `json:"property_id"`
-	InputHash                           string      `json:"input_hash"`
+	InputHex                            string      `json:"input_hex"`
 	Amount                              float64     `json:"amount"` // output bob amount
-	TxHash                              string      `json:"tx_hash"`
+	TxHex                               string      `json:"tx_hex"`
 	Txid                                string      `json:"txid"`
 	CurrState                           TxInfoState `json:"curr_state"`
 	CreateBy                            string      `json:"create_by"`

@@ -370,7 +370,7 @@ func htlcCreateExecutionDeliveryOfHForAlice(tx storm.Node, aliceIsSender bool, p
 	}
 
 	hednx.Txid = txid
-	hednx.TxHash = hex
+	hednx.TxHex = hex
 	hednx.CreateAt = time.Now()
 	hednx.CurrState = dao.TxInfoState_CreateAndSign
 	err = tx.Save(hednx)
@@ -428,7 +428,7 @@ func htlcCreateExecutionDeliveryOfHForBob(tx storm.Node, aliceIsSender bool, own
 	}
 
 	henx.Txid = txid
-	henx.TxHash = hex
+	henx.TxHex = hex
 	henx.CreateAt = time.Now()
 	henx.CurrState = dao.TxInfoState_CreateAndSign
 	err = tx.Save(henx)
@@ -518,7 +518,7 @@ func createHtlcTimeoutTxForAliceSide(tx storm.Node, owner string, channelInfo da
 	}
 
 	htlcTimeoutTx.RSMCTxid = txid
-	htlcTimeoutTx.RSMCTxHash = hex
+	htlcTimeoutTx.RSMCTxHex = hex
 	htlcTimeoutTx.SignAt = time.Now()
 	htlcTimeoutTx.CurrState = dao.TxInfoState_CreateAndSign
 	err = tx.Save(htlcTimeoutTx)
@@ -566,7 +566,7 @@ func createHtlcTimeoutTxForBobSide(tx storm.Node, owner string, channelInfo dao.
 	}
 
 	htlcTimeoutTx.RSMCTxid = txid
-	htlcTimeoutTx.RSMCTxHash = hex
+	htlcTimeoutTx.RSMCTxHex = hex
 	htlcTimeoutTx.SignAt = time.Now()
 	htlcTimeoutTx.CurrState = dao.TxInfoState_CreateAndSign
 	err = tx.Save(htlcTimeoutTx)
@@ -616,7 +616,7 @@ func createHtlcTimeoutDeliveryTx(tx storm.Node, owner string, outputAddress stri
 	}
 
 	htlcTimeoutDeliveryTx.Txid = txid
-	htlcTimeoutDeliveryTx.TxHash = hex
+	htlcTimeoutDeliveryTx.TxHex = hex
 	err = tx.Save(htlcTimeoutDeliveryTx)
 	if err != nil {
 		log.Println(err)
@@ -1008,7 +1008,7 @@ func htlcCreateRDOfRsmc(tx storm.Node, channelInfo dao.ChannelInfo, operator bea
 	}
 
 	rdTransaction.Txid = txid
-	rdTransaction.TxHash = hex
+	rdTransaction.TxHex = hex
 	rdTransaction.SignAt = time.Now()
 	rdTransaction.CurrState = dao.TxInfoState_CreateAndSign
 	err = tx.Save(rdTransaction)
@@ -1050,7 +1050,7 @@ func createHtlcRD(tx storm.Node, channelInfo dao.ChannelInfo, operator bean.User
 		currChannelAddressPrivateKey = tempAddrPrivateKeyMap[channelInfo.PubKeyA]
 	}
 
-	inputs, err := getInputsForNextTxByParseTxHashVout(htlcTimeoutTx.RSMCTxHash, htlcTimeoutTx.RSMCMultiAddress, htlcTimeoutTx.RSMCMultiAddressScriptPubKey)
+	inputs, err := getInputsForNextTxByParseTxHashVout(htlcTimeoutTx.RSMCTxHex, htlcTimeoutTx.RSMCMultiAddress, htlcTimeoutTx.RSMCMultiAddressScriptPubKey)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -1076,7 +1076,7 @@ func createHtlcRD(tx storm.Node, channelInfo dao.ChannelInfo, operator bean.User
 	}
 
 	rdTransaction.Txid = txid
-	rdTransaction.TxHash = hex
+	rdTransaction.TxHex = hex
 	rdTransaction.SignAt = time.Now()
 	rdTransaction.CurrState = dao.TxInfoState_CreateAndSign
 	err = tx.Save(rdTransaction)
@@ -1156,7 +1156,7 @@ func createHtlcTimeoutBRTx(owner string, channelInfo *dao.ChannelInfo, txInfo da
 	htbr.ChannelId = channelInfo.ChannelId
 	htbr.PropertyId = txInfo.PropertyId
 	htbr.Owner = owner
-	htbr.InputHash = txInfo.RSMCTxHash
+	htbr.InputHex = txInfo.RSMCTxHex
 	//output
 	htbr.Amount = txInfo.RSMCOutAmount
 

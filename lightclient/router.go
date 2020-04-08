@@ -20,6 +20,7 @@ func InitRouter(conn *grpc.ClientConn) *gin.Engine {
 	router := gin.New()
 	router.Use(gin.Logger())
 	router.Use(gin.Recovery())
+
 	go GlobalWsClientManager.Start()
 	router.GET("/ws", wsClientConnect)
 

@@ -104,7 +104,7 @@ func (service *UserManager) UserLogout(user *bean.User) error {
 
 func (service *UserManager) UserInfo(email string) (user *dao.User, e error) {
 
-	db, e := dao.DBService.GetDB()
+	db, e := dao.DBService.GetGlobalDB()
 	if e != nil {
 		return nil, errors.New("db is not exist")
 	}

@@ -565,7 +565,7 @@ func (service *fundingTransactionManager) AssetFundingCreated(jsonData string, u
 	}
 
 	if tool.CheckIsString(&reqData.FundingTxHex) == false {
-		err = errors.New("wrong TxHash ")
+		err = errors.New("wrong TxHex ")
 		log.Println(err)
 		return nil, err
 	}
@@ -633,7 +633,7 @@ func (service *fundingTransactionManager) AssetFundingCreated(jsonData string, u
 	// if alice launch funding
 	fundingTxHexDecode, err := rpcClient.OmniDecodeTransaction(reqData.FundingTxHex)
 	if err != nil {
-		err = errors.New("TxHash  parse fail " + err.Error())
+		err = errors.New("TxHex  parse fail " + err.Error())
 		log.Println(err)
 		return nil, err
 	}
@@ -944,7 +944,7 @@ func (service *fundingTransactionManager) BeforeBobSignOmniFundingAtBobSide(data
 
 		fundingTxHexDecode, err := rpcClient.OmniDecodeTransaction(fundingTxHex)
 		if err != nil {
-			err = errors.New("TxHash  parse fail " + err.Error())
+			err = errors.New("TxHex  parse fail " + err.Error())
 			log.Println(err)
 			return nil, err
 		}
@@ -1288,7 +1288,7 @@ func (service *fundingTransactionManager) AfterBobSignOmniFundingAtAilceSide(dat
 
 	fundingTxHexDecode, err := rpcClient.OmniDecodeTransaction(rsmcSignedHex)
 	if err != nil {
-		err = errors.New("TxHash  parse fail " + err.Error())
+		err = errors.New("TxHex  parse fail " + err.Error())
 		log.Println(err)
 		return nil, err
 	}
@@ -1357,7 +1357,7 @@ func (service *fundingTransactionManager) AfterBobSignOmniFundingAtAilceSide(dat
 		return nil, err
 	}
 	rdTransaction.RDType = 0
-	rdTransaction.TxHash = signedRdHex
+	rdTransaction.TxHex = signedRdHex
 	rdTransaction.Txid = txid
 	rdTransaction.CurrState = dao.TxInfoState_CreateAndSign
 	err = tx.Save(rdTransaction)

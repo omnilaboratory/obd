@@ -3,7 +3,6 @@ package service
 import (
 	"encoding/json"
 	"errors"
-	"github.com/asdine/storm"
 	"github.com/asdine/storm/q"
 	"github.com/tidwall/gjson"
 	"log"
@@ -340,7 +339,7 @@ func (this *channelManager) ForceCloseChannel(jsonData string, user *bean.User) 
 		return nil, err
 	}
 
-	revocableDeliveryTxid, err := rpcClient.SendRawTransaction(lastRevocableDeliveryTx.TxHash)
+	revocableDeliveryTxid, err := rpcClient.SendRawTransaction(lastRevocableDeliveryTx.TxHex)
 	if err != nil {
 		log.Println(err)
 		msg := err.Error()
@@ -364,7 +363,7 @@ func (this *channelManager) ForceCloseChannel(jsonData string, user *bean.User) 
 		return nil, err
 	}
 
-	err = addRDTxToWaitDB(tx, lastRevocableDeliveryTx)
+	err = addRDTxToWaitDB(lastRevocableDeliveryTx)
 	if err != nil {
 		return nil, err
 	}
@@ -764,7 +763,7 @@ func (this *channelManager) AfterBobSignCloseChannelAtAliceSide(jsonData string,
 		return nil, err
 	}
 
-	_, err = rpcClient.SendRawTransaction(latestRevocableDeliveryTx.TxHash)
+	_, err = rpcClient.SendRawTransaction(latestRevocableDeliveryTx.TxHex)
 	if err != nil {
 		log.Println(err)
 		msg := err.Error()
@@ -790,7 +789,7 @@ func (this *channelManager) AfterBobSignCloseChannelAtAliceSide(jsonData string,
 		return nil, err
 	}
 
-	err = addRDTxToWaitDB(tx, latestRevocableDeliveryTx)
+	err = addRDTxToWaitDB(latestRevocableDeliveryTx)
 	if err != nil {
 		return nil, err
 	}
@@ -860,7 +859,7 @@ func (this *channelManager) CloseHtlcChannelSigned(channelInfo *dao.ChannelInfo,
 		return nil, "", err
 	}
 
-	latestRsmcRDTxid, err := rpcClient.SendRawTransaction(latestRsmcRD.TxHash)
+	latestRsmcRDTxid, err := rpcClient.SendRawTransaction(latestRsmcRD.TxHex)
 	if err != nil {
 		log.Println(err)
 		msg := err.Error()
@@ -907,8 +906,8 @@ func (this *channelManager) CloseHtlcChannelSigned(channelInfo *dao.ChannelInfo,
 				q.Eq("Owner", closeOpStarter)).
 				First(hednx)
 			if err == nil {
-				if tool.CheckIsString(&hednx.TxHash) {
-					_, err := rpcClient.SendRawTransaction(hednx.TxHash)
+				if tool.CheckIsString(&hednx.TxHex) {
+					_, err := rpcClient.SendRawTransaction(hednx.TxHex)
 					if err != nil {
 						log.Println(err)
 						return nil, "", err
@@ -930,8 +929,8 @@ func (this *channelManager) CloseHtlcChannelSigned(channelInfo *dao.ChannelInfo,
 				q.Eq("Owner", closeOpStarter)).
 				First(htdnx)
 			if err == nil {
-				if tool.CheckIsString(&htdnx.TxHash) {
-					_, err := rpcClient.SendRawTransaction(htdnx.TxHash)
+				if tool.CheckIsString(&htdnx.TxHex) {
+					_, err := rpcClient.SendRawTransaction(htdnx.TxHex)
 					if err != nil {
 						log.Println(err)
 						msg := err.Error()
@@ -965,12 +964,12 @@ func (this *channelManager) CloseHtlcChannelSigned(channelInfo *dao.ChannelInfo,
 				q.Eq("CurrState", dao.TxInfoState_CreateAndSign)).
 				First(htrd)
 			if err == nil {
-				if tool.CheckIsString(&htnx.RSMCTxHash) {
+				if tool.CheckIsString(&htnx.RSMCTxHex) {
 					//广播alice的ht1a 或者bob的he1b
-					_, err := rpcClient.SendRawTransaction(htnx.RSMCTxHash)
+					_, err := rpcClient.SendRawTransaction(htnx.RSMCTxHex)
 					if err == nil { //如果已经超时 比如alic的3天超时，bob的得到R后的交易的无等待锁定
-						if tool.CheckIsString(&htrd.TxHash) {
-							_, err = rpcClient.SendRawTransaction(htrd.TxHash)
+						if tool.CheckIsString(&htrd.TxHex) {
+							_, err = rpcClient.SendRawTransaction(htrd.TxHex)
 							if err != nil {
 								log.Println(err)
 								msg := err.Error()
@@ -978,7 +977,7 @@ func (this *channelManager) CloseHtlcChannelSigned(channelInfo *dao.ChannelInfo,
 									return nil, "", err
 								}
 							}
-							_ = addRDTxToWaitDB(tx, htrd)
+							_ = addRDTxToWaitDB(htrd)
 							htnx.CurrState = dao.TxInfoState_SendHex
 							htnx.SendAt = time.Now()
 							_ = tx.Update(htnx)
@@ -1018,7 +1017,7 @@ func (this *channelManager) CloseHtlcChannelSigned(channelInfo *dao.ChannelInfo,
 		return nil, "", err
 	}
 
-	err = addRDTxToWaitDB(tx, latestRsmcRD)
+	err = addRDTxToWaitDB(latestRsmcRD)
 	if err != nil {
 		return nil, "", err
 	}
@@ -1041,19 +1040,36 @@ func (this *channelManager) CloseHtlcChannelSigned(channelInfo *dao.ChannelInfo,
 	return channelInfo, closeOpStarter, nil
 }
 
-func addRDTxToWaitDB(tx storm.Node, lastRevocableDeliveryTx *dao.RevocableDeliveryTransaction) (err error) {
+func (this *channelManager) TestDb(user bean.User) {
+	tx, err := user.Db.Begin(true)
+	if err != nil {
+		log.Println(err)
+	}
+	transaction := &dao.RevocableDeliveryTransaction{}
+	_ = tx.Select(q.Eq("ChannelId", "a809e2c1381400bba2ee635fad985cacdf6ac2afa27682814b855013c80805f1")).OrderBy("CreateAt").Reverse().First(transaction)
+	addRDTxToWaitDB(transaction)
+
+	defer tx.Rollback()
+
+	tx.Commit()
+}
+
+func addRDTxToWaitDB(lastRevocableDeliveryTx *dao.RevocableDeliveryTransaction) (err error) {
+	if lastRevocableDeliveryTx == nil || tool.CheckIsString(&lastRevocableDeliveryTx.TxHex) == false {
+		return errors.New("empty tx hex")
+	}
 	node := &dao.RDTxWaitingSend{}
-	count, err := tx.Select(
-		q.Eq("TransactionHex", lastRevocableDeliveryTx.TxHash)).
+	count, err := db.Select(
+		q.Eq("TransactionHex", lastRevocableDeliveryTx.TxHex)).
 		Count(node)
 	if count > 0 {
 		return errors.New("already save")
 	}
-	node.TransactionHex = lastRevocableDeliveryTx.TxHash
+	node.TransactionHex = lastRevocableDeliveryTx.TxHex
 	node.Type = 0
 	node.IsEnable = true
 	node.CreateAt = time.Now()
-	err = tx.Save(node)
+	err = db.Save(node)
 	if err != nil {
 		return err
 	}
