@@ -20,8 +20,68 @@ type htlcForwardTxManager struct {
 
 const singleHopPerHopDuration = 6 * 24
 
-// htlc 正向交易
+// htlc pay money  付款
 var HtlcForwardTxService htlcForwardTxManager
+
+// 4001 find htlc find path
+func (service *htlcForwardTxManager) PayerRequestFindPath(msgData string, user bean.User) (data interface{}, err error) {
+	if tool.CheckIsString(&msgData) == false {
+		return nil, errors.New("empty json data")
+	}
+
+	reqData := &bean.HtlcRequestFindPath{}
+	err = json.Unmarshal([]byte(msgData), reqData)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+
+	if tool.CheckIsString(&reqData.RecipientPeerId) == false {
+		return nil, errors.New("wrong recipient_peer_id")
+	}
+
+	if tool.CheckIsString(&reqData.RecipientP2PPeerId) == false {
+		return nil, errors.New("wrong recipient_p2p_peer_id")
+	}
+
+	if reqData.RecipientP2PPeerId == P2PLocalPeerId {
+		if err := FindUserIsOnline(reqData.RecipientPeerId); err != nil {
+			return nil, err
+		}
+	}
+
+	if reqData.PropertyId < 0 {
+		return nil, errors.New("wrong property_id")
+	}
+	if reqData.Amount < config.Dust {
+		return nil, errors.New("wrong amount")
+	}
+
+	//find  path
+	channelAliceInfos := getAllChannels(user.PeerId)
+	if len(channelAliceInfos) == 0 {
+		return nil, errors.New("you have no useful channels")
+	}
+	//if has the currChannel direct
+	var directChannel dao.ChannelInfo
+	for _, item := range channelAliceInfos {
+		interNode := checkChannelCanBeUseAsInterNode(item, user, *reqData)
+		if interNode != nil {
+			directChannel = *interNode
+			break
+		}
+	}
+	channelIdArr := make([]string, 0)
+	if &directChannel != nil {
+		log.Println("has direct currChannel")
+		channelIdArr = append(channelIdArr, directChannel.ChannelId)
+	} else {
+		err = errors.New("has no direct currChannel")
+		log.Println(err)
+		return nil, err
+	}
+	return channelIdArr, nil
+}
 
 // -42 find inter node and send msg to inter node
 func (service *htlcForwardTxManager) AliceFindPathAndSendToBob(msgData string, user bean.User) (data map[string]interface{}, bob string, err error) {
@@ -895,4 +955,25 @@ func (service *htlcForwardTxManager) htlcCreateBobSideTxs(dbTx storm.Node, chann
 	log.Println(hena)
 
 	return commitmentTxInfo, nil
+}
+
+func checkChannelCanBeUseAsInterNode(item dao.ChannelInfo, user bean.User, reqData bean.HtlcRequestFindPath) *dao.ChannelInfo {
+	flag := false
+	if item.PeerIdA == user.PeerId && item.PeerIdB == reqData.RecipientPeerId {
+		flag = true
+	}
+	if item.PeerIdB == user.PeerId && item.PeerIdA == reqData.RecipientPeerId {
+		flag = true
+	}
+	if flag {
+		commitmentTxInfo, err := getLatestCommitmentTx(item.ChannelId, user.PeerId)
+		if err == nil {
+			if commitmentTxInfo.PropertyId == reqData.PropertyId &&
+				commitmentTxInfo.CurrState == dao.TxInfoState_CreateAndSign &&
+				commitmentTxInfo.AmountToRSMC >= reqData.Amount {
+				return &item
+			}
+		}
+	}
+	return nil
 }

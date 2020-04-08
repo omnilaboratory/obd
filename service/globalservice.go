@@ -15,6 +15,7 @@ import (
 )
 
 var db *storm.DB
+var P2PLocalPeerId string
 var rpcClient *rpc.Client
 
 //for store the privateKey

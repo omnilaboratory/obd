@@ -15,7 +15,7 @@ func (client *Client) htlcHDealModule(msg bean.RequestMessage) (enum.SendTargetT
 
 	switch msg.Type {
 	case enum.MsgType_HTLC_AddHTLC_N40, enum.MsgType_HTLC_Invoice_N4003:
-		htlcHRequest := &bean.HtlcHRequest{}
+		htlcHRequest := &bean.HtlcRequestFindPath{}
 		err := json.Unmarshal([]byte(msg.Data), htlcHRequest)
 		if err != nil {
 			data = err.Error()
@@ -39,8 +39,8 @@ func (client *Client) htlcHDealModule(msg bean.RequestMessage) (enum.SendTargetT
 		}
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
-	case enum.MsgType_HTLC_CreatedRAndHInfoList_N4001:
-		respond, err := service.HtlcHMessageService.GetHtlcCreatedRandHInfoList(client.User)
+	case enum.MsgType_HTLC_FindPath_N4001:
+		respond, err := service.HtlcForwardTxService.PayerRequestFindPath(msg.Data, *client.User)
 		if err != nil {
 			data = err.Error()
 		} else {
@@ -53,7 +53,6 @@ func (client *Client) htlcHDealModule(msg bean.RequestMessage) (enum.SendTargetT
 			}
 		}
 		client.sendToMyself(msg.Type, status, data)
-		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_HTLC_CreatedRAndHInfoItem_N4002:
 		respond, err := service.HtlcHMessageService.GetHtlcCreatedRandHInfoItemById(msg.Data, client.User)
 		if err != nil {

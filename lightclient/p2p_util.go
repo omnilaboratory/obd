@@ -15,6 +15,7 @@ import (
 	mrand "math/rand"
 	"obd/bean"
 	"obd/config"
+	"obd/service"
 	"obd/tool"
 	"strings"
 
@@ -67,6 +68,7 @@ func StartP2PServer() {
 	}
 	p2pChannelMap = make(map[string]*P2PChannel)
 	P2PLocalPeerId = host.ID().Pretty()
+	service.P2PLocalPeerId = P2PLocalPeerId
 
 	localServerDest = fmt.Sprintf("/ip4/127.0.0.1/tcp/%v/p2p/%s", config.P2P_sourcePort, host.ID().Pretty())
 	log.Println(localServerDest)

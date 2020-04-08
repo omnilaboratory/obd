@@ -91,9 +91,10 @@ const (
 	MsgType_CloseChannelRequest_N38 MsgType = -38
 	MsgType_CloseChannelSign_N39    MsgType = -39
 
+	// 寻路
+	MsgType_HTLC_FindPath_N4001             MsgType = -4001
 	MsgType_HTLC_Invoice_N4003              MsgType = -4003
 	MsgType_HTLC_AddHTLC_N40                MsgType = -40
-	MsgType_HTLC_CreatedRAndHInfoList_N4001 MsgType = -4001
 	MsgType_HTLC_CreatedRAndHInfoItem_N4002 MsgType = -4002
 	MsgType_HTLC_AddHTLCSigned_N41          MsgType = -41
 	MsgType_HTLC_SignedRAndHInfoList_N4101  MsgType = -4101

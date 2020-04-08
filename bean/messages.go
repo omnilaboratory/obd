@@ -192,11 +192,12 @@ type GetBalanceRespond struct {
 	Frozen float64 `json:"frozen"`
 }
 
-//type -40: alice tell carl ,she wanna transfer some money to Carl
-type HtlcHRequest struct {
-	PropertyId      int64   `json:"property_id"`
-	Amount          float64 `json:"amount"`
-	RecipientPeerId string  `json:"recipient_peer_id"`
+//type -4001: alice tell carl ,she wanna transfer some money to Carl
+type HtlcRequestFindPath struct {
+	RecipientP2PPeerId string  `json:"recipient_p2p_peer_id"`
+	RecipientPeerId    string  `json:"recipient_peer_id"`
+	PropertyId         int64   `json:"property_id"`
+	Amount             float64 `json:"amount"`
 }
 
 //type -41: carl tell alice the H,and he ca

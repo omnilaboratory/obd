@@ -38,7 +38,7 @@ func (service *htlcHMessageManager) AddHTLC(jsonData string,
 	}
 
 	// Get [HtlcHRequest] struct object from [jsonData].
-	htlcHRequest := &bean.HtlcHRequest{}
+	htlcHRequest := &bean.HtlcRequestFindPath{}
 	err = json.Unmarshal([]byte(jsonData), htlcHRequest)
 	if err != nil {
 		return nil, err
@@ -157,7 +157,7 @@ func (service *htlcHMessageManager) AddHTLCSigned(jsonData string,
 // Case 3. The middleman is NOT online, CAN NOT launch HTLC.
 //
 // Case 4. There is a online middleman, but NOT enough balance in channel.
-func checkIfHtlcCanBeLaunched(creator *bean.User, htlcHRequest *bean.HtlcHRequest) error {
+func checkIfHtlcCanBeLaunched(creator *bean.User, htlcHRequest *bean.HtlcRequestFindPath) error {
 
 	// Case 1. There is a direct channel between Alice and Carol.
 	// Get all channels of Alice.
