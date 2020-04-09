@@ -297,7 +297,7 @@ func (service *fundingTransactionManager) BeforeBobSignBtcFundingAtBobSide(data 
 	} else {
 		if fundingBtcRequest.IsFinish {
 			fundingBtcRequest.IsFinish = false
-			tx.Update(fundingBtcRequest)
+			_ = tx.Update(fundingBtcRequest)
 		}
 	}
 
@@ -389,6 +389,7 @@ func (service *fundingTransactionManager) FundingBtcTxSigned(jsonData string, us
 	fundingBtcRequest.SignAt = time.Now()
 	if reqData.Approval == false {
 		_ = tx.Update(fundingBtcRequest)
+		_ = tx.Commit()
 		return node, funder, nil
 	}
 
@@ -1270,6 +1271,7 @@ func (service *fundingTransactionManager) AfterBobSignOmniFundingAtAilceSide(dat
 	if approval == false {
 		fundingTransaction.CurrState = dao.FundingTransactionState_Defuse
 		_ = tx.Update(fundingTransaction)
+		_ = tx.Commit()
 		return node, nil
 	}
 

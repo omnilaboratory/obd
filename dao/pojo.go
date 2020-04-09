@@ -91,12 +91,13 @@ type FundingTransaction struct {
 type TxInfoState int
 
 const (
-	TxInfoState_RsmcCreate    TxInfoState = 5
-	TxInfoState_CreateAndSign TxInfoState = 10
-	TxInfoState_Htlc_GetH     TxInfoState = 11 // 创建Htlc交易的时候的状态
-	TxInfoState_Htlc_GetR     TxInfoState = 12 // 获取到R后的状态
-	TxInfoState_SendHex       TxInfoState = 20
-	TxInfoState_Abord         TxInfoState = 30
+	TxInfoState_RsmcCreate       TxInfoState = 5
+	TxInfoState_Htlc_GetH_Create TxInfoState = 6
+	TxInfoState_CreateAndSign    TxInfoState = 10
+	TxInfoState_Htlc_GetH        TxInfoState = 11 // 创建Htlc交易的时候的状态
+	TxInfoState_Htlc_GetR        TxInfoState = 12 // 获取到R后的状态
+	TxInfoState_SendHex          TxInfoState = 20
+	TxInfoState_Abord            TxInfoState = 30
 )
 
 type FundingBtcRequest struct {
@@ -168,9 +169,10 @@ type CommitmentTransaction struct {
 	RSMCTxHex                    string  `json:"rsmc_tx_hex"`
 	RSMCTxid                     string  `json:"rsmc_txid"`
 	//To other
-	ToOtherTxHex  string  `json:"to_other_tx_hex"`
-	ToOtherTxid   string  `json:"to_other_txid"`
-	AmountToOther float64 `json:"amount_to_other"` //amount to bob(if Cna) or alice(if Cnb)
+	ToOtherTxHex            string  `json:"to_other_tx_hex"`
+	ToOtherTxid             string  `json:"to_other_txid"`
+	AmountToOther           float64 `json:"amount_to_other"`               //amount to bob(if Cna) or alice(if Cnb)
+	FromOtherSideForMeTxHex string  `json:"from_other_side_for_me_tx_hex"` //对方给自己的转账部分，防止对方不广播此交易
 	//htlc
 	HTLCTempAddressPubKey        string  `json:"htlc_temp_address_pub_key"` //alice for htlc or bob for htlc
 	HTLCMultiAddress             string  `json:"htlc_multi_address"`        //output aliceTempHtlc&bob  or alice&bobTempHtlc  multiAddr

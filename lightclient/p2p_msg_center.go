@@ -108,6 +108,14 @@ func routerOfP2PNode(msgType enum.MsgType, data string, client *Client) (retData
 			return string(retData), nil
 		}
 		defaultErr = err
+	case enum.MsgType_HTLC_AddHTLC_N40:
+		node, err := service.HtlcForwardTxService.BeforeBobSignPayerAddHtlcAtBobSide(data, *client.User)
+		if err == nil {
+			status = true
+			retData, _ := json.Marshal(node)
+			return string(retData), nil
+		}
+		defaultErr = err
 	default:
 		status = true
 	}

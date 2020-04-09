@@ -14,7 +14,7 @@ func (client *Client) htlcHDealModule(msg bean.RequestMessage) (enum.SendTargetT
 	data := ""
 
 	switch msg.Type {
-	case enum.MsgType_HTLC_AddHTLC_N40, enum.MsgType_HTLC_Invoice_N4003:
+	case enum.MsgType_HTLC_Invoice_N4003:
 		htlcHRequest := &bean.HtlcRequestFindPath{}
 		err := json.Unmarshal([]byte(msg.Data), htlcHRequest)
 		if err != nil {
@@ -51,6 +51,23 @@ func (client *Client) htlcHDealModule(msg bean.RequestMessage) (enum.SendTargetT
 				data = string(bytes)
 				status = true
 			}
+		}
+		client.sendToMyself(msg.Type, status, data)
+	case enum.MsgType_HTLC_AddHTLC_N40:
+		respond, err := service.HtlcForwardTxService.PayerAddHtlc(msg.Data, *client.User)
+		if err != nil {
+			data = err.Error()
+		} else {
+			bytes, err := json.Marshal(respond)
+			if err != nil {
+				data = err.Error()
+			} else {
+				data = string(bytes)
+				status = true
+			}
+		}
+		if status {
+			_ = client.sendDataToP2PUser(msg, true, data)
 		}
 		client.sendToMyself(msg.Type, status, data)
 	case enum.MsgType_HTLC_CreatedRAndHInfoItem_N4002:
