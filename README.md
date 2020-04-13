@@ -1,33 +1,33 @@
-# LightningOnOmni | OmniBOLT Daemon
-[![](https://img.shields.io/badge/license-MIT-blue)](https://github.com/LightningOnOmnilayer/LightningOnOmni/blob/master/LICENSE) [![](https://img.shields.io/badge/standard%20readme-OK-brightgreen)](https://github.com/LightningOnOmnilayer/LightningOnOmni/blob/master/README.md) [![](https://img.shields.io/badge/golang-%3E%3D1.9.0-orange)](https://golang.org/dl/) [![](https://img.shields.io/badge/protocol-OmniBOLT-brightgreen)](https://github.com/LightningOnOmnilayer/Omni-BOLT-spec) 
+# Lightning On Omnilayer | OmniBOLT Daemon
+[![](https://img.shields.io/badge/license-MIT-blue)](https://github.com/omnilaboratory/obd/blob/master/LICENSE) [![](https://img.shields.io/badge/standard%20readme-OK-brightgreen)](https://github.com/omnilaboratory/obd/blob/master/README.md) [![](https://img.shields.io/badge/golang-%3E%3D1.9.0-orange)](https://golang.org/dl/) [![](https://img.shields.io/badge/protocol-OmniBOLT-brightgreen)](https://github.com/omnilaboratory/OmniBOLT-spec) 
 [![](https://img.shields.io/badge/API%20V0.3-Document-blue)](https://api.omnilab.online) 
 
-LightningOnOmni implements the [OmniBOLT](https://github.com/LightningOnOmnilayer/Omni-BOLT-spec) specification, which enables Lightning network to be Omnilayer assets aware. Compile the source code and run the binary executable file, we will have an OmniBOLT deamon(OBD) providing all services for lightning network.   
+obd implements the [OmniBOLT](https://github.com/omnilaboratory/OmniBOLT-spec) specification, which enables Lightning network to be Omnilayer assets aware. Compile the source code and run the binary executable file, we will have an OmniBOLT deamon(OBD) providing all services for lightning network.   
 
 
 # Table of Contents
 
- * [Dependency](https://github.com/LightningOnOmnilayer/LightningOnOmni#dependency)
- * [Installation](https://github.com/LightningOnOmnilayer/LightningOnOmni#installation)
-	* [Step 1: fetch the source code](https://github.com/LightningOnOmnilayer/LightningOnOmni#step-1-fetch-the-source-code)
-	* [Step 2: set up OmniCore node](https://github.com/LightningOnOmnilayer/LightningOnOmni#step-2)
-	* [Step 3: compile and run OmniBOLT daemon](https://github.com/LightningOnOmnilayer/LightningOnOmni#step-3-compile-and-run-omnibolt-daemon)
-	* [Step 4: test channel operations using Websocket testing tool](https://github.com/LightningOnOmnilayer/LightningOnOmni#step-4-test-channel-operations-using-websocket-testing-tool)
-	* [Step 5: channel operations on test site](https://github.com/LightningOnOmnilayer/LightningOnOmni#step-5-channel-operations-on-test-site)
-		* [login](https://github.com/LightningOnOmnilayer/LightningOnOmni#login)
-		* [create channel](https://github.com/LightningOnOmnilayer/LightningOnOmni#create-channel)
-		* [deposit](https://github.com/LightningOnOmnilayer/LightningOnOmni#deposit)
-		* [payments in channel](https://github.com/LightningOnOmnilayer/LightningOnOmni#payments-in-a-channel)
+ * [Dependency](https://github.com/omnilaboratory/obd#dependency)
+ * [Installation](https://github.com/omnilaboratory/obd#installation)
+	* [Step 1: fetch the source code](https://github.com/omnilaboratory/obd#step-1-fetch-the-source-code)
+	* [Step 2: set up OmniCore node](https://github.com/omnilaboratory/obd#step-2)
+	* [Step 3: compile and run OmniBOLT daemon](https://github.com/omnilaboratory/obd#step-3-compile-and-run-omnibolt-daemon)
+	* [Step 4: test channel operations using Websocket testing tool](https://github.com/omnilaboratory/obd#step-4-test-channel-operations-using-websocket-testing-tool)
+	* [Step 5: channel operations on test site](https://github.com/omnilaboratory/obd#step-5-channel-operations-on-test-site)
+		* [login](https://github.com/omnilaboratory/obd#login)
+		* [create channel](https://github.com/omnilaboratory/obd#create-channel)
+		* [deposit](https://github.com/omnilaboratory/obd#deposit)
+		* [payments in channel](https://github.com/omnilaboratory/obd#payments-in-a-channel)
 		* close channel (TBD)
 
 	<!-- Added by Kevin Zhang 2019-11-19 -->
-	* [Step 6: transfer assets through HTLC](https://github.com/LightningOnOmnilayer/LightningOnOmni#step-6-transfer-assets-through-HTLC)
+	* [Step 6: transfer assets through HTLC](https://github.com/omnilaboratory/obd#step-6-transfer-assets-through-HTLC)
 
- * [API Document](https://github.com/LightningOnOmnilayer/LightningOnOmni#api-document)
- * [How to Contribute](https://github.com/LightningOnOmnilayer/LightningOnOmni#how-to-contribute)
- * [Current Features](https://github.com/LightningOnOmnilayer/LightningOnOmni#current-features)
- * [Comming Features](https://github.com/LightningOnOmnilayer/LightningOnOmni#comming-features)
- * [Related Projects](https://github.com/LightningOnOmnilayer/LightningOnOmni#related-projects)
+ * [API Document](https://github.com/omnilaboratory/obd#api-document)
+ * [How to Contribute](https://github.com/omnilaboratory/obd#how-to-contribute)
+ * [Current Features](https://github.com/omnilaboratory/obd#current-features)
+ * [Comming Features](https://github.com/omnilaboratory/obd#comming-features)
+ * [Related Projects](https://github.com/omnilaboratory/obd#related-projects)
 
 # Dependency
 
@@ -43,7 +43,7 @@ The following instruction works for Ubuntu 14.04.4 LTS, golang 1.10 or later.
 on your terminal:
 
 ```
-$ git clone https://github.com/LightningOnOmnilayer/LightningOnOmni.git
+$ git clone https://github.com/omnilaboratory/obd.git
 ```
 
 or if you already set up your local git repo, you just need to fetch the latest version: 
@@ -56,8 +56,8 @@ check if all updated:
 
 ```
 $ git remote -v
-origin	https://github.com/LightningOnOmnilayer/LightningOnOmni.git (fetch)
-origin	https://github.com/LightningOnOmnilayer/LightningOnOmni.git (push)
+origin	https://github.com/omnilaboratory/obd.git (fetch)
+origin	https://github.com/omnilaboratory/obd.git (push)
 ```
 
 ## Step 2: 
@@ -69,7 +69,7 @@ host=62.234.216.108:18332
 user=omniwallet
 pass=cB3]iL2@eZ1?cB2?
 ```
-This is a tesing full node for our community to run/call/test omni commands remotely. The OmniBOLT daemon invocates Omni RPC commands from this node, if you use this configuration. It is the most conveniente way to get started.
+This is a tesing full node for our community to run/call/test omni commands remotely. The OmniBOLT daemon invokes Omni RPC commands from this node, if you use this configuration. It is the most conveniente way to get started.
 
 The other option uses local omnicore full node:  
 
@@ -89,7 +89,7 @@ pass=your password
 Before compile `obdserver.go` file, you should be get all related packages by run `go get` command in terminal.
 Example: `go get google.golang.org/grpc`
 
-This is a full list for need to get packages.
+This is a full list needed to get packages.
 
 ```
 google.golang.org/grpc
@@ -182,7 +182,7 @@ https://chrome.google.com/webstore/detail/websocket-test-client/fgponpodhbmadflj
 Make sure your browser supports WebSocket, as displayed in this screenshot.
 
 <p align="center">
-  <img width="500" alt="Screenshot of Websocket online testing site" src="https://github.com/LightningOnOmnilayer/Omni-BOLT-spec/blob/master/imgs/WebSocketTestSite.png">
+  <img width="500" alt="Screenshot of Websocket online testing site" src="https://github.com/omnilaboratory/OmniBOLT-spec/blob/master/imgs/WebSocketTestSite.png">
 </p>
 
 Input `ws://127.0.0.1:60020/ws`, press `Open`. If on the right text pannel, displays `OPENED`, then we are ready to send messeages to OBD.
@@ -758,7 +758,7 @@ A formal HTL contract describes the following procedure:
 
 If Bob can tell Alice the secret R, which is the pre-image of <code>Hash(R)</code> that some one else (Carol) in the chain shared with Bob 3 days ago in exchange of 10 USDT in the channel <code>[Bob Carol]</code>, then Bob will get the 10 USDT fund inside the channel <code>[Alice Bob]</code>, otherwise Alice gets her 10 USDT back.
 
-Readers shall find the latest specification in [OmniBOLT 04: HTLC and Payment Routing](https://github.com/LightningOnOmnilayer/Omni-BOLT-spec/blob/master/OmniBOLT-04-HTLC-and-Payment-Routing.md)
+Readers shall find the latest specification in [OmniBOLT 04: HTLC and Payment Routing](https://github.com/omnilaboratory/OmniBOLT-spec/blob/master/OmniBOLT-04-HTLC-and-Payment-Routing.md)
 
 <br/>
 
@@ -2044,7 +2044,7 @@ Please submit issues to this repo or help us with those open ones.
 
 Guidelines:
 
-  * read the [OmniBOLT](https://github.com/LightningOnOmnilayer/Omni-BOLT-spec) spec. If you have any question over there, raise issues in that repo.
+  * read the [OmniBOLT](https://github.com/omnilaboratory/OmniBOLT-spec) spec. If you have any question over there, raise issues in that repo.
   * ask questions or talk about things in Issues.
   * make branches and raise pull-request, even if working on the main repository.
   * don't copy/past any code from anywhere else in contribution, because we have limited resource to compare source codes to avoid legal issues. What we can do is to read your code, run tests of your newly developed modules and read your comments in your branch to see if it is solving a real problem. 
@@ -2095,13 +2095,13 @@ Join us in [OmniBOLT slack channel](https://join.slack.com/t/omnibolt/shared_inv
 
 [https://github.com/OmniLayer/spec](https://github.com/OmniLayer/spec)
 
-[https://github.com/LightningOnOmnilayer/Omni-BOLT-spec](https://github.com/LightningOnOmnilayer/Omni-BOLT-spec)
+[https://github.com/omnilaboratory/OmniBOLT-spec](https://github.com/omnilaboratory/OmniBOLT-spec)
 
 [https://github.com/lightningnetwork/lightning-rfc](https://github.com/lightningnetwork/lightning-rfc)
 
 [https://github.com/lightningnetwork/lnd](https://github.com/lightningnetwork/lnd)
 
-[https://github.com/LightningOnOmnilayer/OmniWalletMobile](https://github.com/LightningOnOmnilayer/OmniWalletMobile)
+[https://github.com/omnilaboratory/OmniWalletMobile](https://github.com/omnilaboratory/OmniWalletMobile)
 
 
 
