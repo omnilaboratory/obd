@@ -23,9 +23,7 @@ var (
 	ChainNode_Pass = "cB3]iL2@eZ1?cB2?"
 
 	//P2P
-	P2P_hostIp     = "127.0.0.1"
 	P2P_sourcePort = 3001
-	P2P_dest       = "/ip4/127.0.0.1/tcp/3001/p2p/QmcxsSTeHBEfaWBb2QKe5UZWK8ezWJkxJfmcb5rQV374M6"
 )
 
 func init() {
@@ -61,7 +59,5 @@ func init() {
 		log.Println(err)
 		return
 	}
-	P2P_hostIp = p2pNode.Key("hostIp").String()
 	P2P_sourcePort = p2pNode.Key("sourcePort").MustInt()
-	P2P_dest = p2pNode.Key("dest").String()
 }
