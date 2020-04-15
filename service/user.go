@@ -4,6 +4,7 @@ import (
 	"errors"
 	"github.com/asdine/storm/q"
 	"github.com/tyler-smith/go-bip39"
+	"log"
 	"obd/bean"
 	"obd/dao"
 	"obd/tool"
@@ -59,6 +60,7 @@ func (service *UserManager) UserLogin(user *bean.User) error {
 	}
 	var node dao.User
 	user.PeerId = tool.SignMsgWithSha256([]byte(user.Mnemonic))
+	log.Println("-------------------  UserLogin user.PeerId " + user.PeerId)
 	userDB, err := dao.DBService.GetUserDB(user.PeerId)
 	if err != nil {
 		return err
