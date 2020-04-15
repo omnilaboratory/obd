@@ -57,6 +57,21 @@ func (client *Client) omniCoreModule(msg bean.RequestMessage) (enum.SendTargetTy
 		}
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
+	case enum.MsgType_Core_Omni_GetProperty_1207:
+		propertyId := gjson.Get(msg.Data, "propertyId").Int()
+		if propertyId == 0 {
+			data = "error propertyId"
+		} else {
+			result, err := rpcClient.OmniGetProperty(propertyId)
+			if err != nil {
+				data = err.Error()
+			} else {
+				data = result
+				status = true
+			}
+		}
+		client.sendToMyself(msg.Type, status, data)
+		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_Core_SignMessageWithPrivKey_1004:
 		privkey := gjson.Get(msg.Data, "privkey").String()
 		message := gjson.Get(msg.Data, "message").String()

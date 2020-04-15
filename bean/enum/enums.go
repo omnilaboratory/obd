@@ -37,6 +37,7 @@ const (
 	MsgType_Core_Omni_RevokeUnitsOfManagedToken_1204   MsgType = 1204
 	MsgType_Core_Omni_ListProperties_1205              MsgType = 1205
 	MsgType_Core_Omni_GetTransaction_1206              MsgType = 1206
+	MsgType_Core_Omni_GetProperty_1207                 MsgType = 1207
 
 	MsgType_Core_Omni_FundingAsset_2001 MsgType = 2001
 
