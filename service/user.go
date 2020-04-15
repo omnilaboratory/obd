@@ -101,7 +101,7 @@ func (service *UserManager) UserLogout(user *bean.User) error {
 		return err
 	}
 	node.State = bean.UserState_Offline
-	return db.Update(node)
+	return user.Db.Update(node)
 }
 
 func (service *UserManager) UserInfo(email string) (user *dao.User, e error) {
