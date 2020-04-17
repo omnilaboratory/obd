@@ -713,9 +713,6 @@ func (service *fundingTransactionManager) AssetFundingCreated(jsonData string, u
 		needCreateC1a = true
 	}
 
-	channelInfo.ChannelId = fundingTransaction.ChannelId
-	channelInfo.PropertyId = propertyId
-
 	fundingTransaction.ChannelInfoId = channelInfo.Id
 	fundingTransaction.PropertyId = propertyId
 	fundingTransaction.PeerIdA = channelInfo.PeerIdA
@@ -743,6 +740,10 @@ func (service *fundingTransactionManager) AssetFundingCreated(jsonData string, u
 		log.Println(err)
 		return nil, err
 	}
+
+	channelInfo.ChannelId = fundingTransaction.ChannelId
+	channelInfo.PropertyId = propertyId
+	channelInfo.FundingAddress = fundingTransaction.FunderAddress
 
 	var commitmentTxInfo *dao.CommitmentTransaction
 	if needCreateC1a {
@@ -793,7 +794,7 @@ func (service *fundingTransactionManager) AssetFundingCreated(jsonData string, u
 			commitmentTxInfo.RSMCTxHex = hex
 		}
 
-		commitmentTxInfo.CurrState = dao.TxInfoState_RsmcCreate
+		commitmentTxInfo.CurrState = dao.TxInfoState_Create
 		commitmentTxInfo.LastHash = ""
 		commitmentTxInfo.CurrHash = ""
 		err = tx.Save(commitmentTxInfo)
@@ -1179,16 +1180,18 @@ func (service *fundingTransactionManager) AssetFundingSigned(jsonData string, si
 	//endregion create RD tx for alice
 
 	channelInfo.PropertyId = fundingTransaction.PropertyId
+	channelInfo.FundingAddress = fundingTransaction.FunderAddress
 	// region create BR1b tx  for bob
 	lastCommitmentTx := &dao.CommitmentTransaction{}
 	lastCommitmentTx.Id = 0
-	lastCommitmentTx.PropertyId = fundingTransaction.PropertyId
+	lastCommitmentTx.PropertyId = channelInfo.PropertyId
 	lastCommitmentTx.RSMCMultiAddress = rsmcMultiAddress
 	lastCommitmentTx.RSMCRedeemScript = rsmcRedeemScript
+	lastCommitmentTx.RSMCMultiAddressScriptPubKey = rsmcMultiAddressScriptPubKey
 	lastCommitmentTx.RSMCTxHex = signedRsmcHex
 	lastCommitmentTx.RSMCTxid = rsmcTxId
 	lastCommitmentTx.AmountToRSMC = funderAmount
-	err = createCurrBR(tx, channelInfo, lastCommitmentTx, inputs, myAddress, fundingTransaction.FunderAddress, reqData.FundeeChannelAddressPrivateKey, *signer)
+	err = createCurrCommitmentTxBR(tx, dao.BRType_Rmsc, channelInfo, lastCommitmentTx, inputs, myAddress, reqData.FundeeChannelAddressPrivateKey, *signer)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -1349,7 +1352,7 @@ func (service *fundingTransactionManager) AfterBobSignOmniFundingAtAilceSide(dat
 			return nil, errors.New(gjson.Parse(result).Array()[0].Get("reject-reason").String())
 		}
 	}
-	txid = checkRdOutputAddressFromOmniDecode(signedRdHex, inputs, toAddress)
+	txid = checkHexOutputAddressFromOmniDecode(signedRdHex, inputs, toAddress)
 	if txid == "" {
 		return nil, errors.New("rdtx has wrong output address")
 	}
@@ -1394,7 +1397,7 @@ func (service *fundingTransactionManager) AfterBobSignOmniFundingAtAilceSide(dat
 	return node, nil
 }
 
-func checkRdOutputAddressFromOmniDecode(hexDecode string, inputs []rpc.TransactionInputItem, toAddress string) string {
+func checkHexOutputAddressFromOmniDecode(hexDecode string, inputs []rpc.TransactionInputItem, toAddress string) string {
 	result, err := rpcClient.OmniDecodeTransactionWithPrevTxs(hexDecode, inputs)
 	if err != nil {
 		return ""

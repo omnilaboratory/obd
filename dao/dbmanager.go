@@ -32,7 +32,6 @@ func (manager dbManager) GetGlobalDB() (*storm.DB, error) {
 }
 
 func (manager dbManager) GetUserDB(peerId string) (*storm.DB, error) {
-
 	_dir := "dbdata"
 	_ = tool.PathExistsAndCreate(_dir)
 

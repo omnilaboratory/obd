@@ -5,7 +5,6 @@ import (
 	"github.com/asdine/storm/q"
 	"log"
 	"obd/dao"
-	"obd/tool"
 	"strings"
 )
 
@@ -67,7 +66,7 @@ func (this *pathManager) CreateDemoChannelNetwork(realSenderPeerId, currReceiver
 	}
 
 	if currNode.Level > 0 {
-		amount += tool.GetHtlcFee()
+		amount += GetHtlcFee()
 	}
 
 	currNodeIndex := 0
@@ -175,7 +174,7 @@ func (this *pathManager) GetPath(realSenderPeerId, currReceiverPeerId string,
 	}
 
 	if currNode.Level > 0 {
-		amount += tool.GetHtlcFee()
+		amount += GetHtlcFee()
 	}
 
 	currNodeIndex := 0
@@ -368,7 +367,7 @@ func (p *pathManager) dealNodeFromReceiver(currChannel dao.ChannelInfo, commitme
 	parentNode *PathNode, tree *PathNode, nodeMap map[string]*PathNode, branchMap map[string]*PathBranchInfo) {
 
 	if commitmentTxInfo.AmountToRSMC > needReceiveAmount {
-		needReceiveAmount += tool.GetHtlcFee() * float64(parentNode.Level)
+		needReceiveAmount += GetHtlcFee() * float64(parentNode.Level)
 		newNode := &PathNode{
 			//ParentNode:     len(openList) - 1,
 			CurrNodePeerId: interSenderPeerId,

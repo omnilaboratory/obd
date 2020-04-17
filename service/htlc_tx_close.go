@@ -770,7 +770,7 @@ func createAliceSideBRTxs(tx storm.Node, channelInfo dao.ChannelInfo, isAliceExe
 		return nil, err
 	}
 
-	br, err := createBRTx(brOwner, &channelInfo, lastCommitmentTxInfo, &user)
+	br, err := createBRTxObj(brOwner, &channelInfo, dao.BRType_Rmsc, lastCommitmentTxInfo, &user)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -1037,7 +1037,7 @@ func createBobSideBRTxs(tx storm.Node, channelInfo dao.ChannelInfo, isAliceExecu
 		return nil, err
 	}
 
-	br, err := createBRTx(brOwner, &channelInfo, lastCommitmentTxInfo, &user)
+	br, err := createBRTxObj(brOwner, &channelInfo, dao.BRType_Rmsc, lastCommitmentTxInfo, &user)
 	if err != nil {
 		log.Println(err)
 		return nil, err

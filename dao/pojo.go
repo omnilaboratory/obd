@@ -91,13 +91,13 @@ type FundingTransaction struct {
 type TxInfoState int
 
 const (
-	TxInfoState_RsmcCreate       TxInfoState = 5
-	TxInfoState_Htlc_GetH_Create TxInfoState = 6
-	TxInfoState_CreateAndSign    TxInfoState = 10
-	TxInfoState_Htlc_GetH        TxInfoState = 11 // 创建Htlc交易的时候的状态
-	TxInfoState_Htlc_GetR        TxInfoState = 12 // 获取到R后的状态
-	TxInfoState_SendHex          TxInfoState = 20
-	TxInfoState_Abord            TxInfoState = 30
+	TxInfoState_Create              TxInfoState = 5
+	TxInfoState_Htlc_WaitHTRD1aSign TxInfoState = 6 //等待bob创建htrd1a
+	TxInfoState_CreateAndSign       TxInfoState = 10
+	TxInfoState_Htlc_GetH           TxInfoState = 11 // 创建Htlc交易的时候的状态
+	TxInfoState_Htlc_GetR           TxInfoState = 12 // 获取到R后的状态
+	TxInfoState_SendHex             TxInfoState = 20
+	TxInfoState_Abord               TxInfoState = 30
 )
 
 type FundingBtcRequest struct {
@@ -174,6 +174,7 @@ type CommitmentTransaction struct {
 	AmountToOther           float64 `json:"amount_to_other"`               //amount to bob(if Cna) or alice(if Cnb)
 	FromOtherSideForMeTxHex string  `json:"from_other_side_for_me_tx_hex"` //对方给自己的转账部分，防止对方不广播此交易
 	//htlc
+	HtlcChannelPath              string  `json:"htlc_channel_path"`         //借道Path
 	HTLCTempAddressPubKey        string  `json:"htlc_temp_address_pub_key"` //alice for htlc or bob for htlc
 	HTLCMultiAddress             string  `json:"htlc_multi_address"`        //output aliceTempHtlc&bob  or alice&bobTempHtlc  multiAddr
 	HTLCRedeemScript             string  `json:"htlc_redeem_script"`
@@ -230,6 +231,14 @@ type RDTxWaitingSend struct {
 	CreateAt          time.Time `json:"create_at"`
 	FinishAt          time.Time `json:"finish_at"`
 }
+type BRType int
+
+const (
+	BRType_Rmsc BRType = 0 //来源RSMC
+	BRType_Htlc BRType = 1 //来源Htlc
+	BRType_Ht1a BRType = 2 //来源Ht1a
+	BRType_HE1b BRType = 3 //来源HE1b
+)
 
 // to punish alice do not admit the latest commitment tx
 type BreachRemedyTransaction struct {
@@ -241,7 +250,7 @@ type BreachRemedyTransaction struct {
 	PropertyId               int64       `json:"property_id"`
 	InputAddress             string      `json:"input_address"`
 	InputAddressScriptPubKey string      `json:"input_address_script_pub_key"`
-	RsmcTxHex                string      `json:"rsmc_tx_hex"`
+	InputTxHex               string      `json:"input_tx_hex"`
 	InputTxid                string      `json:"input_txid"`   //input txid  from commitTx alice2&bob multtAddr, so need  sign of alice2 and bob
 	InputVout                uint32      `json:"input_vout"`   // input vout
 	InputAmount              float64     `json:"input_amount"` //input amount
@@ -249,6 +258,7 @@ type BreachRemedyTransaction struct {
 	Amount                   float64     `json:"amount"`    // output bob amount
 	BrTxHex                  string      `json:"br_tx_hex"` // first alice2 sign
 	Txid                     string      `json:"txid"`
+	Type                     BRType      `json:"type"` //:0:rmsc ,1:htlc,2:ht1a 3:hebr1b
 	CurrState                TxInfoState `json:"curr_state"`
 	CreateBy                 string      `json:"create_by"`
 	CreateAt                 time.Time   `json:"create_at"`

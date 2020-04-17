@@ -60,7 +60,6 @@ func (service *UserManager) UserLogin(user *bean.User) error {
 	}
 	var node dao.User
 	user.PeerId = tool.SignMsgWithSha256([]byte(user.Mnemonic))
-	log.Println("-------------------  UserLogin user.PeerId " + user.PeerId)
 	userDB, err := dao.DBService.GetUserDB(user.PeerId)
 	if err != nil {
 		return err
@@ -105,9 +104,7 @@ func (service *UserManager) UserLogout(user *bean.User) error {
 	if err != nil {
 		log.Println(err)
 	}
-	user.Db.Close()
-
-	return nil
+	return user.Db.Close()
 }
 
 func (service *UserManager) UserInfo(email string) (user *dao.User, e error) {

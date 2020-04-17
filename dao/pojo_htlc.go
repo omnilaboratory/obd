@@ -15,12 +15,14 @@ type AddHtlcRequestInfo struct {
 	Memo                             string      `json:"memo"`
 	H                                string      `json:"h"`
 	HtlcChannelPath                  string      `json:"htlc_channel_path"`
+	LastTempAddressPrivateKey        string      `json:"last_temp_address_private_key"`           //	支付方的上一个RSMC委托交易用到的临时地址的私钥 存储在bob这边的请求
 	CurrRsmcTempAddressPubKey        string      `json:"curr_rsmc_temp_address_pub_key"`          //	创建Cnx中的toRsmc的部分使用的临时地址的公钥
 	CurrHtlcTempAddressPubKey        string      `json:"curr_htlc_temp_address_pub_key"`          //	创建Cnx中的toHtlc的部分使用的临时地址的公钥
 	CurrHtlcTempAddressForHt1aPubKey string      `json:"curr_htlc_temp_address_for_ht1a_pub_key"` //	创建Ht1a中生成ht1a的输出的Rmsc的临时地址的公钥
 	CurrState                        NormalState `json:"curr_state"`
 	CreateBy                         string      `json:"create_by"`
 	CreateAt                         time.Time   `json:"create_at"`
+	FinishAt                         time.Time   `json:"finish_at"`
 }
 
 //HT1a 锁住发起方的交易资金：锁住的意思是：把资金放到一个临时多签帐号（alice1&bob）
@@ -69,30 +71,28 @@ type HTLCTimeoutDeliveryTxB struct {
 
 //HED1a when get H , alice 得到H（公钥），生成三签地址，锁住给中间节点的钱，当得到R（私钥）的时候，完成三签地址的签名，生成最终支付交易
 type HTLCExecutionDeliveryOfH struct {
-	Id             int     `storm:"id,increment" json:"id" `
-	ChannelId      string  `json:"channel_id"`
-	PropertyId     int64   `json:"property_id"`
-	CommitmentTxId int     `json:"commitment_tx_id"`
-	InputHex       string  `json:"input_hex"`
-	InputTxid      string  `json:"input_txid"`   // input txid  from commitTx aliceTempHtlc&bob multtaddr, so need  sign of aliceTempHtlc and bob
-	InputVout      uint32  `json:"input_vout"`   // input vout
-	InputAmount    float64 `json:"input_amount"` // input amount
-	HtlcH          string  `json:"htlc_h"`       // H(公钥，三签地址之一)
-	//OwnerTempAddressPubKey string      `json:"temp_address_pub_key"`
-	OtherSideChannelPubKey string      `json:"other_side_channel_pub_key"`
-	OutputAddress          string      `json:"output_address"` // 三签地址 锁定支付资金
-	RedeemScript           string      `json:"redeem_script"`  // 三签地址对应的赎回脚本
-	ScriptPubKey           string      `json:"script_pub_key"`
-	OutAmount              float64     `json:"out_amount"`
-	Timeout                int         `json:"timeout"`
-	TxHex                  string      `json:"tx_hex"`
-	Txid                   string      `json:"txid"`
-	CurrState              TxInfoState `json:"curr_state"`
-	Owner                  string      `json:"owner"`
-	IsEnable               bool        `json:"is_enable"`
-	CreateAt               time.Time   `json:"create_at"`
-	SendAt                 time.Time   `json:"send_at"`
-	CreateBy               string      `json:"create_by"`
+	Id                 int         `storm:"id,increment" json:"id" `
+	ChannelId          string      `json:"channel_id"`
+	PropertyId         int64       `json:"property_id"`
+	CommitmentTxId     int         `json:"commitment_tx_id"`
+	InputHex           string      `json:"input_hex"`
+	InputTxid          string      `json:"input_txid"`   // input txid  from commitTx aliceTempHtlc&bob multtaddr, so need  sign of aliceTempHtlc and bob
+	InputVout          uint32      `json:"input_vout"`   // input vout
+	InputAmount        float64     `json:"input_amount"` // input amount
+	HtlcH              string      `json:"htlc_h"`       // H(公钥，双签地址之一)
+	PayeeChannelPubKey string      `json:"payee_channel_pub_key"`
+	OutputAddress      string      `json:"output_address"` // 双签地址 锁定支付资金
+	RedeemScript       string      `json:"redeem_script"`  // 双签地址对应的赎回脚本
+	ScriptPubKey       string      `json:"script_pub_key"`
+	OutAmount          float64     `json:"out_amount"`
+	Timeout            int         `json:"timeout"`
+	TxHex              string      `json:"tx_hex"`
+	Txid               string      `json:"txid"`
+	CurrState          TxInfoState `json:"curr_state"`
+	Owner              string      `json:"owner"`
+	CreateAt           time.Time   `json:"create_at"`
+	SendAt             time.Time   `json:"send_at"`
+	CreateBy           string      `json:"create_by"`
 }
 
 //HED1a when get R 如果bob返回了正确的R，就可以完成签名，标识这次的htlc可以成功了

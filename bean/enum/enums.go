@@ -95,17 +95,17 @@ const (
 	// 寻路
 	MsgType_HTLC_FindPath_N4001             MsgType = -4001
 	MsgType_HTLC_Invoice_N4003              MsgType = -4003
-	MsgType_HTLC_AddHTLC_N40                MsgType = -40
 	MsgType_HTLC_CreatedRAndHInfoItem_N4002 MsgType = -4002
+	MsgType_HTLC_AddHTLC_N40                MsgType = -40
 	MsgType_HTLC_AddHTLCSigned_N41          MsgType = -41
+	MsgType_HTLC_PayerSignC3b_N42           MsgType = -42
+	MsgType_HTLC_PayeeCreateHTRD1a_N43      MsgType = -43
+	MsgType_HTLC_PayerSignHTRD1a_N44        MsgType = -44
 	MsgType_HTLC_SignedRAndHInfoList_N4101  MsgType = -4101
 	MsgType_HTLC_SignedRAndHInfoItem_N4102  MsgType = -4102
 	MsgType_HTLC_GetRFromLCommitTx_N4103    MsgType = -4103
 	MsgType_HTLC_GetPathInfoByH_N4104       MsgType = -4104
 	MsgType_HTLC_GetRInfoByHOfOwner_N4105   MsgType = -4105
-	MsgType_HTLC_FindPathAndSendH_N42       MsgType = -42
-	MsgType_HTLC_SendH_N43                  MsgType = -43
-	MsgType_HTLC_SignGetH_N44               MsgType = -44
 	MsgType_HTLC_CreateCommitmentTx_N45     MsgType = -45
 	MsgType_HTLC_SendR_N46                  MsgType = -46
 	MsgType_HTLC_VerifyR_N47                MsgType = -47

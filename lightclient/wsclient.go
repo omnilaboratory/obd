@@ -45,6 +45,7 @@ func (client *Client) Read() {
 		if client.User != nil {
 			delete(GlobalWsClientManager.OnlineUserMap, client.User.PeerId)
 			delete(service.OnlineUserMap, client.User.PeerId)
+			client.User = nil
 		}
 		GlobalWsClientManager.Disconnected <- client
 		_ = client.Socket.Close()
@@ -133,8 +134,7 @@ func (client *Client) Read() {
 					msg.Type == enum.MsgType_CommitmentTxSigned_RevokeAndAcknowledgeCommitmentTransaction_N352 ||
 					msg.Type == enum.MsgType_CommitmentTx_CommitmentTransactionCreated_N351 ||
 					msg.Type == enum.MsgType_CloseChannelRequest_N38 || msg.Type == enum.MsgType_CloseChannelSign_N39 ||
-					msg.Type == enum.MsgType_HTLC_FindPathAndSendH_N42 || msg.Type == enum.MsgType_HTLC_SendH_N43 ||
-					msg.Type == enum.MsgType_HTLC_SignGetH_N44 || msg.Type == enum.MsgType_HTLC_CreateCommitmentTx_N45 ||
+					msg.Type == enum.MsgType_HTLC_AddHTLC_N40 || msg.Type == enum.MsgType_HTLC_AddHTLCSigned_N41 ||
 					msg.Type == enum.MsgType_HTLC_SendR_N46 || msg.Type == enum.MsgType_HTLC_VerifyR_N47 ||
 					msg.Type == enum.MsgType_HTLC_RequestCloseCurrTx_N48 || msg.Type == enum.MsgType_HTLC_CloseSigned_N49 ||
 					msg.Type == enum.MsgType_Atomic_Swap_N80 || msg.Type == enum.MsgType_Atomic_Swap_Accept_N81 {
@@ -228,7 +228,7 @@ func (client *Client) Read() {
 					}
 
 					//-42 -43 -44 -45 -46 -47
-					if msg.Type <= enum.MsgType_HTLC_FindPathAndSendH_N42 && msg.Type >= enum.MsgType_HTLC_VerifyR_N47 {
+					if msg.Type <= enum.MsgType_HTLC_PayerSignC3b_N42 && msg.Type >= enum.MsgType_HTLC_VerifyR_N47 {
 						sendType, dataOut, status = client.htlcTxModule(msg)
 						break
 					}
@@ -354,6 +354,7 @@ func (client *Client) sendDataToP2PUser(msg bean.RequestMessage, status bool, da
 				if itemClient != nil && itemClient.User != nil {
 					//因为数据库，分库，需要对特定的消息进行处理
 					if status {
+						//收到请求后，首先对消息进行处理
 						retData, err := routerOfP2PNode(msg.Type, data, itemClient)
 						if err != nil {
 							return err
@@ -374,13 +375,52 @@ func (client *Client) sendDataToP2PUser(msg bean.RequestMessage, status bool, da
 							newMsg.RecipientPeerId = msg.SenderPeerId
 							newMsg.RecipientP2PPeerId = msg.SenderP2PPeerId
 							newMsg.Data = data
+							//转发给bob，
+							_ = itemClient.sendDataToP2PUser(newMsg, true, data)
+
+						}
+
+						//当354处理完成，就改成352的返回 353和354对用户是透明的
+						if msg.Type == enum.MsgType_CommitmentTxSigned_SecondToBobSign_N354 {
+							return nil
+						}
+
+						if msg.Type == enum.MsgType_HTLC_PayerSignC3b_N42 {
+							jsonObj := gjson.Parse(data)
+							approval := jsonObj.Get("approval").Bool()
+							if approval {
+								newMsg := bean.RequestMessage{}
+								newMsg.Type = enum.MsgType_HTLC_PayeeCreateHTRD1a_N43
+								newMsg.SenderPeerId = itemClient.User.PeerId
+								newMsg.SenderP2PPeerId = P2PLocalPeerId
+								newMsg.RecipientPeerId = msg.SenderPeerId
+								newMsg.RecipientP2PPeerId = msg.SenderP2PPeerId
+								newMsg.Data = data
+								//转发给bob
+								_ = itemClient.sendDataToP2PUser(newMsg, true, data)
+								return nil
+							} else {
+								msg.Type = enum.MsgType_HTLC_AddHTLCSigned_N41
+							}
+						}
+
+						//当43处理完成，就改成41的返回 42和43对用户是透明的
+						if msg.Type == enum.MsgType_HTLC_PayeeCreateHTRD1a_N43 {
+							newMsg := bean.RequestMessage{}
+							newMsg.Type = enum.MsgType_HTLC_PayerSignHTRD1a_N44
+							newMsg.SenderPeerId = itemClient.User.PeerId
+							newMsg.SenderP2PPeerId = P2PLocalPeerId
+							newMsg.RecipientPeerId = msg.SenderPeerId
+							newMsg.RecipientP2PPeerId = msg.SenderP2PPeerId
+							newMsg.Data = data
+							//转发给payer alice，
 							_ = itemClient.sendDataToP2PUser(newMsg, true, data)
 							return nil
 						}
 
-						////当354处理完成，就改成352的返回 353和354对用户是透明的
-						if msg.Type == enum.MsgType_CommitmentTxSigned_SecondToBobSign_N354 {
-							return nil
+						//当43处理完成，就改成41的返回 42和43对用户是透明的
+						if msg.Type == enum.MsgType_HTLC_PayerSignHTRD1a_N44 {
+							msg.Type = enum.MsgType_HTLC_AddHTLCSigned_N41
 						}
 					}
 					fromId := msg.SenderPeerId + "@" + p2pChannelMap[msg.SenderP2PPeerId].Address

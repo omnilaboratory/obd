@@ -51,6 +51,10 @@ func init() {
 	rpcClient = rpc.NewClient()
 }
 
+func GetHtlcFee() float64 {
+	return 1
+}
+
 func getAddressFromPubKey(pubKey string) (address string, err error) {
 	if tool.CheckIsString(&pubKey) == false {
 		return "", errors.New("empty pubKey")
@@ -144,7 +148,7 @@ func createRDTx(owner string, channelInfo *dao.ChannelInfo, commitmentTxInfo *da
 
 	return rda, nil
 }
-func createBRTx(owner string, channelInfo *dao.ChannelInfo, commitmentTxInfo *dao.CommitmentTransaction, user *bean.User) (*dao.BreachRemedyTransaction, error) {
+func createBRTxObj(owner string, channelInfo *dao.ChannelInfo, brType dao.BRType, commitmentTxInfo *dao.CommitmentTransaction, user *bean.User) (*dao.BreachRemedyTransaction, error) {
 	breachRemedyTransaction := &dao.BreachRemedyTransaction{}
 	breachRemedyTransaction.CommitmentTxId = commitmentTxInfo.Id
 	breachRemedyTransaction.PeerIdA = channelInfo.PeerIdA
@@ -152,11 +156,12 @@ func createBRTx(owner string, channelInfo *dao.ChannelInfo, commitmentTxInfo *da
 	breachRemedyTransaction.ChannelId = channelInfo.ChannelId
 	breachRemedyTransaction.PropertyId = commitmentTxInfo.PropertyId
 	breachRemedyTransaction.Owner = owner
+	breachRemedyTransaction.Type = brType
 
 	//input
 	breachRemedyTransaction.InputAddress = commitmentTxInfo.RSMCMultiAddress
 	breachRemedyTransaction.InputAddressScriptPubKey = commitmentTxInfo.RSMCMultiAddressScriptPubKey
-	breachRemedyTransaction.RsmcTxHex = commitmentTxInfo.RSMCTxHex
+	breachRemedyTransaction.InputTxHex = commitmentTxInfo.RSMCTxHex
 	breachRemedyTransaction.InputTxid = commitmentTxInfo.RSMCTxid
 	breachRemedyTransaction.InputVout = 0
 	breachRemedyTransaction.InputAmount = commitmentTxInfo.AmountToRSMC
@@ -396,4 +401,150 @@ func getFundingTransactionByChannelId(dbTx storm.Node, channelId string, userPee
 		return nil
 	}
 	return fundingTransaction
+}
+
+func signRdTx(tx storm.Node, channelInfo *dao.ChannelInfo, signedRsmcHex string, rdHex string, latestCcommitmentTxInfo dao.CommitmentTransaction, outputAddress string, user *bean.User) (err error) {
+	inputs, err := getInputsForNextTxByParseTxHashVout(signedRsmcHex, latestCcommitmentTxInfo.RSMCMultiAddress, latestCcommitmentTxInfo.RSMCMultiAddressScriptPubKey)
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+	_, signedRdHex, err := rpcClient.OmniSignRawTransactionForUnsend(rdHex, inputs, tempAddrPrivateKeyMap[latestCcommitmentTxInfo.RSMCTempAddressPubKey])
+	if err != nil {
+		return err
+	}
+	result, err := rpcClient.TestMemPoolAccept(signedRdHex)
+	if err != nil {
+		return err
+	}
+	if gjson.Parse(result).Array()[0].Get("allowed").Bool() == false {
+		if gjson.Parse(result).Array()[0].Get("reject-reason").String() != "missing-inputs" {
+			return errors.New(gjson.Parse(result).Array()[0].Get("reject-reason").String())
+		}
+	}
+
+	aliceRdTxid := checkHexOutputAddressFromOmniDecode(signedRdHex, inputs, outputAddress)
+	if aliceRdTxid == "" {
+		return errors.New("rdtx has wrong output address")
+	}
+	rdTransaction, err := createRDTx(user.PeerId, channelInfo, &latestCcommitmentTxInfo, outputAddress, user)
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+	rdTransaction.RDType = 0
+	rdTransaction.TxHex = signedRdHex
+	rdTransaction.Txid = aliceRdTxid
+	rdTransaction.CurrState = dao.TxInfoState_CreateAndSign
+	err = tx.Save(rdTransaction)
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+	return nil
+}
+
+func signHTD1bTx(tx storm.Node, signedHtlcHex string, htd1bHex string, latestCcommitmentTxInfo dao.CommitmentTransaction, outputAddress string, user *bean.User) (err error) {
+	inputs, err := getInputsForNextTxByParseTxHashVout(signedHtlcHex, latestCcommitmentTxInfo.HTLCMultiAddress, latestCcommitmentTxInfo.HTLCMultiAddressScriptPubKey)
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+	signedHtd1bTxid, signedHtd1bHex, err := rpcClient.OmniSignRawTransactionForUnsend(htd1bHex, inputs, tempAddrPrivateKeyMap[latestCcommitmentTxInfo.HTLCTempAddressPubKey])
+	if err != nil {
+		return err
+	}
+	result, err := rpcClient.TestMemPoolAccept(signedHtd1bHex)
+	if err != nil {
+		return err
+	}
+	if gjson.Parse(result).Array()[0].Get("allowed").Bool() == false {
+		if gjson.Parse(result).Array()[0].Get("reject-reason").String() != "missing-inputs" {
+			return errors.New(gjson.Parse(result).Array()[0].Get("reject-reason").String())
+		}
+	}
+
+	owner := latestCcommitmentTxInfo.PeerIdA
+	if user.PeerId == latestCcommitmentTxInfo.PeerIdA {
+		owner = latestCcommitmentTxInfo.PeerIdB
+	}
+
+	htlcTimeOut := getHtlcTimeout(latestCcommitmentTxInfo.HtlcChannelPath, latestCcommitmentTxInfo.ChannelId)
+	htlcTimeoutDeliveryTx := &dao.HTLCTimeoutDeliveryTxB{}
+	htlcTimeoutDeliveryTx.ChannelId = latestCcommitmentTxInfo.ChannelId
+	htlcTimeoutDeliveryTx.CommitmentTxId = latestCcommitmentTxInfo.Id
+	htlcTimeoutDeliveryTx.PropertyId = latestCcommitmentTxInfo.PropertyId
+	htlcTimeoutDeliveryTx.OutputAddress = outputAddress
+	htlcTimeoutDeliveryTx.InputHex = latestCcommitmentTxInfo.HtlcTxHex
+	htlcTimeoutDeliveryTx.OutAmount = latestCcommitmentTxInfo.AmountToHtlc
+	htlcTimeoutDeliveryTx.Owner = owner
+	htlcTimeoutDeliveryTx.CurrState = dao.TxInfoState_CreateAndSign
+	htlcTimeoutDeliveryTx.CreateBy = user.PeerId
+	htlcTimeoutDeliveryTx.Timeout = htlcTimeOut
+	htlcTimeoutDeliveryTx.CreateAt = time.Now()
+
+	htlcTimeoutDeliveryTx.Txid = signedHtd1bTxid
+	htlcTimeoutDeliveryTx.TxHex = signedHtd1bHex
+	err = tx.Save(htlcTimeoutDeliveryTx)
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+	return nil
+}
+
+func signHt1aTx(tx storm.Node, channelInfo *dao.ChannelInfo, signedHtlcHex string, ht1aHex string, latestCcommitmentTxInfo dao.CommitmentTransaction, outputAddress string, user *bean.User) (err error) {
+	inputs, err := getInputsForNextTxByParseTxHashVout(signedHtlcHex, latestCcommitmentTxInfo.RSMCMultiAddress, latestCcommitmentTxInfo.RSMCMultiAddressScriptPubKey)
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+	_, signedRdHex, err := rpcClient.OmniSignRawTransactionForUnsend(ht1aHex, inputs, tempAddrPrivateKeyMap[latestCcommitmentTxInfo.RSMCTempAddressPubKey])
+	if err != nil {
+		return err
+	}
+	result, err := rpcClient.TestMemPoolAccept(signedRdHex)
+	if err != nil {
+		return err
+	}
+	if gjson.Parse(result).Array()[0].Get("allowed").Bool() == false {
+		if gjson.Parse(result).Array()[0].Get("reject-reason").String() != "missing-inputs" {
+			return errors.New(gjson.Parse(result).Array()[0].Get("reject-reason").String())
+		}
+	}
+
+	aliceHt1aTxid := checkHexOutputAddressFromOmniDecode(signedRdHex, inputs, outputAddress)
+	if aliceHt1aTxid == "" {
+		return errors.New("rdtx has wrong output address")
+	}
+	rdTransaction, err := createRDTx(user.PeerId, channelInfo, &latestCcommitmentTxInfo, outputAddress, user)
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+	rdTransaction.RDType = 0
+	rdTransaction.TxHex = signedRdHex
+	//rdTransaction.Txid = aliceRdTxid
+	rdTransaction.CurrState = dao.TxInfoState_CreateAndSign
+	err = tx.Save(rdTransaction)
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+	return nil
+}
+
+func createMultiSig(pubkey1 string, pubkey2 string) (multiAddress, redeemScript, scriptPubKey string, err error) {
+	aliceRsmcMultiAddr, err := rpcClient.CreateMultiSig(2, []string{pubkey1, pubkey2})
+	if err != nil {
+		return "", "", "", err
+	}
+	multiAddress = gjson.Get(aliceRsmcMultiAddr, "address").String()
+	redeemScript = gjson.Get(aliceRsmcMultiAddr, "redeemScript").String()
+	tempJson, err := rpcClient.GetAddressInfo(multiAddress)
+	if err != nil {
+		return "", "", "", err
+	}
+	scriptPubKey = gjson.Get(tempJson, "scriptPubKey").String()
+	return multiAddress, redeemScript, scriptPubKey, nil
 }

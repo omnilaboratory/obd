@@ -2,15 +2,33 @@ package main
 
 import (
 	"google.golang.org/grpc"
+	"io"
 	"log"
 	"net/http"
 	"obd/config"
 	"obd/lightclient"
+	"obd/rpc"
 	"obd/service"
+	"obd/tool"
+	"os"
 	"strconv"
+	"strings"
+	"time"
 )
 
 func init() {
+	_dir := "log"
+	_ = tool.PathExistsAndCreate(_dir)
+	file := _dir + "/logFile" + strings.Split(time.Now().String(), " ")[0] + ".log"
+	logFile, err := os.OpenFile(file, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0766)
+	if err != nil {
+		panic(err)
+	}
+	writers := []io.Writer{
+		logFile,
+		os.Stdout}
+	fileAndStdoutWriter := io.MultiWriter(writers...)
+	log.SetOutput(fileAndStdoutWriter)
 	log.SetFlags(log.Ldate | log.Ltime | log.Llongfile)
 }
 
@@ -24,8 +42,15 @@ func main() {
 	//conn := startupGRPCClient()
 	//defer conn.Close()
 	//routersInit := routers.InitRouter(conn)
-	lightclient.StartP2PServer()
 
+	err := rpc.NewClient().CheckVersion()
+	if err != nil {
+		log.Println(err)
+		log.Println("obd fail to start")
+		return
+	}
+
+	lightclient.StartP2PServer()
 	routersInit := lightclient.InitRouter(nil)
 	addr := ":" + strconv.Itoa(config.ServerPort)
 	server := &http.Server{

@@ -297,8 +297,8 @@ func checkIfHtlcCanBeLaunched(creator *bean.User, htlcHRequest *bean.HtlcRequest
 
 		// If there is enough balance that Alice transfer to Middleman and
 		// Middleman transfer to Carol, then record the Middleman.
-		if commitmentTxAlice.AmountToRSMC >= (htlcHRequest.Amount+tool.GetHtlcFee()) &&
-			commitmentTxCarol.AmountToRSMC >= (htlcHRequest.Amount+tool.GetHtlcFee()) {
+		if commitmentTxAlice.AmountToRSMC >= (htlcHRequest.Amount+GetHtlcFee()) &&
+			commitmentTxCarol.AmountToRSMC >= (htlcHRequest.Amount+GetHtlcFee()) {
 
 			arrQualifiedMiddleman = append(arrQualifiedMiddleman, middleman)
 		}

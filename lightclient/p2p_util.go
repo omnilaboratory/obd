@@ -79,7 +79,6 @@ func StartP2PServer() {
 		Address:        localServerDest,
 	}
 	host.SetStreamHandler(pid, handleStream)
-
 }
 
 func ConnP2PServer(dest string) (string, error) {
@@ -101,24 +100,23 @@ func ConnP2PServer(dest string) (string, error) {
 		log.Println(err)
 		return "", err
 	}
-	maddr, err := multiaddr.NewMultiaddr(dest)
+	destMaddr, err := multiaddr.NewMultiaddr(dest)
 	if err != nil {
 		log.Println(err)
 		return "", err
 	}
 
-	info, err := peer.AddrInfoFromP2pAddr(maddr)
+	destHostInfo, err := peer.AddrInfoFromP2pAddr(destMaddr)
 	if err != nil {
 		log.Println(err)
 		return "", err
 	}
-
-	if p2pChannelMap[info.ID.Pretty()] != nil {
+	if p2pChannelMap[destHostInfo.ID.Pretty()] != nil {
 		log.Println("p2p channel has connect")
 		return "", errors.New("p2p channel has connect")
 	}
-	host.Peerstore().AddAddrs(info.ID, info.Addrs, peerstore.PermanentAddrTTL)
-	s, err := host.NewStream(context.Background(), info.ID, pid)
+	host.Peerstore().AddAddrs(destHostInfo.ID, destHostInfo.Addrs, peerstore.PermanentAddrTTL)
+	s, err := host.NewStream(context.Background(), destHostInfo.ID, pid)
 	if err != nil {
 		log.Println(err)
 		return "", err

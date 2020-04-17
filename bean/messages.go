@@ -254,7 +254,6 @@ type HtlcSignGetH struct {
 	CurrRsmcTempAddressPrivateKey string `json:"curr_rsmc_temp_address_private_key"` //	创建Cnx中的toRsmc的部分使用的临时地址的私钥
 	CurrHtlcTempAddressPubKey     string `json:"curr_htlc_temp_address_pub_key"`     //	创建Cnx中的toHtlc的部分使用的临时地址的公钥
 	CurrHtlcTempAddressPrivateKey string `json:"curr_htlc_temp_address_private_key"` //	创建Cnx中的toHtlc的部分使用的临时地址的私钥
-	//CurrHtlcTempAddressHe1bOfHPubKey string `json:"curr_htlc_temp_address_he1b_ofh_pub_key"` //	创建he1b,锁住支付资金的三签地址临时地址的公钥
 }
 
 //type -45: sender request obd  to open htlc tx
