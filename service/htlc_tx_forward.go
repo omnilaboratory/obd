@@ -40,16 +40,16 @@ func (service *htlcForwardTxManager) PayerRequestFindPath(msgData string, user b
 		return nil, err
 	}
 
-	if tool.CheckIsString(&requestData.RecipientPeerId) == false {
-		return nil, errors.New("wrong recipient_peer_id")
+	if tool.CheckIsString(&requestData.RecipientUserPeerId) == false {
+		return nil, errors.New("wrong recipient_user_peer_id")
 	}
 
-	if tool.CheckIsString(&requestData.RecipientP2PPeerId) == false {
-		return nil, errors.New("wrong recipient_p2p_peer_id")
+	if tool.CheckIsString(&requestData.RecipientNodePeerId) == false {
+		return nil, errors.New("wrong recipient_node_peer_id")
 	}
 
-	if requestData.RecipientP2PPeerId == P2PLocalPeerId {
-		if err := FindUserIsOnline(requestData.RecipientPeerId); err != nil {
+	if requestData.RecipientNodePeerId == P2PLocalPeerId {
+		if err := FindUserIsOnline(requestData.RecipientUserPeerId); err != nil {
 			return nil, err
 		}
 	}
@@ -133,8 +133,8 @@ func (service *htlcForwardTxManager) PayerAddHtlc_40(msgData string, user bean.U
 	defer tx.Rollback()
 
 	//region check input data 检测输入输入数据
-	if tool.CheckIsString(&requestData.RecipientPeerId) == false {
-		return nil, errors.New("wrong recipient_peer_id")
+	if tool.CheckIsString(&requestData.RecipientUserPeerId) == false {
+		return nil, errors.New("wrong recipient_user_peer_id")
 	}
 	if requestData.PropertyId < 0 {
 		return nil, errors.New("wrong property_id")
@@ -159,7 +159,7 @@ func (service *htlcForwardTxManager) PayerAddHtlc_40(msgData string, user bean.U
 	for index, channelId := range channelIds {
 		temp := getChannelInfoByChannelId(tx, channelId, user.PeerId)
 		if temp != nil {
-			if temp.PeerIdA == requestData.RecipientPeerId || temp.PeerIdB == requestData.RecipientPeerId {
+			if temp.PeerIdA == requestData.RecipientUserPeerId || temp.PeerIdB == requestData.RecipientUserPeerId {
 				channelInfo = temp
 				currStep = index
 				break
@@ -271,7 +271,7 @@ func (service *htlcForwardTxManager) PayerAddHtlc_40(msgData string, user bean.U
 	//这次请求的第一次发起
 	htlcRequestInfo := &dao.AddHtlcRequestInfo{}
 	if latestCommitmentTx.Id == 0 || latestCommitmentTx.CurrState == dao.TxInfoState_CreateAndSign {
-		htlcRequestInfo.RecipientPeerId = requestData.RecipientPeerId
+		htlcRequestInfo.RecipientUserPeerId = requestData.RecipientUserPeerId
 		htlcRequestInfo.H = requestData.H
 		htlcRequestInfo.Memo = requestData.Memo
 		htlcRequestInfo.PropertyId = requestData.PropertyId

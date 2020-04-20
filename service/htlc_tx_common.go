@@ -17,10 +17,10 @@ import (
 
 func checkChannelCanBeUseAsInterNode(item dao.ChannelInfo, user bean.User, reqData bean.HtlcRequestFindPath) *dao.ChannelInfo {
 	flag := false
-	if item.PeerIdA == user.PeerId && item.PeerIdB == reqData.RecipientPeerId {
+	if item.PeerIdA == user.PeerId && item.PeerIdB == reqData.RecipientUserPeerId {
 		flag = true
 	}
-	if item.PeerIdB == user.PeerId && item.PeerIdA == reqData.RecipientPeerId {
+	if item.PeerIdB == user.PeerId && item.PeerIdA == reqData.RecipientUserPeerId {
 		flag = true
 	}
 	if flag {

@@ -9,7 +9,7 @@ type HTLCCommitmentTransaction CommitmentTransaction
 type AddHtlcRequestInfo struct {
 	Id                               int         `storm:"id,increment" json:"id" `
 	ChannelId                        string      `json:"channel_id"`
-	RecipientPeerId                  string      `json:"recipient_peer_id"`
+	RecipientUserPeerId              string      `json:"recipient_user_peer_id"`
 	PropertyId                       int64       `json:"property_id"`
 	Amount                           float64     `json:"amount"`
 	Memo                             string      `json:"memo"`

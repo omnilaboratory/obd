@@ -13,8 +13,8 @@ import (
 func loginRetData(client Client) string {
 	retData := make(map[string]interface{})
 	retData["userPeerId"] = client.User.PeerId
-	retData["p2pNodePeerId"] = client.User.P2PLocalPeerId
-	retData["p2pNodeAddress"] = client.User.P2PLocalAddress
+	retData["nodePeerId"] = client.User.P2PLocalPeerId
+	retData["nodeAddress"] = client.User.P2PLocalAddress
 	bytes, _ := json.Marshal(retData)
 	return string(bytes)
 }
@@ -81,7 +81,7 @@ func (client *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, 
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_p2p_SendDataToServer_4:
-		SendP2PMsg(msg.RecipientP2PPeerId, msg.RawData)
+		SendP2PMsg(msg.RecipientNodePeerId, msg.RawData)
 
 	// Added by Kevin 2019-11-25
 	// Process GetMnemonic

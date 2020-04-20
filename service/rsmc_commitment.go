@@ -76,8 +76,8 @@ func (this *commitmentTxManager) CommitmentTransactionCreated(msg bean.RequestMe
 		targetUser = channelInfo.PeerIdA
 	}
 
-	if targetUser != msg.RecipientPeerId {
-		return nil, errors.New("error target user " + msg.RecipientPeerId)
+	if targetUser != msg.RecipientUserPeerId {
+		return nil, errors.New("error target user " + msg.RecipientUserPeerId)
 	}
 
 	latestCommitmentTxInfo, err := getLatestCommitmentTxUseDbTx(tx, reqData.ChannelId, creator.PeerId)

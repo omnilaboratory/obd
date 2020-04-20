@@ -8,15 +8,15 @@ import (
 )
 
 type RequestMessage struct {
-	Type               enum.MsgType `json:"type"`
-	SenderP2PPeerId    string       `json:"sender_p2p_peer_id"`
-	SenderPeerId       string       `json:"sender_peer_id"`
-	RecipientPeerId    string       `json:"recipient_peer_id"`
-	RecipientP2PPeerId string       `json:"recipient_p2p_peer_id"`
-	Data               string       `json:"data"`
-	RawData            string       `json:"raw_data"`
-	PubKey             string       `json:"pub_key"`
-	Signature          string       `json:"signature"`
+	Type                enum.MsgType `json:"type"`
+	SenderNodePeerId    string       `json:"sender_node_peer_id"`
+	SenderUserPeerId    string       `json:"sender_user_peer_id"`
+	RecipientUserPeerId string       `json:"recipient_user_peer_id"`
+	RecipientNodePeerId string       `json:"recipient_node_peer_id"`
+	Data                string       `json:"data"`
+	RawData             string       `json:"raw_data"`
+	PubKey              string       `json:"pub_key"`
+	Signature           string       `json:"signature"`
 }
 type ReplyMessage struct {
 	Type   enum.MsgType `json:"type"`
@@ -194,15 +194,15 @@ type GetBalanceRespond struct {
 
 //type -4001: alice tell carl ,she wanna transfer some money to Carl
 type HtlcRequestFindPath struct {
-	RecipientP2PPeerId string  `json:"recipient_p2p_peer_id"`
-	RecipientPeerId    string  `json:"recipient_peer_id"`
-	PropertyId         int64   `json:"property_id"`
-	Amount             float64 `json:"amount"`
+	RecipientNodePeerId string  `json:"recipient_node_peer_id"`
+	RecipientUserPeerId string  `json:"recipient_user_peer_id"`
+	PropertyId          int64   `json:"property_id"`
+	Amount              float64 `json:"amount"`
 }
 
 // type 40 payer start htlc tx
 type AddHtlcRequest struct {
-	RecipientPeerId                      string  `json:"recipient_peer_id"`
+	RecipientUserPeerId                  string  `json:"recipient_user_peer_id"`
 	PropertyId                           int64   `json:"property_id"`
 	Amount                               float64 `json:"amount"`
 	Memo                                 string  `json:"memo"`
@@ -327,15 +327,15 @@ type ChannelIdReq CloseChannel
 
 //type -80: MsgType_Atomic_Swap_N80
 type AtomicSwapRequest struct {
-	ChannelIdFrom    string  `json:"channel_id_from"`
-	ChannelIdTo      string  `json:"channel_id_to"`
-	RecipientPeerId  string  `json:"recipient_peer_id"`
-	PropertySent     int64   `json:"property_sent"`
-	Amount           float64 `json:"amount"`
-	ExchangeRate     float64 `json:"exchange_rate"`
-	PropertyReceived int64   `json:"property_received"`
-	TransactionId    string  `json:"transaction_id"`
-	TimeLocker       uint32  `json:"time_locker"`
+	ChannelIdFrom       string  `json:"channel_id_from"`
+	ChannelIdTo         string  `json:"channel_id_to"`
+	RecipientUserPeerId string  `json:"recipient_user_peer_id"`
+	PropertySent        int64   `json:"property_sent"`
+	Amount              float64 `json:"amount"`
+	ExchangeRate        float64 `json:"exchange_rate"`
+	PropertyReceived    int64   `json:"property_received"`
+	TransactionId       string  `json:"transaction_id"`
+	TimeLocker          uint32  `json:"time_locker"`
 }
 
 //type -81: MsgType_Atomic_Swap_Accept_N81

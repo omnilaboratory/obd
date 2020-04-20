@@ -44,8 +44,8 @@ func (service *htlcHMessageManager) AddHTLC(jsonData string,
 		return nil, err
 	}
 
-	if tool.CheckIsString(&htlcHRequest.RecipientPeerId) == false {
-		return nil, errors.New("empty recipient_peer_id")
+	if tool.CheckIsString(&htlcHRequest.RecipientUserPeerId) == false {
+		return nil, errors.New("empty recipient_user_peer_id")
 	}
 
 	if _, err = rpcClient.OmniGetProperty(htlcHRequest.PropertyId); err != nil {
@@ -68,7 +68,7 @@ func (service *htlcHMessageManager) AddHTLC(jsonData string,
 	data = make(map[string]interface{})
 	data["propertyId"] = htlcHRequest.PropertyId
 	data["amount"] = htlcHRequest.Amount
-	data["recipient_peer_id"] = htlcHRequest.RecipientPeerId
+	data["recipient_user_peer_id"] = htlcHRequest.RecipientUserPeerId
 	data["msg"] = "have the path, can create transaction"
 
 	return data, nil
@@ -170,10 +170,10 @@ func checkIfHtlcCanBeLaunched(creator *bean.User, htlcHRequest *bean.HtlcRequest
 	// If Yes, NO need to launch HTLC.
 	for _, item := range channelsOfAlice {
 		flag := false
-		if item.PeerIdA == creator.PeerId && item.PeerIdB == htlcHRequest.RecipientPeerId {
+		if item.PeerIdA == creator.PeerId && item.PeerIdB == htlcHRequest.RecipientUserPeerId {
 			flag = true
 		}
-		if item.PeerIdB == creator.PeerId && item.PeerIdA == htlcHRequest.RecipientPeerId {
+		if item.PeerIdB == creator.PeerId && item.PeerIdA == htlcHRequest.RecipientUserPeerId {
 			flag = true
 		}
 		if flag {
@@ -188,7 +188,7 @@ func checkIfHtlcCanBeLaunched(creator *bean.User, htlcHRequest *bean.HtlcRequest
 		}
 	}
 	//find the path from transaction creator to the receiver
-	PathService.GetPath(creator.PeerId, htlcHRequest.RecipientPeerId, htlcHRequest.PropertyId, htlcHRequest.Amount, nil, true)
+	PathService.GetPath(creator.PeerId, htlcHRequest.RecipientUserPeerId, htlcHRequest.PropertyId, htlcHRequest.Amount, nil, true)
 	hasPath := false
 	for _, node := range PathService.openList {
 		if node.IsTarget {
@@ -204,7 +204,7 @@ func checkIfHtlcCanBeLaunched(creator *bean.User, htlcHRequest *bean.HtlcRequest
 	// region can delete
 	// Case 2. There is NOT a middleman, CAN NOT launch HTLC.
 	// Get all channels of Carol.
-	channelsOfCarol := getAllChannels(htlcHRequest.RecipientPeerId)
+	channelsOfCarol := getAllChannels(htlcHRequest.RecipientUserPeerId)
 	if len(channelsOfCarol) == 0 {
 		return errors.New("The recipient has no channel.")
 	}
@@ -278,7 +278,7 @@ func checkIfHtlcCanBeLaunched(creator *bean.User, htlcHRequest *bean.HtlcRequest
 		}
 
 		// Get channel between Carol and Middleman. htlcHRequest.RecipientPeerId is Carol
-		channelCarol, err = GetChannelInfoByTwoPeerID(htlcHRequest.RecipientPeerId, middleman)
+		channelCarol, err = GetChannelInfoByTwoPeerID(htlcHRequest.RecipientUserPeerId, middleman)
 		if err != nil {
 			return err
 		}

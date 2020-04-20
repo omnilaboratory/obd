@@ -42,7 +42,7 @@ func (this *channelManager) AliceOpenChannel(msg bean.RequestMessage, user *bean
 	channelInfo = &dao.ChannelInfo{}
 	channelInfo.OpenChannelInfo = *reqData
 	channelInfo.PeerIdA = user.PeerId
-	channelInfo.PeerIdB = msg.RecipientPeerId
+	channelInfo.PeerIdB = msg.RecipientUserPeerId
 	channelInfo.PubKeyA = reqData.FundingPubKey
 	channelInfo.AddressA = reqData.FundingAddress
 	channelInfo.CurrState = dao.ChannelState_Create
@@ -472,8 +472,8 @@ func (this *channelManager) RequestCloseChannel(msg bean.RequestMessage, user *b
 		targetUser = channelInfo.PeerIdA
 	}
 
-	if targetUser != msg.RecipientPeerId {
-		return nil, errors.New("wrong targetUser " + msg.RecipientPeerId)
+	if targetUser != msg.RecipientUserPeerId {
+		return nil, errors.New("wrong targetUser " + msg.RecipientUserPeerId)
 	}
 
 	lastCommitmentTx, err := getLatestCommitmentTxUseDbTx(tx, channelInfo.ChannelId, user.PeerId)
@@ -619,8 +619,8 @@ func (this *channelManager) SignCloseChannel(msg bean.RequestMessage, user bean.
 	if user.PeerId == channelInfo.PeerIdA {
 		requestSenderUser = channelInfo.PeerIdB
 	}
-	if requestSenderUser != msg.RecipientPeerId {
-		return nil, errors.New("wrong RecipientPeerId")
+	if requestSenderUser != msg.RecipientUserPeerId {
+		return nil, errors.New("wrong RecipientUserPeerId")
 	}
 
 	closeChannelStarterData := &dao.CloseChannel{}

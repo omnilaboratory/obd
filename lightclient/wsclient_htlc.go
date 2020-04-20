@@ -20,7 +20,7 @@ func (client *Client) htlcHDealModule(msg bean.RequestMessage) (enum.SendTargetT
 		if err != nil {
 			data = err.Error()
 		} else {
-			if _, err := client.FindUser(&htlcHRequest.RecipientPeerId); err != nil {
+			if _, err := client.FindUser(&htlcHRequest.RecipientUserPeerId); err != nil {
 				data = err.Error()
 			} else {
 				respond, err := service.HtlcHMessageService.AddHTLC(msg.Data, client.User)

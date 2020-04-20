@@ -31,20 +31,20 @@ func (this *atomicSwapManager) AtomicSwap(msgData string, user bean.User) (outDa
 		return nil, "", err
 	}
 
-	if tool.CheckIsString(&reqData.RecipientPeerId) == false {
-		return nil, "", errors.New("error recipient_peer_id")
+	if tool.CheckIsString(&reqData.RecipientUserPeerId) == false {
+		return nil, "", errors.New("error recipient_user_peer_id")
 	}
 
 	if reqData.TimeLocker < 10 {
 		return nil, "", errors.New("error time_locker")
 	}
 
-	err = FindUserIsOnline(reqData.RecipientPeerId)
+	err = FindUserIsOnline(reqData.RecipientUserPeerId)
 	if err != nil {
 		return nil, "", err
 	}
 
-	if reqData.RecipientPeerId == user.PeerId {
+	if reqData.RecipientUserPeerId == user.PeerId {
 		return nil, "", errors.New("you should not send msg to yourself")
 	}
 
@@ -85,8 +85,8 @@ func (this *atomicSwapManager) AtomicSwap(msgData string, user bean.User) (outDa
 		q.Eq("CurrState", dao.ChannelState_CanUse),
 		q.Eq("PropertyId", reqData.PropertyReceived),
 		q.Or(
-			q.Eq("PeerIdA", reqData.RecipientPeerId),
-			q.Eq("PeerIdB", reqData.RecipientPeerId))).
+			q.Eq("PeerIdA", reqData.RecipientUserPeerId),
+			q.Eq("PeerIdB", reqData.RecipientUserPeerId))).
 		First(&dao.ChannelInfo{})
 	if err != nil {
 		return nil, "", errors.New("not found this channel_id_to")
@@ -127,7 +127,7 @@ func (this *atomicSwapManager) AtomicSwap(msgData string, user bean.User) (outDa
 	if err != nil {
 		return nil, "", errors.New("fail to save db,try again")
 	}
-	return reqData, reqData.RecipientPeerId, nil
+	return reqData, reqData.RecipientUserPeerId, nil
 }
 
 //MsgType_Atomic_Swap_Accept_N81 可以理解为发货凭证
@@ -142,7 +142,7 @@ func (this *atomicSwapManager) AtomicSwapAccepted(msgData string, user bean.User
 		return nil, "", err
 	}
 
-	if tool.CheckIsString(&reqData.RecipientPeerId) == false {
+	if tool.CheckIsString(&reqData.RecipientUserPeerId) == false {
 		return nil, "", errors.New("error recipient_peer_id")
 	}
 
@@ -150,12 +150,12 @@ func (this *atomicSwapManager) AtomicSwapAccepted(msgData string, user bean.User
 		return nil, "", errors.New("error time_locker")
 	}
 
-	err = FindUserIsOnline(reqData.RecipientPeerId)
+	err = FindUserIsOnline(reqData.RecipientUserPeerId)
 	if err != nil {
 		return nil, "", err
 	}
 
-	if reqData.RecipientPeerId == user.PeerId {
+	if reqData.RecipientUserPeerId == user.PeerId {
 		return nil, "", errors.New("you should not send msg to yourself")
 	}
 
@@ -201,8 +201,8 @@ func (this *atomicSwapManager) AtomicSwapAccepted(msgData string, user bean.User
 		q.Eq("CurrState", dao.ChannelState_CanUse),
 		q.Eq("PropertyId", reqData.PropertyReceived),
 		q.Or(
-			q.Eq("PeerIdA", reqData.RecipientPeerId),
-			q.Eq("PeerIdB", reqData.RecipientPeerId))).
+			q.Eq("PeerIdA", reqData.RecipientUserPeerId),
+			q.Eq("PeerIdB", reqData.RecipientUserPeerId))).
 		First(&dao.ChannelInfo{})
 	if err != nil {
 		return nil, "", errors.New("not found this channel_id_to")
@@ -253,5 +253,5 @@ func (this *atomicSwapManager) AtomicSwapAccepted(msgData string, user bean.User
 		return nil, "", errors.New("fail to save db,try again")
 	}
 
-	return reqData, reqData.RecipientPeerId, nil
+	return reqData, reqData.RecipientUserPeerId, nil
 }

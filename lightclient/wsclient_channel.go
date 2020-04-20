@@ -15,7 +15,7 @@ func (client *Client) channelModule(msg bean.RequestMessage) (enum.SendTargetTyp
 	switch msg.Type {
 	//get openChannelReq from funder then send to fundee
 	case enum.MsgType_ChannelOpen_N32:
-		if msg.RecipientPeerId == client.User.PeerId {
+		if msg.RecipientUserPeerId == client.User.PeerId {
 			data = "can not open channel to yourself"
 		} else {
 			node, err := service.ChannelService.AliceOpenChannel(msg, client.User)

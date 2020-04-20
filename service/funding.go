@@ -80,8 +80,8 @@ func (service *fundingTransactionManager) BTCFundingCreated(data bean.RequestMes
 		targetUser = channelInfo.PeerIdA
 	}
 
-	if data.RecipientPeerId != targetUser {
-		return nil, "", errors.New("error RecipientPeerId")
+	if data.RecipientUserPeerId != targetUser {
+		return nil, "", errors.New("error RecipientUserPeerId")
 	}
 
 	_, err = tool.GetPubKeyFromWifAndCheck(reqData.ChannelAddressPrivateKey, pubKey)
