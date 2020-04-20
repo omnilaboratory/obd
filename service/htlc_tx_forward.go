@@ -120,10 +120,6 @@ func (service *htlcForwardTxManager) PayerAddHtlc_40(msgData string, user bean.U
 		log.Println(err.Error())
 		return nil, err
 	}
-	temp := &dao.ChannelInfo{}
-	user.Db.One("Id", 1, temp)
-	temp.CurrState = dao.ChannelState_CanUse
-	user.Db.Update(temp)
 
 	tx, err := user.Db.Begin(true)
 	if err != nil {
