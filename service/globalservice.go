@@ -113,7 +113,7 @@ func createCommitmentTx(owner string, channelInfo *dao.ChannelInfo, fundingTrans
 	}
 
 	commitmentTxInfo.AmountToRSMC = outputBean.AmountToRsmc
-	commitmentTxInfo.AmountToOther = outputBean.AmountToOther
+	commitmentTxInfo.AmountToCounterParty = outputBean.AmountToOther
 	commitmentTxInfo.AmountToHtlc = outputBean.AmountToHtlc
 
 	commitmentTxInfo.CreateBy = user.PeerId

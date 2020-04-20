@@ -146,11 +146,11 @@ func (this *commitmentTxManager) CommitmentTransactionCreated(msg bean.RequestMe
 			return nil, err
 		}
 		retData["rsmcHex"] = newCommitmentTxInfo.RSMCTxHex
-		retData["toOtherHex"] = newCommitmentTxInfo.ToOtherTxHex
+		retData["toOtherHex"] = newCommitmentTxInfo.ToCounterPartyTxHex
 		retData["commitmentHash"] = newCommitmentTxInfo.CurrHash
 	} else {
 		retData["rsmcHex"] = latestCommitmentTxInfo.RSMCTxHex
-		retData["toOtherHex"] = latestCommitmentTxInfo.ToOtherTxHex
+		retData["toOtherHex"] = latestCommitmentTxInfo.ToCounterPartyTxHex
 		retData["commitmentHash"] = latestCommitmentTxInfo.CurrHash
 	}
 	_ = tx.Commit()
@@ -312,7 +312,7 @@ func (this *commitmentTxManager) AfterBobSignCommitmentTranctionAtAliceSide(data
 	latestCcommitmentTxInfo.SignAt = time.Now()
 	latestCcommitmentTxInfo.CurrState = dao.TxInfoState_CreateAndSign
 	latestCcommitmentTxInfo.RSMCTxHex = signedRsmcHex
-	latestCcommitmentTxInfo.ToOtherTxHex = signedToOtherHex
+	latestCcommitmentTxInfo.ToCounterPartyTxHex = signedToOtherHex
 	bytes, err := json.Marshal(latestCcommitmentTxInfo)
 	msgHash := tool.SignMsgWithSha256(bytes)
 	latestCcommitmentTxInfo.CurrHash = msgHash
@@ -373,7 +373,7 @@ func (this *commitmentTxManager) AfterBobSignCommitmentTranctionAtAliceSide(data
 		partnerChannelAddress,
 		channelInfo.FundingAddress,
 		channelInfo.PropertyId,
-		latestCcommitmentTxInfo.AmountToOther,
+		latestCcommitmentTxInfo.AmountToCounterParty,
 		0,
 		1000,
 		&bobRsmcRedeemScript)
@@ -393,7 +393,7 @@ func (this *commitmentTxManager) AfterBobSignCommitmentTranctionAtAliceSide(data
 	bobCommitmentTx.RSMCMultiAddressScriptPubKey = bobRsmcMultiAddressScriptPubKey
 	bobCommitmentTx.RSMCTxHex = bobSignedRsmcHex
 	bobCommitmentTx.RSMCTxid = bobRsmcTxid
-	bobCommitmentTx.AmountToRSMC = latestCcommitmentTxInfo.AmountToOther
+	bobCommitmentTx.AmountToRSMC = latestCcommitmentTxInfo.AmountToCounterParty
 	err = createCurrCommitmentTxBR(tx, dao.BRType_Rmsc, channelInfo, bobCommitmentTx, inputs, myChannelAddress, myChannelPrivateKey, *user)
 	if err != nil {
 		log.Println(err)
@@ -435,7 +435,7 @@ func checkBobRemcData(rsmcHex string, commitmentTransaction *dao.CommitmentTrans
 	if parse.Get("propertyid").Int() != commitmentTransaction.PropertyId {
 		return errors.New("error propertyid in rsmcHex ")
 	}
-	if parse.Get("amount").Float() != commitmentTransaction.AmountToOther {
+	if parse.Get("amount").Float() != commitmentTransaction.AmountToCounterParty {
 		return errors.New("error amount in rsmcHex ")
 	}
 	return nil
@@ -469,10 +469,10 @@ func createCommitmentTxHex(dbTx storm.Node, isSender bool, reqData *bean.Commitm
 	if lastCommitmentTx != nil && lastCommitmentTx.Id > 0 {
 		if isSender {
 			outputBean.AmountToRsmc, _ = decimal.NewFromFloat(lastCommitmentTx.AmountToRSMC).Sub(decimal.NewFromFloat(reqData.Amount)).Float64()
-			outputBean.AmountToOther, _ = decimal.NewFromFloat(lastCommitmentTx.AmountToOther).Add(decimal.NewFromFloat(reqData.Amount)).Float64()
+			outputBean.AmountToOther, _ = decimal.NewFromFloat(lastCommitmentTx.AmountToCounterParty).Add(decimal.NewFromFloat(reqData.Amount)).Float64()
 		} else {
 			outputBean.AmountToRsmc, _ = decimal.NewFromFloat(lastCommitmentTx.AmountToRSMC).Add(decimal.NewFromFloat(reqData.Amount)).Float64()
-			outputBean.AmountToOther, _ = decimal.NewFromFloat(lastCommitmentTx.AmountToOther).Sub(decimal.NewFromFloat(reqData.Amount)).Float64()
+			outputBean.AmountToOther, _ = decimal.NewFromFloat(lastCommitmentTx.AmountToCounterParty).Sub(decimal.NewFromFloat(reqData.Amount)).Float64()
 		}
 	}
 
@@ -508,7 +508,7 @@ func createCommitmentTxHex(dbTx storm.Node, isSender bool, reqData *bean.Commitm
 	}
 
 	//create to other tx
-	if commitmentTxInfo.AmountToOther > 0 {
+	if commitmentTxInfo.AmountToCounterParty > 0 {
 		txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionUseRestInput(
 			int(commitmentTxInfo.TxType),
 			channelInfo.ChannelAddress,
@@ -519,15 +519,15 @@ func createCommitmentTxHex(dbTx storm.Node, isSender bool, reqData *bean.Commitm
 			outputBean.OppositeSideChannelAddress,
 			fundingTransaction.FunderAddress,
 			fundingTransaction.PropertyId,
-			commitmentTxInfo.AmountToOther,
+			commitmentTxInfo.AmountToCounterParty,
 			0,
 			0, &channelInfo.ChannelAddressRedeemScript)
 		if err != nil {
 			log.Println(err)
 			return nil, err
 		}
-		commitmentTxInfo.ToOtherTxid = txid
-		commitmentTxInfo.ToOtherTxHex = hex
+		commitmentTxInfo.ToCounterPartyTxid = txid
+		commitmentTxInfo.ToCounterPartyTxHex = hex
 	}
 	commitmentTxInfo.LastHash = ""
 	commitmentTxInfo.CurrHash = ""
@@ -829,10 +829,10 @@ func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction
 			log.Println(err)
 			return nil, "", err
 		}
-		amountToOther = newCommitmentTxInfo.AmountToOther
+		amountToOther = newCommitmentTxInfo.AmountToCounterParty
 
 		retData["rsmcHex"] = newCommitmentTxInfo.RSMCTxHex
-		retData["toOtherHex"] = newCommitmentTxInfo.ToOtherTxHex
+		retData["toOtherHex"] = newCommitmentTxInfo.ToCounterPartyTxHex
 		//endregion
 
 		// region 5、根据alice的Rsmc，创建对应的BR,为下一个交易做准备，create BR2b tx  for bob
@@ -848,7 +848,7 @@ func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction
 		senderCommitmentTx.RSMCMultiAddressScriptPubKey = aliceRsmcMultiAddressScriptPubKey
 		senderCommitmentTx.RSMCTxHex = signedRsmcHex
 		senderCommitmentTx.RSMCTxid = rsmcTxId
-		senderCommitmentTx.AmountToRSMC = newCommitmentTxInfo.AmountToOther
+		senderCommitmentTx.AmountToRSMC = newCommitmentTxInfo.AmountToCounterParty
 		err = createCurrCommitmentTxBR(tx, dao.BRType_Rmsc, channelInfo, senderCommitmentTx, inputs, myAddress, reqData.ChannelAddressPrivateKey, *signer)
 		if err != nil {
 			log.Println(err)
@@ -858,8 +858,8 @@ func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction
 
 	} else {
 		retData["rsmcHex"] = latestCommitmentTxInfo.RSMCTxHex
-		retData["toOtherHex"] = latestCommitmentTxInfo.ToOtherTxHex
-		amountToOther = latestCommitmentTxInfo.AmountToOther
+		retData["toOtherHex"] = latestCommitmentTxInfo.ToCounterPartyTxHex
+		amountToOther = latestCommitmentTxInfo.AmountToCounterParty
 	}
 
 	//region 6、根据签名后的AliceRsmc创建alice的RD create RD tx for alice
@@ -943,7 +943,7 @@ func (this *commitmentTxSignedManager) AfterAliceSignCommitmentTranctionAtBobSid
 	latestCcommitmentTxInfo.SignAt = time.Now()
 	latestCcommitmentTxInfo.CurrState = dao.TxInfoState_CreateAndSign
 	latestCcommitmentTxInfo.RSMCTxHex = signedRsmcHex
-	latestCcommitmentTxInfo.ToOtherTxHex = signedToOtherHex
+	latestCcommitmentTxInfo.ToCounterPartyTxHex = signedToOtherHex
 	bytes, err := json.Marshal(latestCcommitmentTxInfo)
 	msgHash := tool.SignMsgWithSha256(bytes)
 	latestCcommitmentTxInfo.CurrHash = msgHash

@@ -319,8 +319,8 @@ func (this *channelManager) ForceCloseChannel(jsonData string, user *bean.User) 
 		}
 		log.Println(commitmentTxid)
 	}
-	if tool.CheckIsString(&lastCommitmentTx.ToOtherTxHex) {
-		commitmentTxidToBob, err := rpcClient.SendRawTransaction(lastCommitmentTx.ToOtherTxHex)
+	if tool.CheckIsString(&lastCommitmentTx.ToCounterPartyTxHex) {
+		commitmentTxidToBob, err := rpcClient.SendRawTransaction(lastCommitmentTx.ToCounterPartyTxHex)
 		if err != nil {
 			log.Println(err)
 			return nil, err
@@ -741,8 +741,8 @@ func (this *channelManager) AfterBobSignCloseChannelAtAliceSide(jsonData string,
 		}
 		log.Println(commitmentTxid)
 	}
-	if tool.CheckIsString(&latestCommitmentTx.ToOtherTxHex) {
-		commitmentTxidToBob, err := rpcClient.SendRawTransaction(latestCommitmentTx.ToOtherTxHex)
+	if tool.CheckIsString(&latestCommitmentTx.ToCounterPartyTxHex) {
+		commitmentTxidToBob, err := rpcClient.SendRawTransaction(latestCommitmentTx.ToCounterPartyTxHex)
 		if err != nil {
 			log.Println(err)
 			return nil, err
@@ -837,8 +837,8 @@ func (this *channelManager) CloseHtlcChannelSigned(channelInfo *dao.ChannelInfo,
 		log.Println(commitmentTxid)
 	}
 
-	if tool.CheckIsString(&latestCommitmentTx.ToOtherTxHex) {
-		commitmentTxidToBob, err := rpcClient.SendRawTransaction(latestCommitmentTx.ToOtherTxHex)
+	if tool.CheckIsString(&latestCommitmentTx.ToCounterPartyTxHex) {
+		commitmentTxidToBob, err := rpcClient.SendRawTransaction(latestCommitmentTx.ToCounterPartyTxHex)
 		if err != nil {
 			log.Println(err)
 			return nil, "", err
