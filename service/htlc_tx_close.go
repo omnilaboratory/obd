@@ -407,18 +407,18 @@ func createAliceRsmcTxsForCloseHtlc(tx storm.Node, channelInfo dao.ChannelInfo, 
 	if lastCommitmentATx.CurrState == dao.TxInfoState_Htlc_GetH { //转账失败 退钱回去
 		if lastCommitmentATx.HtlcSender == owner {
 			outputBean.AmountToRsmc, _ = decimal.NewFromFloat(lastCommitmentATx.AmountToRSMC).Add(decimal.NewFromFloat(lastCommitmentATx.AmountToHtlc)).Float64()
-			outputBean.AmountToOther = lastCommitmentATx.AmountToCounterParty
+			outputBean.AmountToOther = lastCommitmentATx.AmountToCounterparty
 		} else {
 			outputBean.AmountToRsmc = lastCommitmentATx.AmountToRSMC
-			outputBean.AmountToOther, _ = decimal.NewFromFloat(lastCommitmentATx.AmountToCounterParty).Add(decimal.NewFromFloat(lastCommitmentATx.AmountToHtlc)).Float64()
+			outputBean.AmountToOther, _ = decimal.NewFromFloat(lastCommitmentATx.AmountToCounterparty).Add(decimal.NewFromFloat(lastCommitmentATx.AmountToHtlc)).Float64()
 		}
 	} else {
 		if lastCommitmentATx.HtlcSender == owner {
 			outputBean.AmountToRsmc = lastCommitmentATx.AmountToRSMC
-			outputBean.AmountToOther, _ = decimal.NewFromFloat(lastCommitmentATx.AmountToCounterParty).Add(decimal.NewFromFloat(lastCommitmentATx.AmountToHtlc)).Float64()
+			outputBean.AmountToOther, _ = decimal.NewFromFloat(lastCommitmentATx.AmountToCounterparty).Add(decimal.NewFromFloat(lastCommitmentATx.AmountToHtlc)).Float64()
 		} else {
 			outputBean.AmountToRsmc, _ = decimal.NewFromFloat(lastCommitmentATx.AmountToRSMC).Add(decimal.NewFromFloat(lastCommitmentATx.AmountToHtlc)).Float64()
-			outputBean.AmountToOther = lastCommitmentATx.AmountToCounterParty
+			outputBean.AmountToOther = lastCommitmentATx.AmountToCounterparty
 		}
 	}
 	outputBean.OppositeSideChannelPubKey = channelInfo.PubKeyB
@@ -462,7 +462,7 @@ func createAliceRsmcTxsForCloseHtlc(tx storm.Node, channelInfo dao.ChannelInfo, 
 	}
 
 	//create to Bob tx
-	if commitmentTxInfo.AmountToCounterParty > 0 {
+	if commitmentTxInfo.AmountToCounterparty > 0 {
 		txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionUseRestInput(
 			int(commitmentTxInfo.TxType),
 			channelInfo.ChannelAddress,
@@ -474,15 +474,15 @@ func createAliceRsmcTxsForCloseHtlc(tx storm.Node, channelInfo dao.ChannelInfo, 
 			channelInfo.AddressB,
 			fundingTransaction.FunderAddress,
 			fundingTransaction.PropertyId,
-			commitmentTxInfo.AmountToCounterParty,
+			commitmentTxInfo.AmountToCounterparty,
 			0,
 			0, &channelInfo.ChannelAddressRedeemScript)
 		if err != nil {
 			log.Println(err)
 			return nil, err
 		}
-		commitmentTxInfo.ToCounterPartyTxid = txid
-		commitmentTxInfo.ToCounterPartyTxHex = hex
+		commitmentTxInfo.ToCounterpartyTxid = txid
+		commitmentTxInfo.ToCounterpartyTxHex = hex
 	}
 
 	commitmentTxInfo.SignAt = time.Now()
@@ -561,18 +561,18 @@ func createBobRsmcTxsForCloseHtlc(tx storm.Node, channelInfo dao.ChannelInfo, is
 	if lastCommitmentBTx.CurrState == dao.TxInfoState_Htlc_GetH { //转账失败
 		if lastCommitmentBTx.HtlcSender == owner {
 			outputBean.AmountToRsmc, _ = decimal.NewFromFloat(lastCommitmentBTx.AmountToRSMC).Add(decimal.NewFromFloat(lastCommitmentBTx.AmountToHtlc)).Float64()
-			outputBean.AmountToOther = lastCommitmentBTx.AmountToCounterParty
+			outputBean.AmountToOther = lastCommitmentBTx.AmountToCounterparty
 		} else { // 是收款方
 			outputBean.AmountToRsmc = lastCommitmentBTx.AmountToRSMC
-			outputBean.AmountToOther, _ = decimal.NewFromFloat(lastCommitmentBTx.AmountToCounterParty).Add(decimal.NewFromFloat(lastCommitmentBTx.AmountToHtlc)).Float64()
+			outputBean.AmountToOther, _ = decimal.NewFromFloat(lastCommitmentBTx.AmountToCounterparty).Add(decimal.NewFromFloat(lastCommitmentBTx.AmountToHtlc)).Float64()
 		}
 	} else { //转账成功
 		if lastCommitmentBTx.HtlcSender == owner { // 我是转账方
 			outputBean.AmountToRsmc = lastCommitmentBTx.AmountToRSMC
-			outputBean.AmountToOther, _ = decimal.NewFromFloat(lastCommitmentBTx.AmountToCounterParty).Add(decimal.NewFromFloat(lastCommitmentBTx.AmountToHtlc)).Float64()
+			outputBean.AmountToOther, _ = decimal.NewFromFloat(lastCommitmentBTx.AmountToCounterparty).Add(decimal.NewFromFloat(lastCommitmentBTx.AmountToHtlc)).Float64()
 		} else { // 我是收款方
 			outputBean.AmountToRsmc, _ = decimal.NewFromFloat(lastCommitmentBTx.AmountToRSMC).Add(decimal.NewFromFloat(lastCommitmentBTx.AmountToHtlc)).Float64()
-			outputBean.AmountToOther = lastCommitmentBTx.AmountToCounterParty
+			outputBean.AmountToOther = lastCommitmentBTx.AmountToCounterparty
 		}
 	}
 	outputBean.OppositeSideChannelPubKey = channelInfo.PubKeyA
@@ -616,7 +616,7 @@ func createBobRsmcTxsForCloseHtlc(tx storm.Node, channelInfo dao.ChannelInfo, is
 	}
 
 	//create to alice tx
-	if commitmentTxInfo.AmountToCounterParty > 0 {
+	if commitmentTxInfo.AmountToCounterparty > 0 {
 		txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionUseRestInput(
 			int(commitmentTxInfo.TxType),
 			channelInfo.ChannelAddress,
@@ -628,15 +628,15 @@ func createBobRsmcTxsForCloseHtlc(tx storm.Node, channelInfo dao.ChannelInfo, is
 			channelInfo.AddressA,
 			fundingTransaction.FunderAddress,
 			fundingTransaction.PropertyId,
-			commitmentTxInfo.AmountToCounterParty,
+			commitmentTxInfo.AmountToCounterparty,
 			0,
 			0, &channelInfo.ChannelAddressRedeemScript)
 		if err != nil {
 			log.Println(err)
 			return nil, err
 		}
-		commitmentTxInfo.ToCounterPartyTxid = txid
-		commitmentTxInfo.ToCounterPartyTxHex = hex
+		commitmentTxInfo.ToCounterpartyTxid = txid
+		commitmentTxInfo.ToCounterpartyTxHex = hex
 	}
 
 	commitmentTxInfo.SignAt = time.Now()

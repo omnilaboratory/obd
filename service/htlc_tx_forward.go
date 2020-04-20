@@ -304,7 +304,7 @@ func (service *htlcForwardTxManager) PayerAddHtlc_40(msgData string, user bean.U
 	returnData["commitmentTxHash"] = latestCommitmentTx.CurrHash
 	returnData["rsmcTxHex"] = latestCommitmentTx.RSMCTxHex
 	returnData["htlcTxHex"] = latestCommitmentTx.HtlcTxHex
-	returnData["toOtherHex"] = latestCommitmentTx.ToCounterPartyTxHex
+	returnData["toOtherHex"] = latestCommitmentTx.ToCounterpartyTxHex
 	return returnData, nil
 }
 
@@ -605,11 +605,11 @@ func (service *htlcForwardTxManager) PayeeSignGetAddHtlc_41(jsonData string, use
 
 		//region 5、创建C3b
 		newCommitmentTxInfo, err := htlcPayeeCreateCommitmentTx_C3b(tx, channelInfo, *requestData, aliceDataJson, latestCommitmentTxInfo, signedToOtherHex, user)
-		amountToOther = newCommitmentTxInfo.AmountToCounterParty
+		amountToOther = newCommitmentTxInfo.AmountToCounterparty
 		amountToHtlc = newCommitmentTxInfo.AmountToHtlc
 
 		returnData["rsmcHex"] = newCommitmentTxInfo.RSMCTxHex
-		returnData["toOtherHex"] = newCommitmentTxInfo.ToCounterPartyTxHex
+		returnData["toOtherHex"] = newCommitmentTxInfo.ToCounterpartyTxHex
 		returnData["htlcHex"] = newCommitmentTxInfo.HtlcTxHex
 		returnData["bobCommitmentHash"] = newCommitmentTxInfo.CurrHash
 		//endregion
@@ -627,7 +627,7 @@ func (service *htlcForwardTxManager) PayeeSignGetAddHtlc_41(jsonData string, use
 		tempOtherSideCommitmentTx.RSMCRedeemScript = aliceRsmcRedeemScript
 		tempOtherSideCommitmentTx.RSMCTxHex = signedAliceRsmcHex
 		tempOtherSideCommitmentTx.RSMCTxid = aliceRsmcTxId
-		tempOtherSideCommitmentTx.AmountToRSMC = newCommitmentTxInfo.AmountToCounterParty
+		tempOtherSideCommitmentTx.AmountToRSMC = newCommitmentTxInfo.AmountToCounterparty
 		err = createCurrCommitmentTxBR(tx, dao.BRType_Rmsc, channelInfo, tempOtherSideCommitmentTx, aliceRsmcInputs, myAddress, requestData.ChannelAddressPrivateKey, user)
 		if err != nil {
 			log.Println(err)
@@ -658,10 +658,10 @@ func (service *htlcForwardTxManager) PayeeSignGetAddHtlc_41(jsonData string, use
 
 	} else {
 		returnData["rsmcHex"] = latestCommitmentTxInfo.RSMCTxHex
-		returnData["toOtherHex"] = latestCommitmentTxInfo.ToCounterPartyTxHex
+		returnData["toOtherHex"] = latestCommitmentTxInfo.ToCounterpartyTxHex
 		returnData["htlcHex"] = latestCommitmentTxInfo.HtlcTxHex
 		returnData["bobCommitmentHash"] = latestCommitmentTxInfo.CurrHash
-		amountToOther = latestCommitmentTxInfo.AmountToCounterParty
+		amountToOther = latestCommitmentTxInfo.AmountToCounterparty
 		amountToHtlc = latestCommitmentTxInfo.AmountToHtlc
 	}
 
@@ -800,7 +800,7 @@ func (service *htlcForwardTxManager) AfterBobSignAddHtlcAtAliceSide_42(msgData s
 		return nil, true, errors.New(gjson.Parse(testResult).Array()[0].Get("reject-reason").String())
 	}
 	returnData["signedRsmcHex"] = bobSignedRsmcHex
-	commitmentTransaction.FromCounterPartySideForMeTxHex = bobSignedRsmcHex
+	commitmentTransaction.FromCounterpartySideForMeTxHex = bobSignedRsmcHex
 	//endregion
 
 	// region 2、签名对方传过来的toOtherHex
@@ -853,7 +853,7 @@ func (service *htlcForwardTxManager) AfterBobSignAddHtlcAtAliceSide_42(msgData s
 		payeeRdOutputAddress,
 		channelInfo.FundingAddress,
 		channelInfo.PropertyId,
-		commitmentTransaction.AmountToCounterParty,
+		commitmentTransaction.AmountToCounterparty,
 		0,
 		1000,
 		&bobRsmcRedeemScript)
@@ -924,7 +924,7 @@ func (service *htlcForwardTxManager) AfterBobSignAddHtlcAtAliceSide_42(msgData s
 		tempOtherSideCommitmentTx.RSMCMultiAddressScriptPubKey = bobRsmcMultiAddressScriptPubKey
 		tempOtherSideCommitmentTx.RSMCTxHex = bobSignedRsmcHex
 		tempOtherSideCommitmentTx.RSMCTxid = bobSignedRsmcTxid
-		tempOtherSideCommitmentTx.AmountToRSMC = commitmentTransaction.AmountToCounterParty
+		tempOtherSideCommitmentTx.AmountToRSMC = commitmentTransaction.AmountToCounterparty
 		err = createCurrCommitmentTxBR(tx, dao.BRType_Rmsc, channelInfo, tempOtherSideCommitmentTx, bobRsmcOutputs, payerChannelAddress, tempAddrPrivateKeyMap[payerChannelPubKey], user)
 		if err != nil {
 			log.Println(err)
@@ -1166,7 +1166,7 @@ func htlcPayerCreateCommitmentTx_C3a(tx storm.Node, channelInfo *dao.ChannelInfo
 	}
 	if latestCommitmentTx.Id > 0 {
 		outputBean.AmountToRsmc, _ = decimal.NewFromFloat(latestCommitmentTx.AmountToRSMC).Sub(decimal.NewFromFloat(amountAndFee)).Float64()
-		outputBean.AmountToOther = latestCommitmentTx.AmountToCounterParty
+		outputBean.AmountToOther = latestCommitmentTx.AmountToCounterparty
 	}
 
 	newCommitmentTxInfo, err := createCommitmentTx(user.PeerId, channelInfo, fundingTransaction, outputBean, &user)
@@ -1229,7 +1229,7 @@ func htlcPayerCreateCommitmentTx_C3a(tx storm.Node, channelInfo *dao.ChannelInfo
 	}
 
 	//create to Bob tx
-	if newCommitmentTxInfo.AmountToCounterParty > 0 {
+	if newCommitmentTxInfo.AmountToCounterparty > 0 {
 		txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionUseRestInput(
 			int(newCommitmentTxInfo.TxType),
 			channelInfo.ChannelAddress,
@@ -1240,15 +1240,15 @@ func htlcPayerCreateCommitmentTx_C3a(tx storm.Node, channelInfo *dao.ChannelInfo
 			outputBean.OppositeSideChannelAddress,
 			channelInfo.FundingAddress,
 			channelInfo.PropertyId,
-			newCommitmentTxInfo.AmountToCounterParty,
+			newCommitmentTxInfo.AmountToCounterparty,
 			0,
 			0, &channelInfo.ChannelAddressRedeemScript)
 		if err != nil {
 			log.Println(err)
 			return nil, err
 		}
-		newCommitmentTxInfo.ToCounterPartyTxid = txid
-		newCommitmentTxInfo.ToCounterPartyTxHex = hex
+		newCommitmentTxInfo.ToCounterpartyTxid = txid
+		newCommitmentTxInfo.ToCounterpartyTxHex = hex
 	}
 
 	newCommitmentTxInfo.CurrState = dao.TxInfoState_Create
@@ -1317,7 +1317,7 @@ func htlcPayeeCreateCommitmentTx_C3b(tx storm.Node, channelInfo *dao.ChannelInfo
 		outputBean.OppositeSideChannelAddress = channelInfo.AddressB
 	}
 	if latestCommitmentTx.Id > 0 {
-		outputBean.AmountToOther, _ = decimal.NewFromFloat(latestCommitmentTx.AmountToCounterParty).Sub(decimal.NewFromFloat(amountAndFee)).Float64()
+		outputBean.AmountToOther, _ = decimal.NewFromFloat(latestCommitmentTx.AmountToCounterparty).Sub(decimal.NewFromFloat(amountAndFee)).Float64()
 		outputBean.AmountToRsmc = latestCommitmentTx.AmountToRSMC
 	}
 
@@ -1326,7 +1326,7 @@ func htlcPayeeCreateCommitmentTx_C3b(tx storm.Node, channelInfo *dao.ChannelInfo
 		log.Println(err)
 		return nil, err
 	}
-	newCommitmentTxInfo.FromCounterPartySideForMeTxHex = signedToOtherHex
+	newCommitmentTxInfo.FromCounterpartySideForMeTxHex = signedToOtherHex
 	newCommitmentTxInfo.TxType = dao.CommitmentTransactionType_Htlc
 
 	allUsedTxidTemp := ""
@@ -1382,7 +1382,7 @@ func htlcPayeeCreateCommitmentTx_C3b(tx storm.Node, channelInfo *dao.ChannelInfo
 	}
 
 	//create for other side tx
-	if newCommitmentTxInfo.AmountToCounterParty > 0 {
+	if newCommitmentTxInfo.AmountToCounterparty > 0 {
 		txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionUseRestInput(
 			int(newCommitmentTxInfo.TxType),
 			channelInfo.ChannelAddress,
@@ -1393,15 +1393,15 @@ func htlcPayeeCreateCommitmentTx_C3b(tx storm.Node, channelInfo *dao.ChannelInfo
 			outputBean.OppositeSideChannelAddress,
 			channelInfo.FundingAddress,
 			channelInfo.PropertyId,
-			newCommitmentTxInfo.AmountToCounterParty,
+			newCommitmentTxInfo.AmountToCounterparty,
 			0,
 			0, &channelInfo.ChannelAddressRedeemScript)
 		if err != nil {
 			log.Println(err)
 			return nil, err
 		}
-		newCommitmentTxInfo.ToCounterPartyTxid = txid
-		newCommitmentTxInfo.ToCounterPartyTxHex = hex
+		newCommitmentTxInfo.ToCounterpartyTxid = txid
+		newCommitmentTxInfo.ToCounterpartyTxHex = hex
 	}
 
 	newCommitmentTxInfo.CurrState = dao.TxInfoState_Create
@@ -1476,13 +1476,13 @@ func checkHexAndUpdateC3aOn42Protocal(tx storm.Node, jsonObj gjson.Result, htlcR
 		log.Println(err)
 		return nil, true, err
 	}
-	if commitmentTransaction.AmountToCounterParty != hexJsonObj.Get("amount").Float() {
+	if commitmentTransaction.AmountToCounterparty != hexJsonObj.Get("amount").Float() {
 		err = errors.New("wrong amount at signedToOtherHex  at 41 protocol")
 		log.Println(err)
 		return nil, true, err
 	}
-	commitmentTransaction.ToCounterPartyTxHex = signedToOtherHex
-	commitmentTransaction.ToCounterPartyTxid = hexJsonObj.Get("txid").String()
+	commitmentTransaction.ToCounterpartyTxHex = signedToOtherHex
+	commitmentTransaction.ToCounterpartyTxid = hexJsonObj.Get("txid").String()
 	//endregion
 
 	//region 2、检测 signedRsmcHex
@@ -1734,13 +1734,13 @@ func checkHexAndUpdateC3bOn43Protocal(tx storm.Node, jsonObj gjson.Result, chann
 		log.Println(err)
 		return nil, true, err
 	}
-	if latestCommitmentTx.AmountToCounterParty != hexJsonObj.Get("amount").Float() {
+	if latestCommitmentTx.AmountToCounterparty != hexJsonObj.Get("amount").Float() {
 		err = errors.New("wrong amount at signedToOtherHex  at 41 protocol")
 		log.Println(err)
 		return nil, true, err
 	}
-	latestCommitmentTx.ToCounterPartyTxHex = signedToOtherHex
-	latestCommitmentTx.ToCounterPartyTxid = hexJsonObj.Get("txid").String()
+	latestCommitmentTx.ToCounterpartyTxHex = signedToOtherHex
+	latestCommitmentTx.ToCounterpartyTxid = hexJsonObj.Get("txid").String()
 	//endregion
 
 	//region 2、检测 signedRsmcHex

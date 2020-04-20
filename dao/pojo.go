@@ -169,10 +169,10 @@ type CommitmentTransaction struct {
 	RSMCTxHex                    string  `json:"rsmc_tx_hex"`
 	RSMCTxid                     string  `json:"rsmc_txid"`
 	//To CounterParty
-	ToCounterPartyTxHex            string  `json:"to_counter_party_tx_hex"`
-	ToCounterPartyTxid             string  `json:"to_counter_party_txid"`
-	AmountToCounterParty           float64 `json:"amount_to_counter_party"`               //amount to bob(if Cna) or alice(if Cnb)
-	FromCounterPartySideForMeTxHex string  `json:"from_counter_party_side_for_me_tx_hex"` //对方给自己的转账部分，防止对方不广播此交易
+	ToCounterpartyTxHex            string  `json:"to_counterparty_tx_hex"`
+	ToCounterpartyTxid             string  `json:"to_counterparty_txid"`
+	AmountToCounterparty           float64 `json:"amount_to_counterparty"`               //amount to bob(if Cna) or alice(if Cnb)
+	FromCounterpartySideForMeTxHex string  `json:"from_counterparty_side_for_me_tx_hex"` //对方给自己的转账部分，防止对方不广播此交易
 	//htlc
 	HtlcChannelPath              string  `json:"htlc_channel_path"`         //借道Path
 	HTLCTempAddressPubKey        string  `json:"htlc_temp_address_pub_key"` //alice for htlc or bob for htlc

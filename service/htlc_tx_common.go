@@ -716,7 +716,7 @@ func htlcCreateCna(tx storm.Node, channelInfo dao.ChannelInfo, operator bean.Use
 			outputBean.AmountToOther = fundingTransaction.AmountB
 		} else {
 			outputBean.AmountToRsmc, _ = decimal.NewFromFloat(lastCommitmentATx.AmountToRSMC).Sub(decimal.NewFromFloat(amountAndFee)).Float64()
-			outputBean.AmountToOther = lastCommitmentATx.AmountToCounterParty
+			outputBean.AmountToOther = lastCommitmentATx.AmountToCounterparty
 		}
 	} else { //	bob send money to alice
 		//	bob借道Alice作为中间节点转账，也就是当前操作者实际是Bob，Alice是中间商，当前通道作为接收者，
@@ -729,7 +729,7 @@ func htlcCreateCna(tx storm.Node, channelInfo dao.ChannelInfo, operator bean.Use
 			outputBean.AmountToOther, _ = decimal.NewFromFloat(fundingTransaction.AmountB).Add(decimal.NewFromFloat(amountAndFee)).Float64()
 		} else {
 			outputBean.AmountToRsmc = lastCommitmentATx.AmountToRSMC
-			outputBean.AmountToOther, _ = decimal.NewFromFloat(lastCommitmentATx.AmountToCounterParty).Sub(decimal.NewFromFloat(amountAndFee)).Float64()
+			outputBean.AmountToOther, _ = decimal.NewFromFloat(lastCommitmentATx.AmountToCounterparty).Sub(decimal.NewFromFloat(amountAndFee)).Float64()
 		}
 	}
 	outputBean.AmountToHtlc = amountAndFee
@@ -768,7 +768,7 @@ func htlcCreateCna(tx storm.Node, channelInfo dao.ChannelInfo, operator bean.Use
 	}
 
 	//create to Bob tx
-	if commitmentTxInfo.AmountToCounterParty > 0 {
+	if commitmentTxInfo.AmountToCounterparty > 0 {
 		txid, hex, usedTxid, err := rpcClient.OmniCreateAndSignRawTransactionUseSingleInput(
 			int(commitmentTxInfo.TxType),
 			channelInfo.ChannelAddress,
@@ -778,7 +778,7 @@ func htlcCreateCna(tx storm.Node, channelInfo dao.ChannelInfo, operator bean.Use
 			},
 			channelInfo.AddressB,
 			fundingTransaction.PropertyId,
-			commitmentTxInfo.AmountToCounterParty,
+			commitmentTxInfo.AmountToCounterparty,
 			0,
 			0, &channelInfo.ChannelAddressRedeemScript, allUsedTxidTemp)
 		if err != nil {
@@ -786,8 +786,8 @@ func htlcCreateCna(tx storm.Node, channelInfo dao.ChannelInfo, operator bean.Use
 			return nil, err
 		}
 		allUsedTxidTemp += "," + usedTxid
-		commitmentTxInfo.ToCounterPartyTxid = txid
-		commitmentTxInfo.ToCounterPartyTxHex = hex
+		commitmentTxInfo.ToCounterpartyTxid = txid
+		commitmentTxInfo.ToCounterpartyTxHex = hex
 	}
 
 	//htlc
@@ -865,7 +865,7 @@ func htlcCreateCnb(tx storm.Node, channelInfo dao.ChannelInfo, operator bean.Use
 			outputBean.AmountToOther, _ = decimal.NewFromFloat(fundingTransaction.AmountA).Sub(decimal.NewFromFloat(amountAndFee)).Float64()
 		} else {
 			outputBean.AmountToRsmc = lastCommitmentTx.AmountToRSMC
-			outputBean.AmountToOther, _ = decimal.NewFromFloat(lastCommitmentTx.AmountToCounterParty).Sub(decimal.NewFromFloat(amountAndFee)).Float64()
+			outputBean.AmountToOther, _ = decimal.NewFromFloat(lastCommitmentTx.AmountToCounterparty).Sub(decimal.NewFromFloat(amountAndFee)).Float64()
 		}
 	} else { //	bob send money to alice bob是发送方 bob的钱就要减少，alice的钱不变
 		// requestData 请求数据就是当前用户Bob的数据，在创建Cnb的时候，需要用bob的临时地址和Alice的通道地址的私钥完成交易的构建
@@ -876,7 +876,7 @@ func htlcCreateCnb(tx storm.Node, channelInfo dao.ChannelInfo, operator bean.Use
 			outputBean.AmountToOther = fundingTransaction.AmountA
 		} else {
 			outputBean.AmountToRsmc, _ = decimal.NewFromFloat(lastCommitmentTx.AmountToRSMC).Sub(decimal.NewFromFloat(amountAndFee)).Float64()
-			outputBean.AmountToOther = lastCommitmentTx.AmountToCounterParty
+			outputBean.AmountToOther = lastCommitmentTx.AmountToCounterparty
 		}
 	}
 	outputBean.AmountToHtlc = amountAndFee
@@ -915,7 +915,7 @@ func htlcCreateCnb(tx storm.Node, channelInfo dao.ChannelInfo, operator bean.Use
 	}
 
 	//create to alice tx
-	if commitmentTxInfo.AmountToCounterParty > 0 {
+	if commitmentTxInfo.AmountToCounterparty > 0 {
 		txid, hex, usedTxid, err := rpcClient.OmniCreateAndSignRawTransactionUseSingleInput(
 			int(commitmentTxInfo.TxType),
 			channelInfo.ChannelAddress,
@@ -925,7 +925,7 @@ func htlcCreateCnb(tx storm.Node, channelInfo dao.ChannelInfo, operator bean.Use
 			},
 			channelInfo.AddressA,
 			fundingTransaction.PropertyId,
-			commitmentTxInfo.AmountToCounterParty,
+			commitmentTxInfo.AmountToCounterparty,
 			0,
 			0, &channelInfo.ChannelAddressRedeemScript, allUsedTxidTemp)
 		if err != nil {
@@ -933,8 +933,8 @@ func htlcCreateCnb(tx storm.Node, channelInfo dao.ChannelInfo, operator bean.Use
 			return nil, err
 		}
 		allUsedTxidTemp += "," + usedTxid
-		commitmentTxInfo.ToCounterPartyTxid = txid
-		commitmentTxInfo.ToCounterPartyTxHex = hex
+		commitmentTxInfo.ToCounterpartyTxid = txid
+		commitmentTxInfo.ToCounterpartyTxHex = hex
 	}
 
 	//htlc
