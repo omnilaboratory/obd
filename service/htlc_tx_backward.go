@@ -88,6 +88,7 @@ func (service *htlcBackwardTxManager) SendRToPreviousNode_Step1(msg bean.Request
 	if err != nil {
 		return nil, errors.New("ChannelAddressPrivateKey is wrong")
 	}
+	tempAddrPrivateKeyMap[payeeChannelPubKey] = reqData.ChannelAddressPrivateKey
 
 	if tool.CheckIsString(&reqData.R) == false {
 		err = errors.New("r is empty")
@@ -244,7 +245,6 @@ func (service *htlcBackwardTxManager) VerifyRAndCreateTxs_Step3(msgData string, 
 	if message.Receiver != user.PeerId {
 		return nil, errors.New("you are not the operator")
 	}
-	reqData.RequestHash = message.Data
 	jsonDataFromPayee := gjson.Parse(message.Data)
 
 	if tool.CheckIsString(&reqData.ChannelAddressPrivateKey) == false {
@@ -265,21 +265,19 @@ func (service *htlcBackwardTxManager) VerifyRAndCreateTxs_Step3(msgData string, 
 	}
 
 	payerChannelPubKey := channelInfo.PubKeyA
-	payeeChannelPubKey := channelInfo.PubKeyB
 	payerChannelAddress := channelInfo.AddressA
 	if user.PeerId == channelInfo.PeerIdB {
 		payerChannelPubKey = channelInfo.PubKeyB
-		payeeChannelPubKey = channelInfo.PubKeyA
 		payerChannelAddress = channelInfo.AddressB
 	}
 
-	_, err = tool.GetPubKeyFromWifAndCheck(reqData.ChannelAddressPrivateKey, payeeChannelPubKey)
+	_, err = tool.GetPubKeyFromWifAndCheck(reqData.ChannelAddressPrivateKey, payerChannelPubKey)
 	if err != nil {
 		err = errors.New("channel_address_private_key is wrong")
 		log.Println(err)
 		return nil, err
 	}
-	tempAddrPrivateKeyMap[payeeChannelPubKey] = reqData.ChannelAddressPrivateKey
+	tempAddrPrivateKeyMap[payerChannelPubKey] = reqData.ChannelAddressPrivateKey
 
 	if tool.CheckIsString(&reqData.R) == false {
 		err = errors.New("channel_address_private_key is empty")
@@ -587,7 +585,7 @@ func createHerd1bAtPayeeSide_at45(tx storm.Node, channelInfo dao.ChannelInfo, he
 		q.Eq("ChannelId", he1b.ChannelId),
 		q.Eq("CommitmentTxId", he1b.Id),
 		q.Eq("RDType", 1),
-		q.Eq("Owner", user.PeerId)).First(he1b)
+		q.Eq("Owner", user.PeerId)).First(herd)
 	if herd.Id > 0 {
 		return herd, nil
 	}
@@ -631,7 +629,7 @@ func createHerd1bAtPayeeSide_at45(tx storm.Node, channelInfo dao.ChannelInfo, he
 		channelInfo.FundingAddress,
 		channelInfo.PropertyId,
 		he1b.OutAmount,
-		0,
+		0.00001,
 		herd.Sequence,
 		&he1b.OutAddressRedeemScript)
 	if err != nil {
@@ -740,7 +738,8 @@ func checkSignedHerdHexAtPayeeSide_at47(tx storm.Node, signedHerd1bHex string, c
 	_ = tx.Select(
 		q.Eq("ChannelId", channelInfo.ChannelId),
 		q.Eq("CommitmentTxId", he1b.Id),
-		q.Eq("Owner", user.PeerId)).First(he1b)
+		q.Eq("RDType", 1),
+		q.Eq("Owner", user.PeerId)).First(herd)
 	if err != nil {
 		log.Println(err)
 		return err

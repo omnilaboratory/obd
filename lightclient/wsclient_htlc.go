@@ -226,8 +226,6 @@ func (client *Client) htlcTxModule(msg bean.RequestMessage) (enum.SendTargetType
 				_ = client.sendDataToP2PUser(msg, status, data)
 			}
 		}
-		client.sendToMyself(msg.Type, status, data)
-		sendType = enum.SendTargetType_SendToSomeone
 	}
 	return sendType, []byte(data), status
 }
