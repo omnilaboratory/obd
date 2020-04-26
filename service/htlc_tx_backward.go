@@ -629,7 +629,7 @@ func createHerd1bAtPayeeSide_at45(tx storm.Node, channelInfo dao.ChannelInfo, he
 		channelInfo.FundingAddress,
 		channelInfo.PropertyId,
 		he1b.OutAmount,
-		0.00001,
+		0,
 		herd.Sequence,
 		&he1b.OutAddressRedeemScript)
 	if err != nil {

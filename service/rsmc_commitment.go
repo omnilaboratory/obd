@@ -994,7 +994,7 @@ func createCurrCommitmentTxBR(tx storm.Node, brType dao.BRType, channelInfo *dao
 				channelInfo.FundingAddress,
 				channelInfo.PropertyId,
 				breachRemedyTransaction.Amount,
-				0.00001,
+				0,
 				0,
 				&commitmentTx.RSMCRedeemScript)
 			if err != nil {
