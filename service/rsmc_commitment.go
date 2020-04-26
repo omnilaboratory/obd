@@ -388,6 +388,7 @@ func (this *commitmentTxManager) AfterBobSignCommitmentTranctionAtAliceSide(data
 	bobCommitmentTx := &dao.CommitmentTransaction{}
 	bobCommitmentTx.Id = latestCcommitmentTxInfo.Id
 	bobCommitmentTx.PropertyId = channelInfo.PropertyId
+	bobCommitmentTx.RSMCTempAddressPubKey = bobCurrTempAddressPubKey
 	bobCommitmentTx.RSMCMultiAddress = bobRsmcMultiAddress
 	bobCommitmentTx.RSMCRedeemScript = bobRsmcRedeemScript
 	bobCommitmentTx.RSMCMultiAddressScriptPubKey = bobRsmcMultiAddressScriptPubKey
@@ -843,6 +844,7 @@ func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction
 		senderCommitmentTx := &dao.CommitmentTransaction{}
 		senderCommitmentTx.Id = newCommitmentTxInfo.Id
 		senderCommitmentTx.PropertyId = fundingTransaction.PropertyId
+		senderCommitmentTx.RSMCTempAddressPubKey = aliceDataJson.Get("currTempAddressPubKey").String()
 		senderCommitmentTx.RSMCMultiAddress = aliceRsmcMultiAddress
 		senderCommitmentTx.RSMCRedeemScript = aliceRsmcRedeemScript
 		senderCommitmentTx.RSMCMultiAddressScriptPubKey = aliceRsmcMultiAddressScriptPubKey

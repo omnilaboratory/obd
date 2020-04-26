@@ -142,6 +142,31 @@ func routerOfP2PNode(msgType enum.MsgType, data string, client *Client) (retData
 			return string(retData), nil
 		}
 		defaultErr = err
+	case enum.MsgType_HTLC_SendR_N45:
+		responseData, _, err := service.HtlcBackwardTxService.BeforeSendRInfoToPayerAtAliceSide_Step2(data, *client.User)
+		if err == nil {
+			retData, _ := json.Marshal(responseData)
+			return string(retData), nil
+		}
+		defaultErr = err
+	case enum.MsgType_HTLC_SendHerdHex_N47:
+		responseData, err := service.HtlcBackwardTxService.SignHed1aAndUpdate_Step4(data, *client.User)
+		if err == nil {
+			//给收款方的信息用sendToMyself发送
+			tempData, _ := json.Marshal(responseData["payeeData"])
+			client.sendToMyself(enum.MsgType_HTLC_VerifyR_N46, true, string(tempData))
+			//给付款方的信息用sendToMyself发送
+			retData, _ := json.Marshal(responseData["payerData"])
+			return string(retData), nil
+		}
+		defaultErr = err
+	case enum.MsgType_HTLC_SignHedHex_N48:
+		responseData, err := service.HtlcBackwardTxService.CheckHed1aHex_Step5(data, *client.User)
+		if err == nil {
+			retData, _ := json.Marshal(responseData)
+			return string(retData), nil
+		}
+		defaultErr = err
 	default:
 		status = true
 	}

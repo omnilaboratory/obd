@@ -622,6 +622,7 @@ func (service *htlcForwardTxManager) PayeeSignGetAddHtlc_41(jsonData string, use
 		tempOtherSideCommitmentTx := &dao.CommitmentTransaction{}
 		tempOtherSideCommitmentTx.Id = newCommitmentTxInfo.Id
 		tempOtherSideCommitmentTx.PropertyId = channelInfo.PropertyId
+		tempOtherSideCommitmentTx.RSMCTempAddressPubKey = aliceDataJson.Get("currRsmcTempAddressPubKey").String()
 		tempOtherSideCommitmentTx.RSMCMultiAddress = aliceRsmcMultiAddress
 		tempOtherSideCommitmentTx.RSMCMultiAddressScriptPubKey = aliceRsmcMultiAddressScriptPubKey
 		tempOtherSideCommitmentTx.RSMCRedeemScript = aliceRsmcRedeemScript
@@ -634,9 +635,11 @@ func (service *htlcForwardTxManager) PayeeSignGetAddHtlc_41(jsonData string, use
 			return nil, err
 		}
 		//endregion
+
 		// region 6.1、根据alice C3a的Htlc输出，创建对应的BR,为下一个交易做准备，create HBR2b tx  for bob
 		tempOtherSideCommitmentTx.Id = newCommitmentTxInfo.Id
 		tempOtherSideCommitmentTx.PropertyId = channelInfo.PropertyId
+		tempOtherSideCommitmentTx.RSMCTempAddressPubKey = aliceDataJson.Get("currHtlcTempAddressPubKey").String()
 		tempOtherSideCommitmentTx.RSMCMultiAddress = aliceHtlcMultiAddress
 		tempOtherSideCommitmentTx.RSMCRedeemScript = aliceHtlcRedeemScript
 		tempOtherSideCommitmentTx.RSMCMultiAddressScriptPubKey = aliceHtlcMultiAddressScriptPubKey
@@ -649,13 +652,6 @@ func (service *htlcForwardTxManager) PayeeSignGetAddHtlc_41(jsonData string, use
 			return nil, err
 		}
 		//endregion
-
-		// region 7、根据bob C3b的Htlc输出，创建对应的htd1b for alice
-		//endregion
-		// region 8、根据bob C3b的Htlc输出，创建对应的htlcLockByH for bob
-
-		//endregion
-
 	} else {
 		returnData["rsmcHex"] = latestCommitmentTxInfo.RSMCTxHex
 		returnData["toOtherHex"] = latestCommitmentTxInfo.ToCounterpartyTxHex
@@ -919,6 +915,7 @@ func (service *htlcForwardTxManager) AfterBobSignAddHtlcAtAliceSide_42(msgData s
 		tempOtherSideCommitmentTx := &dao.CommitmentTransaction{}
 		tempOtherSideCommitmentTx.Id = commitmentTransaction.Id
 		tempOtherSideCommitmentTx.PropertyId = channelInfo.PropertyId
+		tempOtherSideCommitmentTx.RSMCTempAddressPubKey = jsonObjFromPayee.Get("currRsmcTempAddressPubKey").String()
 		tempOtherSideCommitmentTx.RSMCMultiAddress = bobRsmcMultiAddress
 		tempOtherSideCommitmentTx.RSMCRedeemScript = bobRsmcRedeemScript
 		tempOtherSideCommitmentTx.RSMCMultiAddressScriptPubKey = bobRsmcMultiAddressScriptPubKey
@@ -935,6 +932,7 @@ func (service *htlcForwardTxManager) AfterBobSignAddHtlcAtAliceSide_42(msgData s
 		// region 5.1、根据alice C3a的Htlc输出，创建对应的BR,为下一个交易做准备，create HBR2b tx  for bob
 		tempOtherSideCommitmentTx.Id = commitmentTransaction.Id
 		tempOtherSideCommitmentTx.PropertyId = channelInfo.PropertyId
+		tempOtherSideCommitmentTx.RSMCTempAddressPubKey = jsonObjFromPayee.Get("currHtlcTempAddressPubKey").String()
 		tempOtherSideCommitmentTx.RSMCMultiAddress = bobHtlcMultiAddress
 		tempOtherSideCommitmentTx.RSMCMultiAddressScriptPubKey = bobHtlcMultiAddressScriptPubKey
 		tempOtherSideCommitmentTx.RSMCRedeemScript = bobHtlcRedeemScript
@@ -1059,6 +1057,7 @@ func (service *htlcForwardTxManager) AfterAliceSignAddHtlcAtBobSide_43(msgData s
 		tempOtherSideCommitmentTx := &dao.CommitmentTransaction{}
 		tempOtherSideCommitmentTx.Id = latestCommitmentTx.Id
 		tempOtherSideCommitmentTx.PropertyId = channelInfo.PropertyId
+		tempOtherSideCommitmentTx.RSMCTempAddressPubKey = jsonObj.Get("currHtlcTempAddressForHt1aPubKey").String()
 		tempOtherSideCommitmentTx.RSMCMultiAddress = aliceHt1aMultiAddress
 		tempOtherSideCommitmentTx.RSMCRedeemScript = aliceHt1aRedeemScript
 		tempOtherSideCommitmentTx.RSMCMultiAddressScriptPubKey = aliceHt1aMultiAddressScriptPubKey
@@ -1218,6 +1217,12 @@ func htlcPayerCreateCommitmentTx_C3a(tx storm.Node, channelInfo *dao.ChannelInfo
 		}
 		allUsedTxidTemp += "," + usedTxid
 		newCommitmentTxInfo.HtlcChannelPath = requestData.HtlcChannelPath
+
+		currBlockHeight, err := rpcClient.GetBlockCount()
+		if err != nil {
+			return nil, errors.New("fail to get blockHeight ,please try again later")
+		}
+		newCommitmentTxInfo.BeginBlockHeight = currBlockHeight
 		newCommitmentTxInfo.HTLCTxid = txid
 		newCommitmentTxInfo.HtlcTxHex = hex
 		newCommitmentTxInfo.HtlcH = requestData.H
@@ -1371,6 +1376,11 @@ func htlcPayeeCreateCommitmentTx_C3b(tx storm.Node, channelInfo *dao.ChannelInfo
 		}
 		allUsedTxidTemp += "," + usedTxid
 		newCommitmentTxInfo.HtlcChannelPath = payerJsonData.Get("htlcChannelPath").String()
+		currBlockHeight, err := rpcClient.GetBlockCount()
+		if err != nil {
+			return nil, errors.New("fail to get blockHeight ,please try again later")
+		}
+		newCommitmentTxInfo.BeginBlockHeight = currBlockHeight
 		newCommitmentTxInfo.HTLCTxid = txid
 		newCommitmentTxInfo.HtlcTxHex = hex
 		newCommitmentTxInfo.HtlcH = payerJsonData.Get("h").String()
@@ -1944,57 +1954,4 @@ func checkHexAndUpdateC3bOn43Protocal(tx storm.Node, jsonObj gjson.Result, chann
 	_ = tx.Update(latestCommitmentTx)
 
 	return latestCommitmentTx, false, nil
-}
-
-// 用H为bob生成Htlc lock 交易，并保存 htlcLockByH
-func createPayeeSideHtlcLockByHForBob(tx storm.Node, channelInfo dao.ChannelInfo, commitmentTxInfo dao.CommitmentTransaction, user bean.User) (interface{}, error) {
-	//he1b for h
-	payeeChannelPubKey := channelInfo.PubKeyB
-	if user.PeerId == channelInfo.PeerIdA {
-		payeeChannelPubKey = channelInfo.PubKeyA
-	}
-	outputBean := make(map[string]interface{})
-	outputBean["amount"] = commitmentTxInfo.AmountToHtlc
-	outputBean["otherSideChannelPubKey"] = payeeChannelPubKey
-
-	henx, err := createHtlcExecutionDeliveryTxObj(tx, user.PeerId, channelInfo, commitmentTxInfo.HtlcH, commitmentTxInfo, outputBean, 0, user)
-	if err != nil {
-		log.Println(err)
-		return nil, err
-	}
-
-	inputs, err := getInputsForNextTxByParseTxHashVout(commitmentTxInfo.HtlcTxHex, commitmentTxInfo.HTLCMultiAddress, commitmentTxInfo.HTLCMultiAddressScriptPubKey)
-	if err != nil {
-		log.Println(err)
-		return nil, err
-	}
-
-	txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionUseUnsendInput(
-		commitmentTxInfo.HTLCMultiAddress,
-		[]string{
-			tempAddrPrivateKeyMap[payeeChannelPubKey],
-		},
-		inputs,
-		henx.OutputAddress,
-		henx.OutputAddress,
-		commitmentTxInfo.PropertyId,
-		henx.OutAmount,
-		0,
-		henx.Timeout,
-		&commitmentTxInfo.HTLCRedeemScript)
-	if err != nil {
-		log.Println(err)
-		return nil, err
-	}
-
-	henx.Txid = txid
-	henx.TxHex = hex
-	henx.CreateAt = time.Now()
-	henx.CurrState = dao.TxInfoState_Create
-	err = tx.Save(henx)
-	if err != nil {
-		log.Println(err)
-		return nil, err
-	}
-	return henx, err
 }

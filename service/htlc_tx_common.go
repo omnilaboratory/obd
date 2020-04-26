@@ -356,7 +356,7 @@ func htlcBobAbortLastRsmcCommitmentTx(tx storm.Node, channelInfo dao.ChannelInfo
 	return nil
 }
 
-func htlcCreateExecutionDeliveryOfHForAlice(tx storm.Node, aliceIsSender bool, pathInfo dao.HtlcPathInfo, owner string, channelInfo dao.ChannelInfo, propertyId int64, commitmentTxInfo dao.CommitmentTransaction, requestData bean.HtlcRequestOpen, operator bean.User, h string) (hednx *dao.HTLCExecutionDeliveryOfH, err error) {
+func htlcCreateExecutionDeliveryOfHForAlice(tx storm.Node, aliceIsSender bool, pathInfo dao.HtlcPathInfo, owner string, channelInfo dao.ChannelInfo, propertyId int64, commitmentTxInfo dao.CommitmentTransaction, requestData bean.HtlcRequestOpen, operator bean.User, h string) (hednx *dao.HtlcLockTxByH, err error) {
 	//hed1a for h
 	//ownerTempPubKey := requestData.CurrHtlcTempAddressForHed1aOfHPubKey
 	ownerHtlcTempAddressPrivateKey := requestData.CurrHtlcTempAddressPrivateKey
@@ -371,7 +371,7 @@ func htlcCreateExecutionDeliveryOfHForAlice(tx storm.Node, aliceIsSender bool, p
 	outputBean["otherSideChannelPubKey"] = channelInfo.PubKeyB
 	//outputBean["ownerTempPubKey"] = ownerTempPubKey
 
-	hednx, err = createHtlcExecutionDeliveryTxObj(tx, owner, channelInfo, h, commitmentTxInfo, outputBean, 0, operator)
+	hednx, err = createHtlcHLockTxObj(tx, owner, channelInfo, h, commitmentTxInfo, outputBean, 0, operator)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -414,7 +414,7 @@ func htlcCreateExecutionDeliveryOfHForAlice(tx storm.Node, aliceIsSender bool, p
 	return hednx, err
 }
 
-func htlcCreateExecutionDeliveryOfHForBob(tx storm.Node, aliceIsSender bool, owner string, pathInfo dao.HtlcPathInfo, channelInfo dao.ChannelInfo, propertyId int64, commitmentTxInfo dao.CommitmentTransaction, requestData bean.HtlcRequestOpen, operator bean.User, h string) (henx *dao.HTLCExecutionDeliveryOfH, err error) {
+func htlcCreateExecutionDeliveryOfHForBob(tx storm.Node, aliceIsSender bool, owner string, pathInfo dao.HtlcPathInfo, channelInfo dao.ChannelInfo, propertyId int64, commitmentTxInfo dao.CommitmentTransaction, requestData bean.HtlcRequestOpen, operator bean.User, h string) (henx *dao.HtlcLockTxByH, err error) {
 	//he1b for h
 	//ownerTempPubKey := pathInfo.CurrHtlcTempForHe1bOfHPubKey
 	ownerHtlcTempAddressPrivateKey := tempAddrPrivateKeyMap[pathInfo.CurrHtlcTempPubKey]
@@ -429,7 +429,7 @@ func htlcCreateExecutionDeliveryOfHForBob(tx storm.Node, aliceIsSender bool, own
 	outputBean["otherSideChannelPubKey"] = channelInfo.PubKeyA
 	//outputBean["ownerTempPubKey"] = ownerTempPubKey
 
-	henx, err = createHtlcExecutionDeliveryTxObj(tx, owner, channelInfo, h, commitmentTxInfo, outputBean, 0, operator)
+	henx, err = createHtlcHLockTxObj(tx, owner, channelInfo, h, commitmentTxInfo, outputBean, 0, operator)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -473,8 +473,8 @@ func htlcCreateExecutionDeliveryOfHForBob(tx storm.Node, aliceIsSender bool, own
 	return henx, err
 }
 
-func createHtlcExecutionDeliveryTxObj(tx storm.Node, owner string, channelInfo dao.ChannelInfo, h string, commitmentTxInfo dao.CommitmentTransaction, outputBean map[string]interface{}, timeout int, user bean.User) (henxTx *dao.HTLCExecutionDeliveryOfH, err error) {
-	henxTx = &dao.HTLCExecutionDeliveryOfH{}
+func createHtlcHLockTxObj(tx storm.Node, owner string, channelInfo dao.ChannelInfo, h string, commitmentTxInfo dao.CommitmentTransaction, outputBean map[string]interface{}, timeout int, user bean.User) (henxTx *dao.HtlcLockTxByH, err error) {
+	henxTx = &dao.HtlcLockTxByH{}
 	henxTx.ChannelId = channelInfo.ChannelId
 	henxTx.CommitmentTxId = commitmentTxInfo.Id
 	henxTx.PropertyId = commitmentTxInfo.PropertyId
@@ -492,6 +492,7 @@ func createHtlcExecutionDeliveryTxObj(tx storm.Node, owner string, channelInfo d
 	}
 	//input
 	henxTx.InputHex = commitmentTxInfo.HtlcTxHex
+	henxTx.InputTxid = commitmentTxInfo.HTLCTxid
 
 	henxTx.PayeeChannelPubKey = outputBean["otherSideChannelPubKey"].(string)
 	multiAddr, err := rpcClient.CreateMultiSig(2, []string{h, henxTx.PayeeChannelPubKey})
@@ -1329,7 +1330,7 @@ func createHtlcLockByHForBobAtPayeeSide(aliceDataJson gjson.Result, signedHtlcHe
 		return nil, err
 	}
 	htlcLockByHMultiAddress := gjson.Get(htlcLockByHMultiAddr, "address").String()
-	_, aliceHt1ahex, err := rpcClient.OmniCreateAndSignRawTransactionUseUnsendInput(
+	_, hlockHex, err := rpcClient.OmniCreateAndSignRawTransactionUseUnsendInput(
 		aliceHtlcMultiAddress,
 		[]string{
 			bobChannelAddressPrivateKey,
@@ -1346,12 +1347,12 @@ func createHtlcLockByHForBobAtPayeeSide(aliceDataJson gjson.Result, signedHtlcHe
 		log.Println(err)
 		return nil, err
 	}
-	return &aliceHt1ahex, nil
+	return &hlockHex, nil
 }
 
 // 付款方在42号协议，签名Hlock交易，用H+收款方地址构建的多签地址，锁住给收款方的钱
 func signHtlcLockByHTxAtPayerSide(tx storm.Node, channelInfo dao.ChannelInfo,
-	commitmentTransaction dao.CommitmentTransaction, lockByHForBobHex string, user bean.User) (henxTx *dao.HTLCExecutionDeliveryOfH, err error) {
+	commitmentTransaction dao.CommitmentTransaction, lockByHForBobHex string, user bean.User) (henxTx *dao.HtlcLockTxByH, err error) {
 	payeePubKey := channelInfo.PubKeyB
 	if user.PeerId == channelInfo.PeerIdB {
 		payeePubKey = channelInfo.PubKeyA
@@ -1360,19 +1361,19 @@ func signHtlcLockByHTxAtPayerSide(tx storm.Node, channelInfo dao.ChannelInfo,
 	outputBean["amount"] = commitmentTransaction.AmountToHtlc
 	outputBean["otherSideChannelPubKey"] = payeePubKey
 
-	hednx, err := createHtlcExecutionDeliveryTxObj(tx, user.PeerId, channelInfo, commitmentTransaction.HtlcH, commitmentTransaction, outputBean, 0, user)
+	hlockTx, err := createHtlcHLockTxObj(tx, user.PeerId, channelInfo, commitmentTransaction.HtlcH, commitmentTransaction, outputBean, 0, user)
 	if err != nil {
 		log.Println(err)
 		return nil, err
 	}
 
-	htlcInputs, err := getInputsForNextTxByParseTxHashVout(commitmentTransaction.HtlcTxHex, commitmentTransaction.HTLCMultiAddress, commitmentTransaction.HTLCMultiAddressScriptPubKey)
+	htlcOutputs, err := getInputsForNextTxByParseTxHashVout(commitmentTransaction.HtlcTxHex, commitmentTransaction.HTLCMultiAddress, commitmentTransaction.HTLCMultiAddressScriptPubKey)
 	if err != nil {
 		log.Println(err)
 		return nil, err
 	}
 
-	txid, signedHLockHex, err := rpcClient.OmniSignRawTransactionForUnsend(lockByHForBobHex, htlcInputs, tempAddrPrivateKeyMap[commitmentTransaction.HTLCTempAddressPubKey])
+	txid, signedHLockHex, err := rpcClient.OmniSignRawTransactionForUnsend(lockByHForBobHex, htlcOutputs, tempAddrPrivateKeyMap[commitmentTransaction.HTLCTempAddressPubKey])
 	if err != nil {
 		return nil, err
 	}
@@ -1386,16 +1387,16 @@ func signHtlcLockByHTxAtPayerSide(tx storm.Node, channelInfo dao.ChannelInfo,
 		}
 	}
 
-	hednx.Txid = txid
-	hednx.TxHex = signedHLockHex
-	hednx.CreateAt = time.Now()
-	hednx.CurrState = dao.TxInfoState_Create
-	err = tx.Save(hednx)
+	hlockTx.Txid = txid
+	hlockTx.TxHex = signedHLockHex
+	hlockTx.CreateAt = time.Now()
+	hlockTx.CurrState = dao.TxInfoState_Create
+	err = tx.Save(hlockTx)
 	if err != nil {
 		log.Println(err)
 		return nil, err
 	}
-	return hednx, err
+	return hlockTx, err
 }
 
 // 付款方在42号协议，用签名完成toHtlc的Hex，就用这个完整交易Hex，构建C3b方的Hlock交易
@@ -1425,7 +1426,7 @@ func createHtlcLockByHForBobAtPayerSide(bobDataJson gjson.Result, signedHtlcHex 
 		return nil, err
 	}
 	htlcLockByHMultiAddress := gjson.Get(htlcLockByHMultiAddr, "address").String()
-	_, aliceHt1ahex, err := rpcClient.OmniCreateAndSignRawTransactionUseUnsendInput(
+	_, hlockHex, err := rpcClient.OmniCreateAndSignRawTransactionUseUnsendInput(
 		bobHtlcMultiAddress,
 		[]string{
 			aliceChannelAddressPrivateKey,
@@ -1442,12 +1443,12 @@ func createHtlcLockByHForBobAtPayerSide(bobDataJson gjson.Result, signedHtlcHex 
 		log.Println(err)
 		return nil, err
 	}
-	return &aliceHt1ahex, nil
+	return &hlockHex, nil
 }
 
 // 收款方在43号协议，签名Hlock交易
 func signHtlcLockByHForBobAtPayeeSide(tx storm.Node, channelInfo dao.ChannelInfo,
-	commitmentTransaction dao.CommitmentTransaction, lockByHForBobHex string, user bean.User) (henxTx *dao.HTLCExecutionDeliveryOfH, err error) {
+	commitmentTransaction dao.CommitmentTransaction, lockByHForBobHex string, user bean.User) (henxTx *dao.HtlcLockTxByH, err error) {
 	payeePubKey := channelInfo.PubKeyB
 	if user.PeerId == channelInfo.PeerIdA {
 		payeePubKey = channelInfo.PubKeyA
@@ -1456,19 +1457,19 @@ func signHtlcLockByHForBobAtPayeeSide(tx storm.Node, channelInfo dao.ChannelInfo
 	outputBean["amount"] = commitmentTransaction.AmountToHtlc
 	outputBean["otherSideChannelPubKey"] = payeePubKey
 
-	hednx, err := createHtlcExecutionDeliveryTxObj(tx, user.PeerId, channelInfo, commitmentTransaction.HtlcH, commitmentTransaction, outputBean, 0, user)
+	hlock, err := createHtlcHLockTxObj(tx, user.PeerId, channelInfo, commitmentTransaction.HtlcH, commitmentTransaction, outputBean, 0, user)
 	if err != nil {
 		log.Println(err)
 		return nil, err
 	}
 
-	htlcInputs, err := getInputsForNextTxByParseTxHashVout(commitmentTransaction.HtlcTxHex, commitmentTransaction.HTLCMultiAddress, commitmentTransaction.HTLCMultiAddressScriptPubKey)
+	htlcOutputs, err := getInputsForNextTxByParseTxHashVout(commitmentTransaction.HtlcTxHex, commitmentTransaction.HTLCMultiAddress, commitmentTransaction.HTLCMultiAddressScriptPubKey)
 	if err != nil {
 		log.Println(err)
 		return nil, err
 	}
 
-	txid, signedHLockHex, err := rpcClient.OmniSignRawTransactionForUnsend(lockByHForBobHex, htlcInputs, tempAddrPrivateKeyMap[commitmentTransaction.HTLCTempAddressPubKey])
+	txid, signedHLockHex, err := rpcClient.OmniSignRawTransactionForUnsend(lockByHForBobHex, htlcOutputs, tempAddrPrivateKeyMap[commitmentTransaction.HTLCTempAddressPubKey])
 	if err != nil {
 		return nil, err
 	}
@@ -1482,16 +1483,16 @@ func signHtlcLockByHForBobAtPayeeSide(tx storm.Node, channelInfo dao.ChannelInfo
 		}
 	}
 
-	hednx.Txid = txid
-	hednx.TxHex = signedHLockHex
-	hednx.CreateAt = time.Now()
-	hednx.CurrState = dao.TxInfoState_Create
-	err = tx.Save(hednx)
+	hlock.Txid = txid
+	hlock.TxHex = signedHLockHex
+	hlock.CreateAt = time.Now()
+	hlock.CurrState = dao.TxInfoState_Create
+	err = tx.Save(hlock)
 	if err != nil {
 		log.Println(err)
 		return nil, err
 	}
-	return hednx, err
+	return hlock, err
 }
 
 func signHtRD1a(tx storm.Node, aliceHt1aRDhex string, latestCommitmentTransaction dao.CommitmentTransaction, user bean.User) (rdTransaction *dao.RevocableDeliveryTransaction, err error) {

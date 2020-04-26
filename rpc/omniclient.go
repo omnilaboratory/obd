@@ -235,7 +235,6 @@ func (client *Client) OmniCreateAndSignRawTransaction(fromBitCoinAddress string,
 	}
 
 	_, _ = client.ValidateAddress(fromBitCoinAddress)
-	_, _ = client.ValidateAddress(fromBitCoinAddress)
 	resultListUnspent, err := client.ListUnspent(fromBitCoinAddress)
 	if err != nil {
 		return "", "", err

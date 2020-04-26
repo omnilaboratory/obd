@@ -192,14 +192,12 @@ func (client *Client) htlcHDealModule(msg bean.RequestMessage) (enum.SendTargetT
 //htlc tx
 func (client *Client) htlcTxModule(msg bean.RequestMessage) (enum.SendTargetType, []byte, bool) {
 	status := false
-	var sendType = enum.SendTargetType_SendToNone
+	var sendType = enum.SendTargetType_SendToSomeone
 	data := ""
 	switch msg.Type {
 	// Coding by Kevin 2019-10-28
-	case enum.MsgType_HTLC_SendR_N46:
-		respond, senderPeerId, err :=
-			service.HtlcBackwardTxService.SendRToPreviousNode(msg.Data, *client.User)
-
+	case enum.MsgType_HTLC_SendR_N45:
+		respond, err := service.HtlcBackwardTxService.SendRToPreviousNode_Step1(msg, *client.User)
 		if err != nil {
 			data = err.Error()
 		} else {
@@ -209,13 +207,12 @@ func (client *Client) htlcTxModule(msg bean.RequestMessage) (enum.SendTargetType
 			} else {
 				data = string(bytes)
 				status = true
-				_ = client.sendToSomeone(msg.Type, status, senderPeerId, data)
+				_ = client.sendDataToP2PUser(msg, status, data)
 			}
 		}
 		client.sendToMyself(msg.Type, status, data)
-		sendType = enum.SendTargetType_SendToSomeone
-	case enum.MsgType_HTLC_VerifyR_N47:
-		respond, senderPeerId, err := service.HtlcBackwardTxService.VerifyRAndCreateTxs(msg.Data, *client.User)
+	case enum.MsgType_HTLC_VerifyR_N46:
+		respond, err := service.HtlcBackwardTxService.VerifyRAndCreateTxs_Step3(msg.Data, *client.User)
 		if err != nil {
 			data = err.Error()
 		} else {
@@ -225,7 +222,8 @@ func (client *Client) htlcTxModule(msg bean.RequestMessage) (enum.SendTargetType
 			} else {
 				data = string(bytes)
 				status = true
-				_ = client.sendToSomeone(msg.Type, status, senderPeerId, data)
+				msg.Type = enum.MsgType_HTLC_SendHerdHex_N47
+				_ = client.sendDataToP2PUser(msg, status, data)
 			}
 		}
 		client.sendToMyself(msg.Type, status, data)
@@ -240,7 +238,7 @@ func (client *Client) htlcCloseModule(msg bean.RequestMessage) (enum.SendTargetT
 	var sendType = enum.SendTargetType_SendToNone
 	data := ""
 	switch msg.Type {
-	case enum.MsgType_HTLC_RequestCloseCurrTx_N48:
+	case enum.MsgType_HTLC_RequestCloseCurrTx_N50:
 		outData, targetUser, err := service.HtlcCloseTxService.RequestCloseHtlc(msg.Data, *client.User)
 		if err != nil {
 			data = err.Error()
@@ -256,7 +254,7 @@ func (client *Client) htlcCloseModule(msg bean.RequestMessage) (enum.SendTargetT
 		}
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
-	case enum.MsgType_HTLC_CloseSigned_N49:
+	case enum.MsgType_HTLC_CloseSigned_N51:
 		outData, targetUser, err := service.HtlcCloseTxService.CloseHTLCSigned(msg.Data, *client.User)
 		if err != nil {
 			data = err.Error()

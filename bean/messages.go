@@ -218,33 +218,7 @@ type AddHtlcRequest struct {
 	CurrHtlcTempAddressForHt1aPrivateKey string  `json:"curr_htlc_temp_address_for_ht1a_private_key"` //	创建Ht1a中生成ht1a的输出的Rmsc的临时地址的私钥
 }
 
-//type -41: carl tell alice the H,and he ca
-// Deprecated: h and r create by transfer, do not need tell the receiver
-type HtlcHRespond struct {
-	RequestHash string  `json:"request_hash"`
-	Approval    bool    `json:"approval"` // true agree false disagree
-	PropertyId  int     `json:"property_id"`
-	Amount      float64 `json:"amount"`
-	H           string  `json:"h"` // pubKey
-	R           string  `json:"r"` // privateKey
-}
-
-//type -42: alice request ask bob whether agree to be the interNode
-type HtlcRequestFindPathAndSendH struct {
-	H               string  `json:"h"`
-	RecipientPeerId string  `json:"recipient_peer_id"`
-	PropertyId      int64   `json:"property_id"`
-	Amount          float64 `json:"amount"`
-	Memo            string  `json:"memo"`
-}
-
-//type -43: bob send h to carl
-type HtlcSendH struct {
-	H                    string `json:"h"`
-	HAndRInfoRequestHash string `json:"h_and_r_info_request_hash"`
-}
-
-//type -44: bob sign the request for the interNode
+//type -41: bob sign the request for the interNode
 type HtlcSignGetH struct {
 	RequestHash                   string `json:"request_hash"`
 	Approval                      bool   `json:"approval"`                           // true agree false disagree ,最后的收款节点，必须是true
@@ -254,6 +228,17 @@ type HtlcSignGetH struct {
 	CurrRsmcTempAddressPrivateKey string `json:"curr_rsmc_temp_address_private_key"` //	创建Cnx中的toRsmc的部分使用的临时地址的私钥
 	CurrHtlcTempAddressPubKey     string `json:"curr_htlc_temp_address_pub_key"`     //	创建Cnx中的toHtlc的部分使用的临时地址的公钥
 	CurrHtlcTempAddressPrivateKey string `json:"curr_htlc_temp_address_private_key"` //	创建Cnx中的toHtlc的部分使用的临时地址的私钥
+}
+
+//type -41: carl tell alice the H,and he ca
+// Deprecated: h and r create by transfer, do not need tell the receiver
+type HtlcHRespond struct {
+	RequestHash string  `json:"request_hash"`
+	Approval    bool    `json:"approval"` // true agree false disagree
+	PropertyId  int     `json:"property_id"`
+	Amount      float64 `json:"amount"`
+	H           string  `json:"h"` // pubKey
+	R           string  `json:"r"` // privateKey
 }
 
 //type -45: sender request obd  to open htlc tx
@@ -267,36 +252,23 @@ type HtlcRequestOpen struct {
 	CurrHtlcTempAddressPrivateKey        string `json:"curr_htlc_temp_address_private_key"`          //	创建Cnx中的toHtlc的部分使用的临时地址的私钥
 	CurrHtlcTempAddressForHt1aPubKey     string `json:"curr_htlc_temp_address_for_ht1a_pub_key"`     //	创建Ht1a中生成ht1a的输出的Rmsc的临时地址的公钥
 	CurrHtlcTempAddressForHt1aPrivateKey string `json:"curr_htlc_temp_address_for_ht1a_private_key"` //	创建Ht1a中生成ht1a的输出的Rmsc的临时地址的私钥
-	//CurrHtlcTempAddressForHed1aOfHPubKey string `json:"curr_htlc_temp_address_for_hed1a_ofh_pub_key"` //	创建hed1a,锁住支付资金的三签地址临时地址的公钥
 }
 
-//type -46: Send R to previous node.
+//type -46: Send R to previous node. and create commitment transactions.
 type HtlcSendR struct {
-	RequestHash string `json:"request_hash"`
-	R           string `json:"r"`
-
-	// The key of Sender. Example Bob send R to Alice, the Sender is Bob.
-	ChannelAddressPrivateKey string `json:"channel_address_private_key"`
-
-	// The key of Cnb NO.3 output. Example Bob send R to Alice, that is Bob2's.
-	//CurrHtlcTempAddressHe1bOfHPrivateKey string `json:"curr_htlc_temp_address_he1b_ofh_private_key"`
-
-	// These keys of HE1b output. Example Bob send R to Alice, these is Bob3's.
-	CurrHtlcTempAddressForHE1bPubKey     string `json:"curr_htlc_temp_address_for_he1b_pub_key"`
+	ChannelId                            string `json:"channel_id"`
+	R                                    string `json:"r"`
+	ChannelAddressPrivateKey             string `json:"channel_address_private_key"`             // The key of Sender. Example Bob send R to Alice, the Sender is Bob.
+	CurrHtlcTempAddressForHE1bPubKey     string `json:"curr_htlc_temp_address_for_he1b_pub_key"` // These keys of HE1b output. Example Bob send R to Alice, these is Bob3's.
 	CurrHtlcTempAddressForHE1bPrivateKey string `json:"curr_htlc_temp_address_for_he1b_private_key"`
 }
 
 //type -47: Middleman node check out if R is correct
-// and create commitment transactions.
 type HtlcCheckRAndCreateTx struct {
-	RequestHash string `json:"request_hash"`
-	R           string `json:"r"`
-
-	// The key of creator tx. Example Bob send R to Alice, that is Alice's.
-	ChannelAddressPrivateKey string `json:"channel_address_private_key"`
-
-	// The key of Cna NO.3 output. Example Bob send R to Alice, that is Alice2's.
-	//CurrHtlcTempAddressForHed1aOfHPrivateKey string `json:"curr_htlc_temp_address_for_hed1a_ofh_private_key"`
+	ChannelId                string `json:"channel_id"`
+	R                        string `json:"r"`
+	RequestHash              string `json:"request_hash"`
+	ChannelAddressPrivateKey string `json:"channel_address_private_key"` // The key of creator tx. Example Bob send R to Alice, that is Alice's.
 }
 
 //type -48: user wanna close htlc tx when tx is on getH state

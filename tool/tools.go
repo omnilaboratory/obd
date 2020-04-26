@@ -17,6 +17,7 @@ import (
 	"obd/config"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -133,6 +134,10 @@ func PathExistsAndCreate(path string) error {
 		return nil
 	}
 	return errors.New("fail to create")
+}
+
+func FloatToString(input_num float64, prec int) string {
+	return strconv.FormatFloat(input_num, 'f', prec, 64)
 }
 
 func CheckPsw(psw string) (flag bool) {

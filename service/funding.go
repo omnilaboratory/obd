@@ -96,9 +96,9 @@ func (service *fundingTransactionManager) BTCFundingCreated(data bean.RequestMes
 		return nil, "", err
 	}
 
-	out, _ := decimal.NewFromFloat(rpc.GetMinerFee()).Add(decimal.NewFromFloat(config.Dust)).Float64()
+	out, _ := decimal.NewFromFloat(rpc.GetMinerFee()).Add(decimal.NewFromFloat(config.Dust)).Mul(decimal.NewFromFloat(4.0)).Float64()
 	if amount < out {
-		err = errors.New("error btc amount")
+		err = errors.New("error btc amount, must greater " + tool.FloatToString(out, 8))
 		log.Println(err)
 		return nil, "", err
 	}
@@ -851,12 +851,12 @@ func checkBtcFundFinish(address string) error {
 	}
 
 	pMoney := rpc.GetOmniDustBtc()
-	out, _ := decimal.NewFromFloat(rpc.GetMinerFee()).Add(decimal.NewFromFloat(pMoney)).Float64()
+	out, _ := decimal.NewFromFloat(rpc.GetMinerFee()).Add(decimal.NewFromFloat(pMoney)).Mul(decimal.NewFromFloat(4.0)).Float64()
 	for _, item := range array {
 		amount := item.Get("amount").Float()
 		if amount != pMoney {
 			if amount < out {
-				return errors.New("btc amount error")
+				return errors.New("btc amount error, must greater " + tool.FloatToString(out, 8))
 			}
 		}
 	}
@@ -1185,6 +1185,7 @@ func (service *fundingTransactionManager) AssetFundingSigned(jsonData string, si
 	lastCommitmentTx := &dao.CommitmentTransaction{}
 	lastCommitmentTx.Id = 0
 	lastCommitmentTx.PropertyId = channelInfo.PropertyId
+	lastCommitmentTx.RSMCTempAddressPubKey = fundingTransaction.RsmcTempAddressPubKey
 	lastCommitmentTx.RSMCMultiAddress = rsmcMultiAddress
 	lastCommitmentTx.RSMCRedeemScript = rsmcRedeemScript
 	lastCommitmentTx.RSMCMultiAddressScriptPubKey = rsmcMultiAddressScriptPubKey

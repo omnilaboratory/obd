@@ -70,7 +70,7 @@ type HTLCTimeoutDeliveryTxB struct {
 }
 
 //HED1a when get H , alice 得到H（公钥），生成三签地址，锁住给中间节点的钱，当得到R（私钥）的时候，完成三签地址的签名，生成最终支付交易
-type HTLCExecutionDeliveryOfH struct {
+type HtlcLockTxByH struct {
 	Id                 int         `storm:"id,increment" json:"id" `
 	ChannelId          string      `json:"channel_id"`
 	PropertyId         int64       `json:"property_id"`
@@ -98,9 +98,11 @@ type HTLCExecutionDeliveryOfH struct {
 //HED1a when get R 如果bob返回了正确的R，就可以完成签名，标识这次的htlc可以成功了
 type HTLCExecutionDeliveryOfR struct {
 	Id             int         `storm:"id,increment" json:"id" `
+	ChannelId      string      `json:"channel_id"`
 	CommitmentTxId int         `json:"commitment_tx_id"`
+	HLockTxId      int         `json:"hlock_tx_id"`
+	InputHex       string      `json:"input_hex"`
 	InputTxid      string      `json:"input_txid"`   // input txid  from commitTx aliceTempHtlc&bob multtaddr, so need  sign of aliceTempHtlc and bob
-	InputVout      uint32      `json:"input_vout"`   // input vout
 	InputAmount    float64     `json:"input_amount"` // input amount
 	HtlcR          string      `json:"htlc_r"`
 	OutputAddress  string      `json:"output_address"` //to Bob
@@ -116,7 +118,13 @@ type HTLCExecutionDeliveryOfR struct {
 }
 
 //HE1b 如果bob获得了正确的R，就可以完成签名，标识这次的htlc可以成功了
-type HTLCExecutionB HTLCExecutionDeliveryOfR
+type HTLCExecutionB struct {
+	Id int `storm:"id,increment" json:"id" `
+	HTLCExecutionDeliveryOfR
+	HtlcTempAddressForHE1bPubKey string `json:"htlc_temp_address_for_he1b_pub_key"`
+	OutAddressRedeemScript       string `json:"out_address_redeem_script"`
+	OutAddressScriptPubKey       string `json:"out_address_script_pub_key"`
+}
 
 type NormalState int
 

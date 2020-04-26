@@ -159,6 +159,7 @@ func createBRTxObj(owner string, channelInfo *dao.ChannelInfo, brType dao.BRType
 	breachRemedyTransaction.Type = brType
 
 	//input
+	breachRemedyTransaction.TempPubKey = commitmentTxInfo.RSMCTempAddressPubKey
 	breachRemedyTransaction.InputAddress = commitmentTxInfo.RSMCMultiAddress
 	breachRemedyTransaction.InputAddressScriptPubKey = commitmentTxInfo.RSMCMultiAddressScriptPubKey
 	breachRemedyTransaction.InputTxHex = commitmentTxInfo.RSMCTxHex

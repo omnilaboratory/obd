@@ -175,6 +175,7 @@ type CommitmentTransaction struct {
 	FromCounterpartySideForMeTxHex string  `json:"from_counterparty_side_for_me_tx_hex"` //对方给自己的转账部分，防止对方不广播此交易
 	//htlc
 	HtlcChannelPath              string  `json:"htlc_channel_path"`         //借道Path
+	BeginBlockHeight             int     `json:"begin_block_height"`        //借道时的区块高度
 	HTLCTempAddressPubKey        string  `json:"htlc_temp_address_pub_key"` //alice for htlc or bob for htlc
 	HTLCMultiAddress             string  `json:"htlc_multi_address"`        //output aliceTempHtlc&bob  or alice&bobTempHtlc  multiAddr
 	HTLCRedeemScript             string  `json:"htlc_redeem_script"`
@@ -203,6 +204,7 @@ type RevocableDeliveryTransaction struct {
 	PeerIdB        string      `json:"peer_id_b"`
 	ChannelId      string      `json:"channel_id"`
 	PropertyId     int64       `json:"property_id"`
+	InputTxHex     string      `json:"input_tx_hex"`
 	InputTxid      string      `json:"input_txid"`     //input txid  from commitTx alice2&bob multtaddr, so need  sign of alice2 and bob
 	InputVout      uint32      `json:"input_vout"`     // input vout
 	InputAmount    float64     `json:"input_amount"`   //input amount
@@ -248,6 +250,7 @@ type BreachRemedyTransaction struct {
 	PeerIdB                  string      `json:"peer_id_b"`
 	ChannelId                string      `json:"channel_id"`
 	PropertyId               int64       `json:"property_id"`
+	TempPubKey               string      `json:"temp_pub_key"`
 	InputAddress             string      `json:"input_address"`
 	InputAddressScriptPubKey string      `json:"input_address_script_pub_key"`
 	InputTxHex               string      `json:"input_tx_hex"`
