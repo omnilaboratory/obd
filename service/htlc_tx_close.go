@@ -22,133 +22,142 @@ type htlcCloseTxManager struct {
 // htlc 关闭当前htlc交易
 var HtlcCloseTxService htlcCloseTxManager
 
-// -48 request close htlc
-func (service *htlcCloseTxManager) RequestCloseHtlc(msgData string, user bean.User) (outData interface{}, targetUser string, err error) {
-	if tool.CheckIsString(&msgData) == false {
-		return nil, "", errors.New("empty json data")
+// -49 request close htlc
+func (service *htlcCloseTxManager) RequestCloseHtlc(msg bean.RequestMessage, user bean.User) (outData interface{}, err error) {
+	if tool.CheckIsString(&msg.Data) == false {
+		return nil, errors.New("empty json data")
 	}
 
 	reqData := &bean.HtlcRequestCloseCurrTx{}
-	err = json.Unmarshal([]byte(msgData), reqData)
+	err = json.Unmarshal([]byte(msg.Data), reqData)
 	if err != nil {
 		log.Println(err)
-		return nil, "", err
+		return nil, err
 	}
 
 	// region check data
 	if tool.CheckIsString(&reqData.ChannelId) == false {
 		err = errors.New("wrong channel Id")
 		log.Println(err)
-		return nil, "", err
+		return nil, err
 	}
 
 	if tool.CheckIsString(&reqData.CurrRsmcTempAddressPubKey) == false {
 		err = errors.New("empty CurrRsmcTempAddressPubKey")
 		log.Println(err)
-		return nil, "", err
+		return nil, err
 	}
 	if tool.CheckIsString(&reqData.CurrRsmcTempAddressPrivateKey) == false {
 		err = errors.New("empty CurrRsmcTempAddressPrivateKey")
 		log.Println(err)
-		return nil, "", err
+		return nil, err
 	}
 
 	_, err = tool.GetPubKeyFromWifAndCheck(reqData.CurrRsmcTempAddressPrivateKey, reqData.CurrRsmcTempAddressPubKey)
 	if err != nil {
-		return nil, "", errors.New("CurrRsmcTempAddressPrivateKey is wrong")
+		return nil, errors.New("CurrRsmcTempAddressPrivateKey is wrong")
 	}
 
 	if tool.CheckIsString(&reqData.LastHtlcTempAddressForHtnxPrivateKey) == false {
 		err = errors.New("empty LastHtlcTempAddressForHtnxPrivateKey")
 		log.Println(err)
-		return nil, "", err
+		return nil, err
 	}
 	if tool.CheckIsString(&reqData.LastHtlcTempAddressPrivateKey) == false {
 		err = errors.New("empty LastHtlcTempAddressPrivateKey")
 		log.Println(err)
-		return nil, "", err
+		return nil, err
 	}
 	if tool.CheckIsString(&reqData.LastRsmcTempAddressPrivateKey) == false {
 		err = errors.New("empty LastRsmcTempAddressPrivateKey")
 		log.Println(err)
-		return nil, "", err
+		return nil, err
 	}
 	if tool.CheckIsString(&reqData.ChannelAddressPrivateKey) == false {
 		err = errors.New("empty ChannelAddressPrivateKey")
 		log.Println(err)
-		return nil, "", err
+		return nil, err
 	}
 	// endregion
 
-	commitmentTxInfo, err := getHtlcLatestCommitmentTx(reqData.ChannelId, user.PeerId)
+	tx, err := user.Db.Begin(true)
 	if err != nil {
 		log.Println(err)
-		return nil, "", err
+		return nil, err
 	}
-
-	_, err = tool.GetPubKeyFromWifAndCheck(reqData.LastRsmcTempAddressPrivateKey, commitmentTxInfo.RSMCTempAddressPubKey)
-	if err != nil {
-		return nil, "", errors.New("LastRsmcTempAddressPrivateKey is wrong")
-	}
-	_, err = tool.GetPubKeyFromWifAndCheck(reqData.LastHtlcTempAddressPrivateKey, commitmentTxInfo.HTLCTempAddressPubKey)
-	if err != nil {
-		return nil, "", errors.New("LastHtlcTempAddressPrivateKey is wrong")
-	}
+	defer tx.Rollback()
 
 	channelInfo := dao.ChannelInfo{}
 	err = db.Select(
-		q.Eq("ChannelId", commitmentTxInfo.ChannelId),
+		q.Eq("ChannelId", reqData.ChannelId),
+		q.Or(
+			q.Eq("PeerIdA", user.PeerId),
+			q.Eq("PeerIdB", user.PeerId)),
 		q.Eq("CurrState", dao.ChannelState_HtlcTx)).
 		First(&channelInfo)
 	if err != nil {
 		log.Println(err)
-		return nil, "", err
+		return nil, err
 	}
-	log.Println(channelInfo)
+
+	requesterPubKey := channelInfo.PubKeyA
+	targetUser := channelInfo.PeerIdB
+	if user.PeerId == channelInfo.PeerIdB {
+		requesterPubKey = channelInfo.PubKeyB
+		targetUser = channelInfo.PeerIdA
+	}
+	if msg.RecipientUserPeerId != targetUser {
+		return nil, errors.New("RecipientUserPeerId is wrong")
+	}
+	if P2PLocalPeerId == msg.RecipientNodePeerId {
+		if err := FindUserIsOnline(targetUser); err != nil {
+			return nil, err
+		}
+	}
+	_, err = tool.GetPubKeyFromWifAndCheck(reqData.ChannelAddressPrivateKey, requesterPubKey)
+	if err != nil {
+		return nil, errors.New("ChannelAddressPrivateKey is wrong")
+	}
+	tempAddrPrivateKeyMap[requesterPubKey] = reqData.ChannelAddressPrivateKey
+
+	latestCommitmentTxInfo, err := getHtlcLatestCommitmentTxByUseDb(tx, reqData.ChannelId, user.PeerId)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	_, err = tool.GetPubKeyFromWifAndCheck(reqData.LastRsmcTempAddressPrivateKey, latestCommitmentTxInfo.RSMCTempAddressPubKey)
+	if err != nil {
+		return nil, errors.New("LastRsmcTempAddressPrivateKey is wrong")
+	}
+	_, err = tool.GetPubKeyFromWifAndCheck(reqData.LastHtlcTempAddressPrivateKey, latestCommitmentTxInfo.HTLCTempAddressPubKey)
+	if err != nil {
+		return nil, errors.New("LastHtlcTempAddressPrivateKey is wrong")
+	}
 
 	ht1aOrHe1b := dao.HTLCTimeoutTxForAAndExecutionForB{}
 	err = db.Select(
 		q.Eq("ChannelId", channelInfo.ChannelId),
-		q.Eq("CommitmentTxId", commitmentTxInfo.Id),
+		q.Eq("CommitmentTxId", latestCommitmentTxInfo.Id),
 		q.Eq("Owner", user.PeerId)).
 		First(&ht1aOrHe1b)
 	if err != nil {
 		log.Println(err)
-		return nil, "", err
+		return nil, err
 	}
 
 	_, err = tool.GetPubKeyFromWifAndCheck(reqData.LastHtlcTempAddressForHtnxPrivateKey, ht1aOrHe1b.RSMCTempAddressPubKey)
 	if err != nil {
-		return nil, "", errors.New("LastHtlcTempAddressForHtnxPrivateKey is wrong")
+		return nil, errors.New("LastHtlcTempAddressForHtnxPrivateKey is wrong")
 	}
 
-	currNodeChannelPubKey := ""
-	if user.PeerId == channelInfo.PeerIdA {
-		currNodeChannelPubKey = channelInfo.PubKeyA
-		targetUser = channelInfo.PeerIdB
-	} else {
-		currNodeChannelPubKey = channelInfo.PubKeyB
-		targetUser = channelInfo.PeerIdA
-	}
-
-	_, err = tool.GetPubKeyFromWifAndCheck(reqData.ChannelAddressPrivateKey, currNodeChannelPubKey)
-	if err != nil {
-		return nil, "", errors.New("ChannelAddressPrivateKey is wrong")
-	}
-	tempAddrPrivateKeyMap[currNodeChannelPubKey] = reqData.ChannelAddressPrivateKey
-
-	err = FindUserIsOnline(targetUser)
-	if err != nil {
-		return nil, "", err
-	}
-
-	tempAddrPrivateKeyMap[commitmentTxInfo.RSMCTempAddressPubKey] = reqData.LastRsmcTempAddressPrivateKey
-	tempAddrPrivateKeyMap[commitmentTxInfo.HTLCTempAddressPubKey] = reqData.LastHtlcTempAddressPrivateKey
+	tempAddrPrivateKeyMap[latestCommitmentTxInfo.RSMCTempAddressPubKey] = reqData.LastRsmcTempAddressPrivateKey
+	tempAddrPrivateKeyMap[latestCommitmentTxInfo.HTLCTempAddressPubKey] = reqData.LastHtlcTempAddressPrivateKey
 	tempAddrPrivateKeyMap[ht1aOrHe1b.RSMCTempAddressPubKey] = reqData.LastHtlcTempAddressForHtnxPrivateKey
 	tempAddrPrivateKeyMap[reqData.CurrRsmcTempAddressPubKey] = reqData.CurrRsmcTempAddressPrivateKey
 
 	info := dao.HtlcRequestCloseCurrTxInfo{}
-	info.ChannelId = commitmentTxInfo.ChannelId
+	info.ChannelId = latestCommitmentTxInfo.ChannelId
 	info.CurrRsmcTempAddressPubKey = reqData.CurrRsmcTempAddressPubKey
 	info.CreateBy = user.PeerId
 	info.CurrState = dao.NS_Create
@@ -165,17 +174,17 @@ func (service *htlcCloseTxManager) RequestCloseHtlc(msgData string, user bean.Us
 		err = db.Save(&info)
 		if err != nil {
 			log.Println(err)
-			return nil, "", err
+			return nil, err
 		}
 	}
 
 	msgHash := MessageService.saveMsg(user.PeerId, targetUser, info.RequestHash)
 	if tool.CheckIsString(&msgHash) == false {
-		return nil, "", errors.New("fail to save msgHash")
+		return nil, errors.New("fail to save msgHash")
 	}
 	info.RequestHash = msgHash
 
-	return info, targetUser, nil
+	return info, nil
 }
 
 // -49 close htlc

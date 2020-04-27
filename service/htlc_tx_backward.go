@@ -167,7 +167,7 @@ func (service *htlcBackwardTxManager) SendRToPreviousNode_Step1(msg bean.Request
 	responseData = make(map[string]interface{})
 	responseData["channelId"] = reqData.ChannelId
 	responseData["r"] = reqData.R
-	responseData["he1bHex"] = he1b.TxHex
+	responseData["he1bHex"] = he1b.RSMCTxHex
 	responseData["he1bTempPubKey"] = reqData.CurrHtlcTempAddressForHE1bPubKey
 	responseData["herd1bHex"] = herd.TxHex
 
@@ -495,8 +495,8 @@ func (service *htlcBackwardTxManager) CheckHed1aHex_Step5(msgData string, user b
 }
 
 //45 创建He1b
-func createHe1bAtPayeeSide_at45(tx storm.Node, channelInfo dao.ChannelInfo, latestCommitmentTxInfoId int, reqData bean.HtlcSendR, user bean.User) (he1b *dao.HTLCExecutionB, err error) {
-	he1b = &dao.HTLCExecutionB{}
+func createHe1bAtPayeeSide_at45(tx storm.Node, channelInfo dao.ChannelInfo, latestCommitmentTxInfoId int, reqData bean.HtlcSendR, user bean.User) (he1b *dao.HTLCTimeoutTxForAAndExecutionForB, err error) {
+	he1b = &dao.HTLCTimeoutTxForAAndExecutionForB{}
 	_ = tx.Select(
 		q.Eq("ChannelId", channelInfo.ChannelId),
 		q.Eq("CommitmentTxId", latestCommitmentTxInfoId),
@@ -555,14 +555,13 @@ func createHe1bAtPayeeSide_at45(tx storm.Node, channelInfo dao.ChannelInfo, late
 	he1b.InputTxid = hlockOutputs[0].Txid
 	he1b.InputAmount = hlockTx.OutAmount
 
-	he1b.HtlcTempAddressForHE1bPubKey = reqData.CurrHtlcTempAddressForHE1bPubKey
-	he1b.OutputAddress = he1bMultiAddress
-	he1b.OutAddressRedeemScript = he1bRedeemScript
-	he1b.OutAddressScriptPubKey = he1bScriptPubKey
-	he1b.OutAmount = hlockTx.OutAmount
-	he1b.HtlcR = reqData.R
-	he1b.TxHex = bobHe1bHex
-	he1b.Txid = bobHe1bTxid
+	he1b.RSMCTempAddressPubKey = reqData.CurrHtlcTempAddressForHE1bPubKey
+	he1b.RSMCMultiAddress = he1bMultiAddress
+	he1b.RSMCRedeemScript = he1bRedeemScript
+	he1b.RSMCMultiAddressScriptPubKey = he1bScriptPubKey
+	he1b.RSMCOutAmount = hlockTx.OutAmount
+	he1b.RSMCTxHex = bobHe1bHex
+	he1b.RSMCTxid = bobHe1bTxid
 
 	he1b.ChannelId = channelInfo.ChannelId
 	he1b.CommitmentTxId = latestCommitmentTxInfoId
@@ -579,7 +578,7 @@ func createHe1bAtPayeeSide_at45(tx storm.Node, channelInfo dao.ChannelInfo, late
 }
 
 //45 创建HERD for payee
-func createHerd1bAtPayeeSide_at45(tx storm.Node, channelInfo dao.ChannelInfo, he1b *dao.HTLCExecutionB, reqData bean.HtlcSendR, user bean.User) (herd *dao.RevocableDeliveryTransaction, err error) {
+func createHerd1bAtPayeeSide_at45(tx storm.Node, channelInfo dao.ChannelInfo, he1b *dao.HTLCTimeoutTxForAAndExecutionForB, reqData bean.HtlcSendR, user bean.User) (herd *dao.RevocableDeliveryTransaction, err error) {
 	herd = &dao.RevocableDeliveryTransaction{}
 	_ = tx.Select(
 		q.Eq("ChannelId", he1b.ChannelId),
@@ -590,7 +589,7 @@ func createHerd1bAtPayeeSide_at45(tx storm.Node, channelInfo dao.ChannelInfo, he
 		return herd, nil
 	}
 
-	he1bOutputs, err := getInputsForNextTxByParseTxHashVout(he1b.TxHex, he1b.OutputAddress, he1b.OutAddressScriptPubKey)
+	he1bOutputs, err := getInputsForNextTxByParseTxHashVout(he1b.RSMCTxHex, he1b.RSMCMultiAddress, he1b.RSMCMultiAddressScriptPubKey)
 	if err != nil || len(he1bOutputs) == 0 {
 		log.Println(err)
 		return nil, err
@@ -610,17 +609,17 @@ func createHerd1bAtPayeeSide_at45(tx storm.Node, channelInfo dao.ChannelInfo, he
 	herd.RDType = 1
 
 	//input
-	herd.InputTxHex = he1b.TxHex
+	herd.InputTxHex = he1b.RSMCTxHex
 	herd.InputTxid = he1bOutputs[0].Txid
 	herd.InputVout = 0
-	herd.InputAmount = he1b.OutAmount
+	herd.InputAmount = he1b.RSMCOutAmount
 	//output
 	herd.OutputAddress = payeeChannelAddress
 	herd.Sequence = 1000
-	herd.Amount = he1b.OutAmount
+	herd.Amount = he1b.RSMCOutAmount
 
 	bobHerdTxid, bobHerdHex, err := rpcClient.OmniCreateAndSignRawTransactionUseUnsendInput(
-		he1b.OutputAddress,
+		he1b.RSMCMultiAddress,
 		[]string{
 			reqData.CurrHtlcTempAddressForHE1bPrivateKey,
 		},
@@ -628,10 +627,10 @@ func createHerd1bAtPayeeSide_at45(tx storm.Node, channelInfo dao.ChannelInfo, he
 		herd.OutputAddress,
 		channelInfo.FundingAddress,
 		channelInfo.PropertyId,
-		he1b.OutAmount,
-		0,
+		he1b.RSMCOutAmount,
+		0.00001,
 		herd.Sequence,
-		&he1b.OutAddressRedeemScript)
+		&he1b.RSMCRedeemScript)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -724,7 +723,7 @@ func createHed1aHexAtPayerSide_at46(tx storm.Node, channelInfo dao.ChannelInfo, 
 }
 
 func checkSignedHerdHexAtPayeeSide_at47(tx storm.Node, signedHerd1bHex string, channelInfo dao.ChannelInfo, commitmentTxInfo dao.CommitmentTransaction, user bean.User) (err error) {
-	he1b := &dao.HTLCExecutionB{}
+	he1b := &dao.HTLCTimeoutTxForAAndExecutionForB{}
 	err = tx.Select(
 		q.Eq("ChannelId", channelInfo.ChannelId),
 		q.Eq("CommitmentTxId", commitmentTxInfo.Id),
@@ -755,7 +754,7 @@ func checkSignedHerdHexAtPayeeSide_at47(tx storm.Node, signedHerd1bHex string, c
 		}
 	}
 
-	he1bOutputs, err := getInputsForNextTxByParseTxHashVout(he1b.TxHex, he1b.OutputAddress, he1b.OutAddressScriptPubKey)
+	he1bOutputs, err := getInputsForNextTxByParseTxHashVout(he1b.RSMCTxHex, he1b.RSMCMultiAddress, he1b.RSMCMultiAddressScriptPubKey)
 	if err != nil {
 		log.Println(err)
 		return err
@@ -768,7 +767,7 @@ func checkSignedHerdHexAtPayeeSide_at47(tx storm.Node, signedHerd1bHex string, c
 	}
 
 	hexJsonObj := gjson.Parse(result)
-	if he1b.OutputAddress != hexJsonObj.Get("sendingaddress").String() {
+	if he1b.RSMCMultiAddress != hexJsonObj.Get("sendingaddress").String() {
 		err = errors.New("wrong inputAddress at payerHt1aHex  at 41 protocol")
 		log.Println(err)
 		return err

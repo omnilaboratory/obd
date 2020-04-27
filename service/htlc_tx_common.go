@@ -676,6 +676,7 @@ func createHtlcTimeoutTxObj(tx storm.Node, owner string, channelInfo dao.Channel
 	}
 	//input
 	htlcTimeoutTx.InputHex = commitmentTxInfo.HtlcTxHex
+	htlcTimeoutTx.InputAmount = commitmentTxInfo.AmountToHtlc
 
 	//output to rsmc
 	htlcTimeoutTx.RSMCTempAddressPubKey = outputBean.RsmcTempPubKey
@@ -1161,6 +1162,20 @@ func getHtlcLatestCommitmentTx(channelId string, owner string) (commitmentTxInfo
 	return commitmentTxInfo, err
 }
 
+func getHtlcLatestCommitmentTxByUseDb(tx storm.Node, channelId string, owner string) (commitmentTxInfo *dao.CommitmentTransaction, err error) {
+	commitmentTxInfo = &dao.CommitmentTransaction{}
+	err = tx.Select(
+		q.Eq("ChannelId", channelId),
+		q.Eq("Owner", owner)).
+		OrderBy("CreateAt").
+		Reverse().
+		First(commitmentTxInfo)
+	if err == nil && commitmentTxInfo.TxType != dao.CommitmentTransactionType_Htlc {
+		err = errors.New("error tx type")
+	}
+	return commitmentTxInfo, err
+}
+
 func createHtlcBRTx(owner string, channelInfo *dao.ChannelInfo, commitmentTxInfo *dao.CommitmentTransaction, user *bean.User) (*dao.HTLCBreachRemedyTransaction, error) {
 	hbr := &dao.HTLCBreachRemedyTransaction{}
 	hbr.CommitmentTxId = commitmentTxInfo.Id
@@ -1291,6 +1306,9 @@ func signHT1aForAlice(tx storm.Node, channelInfo dao.ChannelInfo, commitmentTran
 			return nil, errors.New(gjson.Parse(result).Array()[0].Get("reject-reason").String())
 		}
 	}
+
+	htlcTimeoutTx.InputTxid = payerHt1aInputsFromHtlc[0].Txid
+
 	htlcTimeoutTx.RSMCTxid = txid
 	htlcTimeoutTx.RSMCTxHex = signedHtlaHex
 	htlcTimeoutTx.SignAt = time.Now()

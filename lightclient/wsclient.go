@@ -136,7 +136,7 @@ func (client *Client) Read() {
 					msg.Type == enum.MsgType_CloseChannelRequest_N38 || msg.Type == enum.MsgType_CloseChannelSign_N39 ||
 					msg.Type == enum.MsgType_HTLC_AddHTLC_N40 || msg.Type == enum.MsgType_HTLC_AddHTLCSigned_N41 ||
 					msg.Type == enum.MsgType_HTLC_SendR_N45 || msg.Type == enum.MsgType_HTLC_VerifyR_N46 ||
-					msg.Type == enum.MsgType_HTLC_RequestCloseCurrTx_N50 || msg.Type == enum.MsgType_HTLC_CloseSigned_N51 ||
+					msg.Type == enum.MsgType_HTLC_RequestCloseCurrTx_N49 || msg.Type == enum.MsgType_HTLC_CloseSigned_N50 ||
 					msg.Type == enum.MsgType_Atomic_Swap_N80 || msg.Type == enum.MsgType_Atomic_Swap_Accept_N81 {
 					if tool.CheckIsString(&msg.RecipientUserPeerId) == false {
 						client.sendToMyself(msg.Type, false, "error recipient_user_peer_id")
@@ -234,8 +234,8 @@ func (client *Client) Read() {
 					}
 
 					// -48 -49
-					if msg.Type == enum.MsgType_HTLC_RequestCloseCurrTx_N50 ||
-						msg.Type == enum.MsgType_HTLC_CloseSigned_N51 {
+					if msg.Type == enum.MsgType_HTLC_RequestCloseCurrTx_N49 ||
+						msg.Type == enum.MsgType_HTLC_CloseSigned_N50 {
 						sendType, dataOut, status = client.htlcCloseModule(msg)
 						break
 					}
@@ -397,7 +397,7 @@ func (client *Client) sendDataToP2PUser(msg bean.RequestMessage, status bool, da
 								newMsg.RecipientNodePeerId = msg.SenderNodePeerId
 								newMsg.Data = data
 								//转发给bob
-								_ = itemClient.sendDataToP2PUser(newMsg, true, data)
+								_ = itemClient.sendDataToP2PUser(newMsg, true, newMsg.Data)
 								return nil
 							} else {
 								msg.Type = enum.MsgType_HTLC_AddHTLCSigned_N41
@@ -414,7 +414,7 @@ func (client *Client) sendDataToP2PUser(msg bean.RequestMessage, status bool, da
 							newMsg.RecipientNodePeerId = msg.SenderNodePeerId
 							newMsg.Data = data
 							//转发给payer alice，
-							_ = itemClient.sendDataToP2PUser(newMsg, true, data)
+							_ = itemClient.sendDataToP2PUser(newMsg, true, newMsg.Data)
 							return nil
 						}
 
@@ -425,25 +425,32 @@ func (client *Client) sendDataToP2PUser(msg bean.RequestMessage, status bool, da
 
 						//当47处理完成，发送48号协议给收款方
 						if msg.Type == enum.MsgType_HTLC_SendHerdHex_N47 {
+
 							newMsg := bean.RequestMessage{}
 							newMsg.Type = enum.MsgType_HTLC_SignHedHex_N48
 							newMsg.SenderUserPeerId = itemClient.User.PeerId
 							newMsg.SenderNodePeerId = P2PLocalPeerId
 							newMsg.RecipientUserPeerId = msg.SenderUserPeerId
 							newMsg.RecipientNodePeerId = msg.SenderNodePeerId
-							newMsg.Data = data
+							payerData := gjson.Parse(retData).Get("payerData").String()
 							//转发给payer alice，
-							_ = itemClient.sendDataToP2PUser(newMsg, true, data)
-							return nil
+							_ = itemClient.sendDataToP2PUser(newMsg, true, payerData)
+
+							//发给bob的
+							msg.Type = enum.MsgType_HTLC_VerifyR_N46
+							payeeData := gjson.Parse(retData).Get("payeeData").String()
+							data = payeeData
 						}
 
 						//当48理完成，就改成46的返回 47和48对用户是透明的
 						if msg.Type == enum.MsgType_HTLC_SignHedHex_N48 {
+							msg.SenderUserPeerId = msg.RecipientUserPeerId
+							msg.SenderNodePeerId = msg.RecipientNodePeerId
 							msg.Type = enum.MsgType_HTLC_VerifyR_N46
 						}
 					}
 					fromId := msg.SenderUserPeerId + "@" + p2pChannelMap[msg.SenderNodePeerId].Address
-					toId := msg.RecipientNodePeerId + "@" + p2pChannelMap[msg.RecipientNodePeerId].Address
+					toId := msg.RecipientUserPeerId + "@" + p2pChannelMap[msg.RecipientNodePeerId].Address
 					jsonMessage := getP2PReplyObj(data, msg.Type, status, fromId, toId)
 					itemClient.SendChannel <- jsonMessage
 					return nil

@@ -110,8 +110,8 @@ const (
 	MsgType_HTLC_VerifyR_N46                MsgType = -46
 	MsgType_HTLC_SendHerdHex_N47            MsgType = -47
 	MsgType_HTLC_SignHedHex_N48             MsgType = -48
-	MsgType_HTLC_RequestCloseCurrTx_N50     MsgType = -50
-	MsgType_HTLC_CloseSigned_N51            MsgType = -51
+	MsgType_HTLC_RequestCloseCurrTx_N49     MsgType = -49
+	MsgType_HTLC_CloseSigned_N50            MsgType = -50
 
 	//https://github.com/LightningOnOmnilayer/Omni-BOLT-spec/blob/master/OmniBOLT-05-Atomic-Swap-among-Channels.md
 	MsgType_Atomic_Swap_N80        MsgType = -80

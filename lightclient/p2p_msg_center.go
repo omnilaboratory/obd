@@ -130,7 +130,6 @@ func routerOfP2PNode(msgType enum.MsgType, data string, client *Client) (retData
 			//给收款方的信息用sendToMyself发送
 			tempData, _ := json.Marshal(node["bobData"])
 			client.sendToMyself(enum.MsgType_HTLC_AddHTLCSigned_N41, true, string(tempData))
-			//给付款方的信息用sendToMyself发送
 			retData, _ := json.Marshal(node["aliceData"])
 			return string(retData), nil
 		}
@@ -153,10 +152,9 @@ func routerOfP2PNode(msgType enum.MsgType, data string, client *Client) (retData
 		responseData, err := service.HtlcBackwardTxService.SignHed1aAndUpdate_Step4(data, *client.User)
 		if err == nil {
 			//给收款方的信息用sendToMyself发送
-			tempData, _ := json.Marshal(responseData["payeeData"])
-			client.sendToMyself(enum.MsgType_HTLC_VerifyR_N46, true, string(tempData))
-			//给付款方的信息用sendToMyself发送
-			retData, _ := json.Marshal(responseData["payerData"])
+			//tempData, _ := json.Marshal(responseData["payeeData"])
+			//client.sendToMyself(enum.MsgType_HTLC_VerifyR_N46, true, string(tempData))
+			retData, _ := json.Marshal(responseData)
 			return string(retData), nil
 		}
 		defaultErr = err

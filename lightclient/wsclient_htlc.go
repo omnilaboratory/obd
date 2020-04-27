@@ -236,8 +236,8 @@ func (client *Client) htlcCloseModule(msg bean.RequestMessage) (enum.SendTargetT
 	var sendType = enum.SendTargetType_SendToNone
 	data := ""
 	switch msg.Type {
-	case enum.MsgType_HTLC_RequestCloseCurrTx_N50:
-		outData, targetUser, err := service.HtlcCloseTxService.RequestCloseHtlc(msg.Data, *client.User)
+	case enum.MsgType_HTLC_RequestCloseCurrTx_N49:
+		outData, err := service.HtlcCloseTxService.RequestCloseHtlc(msg, *client.User)
 		if err != nil {
 			data = err.Error()
 		} else {
@@ -247,12 +247,12 @@ func (client *Client) htlcCloseModule(msg bean.RequestMessage) (enum.SendTargetT
 			} else {
 				data = string(bytes)
 				status = true
-				_ = client.sendToSomeone(msg.Type, status, targetUser, data)
+				_ = client.sendDataToP2PUser(msg, status, data)
 			}
 		}
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
-	case enum.MsgType_HTLC_CloseSigned_N51:
+	case enum.MsgType_HTLC_CloseSigned_N50:
 		outData, targetUser, err := service.HtlcCloseTxService.CloseHTLCSigned(msg.Data, *client.User)
 		if err != nil {
 			data = err.Error()

@@ -32,6 +32,8 @@ type HTLCTimeoutTxForAAndExecutionForB struct {
 	ChannelId                    string      `json:"channel_id"`
 	CommitmentTxId               int         `json:"commitment_tx_id"`
 	PropertyId                   int64       `json:"property_id"`
+	InputTxid                    string      `json:"input_txid"`   // input txid  from commitTx aliceTempHtlc&bob multtaddr, so need  sign of aliceTempHtlc and bob
+	InputAmount                  float64     `json:"input_amount"` // input amount
 	InputHex                     string      `json:"input_hex"`
 	Timeout                      int         `json:"timeout"` // if 3days 432=3*24*6
 	RSMCTempAddressPubKey        string      `json:"rsmc_temp_address_pub_key"`
@@ -117,15 +119,6 @@ type HTLCExecutionDeliveryOfR struct {
 	CreateBy       string      `json:"create_by"`
 }
 
-//HE1b 如果bob获得了正确的R，就可以完成签名，标识这次的htlc可以成功了
-type HTLCExecutionB struct {
-	Id int `storm:"id,increment" json:"id" `
-	HTLCExecutionDeliveryOfR
-	HtlcTempAddressForHE1bPubKey string `json:"htlc_temp_address_for_he1b_pub_key"`
-	OutAddressRedeemScript       string `json:"out_address_redeem_script"`
-	OutAddressScriptPubKey       string `json:"out_address_script_pub_key"`
-}
-
 type NormalState int
 
 const (
@@ -175,7 +168,7 @@ type HtlcPathInfo struct {
 	CurrHtlcTempForHe1bPubKey string `json:"curr_htlc_temp_for_he1b_pub_key"` // temp data when get r for he1b
 }
 
-// 为记录-48的关闭htlc的请求数据
+// 为记录-49的关闭htlc的请求数据
 type HtlcRequestCloseCurrTxInfo struct {
 	Id                        int         `storm:"id,increment" json:"id" `
 	RequestHash               string      `json:"request_hash"`
