@@ -12,6 +12,14 @@ func init() {
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
 }
 
+//测试omnicore 0.13的正式版是否可以连接上
+func TestClient_GetMiningInfo(t *testing.T) {
+	client := NewClient()
+	result, err := client.GetMiningInfo()
+	log.Println(err)
+	log.Println(result)
+}
+
 func TestDemo(t *testing.T) {
 	name := "Yuki will you marry me ? Tetsu.Yuki will you marry me ? Tetsu."
 	s := hex.EncodeToString([]byte(name))
@@ -21,31 +29,6 @@ func TestDemo(t *testing.T) {
 	bytes, e := hex.DecodeString("03c57bea53afd7c3c2d75653ca35ca968c8e9610b6448f822cfb006730870ee961")
 	log.Println(e)
 	log.Println(string(bytes))
-}
-
-func TestClient_OmniSend(t *testing.T) {
-	client := NewClient()
-
-	channelAddr := "2N5EJHxmzRPSYxkijP95p4ZmvbJJ9Vk1hio"
-	toChanelAddr := "2NCprPtFBuBdDUG7xsY7QvAMDWZwfaJvKxR"
-	ChannelAddressRedeemScript := "522103b4df7d3026a437f537dcc0a9e681ffdfb000c9f1223189adf18364588d46e55921024e70d53f1e328c20d28950116d32e503c113be554af643ef68808ad83371737352ae"
-	txid, hex, usedTxid, err := client.OmniCreateAndSignRawTransactionUseSingleInput(
-		channelAddr,
-		[]string{
-			"cVaSpCw5UaioTmsrxr3jL4bcn1wsdbbeQuUoQVW6P9pZxNhqa6wc",
-			"cSV9Tmayp42czShgzkVQ8gJYBqnuZ27FdYho5QehUgQL83UJQ3rY",
-		},
-		toChanelAddr,
-		toChanelAddr,
-		121,
-		2,
-		0,
-		0, &ChannelAddressRedeemScript, "")
-	log.Println(err)
-	log.Println(txid)
-	log.Println(hex)
-	log.Println(usedTxid)
-
 }
 
 func TestClient_GetBlockCount(t *testing.T) {
