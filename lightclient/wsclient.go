@@ -374,14 +374,21 @@ func (client *Client) sendDataToP2PUser(msg bean.RequestMessage, status bool, da
 							newMsg.SenderNodePeerId = P2PLocalPeerId
 							newMsg.RecipientUserPeerId = msg.SenderUserPeerId
 							newMsg.RecipientNodePeerId = msg.SenderNodePeerId
-							newMsg.Data = data
+							payeeData := gjson.Parse(retData).Get("bobData").String()
 							//转发给bob，
-							_ = itemClient.sendDataToP2PUser(newMsg, true, data)
+							_ = itemClient.sendDataToP2PUser(newMsg, true, payeeData)
+
+							//发给alice
+							msg.Type = enum.MsgType_CommitmentTxSigned_RevokeAndAcknowledgeCommitmentTransaction_N352
+							payerData := gjson.Parse(retData).Get("aliceData").String()
+							data = payerData
 						}
 
 						//当354处理完成，就改成352的返回 353和354对用户是透明的
 						if msg.Type == enum.MsgType_CommitmentTxSigned_SecondToBobSign_N354 {
-							return nil
+							msg.Type = enum.MsgType_CommitmentTxSigned_RevokeAndAcknowledgeCommitmentTransaction_N352
+							msg.SenderUserPeerId = msg.RecipientUserPeerId
+							msg.SenderNodePeerId = msg.RecipientNodePeerId
 						}
 
 						if msg.Type == enum.MsgType_HTLC_PayerSignC3b_N42 {
