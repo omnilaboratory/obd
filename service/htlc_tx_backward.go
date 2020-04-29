@@ -435,6 +435,8 @@ func (service *htlcBackwardTxManager) SignHed1aAndUpdate_Step4(msgData string, u
 	if err != nil {
 		return nil, err
 	}
+	commitmentTxInfo.CurrState = dao.TxInfoState_Htlc_GetR
+	tx.Update(commitmentTxInfo)
 	//endregion
 	_ = tx.Commit()
 

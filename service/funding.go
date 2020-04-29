@@ -759,12 +759,12 @@ func (service *fundingTransactionManager) AssetFundingCreated(jsonData string, u
 			outputBean.OppositeSideChannelPubKey = channelInfo.PubKeyB
 			outputBean.OppositeSideChannelAddress = channelInfo.AddressB
 			outputBean.AmountToRsmc = fundingTransaction.AmountA
-			outputBean.AmountToOther = fundingTransaction.AmountB
+			outputBean.AmountToCounterparty = fundingTransaction.AmountB
 		} else { // if bob funding
 			outputBean.OppositeSideChannelPubKey = channelInfo.PubKeyA
 			outputBean.OppositeSideChannelAddress = channelInfo.AddressA
 			outputBean.AmountToRsmc = fundingTransaction.AmountB
-			outputBean.AmountToOther = fundingTransaction.AmountA
+			outputBean.AmountToCounterparty = fundingTransaction.AmountA
 		}
 
 		commitmentTxInfo, err = createCommitmentTx(funder, channelInfo, fundingTransaction, outputBean, user)

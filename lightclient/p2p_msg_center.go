@@ -151,9 +151,6 @@ func routerOfP2PNode(msgType enum.MsgType, data string, client *Client) (retData
 	case enum.MsgType_HTLC_SendHerdHex_N47:
 		responseData, err := service.HtlcBackwardTxService.SignHed1aAndUpdate_Step4(data, *client.User)
 		if err == nil {
-			//给收款方的信息用sendToMyself发送
-			//tempData, _ := json.Marshal(responseData["payeeData"])
-			//client.sendToMyself(enum.MsgType_HTLC_VerifyR_N46, true, string(tempData))
 			retData, _ := json.Marshal(responseData)
 			return string(retData), nil
 		}
@@ -162,6 +159,27 @@ func routerOfP2PNode(msgType enum.MsgType, data string, client *Client) (retData
 		responseData, err := service.HtlcBackwardTxService.CheckHed1aHex_Step5(data, *client.User)
 		if err == nil {
 			retData, _ := json.Marshal(responseData)
+			return string(retData), nil
+		}
+		defaultErr = err
+	case enum.MsgType_HTLC_RequestCloseCurrTx_N49:
+		responseData, err := service.HtlcCloseTxService.BeforeBobSignCloseHtlcAtBobSide(data, client.User)
+		if err == nil {
+			retData, _ := json.Marshal(responseData)
+			return string(retData), nil
+		}
+		defaultErr = err
+	case enum.MsgType_HTLC_CloseHtlcRequestSignBR_N51:
+		responseData, _, err := service.HtlcCloseTxService.AfterBobCloseHTLCSigned_AtAliceSide(data, client.User)
+		if err == nil {
+			retData, _ := json.Marshal(responseData)
+			return string(retData), nil
+		}
+		defaultErr = err
+	case enum.MsgType_HTLC_CloseHtlcUpdateCnb_N52:
+		node, err := service.HtlcCloseTxService.AfterAliceSignCloseHTLCAtBobSide(data, client.User)
+		if err == nil {
+			retData, _ := json.Marshal(node)
 			return string(retData), nil
 		}
 		defaultErr = err

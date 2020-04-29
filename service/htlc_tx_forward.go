@@ -591,7 +591,7 @@ func (service *htlcForwardTxManager) PayeeSignGetAddHtlc_41(jsonData string, use
 	//如果是本轮的第一次请求交易
 	if isFirstRequest {
 		//region 4、根据对方传过来的上一个交易的临时rsmc私钥，签名最近的BR交易，保证对方确实放弃了上一个承诺交易
-		err := signLastBR(tx, *channelInfo, user.PeerId, aliceDataJson.Get("lastTempAddressPrivateKey").String(), latestCommitmentTxInfo.Id)
+		err := signLastBR(tx, dao.BRType_Rmsc, *channelInfo, user.PeerId, aliceDataJson.Get("lastTempAddressPrivateKey").String(), latestCommitmentTxInfo.Id)
 		if err != nil {
 			log.Println(err)
 			return nil, err
@@ -904,7 +904,7 @@ func (service *htlcForwardTxManager) AfterBobSignAddHtlcAtAliceSide_42(msgData s
 	//region 处理付款方收到的已经签名C3a的子交易，及上一个BR的签名，RSMCBR，HBR的创建
 	if commitmentTransaction.CurrState == dao.TxInfoState_Create {
 		//region 4、根据对方传过来的上一个交易的临时rsmc私钥，签名最近的BR交易，保证对方确实放弃了上一个承诺交易
-		err := signLastBR(tx, *channelInfo, user.PeerId, jsonObjFromPayee.Get("lastTempAddressPrivateKey").String(), commitmentTransaction.LastCommitmentTxId)
+		err := signLastBR(tx, dao.BRType_Rmsc, *channelInfo, user.PeerId, jsonObjFromPayee.Get("lastTempAddressPrivateKey").String(), commitmentTransaction.LastCommitmentTxId)
 		if err != nil {
 			log.Println(err)
 			return nil, true, err
@@ -1154,18 +1154,18 @@ func htlcPayerCreateCommitmentTx_C3a(tx storm.Node, channelInfo *dao.ChannelInfo
 	outputBean.AmountToHtlc = amountAndFee
 	if aliceIsPayer { //Alice pay money to bob Alice是付款方
 		outputBean.AmountToRsmc, _ = decimal.NewFromFloat(fundingTransaction.AmountA).Sub(decimal.NewFromFloat(amountAndFee)).Float64()
-		outputBean.AmountToOther = fundingTransaction.AmountB
+		outputBean.AmountToCounterparty = fundingTransaction.AmountB
 		outputBean.OppositeSideChannelPubKey = channelInfo.PubKeyB
 		outputBean.OppositeSideChannelAddress = channelInfo.AddressB
 	} else { //	bob pay money to alice
 		outputBean.AmountToRsmc, _ = decimal.NewFromFloat(fundingTransaction.AmountB).Sub(decimal.NewFromFloat(amountAndFee)).Float64()
-		outputBean.AmountToOther = fundingTransaction.AmountA
+		outputBean.AmountToCounterparty = fundingTransaction.AmountA
 		outputBean.OppositeSideChannelPubKey = channelInfo.PubKeyA
 		outputBean.OppositeSideChannelAddress = channelInfo.AddressA
 	}
 	if latestCommitmentTx.Id > 0 {
 		outputBean.AmountToRsmc, _ = decimal.NewFromFloat(latestCommitmentTx.AmountToRSMC).Sub(decimal.NewFromFloat(amountAndFee)).Float64()
-		outputBean.AmountToOther = latestCommitmentTx.AmountToCounterparty
+		outputBean.AmountToCounterparty = latestCommitmentTx.AmountToCounterparty
 	}
 
 	newCommitmentTxInfo, err := createCommitmentTx(user.PeerId, channelInfo, fundingTransaction, outputBean, &user)
@@ -1312,17 +1312,17 @@ func htlcPayeeCreateCommitmentTx_C3b(tx storm.Node, channelInfo *dao.ChannelInfo
 	outputBean.AmountToHtlc = amountAndFee
 	if bobIsPayee { //Alice pay money to bob
 		outputBean.AmountToRsmc = fundingTransaction.AmountB
-		outputBean.AmountToOther, _ = decimal.NewFromFloat(fundingTransaction.AmountA).Sub(decimal.NewFromFloat(amountAndFee)).Float64()
+		outputBean.AmountToCounterparty, _ = decimal.NewFromFloat(fundingTransaction.AmountA).Sub(decimal.NewFromFloat(amountAndFee)).Float64()
 		outputBean.OppositeSideChannelPubKey = channelInfo.PubKeyA
 		outputBean.OppositeSideChannelAddress = channelInfo.AddressA
 	} else { //	bob pay money to alice
 		outputBean.AmountToRsmc = fundingTransaction.AmountA
-		outputBean.AmountToOther, _ = decimal.NewFromFloat(fundingTransaction.AmountB).Sub(decimal.NewFromFloat(amountAndFee)).Float64()
+		outputBean.AmountToCounterparty, _ = decimal.NewFromFloat(fundingTransaction.AmountB).Sub(decimal.NewFromFloat(amountAndFee)).Float64()
 		outputBean.OppositeSideChannelPubKey = channelInfo.PubKeyB
 		outputBean.OppositeSideChannelAddress = channelInfo.AddressB
 	}
 	if latestCommitmentTx.Id > 0 {
-		outputBean.AmountToOther, _ = decimal.NewFromFloat(latestCommitmentTx.AmountToCounterparty).Sub(decimal.NewFromFloat(amountAndFee)).Float64()
+		outputBean.AmountToCounterparty, _ = decimal.NewFromFloat(latestCommitmentTx.AmountToCounterparty).Sub(decimal.NewFromFloat(amountAndFee)).Float64()
 		outputBean.AmountToRsmc = latestCommitmentTx.AmountToRSMC
 	}
 

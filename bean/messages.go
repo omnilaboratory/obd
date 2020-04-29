@@ -271,7 +271,7 @@ type HtlcCheckRAndCreateTx struct {
 	ChannelAddressPrivateKey string `json:"channel_address_private_key"` // The key of creator tx. Example Bob send R to Alice, that is Alice's.
 }
 
-//type -48: user wanna close htlc tx when tx is on getH state
+//type -49: user wanna close htlc tx when tx is on getH state
 type HtlcRequestCloseCurrTx struct {
 	ChannelId                            string `json:"channel_id"`
 	ChannelAddressPrivateKey             string `json:"channel_address_private_key"` //	开通通道用到的私钥
@@ -282,9 +282,9 @@ type HtlcRequestCloseCurrTx struct {
 	CurrRsmcTempAddressPrivateKey        string `json:"curr_rsmc_temp_address_private_key"`
 }
 
-//type -49: receiver sign the close request
+//type -50: receiver sign the close request
 type HtlcSignCloseCurrTx struct {
-	RequestCloseHtlcHash                 string `json:"request_close_htlc_hash"`     //-48的操作，临时存储一下
+	RequestHash                          string `json:"request_hash"`
 	ChannelAddressPrivateKey             string `json:"channel_address_private_key"` //	开通通道用到的私钥
 	LastRsmcTempAddressPrivateKey        string `json:"last_rsmc_temp_address_private_key"`
 	LastHtlcTempAddressPrivateKey        string `json:"last_htlc_temp_address_private_key"`

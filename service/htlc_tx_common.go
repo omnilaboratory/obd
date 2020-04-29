@@ -715,10 +715,10 @@ func htlcCreateCna(tx storm.Node, channelInfo dao.ChannelInfo, operator bean.Use
 		outputBean.HtlcTempPubKey = requestData.CurrHtlcTempAddressPubKey
 		if lastCommitmentATx == nil {
 			outputBean.AmountToRsmc, _ = decimal.NewFromFloat(fundingTransaction.AmountA).Sub(decimal.NewFromFloat(amountAndFee)).Float64()
-			outputBean.AmountToOther = fundingTransaction.AmountB
+			outputBean.AmountToCounterparty = fundingTransaction.AmountB
 		} else {
 			outputBean.AmountToRsmc, _ = decimal.NewFromFloat(lastCommitmentATx.AmountToRSMC).Sub(decimal.NewFromFloat(amountAndFee)).Float64()
-			outputBean.AmountToOther = lastCommitmentATx.AmountToCounterparty
+			outputBean.AmountToCounterparty = lastCommitmentATx.AmountToCounterparty
 		}
 	} else { //	bob send money to alice
 		//	bob借道Alice作为中间节点转账，也就是当前操作者实际是Bob，Alice是中间商，当前通道作为接收者，
@@ -728,10 +728,10 @@ func htlcCreateCna(tx storm.Node, channelInfo dao.ChannelInfo, operator bean.Use
 		outputBean.HtlcTempPubKey = pathInfo.CurrHtlcTempPubKey
 		if lastCommitmentATx == nil {
 			outputBean.AmountToRsmc = fundingTransaction.AmountA
-			outputBean.AmountToOther, _ = decimal.NewFromFloat(fundingTransaction.AmountB).Add(decimal.NewFromFloat(amountAndFee)).Float64()
+			outputBean.AmountToCounterparty, _ = decimal.NewFromFloat(fundingTransaction.AmountB).Add(decimal.NewFromFloat(amountAndFee)).Float64()
 		} else {
 			outputBean.AmountToRsmc = lastCommitmentATx.AmountToRSMC
-			outputBean.AmountToOther, _ = decimal.NewFromFloat(lastCommitmentATx.AmountToCounterparty).Sub(decimal.NewFromFloat(amountAndFee)).Float64()
+			outputBean.AmountToCounterparty, _ = decimal.NewFromFloat(lastCommitmentATx.AmountToCounterparty).Sub(decimal.NewFromFloat(amountAndFee)).Float64()
 		}
 	}
 	outputBean.AmountToHtlc = amountAndFee
@@ -864,10 +864,10 @@ func htlcCreateCnb(tx storm.Node, channelInfo dao.ChannelInfo, operator bean.Use
 			// 给bob，bob是收款方，bob本身的余额还是放到RSMC里面
 			outputBean.AmountToRsmc = fundingTransaction.AmountB
 			// 给Alice的，Alice转账给bob，Alice要锁定一部分资金
-			outputBean.AmountToOther, _ = decimal.NewFromFloat(fundingTransaction.AmountA).Sub(decimal.NewFromFloat(amountAndFee)).Float64()
+			outputBean.AmountToCounterparty, _ = decimal.NewFromFloat(fundingTransaction.AmountA).Sub(decimal.NewFromFloat(amountAndFee)).Float64()
 		} else {
 			outputBean.AmountToRsmc = lastCommitmentTx.AmountToRSMC
-			outputBean.AmountToOther, _ = decimal.NewFromFloat(lastCommitmentTx.AmountToCounterparty).Sub(decimal.NewFromFloat(amountAndFee)).Float64()
+			outputBean.AmountToCounterparty, _ = decimal.NewFromFloat(lastCommitmentTx.AmountToCounterparty).Sub(decimal.NewFromFloat(amountAndFee)).Float64()
 		}
 	} else { //	bob send money to alice bob是发送方 bob的钱就要减少，alice的钱不变
 		// requestData 请求数据就是当前用户Bob的数据，在创建Cnb的时候，需要用bob的临时地址和Alice的通道地址的私钥完成交易的构建
@@ -875,10 +875,10 @@ func htlcCreateCnb(tx storm.Node, channelInfo dao.ChannelInfo, operator bean.Use
 		outputBean.HtlcTempPubKey = requestData.CurrHtlcTempAddressPubKey
 		if lastCommitmentTx == nil {
 			outputBean.AmountToRsmc, _ = decimal.NewFromFloat(fundingTransaction.AmountB).Add(decimal.NewFromFloat(amountAndFee)).Float64()
-			outputBean.AmountToOther = fundingTransaction.AmountA
+			outputBean.AmountToCounterparty = fundingTransaction.AmountA
 		} else {
 			outputBean.AmountToRsmc, _ = decimal.NewFromFloat(lastCommitmentTx.AmountToRSMC).Sub(decimal.NewFromFloat(amountAndFee)).Float64()
-			outputBean.AmountToOther = lastCommitmentTx.AmountToCounterparty
+			outputBean.AmountToCounterparty = lastCommitmentTx.AmountToCounterparty
 		}
 	}
 	outputBean.AmountToHtlc = amountAndFee
@@ -1151,20 +1151,6 @@ func createHtlcRDTxObj(owner string, channelInfo *dao.ChannelInfo, htlcTimeoutTx
 func getHtlcLatestCommitmentTx(channelId string, owner string) (commitmentTxInfo *dao.CommitmentTransaction, err error) {
 	commitmentTxInfo = &dao.CommitmentTransaction{}
 	err = db.Select(
-		q.Eq("ChannelId", channelId),
-		q.Eq("Owner", owner)).
-		OrderBy("CreateAt").
-		Reverse().
-		First(commitmentTxInfo)
-	if err == nil && commitmentTxInfo.TxType != dao.CommitmentTransactionType_Htlc {
-		err = errors.New("error tx type")
-	}
-	return commitmentTxInfo, err
-}
-
-func getHtlcLatestCommitmentTxByUseDb(tx storm.Node, channelId string, owner string) (commitmentTxInfo *dao.CommitmentTransaction, err error) {
-	commitmentTxInfo = &dao.CommitmentTransaction{}
-	err = tx.Select(
 		q.Eq("ChannelId", channelId),
 		q.Eq("Owner", owner)).
 		OrderBy("CreateAt").

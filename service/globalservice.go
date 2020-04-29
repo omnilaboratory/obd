@@ -1,8 +1,10 @@
 package service
 
 import (
+	"encoding/json"
 	"errors"
 	"github.com/asdine/storm/q"
+	"github.com/shopspring/decimal"
 	"log"
 	"obd/bean"
 	"obd/dao"
@@ -34,7 +36,7 @@ func FindUserIsOnline(peerId string) error {
 
 type commitmentOutputBean struct {
 	AmountToRsmc               float64
-	AmountToOther              float64
+	AmountToCounterparty       float64
 	AmountToHtlc               float64
 	RsmcTempPubKey             string
 	HtlcTempPubKey             string
@@ -113,7 +115,7 @@ func createCommitmentTx(owner string, channelInfo *dao.ChannelInfo, fundingTrans
 	}
 
 	commitmentTxInfo.AmountToRSMC = outputBean.AmountToRsmc
-	commitmentTxInfo.AmountToCounterparty = outputBean.AmountToOther
+	commitmentTxInfo.AmountToCounterparty = outputBean.AmountToCounterparty
 	commitmentTxInfo.AmountToHtlc = outputBean.AmountToHtlc
 
 	commitmentTxInfo.CreateBy = user.PeerId
@@ -548,4 +550,124 @@ func createMultiSig(pubkey1 string, pubkey2 string) (multiAddress, redeemScript,
 	}
 	scriptPubKey = gjson.Get(tempJson, "scriptPubKey").String()
 	return multiAddress, redeemScript, scriptPubKey, nil
+}
+
+func createCommitmentTxHex(dbTx storm.Node, isSender bool, reqData *bean.CommitmentTx, channelInfo *dao.ChannelInfo, lastCommitmentTx *dao.CommitmentTransaction, currUser bean.User) (commitmentTxInfo *dao.CommitmentTransaction, err error) {
+	//1、转账给bob的交易：输入：通道其中一个input，输出：给bob
+	//2、转账后的余额的交易：输入：通道总的一个input,输出：一个多签地址，这个钱又需要后续的RD才能赎回
+	// create Cna tx
+	fundingTransaction := getFundingTransactionByChannelId(dbTx, channelInfo.ChannelId, currUser.PeerId)
+	if fundingTransaction == nil {
+		err = errors.New("not found fundingTransaction")
+		return nil, err
+	}
+
+	var outputBean = commitmentOutputBean{}
+	outputBean.RsmcTempPubKey = reqData.CurrTempAddressPubKey
+	if currUser.PeerId == channelInfo.PeerIdA {
+		//default alice transfer to bob ,then alice minus money
+		outputBean.AmountToRsmc, _ = decimal.NewFromFloat(fundingTransaction.AmountA).Sub(decimal.NewFromFloat(reqData.Amount)).Float64()
+		outputBean.AmountToCounterparty, _ = decimal.NewFromFloat(fundingTransaction.AmountB).Add(decimal.NewFromFloat(reqData.Amount)).Float64()
+		outputBean.OppositeSideChannelAddress = channelInfo.AddressB
+		outputBean.OppositeSideChannelPubKey = channelInfo.PubKeyB
+	} else {
+		outputBean.AmountToRsmc, _ = decimal.NewFromFloat(fundingTransaction.AmountB).Add(decimal.NewFromFloat(reqData.Amount)).Float64()
+		outputBean.AmountToCounterparty, _ = decimal.NewFromFloat(fundingTransaction.AmountA).Sub(decimal.NewFromFloat(reqData.Amount)).Float64()
+		outputBean.OppositeSideChannelAddress = channelInfo.AddressA
+		outputBean.OppositeSideChannelPubKey = channelInfo.PubKeyA
+	}
+
+	if lastCommitmentTx != nil && lastCommitmentTx.Id > 0 {
+		if isSender {
+			outputBean.AmountToRsmc, _ = decimal.NewFromFloat(lastCommitmentTx.AmountToRSMC).Sub(decimal.NewFromFloat(reqData.Amount)).Float64()
+			outputBean.AmountToCounterparty, _ = decimal.NewFromFloat(lastCommitmentTx.AmountToCounterparty).Add(decimal.NewFromFloat(reqData.Amount)).Float64()
+		} else {
+			outputBean.AmountToRsmc, _ = decimal.NewFromFloat(lastCommitmentTx.AmountToRSMC).Add(decimal.NewFromFloat(reqData.Amount)).Float64()
+			outputBean.AmountToCounterparty, _ = decimal.NewFromFloat(lastCommitmentTx.AmountToCounterparty).Sub(decimal.NewFromFloat(reqData.Amount)).Float64()
+		}
+	}
+
+	if lastCommitmentTx.TxType == dao.CommitmentTransactionType_Htlc {
+		if lastCommitmentTx.HtlcSender == currUser.PeerId {
+			outputBean.AmountToCounterparty, _ = decimal.NewFromFloat(lastCommitmentTx.AmountToCounterparty).Add(decimal.NewFromFloat(lastCommitmentTx.AmountToHtlc)).Float64()
+		} else {
+			outputBean.AmountToRsmc, _ = decimal.NewFromFloat(lastCommitmentTx.AmountToRSMC).Add(decimal.NewFromFloat(lastCommitmentTx.AmountToHtlc)).Float64()
+		}
+	}
+
+	commitmentTxInfo, err = createCommitmentTx(currUser.PeerId, channelInfo, fundingTransaction, outputBean, &currUser)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	commitmentTxInfo.TxType = dao.CommitmentTransactionType_Rsmc
+
+	usedTxidTemp := ""
+	if commitmentTxInfo.AmountToRSMC > 0 {
+		txid, hex, usedTxid, err := rpcClient.OmniCreateAndSignRawTransactionUseSingleInput(
+			int(commitmentTxInfo.TxType),
+			channelInfo.ChannelAddress,
+			[]string{
+				reqData.ChannelAddressPrivateKey,
+			},
+			commitmentTxInfo.RSMCMultiAddress,
+			fundingTransaction.PropertyId,
+			commitmentTxInfo.AmountToRSMC,
+			0,
+			0, &channelInfo.ChannelAddressRedeemScript, "")
+		if err != nil {
+			log.Println(err)
+			return nil, err
+		}
+
+		usedTxidTemp = usedTxid
+		commitmentTxInfo.RsmcInputTxid = usedTxid
+		commitmentTxInfo.RSMCTxid = txid
+		commitmentTxInfo.RSMCTxHex = hex
+	}
+
+	//create to other tx
+	if commitmentTxInfo.AmountToCounterparty > 0 {
+		txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionUseRestInput(
+			int(commitmentTxInfo.TxType),
+			channelInfo.ChannelAddress,
+			usedTxidTemp,
+			[]string{
+				reqData.ChannelAddressPrivateKey,
+			},
+			outputBean.OppositeSideChannelAddress,
+			fundingTransaction.FunderAddress,
+			fundingTransaction.PropertyId,
+			commitmentTxInfo.AmountToCounterparty,
+			0,
+			0, &channelInfo.ChannelAddressRedeemScript)
+		if err != nil {
+			log.Println(err)
+			return nil, err
+		}
+		commitmentTxInfo.ToCounterpartyTxid = txid
+		commitmentTxInfo.ToCounterpartyTxHex = hex
+	}
+	commitmentTxInfo.LastHash = ""
+	commitmentTxInfo.CurrHash = ""
+	if lastCommitmentTx != nil && lastCommitmentTx.Id > 0 {
+		commitmentTxInfo.LastCommitmentTxId = lastCommitmentTx.Id
+		commitmentTxInfo.LastHash = lastCommitmentTx.CurrHash
+	}
+	commitmentTxInfo.CurrState = dao.TxInfoState_Create
+	err = dbTx.Save(commitmentTxInfo)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	bytes, err := json.Marshal(commitmentTxInfo)
+	msgHash := tool.SignMsgWithSha256(bytes)
+	commitmentTxInfo.CurrHash = msgHash
+	err = dbTx.Update(commitmentTxInfo)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	return commitmentTxInfo, nil
 }
