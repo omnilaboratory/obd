@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/lestrrat-go/file-rotatelogs"
 	"google.golang.org/grpc"
 	"io"
 	"log"
@@ -9,24 +10,25 @@ import (
 	"obd/lightclient"
 	"obd/rpc"
 	"obd/service"
-	"obd/tool"
-	"os"
 	"strconv"
-	"strings"
 	"time"
 )
 
 func init() {
-	_dir := "log"
-	_ = tool.PathExistsAndCreate(_dir)
-	file := _dir + "/logFile" + strings.Split(time.Now().String(), " ")[0] + ".log"
-	logFile, err := os.OpenFile(file, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0766)
+	path := "log/go"
+	writer, err := rotatelogs.New(
+		path+".%Y%m%d%H%M.log",
+		rotatelogs.WithLinkName(path),
+		rotatelogs.WithMaxAge(time.Duration(12)*time.Hour),
+		rotatelogs.WithRotationTime(time.Duration(12)*time.Hour),
+	)
 	if err != nil {
 		panic(err)
 	}
 	writers := []io.Writer{
-		logFile,
-		os.Stdout}
+		//os.Stdout,
+		writer,
+	}
 	fileAndStdoutWriter := io.MultiWriter(writers...)
 	log.SetOutput(fileAndStdoutWriter)
 	log.SetFlags(log.Ldate | log.Ltime | log.Llongfile)
