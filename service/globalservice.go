@@ -572,6 +572,7 @@ func createCommitmentTxHex(dbTx storm.Node, isSender bool, reqData *bean.Commitm
 		commitmentTxInfo.ToCounterpartyTxid = txid
 		commitmentTxInfo.ToCounterpartyTxHex = hex
 	}
+
 	commitmentTxInfo.LastHash = ""
 	commitmentTxInfo.CurrHash = ""
 	if lastCommitmentTx != nil && lastCommitmentTx.Id > 0 {
