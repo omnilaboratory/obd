@@ -10,15 +10,18 @@ import (
 	"obd/lightclient"
 	"obd/rpc"
 	"obd/service"
+	"obd/tool"
+	"os"
 	"strconv"
 	"time"
 )
 
 func init() {
+	_dir := "log"
+	_ = tool.PathExistsAndCreate(_dir)
 	path := "log/go"
 	writer, err := rotatelogs.New(
 		path+".%Y%m%d%H%M.log",
-		rotatelogs.WithLinkName(path),
 		rotatelogs.WithMaxAge(time.Duration(12)*time.Hour),
 		rotatelogs.WithRotationTime(time.Duration(12)*time.Hour),
 	)
@@ -26,7 +29,7 @@ func init() {
 		panic(err)
 	}
 	writers := []io.Writer{
-		//os.Stdout,
+		os.Stdout,
 		writer,
 	}
 	fileAndStdoutWriter := io.MultiWriter(writers...)
