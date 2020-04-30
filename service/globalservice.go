@@ -288,41 +288,6 @@ func checkOmniTxHex(fundingTxHexDecode string, channelInfo *dao.ChannelInfo, use
 	return fundingTxid, amountA, propertyId, err
 }
 
-func checkOmniTxHexForRD(rdHex string, channelInfo *dao.ChannelInfo, fromAddress string, user *bean.User) (fundingTxid string, amountA float64, propertyId int64, err error) {
-	rdHexDecode, err := rpcClient.OmniDecodeTransaction(rdHex)
-	if err != nil {
-		err = errors.New("rdHex parse fail " + err.Error())
-		log.Println(err)
-		return "", 0, 0, err
-	}
-	log.Println(rdHexDecode)
-	jsonOmniTxHexDecode := gjson.Parse(rdHexDecode)
-	fundingTxid = jsonOmniTxHexDecode.Get("txid").String()
-
-	funderAddress := channelInfo.AddressA
-	if user.PeerId == channelInfo.PeerIdB {
-		funderAddress = channelInfo.AddressB
-	}
-
-	referenceAddress := jsonOmniTxHexDecode.Get("referenceaddress").String()
-	if referenceAddress != fromAddress {
-		err = errors.New("wrong Tx output")
-		log.Println(err)
-		return "", 0, 0, err
-	}
-
-	sendingAddress := jsonOmniTxHexDecode.Get("sendingaddress").String()
-	if sendingAddress != funderAddress {
-		err = errors.New("wrong Tx input")
-		log.Println(err)
-		return "", 0, 0, err
-	}
-
-	amountA = jsonOmniTxHexDecode.Get("amount").Float()
-	propertyId = jsonOmniTxHexDecode.Get("propertyid").Int()
-	return fundingTxid, amountA, propertyId, err
-}
-
 //从未广播的交易hash数据中解析出他的输出，以此作为下个交易的输入
 func getInputsForNextTxByParseTxHashVout(hex string, toAddress, scriptPubKey string) (inputs []rpc.TransactionInputItem, err error) {
 	result, err := rpcClient.DecodeRawTransaction(hex)
@@ -489,47 +454,6 @@ func signHTD1bTx(tx storm.Node, signedHtlcHex string, htd1bHex string, latestCco
 	htlcTimeoutDeliveryTx.Txid = signedHtd1bTxid
 	htlcTimeoutDeliveryTx.TxHex = signedHtd1bHex
 	err = tx.Save(htlcTimeoutDeliveryTx)
-	if err != nil {
-		log.Println(err)
-		return err
-	}
-	return nil
-}
-
-func signHt1aTx(tx storm.Node, channelInfo *dao.ChannelInfo, signedHtlcHex string, ht1aHex string, latestCcommitmentTxInfo dao.CommitmentTransaction, outputAddress string, user *bean.User) (err error) {
-	inputs, err := getInputsForNextTxByParseTxHashVout(signedHtlcHex, latestCcommitmentTxInfo.RSMCMultiAddress, latestCcommitmentTxInfo.RSMCMultiAddressScriptPubKey)
-	if err != nil {
-		log.Println(err)
-		return err
-	}
-	_, signedRdHex, err := rpcClient.OmniSignRawTransactionForUnsend(ht1aHex, inputs, tempAddrPrivateKeyMap[latestCcommitmentTxInfo.RSMCTempAddressPubKey])
-	if err != nil {
-		return err
-	}
-	result, err := rpcClient.TestMemPoolAccept(signedRdHex)
-	if err != nil {
-		return err
-	}
-	if gjson.Parse(result).Array()[0].Get("allowed").Bool() == false {
-		if gjson.Parse(result).Array()[0].Get("reject-reason").String() != "missing-inputs" {
-			return errors.New(gjson.Parse(result).Array()[0].Get("reject-reason").String())
-		}
-	}
-
-	aliceHt1aTxid := checkHexOutputAddressFromOmniDecode(signedRdHex, inputs, outputAddress)
-	if aliceHt1aTxid == "" {
-		return errors.New("rdtx has wrong output address")
-	}
-	rdTransaction, err := createRDTx(user.PeerId, channelInfo, &latestCcommitmentTxInfo, outputAddress, user)
-	if err != nil {
-		log.Println(err)
-		return err
-	}
-	rdTransaction.RDType = 0
-	rdTransaction.TxHex = signedRdHex
-	//rdTransaction.Txid = aliceRdTxid
-	rdTransaction.CurrState = dao.TxInfoState_CreateAndSign
-	err = tx.Save(rdTransaction)
 	if err != nil {
 		log.Println(err)
 		return err
