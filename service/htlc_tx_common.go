@@ -1529,13 +1529,13 @@ func signHtRD1a(tx storm.Node, aliceHt1aRDhex string, latestCommitmentTransactio
 		return nil, err
 	}
 
-	inputItems, err := getInputsForNextTxByParseTxHashVout(ht1a.RSMCTxHex, ht1a.RSMCMultiAddress, ht1a.RSMCMultiAddressScriptPubKey)
+	ht1aOutputs, err := getInputsForNextTxByParseTxHashVout(ht1a.RSMCTxHex, ht1a.RSMCMultiAddress, ht1a.RSMCMultiAddressScriptPubKey)
 	if err != nil {
 		log.Println(err)
 		return nil, err
 	}
 
-	htrdTxid, htrdHex, err := rpcClient.OmniSignRawTransactionForUnsend(aliceHt1aRDhex, inputItems, tempAddrPrivateKeyMap[ht1a.RSMCTempAddressPubKey])
+	htrdTxid, htrdHex, err := rpcClient.OmniSignRawTransactionForUnsend(aliceHt1aRDhex, ht1aOutputs, tempAddrPrivateKeyMap[ht1a.RSMCTempAddressPubKey])
 	if err != nil {
 		log.Println(err)
 		return nil, err

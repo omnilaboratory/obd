@@ -43,7 +43,6 @@ func (client *Client) channelModule(msg bean.RequestMessage) (enum.SendTargetTyp
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_ChannelOpen_AllItem_N3201:
 		nodes, err := service.ChannelService.AllItem(*client.User)
-		service.ChannelService.TestDb(*client.User)
 		if err != nil {
 			data = err.Error()
 		} else {
@@ -126,21 +125,6 @@ func (client *Client) channelModule(msg bean.RequestMessage) (enum.SendTargetTyp
 			}
 		}
 		client.sendToMyself(msg.Type, status, data)
-	case enum.MsgType_ForceCloseChannel_N3205:
-		node, err := service.ChannelService.ForceCloseChannel(msg.Data, client.User)
-		if err != nil {
-			data = err.Error()
-		} else {
-			bytes, err := json.Marshal(node)
-			if err != nil {
-				data = err.Error()
-			} else {
-				data = string(bytes)
-				status = true
-			}
-		}
-		client.sendToMyself(msg.Type, status, data)
-		sendType = enum.SendTargetType_SendToSomeone
 	//get acceptChannelReq from fundee then send to funder
 	case enum.MsgType_ChannelAccept_N33:
 		node, err := service.ChannelService.BobAcceptChannel(msg.Data, client.User)

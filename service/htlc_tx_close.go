@@ -3,7 +3,6 @@ package service
 import (
 	"encoding/json"
 	"errors"
-	"github.com/asdine/storm"
 	"github.com/asdine/storm/q"
 	"github.com/tidwall/gjson"
 	"log"
@@ -954,9 +953,9 @@ func (service *htlcCloseTxManager) AfterAliceSignCloseHTLCAtBobSide(data string,
 	return retData, nil
 }
 
-func addHT1aTxToWaitDB(tx storm.Node, htnx *dao.HTLCTimeoutTxForAAndExecutionForB, htrd *dao.RevocableDeliveryTransaction) error {
+func addHT1aTxToWaitDB(htnx *dao.HTLCTimeoutTxForAAndExecutionForB, htrd *dao.RevocableDeliveryTransaction) error {
 	node := &dao.RDTxWaitingSend{}
-	count, err := tx.Select(
+	count, err := db.Select(
 		q.Eq("TransactionHex", htnx.RSMCTxHex)).
 		Count(node)
 	if err == nil {
@@ -972,7 +971,7 @@ func addHT1aTxToWaitDB(tx storm.Node, htnx *dao.HTLCTimeoutTxForAAndExecutionFor
 	node.HtnxIdAndHtnxRdId = make([]int, 2)
 	node.HtnxIdAndHtnxRdId[0] = htnx.Id
 	node.HtnxIdAndHtnxRdId[1] = htrd.Id
-	err = tx.Save(node)
+	err = db.Save(node)
 	if err != nil {
 		return err
 	}
@@ -1022,9 +1021,9 @@ func addHTRD1aTxToWaitDB(htnxIdAndHtnxRdId []int) error {
 }
 
 //htlc timeout Delivery 1b
-func addHTDnxTxToWaitDB(tx storm.Node, txInfo *dao.HTLCTimeoutDeliveryTxB) (err error) {
+func addHTDnxTxToWaitDB(txInfo *dao.HTLCTimeoutDeliveryTxB) (err error) {
 	node := &dao.RDTxWaitingSend{}
-	count, err := tx.Select(
+	count, err := db.Select(
 		q.Eq("TransactionHex", txInfo.TxHex)).
 		Count(node)
 	if err == nil {
@@ -1037,7 +1036,7 @@ func addHTDnxTxToWaitDB(tx storm.Node, txInfo *dao.HTLCTimeoutDeliveryTxB) (err 
 	node.Type = 2
 	node.IsEnable = true
 	node.CreateAt = time.Now()
-	err = tx.Save(node)
+	err = db.Save(node)
 	if err != nil {
 		return err
 	}
