@@ -38,7 +38,7 @@ func (client *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, 
 			var err error = nil
 			peerId := tool.SignMsgWithSha256([]byte(user.Mnemonic))
 			if GlobalWsClientManager.OnlineUserMap[peerId] != nil {
-				err = errors.New("user has login")
+				err = errors.New("user has logined at other node")
 			} else {
 				err = service.UserService.UserLogin(&user)
 			}

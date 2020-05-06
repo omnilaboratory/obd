@@ -51,8 +51,7 @@ func main() {
 	err := rpc.NewClient().CheckVersion()
 	if err != nil {
 		log.Println(err)
-		log.Println("obd fail to start")
-		return
+		panic("obd fail to start")
 	}
 
 	lightclient.StartP2PServer()

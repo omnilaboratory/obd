@@ -83,7 +83,6 @@ func (service *hdWalletManager) CreateNewAddress(user *bean.User) (wallet *Walle
 	if err != nil {
 		return nil, err
 	}
-	_ = user.Db.Update(&user)
 	return wallet, nil
 }
 

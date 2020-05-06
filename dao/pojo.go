@@ -12,6 +12,12 @@ type User struct {
 	CreateAt        time.Time `json:"create_at"`
 	LatestLoginTime time.Time `json:"latest_login_time"`
 }
+type UserLoginLog struct {
+	Id       int       `storm:"id,increment" `
+	PeerId   string    `json:"peer_id"`
+	LoginAt  time.Time `json:"login_at"`
+	LogoutAt time.Time `json:"logout_at"`
+}
 
 type ChannelState int
 
