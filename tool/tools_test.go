@@ -3,11 +3,8 @@ package tool
 import (
 	"crypto/sha256"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"log"
-	"obd/bean"
-	"obd/bean/enum"
 	"testing"
 )
 
@@ -18,15 +15,6 @@ func TestDemo6(t *testing.T) {
 }
 
 func TestDemo5(t *testing.T) {
-	msgToOther := bean.RequestMessage{}
-	msgToOther.Type = enum.MsgType_ChannelOpen_N32
-	msgToOther.SenderP2PPeerId = "P2PLocalPeerId"
-	msgToOther.SenderPeerId = "P2PLocalPeerId"
-	msgToOther.RecipientPeerId = "msg.RecipientPeerId"
-	msgToOther.Data = "data"
-	bytes, err := json.Marshal(msgToOther)
-	log.Println(err)
-	log.Println(string(bytes))
 }
 
 func TestDemo4(t *testing.T) {

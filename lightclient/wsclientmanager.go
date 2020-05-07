@@ -40,6 +40,7 @@ func (clientManager *ClientManager) Start() {
 			jsonMessage, _ := json.Marshal(&bean.RequestMessage{Data: "A new socket has connected."})
 			log.Println("new socket has connected.")
 			clientManager.Send(jsonMessage, conn)
+
 		case conn := <-clientManager.Disconnected:
 			if _, ok := clientManager.ClientsMap[conn]; ok {
 				close(conn.SendChannel)
@@ -65,7 +66,7 @@ func (clientManager *ClientManager) Start() {
 
 func (clientManager *ClientManager) Send(message []byte, myself *Client) {
 	for conn := range clientManager.ClientsMap {
-		if conn != myself {
+		if conn == myself {
 			conn.SendChannel <- message
 		}
 	}
