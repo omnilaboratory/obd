@@ -9,7 +9,6 @@ import (
 	"github.com/tidwall/gjson"
 	"log"
 	"obd/bean"
-	"obd/config"
 	"obd/dao"
 	"obd/rpc"
 	"obd/tool"
@@ -64,7 +63,7 @@ func (service *htlcForwardTxManager) PayerRequestFindPath(msgData string, user b
 		return nil, err
 	}
 
-	if requestData.Amount < config.Dust {
+	if requestData.Amount < rpc.GetOmniDustBtc() {
 		return nil, errors.New("wrong amount")
 	}
 
@@ -140,7 +139,7 @@ func (service *htlcForwardTxManager) PayerAddHtlc_40(msgData string, user bean.U
 	if err != nil {
 		return nil, errors.New("wrong property_id")
 	}
-	if requestData.Amount < config.Dust {
+	if requestData.Amount < rpc.GetOmniDustBtc() {
 		return nil, errors.New("wrong amount")
 	}
 	if tool.CheckIsString(&requestData.H) == false {

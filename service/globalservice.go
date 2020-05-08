@@ -57,6 +57,32 @@ func GetHtlcFee() float64 {
 	return 1
 }
 
+func checkBtcFundFinish(address string) error {
+	result, err := rpcClient.ListUnspent(address)
+	if err != nil {
+		return err
+	}
+	array := gjson.Parse(result).Array()
+	log.Println("listunspent", array)
+	if len(array) < 3 {
+		return errors.New("btc fund have been not finished")
+	}
+
+	pMoney := rpc.GetOmniDustBtc()
+	out, _ := decimal.NewFromFloat(rpc.GetMinerFee()).Add(decimal.NewFromFloat(pMoney)).Mul(decimal.NewFromFloat(4.0)).Float64()
+	count := 0
+	for _, item := range array {
+		amount := item.Get("amount").Float()
+		if amount >= out {
+			count++
+		}
+	}
+	if count < 4 {
+		return errors.New("btc amount error, must greater " + tool.FloatToString(out, 8))
+	}
+	return nil
+}
+
 func getAddressFromPubKey(pubKey string) (address string, err error) {
 	if tool.CheckIsString(&pubKey) == false {
 		return "", errors.New("empty pubKey")

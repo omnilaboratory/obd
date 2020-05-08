@@ -25,13 +25,24 @@ func (client *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, 
 	var data string
 	switch msg.Type {
 	case enum.MsgType_UserLogin_1:
+
+		mnemonic := gjson.Get(msg.Data, "mnemonic").String()
+		if client.User != nil {
+			if client.User.Mnemonic != mnemonic {
+				_ = service.UserService.UserLogout(client.User)
+				delete(GlobalWsClientManager.OnlineUserMap, client.User.PeerId)
+				delete(service.OnlineUserMap, client.User.PeerId)
+				client.User = nil
+			}
+		}
+
 		if client.User != nil {
 			data = loginRetData(*client)
 			client.sendToMyself(msg.Type, true, data)
 			sendType = enum.SendTargetType_SendToSomeone
 		} else {
 			user := bean.User{
-				Mnemonic:        gjson.Get(msg.Data, "mnemonic").String(),
+				Mnemonic:        mnemonic,
 				P2PLocalAddress: localServerDest,
 				P2PLocalPeerId:  P2PLocalPeerId,
 			}

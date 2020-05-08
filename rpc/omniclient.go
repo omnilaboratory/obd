@@ -5,7 +5,6 @@ import (
 	"github.com/shopspring/decimal"
 	"github.com/tidwall/gjson"
 	"log"
-	"obd/config"
 	"obd/tool"
 	"strconv"
 	"strings"
@@ -225,12 +224,12 @@ func (client *Client) OmniCreateAndSignRawTransaction(fromBitCoinAddress string,
 	if tool.CheckIsString(&toBitCoinAddress) == false {
 		return "", "", errors.New("toBitCoinAddress is empty")
 	}
-	if amount < config.Dust {
+	if amount < GetOmniDustBtc() {
 		return "", "", errors.New("wrong amount")
 	}
 
-	pMoney := 0.0000054
-	if minerFee < config.Dust {
+	pMoney := GetOmniDustBtc()
+	if minerFee < GetOmniDustBtc() {
 		minerFee = 0.00003
 	}
 
@@ -354,12 +353,12 @@ func (client *Client) OmniCreateAndSignRawTransactionUseSingleInput(txType int, 
 	if tool.CheckIsString(&toBitCoinAddress) == false {
 		return "", "", "", errors.New("toBitCoinAddress is empty")
 	}
-	if amount < config.Dust {
+	if amount < GetOmniDustBtc() {
 		return "", "", "", errors.New("wrong amount")
 	}
 
 	pMoney := GetOmniDustBtc()
-	if minerFee < config.Dust {
+	if minerFee < GetOmniDustBtc() {
 		minerFee = GetMinerFee()
 	}
 
@@ -494,12 +493,12 @@ func (client *Client) OmniCreateAndSignRawTransactionUseRestInput(txType int, fr
 	if tool.CheckIsString(&toBitCoinAddress) == false {
 		return "", "", errors.New("toBitCoinAddress is empty")
 	}
-	if amount < config.Dust {
+	if amount < GetOmniDustBtc() {
 		return "", "", errors.New("wrong amount")
 	}
 
 	pMoney := GetOmniDustBtc()
-	if minerFee < config.Dust {
+	if minerFee < GetOmniDustBtc() {
 		minerFee = GetMinerFee()
 	}
 
@@ -635,12 +634,12 @@ func (client *Client) OmniCreateAndSignRawTransactionUseUnsendInput(fromBitCoinA
 		return "", "", errors.New("inputItems is empty")
 	}
 
-	if amount < config.Dust {
+	if amount < GetOmniDustBtc() {
 		return "", "", errors.New("wrong amount")
 	}
 
 	pMoney := GetOmniDustBtc()
-	if minerFee < config.Dust {
+	if minerFee < GetOmniDustBtc() {
 		minerFee = GetMinerFee()
 	}
 
@@ -718,7 +717,7 @@ func (client *Client) OmniCreateAndSignRawTransactionUseUnsendInput(fromBitCoinA
 	if err != nil {
 		return "", "", err
 	}
-	log.Println(result)
+	//log.Println(result)
 	//6.Omni_createrawtx_change
 	prevtxs := make([]map[string]interface{}, 0, 0)
 	for _, item := range inputItems {
@@ -761,8 +760,10 @@ func (client *Client) OmniCreateAndSignRawTransactionUseUnsendInput(fromBitCoinA
 	txid = gjson.Get(decodeHex, "txid").String()
 
 	result, err = client.OmniDecodeTransaction(hex)
-	log.Println(result)
-	log.Println(err)
+	if err != nil {
+		log.Println(err)
+	}
+	//log.Println(result)
 
 	return txid, hex, nil
 }

@@ -6,7 +6,6 @@ import (
 	"github.com/tidwall/gjson"
 	"log"
 	"math"
-	"obd/config"
 	"obd/tool"
 	"strconv"
 )
@@ -142,8 +141,7 @@ func (client *Client) ValidateAddress(address string) (isValid bool, err error) 
 	if gjson.Get(result, "iswatchonly").Bool() == false {
 		_, _ = client.send("importaddress", []interface{}{address, "", false})
 	}
-
-	log.Println(result)
+	//log.Println(result)
 
 	return gjson.Get(result, "iswatchonly").Bool(), nil
 }
@@ -193,11 +191,11 @@ func (client *Client) BtcCreateAndSignRawTransaction(fromBitCoinAddress string, 
 		outTotalAmount = outTotalAmount.Add(decimal.NewFromFloat(item.Amount))
 	}
 
-	if outTotalAmount.LessThan(decimal.NewFromFloat(config.Dust)) {
+	if outTotalAmount.LessThan(decimal.NewFromFloat(GetOmniDustBtc())) {
 		return "", "", errors.New("wrong outTotalAmount")
 	}
 
-	if minerFee < config.Dust {
+	if minerFee < GetOmniDustBtc() {
 		return "", "", errors.New("minerFee too small")
 	}
 
@@ -314,7 +312,7 @@ func (client *Client) BtcCreateAndSignRawTransactionForUnsendInputTx(fromBitCoin
 		return "", "", err
 	}
 
-	if minerFee <= config.Dust {
+	if minerFee <= GetOmniDustBtc() {
 		minerFee = GetMinerFee()
 	}
 
@@ -323,11 +321,11 @@ func (client *Client) BtcCreateAndSignRawTransactionForUnsendInputTx(fromBitCoin
 		outAmount = outAmount.Add(decimal.NewFromFloat(item.Amount))
 	}
 
-	if outAmount.LessThan(decimal.NewFromFloat(config.Dust)) {
+	if outAmount.LessThan(decimal.NewFromFloat(GetOmniDustBtc())) {
 		return "", "", errors.New("wrong outAmount")
 	}
 
-	if minerFee < config.Dust {
+	if minerFee < GetOmniDustBtc() {
 		return "", "", errors.New("minerFee too small")
 	}
 

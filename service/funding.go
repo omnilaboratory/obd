@@ -9,7 +9,6 @@ import (
 	"log"
 	"obd/bean"
 	"obd/bean/chainhash"
-	"obd/config"
 	"obd/dao"
 	"obd/rpc"
 	"obd/tool"
@@ -96,7 +95,7 @@ func (service *fundingTransactionManager) BTCFundingCreated(data bean.RequestMes
 		return nil, "", err
 	}
 
-	out, _ := decimal.NewFromFloat(rpc.GetMinerFee()).Add(decimal.NewFromFloat(config.Dust)).Mul(decimal.NewFromFloat(4.0)).Float64()
+	out, _ := decimal.NewFromFloat(rpc.GetMinerFee()).Add(decimal.NewFromFloat(rpc.GetOmniDustBtc())).Mul(decimal.NewFromFloat(4.0)).Float64()
 	if amount < out {
 		err = errors.New("error btc amount, must greater " + tool.FloatToString(out, 8))
 		log.Println(err)
@@ -837,30 +836,6 @@ func (service *fundingTransactionManager) AssetFundingCreated(jsonData string, u
 	node["c1a_rsmc_hex"] = commitmentTxInfo.RSMCTxHex
 	node["rsmc_temp_address_pub_key"] = commitmentTxInfo.RSMCTempAddressPubKey
 	return node, err
-}
-
-func checkBtcFundFinish(address string) error {
-	result, err := rpcClient.ListUnspent(address)
-	if err != nil {
-		return err
-	}
-	array := gjson.Parse(result).Array()
-	log.Println("listunspent", array)
-	if len(array) < 3 {
-		return errors.New("btc fund have been not finished")
-	}
-
-	pMoney := rpc.GetOmniDustBtc()
-	out, _ := decimal.NewFromFloat(rpc.GetMinerFee()).Add(decimal.NewFromFloat(pMoney)).Mul(decimal.NewFromFloat(4.0)).Float64()
-	for _, item := range array {
-		amount := item.Get("amount").Float()
-		if amount != pMoney {
-			if amount < out {
-				return errors.New("btc amount error, must greater " + tool.FloatToString(out, 8))
-			}
-		}
-	}
-	return nil
 }
 
 func (service *fundingTransactionManager) BeforeBobSignOmniFundingAtBobSide(data string, user *bean.User) (outData interface{}, err error) {

@@ -5,8 +5,8 @@ import (
 	"errors"
 	"github.com/asdine/storm/q"
 	"obd/bean"
-	"obd/config"
 	"obd/dao"
+	"obd/rpc"
 	"obd/tool"
 	"sync"
 )
@@ -52,7 +52,7 @@ func (service *htlcHMessageManager) AddHTLC(jsonData string,
 		return nil, err
 	}
 
-	if htlcHRequest.Amount <= config.Dust {
+	if htlcHRequest.Amount <= rpc.GetOmniDustBtc() {
 		return nil, errors.New("wrong amount")
 	}
 
