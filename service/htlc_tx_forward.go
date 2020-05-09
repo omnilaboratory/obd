@@ -525,7 +525,7 @@ func (service *htlcForwardTxManager) PayeeSignGetAddHtlc_41(jsonData string, use
 	// region 2、签名对方传过来的toOtherHex
 	signedToOtherHex := ""
 	if len(aliceDataJson.Get("toOtherHex").String()) > 0 {
-		_, signedToOtherHex, err := rpcClient.BtcSignRawTransaction(aliceDataJson.Get("toOtherHex").String(), requestData.ChannelAddressPrivateKey)
+		_, signedToOtherHex, err = rpcClient.BtcSignRawTransaction(aliceDataJson.Get("toOtherHex").String(), requestData.ChannelAddressPrivateKey)
 		if err != nil {
 			return nil, errors.New("fail to sign payer toOther hex ")
 		}
