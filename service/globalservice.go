@@ -77,7 +77,7 @@ func checkBtcFundFinish(address string) error {
 			count++
 		}
 	}
-	if count < 4 {
+	if count < 3 {
 		return errors.New("btc amount error, must greater " + tool.FloatToString(out, 8))
 	}
 	return nil
