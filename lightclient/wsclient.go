@@ -70,6 +70,13 @@ func (client *Client) Read() {
 		}
 
 		msg.Type = enum.MsgType(parse.Get("type").Int())
+		if enum.CheckExist(msg.Type) == false {
+			data := "not exist the msg type"
+			log.Println(data)
+			client.sendToMyself(msg.Type, false, data)
+			continue
+		}
+
 		msg.Data = parse.Get("data").String()
 		msg.RawData = string(dataReq)
 		msg.SenderUserPeerId = parse.Get("sender_user_peer_id").String()
