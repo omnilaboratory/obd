@@ -15,14 +15,14 @@ var (
 	WriteTimeout = 10 * time.Second
 
 	//0.13 omnicore
-	ChainNode_Host = "62.234.216.108:8332"
+	//ChainNode_Host = "62.234.216.108:8332"
+	//ChainNode_User = "uprets"
+	//ChainNode_Pass = "pass"
 	//0.18 omnicore
 	ChainNode_Type = "test"
-	//ChainNode_Host = "62.234.216.108:18334"
-	//ChainNode_User = "omniwallet"
-	//ChainNode_Pass = "cB3]iL2@eZ1?cB2?"
-	ChainNode_User = "uprets"
-	ChainNode_Pass = "pass"
+	ChainNode_Host = "62.234.216.108:18334"
+	ChainNode_User = "omniwallet"
+	ChainNode_Pass = "cB3]iL2@eZ1?cB2?"
 
 	//P2P
 	P2P_hostIp     = "127.0.0.1"
