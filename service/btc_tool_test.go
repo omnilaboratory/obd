@@ -7,8 +7,8 @@ import (
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcutil"
 	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/omnilaboratory/obd/tool"
 	"log"
-	"obd/tool"
 	"testing"
 )
 

@@ -11,8 +11,8 @@ import (
 	"github.com/btcsuite/btcd/txscript"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
+	"github.com/omnilaboratory/obd/tool"
 	"log"
-	"obd/tool"
 )
 
 func GenMultiSigScript(aPub, bPub []byte) ([]byte, error) {

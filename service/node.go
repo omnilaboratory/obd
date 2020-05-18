@@ -2,7 +2,7 @@ package service
 
 import (
 	"fmt"
-	"obd/dao"
+	"github.com/omnilaboratory/obd/dao"
 	"time"
 )
 

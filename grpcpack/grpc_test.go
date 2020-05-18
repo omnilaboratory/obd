@@ -2,10 +2,10 @@ package grpcpack
 
 import (
 	"context"
+	"github.com/omnilaboratory/obd/config"
+	pb "github.com/omnilaboratory/obd/grpcpack/pb"
 	"google.golang.org/grpc"
 	"log"
-	"obd/config"
-	pb "obd/grpcpack/pb"
 	"strconv"
 	"testing"
 )

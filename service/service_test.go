@@ -2,10 +2,10 @@ package service
 
 import (
 	"github.com/asdine/storm/q"
+	"github.com/omnilaboratory/obd/dao"
+	"github.com/omnilaboratory/obd/rpc"
 	"github.com/tidwall/gjson"
 	"log"
-	"obd/dao"
-	"obd/rpc"
 	"testing"
 	"time"
 )

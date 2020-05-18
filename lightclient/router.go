@@ -1,11 +1,11 @@
 package lightclient
 
 import (
+	"github.com/omnilaboratory/obd/grpcpack"
+	pb "github.com/omnilaboratory/obd/grpcpack/pb"
+	"github.com/omnilaboratory/obd/service"
 	"log"
 	"net/http"
-	"obd/grpcpack"
-	pb "obd/grpcpack/pb"
-	"obd/service"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -101,7 +101,7 @@ func wsClientConnect(c *gin.Context) {
 		return
 	}
 
-	uuidStr, _ := uuid.NewV4()
+	uuidStr := uuid.NewV4()
 	client := &Client{
 		Id:          uuidStr.String(),
 		Socket:      conn,

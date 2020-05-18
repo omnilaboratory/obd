@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/asdine/storm/q"
-	"obd/bean"
-	"obd/dao"
-	"obd/rpc"
-	"obd/tool"
+	"github.com/omnilaboratory/obd/bean"
+	"github.com/omnilaboratory/obd/dao"
+	"github.com/omnilaboratory/obd/rpc"
+	"github.com/omnilaboratory/obd/tool"
 	"sync"
 )
 

@@ -2,9 +2,9 @@ package lightclient
 
 import (
 	"encoding/json"
-	"obd/bean"
-	"obd/bean/enum"
-	"obd/service"
+	"github.com/omnilaboratory/obd/bean"
+	"github.com/omnilaboratory/obd/bean/enum"
+	"github.com/omnilaboratory/obd/service"
 )
 
 //htlc h module

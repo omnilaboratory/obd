@@ -2,10 +2,10 @@ package lightclient
 
 import (
 	"encoding/json"
+	"github.com/omnilaboratory/obd/bean"
+	"github.com/omnilaboratory/obd/bean/enum"
+	"github.com/omnilaboratory/obd/service"
 	"log"
-	"obd/bean"
-	"obd/bean/enum"
-	"obd/service"
 	"strconv"
 )
 

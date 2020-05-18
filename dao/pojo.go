@@ -1,7 +1,7 @@
 package dao
 
 import (
-	"obd/bean"
+	"github.com/omnilaboratory/obd/bean"
 	"time"
 )
 

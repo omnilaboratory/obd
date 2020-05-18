@@ -3,8 +3,8 @@ package lightclient
 import (
 	"encoding/json"
 	"errors"
-	"obd/bean/enum"
-	"obd/service"
+	"github.com/omnilaboratory/obd/bean/enum"
+	"github.com/omnilaboratory/obd/service"
 )
 
 func routerOfP2PNode(msgType enum.MsgType, data string, client *Client) (retData string, retErr error) {

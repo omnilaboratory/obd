@@ -1,6 +1,6 @@
 package bean
 
-import "obd/bean/chainhash"
+import "github.com/omnilaboratory/obd/bean/chainhash"
 
 // OutPoint defines a bitcoin data type that is used to track previous transaction outputs.
 type OutPoint struct {

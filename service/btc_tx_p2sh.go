@@ -9,9 +9,9 @@ import (
 	"github.com/btcsuite/btcd/txscript"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
+	"github.com/omnilaboratory/obd/rpc"
 	"github.com/tidwall/gjson"
 	"log"
-	"obd/rpc"
 )
 
 // addrtool_mnemonic_test.go的Test_Demo2生成
