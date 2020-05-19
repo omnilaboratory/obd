@@ -86,62 +86,6 @@ pass=your password
 
 ## Step 3: Compile and Run OmniBOLT Daemon
 
-Before compile `obdserver.go` file, you should be get all related packages by run `go get` command in terminal.
-Example: `go get google.golang.org/grpc`
-
-This is a full list needed to get packages.
-
-```
-google.golang.org/grpc
-github.com/gin-gonic/gin
-github.com/gorilla/websocket
-github.com/satori/go.uuid
-github.com/tidwall/gjson
-google.golang.org/grpc
-golang.org/x/net/context
-github.com/shopspring/decimal
-github.com/asdine/storm
-github.com/asdine/storm/q
-github.com/btcsuite/btcd/chaincfg
-github.com/btcsuite/btcutil
-golang.org/x/crypto/ripemd160
-github.com/btcsuite/btcutil/base58
-golang.org/x/crypto/salsa20
-github.com/go-ini/ini
-github.com/tyler-smith/go-bip39
-github.com/tyler-smith/go-bip32
-```
-
-<br/>
-
-If you fail to install gRPC by `go get google.golang.org/grpc` and other gRPC related packages used in this project,try this:
-```
-$ mkdir -p $GOPATH/src/google.golang.org/
-$ cd $GOPATH/src/google.golang.org
-$ git clone https://github.com/grpc/grpc-go grpc
-$ git clone https://github.com/googleapis/go-genproto genproto
-```
-
-During compilation, if you come across:
-```
-cannot find package "golang.org/x/net/context" in any of:
-	/usr/local/go/src/golang.org/x/net/context (from $GOROOT)
-...
-```
-
-That's because these packages had been moved to github. Use the following commands to fix:
-```
-go to your GOPATH and:
-$ cd src
-$ mkdir golang.org
-$ cd golang.org
-$ mkdir x
-$ cd x
-$ git clone https://github.com/golang/net.git
-$ git clone https://github.com/golang/sys.git
-$ git clone https://github.com/golang/text.git
-```
-
 Wait till all data downloaded.
 
 ```
