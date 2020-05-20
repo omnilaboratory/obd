@@ -13,7 +13,6 @@ func InitRouter() *gin.Engine {
 	router := gin.New()
 	router.Use(gin.Logger())
 	router.Use(gin.Recovery())
-
 	go service.ObdNodeManager.TrackerStart()
 	router.GET("/ws", wsClientConnect)
 	return router
@@ -25,7 +24,7 @@ func wsClientConnect(c *gin.Context) {
 		http.NotFound(c.Writer, c.Request)
 		return
 	}
-	uuidStr, _ := uuid.NewV4()
+	uuidStr := uuid.NewV4()
 	newClient := &service.ObdNode{
 		Id:          uuidStr.String(),
 		Socket:      conn,

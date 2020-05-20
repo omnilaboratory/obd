@@ -7,7 +7,6 @@ import (
 	"github.com/omnilaboratory/obd/rpc"
 	"github.com/omnilaboratory/obd/service"
 	"github.com/omnilaboratory/obd/tool"
-	"google.golang.org/grpc"
 	"io"
 	"log"
 	"net/http"
@@ -25,6 +24,7 @@ func init() {
 		rotatelogs.WithMaxAge(time.Duration(12)*time.Hour),
 		rotatelogs.WithRotationTime(time.Duration(12)*time.Hour),
 	)
+
 	if err != nil {
 		panic(err)
 	}
@@ -41,12 +41,6 @@ func init() {
 // gox -os "windows linux darwin" -arch amd64
 // gox -os "windows" -arch amd64
 func main() {
-
-	// grpc
-	//go grpcpack.Server()
-	//conn := startupGRPCClient()
-	//defer conn.Close()
-	//routersInit := routers.InitRouter(conn)
 
 	err := rpc.NewClient().CheckVersion()
 	if err != nil {
@@ -71,12 +65,4 @@ func main() {
 
 	log.Println("obd " + tool.GetObdNodeId() + " start at " + addr)
 	log.Fatal(server.ListenAndServe())
-}
-
-func startupGRPCClient() *grpc.ClientConn {
-	conn, err := grpc.Dial("localhost:"+strconv.Itoa(config.GrpcPort), grpc.WithInsecure())
-	if err != nil {
-		log.Println("did not connect: ", err)
-	}
-	return conn
 }

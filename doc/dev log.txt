@@ -1,0 +1,2 @@
+1、编译的时候，出现 exec: "gcc": executable file not found in %PATH%
+https://blog.cnbattle.com/archives/110.html，根据这个，安装mingw
