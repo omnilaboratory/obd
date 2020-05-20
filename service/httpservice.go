@@ -3,8 +3,8 @@ package service
 import (
 	"encoding/json"
 	"github.com/gin-gonic/gin"
+	"github.com/omnilaboratory/obd/bean"
 	"net/http"
-	"obd/bean"
 	"strconv"
 )
 

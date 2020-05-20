@@ -3,11 +3,11 @@ package lightclient
 import (
 	"encoding/json"
 	"errors"
+	"github.com/omnilaboratory/obd/bean"
+	"github.com/omnilaboratory/obd/bean/enum"
+	"github.com/omnilaboratory/obd/service"
+	"github.com/omnilaboratory/obd/tool"
 	"github.com/tidwall/gjson"
-	"obd/bean"
-	"obd/bean/enum"
-	"obd/service"
-	"obd/tool"
 )
 
 func loginRetData(client Client) string {

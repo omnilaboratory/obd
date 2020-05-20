@@ -3,8 +3,8 @@ package lightclient
 import (
 	"encoding/json"
 	"github.com/gorilla/websocket"
+	"github.com/omnilaboratory/obd/bean"
 	"log"
-	"obd/bean"
 )
 
 type Client struct {

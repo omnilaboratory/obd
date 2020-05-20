@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcutil/hdkeychain"
+	"github.com/omnilaboratory/obd/bean"
+	"github.com/omnilaboratory/obd/tool"
 	"github.com/tyler-smith/go-bip39"
 	"log"
-	"obd/bean"
-	"obd/tool"
 	"testing"
 )
 

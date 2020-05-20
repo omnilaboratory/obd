@@ -1,8 +1,8 @@
 package bean
 
 import (
+	"github.com/omnilaboratory/obd/bean/chainhash"
 	"log"
-	"obd/bean/chainhash"
 	"testing"
 )
 

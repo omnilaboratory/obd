@@ -2,9 +2,9 @@ package dao
 
 import (
 	"github.com/asdine/storm"
+	"github.com/omnilaboratory/obd/config"
+	"github.com/omnilaboratory/obd/tool"
 	"log"
-	"obd/config"
-	"obd/tool"
 )
 
 //storm  doc  https://github.com/asdine/storm#getting-started

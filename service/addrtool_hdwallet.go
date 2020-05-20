@@ -6,11 +6,11 @@ import (
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcutil"
+	"github.com/omnilaboratory/obd/bean"
+	"github.com/omnilaboratory/obd/config"
+	"github.com/omnilaboratory/obd/tool"
 	"github.com/tyler-smith/go-bip32"
 	"github.com/tyler-smith/go-bip39"
-	"obd/bean"
-	"obd/config"
-	"obd/tool"
 )
 
 type Wallet struct {

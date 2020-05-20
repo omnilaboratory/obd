@@ -2,9 +2,9 @@ package bean
 
 import (
 	"github.com/asdine/storm"
+	"github.com/omnilaboratory/obd/bean/chainhash"
+	"github.com/omnilaboratory/obd/bean/enum"
 	"github.com/tyler-smith/go-bip32"
-	"obd/bean/chainhash"
-	"obd/bean/enum"
 )
 
 type RequestMessage struct {

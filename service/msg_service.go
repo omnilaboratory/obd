@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"github.com/asdine/storm"
 	"github.com/asdine/storm/q"
-	"obd/dao"
-	"obd/tool"
+	"github.com/omnilaboratory/obd/dao"
+	"github.com/omnilaboratory/obd/tool"
 	"time"
 )
 

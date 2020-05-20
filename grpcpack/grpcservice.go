@@ -3,12 +3,12 @@ package grpcpack
 import (
 	"encoding/json"
 	"github.com/gin-gonic/gin"
+	pb "github.com/omnilaboratory/obd/grpcpack/pb"
+	"github.com/omnilaboratory/obd/rpc"
 	"github.com/tidwall/gjson"
 	"golang.org/x/net/context"
 	"log"
 	"net/http"
-	pb "obd/grpcpack/pb"
-	"obd/rpc"
 )
 
 type grpcService struct {
