@@ -14,7 +14,7 @@ type Client struct {
 	SendChannel chan []byte
 }
 
-type ClientManager struct {
+type clientManager struct {
 	Broadcast     chan []byte
 	Connected     chan *Client
 	Disconnected  chan *Client
@@ -23,7 +23,7 @@ type ClientManager struct {
 	OnlineUserMap map[string]*Client
 }
 
-var GlobalWsClientManager = ClientManager{
+var globalWsClientManager = clientManager{
 	Broadcast:     make(chan []byte),
 	Connected:     make(chan *Client),
 	Disconnected:  make(chan *Client),
@@ -32,7 +32,7 @@ var GlobalWsClientManager = ClientManager{
 	OnlineUserMap: make(map[string]*Client),
 }
 
-func (clientManager *ClientManager) Start() {
+func (clientManager *clientManager) Start() {
 	for {
 		select {
 		case conn := <-clientManager.Connected:
@@ -64,7 +64,7 @@ func (clientManager *ClientManager) Start() {
 	}
 }
 
-func (clientManager *ClientManager) Send(message []byte, myself *Client) {
+func (clientManager *clientManager) Send(message []byte, myself *Client) {
 	for conn := range clientManager.ClientsMap {
 		if conn == myself {
 			conn.SendChannel <- message

@@ -13,9 +13,7 @@ type dbManager struct {
 	Db *storm.DB //db
 }
 
-var DBService = dbManager{
-	Db: nil,
-}
+var DBService dbManager
 
 func (manager dbManager) GetGlobalDB() (*storm.DB, error) {
 	if DBService.Db == nil {

@@ -15,6 +15,7 @@ import (
 	"golang.org/x/crypto/ripemd160"
 	"io"
 	"log"
+	"net"
 	"os"
 	"regexp"
 	"strconv"
@@ -140,4 +141,50 @@ func FloatToString(input_num float64, prec int) string {
 func CheckPsw(psw string) (flag bool) {
 	reg := regexp.MustCompile("^[a-zA-Z0-9]{6,32}$")
 	return reg.MatchString(psw)
+}
+
+func GetMacAddrs() (macAddrs string) {
+	netInterfaces, err := net.Interfaces()
+	if err != nil {
+		fmt.Printf("fail to get net interfaces: %v", err)
+		return macAddrs
+	}
+
+	for _, netInterface := range netInterfaces {
+		macAddrs := netInterface.HardwareAddr.String()
+		if len(macAddrs) == 0 {
+			continue
+		}
+		return macAddrs
+	}
+	return macAddrs
+}
+
+// get obd node id
+func GetObdNodeId() string {
+	source := GetMacAddrs() + ":" + strconv.Itoa(config.ServerPort)
+	return SignMsgWithSha256([]byte(source))
+}
+
+// get obd node id
+func GetTrackerNodeId() string {
+	source := GetMacAddrs() + ":" + strconv.Itoa(config.TrackerServerPort)
+	return SignMsgWithSha256([]byte(source))
+}
+
+func GetIPs() (ips string) {
+	interfaceAddr, err := net.InterfaceAddrs()
+	if err != nil {
+		fmt.Printf("fail to get net interface addrs: %v", err)
+		return ips
+	}
+	for _, address := range interfaceAddr {
+		ipNet, isValidIpNet := address.(*net.IPNet)
+		if isValidIpNet && !ipNet.IP.IsLoopback() {
+			if ipNet.IP.To4() != nil {
+				return ipNet.IP.String()
+			}
+		}
+	}
+	return ips
 }

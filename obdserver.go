@@ -19,7 +19,7 @@ import (
 func init() {
 	_dir := "log"
 	_ = tool.PathExistsAndCreate(_dir)
-	path := "log/go"
+	path := "log/obdServer"
 	writer, err := rotatelogs.New(
 		path+".%Y%m%d%H%M.log",
 		rotatelogs.WithMaxAge(time.Duration(12)*time.Hour),
@@ -69,8 +69,8 @@ func main() {
 	// Timer
 	service.ScheduleService.StartSchedule()
 
+	log.Println("obd " + tool.GetObdNodeId() + " start at " + addr)
 	log.Fatal(server.ListenAndServe())
-
 }
 
 func startupGRPCClient() *grpc.ClientConn {

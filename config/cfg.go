@@ -8,17 +8,13 @@ import (
 )
 
 var (
-	Cfg          *ini.File
-	ServerPort   = 60020
-	GrpcPort     = 60021
-	ReadTimeout  = 5 * time.Second
-	WriteTimeout = 10 * time.Second
+	Cfg               *ini.File
+	ServerPort        = 60020
+	GrpcPort          = 60021
+	ReadTimeout       = 5 * time.Second
+	WriteTimeout      = 10 * time.Second
+	TrackerServerPort = 60060
 
-	//0.13 omnicore
-	//ChainNode_Host = "62.234.216.108:8332"
-	//ChainNode_User = "uprets"
-	//ChainNode_Pass = "pass"
-	//0.18 omnicore
 	ChainNode_Type = "test"
 	ChainNode_Host = "62.234.216.108:18334"
 	ChainNode_User = "omniwallet"
@@ -64,4 +60,12 @@ func init() {
 	}
 	P2P_hostIp = p2pNode.Key("hostIp").String()
 	P2P_sourcePort = p2pNode.Key("sourcePort").MustInt()
+
+	//tracker
+	tracker, err := Cfg.GetSection("tracker")
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	TrackerServerPort = tracker.Key("port").MustInt(60060)
 }

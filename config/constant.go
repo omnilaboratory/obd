@@ -7,6 +7,7 @@ const (
 
 //database
 const (
-	DBname     = "obdserver.db"
-	Userbucket = "user"
+	DBname        = "obdserver.db"
+	TrackerDbName = "trackerServer.db"
+	Userbucket    = "user"
 )

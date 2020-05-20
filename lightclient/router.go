@@ -2,7 +2,7 @@ package lightclient
 
 import (
 	"github.com/omnilaboratory/obd/grpcpack"
-	pb "github.com/omnilaboratory/obd/grpcpack/pb"
+	"github.com/omnilaboratory/obd/grpcpack/pb"
 	"github.com/omnilaboratory/obd/service"
 	"log"
 	"net/http"
@@ -21,7 +21,7 @@ func InitRouter(conn *grpc.ClientConn) *gin.Engine {
 	router.Use(gin.Logger())
 	router.Use(gin.Recovery())
 
-	go GlobalWsClientManager.Start()
+	go globalWsClientManager.Start()
 	router.GET("/ws", wsClientConnect)
 
 	return router
@@ -107,7 +107,7 @@ func wsClientConnect(c *gin.Context) {
 		Socket:      conn,
 		SendChannel: make(chan []byte)}
 
-	GlobalWsClientManager.Connected <- client
+	globalWsClientManager.Connected <- client
 	go client.Write()
 	client.Read()
 }

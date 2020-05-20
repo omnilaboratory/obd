@@ -43,11 +43,11 @@ func (client *Client) Read() {
 	defer func() {
 		_ = service.UserService.UserLogout(client.User)
 		if client.User != nil {
-			delete(GlobalWsClientManager.OnlineUserMap, client.User.PeerId)
+			delete(globalWsClientManager.OnlineUserMap, client.User.PeerId)
 			delete(service.OnlineUserMap, client.User.PeerId)
 			client.User = nil
 		}
-		GlobalWsClientManager.Disconnected <- client
+		globalWsClientManager.Disconnected <- client
 		_ = client.Socket.Close()
 		log.Println("socket closed after reading...")
 	}()
@@ -263,7 +263,7 @@ func (client *Client) Read() {
 
 		//broadcast except me
 		if sendType == enum.SendTargetType_SendToExceptMe {
-			for itemClient := range GlobalWsClientManager.ClientsMap {
+			for itemClient := range globalWsClientManager.ClientsMap {
 				if itemClient != client {
 					jsonMessage := getReplyObj(string(dataOut), msg.Type, status, client, itemClient)
 					itemClient.SendChannel <- jsonMessage
@@ -273,7 +273,7 @@ func (client *Client) Read() {
 		//broadcast to all
 		if sendType == enum.SendTargetType_SendToAll {
 			jsonMessage := getReplyObj(string(dataOut), msg.Type, status, client, nil)
-			GlobalWsClientManager.Broadcast <- jsonMessage
+			globalWsClientManager.Broadcast <- jsonMessage
 		}
 	}
 }
@@ -339,7 +339,7 @@ func (client *Client) sendToMyself(msgType enum.MsgType, status bool, data strin
 func (client *Client) sendToSomeone(msgType enum.MsgType, status bool, recipientPeerId string, data string) error {
 	if tool.CheckIsString(&recipientPeerId) {
 		if _, err := client.FindUser(&recipientPeerId); err == nil {
-			itemClient := GlobalWsClientManager.OnlineUserMap[recipientPeerId]
+			itemClient := globalWsClientManager.OnlineUserMap[recipientPeerId]
 			if itemClient != nil && itemClient.User != nil {
 				jsonMessage := getReplyObj(data, msgType, status, client, itemClient)
 				itemClient.SendChannel <- jsonMessage
@@ -358,7 +358,7 @@ func (client *Client) sendDataToP2PUser(msg bean.RequestMessage, status bool, da
 		//如果是同一个obd节点
 		if msg.RecipientNodePeerId == P2PLocalPeerId {
 			if _, err := FindUserOnLine(&msg.RecipientUserPeerId); err == nil {
-				itemClient := GlobalWsClientManager.OnlineUserMap[msg.RecipientUserPeerId]
+				itemClient := globalWsClientManager.OnlineUserMap[msg.RecipientUserPeerId]
 				if itemClient != nil && itemClient.User != nil {
 					//因为数据库，分库，需要对特定的消息进行处理
 					if status {
@@ -405,7 +405,7 @@ func getDataFromP2PSomeone(msg bean.RequestMessage) error {
 	if tool.CheckIsString(&msg.RecipientUserPeerId) && tool.CheckIsString(&msg.RecipientNodePeerId) {
 		if msg.RecipientNodePeerId == P2PLocalPeerId {
 			if _, err := FindUserOnLine(&msg.RecipientUserPeerId); err == nil {
-				itemClient := GlobalWsClientManager.OnlineUserMap[msg.RecipientUserPeerId]
+				itemClient := globalWsClientManager.OnlineUserMap[msg.RecipientUserPeerId]
 				if itemClient != nil && itemClient.User != nil {
 					//收到数据后，需要对其进行加工
 					retData, err := routerOfP2PNode(msg.Type, msg.Data, itemClient)
@@ -553,7 +553,7 @@ func p2pMiddleNodeTransferData(msg *bean.RequestMessage, itemClient Client, data
 
 func (client *Client) FindUser(peerId *string) (*Client, error) {
 	if tool.CheckIsString(peerId) {
-		itemClient := GlobalWsClientManager.OnlineUserMap[*peerId]
+		itemClient := globalWsClientManager.OnlineUserMap[*peerId]
 		if itemClient != nil && itemClient.User != nil {
 			return itemClient, nil
 		}
@@ -562,7 +562,7 @@ func (client *Client) FindUser(peerId *string) (*Client, error) {
 }
 func FindUserOnLine(peerId *string) (*Client, error) {
 	if tool.CheckIsString(peerId) {
-		itemClient := GlobalWsClientManager.OnlineUserMap[*peerId]
+		itemClient := globalWsClientManager.OnlineUserMap[*peerId]
 		if itemClient != nil && itemClient.User != nil {
 			return itemClient, nil
 		}

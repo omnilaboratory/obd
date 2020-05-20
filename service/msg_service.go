@@ -55,7 +55,6 @@ func (this *messageManage) saveMsgUseTx(tx storm.Node, sender, receiver, data st
 		CreateAt:  time.Now(),
 		CurrState: dao.NS_Create,
 	}
-
 	bytes, err := json.Marshal(msg)
 	if err == nil {
 		msg.HashValue = tool.SignMsgWithSha256(bytes)
