@@ -64,5 +64,8 @@ func main() {
 	service.ScheduleService.StartSchedule()
 
 	log.Println("obd " + tool.GetObdNodeId() + " start at " + addr)
+	//tracker
+	go lightclient.ConnectToTracker()
+
 	log.Fatal(server.ListenAndServe())
 }

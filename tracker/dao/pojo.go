@@ -32,6 +32,7 @@ type ChannelInfo struct {
 	ObdNodeIdA string    `json:"obd_node_ida"`
 	ObdNodeIdB string    `json:"obd_node_idb"`
 	ChannelId  string    `json:"channel_id"`
+	PropertyId int64     `json:"property_id"`
 	CurrState  int       `json:"curr_state"`
 	PeerIdA    string    `json:"peer_ida"`
 	PeerIdB    string    `json:"peer_idb"`

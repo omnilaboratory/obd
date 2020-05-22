@@ -5,7 +5,36 @@ import (
 	"github.com/omnilaboratory/obd/bean"
 	"github.com/omnilaboratory/obd/bean/enum"
 	"github.com/omnilaboratory/obd/service"
+	"log"
 )
+
+var tempClientMap = make(map[string]*Client)
+
+func htlcTrackerDealModule(msg bean.RequestMessage) {
+	status := false
+	data := ""
+	client := tempClientMap[msg.RecipientUserPeerId]
+	if client == nil {
+		log.Println("not found client")
+		return
+	}
+	switch msg.Type {
+	case enum.MsgType_Tracker_GetHtlcPath_351:
+		respond, err := service.HtlcForwardTxService.GetResponseFromTrackerOfPayerRequestFindPath(msg.Data, *client.User)
+		if err != nil {
+			data = err.Error()
+		} else {
+			bytes, err := json.Marshal(respond)
+			if err != nil {
+				data = err.Error()
+			} else {
+				data = string(bytes)
+				status = true
+			}
+		}
+		client.sendToMyself(enum.MsgType_HTLC_FindPath_N4001, status, data)
+	}
+}
 
 //htlc h module
 func (client *Client) htlcHDealModule(msg bean.RequestMessage) (enum.SendTargetType, []byte, bool) {
@@ -40,19 +69,8 @@ func (client *Client) htlcHDealModule(msg bean.RequestMessage) (enum.SendTargetT
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_HTLC_FindPath_N4001:
-		respond, err := service.HtlcForwardTxService.PayerRequestFindPath(msg.Data, *client.User)
-		if err != nil {
-			data = err.Error()
-		} else {
-			bytes, err := json.Marshal(respond)
-			if err != nil {
-				data = err.Error()
-			} else {
-				data = string(bytes)
-				status = true
-			}
-		}
-		client.sendToMyself(msg.Type, status, data)
+		_, _ = service.HtlcForwardTxService.PayerRequestFindPath(msg.Data, *client.User)
+		tempClientMap[client.User.PeerId] = client
 	case enum.MsgType_HTLC_AddHTLC_N40:
 		respond, err := service.HtlcForwardTxService.PayerAddHtlc_40(msg.Data, *client.User)
 		if err != nil {

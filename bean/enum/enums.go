@@ -19,6 +19,14 @@ const (
 	MsgType_p2p_ConnectServer_3    MsgType = 3
 	MsgType_p2p_SendDataToServer_4 MsgType = 4
 
+	MsgType_Tracker_Connect_301           MsgType = 301
+	MsgType_Tracker_HeartBeat_302         MsgType = 302
+	MsgType_Tracker_NodeLogin_303         MsgType = 303
+	MsgType_Tracker_UserLogin_304         MsgType = 304
+	MsgType_Tracker_UserLogout_305        MsgType = 305
+	MsgType_Tracker_UpdateChannelInfo_350 MsgType = 350
+	MsgType_Tracker_GetHtlcPath_351       MsgType = 351
+
 	MsgType_Core_GetNewAddress_1001                    MsgType = 1001
 	MsgType_Core_GetMiningInfo_1002                    MsgType = 1002
 	MsgType_Core_GetNetworkInfo_1003                   MsgType = 1003

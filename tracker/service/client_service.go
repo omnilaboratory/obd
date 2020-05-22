@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/gorilla/websocket"
+	"github.com/omnilaboratory/obd/bean/enum"
 	"github.com/omnilaboratory/obd/tool"
 	"github.com/omnilaboratory/obd/tracker/bean"
 	"github.com/tidwall/gjson"
@@ -23,7 +24,7 @@ type ObdNode struct {
 	IsLogin     bool
 }
 
-func (this *ObdNode) sendMsgBackToSender(msgType bean.MsgType, status bool, data string) {
+func (this *ObdNode) sendMsgBackToSender(msgType enum.MsgType, status bool, data string) {
 	jsonMessage := getReplyObj(data, msgType, status, tracker, this)
 	this.SendChannel <- jsonMessage
 }
@@ -53,38 +54,37 @@ func (this *ObdNode) Read() {
 		}
 		log.Println("get data from client: ", string(dataReq))
 		reqDataJson := gjson.Parse(string(dataReq))
-		msgType := bean.MsgType(reqDataJson.Get("type").Int())
+		msgType := enum.MsgType(reqDataJson.Get("type").Int())
 		if bean.CheckExist(msgType) == false {
 			this.sendMsgBackToSender(msgType, false, "not exist the msg type")
 			continue
 		}
-		if msgType > 3 && this.IsLogin == false {
+		if msgType > enum.MsgType_Tracker_UserLogin_304 && this.IsLogin == false {
 			this.sendMsgBackToSender(msgType, false, "obd need login")
 			continue
 		}
 
 		msgData := reqDataJson.Get("data").String()
 		switch msgType {
-		case bean.MsgType_HeartBeat_2:
+		case enum.MsgType_Tracker_HeartBeat_302:
 			this.sendMsgBackToSender(msgType, true, "echo")
-		case bean.MsgType_NodeLogin_3:
+		case enum.MsgType_Tracker_NodeLogin_303:
 			retData, err := nodeAccountService.login(this, msgData)
 			sendDataBackToSender(this, msgType, retData, err)
-		case bean.MsgType_UserLogin_4:
-			retData, err := nodeAccountService.userLogin(this, msgData)
-			sendDataBackToSender(this, msgType, retData, err)
-		case bean.MsgType_UserLogout_5:
+		case enum.MsgType_Tracker_UserLogin_304:
+			_, _ = nodeAccountService.userLogin(this, msgData)
+		case enum.MsgType_Tracker_UserLogout_305:
 			_ = nodeAccountService.userLogout(this, msgData)
-		case bean.MsgType_UpdateChannelInfo_50:
+		case enum.MsgType_Tracker_UpdateChannelInfo_350:
 			_ = channelService.updateChannelInfo(this, msgData)
-		case bean.MsgType_GetHtlcPath_51:
+		case enum.MsgType_Tracker_GetHtlcPath_351:
 			path, err := channelService.getPath(this, msgData)
 			sendDataBackToSender(this, msgType, path, err)
 		}
 	}
 }
 
-func sendDataBackToSender(this *ObdNode, msgType bean.MsgType, retData interface{}, err error) {
+func sendDataBackToSender(this *ObdNode, msgType enum.MsgType, retData interface{}, err error) {
 	var data interface{}
 	status := false
 	if err != nil {
@@ -124,7 +124,7 @@ func (this *ObdNode) Write() {
 	}
 }
 
-func sendToSomeObdNode(msgType bean.MsgType, status bool, recipientObdId string, data string) error {
+func sendToSomeObdNode(msgType enum.MsgType, status bool, recipientObdId string, data string) error {
 	if tool.CheckIsString(&recipientObdId) {
 		recipientNode := ObdNodeManager.ObdNodeMap[recipientObdId]
 		if recipientNode != nil {
@@ -136,7 +136,7 @@ func sendToSomeObdNode(msgType bean.MsgType, status bool, recipientObdId string,
 	return errors.New("recipient not exist or online")
 }
 
-func getReplyObj(data string, msgType bean.MsgType, status bool, fromClient, toClient *ObdNode) []byte {
+func getReplyObj(data string, msgType enum.MsgType, status bool, fromClient, toClient *ObdNode) []byte {
 	parse := gjson.Parse(data)
 	result := parse.Value()
 	if parse.Exists() == false {
@@ -168,10 +168,10 @@ func (endManager *obdNodeManager) TrackerStart() {
 		case newConn := <-endManager.Connected:
 			endManager.ClientsMap[newConn] = true
 			endManager.ObdNodeMap[newConn.Id] = newConn
-			newConn.sendMsgBackToSender(bean.MsgType_Connect_1, true, "connect server successfully")
+			newConn.sendMsgBackToSender(enum.MsgType_Tracker_Connect_301, true, "connect server successfully")
 		case currConn := <-endManager.Disconnected:
 			if _, ok := endManager.ClientsMap[currConn]; ok {
-				currConn.sendMsgBackToSender(bean.MsgType_Connect_1, true, "disconnect from server successfully")
+				currConn.sendMsgBackToSender(enum.MsgType_Tracker_Connect_301, true, "disconnect from server successfully")
 				_ = nodeAccountService.logout(currConn)
 				delete(endManager.ClientsMap, currConn)
 				delete(endManager.ObdNodeMap, currConn.Id)

@@ -49,7 +49,7 @@ func (manager *channelManager) updateChannelInfo(obdClient *ObdNode, msgData str
 
 	for _, item := range channelInfos {
 		if tool.CheckIsString(&item.ChannelId) == false ||
-			tool.CheckIsString(&item.PeerIdA) ||
+			tool.CheckIsString(&item.PeerIdA) == false ||
 			tool.CheckIsString(&item.PeerIdB) == false {
 			continue
 		}
@@ -57,6 +57,7 @@ func (manager *channelManager) updateChannelInfo(obdClient *ObdNode, msgData str
 		_ = db.Select(q.Eq("ChannelId", item.ChannelId)).First(channelInfo)
 		if channelInfo.Id == 0 {
 			channelInfo.ChannelId = item.ChannelId
+			channelInfo.PropertyId = item.PropertyId
 			channelInfo.CurrState = item.CurrState
 			channelInfo.PeerIdA = item.PeerIdA
 			channelInfo.PeerIdB = item.PeerIdB
@@ -70,6 +71,7 @@ func (manager *channelManager) updateChannelInfo(obdClient *ObdNode, msgData str
 			channelInfo.CreateAt = time.Now()
 			_ = db.Save(channelInfo)
 		} else {
+			channelInfo.PropertyId = item.PropertyId
 			channelInfo.CurrState = item.CurrState
 			channelInfo.PeerIdA = item.PeerIdA
 			channelInfo.PeerIdB = item.PeerIdB
@@ -85,7 +87,7 @@ func (manager *channelManager) updateChannelInfo(obdClient *ObdNode, msgData str
 	}
 	return err
 }
-func (manager *channelManager) getPath(obdClient *ObdNode, msgData string) (path string, err error) {
+func (manager *channelManager) getPath(obdClient *ObdNode, msgData string) (path interface{}, err error) {
 	manager.mu.Lock()
 	defer manager.mu.Unlock()
 
@@ -97,6 +99,7 @@ func (manager *channelManager) getPath(obdClient *ObdNode, msgData string) (path
 	if err != nil {
 		return "", err
 	}
+
 	if tool.CheckIsString(&pathRequest.RealPayerPeerId) == false {
 		return "", errors.New("wrong realPayerPeerId")
 	}
@@ -107,7 +110,7 @@ func (manager *channelManager) getPath(obdClient *ObdNode, msgData string) (path
 		return "", errors.New("wrong amount")
 	}
 
-	manager.createChannelNetwork(pathRequest.RealPayerPeerId, pathRequest.PayeePeerId, pathRequest.Amount, nil, true)
+	manager.createChannelNetwork(pathRequest.RealPayerPeerId, pathRequest.PayeePeerId, pathRequest.PropertyId, pathRequest.Amount, nil, true)
 	resultIndex := -1
 	minLength := 99
 	for index, node := range manager.openList {
@@ -120,15 +123,22 @@ func (manager *channelManager) getPath(obdClient *ObdNode, msgData string) (path
 			}
 		}
 	}
-
+	retNode := make(map[string]interface{})
+	retNode["senderPeerId"] = pathRequest.RealPayerPeerId
+	retNode["path"] = ""
 	if resultIndex != -1 {
-		return manager.openList[resultIndex].ChannelIds, nil
+		splitArr := strings.Split(manager.openList[resultIndex].ChannelIds, ",")
+		path := ""
+		for i := len(splitArr) - 1; i > -1; i-- {
+			path = splitArr[i] + ","
+		}
+		path = strings.TrimSuffix(path, ",")
+		retNode["path"] = path
 	}
-
-	return "", errors.New("not found path")
+	return retNode, nil
 }
 
-func (manager *channelManager) createChannelNetwork(realPayerPeerId, currPayeePeerId string, amount float64, currNode *graphEdge, isBegin bool) {
+func (manager *channelManager) createChannelNetwork(realPayerPeerId, currPayeePeerId string, propertyId int64, amount float64, currNode *graphEdge, isBegin bool) {
 	if isBegin {
 		manager.openList = make([]*graphEdge, 0)
 		realPayeeEdge := &graphEdge{
@@ -182,6 +192,7 @@ func (manager *channelManager) createChannelNetwork(realPayerPeerId, currPayeePe
 
 	var nodes []dao.ChannelInfo
 	err := db.Select(
+		q.Eq("PropertyId", propertyId),
 		q.Or(
 			q.Eq("PeerIdB", currPayeePeerId),
 			q.Eq("PeerIdA", currPayeePeerId))).
@@ -217,7 +228,7 @@ func (manager *channelManager) createChannelNetwork(realPayerPeerId, currPayeePe
 					newEdge.PathPeerIds += "," + newEdge.CurrNodePeerId
 				} else {
 					if newEdge.Level < 6 {
-						manager.createChannelNetwork(realPayerPeerId, interSender, amount, &newEdge, false)
+						manager.createChannelNetwork(realPayerPeerId, interSender, propertyId, amount, &newEdge, false)
 					}
 				}
 			}

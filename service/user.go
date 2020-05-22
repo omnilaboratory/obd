@@ -4,8 +4,10 @@ import (
 	"errors"
 	"github.com/asdine/storm/q"
 	"github.com/omnilaboratory/obd/bean"
+	"github.com/omnilaboratory/obd/bean/enum"
 	"github.com/omnilaboratory/obd/dao"
 	"github.com/omnilaboratory/obd/tool"
+	trackerBean "github.com/omnilaboratory/obd/tracker/bean"
 	"github.com/tyler-smith/go-bip39"
 	"log"
 	"time"
@@ -82,6 +84,9 @@ func (service *UserManager) UserLogin(user *bean.User) error {
 		node.LatestLoginTime = time.Now()
 		err = userDB.Update(&node)
 	}
+
+	noticeTrackerUserLogin(node)
+
 	if err != nil {
 		return err
 	}
@@ -119,7 +124,7 @@ func (service *UserManager) UserLogout(user *bean.User) error {
 		loginLog.LogoutAt = time.Now()
 		_ = user.Db.Update(loginLog)
 	}
-
+	noticeTrackerUserLogout(node)
 	return user.Db.Close()
 }
 
@@ -136,4 +141,16 @@ func (service *UserManager) UserInfo(email string) (user *dao.User, e error) {
 		return nil, errors.New("user not exist")
 	}
 	return &node, nil
+}
+
+func noticeTrackerUserLogin(user dao.User) {
+	loginRequest := trackerBean.ObdNodeUserLoginRequest{}
+	loginRequest.UserId = user.PeerId
+	sendMsgToTracker(enum.MsgType_Tracker_UserLogin_304, loginRequest)
+}
+
+func noticeTrackerUserLogout(user dao.User) {
+	loginRequest := trackerBean.ObdNodeUserLoginRequest{}
+	loginRequest.UserId = user.PeerId
+	sendMsgToTracker(enum.MsgType_Tracker_UserLogout_305, loginRequest)
 }

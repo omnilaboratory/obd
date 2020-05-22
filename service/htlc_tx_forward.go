@@ -6,10 +6,12 @@ import (
 	"github.com/asdine/storm"
 	"github.com/asdine/storm/q"
 	"github.com/omnilaboratory/obd/bean"
+	"github.com/omnilaboratory/obd/bean/enum"
 	"github.com/omnilaboratory/obd/config"
 	"github.com/omnilaboratory/obd/dao"
 	"github.com/omnilaboratory/obd/rpc"
 	"github.com/omnilaboratory/obd/tool"
+	trackerBean "github.com/omnilaboratory/obd/tracker/bean"
 	"github.com/shopspring/decimal"
 	"github.com/tidwall/gjson"
 	"log"
@@ -68,35 +70,30 @@ func (service *htlcForwardTxManager) PayerRequestFindPath(msgData string, user b
 		return nil, errors.New("wrong amount")
 	}
 
-	//find  path
-	channelAliceInfos := getAllChannelsByUser(user)
-	if len(channelAliceInfos) == 0 {
-		return nil, errors.New("you have no useful channels")
-	}
-	//if has the currChannel direct
-	var directChannel dao.ChannelInfo
-	for _, item := range channelAliceInfos {
-		interNode := checkChannelCanBeUseAsInterNode(item, user, *requestData)
-		if interNode != nil {
-			directChannel = *interNode
-			break
-		}
-	}
-	channelIdArr := make([]string, 0)
-	if &directChannel != nil && directChannel.Id > 0 {
-		log.Println("has direct currChannel")
-		channelIdArr = append(channelIdArr, directChannel.ChannelId)
-	} else {
-		err = errors.New("has no direct currChannel")
+	//tracker find path
+	pathRequest := trackerBean.HtlcPathRequest{}
+	pathRequest.PropertyId = requestData.PropertyId
+	pathRequest.Amount = requestData.Amount
+	pathRequest.RealPayerPeerId = user.PeerId
+	pathRequest.PayeePeerId = requestData.RecipientUserPeerId
+	sendMsgToTracker(enum.MsgType_Tracker_GetHtlcPath_351, pathRequest)
+
+	return nil, nil
+}
+func (service *htlcForwardTxManager) GetResponseFromTrackerOfPayerRequestFindPath(channelPath string, user bean.User) (data interface{}, err error) {
+	if tool.CheckIsString(&channelPath) == false {
+		err = errors.New("has no channel path")
 		log.Println(err)
 		return nil, err
 	}
-	channelPath := ""
-	for _, item := range channelIdArr {
-		channelPath = item + ","
-	}
-	if len(channelPath) > 0 {
-		channelPath = strings.TrimSuffix(channelPath, ",")
+
+	splitArr := strings.Split(channelPath, ",")
+	directChannel := dao.ChannelInfo{}
+	err = user.Db.Select(q.Eq("ChannelId", splitArr[0])).First(&directChannel)
+	if err != nil {
+		err = errors.New("has no directChannel")
+		log.Println(err)
+		return nil, err
 	}
 	nextNodePeerId := directChannel.PeerIdB
 	if user.PeerId == directChannel.PeerIdB {

@@ -2,6 +2,7 @@ package config
 
 import (
 	"log"
+	"strconv"
 	"time"
 
 	"github.com/go-ini/ini"
@@ -13,6 +14,7 @@ var (
 	GrpcPort          = 60021
 	ReadTimeout       = 5 * time.Second
 	WriteTimeout      = 10 * time.Second
+	TrackerHost       = "localhost:60060"
 	TrackerServerPort = 60060
 
 	ChainNode_Type = "test"
@@ -68,4 +70,5 @@ func init() {
 		return
 	}
 	TrackerServerPort = tracker.Key("port").MustInt(60060)
+	TrackerHost = tracker.Key("hostIp").MustString("localhost") + ":" + strconv.Itoa(TrackerServerPort)
 }

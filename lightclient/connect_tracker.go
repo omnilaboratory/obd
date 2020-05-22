@@ -1,33 +1,45 @@
 package lightclient
 
 import (
-	"flag"
+	"encoding/json"
+	"github.com/asdine/storm"
+	"github.com/asdine/storm/q"
 	"github.com/gorilla/websocket"
+	"github.com/omnilaboratory/obd/bean"
+	"github.com/omnilaboratory/obd/bean/enum"
+	"github.com/omnilaboratory/obd/config"
+	"github.com/omnilaboratory/obd/dao"
+	"github.com/omnilaboratory/obd/service"
+	"github.com/omnilaboratory/obd/tool"
+	trackerBean "github.com/omnilaboratory/obd/tracker/bean"
+	"io/ioutil"
 	"log"
 	"net/url"
 	"os"
 	"os/signal"
+	"reflect"
+	"strings"
 	"time"
 )
 
-var addr = flag.String("addr", "localhost:60060", "http service address")
 var conn *websocket.Conn
 
 func ConnectToTracker() {
-	flag.Parse()
-	log.SetFlags(0)
 	interrupt := make(chan os.Signal, 1)
 	signal.Notify(interrupt, os.Interrupt)
 
-	u := url.URL{Scheme: "ws", Host: *addr, Path: "/echo"}
-	log.Printf("connecting to %s", u.String())
+	u := url.URL{Scheme: "ws", Host: config.TrackerHost, Path: "/ws"}
+	log.Printf("connecting tracker to %s", u.String())
 	var err error
 	conn, _, err = websocket.DefaultDialer.Dial(u.String(), nil)
 	if err != nil {
-		log.Fatal("dial:", err)
+		log.Println("dial:", err)
+		return
 	}
 	defer conn.Close()
 	done := make(chan struct{})
+
+	service.TrackerWsConn = conn
 
 	go func() {
 		defer close(done)
@@ -37,11 +49,32 @@ func ConnectToTracker() {
 				log.Println("read:", err)
 				return
 			}
-			log.Printf("recv: %s", message)
+			log.Println("recv:" + string(message))
+
+			replyMessage := bean.ReplyMessage{}
+			err = json.Unmarshal(message, &replyMessage)
+			if err == nil {
+				switch replyMessage.Type {
+				case enum.MsgType_Tracker_GetHtlcPath_351:
+					v := reflect.ValueOf(replyMessage.Result)
+					requestMessage := bean.RequestMessage{}
+					requestMessage.Type = replyMessage.Type
+					requestMessage.Data = ""
+					if v.Kind() == reflect.Map {
+						dataMap := replyMessage.Result.(map[string]interface{})
+						requestMessage.RecipientUserPeerId = dataMap["senderPeerId"].(string)
+						requestMessage.Data = dataMap["path"].(string)
+					}
+					htlcTrackerDealModule(requestMessage)
+				}
+			}
 		}
 	}()
 
-	ticker := time.NewTicker(time.Second)
+	nodeLogin()
+	sycChannelInfos()
+
+	ticker := time.NewTicker(time.Minute)
 	defer ticker.Stop()
 
 	for {
@@ -49,14 +82,17 @@ func ConnectToTracker() {
 		case <-done:
 			return
 		case t := <-ticker.C:
-			err := conn.WriteMessage(websocket.TextMessage, []byte(t.String()))
+			info := make(map[string]interface{})
+			info["type"] = enum.MsgType_Tracker_HeartBeat_302
+			info["data"] = t.String()
+			bytes, err := json.Marshal(info)
+			err = conn.WriteMessage(websocket.TextMessage, bytes)
 			if err != nil {
 				log.Println("write:", err)
 				return
 			}
 		case <-interrupt:
-			log.Println("interrupt")
-
+			log.Println("ws to tracker interrupt")
 			// Cleanly close the connection by sending a close message and then
 			// waiting (with timeout) for the server to close the connection.
 			err := conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
@@ -73,7 +109,74 @@ func ConnectToTracker() {
 	}
 }
 
-func SendMsgToTracker(msg string) {
+func nodeLogin() {
+	info := make(map[string]interface{})
+	info["type"] = enum.MsgType_Tracker_NodeLogin_303
+	nodeLogin := &trackerBean.ObdNodeLoginRequest{}
+	nodeLogin.NodeId = tool.GetObdNodeId()
+	info["data"] = nodeLogin
+	bytes, err := json.Marshal(info)
+	if err != nil {
+		log.Println(err)
+	} else {
+		sendMsgToTracker(string(bytes))
+	}
+}
+
+//同步通道信息
+func sycChannelInfos() {
+	_dir := "dbdata"
+	files, _ := ioutil.ReadDir(_dir)
+	dbNames := make([]string, 0)
+	for _, f := range files {
+		if strings.HasPrefix(f.Name(), "user_") && strings.HasSuffix(f.Name(), ".db") {
+			dbNames = append(dbNames, f.Name())
+		}
+	}
+
+	nodes := make([]trackerBean.ChannelInfoRequest, 0)
+
+	for _, dbName := range dbNames {
+		db, err := storm.Open(_dir + "/" + dbName)
+		if err == nil {
+			channelInfos := []dao.ChannelInfo{}
+			err := db.All(&channelInfos)
+			if err == nil {
+				for _, channelInfo := range channelInfos {
+					commitmentTransaction := dao.CommitmentTransaction{}
+					err := db.Select(q.Eq("ChannelId", channelInfo.ChannelId)).OrderBy("CreateAt").Reverse().First(&commitmentTransaction)
+					if err == nil {
+						request := trackerBean.ChannelInfoRequest{}
+						request.ChannelId = channelInfo.ChannelId
+						request.PropertyId = channelInfo.PropertyId
+						request.PeerIdA = channelInfo.PeerIdA
+						request.PeerIdB = channelInfo.PeerIdB
+						request.CurrState = int(channelInfo.CurrState)
+						request.AmountA = commitmentTransaction.AmountToRSMC
+						request.AmountB = commitmentTransaction.AmountToCounterparty
+						request.IsAlice = false
+						if commitmentTransaction.Owner == channelInfo.PeerIdA {
+							request.IsAlice = true
+						}
+						nodes = append(nodes, request)
+					}
+				}
+			}
+		}
+		_ = db.Close()
+	}
+	if len(nodes) > 0 {
+		info := make(map[string]interface{})
+		info["type"] = enum.MsgType_Tracker_UpdateChannelInfo_350
+		info["data"] = nodes
+		bytes, err := json.Marshal(info)
+		if err == nil {
+			sendMsgToTracker(string(bytes))
+		}
+	}
+}
+
+func sendMsgToTracker(msg string) {
 	err := conn.WriteMessage(websocket.TextMessage, []byte(msg))
 	if err != nil {
 		log.Println("write:", err)

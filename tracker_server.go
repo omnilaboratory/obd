@@ -34,6 +34,8 @@ func init() {
 	log.SetFlags(log.Ldate | log.Ltime | log.Llongfile)
 }
 
+// gox -os "windows linux darwin" -arch amd64
+// gox -os "windows" -arch amd6
 func main() {
 
 	routersInit := tracker.InitRouter()

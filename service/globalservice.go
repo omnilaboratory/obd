@@ -4,11 +4,14 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/asdine/storm/q"
+	"github.com/gorilla/websocket"
 	"github.com/omnilaboratory/obd/bean"
+	"github.com/omnilaboratory/obd/bean/enum"
 	"github.com/omnilaboratory/obd/config"
 	"github.com/omnilaboratory/obd/dao"
 	"github.com/omnilaboratory/obd/rpc"
 	"github.com/omnilaboratory/obd/tool"
+	trackerBean "github.com/omnilaboratory/obd/tracker/bean"
 	"github.com/shopspring/decimal"
 	"log"
 	"time"
@@ -20,6 +23,7 @@ import (
 var db *storm.DB
 var P2PLocalPeerId string
 var rpcClient *rpc.Client
+var TrackerWsConn *websocket.Conn
 
 //for store the privateKey
 var tempAddrPrivateKeyMap = make(map[string]string)
@@ -618,4 +622,25 @@ func createCommitmentTxHex(dbTx storm.Node, isSender bool, reqData *bean.Commitm
 		return nil, err
 	}
 	return commitmentTxInfo, nil
+}
+
+func sendMsgToTracker(msgType enum.MsgType, data interface{}) {
+	message := trackerBean.RequestMessage{}
+	message.Type = msgType
+
+	dataBytes, _ := json.Marshal(data)
+	dataStr := string(dataBytes)
+	parse := gjson.Parse(dataStr)
+	result := parse.Value()
+	if parse.Exists() == false {
+		result = dataStr
+	}
+	message.Data = result
+
+	bytes, _ := json.Marshal(message)
+	err := TrackerWsConn.WriteMessage(websocket.TextMessage, bytes)
+	if err != nil {
+		log.Println("write:", err)
+		return
+	}
 }
