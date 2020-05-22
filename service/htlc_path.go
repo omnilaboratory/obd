@@ -3,6 +3,7 @@ package service
 import (
 	"errors"
 	"github.com/asdine/storm/q"
+	"github.com/omnilaboratory/obd/config"
 	"github.com/omnilaboratory/obd/dao"
 	"log"
 	"strings"
@@ -66,7 +67,7 @@ func (this *pathManager) CreateDemoChannelNetwork(realSenderPeerId, currReceiver
 	}
 
 	if currNode.Level > 0 {
-		amount += GetHtlcFee()
+		amount += config.GetHtlcFee()
 	}
 
 	currNodeIndex := 0
@@ -174,7 +175,7 @@ func (this *pathManager) GetPath(realSenderPeerId, currReceiverPeerId string,
 	}
 
 	if currNode.Level > 0 {
-		amount += GetHtlcFee()
+		amount += config.GetHtlcFee()
 	}
 
 	currNodeIndex := 0
@@ -367,7 +368,7 @@ func (p *pathManager) dealNodeFromReceiver(currChannel dao.ChannelInfo, commitme
 	parentNode *PathNode, tree *PathNode, nodeMap map[string]*PathNode, branchMap map[string]*PathBranchInfo) {
 
 	if commitmentTxInfo.AmountToRSMC > needReceiveAmount {
-		needReceiveAmount += GetHtlcFee() * float64(parentNode.Level)
+		needReceiveAmount += config.GetHtlcFee() * float64(parentNode.Level)
 		newNode := &PathNode{
 			//ParentNode:     len(openList) - 1,
 			CurrNodePeerId: interSenderPeerId,

@@ -23,3 +23,21 @@ type ObdNodeLoginRequest struct {
 type ObdNodeUserLoginRequest struct {
 	UserId string `json:"user_id"`
 }
+
+//更新通道
+type ChannelInfoRequest struct {
+	ChannelId string  `json:"channel_id"`
+	CurrState int     `json:"curr_state"`
+	IsAlice   bool    `json:"is_alice"` //是否是alice方的节点
+	PeerIdA   string  `json:"peer_ida"`
+	PeerIdB   string  `json:"peer_idb"`
+	AmountA   float64 `json:"amount_a"`
+	AmountB   float64 `json:"amount_b"`
+}
+
+//请求获取htlc的path
+type HtlcPathRequest struct {
+	RealPayerPeerId string  `json:"real_payer_peer_id"`
+	PayeePeerId     string  `json:"payee_peer_id"`
+	Amount          float64 `json:"amount"`
+}

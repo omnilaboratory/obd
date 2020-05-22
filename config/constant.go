@@ -11,3 +11,17 @@ const (
 	TrackerDbName = "trackerServer.db"
 	Userbucket    = "user"
 )
+
+func GetHtlcFee() float64 {
+	return 1
+}
+
+// ins*150 + outs*34 + 10 + 80 = transaction size
+// https://shimo.im/docs/5w9Fi1c9vm8yp1ly
+func GetMinerFee() float64 {
+	return 0.00003
+}
+
+func GetOmniDustBtc() float64 {
+	return 0.0000054
+}

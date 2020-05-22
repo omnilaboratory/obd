@@ -2,6 +2,7 @@ package rpc
 
 import (
 	"errors"
+	"github.com/omnilaboratory/obd/config"
 	"github.com/omnilaboratory/obd/tool"
 	"github.com/shopspring/decimal"
 	"github.com/tidwall/gjson"
@@ -224,12 +225,12 @@ func (client *Client) OmniCreateAndSignRawTransaction(fromBitCoinAddress string,
 	if tool.CheckIsString(&toBitCoinAddress) == false {
 		return "", "", errors.New("toBitCoinAddress is empty")
 	}
-	if amount < GetOmniDustBtc() {
+	if amount < config.GetOmniDustBtc() {
 		return "", "", errors.New("wrong amount")
 	}
 
-	pMoney := GetOmniDustBtc()
-	if minerFee < GetOmniDustBtc() {
+	pMoney := config.GetOmniDustBtc()
+	if minerFee < config.GetOmniDustBtc() {
 		minerFee = 0.00003
 	}
 
@@ -353,13 +354,13 @@ func (client *Client) OmniCreateAndSignRawTransactionUseSingleInput(txType int, 
 	if tool.CheckIsString(&toBitCoinAddress) == false {
 		return "", "", "", errors.New("toBitCoinAddress is empty")
 	}
-	if amount < GetOmniDustBtc() {
+	if amount < config.GetOmniDustBtc() {
 		return "", "", "", errors.New("wrong amount")
 	}
 
-	pMoney := GetOmniDustBtc()
-	if minerFee < GetOmniDustBtc() {
-		minerFee = GetMinerFee()
+	pMoney := config.GetOmniDustBtc()
+	if minerFee < config.GetOmniDustBtc() {
+		minerFee = config.GetMinerFee()
 	}
 
 	out, _ := decimal.NewFromFloat(pMoney).
@@ -493,13 +494,13 @@ func (client *Client) OmniCreateAndSignRawTransactionUseRestInput(txType int, fr
 	if tool.CheckIsString(&toBitCoinAddress) == false {
 		return "", "", errors.New("toBitCoinAddress is empty")
 	}
-	if amount < GetOmniDustBtc() {
+	if amount < config.GetOmniDustBtc() {
 		return "", "", errors.New("wrong amount")
 	}
 
-	pMoney := GetOmniDustBtc()
-	if minerFee < GetOmniDustBtc() {
-		minerFee = GetMinerFee()
+	pMoney := config.GetOmniDustBtc()
+	if minerFee < config.GetOmniDustBtc() {
+		minerFee = config.GetMinerFee()
 	}
 
 	out, _ := decimal.NewFromFloat(minerFee).
@@ -634,13 +635,13 @@ func (client *Client) OmniCreateAndSignRawTransactionUseUnsendInput(fromBitCoinA
 		return "", "", errors.New("inputItems is empty")
 	}
 
-	if amount < GetOmniDustBtc() {
+	if amount < config.GetOmniDustBtc() {
 		return "", "", errors.New("wrong amount")
 	}
 
-	pMoney := GetOmniDustBtc()
-	if minerFee < GetOmniDustBtc() {
-		minerFee = GetMinerFee()
+	pMoney := config.GetOmniDustBtc()
+	if minerFee < config.GetOmniDustBtc() {
+		minerFee = config.GetMinerFee()
 	}
 
 	_, _ = client.ValidateAddress(fromBitCoinAddress)

@@ -5,6 +5,7 @@ import (
 	"github.com/asdine/storm"
 	"github.com/asdine/storm/q"
 	"github.com/omnilaboratory/obd/bean"
+	"github.com/omnilaboratory/obd/config"
 	"github.com/omnilaboratory/obd/dao"
 	"github.com/tidwall/gjson"
 	"log"
@@ -63,7 +64,7 @@ func getCarlChannelHasInterNodeBob(htlcRAndHInfo dao.HtlcRAndHInfo, aliceChannel
 	if err != nil {
 		return nil, err
 	}
-	if aliceCommitmentTxInfo.AmountToRSMC < (htlcRAndHInfo.Amount + GetHtlcFee()) {
+	if aliceCommitmentTxInfo.AmountToRSMC < (htlcRAndHInfo.Amount + config.GetHtlcFee()) {
 		return nil, errors.New("channel not have enough money")
 	}
 

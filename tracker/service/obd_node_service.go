@@ -13,6 +13,9 @@ import (
 	"time"
 )
 
+//普通在线用户
+var userOfOnlineMap map[string]dao.UserInfo
+
 var db *storm.DB
 
 func init() {
@@ -21,6 +24,8 @@ func init() {
 	if err != nil {
 		log.Println(err)
 	}
+
+	userOfOnlineMap = make(map[string]dao.UserInfo)
 }
 
 type obdNodeAccountManager struct {
@@ -100,6 +105,8 @@ func (this *obdNodeAccountManager) userLogin(obdClient *ObdNode, msgData string)
 			_ = db.Update(info)
 		}
 	}
+
+	userOfOnlineMap[info.UserId] = *info
 	retData = "login successfully"
 	return retData, err
 }
@@ -126,5 +133,7 @@ func (this *obdNodeAccountManager) userLogout(obdClient *ObdNode, msgData string
 	err = db.Update(info)
 	info.IsOnline = false
 	err = db.UpdateField(info, "IsOnline", info.IsOnline)
+
+	delete(userOfOnlineMap, info.UserId)
 	return err
 }

@@ -2,6 +2,7 @@ package rpc
 
 import (
 	"errors"
+	"github.com/omnilaboratory/obd/config"
 	"github.com/omnilaboratory/obd/tool"
 	"github.com/shopspring/decimal"
 	"github.com/tidwall/gjson"
@@ -183,7 +184,7 @@ func (client *Client) BtcCreateAndSignRawTransaction(fromBitCoinAddress string, 
 	}
 
 	if minerFee <= 0 {
-		minerFee = GetMinerFee()
+		minerFee = config.GetMinerFee()
 	}
 
 	outTotalAmount := decimal.NewFromFloat(0)
@@ -191,11 +192,11 @@ func (client *Client) BtcCreateAndSignRawTransaction(fromBitCoinAddress string, 
 		outTotalAmount = outTotalAmount.Add(decimal.NewFromFloat(item.Amount))
 	}
 
-	if outTotalAmount.LessThan(decimal.NewFromFloat(GetOmniDustBtc())) {
+	if outTotalAmount.LessThan(decimal.NewFromFloat(config.GetOmniDustBtc())) {
 		return "", "", errors.New("wrong outTotalAmount")
 	}
 
-	if minerFee < GetOmniDustBtc() {
+	if minerFee < config.GetOmniDustBtc() {
 		return "", "", errors.New("minerFee too small")
 	}
 
@@ -312,8 +313,8 @@ func (client *Client) BtcCreateAndSignRawTransactionForUnsendInputTx(fromBitCoin
 		return "", "", err
 	}
 
-	if minerFee <= GetOmniDustBtc() {
-		minerFee = GetMinerFee()
+	if minerFee <= config.GetOmniDustBtc() {
+		minerFee = config.GetMinerFee()
 	}
 
 	outAmount := decimal.NewFromFloat(0)
@@ -321,11 +322,11 @@ func (client *Client) BtcCreateAndSignRawTransactionForUnsendInputTx(fromBitCoin
 		outAmount = outAmount.Add(decimal.NewFromFloat(item.Amount))
 	}
 
-	if outAmount.LessThan(decimal.NewFromFloat(GetOmniDustBtc())) {
+	if outAmount.LessThan(decimal.NewFromFloat(config.GetOmniDustBtc())) {
 		return "", "", errors.New("wrong outAmount")
 	}
 
-	if minerFee < GetOmniDustBtc() {
+	if minerFee < config.GetOmniDustBtc() {
 		return "", "", errors.New("minerFee too small")
 	}
 

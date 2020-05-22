@@ -5,6 +5,7 @@ import (
 	"errors"
 	"github.com/asdine/storm/q"
 	"github.com/omnilaboratory/obd/bean"
+	"github.com/omnilaboratory/obd/config"
 	"github.com/omnilaboratory/obd/dao"
 	"github.com/omnilaboratory/obd/rpc"
 	"github.com/omnilaboratory/obd/tool"
@@ -53,10 +54,6 @@ func init() {
 	rpcClient = rpc.NewClient()
 }
 
-func GetHtlcFee() float64 {
-	return 1
-}
-
 func checkBtcFundFinish(address string) error {
 	result, err := rpcClient.ListUnspent(address)
 	if err != nil {
@@ -68,8 +65,8 @@ func checkBtcFundFinish(address string) error {
 		return errors.New("btc fund have been not finished")
 	}
 
-	pMoney := rpc.GetOmniDustBtc()
-	out, _ := decimal.NewFromFloat(rpc.GetMinerFee()).Add(decimal.NewFromFloat(pMoney)).Mul(decimal.NewFromFloat(4.0)).Float64()
+	pMoney := config.GetOmniDustBtc()
+	out, _ := decimal.NewFromFloat(config.GetMinerFee()).Add(decimal.NewFromFloat(pMoney)).Mul(decimal.NewFromFloat(4.0)).Float64()
 	count := 0
 	for _, item := range array {
 		amount := item.Get("amount").Float()

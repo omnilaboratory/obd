@@ -6,6 +6,7 @@ import (
 	"github.com/asdine/storm"
 	"github.com/asdine/storm/q"
 	"github.com/omnilaboratory/obd/bean"
+	"github.com/omnilaboratory/obd/config"
 	"github.com/omnilaboratory/obd/dao"
 	"github.com/omnilaboratory/obd/rpc"
 	"github.com/omnilaboratory/obd/tool"
@@ -63,7 +64,7 @@ func (service *htlcForwardTxManager) PayerRequestFindPath(msgData string, user b
 		return nil, err
 	}
 
-	if requestData.Amount < rpc.GetOmniDustBtc() {
+	if requestData.Amount < config.GetOmniDustBtc() {
 		return nil, errors.New("wrong amount")
 	}
 
@@ -139,7 +140,7 @@ func (service *htlcForwardTxManager) PayerAddHtlc_40(msgData string, user bean.U
 	if err != nil {
 		return nil, errors.New("wrong property_id")
 	}
-	if requestData.Amount < rpc.GetOmniDustBtc() {
+	if requestData.Amount < config.GetOmniDustBtc() {
 		return nil, errors.New("wrong amount")
 	}
 	if tool.CheckIsString(&requestData.H) == false {
@@ -1162,7 +1163,7 @@ func htlcPayerCreateCommitmentTx_C3a(tx storm.Node, channelInfo *dao.ChannelInfo
 	}
 	// htlc的资产分配方案
 	var outputBean = commitmentOutputBean{}
-	amountAndFee := requestData.Amount + GetHtlcFee()*float64(totalStep-(currStep+1))
+	amountAndFee := requestData.Amount + config.GetHtlcFee()*float64(totalStep-(currStep+1))
 	outputBean.RsmcTempPubKey = requestData.CurrRsmcTempAddressPubKey
 	outputBean.HtlcTempPubKey = requestData.CurrHtlcTempAddressPubKey
 
@@ -1320,7 +1321,7 @@ func htlcPayeeCreateCommitmentTx_C3b(tx storm.Node, channelInfo *dao.ChannelInfo
 
 	// htlc的资产分配方案
 	var outputBean = commitmentOutputBean{}
-	amountAndFee := payerJsonData.Get("amount").Float() + GetHtlcFee()*float64(totalStep-(currStep+1))
+	amountAndFee := payerJsonData.Get("amount").Float() + config.GetHtlcFee()*float64(totalStep-(currStep+1))
 	outputBean.RsmcTempPubKey = reqData.CurrRsmcTempAddressPubKey
 	outputBean.HtlcTempPubKey = reqData.CurrHtlcTempAddressPubKey
 

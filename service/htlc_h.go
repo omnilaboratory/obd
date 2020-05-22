@@ -5,8 +5,8 @@ import (
 	"errors"
 	"github.com/asdine/storm/q"
 	"github.com/omnilaboratory/obd/bean"
+	"github.com/omnilaboratory/obd/config"
 	"github.com/omnilaboratory/obd/dao"
-	"github.com/omnilaboratory/obd/rpc"
 	"github.com/omnilaboratory/obd/tool"
 	"sync"
 )
@@ -52,7 +52,7 @@ func (service *htlcHMessageManager) AddHTLC(jsonData string,
 		return nil, err
 	}
 
-	if htlcHRequest.Amount <= rpc.GetOmniDustBtc() {
+	if htlcHRequest.Amount <= config.GetOmniDustBtc() {
 		return nil, errors.New("wrong amount")
 	}
 
@@ -297,8 +297,8 @@ func checkIfHtlcCanBeLaunched(creator *bean.User, htlcHRequest *bean.HtlcRequest
 
 		// If there is enough balance that Alice transfer to Middleman and
 		// Middleman transfer to Carol, then record the Middleman.
-		if commitmentTxAlice.AmountToRSMC >= (htlcHRequest.Amount+GetHtlcFee()) &&
-			commitmentTxCarol.AmountToRSMC >= (htlcHRequest.Amount+GetHtlcFee()) {
+		if commitmentTxAlice.AmountToRSMC >= (htlcHRequest.Amount+config.GetHtlcFee()) &&
+			commitmentTxCarol.AmountToRSMC >= (htlcHRequest.Amount+config.GetHtlcFee()) {
 
 			arrQualifiedMiddleman = append(arrQualifiedMiddleman, middleman)
 		}

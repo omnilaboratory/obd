@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/omnilaboratory/obd/bean"
+	"github.com/omnilaboratory/obd/config"
 	"github.com/omnilaboratory/obd/dao"
 	"github.com/omnilaboratory/obd/rpc"
 	"github.com/omnilaboratory/obd/tool"
@@ -880,7 +881,7 @@ func createCurrCommitmentTxBR(tx storm.Node, brType dao.BRType, channelInfo *dao
 				channelInfo.FundingAddress,
 				channelInfo.PropertyId,
 				breachRemedyTransaction.Amount,
-				rpc.GetMinerFee(),
+				config.GetMinerFee(),
 				0,
 				&commitmentTx.RSMCRedeemScript)
 			if err != nil {

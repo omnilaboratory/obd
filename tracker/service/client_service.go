@@ -75,6 +75,11 @@ func (this *ObdNode) Read() {
 			sendDataBackToSender(this, msgType, retData, err)
 		case bean.MsgType_UserLogout_5:
 			_ = nodeAccountService.userLogout(this, msgData)
+		case bean.MsgType_UpdateChannelInfo_50:
+			_ = channelService.updateChannelInfo(this, msgData)
+		case bean.MsgType_GetHtlcPath_51:
+			path, err := channelService.getPath(this, msgData)
+			sendDataBackToSender(this, msgType, path, err)
 		}
 	}
 }

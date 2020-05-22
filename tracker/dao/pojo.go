@@ -27,3 +27,15 @@ type UserInfo struct {
 	OfflineAt time.Time `json:"offline_at"`
 	bean.ObdNodeUserLoginRequest
 }
+type ChannelInfo struct {
+	Id         int       `storm:"id,increment" json:"id"`
+	ObdNodeIdA string    `json:"obd_node_ida"`
+	ObdNodeIdB string    `json:"obd_node_idb"`
+	ChannelId  string    `json:"channel_id"`
+	CurrState  int       `json:"curr_state"`
+	PeerIdA    string    `json:"peer_ida"`
+	PeerIdB    string    `json:"peer_idb"`
+	AmountA    float64   `json:"amount_a"`
+	AmountB    float64   `json:"amount_b"`
+	CreateAt   time.Time `json:"create_at"`
+}
