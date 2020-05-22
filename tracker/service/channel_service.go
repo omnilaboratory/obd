@@ -208,9 +208,9 @@ func (manager *channelManager) createChannelNetwork(realPayerPeerId, currPayeePe
 
 			if leftAmount >= amount {
 
-				//if _, ok := userOfOnlineMap[interSender]; ok == false {
-				//	continue
-				//}
+				if _, ok := userOfOnlineMap[interSender]; ok == false {
+					continue
+				}
 
 				channelIds := item.ChannelId
 				if tool.CheckIsString(&currNode.ChannelIds) {
