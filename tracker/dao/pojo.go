@@ -40,3 +40,9 @@ type ChannelInfo struct {
 	AmountB    float64   `json:"amount_b"`
 	CreateAt   time.Time `json:"create_at"`
 }
+
+type HtlcTxInfo struct {
+	Id       int       `storm:"id,increment" json:"id"`
+	CreateAt time.Time `json:"create_at"`
+	bean.HtlcTxStateRequest
+}

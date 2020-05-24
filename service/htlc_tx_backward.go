@@ -6,12 +6,15 @@ import (
 	"github.com/asdine/storm"
 	"github.com/asdine/storm/q"
 	"github.com/omnilaboratory/obd/bean"
+	"github.com/omnilaboratory/obd/bean/enum"
 	"github.com/omnilaboratory/obd/config"
 	"github.com/omnilaboratory/obd/dao"
 	"github.com/omnilaboratory/obd/tool"
+	trackerBean "github.com/omnilaboratory/obd/tracker/bean"
 	"github.com/tidwall/gjson"
 	"log"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 )
@@ -23,7 +26,7 @@ type htlcBackwardTxManager struct {
 // HTLC Reverse pass the R (Preimage R)
 var HtlcBackwardTxService htlcBackwardTxManager
 
-// 45 at payee side
+// -45 at payee side
 func (service *htlcBackwardTxManager) SendRToPreviousNode_Step1(msg bean.RequestMessage, user bean.User) (responseData map[string]interface{}, err error) {
 	if tool.CheckIsString(&msg.Data) == false {
 		return nil, errors.New("empty json data")
@@ -174,7 +177,7 @@ func (service *htlcBackwardTxManager) SendRToPreviousNode_Step1(msg bean.Request
 	return responseData, nil
 }
 
-// 45 at payer side
+// -45 at payer side
 func (service *htlcBackwardTxManager) BeforeSendRInfoToPayerAtAliceSide_Step2(msgData string, user bean.User) (data map[string]interface{}, needNoticeOtherSide bool, err error) {
 
 	jsonObjFromPayee := gjson.Parse(msgData)
@@ -372,7 +375,7 @@ func (service *htlcBackwardTxManager) VerifyRAndCreateTxs_Step3(msgData string, 
 	return responseData, nil
 }
 
-//47 at Payee side
+// -47 at Payee side
 func (service *htlcBackwardTxManager) SignHed1aAndUpdate_Step4(msgData string, user bean.User) (responseData map[string]interface{}, err error) {
 	jsonObjFromPayer := gjson.Parse(msgData)
 
@@ -436,9 +439,20 @@ func (service *htlcBackwardTxManager) SignHed1aAndUpdate_Step4(msgData string, u
 		return nil, err
 	}
 	commitmentTxInfo.CurrState = dao.TxInfoState_Htlc_GetR
-	tx.Update(commitmentTxInfo)
+	_ = tx.Update(commitmentTxInfo)
 	//endregion
 	_ = tx.Commit()
+
+	//更新tracker的htlc的状态
+	txStateRequest := trackerBean.HtlcTxStateRequest{}
+	txStateRequest.Path = commitmentTxInfo.HtlcChannelPath
+	txStateRequest.H = commitmentTxInfo.HtlcH
+	if strings.HasSuffix(commitmentTxInfo.HtlcChannelPath, channelInfo.ChannelId) {
+		txStateRequest.R = commitmentTxInfo.HtlcR
+	}
+	txStateRequest.DirectionFlag = trackerBean.HtlcTxState_ConfirmPayMoney
+	txStateRequest.CurrChannelId = channelInfo.ChannelId
+	sendMsgToTracker(enum.MsgType_Tracker_UpdateHtlcTxState_352, txStateRequest)
 
 	responseData = make(map[string]interface{})
 	payerData := make(map[string]interface{})
@@ -453,7 +467,7 @@ func (service *htlcBackwardTxManager) SignHed1aAndUpdate_Step4(msgData string, u
 	return responseData, nil
 }
 
-//48 at Payer side
+// -48 at Payer side
 func (service *htlcBackwardTxManager) CheckHed1aHex_Step5(msgData string, user bean.User) (responseData map[string]interface{}, err error) {
 	jsonObjFromPayee := gjson.Parse(msgData)
 

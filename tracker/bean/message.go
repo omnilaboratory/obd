@@ -45,3 +45,18 @@ type HtlcPathRequest struct {
 	PropertyId      int64   `json:"property_id"`
 	Amount          float64 `json:"amount"`
 }
+
+const (
+	HtlcTxState_PayMoney        = 0
+	HtlcTxState_ConfirmPayMoney = 1
+)
+
+//newHtlcTx
+type HtlcTxStateRequest struct {
+	Path string `json:"path"`
+	H    string `json:"h"`
+	R    string `json:"r"`
+	//0 0:forward h 1:backword
+	DirectionFlag int    `json:"direction_flag"`
+	CurrChannelId string `json:"curr_channel_id"`
+}

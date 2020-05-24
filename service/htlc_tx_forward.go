@@ -286,6 +286,14 @@ func (service *htlcForwardTxManager) PayerAddHtlc_40(msgData string, user bean.U
 			log.Println(err)
 			return nil, err
 		}
+
+		//更新tracker的htlc的状态
+		txStateRequest := trackerBean.HtlcTxStateRequest{}
+		txStateRequest.Path = latestCommitmentTx.HtlcChannelPath
+		txStateRequest.H = latestCommitmentTx.HtlcH
+		txStateRequest.DirectionFlag = trackerBean.HtlcTxState_PayMoney
+		txStateRequest.CurrChannelId = channelInfo.ChannelId
+		sendMsgToTracker(enum.MsgType_Tracker_UpdateHtlcTxState_352, txStateRequest)
 	}
 	_ = tx.Commit()
 
