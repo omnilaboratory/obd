@@ -151,7 +151,7 @@ func sycChannelInfos() {
 						request.PropertyId = channelInfo.PropertyId
 						request.PeerIdA = channelInfo.PeerIdA
 						request.PeerIdB = channelInfo.PeerIdB
-						request.CurrState = int(channelInfo.CurrState)
+						request.CurrState = channelInfo.CurrState
 						request.AmountA = commitmentTransaction.AmountToRSMC
 						request.AmountB = commitmentTransaction.AmountToCounterparty
 						request.IsAlice = false

@@ -624,6 +624,21 @@ func createCommitmentTxHex(dbTx storm.Node, isSender bool, reqData *bean.Commitm
 	return commitmentTxInfo, nil
 }
 
+//同步通道信息到tracker
+func sendChannelStateToTracker(channelInfo dao.ChannelInfo, commitmentTx dao.CommitmentTransaction) {
+	infoRequest := trackerBean.ChannelInfoRequest{}
+	infoRequest.ChannelId = channelInfo.ChannelId
+	infoRequest.PropertyId = channelInfo.PropertyId
+	infoRequest.CurrState = channelInfo.CurrState
+	infoRequest.PeerIdA = channelInfo.PeerIdA
+	infoRequest.PeerIdB = channelInfo.PeerIdB
+	infoRequest.AmountA = commitmentTx.AmountToRSMC
+	infoRequest.AmountB = commitmentTx.AmountToCounterparty
+	nodes := make([]trackerBean.ChannelInfoRequest, 0)
+	nodes = append(nodes, infoRequest)
+	sendMsgToTracker(enum.MsgType_Tracker_UpdateChannelInfo_350, nodes)
+}
+
 func sendMsgToTracker(msgType enum.MsgType, data interface{}) {
 	message := trackerBean.RequestMessage{}
 	message.Type = msgType

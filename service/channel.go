@@ -700,6 +700,10 @@ func (this *channelManager) AfterBobSignCloseChannelAtAliceSide(jsonData string,
 	if err != nil {
 		return nil, err
 	}
+
+	//同步通道信息到tracker
+	sendChannelStateToTracker(*channelInfo, *latestCommitmentTx)
+
 	return channelInfo, nil
 }
 

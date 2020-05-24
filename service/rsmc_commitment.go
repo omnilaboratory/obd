@@ -417,6 +417,9 @@ func (this *commitmentTxManager) AfterBobSignCommitmentTranctionAtAliceSide(data
 
 	_ = tx.Commit()
 
+	//同步通道信息到tracker
+	sendChannelStateToTracker(*channelInfo, *latestCcommitmentTxInfo)
+
 	aliceData["channelId"] = channelId
 	bobData["channelId"] = channelId
 

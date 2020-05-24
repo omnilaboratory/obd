@@ -1370,6 +1370,9 @@ func (service *fundingTransactionManager) AfterBobSignOmniFundingAtAilceSide(dat
 		return nil, err
 	}
 
+	//同步通道信息到tracker
+	sendChannelStateToTracker(*channelInfo, *commitmentTxInfo)
+
 	node["channelId"] = channelInfo.ChannelId
 	return node, nil
 }

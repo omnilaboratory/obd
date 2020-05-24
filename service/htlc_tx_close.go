@@ -867,6 +867,9 @@ func (service *htlcCloseTxManager) AfterBobCloseHTLCSigned_AtAliceSide(data stri
 
 	_ = tx.Commit()
 
+	//同步通道信息到tracker
+	sendChannelStateToTracker(*channelInfo, *latestCcommitmentTxInfo)
+
 	aliceData["channelId"] = channelId
 	bobData["channelId"] = channelId
 

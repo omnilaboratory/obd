@@ -1107,6 +1107,10 @@ func (service *htlcForwardTxManager) AfterAliceSignAddHtlcAtBobSide_43(msgData s
 	_ = tx.Update(channelInfo)
 
 	_ = tx.Commit()
+
+	//同步通道信息到tracker
+	sendChannelStateToTracker(*channelInfo, *latestCommitmentTx)
+
 	bobRetData["commitmentTx"] = latestCommitmentTx
 
 	retData := make(map[string]interface{})
