@@ -288,7 +288,7 @@ func (service *htlcForwardTxManager) PayerAddHtlc_40(msgData string, user bean.U
 		}
 
 		//更新tracker的htlc的状态
-		txStateRequest := trackerBean.HtlcTxStateRequest{}
+		txStateRequest := trackerBean.UpdateHtlcTxStateRequest{}
 		txStateRequest.Path = latestCommitmentTx.HtlcChannelPath
 		txStateRequest.H = latestCommitmentTx.HtlcH
 		txStateRequest.DirectionFlag = trackerBean.HtlcTxState_PayMoney
@@ -1165,14 +1165,14 @@ func (service *htlcForwardTxManager) AfterBobCreateHTRDAtAliceSide_44(msgData st
 // 创建付款方的C3a
 func htlcPayerCreateCommitmentTx_C3a(tx storm.Node, channelInfo *dao.ChannelInfo, requestData bean.AddHtlcRequest, totalStep int, currStep int, latestCommitmentTx *dao.CommitmentTransaction, user bean.User) (*dao.CommitmentTransaction, error) {
 
-	// htlc的资产分配方案
 	fundingTransaction := getFundingTransactionByChannelId(tx, channelInfo.ChannelId, user.PeerId)
 	if fundingTransaction == nil {
 		return nil, errors.New("not found fundingTransaction")
 	}
 	// htlc的资产分配方案
 	var outputBean = commitmentOutputBean{}
-	amountAndFee := requestData.Amount + config.GetHtlcFee()*float64(totalStep-(currStep+1))
+	decimal.DivisionPrecision = 8
+	amountAndFee, _ := decimal.NewFromFloat(requestData.Amount).Mul(decimal.NewFromFloat(1 + config.GetHtlcFee()*float64(totalStep-(currStep+1)))).Round(8).Float64()
 	outputBean.RsmcTempPubKey = requestData.CurrRsmcTempAddressPubKey
 	outputBean.HtlcTempPubKey = requestData.CurrHtlcTempAddressPubKey
 
@@ -1182,18 +1182,18 @@ func htlcPayerCreateCommitmentTx_C3a(tx storm.Node, channelInfo *dao.ChannelInfo
 	}
 	outputBean.AmountToHtlc = amountAndFee
 	if aliceIsPayer { //Alice pay money to bob Alice是付款方
-		outputBean.AmountToRsmc, _ = decimal.NewFromFloat(fundingTransaction.AmountA).Sub(decimal.NewFromFloat(amountAndFee)).Float64()
+		outputBean.AmountToRsmc, _ = decimal.NewFromFloat(fundingTransaction.AmountA).Sub(decimal.NewFromFloat(amountAndFee)).Round(8).Float64()
 		outputBean.AmountToCounterparty = fundingTransaction.AmountB
 		outputBean.OppositeSideChannelPubKey = channelInfo.PubKeyB
 		outputBean.OppositeSideChannelAddress = channelInfo.AddressB
 	} else { //	bob pay money to alice
-		outputBean.AmountToRsmc, _ = decimal.NewFromFloat(fundingTransaction.AmountB).Sub(decimal.NewFromFloat(amountAndFee)).Float64()
+		outputBean.AmountToRsmc, _ = decimal.NewFromFloat(fundingTransaction.AmountB).Sub(decimal.NewFromFloat(amountAndFee)).Round(8).Float64()
 		outputBean.AmountToCounterparty = fundingTransaction.AmountA
 		outputBean.OppositeSideChannelPubKey = channelInfo.PubKeyA
 		outputBean.OppositeSideChannelAddress = channelInfo.AddressA
 	}
 	if latestCommitmentTx.Id > 0 {
-		outputBean.AmountToRsmc, _ = decimal.NewFromFloat(latestCommitmentTx.AmountToRSMC).Sub(decimal.NewFromFloat(amountAndFee)).Float64()
+		outputBean.AmountToRsmc, _ = decimal.NewFromFloat(latestCommitmentTx.AmountToRSMC).Sub(decimal.NewFromFloat(amountAndFee)).Round(8).Float64()
 		outputBean.AmountToCounterparty = latestCommitmentTx.AmountToCounterparty
 	}
 
@@ -1330,7 +1330,8 @@ func htlcPayeeCreateCommitmentTx_C3b(tx storm.Node, channelInfo *dao.ChannelInfo
 
 	// htlc的资产分配方案
 	var outputBean = commitmentOutputBean{}
-	amountAndFee := payerJsonData.Get("amount").Float() + config.GetHtlcFee()*float64(totalStep-(currStep+1))
+	decimal.DivisionPrecision = 8
+	amountAndFee, _ := decimal.NewFromFloat(payerJsonData.Get("amount").Float()).Mul(decimal.NewFromFloat((1 + config.GetHtlcFee()*float64(totalStep-(currStep+1))))).Round(8).Float64()
 	outputBean.RsmcTempPubKey = reqData.CurrRsmcTempAddressPubKey
 	outputBean.HtlcTempPubKey = reqData.CurrHtlcTempAddressPubKey
 
@@ -1341,17 +1342,17 @@ func htlcPayeeCreateCommitmentTx_C3b(tx storm.Node, channelInfo *dao.ChannelInfo
 	outputBean.AmountToHtlc = amountAndFee
 	if bobIsPayee { //Alice pay money to bob
 		outputBean.AmountToRsmc = fundingTransaction.AmountB
-		outputBean.AmountToCounterparty, _ = decimal.NewFromFloat(fundingTransaction.AmountA).Sub(decimal.NewFromFloat(amountAndFee)).Float64()
+		outputBean.AmountToCounterparty, _ = decimal.NewFromFloat(fundingTransaction.AmountA).Sub(decimal.NewFromFloat(amountAndFee)).Round(8).Float64()
 		outputBean.OppositeSideChannelPubKey = channelInfo.PubKeyA
 		outputBean.OppositeSideChannelAddress = channelInfo.AddressA
 	} else { //	bob pay money to alice
 		outputBean.AmountToRsmc = fundingTransaction.AmountA
-		outputBean.AmountToCounterparty, _ = decimal.NewFromFloat(fundingTransaction.AmountB).Sub(decimal.NewFromFloat(amountAndFee)).Float64()
+		outputBean.AmountToCounterparty, _ = decimal.NewFromFloat(fundingTransaction.AmountB).Sub(decimal.NewFromFloat(amountAndFee)).Round(8).Float64()
 		outputBean.OppositeSideChannelPubKey = channelInfo.PubKeyB
 		outputBean.OppositeSideChannelAddress = channelInfo.AddressB
 	}
 	if latestCommitmentTx.Id > 0 {
-		outputBean.AmountToCounterparty, _ = decimal.NewFromFloat(latestCommitmentTx.AmountToCounterparty).Sub(decimal.NewFromFloat(amountAndFee)).Float64()
+		outputBean.AmountToCounterparty, _ = decimal.NewFromFloat(latestCommitmentTx.AmountToCounterparty).Sub(decimal.NewFromFloat(amountAndFee)).Round(8).Float64()
 		outputBean.AmountToRsmc = latestCommitmentTx.AmountToRSMC
 	}
 

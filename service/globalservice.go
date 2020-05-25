@@ -13,7 +13,9 @@ import (
 	"github.com/omnilaboratory/obd/tool"
 	trackerBean "github.com/omnilaboratory/obd/tracker/bean"
 	"github.com/shopspring/decimal"
+	"io/ioutil"
 	"log"
+	"net/http"
 	"time"
 
 	"github.com/asdine/storm"
@@ -70,7 +72,7 @@ func checkBtcFundFinish(address string) error {
 	}
 
 	pMoney := config.GetOmniDustBtc()
-	out, _ := decimal.NewFromFloat(config.GetMinerFee()).Add(decimal.NewFromFloat(pMoney)).Mul(decimal.NewFromFloat(4.0)).Float64()
+	out, _ := decimal.NewFromFloat(config.GetMinerFee()).Add(decimal.NewFromFloat(pMoney)).Mul(decimal.NewFromFloat(4.0)).Round(8).Float64()
 	count := 0
 	for _, item := range array {
 		amount := item.Get("amount").Float()
@@ -517,32 +519,32 @@ func createCommitmentTxHex(dbTx storm.Node, isSender bool, reqData *bean.Commitm
 	outputBean.RsmcTempPubKey = reqData.CurrTempAddressPubKey
 	if currUser.PeerId == channelInfo.PeerIdA {
 		//default alice transfer to bob ,then alice minus money
-		outputBean.AmountToRsmc, _ = decimal.NewFromFloat(fundingTransaction.AmountA).Sub(decimal.NewFromFloat(reqData.Amount)).Float64()
-		outputBean.AmountToCounterparty, _ = decimal.NewFromFloat(fundingTransaction.AmountB).Add(decimal.NewFromFloat(reqData.Amount)).Float64()
+		outputBean.AmountToRsmc, _ = decimal.NewFromFloat(fundingTransaction.AmountA).Sub(decimal.NewFromFloat(reqData.Amount)).Round(8).Float64()
+		outputBean.AmountToCounterparty, _ = decimal.NewFromFloat(fundingTransaction.AmountB).Add(decimal.NewFromFloat(reqData.Amount)).Round(8).Float64()
 		outputBean.OppositeSideChannelAddress = channelInfo.AddressB
 		outputBean.OppositeSideChannelPubKey = channelInfo.PubKeyB
 	} else {
-		outputBean.AmountToRsmc, _ = decimal.NewFromFloat(fundingTransaction.AmountB).Add(decimal.NewFromFloat(reqData.Amount)).Float64()
-		outputBean.AmountToCounterparty, _ = decimal.NewFromFloat(fundingTransaction.AmountA).Sub(decimal.NewFromFloat(reqData.Amount)).Float64()
+		outputBean.AmountToRsmc, _ = decimal.NewFromFloat(fundingTransaction.AmountB).Add(decimal.NewFromFloat(reqData.Amount)).Round(8).Float64()
+		outputBean.AmountToCounterparty, _ = decimal.NewFromFloat(fundingTransaction.AmountA).Sub(decimal.NewFromFloat(reqData.Amount)).Round(8).Float64()
 		outputBean.OppositeSideChannelAddress = channelInfo.AddressA
 		outputBean.OppositeSideChannelPubKey = channelInfo.PubKeyA
 	}
 
 	if lastCommitmentTx != nil && lastCommitmentTx.Id > 0 {
 		if isSender {
-			outputBean.AmountToRsmc, _ = decimal.NewFromFloat(lastCommitmentTx.AmountToRSMC).Sub(decimal.NewFromFloat(reqData.Amount)).Float64()
-			outputBean.AmountToCounterparty, _ = decimal.NewFromFloat(lastCommitmentTx.AmountToCounterparty).Add(decimal.NewFromFloat(reqData.Amount)).Float64()
+			outputBean.AmountToRsmc, _ = decimal.NewFromFloat(lastCommitmentTx.AmountToRSMC).Sub(decimal.NewFromFloat(reqData.Amount)).Round(8).Float64()
+			outputBean.AmountToCounterparty, _ = decimal.NewFromFloat(lastCommitmentTx.AmountToCounterparty).Add(decimal.NewFromFloat(reqData.Amount)).Round(8).Float64()
 		} else {
-			outputBean.AmountToRsmc, _ = decimal.NewFromFloat(lastCommitmentTx.AmountToRSMC).Add(decimal.NewFromFloat(reqData.Amount)).Float64()
-			outputBean.AmountToCounterparty, _ = decimal.NewFromFloat(lastCommitmentTx.AmountToCounterparty).Sub(decimal.NewFromFloat(reqData.Amount)).Float64()
+			outputBean.AmountToRsmc, _ = decimal.NewFromFloat(lastCommitmentTx.AmountToRSMC).Add(decimal.NewFromFloat(reqData.Amount)).Round(8).Float64()
+			outputBean.AmountToCounterparty, _ = decimal.NewFromFloat(lastCommitmentTx.AmountToCounterparty).Sub(decimal.NewFromFloat(reqData.Amount)).Round(8).Float64()
 		}
 	}
 
 	if lastCommitmentTx.TxType == dao.CommitmentTransactionType_Htlc {
 		if lastCommitmentTx.HtlcSender == currUser.PeerId {
-			outputBean.AmountToCounterparty, _ = decimal.NewFromFloat(lastCommitmentTx.AmountToCounterparty).Add(decimal.NewFromFloat(lastCommitmentTx.AmountToHtlc)).Float64()
+			outputBean.AmountToCounterparty, _ = decimal.NewFromFloat(lastCommitmentTx.AmountToCounterparty).Add(decimal.NewFromFloat(lastCommitmentTx.AmountToHtlc)).Round(8).Float64()
 		} else {
-			outputBean.AmountToRsmc, _ = decimal.NewFromFloat(lastCommitmentTx.AmountToRSMC).Add(decimal.NewFromFloat(lastCommitmentTx.AmountToHtlc)).Float64()
+			outputBean.AmountToRsmc, _ = decimal.NewFromFloat(lastCommitmentTx.AmountToRSMC).Add(decimal.NewFromFloat(lastCommitmentTx.AmountToHtlc)).Round(8).Float64()
 		}
 	}
 
@@ -658,4 +660,19 @@ func sendMsgToTracker(msgType enum.MsgType, data interface{}) {
 		log.Println("write:", err)
 		return
 	}
+}
+
+func httpGetHtlcStateFromTracker(path string, h string) (flag int64) {
+	url := "http://" + config.TrackerHost + "/api/v1/getHtlcTxState?path=" + path + "&h=" + h
+	resp, err := http.Get(url)
+	if err != nil {
+		return 0
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode == 200 {
+		body, _ := ioutil.ReadAll(resp.Body)
+		log.Println(string(body))
+		return gjson.Get(string(body), "data").Get("flag").Int()
+	}
+	return 0
 }

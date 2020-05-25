@@ -13,7 +13,7 @@ const (
 )
 
 func GetHtlcFee() float64 {
-	return 1
+	return 0.00001
 }
 
 // ins*150 + outs*34 + 10 + 80 = transaction size

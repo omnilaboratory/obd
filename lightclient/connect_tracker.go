@@ -143,22 +143,24 @@ func sycChannelInfos() {
 			err := db.All(&channelInfos)
 			if err == nil {
 				for _, channelInfo := range channelInfos {
-					commitmentTransaction := dao.CommitmentTransaction{}
-					err := db.Select(q.Eq("ChannelId", channelInfo.ChannelId)).OrderBy("CreateAt").Reverse().First(&commitmentTransaction)
-					if err == nil {
-						request := trackerBean.ChannelInfoRequest{}
-						request.ChannelId = channelInfo.ChannelId
-						request.PropertyId = channelInfo.PropertyId
-						request.PeerIdA = channelInfo.PeerIdA
-						request.PeerIdB = channelInfo.PeerIdB
-						request.CurrState = channelInfo.CurrState
-						request.AmountA = commitmentTransaction.AmountToRSMC
-						request.AmountB = commitmentTransaction.AmountToCounterparty
-						request.IsAlice = false
-						if commitmentTransaction.Owner == channelInfo.PeerIdA {
-							request.IsAlice = true
+					if len(channelInfo.ChannelId) > 0 {
+						commitmentTransaction := dao.CommitmentTransaction{}
+						err := db.Select(q.Eq("ChannelId", channelInfo.ChannelId)).OrderBy("CreateAt").Reverse().First(&commitmentTransaction)
+						if err == nil {
+							request := trackerBean.ChannelInfoRequest{}
+							request.ChannelId = channelInfo.ChannelId
+							request.PropertyId = channelInfo.PropertyId
+							request.PeerIdA = channelInfo.PeerIdA
+							request.PeerIdB = channelInfo.PeerIdB
+							request.CurrState = channelInfo.CurrState
+							request.AmountA = commitmentTransaction.AmountToRSMC
+							request.AmountB = commitmentTransaction.AmountToCounterparty
+							request.IsAlice = false
+							if commitmentTransaction.Owner == channelInfo.PeerIdA {
+								request.IsAlice = true
+							}
+							nodes = append(nodes, request)
 						}
-						nodes = append(nodes, request)
 					}
 				}
 			}
@@ -166,6 +168,7 @@ func sycChannelInfos() {
 		_ = db.Close()
 	}
 	if len(nodes) > 0 {
+		log.Println("syn channel data to tracker", nodes)
 		info := make(map[string]interface{})
 		info["type"] = enum.MsgType_Tracker_UpdateChannelInfo_350
 		info["data"] = nodes

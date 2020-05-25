@@ -246,10 +246,10 @@ func (client *Client) OmniCreateAndSignRawTransaction(fromBitCoinAddress string,
 	}
 	log.Println("listunspent", arrayListUnspent)
 
-	out, _ := decimal.NewFromFloat(minerFee).Add(decimal.NewFromFloat(pMoney)).Float64()
+	out, _ := decimal.NewFromFloat(minerFee).Add(decimal.NewFromFloat(pMoney)).Round(8).Float64()
 	balance := 0.0
 	for _, item := range arrayListUnspent {
-		balance, _ = decimal.NewFromFloat(balance).Add(decimal.NewFromFloat(item.Get("amount").Float())).Float64()
+		balance, _ = decimal.NewFromFloat(balance).Add(decimal.NewFromFloat(item.Get("amount").Float())).Round(8).Float64()
 		if balance >= out {
 			break
 		}
@@ -399,7 +399,7 @@ func (client *Client) OmniCreateAndSignRawTransactionUseSingleInput(txType int, 
 			if redeemScript != nil {
 				node["redeemScript"] = *redeemScript
 			}
-			balance, _ = decimal.NewFromFloat(balance).Add(decimal.NewFromFloat(node["amount"].(float64))).Float64()
+			balance, _ = decimal.NewFromFloat(balance).Add(decimal.NewFromFloat(node["amount"].(float64))).Round(8).Float64()
 			inputs = append(inputs, node)
 			break
 		}
@@ -539,7 +539,7 @@ func (client *Client) OmniCreateAndSignRawTransactionUseRestInput(txType int, fr
 
 	balance := 0.0
 	for _, item := range inputs {
-		balance, _ = decimal.NewFromFloat(balance).Add(decimal.NewFromFloat(item["amount"].(float64))).Float64()
+		balance, _ = decimal.NewFromFloat(balance).Add(decimal.NewFromFloat(item["amount"].(float64))).Round(8).Float64()
 		if balance >= out {
 			break
 		}
@@ -664,10 +664,10 @@ func (client *Client) OmniCreateAndSignRawTransactionUseUnsendInput(fromBitCoinA
 
 		inputs = append(inputs, node)
 	}
-	out, _ := decimal.NewFromFloat(minerFee).Add(decimal.NewFromFloat(pMoney)).Float64()
+	out, _ := decimal.NewFromFloat(minerFee).Add(decimal.NewFromFloat(pMoney)).Round(8).Float64()
 	balance := 0.0
 	for _, item := range inputs {
-		balance, _ = decimal.NewFromFloat(balance).Add(decimal.NewFromFloat(item["amount"].(float64))).Float64()
+		balance, _ = decimal.NewFromFloat(balance).Add(decimal.NewFromFloat(item["amount"].(float64))).Round(8).Float64()
 		if balance >= out {
 			break
 		}

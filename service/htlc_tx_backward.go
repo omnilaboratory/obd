@@ -444,7 +444,7 @@ func (service *htlcBackwardTxManager) SignHed1aAndUpdate_Step4(msgData string, u
 	_ = tx.Commit()
 
 	//更新tracker的htlc的状态
-	txStateRequest := trackerBean.HtlcTxStateRequest{}
+	txStateRequest := trackerBean.UpdateHtlcTxStateRequest{}
 	txStateRequest.Path = commitmentTxInfo.HtlcChannelPath
 	txStateRequest.H = commitmentTxInfo.HtlcH
 	if strings.HasSuffix(commitmentTxInfo.HtlcChannelPath, channelInfo.ChannelId) {

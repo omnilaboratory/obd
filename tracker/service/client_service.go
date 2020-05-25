@@ -78,10 +78,10 @@ func (this *ObdNode) Read() {
 		case enum.MsgType_Tracker_UpdateChannelInfo_350:
 			_ = channelService.updateChannelInfo(this, msgData)
 		case enum.MsgType_Tracker_GetHtlcPath_351:
-			path, err := htlcService.getPath(this, msgData)
+			path, err := HtlcService.getPath(this, msgData)
 			sendDataBackToSender(this, msgType, path, err)
 		case enum.MsgType_Tracker_UpdateHtlcTxState_352:
-			_ = htlcService.updateNewHtlc(this, msgData)
+			_ = HtlcService.updateHtlcInfo(this, msgData)
 		}
 	}
 }

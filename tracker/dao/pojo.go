@@ -45,5 +45,5 @@ type ChannelInfo struct {
 type HtlcTxInfo struct {
 	Id       int       `storm:"id,increment" json:"id"`
 	CreateAt time.Time `json:"create_at"`
-	bean.HtlcTxStateRequest
+	bean.UpdateHtlcTxStateRequest
 }

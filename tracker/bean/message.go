@@ -55,10 +55,15 @@ const (
 )
 
 //newHtlcTx
-type HtlcTxStateRequest struct {
+type GetHtlcTxStateRequest struct {
 	Path string `json:"path"`
 	H    string `json:"h"`
-	R    string `json:"r"`
+}
+
+//newHtlcTx
+type UpdateHtlcTxStateRequest struct {
+	GetHtlcTxStateRequest
+	R string `json:"r"`
 	//0 0:forward h 1:backword
 	DirectionFlag int    `json:"direction_flag"`
 	CurrChannelId string `json:"curr_channel_id"`

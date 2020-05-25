@@ -12,12 +12,24 @@ func init() {
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
 }
 
-//测试omnicore 0.13的正式版是否可以连接上
 func TestClient_GetMiningInfo(t *testing.T) {
 	client := NewClient()
 	result, err := client.GetMiningInfo()
 	log.Println(err)
 	log.Println(result)
+
+	//result, err = client.send("importaddress", []interface{}{"mre4gBmjKiBm8gwZmpCNcnnHiDY7TXr2wD", "", false})
+	//log.Println(err)
+	//log.Println(result)
+
+	isValid, err := client.ValidateAddress("mre4gBmjKiBm8gwZmpCNcnnHiDY7TXr2wD")
+	log.Println(isValid)
+	log.Println(err)
+
+	result, err = client.ListUnspent("mre4gBmjKiBm8gwZmpCNcnnHiDY7TXr2wD")
+	log.Println(err)
+	log.Println(result)
+
 }
 
 func TestDemo(t *testing.T) {
@@ -86,7 +98,7 @@ func TestClient_GetBalanceByAddress(t *testing.T) {
 		node["redeemScript"] = redeemScript
 		node["scriptPubKey"] = item.Get("scriptPubKey").String()
 		inputs = append(inputs, node)
-		balance, _ = decimal.NewFromFloat(balance).Add(decimal.NewFromFloat(item.Get("amount").Float())).Float64()
+		balance, _ = decimal.NewFromFloat(balance).Add(decimal.NewFromFloat(item.Get("amount").Float())).Round(8).Float64()
 	}
 	log.Println("input list ", inputs)
 

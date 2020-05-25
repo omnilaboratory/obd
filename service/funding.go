@@ -96,7 +96,7 @@ func (service *fundingTransactionManager) BTCFundingCreated(data bean.RequestMes
 		return nil, "", err
 	}
 
-	out, _ := decimal.NewFromFloat(config.GetMinerFee()).Add(decimal.NewFromFloat(config.GetOmniDustBtc())).Mul(decimal.NewFromFloat(4.0)).Float64()
+	out, _ := decimal.NewFromFloat(config.GetMinerFee()).Add(decimal.NewFromFloat(config.GetOmniDustBtc())).Mul(decimal.NewFromFloat(4.0)).Round(8).Float64()
 	if amount < out {
 		err = errors.New("error btc amount, must greater " + tool.FloatToString(out, 8))
 		log.Println(err)
@@ -415,6 +415,7 @@ func (service *fundingTransactionManager) FundingBtcTxSigned(jsonData string, us
 	inputItems = append(inputItems, rpc.TransactionInputItem{
 		Txid:         fundingTxid,
 		ScriptPubKey: channelInfo.ChannelAddressScriptPubKey,
+		RedeemScript: channelInfo.ChannelAddressRedeemScript,
 		Vout:         vout,
 		Amount:       amount})
 	_, signedHex, err := rpcClient.BtcSignRawTransactionForUnsend(fundingBtcRequest.RedeemHex, inputItems, reqData.ChannelAddressPrivateKey)

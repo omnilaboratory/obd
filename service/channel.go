@@ -371,6 +371,13 @@ func (this *channelManager) RequestCloseChannel(msg bean.RequestMessage, user *b
 		return nil, errors.New("latest commitment tx state is wrong")
 	}
 
+	if channelInfo.CurrState == dao.ChannelState_HtlcTx {
+		flag := httpGetHtlcStateFromTracker(lastCommitmentTx.HtlcChannelPath, lastCommitmentTx.HtlcH)
+		if flag == 1 {
+			return nil, errors.New("R is backward")
+		}
+	}
+
 	closeChannel := &dao.CloseChannel{}
 	closeChannel.ChannelId = channelId
 	closeChannel.Owner = user.PeerId

@@ -4,11 +4,13 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/asdine/storm/q"
+	"github.com/gin-gonic/gin"
 	"github.com/omnilaboratory/obd/config"
 	"github.com/omnilaboratory/obd/tool"
 	"github.com/omnilaboratory/obd/tracker/bean"
 	"github.com/omnilaboratory/obd/tracker/dao"
 	"log"
+	"net/http"
 	"strings"
 	"sync"
 	"time"
@@ -31,7 +33,7 @@ type htlcManager struct {
 	openList []*graphEdge
 }
 
-var htlcService htlcManager
+var HtlcService htlcManager
 
 func (manager *htlcManager) getPath(obdClient *ObdNode, msgData string) (path interface{}, err error) {
 	manager.mu.Lock()
@@ -84,14 +86,14 @@ func (manager *htlcManager) getPath(obdClient *ObdNode, msgData string) (path in
 	return retNode, nil
 }
 
-func (manager *htlcManager) updateNewHtlc(obdClient *ObdNode, msgData string) (err error) {
+func (manager *htlcManager) updateHtlcInfo(obdClient *ObdNode, msgData string) (err error) {
 	manager.mu.Lock()
 	defer manager.mu.Unlock()
 
 	if tool.CheckIsString(&msgData) == false {
 		return errors.New("wrong inputData")
 	}
-	reqData := &bean.HtlcTxStateRequest{}
+	reqData := &bean.UpdateHtlcTxStateRequest{}
 	err = json.Unmarshal([]byte(msgData), reqData)
 	if err != nil {
 		return err
@@ -125,6 +127,39 @@ func (manager *htlcManager) updateNewHtlc(obdClient *ObdNode, msgData string) (e
 		_ = db.Update(htlcTxInfo)
 	}
 	return nil
+}
+
+func (manager *htlcManager) GetHtlcCurrState(context *gin.Context) {
+	manager.mu.Lock()
+	defer manager.mu.Unlock()
+
+	reqData := &bean.GetHtlcTxStateRequest{}
+	reqData.Path = context.Query("path")
+	if tool.CheckIsString(&reqData.Path) == false {
+		context.JSON(http.StatusInternalServerError, gin.H{
+			"msg": "error path",
+		})
+		return
+	}
+	reqData.H = context.Query("h")
+	if tool.CheckIsString(&reqData.H) == false {
+		context.JSON(http.StatusInternalServerError, gin.H{
+			"msg": "error h",
+		})
+		return
+	}
+
+	htlcTxInfo := &dao.HtlcTxInfo{}
+	_ = db.Select(q.Eq("Path", reqData.Path), q.Eq("H", reqData.H)).First(htlcTxInfo)
+	retData := make(map[string]interface{})
+	retData["flag"] = 0
+	if htlcTxInfo.Id > 0 {
+		retData["flag"] = htlcTxInfo.DirectionFlag
+	}
+	context.JSON(http.StatusOK, gin.H{
+		"msg":  "htlcState",
+		"data": retData,
+	})
 }
 
 func (manager *htlcManager) createChannelNetwork(realPayerPeerId, currPayeePeerId string, propertyId int64, amount float64, currNode *graphEdge, isBegin bool) {

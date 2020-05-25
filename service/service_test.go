@@ -2,8 +2,10 @@ package service
 
 import (
 	"github.com/asdine/storm/q"
+	"github.com/omnilaboratory/obd/config"
 	"github.com/omnilaboratory/obd/dao"
 	"github.com/omnilaboratory/obd/rpc"
+	"github.com/shopspring/decimal"
 	"github.com/tidwall/gjson"
 	"log"
 	"testing"
@@ -27,6 +29,14 @@ func TestDemoChannelTreeData(t *testing.T) {
 	//for key, node := range branchMap {
 	//	log.Println(key, node)
 	//}
+
+}
+
+func TestCommitmentTxManager_GetItemById(t *testing.T) {
+	amount := 2.0009
+	decimal.DivisionPrecision = 8
+	amountAndFee, _ := decimal.NewFromFloat(amount).Mul(decimal.NewFromFloat(1 + config.GetHtlcFee()*float64(2-(0+1)))).Round(8).Float64()
+	log.Println(amountAndFee)
 
 }
 

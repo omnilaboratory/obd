@@ -11,7 +11,7 @@ import (
 	"strconv"
 )
 
-//https://bitcoin.org/en/developer-reference#bitcoin-core-apis
+//https://developer.bitcoin.org/reference/rpc/index.html
 func (client *Client) CreateMultiSig(minSignNum int, keys []string) (result string, err error) {
 	for _, item := range keys {
 		_, _ = client.ValidateAddress(item)
@@ -165,6 +165,7 @@ type TransactionOutputItem struct {
 type TransactionInputItem struct {
 	Txid         string  `json:"txid"`
 	ScriptPubKey string  `json:"scriptPubKey"`
+	RedeemScript string  `json:"redeem_script"`
 	Vout         uint32  `json:"vout"`
 	Amount       float64 `json:"value"`
 }
@@ -212,7 +213,7 @@ func (client *Client) BtcCreateAndSignRawTransaction(fromBitCoinAddress string, 
 	log.Println("listunspent", array)
 
 	//out, _ := decimal.NewFromFloat(minerFee).Add(outTotalAmount).Float64()
-	out, _ := outTotalAmount.Float64()
+	out, _ := outTotalAmount.Round(8).Float64()
 
 	balance := 0.0
 	var inputs []map[string]interface{}
@@ -232,7 +233,7 @@ func (client *Client) BtcCreateAndSignRawTransaction(fromBitCoinAddress string, 
 		}
 		node["scriptPubKey"] = item.Get("scriptPubKey").String()
 		inputs = append(inputs, node)
-		balance, _ = decimal.NewFromFloat(balance).Add(decimal.NewFromFloat(item.Get("amount").Float())).Float64()
+		balance, _ = decimal.NewFromFloat(balance).Add(decimal.NewFromFloat(item.Get("amount").Float())).Round(8).Float64()
 	}
 	log.Println("input list ", inputs)
 
@@ -240,11 +241,11 @@ func (client *Client) BtcCreateAndSignRawTransaction(fromBitCoinAddress string, 
 		return "", "", errors.New("not enough balance")
 	}
 
-	minerFeeAndOut, _ := decimal.NewFromFloat(minerFee).Add(outTotalAmount).Float64()
+	minerFeeAndOut, _ := decimal.NewFromFloat(minerFee).Add(outTotalAmount).Round(8).Float64()
 
 	subMinerFee := 0.0
 	if balance <= minerFeeAndOut {
-		needLessFee, _ := decimal.NewFromFloat(minerFeeAndOut).Sub(decimal.NewFromFloat(balance)).Float64()
+		needLessFee, _ := decimal.NewFromFloat(minerFeeAndOut).Sub(decimal.NewFromFloat(balance)).Round(8).Float64()
 		if needLessFee > 0 {
 			var outTotalCount = 0
 			for _, item := range outputItems {
@@ -259,11 +260,11 @@ func (client *Client) BtcCreateAndSignRawTransaction(fromBitCoinAddress string, 
 		}
 	}
 
-	drawback, _ := decimal.NewFromFloat(balance).Sub(decimal.NewFromFloat(minerFeeAndOut)).Float64()
+	drawback, _ := decimal.NewFromFloat(balance).Sub(decimal.NewFromFloat(minerFeeAndOut)).Round(8).Float64()
 	output := make(map[string]interface{})
 	for _, item := range outputItems {
 		if item.Amount > 0 {
-			output[item.ToBitCoinAddress], _ = decimal.NewFromFloat(item.Amount).Sub(decimal.NewFromFloat(subMinerFee)).Float64()
+			output[item.ToBitCoinAddress], _ = decimal.NewFromFloat(item.Amount).Sub(decimal.NewFromFloat(subMinerFee)).Round(8).Float64()
 		}
 	}
 	if drawback > 0 {
@@ -344,7 +345,7 @@ func (client *Client) BtcCreateAndSignRawTransactionForUnsendInputTx(fromBitCoin
 	}
 	minerFee = 0
 	for i := 0; i < outTotalCount; i++ {
-		minerFee, _ = decimal.NewFromFloat(minerFee).Add(decimal.NewFromFloat(subMinerFee)).Float64()
+		minerFee, _ = decimal.NewFromFloat(minerFee).Add(decimal.NewFromFloat(subMinerFee)).Round(8).Float64()
 	}
 
 	balance := 0.0
@@ -360,7 +361,7 @@ func (client *Client) BtcCreateAndSignRawTransactionForUnsendInputTx(fromBitCoin
 			node["redeemScript"] = *redeemScript
 		}
 		node["scriptPubKey"] = item.ScriptPubKey
-		balance, _ = decimal.NewFromFloat(balance).Add(decimal.NewFromFloat(item.Amount)).Float64()
+		balance, _ = decimal.NewFromFloat(balance).Add(decimal.NewFromFloat(item.Amount)).Round(8).Float64()
 		inputs = append(inputs, node)
 	}
 	//not enough money
@@ -373,18 +374,18 @@ func (client *Client) BtcCreateAndSignRawTransactionForUnsendInputTx(fromBitCoin
 		outAmount = outAmount.Sub(decimal.NewFromFloat(minerFee))
 	}
 
-	out, _ := decimal.NewFromFloat(minerFee).Add(outAmount).Float64()
+	out, _ := decimal.NewFromFloat(minerFee).Add(outAmount).Round(8).Float64()
 	log.Println("input list ", inputs)
 
 	if len(inputs) == 0 || balance < out {
 		return "", "", errors.New("not enough balance")
 	}
-	drawback, _ := decimal.NewFromFloat(balance).Sub(decimal.NewFromFloat(out)).Float64()
+	drawback, _ := decimal.NewFromFloat(balance).Sub(decimal.NewFromFloat(out)).Round(8).Float64()
 
 	output := make(map[string]interface{})
 	for _, item := range outputItems {
 		if item.Amount > 0 {
-			output[item.ToBitCoinAddress], _ = decimal.NewFromFloat(item.Amount).Sub(decimal.NewFromFloat(subMinerFee)).Float64()
+			output[item.ToBitCoinAddress], _ = decimal.NewFromFloat(item.Amount).Sub(decimal.NewFromFloat(subMinerFee)).Round(8).Float64()
 		}
 	}
 	if drawback > 0 {
@@ -425,6 +426,7 @@ func (client *Client) BtcSignRawTransactionForUnsend(hex string, inputItems []Tr
 		node["txid"] = item.Txid
 		node["vout"] = item.Vout
 		node["scriptPubKey"] = item.ScriptPubKey
+		node["redeemScript"] = item.RedeemScript
 		inputs = append(inputs, node)
 	}
 	signHex, err := client.SignRawTransactionWithKey(hex, []string{privKey}, inputs, "ALL")

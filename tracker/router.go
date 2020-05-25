@@ -15,6 +15,12 @@ func InitRouter() *gin.Engine {
 	router.Use(gin.Recovery())
 	go service.ObdNodeManager.TrackerStart()
 	router.GET("/ws", wsClientConnect)
+
+	apiv1 := router.Group("/api/v1")
+	{
+		apiv1.GET("/getHtlcTxState", service.HtlcService.GetHtlcCurrState)
+	}
+
 	return router
 }
 
