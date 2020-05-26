@@ -357,7 +357,11 @@ func (this *commitmentTxManager) AfterBobSignCommitmentTranctionAtAliceSide(data
 	}
 	bobRsmcMultiAddressScriptPubKey := gjson.Get(addressJson, "scriptPubKey").String()
 
-	inputs, err := getInputsForNextTxByParseTxHashVout(bobSignedRsmcHex, bobRsmcMultiAddress, bobRsmcMultiAddressScriptPubKey)
+	inputs, err := getInputsForNextTxByParseTxHashVout(
+		bobSignedRsmcHex,
+		bobRsmcMultiAddress,
+		bobRsmcMultiAddressScriptPubKey,
+		bobRsmcRedeemScript)
 	if err != nil {
 		log.Println(err)
 		return nil, false, err
@@ -637,7 +641,7 @@ func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction
 	}
 	aliceRsmcMultiAddressScriptPubKey := gjson.Get(tempJson, "scriptPubKey").String()
 
-	aliceRsmcOutputs, err := getInputsForNextTxByParseTxHashVout(signedRsmcHex, aliceRsmcMultiAddress, aliceRsmcMultiAddressScriptPubKey)
+	aliceRsmcOutputs, err := getInputsForNextTxByParseTxHashVout(signedRsmcHex, aliceRsmcMultiAddress, aliceRsmcMultiAddressScriptPubKey, aliceRsmcRedeemScript)
 	if err != nil {
 		log.Println(err)
 		return nil, "", err
@@ -914,7 +918,11 @@ func signLastBR(tx storm.Node, brType dao.BRType, channelInfo dao.ChannelInfo, u
 		OrderBy("CreateAt").
 		Reverse().First(lastBreachRemedyTransaction)
 	if lastBreachRemedyTransaction != nil && lastBreachRemedyTransaction.Id > 0 {
-		inputs, err := getInputsForNextTxByParseTxHashVout(lastBreachRemedyTransaction.InputTxHex, lastBreachRemedyTransaction.InputAddress, lastBreachRemedyTransaction.InputAddressScriptPubKey)
+		inputs, err := getInputsForNextTxByParseTxHashVout(
+			lastBreachRemedyTransaction.InputTxHex,
+			lastBreachRemedyTransaction.InputAddress,
+			lastBreachRemedyTransaction.InputAddressScriptPubKey,
+			lastBreachRemedyTransaction.InputRedeemScript)
 		if err != nil {
 			log.Println(err)
 			return errors.New("fail to sign breachRemedyTransaction")

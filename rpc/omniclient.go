@@ -778,6 +778,7 @@ func (client *Client) OmniSignRawTransactionForUnsend(hex string, inputItems []T
 		node["vout"] = item.Vout
 		node["amount"] = item.Amount
 		node["scriptPubKey"] = item.ScriptPubKey
+		node["redeemScript"] = item.RedeemScript
 		inputs = append(inputs, node)
 	}
 	signHex, err := client.SignRawTransactionWithKey(hex, []string{privKey}, inputs, "ALL")

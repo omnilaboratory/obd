@@ -464,7 +464,7 @@ func (service *htlcCloseTxManager) CloseHTLCSigned(msg bean.RequestMessage, user
 	}
 	aliceRsmcMultiAddressScriptPubKey := gjson.Get(tempJson, "scriptPubKey").String()
 
-	aliceRsmcOutputs, err := getInputsForNextTxByParseTxHashVout(signedRsmcHex, aliceRsmcMultiAddress, aliceRsmcMultiAddressScriptPubKey)
+	aliceRsmcOutputs, err := getInputsForNextTxByParseTxHashVout(signedRsmcHex, aliceRsmcMultiAddress, aliceRsmcMultiAddressScriptPubKey, aliceRsmcRedeemScript)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -804,7 +804,7 @@ func (service *htlcCloseTxManager) AfterBobCloseHTLCSigned_AtAliceSide(data stri
 	}
 	bobRsmcMultiAddressScriptPubKey := gjson.Get(addressJson, "scriptPubKey").String()
 
-	inputs, err := getInputsForNextTxByParseTxHashVout(bobSignedRsmcHex, bobRsmcMultiAddress, bobRsmcMultiAddressScriptPubKey)
+	inputs, err := getInputsForNextTxByParseTxHashVout(bobSignedRsmcHex, bobRsmcMultiAddress, bobRsmcMultiAddressScriptPubKey, bobRsmcRedeemScript)
 	if err != nil {
 		log.Println(err)
 		return nil, false, err

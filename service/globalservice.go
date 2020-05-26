@@ -193,6 +193,7 @@ func createBRTxObj(owner string, channelInfo *dao.ChannelInfo, brType dao.BRType
 	breachRemedyTransaction.TempPubKey = commitmentTxInfo.RSMCTempAddressPubKey
 	breachRemedyTransaction.InputAddress = commitmentTxInfo.RSMCMultiAddress
 	breachRemedyTransaction.InputAddressScriptPubKey = commitmentTxInfo.RSMCMultiAddressScriptPubKey
+	breachRemedyTransaction.InputRedeemScript = commitmentTxInfo.RSMCRedeemScript
 	breachRemedyTransaction.InputTxHex = commitmentTxInfo.RSMCTxHex
 	breachRemedyTransaction.InputTxid = commitmentTxInfo.RSMCTxid
 	breachRemedyTransaction.InputVout = 0
@@ -318,7 +319,7 @@ func checkOmniTxHex(fundingTxHexDecode string, channelInfo *dao.ChannelInfo, use
 }
 
 //从未广播的交易hash数据中解析出他的输出，以此作为下个交易的输入
-func getInputsForNextTxByParseTxHashVout(hex string, toAddress, scriptPubKey string) (inputs []rpc.TransactionInputItem, err error) {
+func getInputsForNextTxByParseTxHashVout(hex string, toAddress, scriptPubKey, redeemScript string) (inputs []rpc.TransactionInputItem, err error) {
 	result, err := rpcClient.DecodeRawTransaction(hex)
 	if err != nil {
 		return nil, err
@@ -335,6 +336,7 @@ func getInputsForNextTxByParseTxHashVout(hex string, toAddress, scriptPubKey str
 						node := rpc.TransactionInputItem{}
 						node.Txid = jsonHex.Get("txid").String()
 						node.ScriptPubKey = scriptPubKey
+						node.RedeemScript = redeemScript
 						node.Vout = uint32(item.Get("n").Uint())
 						node.Amount = item.Get("value").Float()
 						if node.Amount > 0 {
@@ -401,7 +403,7 @@ func getFundingTransactionByChannelId(dbTx storm.Node, channelId string, userPee
 }
 
 func signRdTx(tx storm.Node, channelInfo *dao.ChannelInfo, signedRsmcHex string, rdHex string, latestCcommitmentTxInfo dao.CommitmentTransaction, outputAddress string, user *bean.User) (err error) {
-	inputs, err := getInputsForNextTxByParseTxHashVout(signedRsmcHex, latestCcommitmentTxInfo.RSMCMultiAddress, latestCcommitmentTxInfo.RSMCMultiAddressScriptPubKey)
+	inputs, err := getInputsForNextTxByParseTxHashVout(signedRsmcHex, latestCcommitmentTxInfo.RSMCMultiAddress, latestCcommitmentTxInfo.RSMCMultiAddressScriptPubKey, latestCcommitmentTxInfo.RSMCRedeemScript)
 	if err != nil {
 		log.Println(err)
 		return err
@@ -442,7 +444,7 @@ func signRdTx(tx storm.Node, channelInfo *dao.ChannelInfo, signedRsmcHex string,
 }
 
 func signHTD1bTx(tx storm.Node, signedHtlcHex string, htd1bHex string, latestCcommitmentTxInfo dao.CommitmentTransaction, outputAddress string, user *bean.User) (err error) {
-	inputs, err := getInputsForNextTxByParseTxHashVout(signedHtlcHex, latestCcommitmentTxInfo.HTLCMultiAddress, latestCcommitmentTxInfo.HTLCMultiAddressScriptPubKey)
+	inputs, err := getInputsForNextTxByParseTxHashVout(signedHtlcHex, latestCcommitmentTxInfo.HTLCMultiAddress, latestCcommitmentTxInfo.HTLCMultiAddressScriptPubKey, latestCcommitmentTxInfo.HTLCRedeemScript)
 	if err != nil {
 		log.Println(err)
 		return err

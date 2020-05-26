@@ -338,7 +338,7 @@ func (service *htlcBackwardTxManager) VerifyRAndCreateTxs_Step3(msgData string, 
 		he1bTempPubKey := jsonDataFromPayee.Get("he1bTempPubKey").Str
 		helbOutAddress, helbOutAddressRedeemScript, helbOutAddressScriptPubKey, err := createMultiSig(he1bTempPubKey, payerChannelPubKey)
 		he1bTxHex := jsonDataFromPayee.Get("he1bHex").String()
-		he1bOutputs, err := getInputsForNextTxByParseTxHashVout(he1bTxHex, helbOutAddress, helbOutAddressScriptPubKey)
+		he1bOutputs, err := getInputsForNextTxByParseTxHashVout(he1bTxHex, helbOutAddress, helbOutAddressScriptPubKey, helbOutAddressRedeemScript)
 		if err != nil || len(he1bOutputs) == 0 {
 			log.Println(err)
 			return nil, err
@@ -411,8 +411,8 @@ func (service *htlcBackwardTxManager) SignHed1aAndUpdate_Step4(msgData string, u
 	}
 
 	//region 1 签名hed1a
-	hlockMultiAddress, _, hlockMultiAddressScriptPubKey, err := createMultiSig(commitmentTxInfo.HtlcH, payeeChannelPubKey)
-	payerHLockOutputs, err := getInputsForNextTxByParseTxHashVout(payerHlockTxHex, hlockMultiAddress, hlockMultiAddressScriptPubKey)
+	hlockMultiAddress, hlockRedeemScript, hlockMultiAddressScriptPubKey, err := createMultiSig(commitmentTxInfo.HtlcH, payeeChannelPubKey)
+	payerHLockOutputs, err := getInputsForNextTxByParseTxHashVout(payerHlockTxHex, hlockMultiAddress, hlockMultiAddressScriptPubKey, hlockRedeemScript)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -531,7 +531,7 @@ func createHe1bAtPayeeSide_at45(tx storm.Node, channelInfo dao.ChannelInfo, late
 		return nil, err
 	}
 
-	hlockOutputs, err := getInputsForNextTxByParseTxHashVout(hlockTx.TxHex, hlockTx.OutputAddress, hlockTx.ScriptPubKey)
+	hlockOutputs, err := getInputsForNextTxByParseTxHashVout(hlockTx.TxHex, hlockTx.OutputAddress, hlockTx.ScriptPubKey, hlockTx.RedeemScript)
 	if err != nil || len(hlockOutputs) == 0 {
 		log.Println(err)
 		return nil, err
@@ -605,7 +605,7 @@ func createHerd1bAtPayeeSide_at45(tx storm.Node, channelInfo dao.ChannelInfo, he
 		return herd, nil
 	}
 
-	he1bOutputs, err := getInputsForNextTxByParseTxHashVout(he1b.RSMCTxHex, he1b.RSMCMultiAddress, he1b.RSMCMultiAddressScriptPubKey)
+	he1bOutputs, err := getInputsForNextTxByParseTxHashVout(he1b.RSMCTxHex, he1b.RSMCMultiAddress, he1b.RSMCMultiAddressScriptPubKey, he1b.RSMCRedeemScript)
 	if err != nil || len(he1bOutputs) == 0 {
 		log.Println(err)
 		return nil, err
@@ -673,9 +673,9 @@ func signHerd1bAtPayerSide_at46(jsonDataFromPayee gjson.Result, payerChannelPubK
 	herd1bHex := jsonDataFromPayee.Get("herd1bHex").Str
 
 	he1bTempPubKey := jsonDataFromPayee.Get("he1bTempPubKey").Str
-	helbOutAddress, _, helbOutAddressScriptPubKey, err := createMultiSig(he1bTempPubKey, payerChannelPubKey)
+	helbOutAddress, he1bRedeemScript, helbOutAddressScriptPubKey, err := createMultiSig(he1bTempPubKey, payerChannelPubKey)
 	he1bTxHex := jsonDataFromPayee.Get("he1bHex").String()
-	he1bOutputs, err := getInputsForNextTxByParseTxHashVout(he1bTxHex, helbOutAddress, helbOutAddressScriptPubKey)
+	he1bOutputs, err := getInputsForNextTxByParseTxHashVout(he1bTxHex, helbOutAddress, helbOutAddressScriptPubKey, he1bRedeemScript)
 	if err != nil || len(he1bOutputs) == 0 {
 		log.Println(err)
 		return "", err
@@ -708,7 +708,7 @@ func createHed1aHexAtPayerSide_at46(tx storm.Node, channelInfo dao.ChannelInfo, 
 		return nil, "", err
 	}
 
-	hlockOutputs, err := getInputsForNextTxByParseTxHashVout(hlockTx.TxHex, hlockTx.OutputAddress, hlockTx.ScriptPubKey)
+	hlockOutputs, err := getInputsForNextTxByParseTxHashVout(hlockTx.TxHex, hlockTx.OutputAddress, hlockTx.ScriptPubKey, hlockTx.RedeemScript)
 	if err != nil || len(hlockOutputs) == 0 {
 		log.Println(err)
 		return nil, "", err
@@ -770,7 +770,7 @@ func checkSignedHerdHexAtPayeeSide_at47(tx storm.Node, signedHerd1bHex string, c
 		}
 	}
 
-	he1bOutputs, err := getInputsForNextTxByParseTxHashVout(he1b.RSMCTxHex, he1b.RSMCMultiAddress, he1b.RSMCMultiAddressScriptPubKey)
+	he1bOutputs, err := getInputsForNextTxByParseTxHashVout(he1b.RSMCTxHex, he1b.RSMCMultiAddress, he1b.RSMCMultiAddressScriptPubKey, he1b.RSMCRedeemScript)
 	if err != nil {
 		log.Println(err)
 		return err

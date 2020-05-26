@@ -873,7 +873,7 @@ func (service *fundingTransactionManager) BeforeBobSignOmniFundingAtBobSide(data
 	channelInfo := &dao.ChannelInfo{}
 	err = tx.Select(
 		q.Eq("TemporaryChannelId", temporaryChannelId),
-		q.Eq("CurrState", dao.ChannelState_WaitFundAsset),
+		//q.Eq("CurrState", dao.ChannelState_WaitFundAsset),
 		q.Or(
 			q.Eq("PeerIdA", user.PeerId),
 			q.Eq("PeerIdB", user.PeerId))).
@@ -1036,13 +1036,15 @@ func (service *fundingTransactionManager) AssetFundingSigned(jsonData string, si
 	}
 	defer tx.Rollback()
 
+	//q.Eq("CurrState", dao.ChannelState_WaitFundAsset)
+
 	channelInfo := &dao.ChannelInfo{}
 	err = tx.Select(
 		q.Eq("ChannelId", reqData.ChannelId),
 		q.Or(
 			q.Eq("PeerIdA", signer.PeerId),
 			q.Eq("PeerIdB", signer.PeerId)),
-		q.Eq("CurrState", dao.ChannelState_WaitFundAsset)).
+	).
 		First(channelInfo)
 	if err != nil {
 		channelInfo = nil
@@ -1127,7 +1129,7 @@ func (service *fundingTransactionManager) AssetFundingSigned(jsonData string, si
 	}
 	rsmcMultiAddressScriptPubKey := gjson.Get(tempJson, "scriptPubKey").String()
 
-	inputs, err := getInputsForNextTxByParseTxHashVout(signedRsmcHex, rsmcMultiAddress, rsmcMultiAddressScriptPubKey)
+	inputs, err := getInputsForNextTxByParseTxHashVout(signedRsmcHex, rsmcMultiAddress, rsmcMultiAddressScriptPubKey, rsmcRedeemScript)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -1312,7 +1314,7 @@ func (service *fundingTransactionManager) AfterBobSignOmniFundingAtAilceSide(dat
 	}
 
 	// RD 二次签名
-	inputs, err := getInputsForNextTxByParseTxHashVout(rsmcSignedHex, commitmentTxInfo.RSMCMultiAddress, commitmentTxInfo.RSMCMultiAddressScriptPubKey)
+	inputs, err := getInputsForNextTxByParseTxHashVout(rsmcSignedHex, commitmentTxInfo.RSMCMultiAddress, commitmentTxInfo.RSMCMultiAddressScriptPubKey, commitmentTxInfo.RSMCRedeemScript)
 	if err != nil {
 		log.Println(err)
 		return nil, err

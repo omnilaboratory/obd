@@ -519,7 +519,7 @@ func (service *htlcForwardTxManager) PayeeSignGetAddHtlc_41(jsonData string, use
 		return nil, err
 	}
 
-	aliceRsmcInputs, err := getInputsForNextTxByParseTxHashVout(signedAliceRsmcHex, aliceRsmcMultiAddress, aliceRsmcMultiAddressScriptPubKey)
+	aliceRsmcInputs, err := getInputsForNextTxByParseTxHashVout(signedAliceRsmcHex, aliceRsmcMultiAddress, aliceRsmcMultiAddressScriptPubKey, aliceRsmcRedeemScript)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -567,7 +567,7 @@ func (service *htlcForwardTxManager) PayeeSignGetAddHtlc_41(jsonData string, use
 		return nil, err
 	}
 
-	aliceHtlcInputs, err := getInputsForNextTxByParseTxHashVout(aliceSignedHtlcHex, aliceHtlcMultiAddress, aliceHtlcMultiAddressScriptPubKey)
+	aliceHtlcInputs, err := getInputsForNextTxByParseTxHashVout(aliceSignedHtlcHex, aliceHtlcMultiAddress, aliceHtlcMultiAddressScriptPubKey, aliceHtlcRedeemScript)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -852,7 +852,7 @@ func (service *htlcForwardTxManager) AfterBobSignAddHtlcAtAliceSide_42(msgData s
 		if err != nil {
 			return nil, true, err
 		}
-		bobRsmcOutputs, err = getInputsForNextTxByParseTxHashVout(bobSignedRsmcHex, bobRsmcMultiAddress, bobRsmcMultiAddressScriptPubKey)
+		bobRsmcOutputs, err = getInputsForNextTxByParseTxHashVout(bobSignedRsmcHex, bobRsmcMultiAddress, bobRsmcMultiAddressScriptPubKey, bobRsmcRedeemScript)
 		if err != nil {
 			log.Println(err)
 			return nil, true, err
@@ -885,7 +885,7 @@ func (service *htlcForwardTxManager) AfterBobSignAddHtlcAtAliceSide_42(msgData s
 	if err != nil {
 		return nil, true, err
 	}
-	bobHtlcOutputs, err := getInputsForNextTxByParseTxHashVout(bobSignedHtlcHex, bobHtlcMultiAddress, bobHtlcMultiAddressScriptPubKey)
+	bobHtlcOutputs, err := getInputsForNextTxByParseTxHashVout(bobSignedHtlcHex, bobHtlcMultiAddress, bobHtlcMultiAddressScriptPubKey, bobHtlcRedeemScript)
 	if err != nil {
 		log.Println(err)
 		return nil, true, err
@@ -1049,7 +1049,7 @@ func (service *htlcForwardTxManager) AfterAliceSignAddHtlcAtBobSide_43(msgData s
 	if err != nil {
 		return nil, true, err
 	}
-	alicHtlaOutputs, err := getInputsForNextTxByParseTxHashVout(ht1aSignedHex, aliceHt1aMultiAddress, aliceHt1aMultiAddressScriptPubKey)
+	alicHtlaOutputs, err := getInputsForNextTxByParseTxHashVout(ht1aSignedHex, aliceHt1aMultiAddress, aliceHt1aMultiAddressScriptPubKey, aliceHt1aRedeemScript)
 	if err != nil {
 		log.Println(err)
 		return nil, true, err
@@ -1622,7 +1622,11 @@ func checkHexAndUpdateC3aOn42Protocal(tx storm.Node, jsonObj gjson.Result, htlcR
 		log.Println(err)
 		return nil, true, err
 	}
-	payerRDInputsFromRsmc, err := getInputsForNextTxByParseTxHashVout(signedRsmcHex, commitmentTransaction.RSMCMultiAddress, commitmentTransaction.RSMCMultiAddressScriptPubKey)
+	payerRDInputsFromRsmc, err := getInputsForNextTxByParseTxHashVout(
+		signedRsmcHex,
+		commitmentTransaction.RSMCMultiAddress,
+		commitmentTransaction.RSMCMultiAddressScriptPubKey,
+		commitmentTransaction.RSMCRedeemScript)
 	if err != nil {
 		log.Println(err)
 		return nil, true, err
@@ -1665,7 +1669,11 @@ func checkHexAndUpdateC3aOn42Protocal(tx storm.Node, jsonObj gjson.Result, htlcR
 
 	//region 5、对ht1a进行二次签名，并保存
 	payerHt1aHex := jsonObj.Get("payerHt1aHex").String()
-	payerHt1aInputsFromHtlc, err := getInputsForNextTxByParseTxHashVout(signedHtlcHex, commitmentTransaction.HTLCMultiAddress, commitmentTransaction.HTLCMultiAddressScriptPubKey)
+	payerHt1aInputsFromHtlc, err := getInputsForNextTxByParseTxHashVout(
+		signedHtlcHex,
+		commitmentTransaction.HTLCMultiAddress,
+		commitmentTransaction.HTLCMultiAddressScriptPubKey,
+		commitmentTransaction.HTLCRedeemScript)
 	if err != nil {
 		log.Println(err)
 		return nil, true, err
@@ -1884,7 +1892,11 @@ func checkHexAndUpdateC3bOn43Protocal(tx storm.Node, jsonObj gjson.Result, chann
 			log.Println(err)
 			return nil, true, err
 		}
-		payerRDInputsFromRsmc, err := getInputsForNextTxByParseTxHashVout(signedRsmcHex, latestCommitmentTx.RSMCMultiAddress, latestCommitmentTx.RSMCMultiAddressScriptPubKey)
+		payerRDInputsFromRsmc, err := getInputsForNextTxByParseTxHashVout(
+			signedRsmcHex,
+			latestCommitmentTx.RSMCMultiAddress,
+			latestCommitmentTx.RSMCMultiAddressScriptPubKey,
+			latestCommitmentTx.RSMCRedeemScript)
 		if err != nil {
 			log.Println(err)
 			return nil, true, err
@@ -1946,7 +1958,11 @@ func checkHexAndUpdateC3bOn43Protocal(tx storm.Node, jsonObj gjson.Result, chann
 		log.Println(err)
 		return nil, true, err
 	}
-	payeeHTD1bInputsFromHtlc, err := getInputsForNextTxByParseTxHashVout(signedHtlcHex, latestCommitmentTx.HTLCMultiAddress, latestCommitmentTx.HTLCMultiAddressScriptPubKey)
+	payeeHTD1bInputsFromHtlc, err := getInputsForNextTxByParseTxHashVout(
+		signedHtlcHex,
+		latestCommitmentTx.HTLCMultiAddress,
+		latestCommitmentTx.HTLCMultiAddressScriptPubKey,
+		latestCommitmentTx.HTLCRedeemScript)
 	if err != nil {
 		log.Println(err)
 		return nil, true, err

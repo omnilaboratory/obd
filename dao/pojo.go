@@ -259,6 +259,7 @@ type BreachRemedyTransaction struct {
 	TempPubKey               string      `json:"temp_pub_key"`
 	InputAddress             string      `json:"input_address"`
 	InputAddressScriptPubKey string      `json:"input_address_script_pub_key"`
+	InputRedeemScript        string      `json:"input_redeem_script"`
 	InputTxHex               string      `json:"input_tx_hex"`
 	InputTxid                string      `json:"input_txid"`   //input txid  from commitTx alice2&bob multtAddr, so need  sign of alice2 and bob
 	InputVout                uint32      `json:"input_vout"`   // input vout

@@ -243,7 +243,7 @@ func createHT1aForAlice(aliceDataJson gjson.Result, signedHtlcHex string,
 	}
 	aliceHtlcMultiAddressScriptPubKey := gjson.Get(tempJson, "scriptPubKey").String()
 
-	htlcInputs, err := getInputsForNextTxByParseTxHashVout(signedHtlcHex, aliceHtlcMultiAddress, aliceHtlcMultiAddressScriptPubKey)
+	htlcInputs, err := getInputsForNextTxByParseTxHashVout(signedHtlcHex, aliceHtlcMultiAddress, aliceHtlcMultiAddressScriptPubKey, aliceHtlcRedeemScript)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -287,7 +287,11 @@ func signHT1aForAlice(tx storm.Node, channelInfo dao.ChannelInfo, commitmentTran
 		return nil, err
 	}
 
-	payerHt1aInputsFromHtlc, err := getInputsForNextTxByParseTxHashVout(commitmentTransaction.HtlcTxHex, commitmentTransaction.HTLCMultiAddress, commitmentTransaction.HTLCMultiAddressScriptPubKey)
+	payerHt1aInputsFromHtlc, err := getInputsForNextTxByParseTxHashVout(
+		commitmentTransaction.HtlcTxHex,
+		commitmentTransaction.HTLCMultiAddress,
+		commitmentTransaction.HTLCMultiAddressScriptPubKey,
+		commitmentTransaction.HTLCRedeemScript)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -337,7 +341,7 @@ func createHtlcLockByHForBobAtPayeeSide(aliceDataJson gjson.Result, signedHtlcHe
 	}
 	aliceHtlcMultiAddressScriptPubKey := gjson.Get(tempJson, "scriptPubKey").String()
 
-	htlcInputs, err := getInputsForNextTxByParseTxHashVout(signedHtlcHex, aliceHtlcMultiAddress, aliceHtlcMultiAddressScriptPubKey)
+	htlcInputs, err := getInputsForNextTxByParseTxHashVout(signedHtlcHex, aliceHtlcMultiAddress, aliceHtlcMultiAddressScriptPubKey, aliceHtlcRedeemScript)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -385,7 +389,11 @@ func signHtlcLockByHTxAtPayerSide(tx storm.Node, channelInfo dao.ChannelInfo,
 		return nil, err
 	}
 
-	htlcOutputs, err := getInputsForNextTxByParseTxHashVout(commitmentTransaction.HtlcTxHex, commitmentTransaction.HTLCMultiAddress, commitmentTransaction.HTLCMultiAddressScriptPubKey)
+	htlcOutputs, err := getInputsForNextTxByParseTxHashVout(
+		commitmentTransaction.HtlcTxHex,
+		commitmentTransaction.HTLCMultiAddress,
+		commitmentTransaction.HTLCMultiAddressScriptPubKey,
+		commitmentTransaction.HTLCRedeemScript)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -433,7 +441,7 @@ func createHtlcLockByHForBobAtPayerSide(bobDataJson gjson.Result, signedHtlcHex 
 	}
 	bobHtlcMultiAddressScriptPubKey := gjson.Get(tempJson, "scriptPubKey").String()
 
-	htlcInputs, err := getInputsForNextTxByParseTxHashVout(signedHtlcHex, bobHtlcMultiAddress, bobHtlcMultiAddressScriptPubKey)
+	htlcInputs, err := getInputsForNextTxByParseTxHashVout(signedHtlcHex, bobHtlcMultiAddress, bobHtlcMultiAddressScriptPubKey, bobHtlcRedeemScript)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -481,7 +489,11 @@ func signHtlcLockByHForBobAtPayeeSide(tx storm.Node, channelInfo dao.ChannelInfo
 		return nil, err
 	}
 
-	htlcOutputs, err := getInputsForNextTxByParseTxHashVout(commitmentTransaction.HtlcTxHex, commitmentTransaction.HTLCMultiAddress, commitmentTransaction.HTLCMultiAddressScriptPubKey)
+	htlcOutputs, err := getInputsForNextTxByParseTxHashVout(
+		commitmentTransaction.HtlcTxHex,
+		commitmentTransaction.HTLCMultiAddress,
+		commitmentTransaction.HTLCMultiAddressScriptPubKey,
+		commitmentTransaction.HTLCRedeemScript)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -543,7 +555,7 @@ func signHtRD1a(tx storm.Node, aliceHt1aRDhex string, latestCommitmentTransactio
 		return nil, err
 	}
 
-	ht1aOutputs, err := getInputsForNextTxByParseTxHashVout(ht1a.RSMCTxHex, ht1a.RSMCMultiAddress, ht1a.RSMCMultiAddressScriptPubKey)
+	ht1aOutputs, err := getInputsForNextTxByParseTxHashVout(ht1a.RSMCTxHex, ht1a.RSMCMultiAddress, ht1a.RSMCMultiAddressScriptPubKey, ht1a.RSMCRedeemScript)
 	if err != nil {
 		log.Println(err)
 		return nil, err

@@ -22,11 +22,11 @@ func TestClient_GetMiningInfo(t *testing.T) {
 	//log.Println(err)
 	//log.Println(result)
 
-	isValid, err := client.ValidateAddress("mre4gBmjKiBm8gwZmpCNcnnHiDY7TXr2wD")
+	isValid, err := client.ValidateAddress("mfteg3UFwYQVRtYV6NXPaKyLCcmBwGuAXu")
 	log.Println(isValid)
 	log.Println(err)
 
-	result, err = client.ListUnspent("mre4gBmjKiBm8gwZmpCNcnnHiDY7TXr2wD")
+	result, err = client.ListUnspent("mfteg3UFwYQVRtYV6NXPaKyLCcmBwGuAXu")
 	log.Println(err)
 	log.Println(result)
 
