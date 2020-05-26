@@ -13,9 +13,6 @@ import (
 
 //https://developer.bitcoin.org/reference/rpc/index.html
 func (client *Client) CreateMultiSig(minSignNum int, keys []string) (result string, err error) {
-	for _, item := range keys {
-		_, _ = client.ValidateAddress(item)
-	}
 	return client.send("createmultisig", []interface{}{minSignNum, keys})
 }
 
