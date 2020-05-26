@@ -89,9 +89,14 @@ func (service *htlcForwardTxManager) GetResponseFromTrackerOfPayerRequestFindPat
 
 	splitArr := strings.Split(channelPath, ",")
 	directChannel := dao.ChannelInfo{}
-	err = user.Db.Select(q.Eq("ChannelId", splitArr[0])).First(&directChannel)
+	err = user.Db.Select(
+		q.Eq("ChannelId", splitArr[0]),
+		q.Eq("CurrState", dao.ChannelState_CanUse),
+		q.Or(
+			q.Eq("PeerIdA", user.PeerId),
+			q.Eq("PeerIdB", user.PeerId))).First(&directChannel)
 	if err != nil {
-		err = errors.New("has no directChannel")
+		err = errors.New("has no ChannelPath")
 		log.Println(err)
 		return nil, err
 	}

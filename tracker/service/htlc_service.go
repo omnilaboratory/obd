@@ -64,9 +64,9 @@ func (manager *htlcManager) getPath(obdClient *ObdNode, msgData string) (path in
 	for index, node := range manager.openList {
 		if node.IsTarget {
 			log.Println(node.ChannelIds)
-			resultIndex = index
 			tempLength := len(strings.Split(node.ChannelIds, ","))
 			if tempLength < minLength {
+				resultIndex = index
 				minLength = tempLength
 			}
 		}
@@ -78,7 +78,7 @@ func (manager *htlcManager) getPath(obdClient *ObdNode, msgData string) (path in
 		splitArr := strings.Split(manager.openList[resultIndex].ChannelIds, ",")
 		path := ""
 		for i := len(splitArr) - 1; i > -1; i-- {
-			path = splitArr[i] + ","
+			path += splitArr[i] + ","
 		}
 		path = strings.TrimSuffix(path, ",")
 		retNode["path"] = path

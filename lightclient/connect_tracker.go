@@ -73,7 +73,6 @@ func ConnectToTracker() {
 
 	nodeLogin()
 	sycChannelInfos()
-	sycUserInfos()
 
 	ticker := time.NewTicker(time.Minute)
 	defer ticker.Stop()
@@ -122,10 +121,6 @@ func nodeLogin() {
 	} else {
 		sendMsgToTracker(string(bytes))
 	}
-}
-
-func sycUserInfos() {
-
 }
 
 //同步通道信息

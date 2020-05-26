@@ -69,8 +69,13 @@ func (client *Client) htlcHDealModule(msg bean.RequestMessage) (enum.SendTargetT
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_HTLC_FindPath_N4001:
-		_, _ = service.HtlcForwardTxService.PayerRequestFindPath(msg.Data, *client.User)
-		tempClientMap[client.User.PeerId] = client
+		_, err := service.HtlcForwardTxService.PayerRequestFindPath(msg.Data, *client.User)
+		if err != nil {
+			data = err.Error()
+			client.sendToMyself(msg.Type, status, data)
+		} else {
+			tempClientMap[client.User.PeerId] = client
+		}
 	case enum.MsgType_HTLC_AddHTLC_N40:
 		respond, err := service.HtlcForwardTxService.PayerAddHtlc_40(msg.Data, *client.User)
 		if err != nil {
@@ -230,7 +235,7 @@ func (client *Client) htlcTxModule(msg bean.RequestMessage) (enum.SendTargetType
 		}
 		client.sendToMyself(msg.Type, status, data)
 	case enum.MsgType_HTLC_VerifyR_N46:
-		respond, err := service.HtlcBackwardTxService.VerifyRAndCreateTxs_Step3(msg.Data, *client.User)
+		respond, err := service.HtlcBackwardTxService.VerifyRAndCreateTxs_Step3(msg, *client.User)
 		if err != nil {
 			data = err.Error()
 		} else {

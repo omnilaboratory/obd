@@ -76,6 +76,7 @@ func (service *htlcBackwardTxManager) SendRToPreviousNode_Step1(msg bean.Request
 		payeeChannelPubKey = channelInfo.PubKeyA
 		payerPeerId = channelInfo.PeerIdB
 	}
+
 	if payerPeerId != msg.RecipientUserPeerId {
 		return nil, errors.New("recipientUserPeerId is wrong")
 	}
@@ -217,12 +218,12 @@ func (service *htlcBackwardTxManager) BeforeSendRInfoToPayerAtAliceSide_Step2(ms
 }
 
 // -46 at Payer side
-func (service *htlcBackwardTxManager) VerifyRAndCreateTxs_Step3(msgData string, user bean.User) (responseData map[string]interface{}, err error) {
-	if tool.CheckIsString(&msgData) == false {
+func (service *htlcBackwardTxManager) VerifyRAndCreateTxs_Step3(msg bean.RequestMessage, user bean.User) (responseData map[string]interface{}, err error) {
+	if tool.CheckIsString(&msg.Data) == false {
 		return nil, errors.New("empty json responseData")
 	}
 	reqData := &bean.HtlcCheckRAndCreateTx{}
-	err = json.Unmarshal([]byte(msgData), reqData)
+	err = json.Unmarshal([]byte(msg.Data), reqData)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
@@ -269,9 +270,15 @@ func (service *htlcBackwardTxManager) VerifyRAndCreateTxs_Step3(msgData string, 
 
 	payerChannelPubKey := channelInfo.PubKeyA
 	payerChannelAddress := channelInfo.AddressA
+	payeePeerId := channelInfo.PeerIdB
 	if user.PeerId == channelInfo.PeerIdB {
 		payerChannelPubKey = channelInfo.PubKeyB
 		payerChannelAddress = channelInfo.AddressB
+		payeePeerId = channelInfo.PeerIdA
+	}
+
+	if msg.RecipientUserPeerId != payeePeerId {
+		return nil, errors.New("error recipient_user_peer_id")
 	}
 
 	_, err = tool.GetPubKeyFromWifAndCheck(reqData.ChannelAddressPrivateKey, payerChannelPubKey)
@@ -299,11 +306,12 @@ func (service *htlcBackwardTxManager) VerifyRAndCreateTxs_Step3(msgData string, 
 		log.Println(err)
 		return nil, err
 	}
-	if latestCommitmentTxInfo.CurrState != dao.TxInfoState_Htlc_GetH {
-		err = errors.New("wrong latestCommitmentTxInfo state " + strconv.Itoa(int(latestCommitmentTxInfo.CurrState)))
-		log.Println(err)
-		return nil, err
-	}
+
+	//if latestCommitmentTxInfo.CurrState != dao.TxInfoState_Htlc_GetH {
+	//	err = errors.New("wrong latestCommitmentTxInfo state " + strconv.Itoa(int(latestCommitmentTxInfo.CurrState)))
+	//	log.Println(err)
+	//	return nil, err
+	//}
 
 	if latestCommitmentTxInfo.HtlcSender != user.PeerId {
 		err = errors.New("you are not the HtlcSender")
