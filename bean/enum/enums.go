@@ -27,7 +27,7 @@ const (
 	MsgType_Tracker_UpdateChannelInfo_350 MsgType = 350
 	MsgType_Tracker_GetHtlcPath_351       MsgType = 351
 	MsgType_Tracker_UpdateHtlcTxState_352 MsgType = 352
-	MsgType_Tracker_GetHtlcTxState_353    MsgType = 353
+	MsgType_Tracker_UpdateUserLogin_353   MsgType = 353
 
 	MsgType_Core_GetNewAddress_1001                    MsgType = 1001
 	MsgType_Core_GetMiningInfo_1002                    MsgType = 1002

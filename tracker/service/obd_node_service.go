@@ -110,6 +110,33 @@ func (this *obdNodeAccountManager) userLogin(obdClient *ObdNode, msgData string)
 	retData = "login successfully"
 	return retData, err
 }
+func (this *obdNodeAccountManager) updateUserLogin(obdClient *ObdNode, msgData string) {
+	reqData := make([]bean.ObdNodeUserLoginRequest, 0)
+	err := json.Unmarshal([]byte(msgData), &reqData)
+	if err != nil {
+		return
+	}
+
+	for _, item := range reqData {
+		if tool.CheckIsString(&item.UserId) == false {
+			continue
+		}
+		info := &dao.UserInfo{}
+		_ = db.Select(q.Eq("ObdNodeId", obdClient.Id), q.Eq("UserId", item.UserId)).First(info)
+		if info.Id == 0 {
+			info.UserId = item.UserId
+			info.ObdNodeId = obdClient.Id
+			info.IsOnline = true
+			_ = db.Save(info)
+		} else {
+			if info.IsOnline == false {
+				info.IsOnline = true
+				_ = db.Update(info)
+			}
+		}
+		userOfOnlineMap[info.UserId] = *info
+	}
+}
 
 func (this *obdNodeAccountManager) userLogout(obdClient *ObdNode, msgData string) (err error) {
 	if obdClient.IsLogin == false {
