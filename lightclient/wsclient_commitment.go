@@ -175,7 +175,7 @@ func (client *Client) commitmentTxSignModule(msg bean.RequestMessage) (enum.Send
 	data := ""
 	switch msg.Type {
 	case enum.MsgType_CommitmentTxSigned_RevokeAndAcknowledgeCommitmentTransaction_N352:
-		retData, _, err := service.CommitmentTxSignedService.RevokeAndAcknowledgeCommitmentTransaction(msg.Data, client.User)
+		retData, _, err := service.CommitmentTxSignedService.RevokeAndAcknowledgeCommitmentTransaction(msg, client.User)
 		if err != nil {
 			data = err.Error()
 		} else {

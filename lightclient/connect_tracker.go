@@ -158,6 +158,11 @@ func sycChannelInfos() {
 							request.IsAlice = false
 							if commitmentTransaction.Owner == channelInfo.PeerIdA {
 								request.IsAlice = true
+								request.AmountA = commitmentTransaction.AmountToRSMC
+								request.AmountB = commitmentTransaction.AmountToCounterparty
+							} else {
+								request.AmountB = commitmentTransaction.AmountToRSMC
+								request.AmountA = commitmentTransaction.AmountToCounterparty
 							}
 							nodes = append(nodes, request)
 						}

@@ -486,15 +486,15 @@ func (this *commitmentTxSignedManager) BeforeBobSignCommitmentTranctionAtBobSide
 	return retData, nil
 }
 
-func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction(jsonData string, signer *bean.User) (retData map[string]interface{}, targetUser string, err error) {
-	if tool.CheckIsString(&jsonData) == false {
+func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction(msg bean.RequestMessage, signer *bean.User) (retData map[string]interface{}, targetUser string, err error) {
+	if tool.CheckIsString(&msg.Data) == false {
 		err := errors.New("empty json reqData")
 		log.Println(err)
 		return nil, "", err
 	}
 
 	reqData := &bean.CommitmentTxSigned{}
-	err = json.Unmarshal([]byte(jsonData), reqData)
+	err = json.Unmarshal([]byte(msg.Data), reqData)
 	if err != nil {
 		log.Println(err)
 		return nil, "", err
@@ -551,6 +551,10 @@ func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction
 		targetUser = channelInfo.PeerIdA
 	} else {
 		targetUser = channelInfo.PeerIdB
+	}
+
+	if targetUser != msg.RecipientUserPeerId {
+		return nil, "", errors.New("recipient_user_peer_id")
 	}
 
 	retData = make(map[string]interface{})

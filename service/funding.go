@@ -310,9 +310,9 @@ func (service *fundingTransactionManager) BeforeBobSignBtcFundingAtBobSide(data 
 	return nil, nil
 }
 
-func (service *fundingTransactionManager) FundingBtcTxSigned(jsonData string, user *bean.User) (outData interface{}, funder string, err error) {
+func (service *fundingTransactionManager) FundingBtcTxSigned(msg bean.RequestMessage, user *bean.User) (outData interface{}, funder string, err error) {
 	reqData := &bean.FundingBtcSigned{}
-	err = json.Unmarshal([]byte(jsonData), reqData)
+	err = json.Unmarshal([]byte(msg.Data), reqData)
 	if err != nil {
 		log.Println(err)
 		return nil, "", err
@@ -365,6 +365,9 @@ func (service *fundingTransactionManager) FundingBtcTxSigned(jsonData string, us
 	if user.PeerId == channelInfo.PeerIdA {
 		funder = channelInfo.PeerIdB
 		myPubKey = channelInfo.PubKeyA
+	}
+	if funder != msg.RecipientUserPeerId {
+		return nil, "", errors.New("error recipient_user_peer_id")
 	}
 
 	fundingBtcRequest := &dao.FundingBtcRequest{}

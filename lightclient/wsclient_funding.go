@@ -240,7 +240,7 @@ func (client *Client) fundingSignModule(msg bean.RequestMessage) (enum.SendTarge
 	data := ""
 	switch msg.Type {
 	case enum.MsgType_FundingSign_BtcSign_N3500:
-		node, funder, err := service.FundingTransactionService.FundingBtcTxSigned(msg.Data, client.User)
+		node, funder, err := service.FundingTransactionService.FundingBtcTxSigned(msg, client.User)
 		if err != nil {
 			data = err.Error()
 		} else {

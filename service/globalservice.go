@@ -636,8 +636,16 @@ func sendChannelStateToTracker(channelInfo dao.ChannelInfo, commitmentTx dao.Com
 	infoRequest.CurrState = channelInfo.CurrState
 	infoRequest.PeerIdA = channelInfo.PeerIdA
 	infoRequest.PeerIdB = channelInfo.PeerIdB
-	infoRequest.AmountA = commitmentTx.AmountToRSMC
-	infoRequest.AmountB = commitmentTx.AmountToCounterparty
+
+	infoRequest.IsAlice = false
+	if commitmentTx.Owner == channelInfo.PeerIdA {
+		infoRequest.IsAlice = true
+		infoRequest.AmountA = commitmentTx.AmountToRSMC
+		infoRequest.AmountB = commitmentTx.AmountToCounterparty
+	} else {
+		infoRequest.AmountB = commitmentTx.AmountToRSMC
+		infoRequest.AmountA = commitmentTx.AmountToCounterparty
+	}
 	nodes := make([]trackerBean.ChannelInfoRequest, 0)
 	nodes = append(nodes, infoRequest)
 	sendMsgToTracker(enum.MsgType_Tracker_UpdateChannelInfo_350, nodes)
