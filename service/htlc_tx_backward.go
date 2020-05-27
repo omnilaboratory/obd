@@ -307,11 +307,11 @@ func (service *htlcBackwardTxManager) VerifyRAndCreateTxs_Step3(msg bean.Request
 		return nil, err
 	}
 
-	//if latestCommitmentTxInfo.CurrState != dao.TxInfoState_Htlc_GetH {
-	//	err = errors.New("wrong latestCommitmentTxInfo state " + strconv.Itoa(int(latestCommitmentTxInfo.CurrState)))
-	//	log.Println(err)
-	//	return nil, err
-	//}
+	if latestCommitmentTxInfo.CurrState != dao.TxInfoState_Htlc_GetH {
+		err = errors.New("wrong latestCommitmentTxInfo state " + strconv.Itoa(int(latestCommitmentTxInfo.CurrState)))
+		log.Println(err)
+		return nil, err
+	}
 
 	if latestCommitmentTxInfo.HtlcSender != user.PeerId {
 		err = errors.New("you are not the HtlcSender")

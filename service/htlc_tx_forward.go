@@ -88,21 +88,21 @@ func (service *htlcForwardTxManager) GetResponseFromTrackerOfPayerRequestFindPat
 	}
 
 	splitArr := strings.Split(channelPath, ",")
-	directChannel := dao.ChannelInfo{}
+	currChannelInfo := dao.ChannelInfo{}
 	err = user.Db.Select(
 		q.Eq("ChannelId", splitArr[0]),
 		q.Eq("CurrState", dao.ChannelState_CanUse),
 		q.Or(
 			q.Eq("PeerIdA", user.PeerId),
-			q.Eq("PeerIdB", user.PeerId))).First(&directChannel)
+			q.Eq("PeerIdB", user.PeerId))).First(&currChannelInfo)
 	if err != nil {
 		err = errors.New("has no ChannelPath")
 		log.Println(err)
 		return nil, err
 	}
-	nextNodePeerId := directChannel.PeerIdB
-	if user.PeerId == directChannel.PeerIdB {
-		nextNodePeerId = directChannel.PeerIdA
+	nextNodePeerId := currChannelInfo.PeerIdB
+	if user.PeerId == currChannelInfo.PeerIdB {
+		nextNodePeerId = currChannelInfo.PeerIdA
 	}
 
 	retData := make(map[string]interface{})

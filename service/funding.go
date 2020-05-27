@@ -876,7 +876,7 @@ func (service *fundingTransactionManager) BeforeBobSignOmniFundingAtBobSide(data
 	channelInfo := &dao.ChannelInfo{}
 	err = tx.Select(
 		q.Eq("TemporaryChannelId", temporaryChannelId),
-		//q.Eq("CurrState", dao.ChannelState_WaitFundAsset),
+		q.Eq("CurrState", dao.ChannelState_WaitFundAsset),
 		q.Or(
 			q.Eq("PeerIdA", user.PeerId),
 			q.Eq("PeerIdB", user.PeerId))).
@@ -1039,11 +1039,10 @@ func (service *fundingTransactionManager) AssetFundingSigned(jsonData string, si
 	}
 	defer tx.Rollback()
 
-	//q.Eq("CurrState", dao.ChannelState_WaitFundAsset)
-
 	channelInfo := &dao.ChannelInfo{}
 	err = tx.Select(
 		q.Eq("ChannelId", reqData.ChannelId),
+		q.Eq("CurrState", dao.ChannelState_WaitFundAsset),
 		q.Or(
 			q.Eq("PeerIdA", signer.PeerId),
 			q.Eq("PeerIdB", signer.PeerId)),

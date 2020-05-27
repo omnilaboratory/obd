@@ -19,10 +19,12 @@ func TestClient_GetMiningInfo(t *testing.T) {
 	log.Println(err)
 	log.Println(result)
 
-	multiAddr, err := client.CreateMultiSig(2, []string{"02c57b02d24356e1d31d34d2e3a09f7d68a4bdec6c0556595bb6391ce5d6d4fc66", "031d9690f47b555ca1fd956671236ee2823bd8ee5eb164ee50c452908d308b7123"})
-	log.Println(err)
-	log.Println(multiAddr)
-
+	//client.send("importaddress", []interface{}{"msbtApWsDVihfJwDv3AF2u4hfbfmi59BtB", "", true})
+	//log.Println(1)
+	//client.send("importaddress", []interface{}{"myFUMkCNPm9oJXFuK838of9EHRdudaa5Um", "", true})
+	//log.Println(2)
+	//client.send("importaddress", []interface{}{"mqnj5uu2jRwY5pe3Y8YyQqpJ6UKgEyqKuY", "", true})
+	//log.Println(3)
 	return
 
 	//result, err = client.send("importaddress", []interface{}{"mre4gBmjKiBm8gwZmpCNcnnHiDY7TXr2wD", "", false})
