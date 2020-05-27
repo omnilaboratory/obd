@@ -202,7 +202,6 @@ type HtlcRequestFindPath struct {
 
 // type 40 payer start htlc tx
 type AddHtlcRequest struct {
-	RecipientUserPeerId                  string  `json:"recipient_user_peer_id"`
 	PropertyId                           int64   `json:"property_id"`
 	Amount                               float64 `json:"amount"`
 	Memo                                 string  `json:"memo"`

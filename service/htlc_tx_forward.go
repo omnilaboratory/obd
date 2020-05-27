@@ -112,13 +112,13 @@ func (service *htlcForwardTxManager) GetResponseFromTrackerOfPayerRequestFindPat
 }
 
 // 40协议的alice方的逻辑 alice start htlc as payer
-func (service *htlcForwardTxManager) PayerAddHtlc_40(msgData string, user bean.User) (data interface{}, err error) {
-	if tool.CheckIsString(&msgData) == false {
+func (service *htlcForwardTxManager) PayerAddHtlc_40(msg bean.RequestMessage, user bean.User) (data interface{}, err error) {
+	if tool.CheckIsString(&msg.Data) == false {
 		return nil, errors.New("empty json data")
 	}
 
 	requestData := &bean.AddHtlcRequest{}
-	err = json.Unmarshal([]byte(msgData), requestData)
+	err = json.Unmarshal([]byte(msg.Data), requestData)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
@@ -132,9 +132,6 @@ func (service *htlcForwardTxManager) PayerAddHtlc_40(msgData string, user bean.U
 	defer tx.Rollback()
 
 	//region check input data 检测输入输入数据
-	if tool.CheckIsString(&requestData.RecipientUserPeerId) == false {
-		return nil, errors.New("wrong recipient_user_peer_id")
-	}
 	if requestData.PropertyId < 0 {
 		return nil, errors.New("wrong property_id")
 	}
@@ -158,7 +155,7 @@ func (service *htlcForwardTxManager) PayerAddHtlc_40(msgData string, user bean.U
 	for index, channelId := range channelIds {
 		temp := getChannelInfoByChannelId(tx, channelId, user.PeerId)
 		if temp != nil {
-			if temp.PeerIdA == requestData.RecipientUserPeerId || temp.PeerIdB == requestData.RecipientUserPeerId {
+			if temp.PeerIdA == msg.RecipientUserPeerId || temp.PeerIdB == msg.RecipientUserPeerId {
 				channelInfo = temp
 				currStep = index
 				break
@@ -270,7 +267,7 @@ func (service *htlcForwardTxManager) PayerAddHtlc_40(msgData string, user bean.U
 	//这次请求的第一次发起
 	htlcRequestInfo := &dao.AddHtlcRequestInfo{}
 	if latestCommitmentTx.Id == 0 || latestCommitmentTx.CurrState == dao.TxInfoState_CreateAndSign {
-		htlcRequestInfo.RecipientUserPeerId = requestData.RecipientUserPeerId
+		htlcRequestInfo.RecipientUserPeerId = msg.RecipientUserPeerId
 		htlcRequestInfo.H = requestData.H
 		htlcRequestInfo.Memo = requestData.Memo
 		htlcRequestInfo.PropertyId = requestData.PropertyId

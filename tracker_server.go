@@ -50,6 +50,6 @@ func main() {
 	}
 	service.Start()
 
-	log.Println("tracker " + tool.GetTrackerNodeId() + " start at " + addr)
+	log.Println("tracker " + tool.GetTrackerNodeId() + " start at port: " + strconv.Itoa(config.TrackerServerPort))
 	log.Fatal(server.ListenAndServe())
 }

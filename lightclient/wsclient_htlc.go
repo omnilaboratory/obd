@@ -77,7 +77,7 @@ func (client *Client) htlcHDealModule(msg bean.RequestMessage) (enum.SendTargetT
 			tempClientMap[client.User.PeerId] = client
 		}
 	case enum.MsgType_HTLC_AddHTLC_N40:
-		respond, err := service.HtlcForwardTxService.PayerAddHtlc_40(msg.Data, *client.User)
+		respond, err := service.HtlcForwardTxService.PayerAddHtlc_40(msg, *client.User)
 		if err != nil {
 			data = err.Error()
 		} else {

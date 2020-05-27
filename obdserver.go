@@ -64,7 +64,7 @@ func main() {
 	// Timer
 	service.ScheduleService.StartSchedule()
 
-	log.Println("obd " + tool.GetObdNodeId() + " start at " + addr)
+	log.Println("obd " + tool.GetObdNodeId() + " start at port: " + strconv.Itoa(config.ServerPort))
 	//tracker
 	go lightclient.ConnectToTracker()
 
