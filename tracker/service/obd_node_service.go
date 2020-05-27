@@ -72,20 +72,22 @@ func (this *obdNodeAccountManager) logout(obdClient *ObdNode) (err error) {
 
 	info.OfflineAt = time.Now()
 	info.IsOnline = false
-	err = db.Update(info)
-	err = db.UpdateField(info, "IsOnline", info.IsOnline)
+	_ = db.Update(info)
+	_ = db.UpdateField(info, "IsOnline", info.IsOnline)
 
 	for userId, item := range userOfOnlineMap {
-		delete(userOfOnlineMap, userId)
-		userInfo := &dao.UserInfo{}
-		err = db.Select(q.Eq("ObdNodeId", item.ObdNodeId), q.Eq("UserId", userId)).First(userInfo)
-		if err != nil {
-			continue
+		if item.ObdNodeId == obdClient.Id {
+			delete(userOfOnlineMap, userId)
+			userInfo := &dao.UserInfo{}
+			err = db.Select(q.Eq("ObdNodeId", item.ObdNodeId), q.Eq("UserId", userId)).First(userInfo)
+			if err != nil {
+				continue
+			}
+			userInfo.OfflineAt = time.Now()
+			_ = db.Update(userInfo)
+			userInfo.IsOnline = false
+			_ = db.UpdateField(userInfo, "IsOnline", userInfo.IsOnline)
 		}
-		userInfo.OfflineAt = time.Now()
-		err = db.Update(userInfo)
-		userInfo.IsOnline = false
-		err = db.UpdateField(userInfo, "IsOnline", userInfo.IsOnline)
 	}
 
 	obdClient.IsLogin = false
