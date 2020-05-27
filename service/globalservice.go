@@ -51,7 +51,7 @@ type commitmentOutputBean struct {
 	OppositeSideChannelAddress string
 }
 
-func init() {
+func Start() {
 	var err error
 	db, err = dao.DBService.GetGlobalDB()
 	if err != nil {

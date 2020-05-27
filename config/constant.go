@@ -9,7 +9,6 @@ const (
 const (
 	DBname        = "obdserver.db"
 	TrackerDbName = "trackerServer.db"
-	Userbucket    = "user"
 )
 
 func GetHtlcFee() float64 {

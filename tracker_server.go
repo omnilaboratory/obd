@@ -5,6 +5,7 @@ import (
 	"github.com/omnilaboratory/obd/config"
 	"github.com/omnilaboratory/obd/tool"
 	"github.com/omnilaboratory/obd/tracker"
+	"github.com/omnilaboratory/obd/tracker/service"
 	"io"
 	"log"
 	"net/http"
@@ -35,7 +36,7 @@ func init() {
 }
 
 // gox -os "windows linux darwin" -arch amd64
-// gox -os "windows" -arch amd6
+// gox -os "windows" -arch amd64
 func main() {
 
 	routersInit := tracker.InitRouter()
@@ -47,6 +48,8 @@ func main() {
 		WriteTimeout:   config.WriteTimeout,
 		MaxHeaderBytes: 1 << 20,
 	}
+	service.Start()
+
 	log.Println("tracker " + tool.GetTrackerNodeId() + " start at " + addr)
 	log.Fatal(server.ListenAndServe())
 }

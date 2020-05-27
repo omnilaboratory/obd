@@ -18,13 +18,12 @@ var userOfOnlineMap map[string]dao.UserInfo
 
 var db *storm.DB
 
-func init() {
+func Start() {
 	var err error
 	db, err = dao.DBService.GetTrackerDB()
 	if err != nil {
 		log.Println(err)
 	}
-
 	userOfOnlineMap = make(map[string]dao.UserInfo)
 }
 
