@@ -29,11 +29,11 @@ func ConnectToTracker() {
 	signal.Notify(interrupt, os.Interrupt)
 
 	u := url.URL{Scheme: "ws", Host: config.TrackerHost, Path: "/ws"}
-	log.Printf("connecting tracker to %s", u.String())
+	log.Printf("begin to connect to tracker: %s", u.String())
 	var err error
 	conn, _, err = websocket.DefaultDialer.Dial(u.String(), nil)
 	if err != nil {
-		log.Println("dial:", err)
+		log.Println("error ================ fail to dial tracker:", err)
 		return
 	}
 	defer conn.Close()

@@ -70,7 +70,7 @@ func StartP2PServer() {
 	P2PLocalPeerId = host.ID().Pretty()
 	service.P2PLocalPeerId = P2PLocalPeerId
 
-	localServerDest = fmt.Sprintf("/ip4/%s/tcp/%v/p2p/%s", config.P2P_hostIp, config.P2P_sourcePort, host.ID().Pretty())
+	localServerDest = fmt.Sprintf("local p2p address: /ip4/%s/tcp/%v/p2p/%s", config.P2P_hostIp, config.P2P_sourcePort, host.ID().Pretty())
 	log.Println(localServerDest)
 
 	//把自己也作为终点放进去，阻止自己连接自己

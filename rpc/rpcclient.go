@@ -24,7 +24,7 @@ func init() {
 		User: config.ChainNode_User,
 		Pass: config.ChainNode_Pass,
 	}
-	log.Println(connConfig)
+	//log.Println(connConfig)
 }
 
 type ConnConfig struct {
@@ -100,8 +100,7 @@ func (client *Client) CheckVersion() error {
 		return err
 	}
 
-	log.Println("omniCoreVersion: " + gjson.Get(result, "omnicoreversion").String())
-	log.Println("bitcoinCoreVersion: " + gjson.Get(result, "bitcoincoreversion").String())
+	log.Println("omniCoreVersion: "+gjson.Get(result, "omnicoreversion").String()+",", "bitcoinCoreVersion: "+gjson.Get(result, "bitcoincoreversion").String())
 	bitcoinCoreVersion := gjson.Get(result, "bitcoincoreversion").String()
 
 	infoes := strings.Split(bitcoinCoreVersion, ".")
