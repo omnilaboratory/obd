@@ -197,7 +197,7 @@ func (this *obdNodeAccountManager) GetAllUsers(context *gin.Context) {
 
 	infoes := []dao.UserInfo{}
 	totalCount, _ := db.Count(&dao.UserInfo{})
-	_ = db.Select(q.True()).Skip(pageNum * pageSize).Limit(pageSize).Find(&infoes)
+	_ = db.Select(q.True()).OrderBy("Id").Reverse().Skip(pageNum * pageSize).Limit(pageSize).Find(&infoes)
 	context.JSON(http.StatusOK, gin.H{
 		"data":       infoes,
 		"totalCount": totalCount,
@@ -221,7 +221,7 @@ func (this *obdNodeAccountManager) GetAllObdNodes(context *gin.Context) {
 
 	infoes := []dao.ObdNodeInfo{}
 	totalCount, _ := db.Count(&dao.ObdNodeInfo{})
-	_ = db.Select(q.True()).Skip(pageNum * pageSize).Limit(pageSize).Find(&infoes)
+	_ = db.Select(q.True()).OrderBy("Id").Reverse().Skip(pageNum * pageSize).Limit(pageSize).Find(&infoes)
 	context.JSON(http.StatusOK, gin.H{
 		"data":       infoes,
 		"totalCount": totalCount,

@@ -117,7 +117,7 @@ func (manager *channelManager) GetChannels(context *gin.Context) {
 
 	infoes := []dao.ChannelInfo{}
 	totalCount, _ := db.Count(&dao.ChannelInfo{})
-	_ = db.Select(q.True()).Skip(pageNum * pageSize).Limit(pageSize).Find(&infoes)
+	_ = db.Select(q.True()).OrderBy("Id").Reverse().Skip(pageNum * pageSize).Limit(pageSize).Find(&infoes)
 	context.JSON(http.StatusOK, gin.H{
 		"data":       infoes,
 		"totalCount": totalCount,
