@@ -10,6 +10,7 @@ import (
 	"github.com/omnilaboratory/obd/tracker/dao"
 	"log"
 	"net/http"
+	"strconv"
 	"sync"
 	"time"
 )
@@ -98,5 +99,27 @@ func (manager *channelManager) GetChannelState(context *gin.Context) {
 	context.JSON(http.StatusOK, gin.H{
 		"msg":  "channelState",
 		"data": retData,
+	})
+}
+
+func (manager *channelManager) GetChannels(context *gin.Context) {
+	pageNumStr := context.Query("pageNum")
+	pageNum, _ := strconv.Atoi(pageNumStr)
+	if pageNum <= 0 {
+		pageNum = 1
+	}
+	pageNum -= 1
+	pageSizeStr := context.Query("pageSize")
+	pageSize, _ := strconv.Atoi(pageSizeStr)
+	if pageSize <= 0 || pageSize > 20 {
+		pageSize = 10
+	}
+
+	infoes := []dao.ChannelInfo{}
+	totalCount, _ := db.Count(&dao.ChannelInfo{})
+	_ = db.Select(q.True()).Skip(pageNum * pageSize).Limit(pageSize).Find(&infoes)
+	context.JSON(http.StatusOK, gin.H{
+		"data":       infoes,
+		"totalCount": totalCount,
 	})
 }

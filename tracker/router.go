@@ -22,6 +22,12 @@ func InitRouter() *gin.Engine {
 		apiv1.GET("/getChannelState", service.ChannelService.GetChannelState)
 		apiv1.GET("/getUserState", service.NodeAccountService.GetUserState)
 	}
+	apiv2 := router.Group("/api/common")
+	{
+		apiv2.GET("/getObdNodes", service.NodeAccountService.GetAllObdNodes)
+		apiv2.GET("/getUsers", service.NodeAccountService.GetAllUsers)
+		apiv2.GET("/getChannels", service.ChannelService.GetChannels)
+	}
 
 	return router
 }
