@@ -20,79 +20,88 @@ type atomicSwapManager struct {
 var AtomicSwapService atomicSwapManager
 
 //type MsgType_Atomic_Swap_N80  可以理解为付款凭证
-func (this *atomicSwapManager) AtomicSwap(msgData string, user bean.User) (outData interface{}, targetUser string, err error) {
-	if tool.CheckIsString(&msgData) == false {
-		return nil, "", errors.New("empty json data")
+func (this *atomicSwapManager) AtomicSwap(msg bean.RequestMessage, user bean.User) (outData interface{}, err error) {
+	if tool.CheckIsString(&msg.Data) == false {
+		return nil, errors.New("empty json data")
 	}
 	reqData := &bean.AtomicSwapRequest{}
-	err = json.Unmarshal([]byte(msgData), reqData)
+	err = json.Unmarshal([]byte(msg.Data), reqData)
 	if err != nil {
 		log.Println(err)
-		return nil, "", err
+		return nil, err
 	}
 
 	if tool.CheckIsString(&reqData.RecipientUserPeerId) == false {
-		return nil, "", errors.New("error recipient_user_peer_id")
+		return nil, errors.New("error recipient_user_peer_id")
+	}
+
+	if msg.RecipientUserPeerId != reqData.RecipientUserPeerId {
+		return nil, errors.New("wrong recipient_user_peer_id")
 	}
 
 	if reqData.TimeLocker < 10 {
-		return nil, "", errors.New("error time_locker")
+		return nil, errors.New("error time_locker")
 	}
-
-	err = FindUserIsOnline(reqData.RecipientUserPeerId)
-	if err != nil {
-		return nil, "", err
-	}
-
 	if reqData.RecipientUserPeerId == user.PeerId {
-		return nil, "", errors.New("you should not send msg to yourself")
+		return nil, errors.New("you should not send msg to yourself")
 	}
 
+	if P2PLocalPeerId == msg.RecipientNodePeerId {
+		err = FindUserIsOnline(reqData.RecipientUserPeerId)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		flag := HttpGetUserStateFromTracker(msg.RecipientUserPeerId)
+		if flag == 0 {
+			return nil, errors.New("user is not online")
+		}
+	}
 	if tool.CheckIsString(&reqData.ChannelIdFrom) == false {
-		return nil, "", errors.New("error channel_id_from")
+		return nil, errors.New("error channel_id_from")
 	}
 
-	if reqData.PropertySent < 0 {
-		return nil, "", errors.New("error property_sent")
+	_, err = rpcClient.OmniGetProperty(reqData.PropertySent)
+	if err != nil {
+		log.Println(err)
+		return nil, errors.New("error property_sent")
 	}
 
-	err = db.Select(
+	err = user.Db.Select(
 		q.Eq("ChannelId", reqData.ChannelIdFrom),
-		q.Eq("CurrState", dao.ChannelState_CanUse),
+		q.Eq("CurrState", dao.ChannelState_HtlcTx),
 		q.Eq("PropertyId", reqData.PropertySent),
 		q.Or(
 			q.Eq("PeerIdA", user.PeerId),
 			q.Eq("PeerIdB", user.PeerId))).
 		First(&dao.ChannelInfo{})
 	if err != nil {
-		return nil, "", errors.New("not found this channel_id_from")
+		return nil, errors.New("not found this channel_id_from")
 	}
+
 	if tool.CheckIsString(&reqData.ChannelIdTo) == false {
-		return nil, "", errors.New("error channel_id_to")
+		return nil, errors.New("error channel_id_to")
 	}
-	if reqData.PropertyReceived < 0 {
-		return nil, "", errors.New("error property_received")
+
+	_, err = rpcClient.OmniGetProperty(reqData.PropertyReceived)
+	if err != nil {
+		log.Println(err)
+		return nil, errors.New("error property_received")
 	}
+
 	if reqData.ExchangeRate < 0 {
-		return nil, "", errors.New("error exchange_rate")
+		return nil, errors.New("error exchange_rate")
 	}
 	if tool.CheckIsString(&reqData.TransactionId) == false {
-		return nil, "", errors.New("error transaction_id")
+		return nil, errors.New("error transaction_id")
 	}
 
-	err = db.Select(
-		q.Eq("ChannelId", reqData.ChannelIdTo),
-		q.Eq("CurrState", dao.ChannelState_CanUse),
-		q.Eq("PropertyId", reqData.PropertyReceived),
-		q.Or(
-			q.Eq("PeerIdA", reqData.RecipientUserPeerId),
-			q.Eq("PeerIdB", reqData.RecipientUserPeerId))).
-		First(&dao.ChannelInfo{})
-	if err != nil {
-		return nil, "", errors.New("not found this channel_id_to")
+	flag := httpGetChannelStateFromTracker(reqData.ChannelIdTo)
+	if flag == 0 {
+		return nil, errors.New("not found this channel_id_to")
 	}
 
-	err = db.Select(
+	err = user.Db.Select(
 		q.Eq("CurrHash", reqData.TransactionId),
 		q.Eq("TxType", dao.CommitmentTransactionType_Htlc),
 		q.Eq("CurrState", dao.TxInfoState_Htlc_GetH),
@@ -100,13 +109,12 @@ func (this *atomicSwapManager) AtomicSwap(msgData string, user bean.User) (outDa
 		q.Eq("Owner", user.PeerId)).
 		First(&dao.CommitmentTransaction{})
 	if err != nil {
-		return nil, "", errors.New("error transaction_id")
+		return nil, errors.New("error transaction_id")
 	}
 
 	swapInfo := &dao.AtomicSwapInfo{}
-
 	//check if have send the same info
-	err = db.Select(
+	err = user.Db.Select(
 		q.Eq("TransactionId", reqData.TransactionId),
 		q.Eq("ChannelIdFrom", reqData.ChannelIdFrom),
 		q.Eq("ChannelIdTo", reqData.ChannelIdTo),
@@ -117,98 +125,133 @@ func (this *atomicSwapManager) AtomicSwap(msgData string, user bean.User) (outDa
 
 	swapInfo.LatestEditAt = time.Now()
 	swapInfo.AtomicSwapRequest = *reqData
-	if err == nil {
-		err = db.Update(swapInfo)
+	if swapInfo.Id > 0 {
+		err = user.Db.Update(swapInfo)
 	} else {
 		swapInfo.CreateBy = user.PeerId
 		swapInfo.CreateAt = time.Now()
-		err = db.Save(swapInfo)
+		err = user.Db.Save(swapInfo)
 	}
 	if err != nil {
-		return nil, "", errors.New("fail to save db,try again")
+		return nil, errors.New("fail to save db,try again")
 	}
-	return reqData, reqData.RecipientUserPeerId, nil
+	return reqData, nil
+}
+
+//80的信息到达接受者的obd节点的处理
+func (this *atomicSwapManager) BeforeSignAtomicSwapAtBobSide(data string, user *bean.User) (retData interface{}, err error) {
+	reqData := &bean.AtomicSwapRequest{}
+	err = json.Unmarshal([]byte(data), reqData)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	swapInfo := &dao.AtomicSwapInfo{}
+	//check if have send the same info
+	err = user.Db.Select(
+		q.Eq("TransactionId", reqData.TransactionId),
+		q.Eq("ChannelIdFrom", reqData.ChannelIdFrom),
+		q.Eq("ChannelIdTo", reqData.ChannelIdTo),
+		q.Eq("PropertySent", reqData.PropertySent),
+		q.Eq("PropertyReceived", reqData.PropertyReceived),
+		q.Eq("CreateBy", user.PeerId),
+	).First(swapInfo)
+
+	swapInfo.LatestEditAt = time.Now()
+	swapInfo.AtomicSwapRequest = *reqData
+	if swapInfo.Id > 0 {
+		err = user.Db.Update(swapInfo)
+	} else {
+		swapInfo.CreateBy = user.PeerId
+		swapInfo.CreateAt = time.Now()
+		err = user.Db.Save(swapInfo)
+	}
+	if err != nil {
+		log.Println(err)
+	}
+
+	return reqData, nil
 }
 
 //MsgType_Atomic_Swap_Accept_N81 可以理解为发货凭证
-func (this *atomicSwapManager) AtomicSwapAccepted(msgData string, user bean.User) (outData interface{}, targetUser string, err error) {
-	if tool.CheckIsString(&msgData) == false {
-		return nil, "", errors.New("empty json data")
+func (this *atomicSwapManager) AtomicSwapAccepted(msg bean.RequestMessage, user bean.User) (outData interface{}, err error) {
+	if tool.CheckIsString(&msg.Data) == false {
+		return nil, errors.New("empty json data")
 	}
 	reqData := &bean.AtomicSwapAccepted{}
-	err = json.Unmarshal([]byte(msgData), reqData)
+	err = json.Unmarshal([]byte(msg.Data), reqData)
 	if err != nil {
 		log.Println(err)
-		return nil, "", err
+		return nil, err
 	}
 
 	if tool.CheckIsString(&reqData.RecipientUserPeerId) == false {
-		return nil, "", errors.New("error recipient_peer_id")
-	}
-
-	if reqData.TimeLocker < 10 {
-		return nil, "", errors.New("error time_locker")
-	}
-
-	err = FindUserIsOnline(reqData.RecipientUserPeerId)
-	if err != nil {
-		return nil, "", err
+		return nil, errors.New("error recipient_user_peer_id")
 	}
 
 	if reqData.RecipientUserPeerId == user.PeerId {
-		return nil, "", errors.New("you should not send msg to yourself")
+		return nil, errors.New("you should not send msg to yourself")
+	}
+
+	if msg.RecipientUserPeerId != reqData.RecipientUserPeerId {
+		return nil, errors.New("wrong recipient_user_peer_id")
+	}
+	if msg.RecipientNodePeerId == P2PLocalPeerId {
+		err = FindUserIsOnline(reqData.RecipientUserPeerId)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		if flag := HttpGetUserStateFromTracker(reqData.RecipientUserPeerId); flag == 0 {
+			return nil, errors.New("recipient_user_peer_id not online")
+		}
+	}
+
+	if reqData.TimeLocker < 10 {
+		return nil, errors.New("error time_locker")
 	}
 
 	if tool.CheckIsString(&reqData.ChannelIdFrom) == false {
-		return nil, "", errors.New("error channel_id_from")
+		return nil, errors.New("error channel_id_from")
 	}
 
-	if reqData.PropertySent < 0 {
-		return nil, "", errors.New("error property_sent")
+	_, err = rpcClient.OmniGetProperty(reqData.PropertySent)
+	if err != nil {
+		log.Println(err)
+		return nil, errors.New("error property_sent")
 	}
 
-	err = db.Select(
+	err = user.Db.Select(
 		q.Eq("ChannelId", reqData.ChannelIdFrom),
-		q.Eq("CurrState", dao.ChannelState_CanUse),
+		q.Eq("CurrState", dao.ChannelState_HtlcTx),
 		q.Eq("PropertyId", reqData.PropertySent),
 		q.Or(
 			q.Eq("PeerIdA", user.PeerId),
 			q.Eq("PeerIdB", user.PeerId))).
 		First(&dao.ChannelInfo{})
 	if err != nil {
-		return nil, "", errors.New("not found this channel_id_from")
+		return nil, errors.New("not found this channel of channel_id_from")
 	}
 
 	if tool.CheckIsString(&reqData.ChannelIdTo) == false {
-		return nil, "", errors.New("error channel_id_to")
+		return nil, errors.New("error channel_id_to")
 	}
 
-	if reqData.PropertyReceived < 0 {
-		return nil, "", errors.New("error property_received")
+	_, err = rpcClient.OmniGetProperty(reqData.PropertyReceived)
+	if err != nil {
+		log.Println(err)
+		return nil, errors.New("error property_received")
 	}
+
 	if reqData.ExchangeRate < 0 {
-		return nil, "", errors.New("error exchange_rate")
+		return nil, errors.New("error exchange_rate")
 	}
 	if tool.CheckIsString(&reqData.TransactionId) == false {
-		return nil, "", errors.New("error transaction_id")
-	}
-	if tool.CheckIsString(&reqData.TargetTransactionId) == false {
-		return nil, "", errors.New("error target_transaction_id")
+		return nil, errors.New("error transaction_id")
 	}
 
-	err = db.Select(
-		q.Eq("ChannelId", reqData.ChannelIdTo),
-		q.Eq("CurrState", dao.ChannelState_CanUse),
-		q.Eq("PropertyId", reqData.PropertyReceived),
-		q.Or(
-			q.Eq("PeerIdA", reqData.RecipientUserPeerId),
-			q.Eq("PeerIdB", reqData.RecipientUserPeerId))).
-		First(&dao.ChannelInfo{})
-	if err != nil {
-		return nil, "", errors.New("not found this channel_id_to")
-	}
-
-	err = db.Select(
+	err = user.Db.Select(
 		q.Eq("CurrHash", reqData.TransactionId),
 		q.Eq("TxType", dao.CommitmentTransactionType_Htlc),
 		q.Eq("CurrState", dao.TxInfoState_Htlc_GetH),
@@ -216,21 +259,29 @@ func (this *atomicSwapManager) AtomicSwapAccepted(msgData string, user bean.User
 		q.Eq("Owner", user.PeerId)).
 		First(&dao.CommitmentTransaction{})
 	if err != nil {
-		return nil, "", errors.New("error transaction_id")
+		return nil, errors.New("error transaction_id")
+	}
+
+	if tool.CheckIsString(&reqData.TargetTransactionId) == false {
+		return nil, errors.New("error target_transaction_id")
+	}
+
+	flag := httpGetChannelStateFromTracker(reqData.ChannelIdTo)
+	if flag == 0 {
+		return nil, errors.New("not found this channel_id_to")
 	}
 
 	targetTx := &dao.AtomicSwapInfo{}
-	err = db.Select(
+	err = user.Db.Select(
 		q.Eq("TransactionId", reqData.TargetTransactionId),
-		q.Eq("RecipientPeerId", user.PeerId),
+		q.Eq("RecipientUserPeerId", user.PeerId),
 	).First(targetTx)
 	if err != nil {
-		return nil, "", errors.New("not found the target swap transaction")
+		return nil, errors.New("not found the target swap transaction")
 	}
 
 	swapInfo := &dao.AtomicSwapAcceptedInfo{}
-
-	err = db.Select(
+	err = user.Db.Select(
 		q.Eq("TransactionId", reqData.TransactionId),
 		q.Eq("ChannelIdFrom", reqData.ChannelIdFrom),
 		q.Eq("ChannelIdTo", reqData.ChannelIdTo),
@@ -242,16 +293,54 @@ func (this *atomicSwapManager) AtomicSwapAccepted(msgData string, user bean.User
 
 	swapInfo.AtomicSwapAccepted = *reqData
 	swapInfo.LatestEditAt = time.Now()
-	if err == nil {
-		err = db.Update(swapInfo)
+	if swapInfo.Id > 0 {
+		err = user.Db.Update(swapInfo)
 	} else {
 		swapInfo.CreateBy = user.PeerId
 		swapInfo.CreateAt = time.Now()
-		err = db.Save(swapInfo)
-	}
-	if err != nil {
-		return nil, "", errors.New("fail to save db,try again")
+		err = user.Db.Save(swapInfo)
 	}
 
-	return reqData, reqData.RecipientUserPeerId, nil
+	if err != nil {
+		log.Println(err)
+		return nil, errors.New("fail to save db,try again")
+	}
+
+	return reqData, nil
+}
+
+//81的信息到达接受者的obd节点的处理
+func (this *atomicSwapManager) BeforeSignAtomicSwapAcceptedAtAliceSide(data string, user *bean.User) (retData interface{}, err error) {
+	reqData := &bean.AtomicSwapAccepted{}
+	err = json.Unmarshal([]byte(data), reqData)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	swapInfo := &dao.AtomicSwapAcceptedInfo{}
+	err = user.Db.Select(
+		q.Eq("TransactionId", reqData.TransactionId),
+		q.Eq("ChannelIdFrom", reqData.ChannelIdFrom),
+		q.Eq("ChannelIdTo", reqData.ChannelIdTo),
+		q.Eq("PropertySent", reqData.PropertySent),
+		q.Eq("PropertyReceived", reqData.PropertyReceived),
+		q.Eq("TargetTransactionId", reqData.TargetTransactionId),
+		q.Eq("CreateBy", user.PeerId),
+	).First(swapInfo)
+
+	swapInfo.AtomicSwapAccepted = *reqData
+	swapInfo.LatestEditAt = time.Now()
+	if swapInfo.Id > 0 {
+		err = user.Db.Update(swapInfo)
+	} else {
+		swapInfo.CreateBy = user.PeerId
+		swapInfo.CreateAt = time.Now()
+		err = user.Db.Save(swapInfo)
+	}
+	if err != nil {
+		log.Println(err)
+	}
+
+	return reqData, nil
 }

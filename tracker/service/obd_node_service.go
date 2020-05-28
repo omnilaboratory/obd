@@ -5,10 +5,12 @@ import (
 	"errors"
 	"github.com/asdine/storm"
 	"github.com/asdine/storm/q"
+	"github.com/gin-gonic/gin"
 	"github.com/omnilaboratory/obd/tool"
 	"github.com/omnilaboratory/obd/tracker/bean"
 	"github.com/omnilaboratory/obd/tracker/dao"
 	"log"
+	"net/http"
 	"sync"
 	"time"
 )
@@ -31,7 +33,7 @@ type obdNodeAccountManager struct {
 	mu sync.Mutex
 }
 
-var nodeAccountService obdNodeAccountManager
+var NodeAccountService obdNodeAccountManager
 
 func (this *obdNodeAccountManager) login(obdClient *ObdNode, msgData string) (retData interface{}, err error) {
 	reqData := &bean.ObdNodeLoginRequest{}
@@ -150,4 +152,28 @@ func (this *obdNodeAccountManager) userLogout(obdClient *ObdNode, msgData string
 
 	delete(userOfOnlineMap, info.UserId)
 	return err
+}
+
+func (this *obdNodeAccountManager) GetUserState(context *gin.Context) {
+	this.mu.Lock()
+	defer this.mu.Unlock()
+
+	reqData := &bean.ObdNodeUserLoginRequest{}
+	reqData.UserId = context.Query("userId")
+	if tool.CheckIsString(&reqData.UserId) == false {
+		context.JSON(http.StatusInternalServerError, gin.H{
+			"msg": "error userId",
+		})
+		return
+	}
+
+	retData := make(map[string]interface{})
+	retData["state"] = 0
+	if _, ok := userOfOnlineMap[reqData.UserId]; ok == true {
+		retData["state"] = 1
+	}
+	context.JSON(http.StatusOK, gin.H{
+		"msg":  "GetUserState",
+		"data": retData,
+	})
 }

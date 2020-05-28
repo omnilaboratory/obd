@@ -69,14 +69,14 @@ func (this *ObdNode) Read() {
 		case enum.MsgType_Tracker_HeartBeat_302:
 			this.sendMsgBackToSender(msgType, true, "echo")
 		case enum.MsgType_Tracker_NodeLogin_303:
-			retData, err := nodeAccountService.login(this, msgData)
+			retData, err := NodeAccountService.login(this, msgData)
 			sendDataBackToSender(this, msgType, retData, err)
 		case enum.MsgType_Tracker_UserLogin_304:
-			_, _ = nodeAccountService.userLogin(this, msgData)
+			_, _ = NodeAccountService.userLogin(this, msgData)
 		case enum.MsgType_Tracker_UserLogout_305:
-			_ = nodeAccountService.userLogout(this, msgData)
+			_ = NodeAccountService.userLogout(this, msgData)
 		case enum.MsgType_Tracker_UpdateChannelInfo_350:
-			_ = channelService.updateChannelInfo(this, msgData)
+			_ = ChannelService.updateChannelInfo(this, msgData)
 		case enum.MsgType_Tracker_GetHtlcPath_351:
 			path, err := HtlcService.getPath(this, msgData)
 			sendDataBackToSender(this, msgType, path, err)
@@ -174,7 +174,7 @@ func (endManager *obdNodeManager) TrackerStart() {
 		case currConn := <-endManager.Disconnected:
 			if _, ok := endManager.ClientsMap[currConn]; ok {
 				currConn.sendMsgBackToSender(enum.MsgType_Tracker_Connect_301, true, "disconnect from server successfully")
-				_ = nodeAccountService.logout(currConn)
+				_ = NodeAccountService.logout(currConn)
 				delete(endManager.ClientsMap, currConn)
 				delete(endManager.ObdNodeMap, currConn.Id)
 				close(currConn.SendChannel)

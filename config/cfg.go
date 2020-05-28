@@ -21,6 +21,10 @@ var (
 	ChainNode_Host = "62.234.216.108:18332"
 	ChainNode_User = "omniwallet"
 	ChainNode_Pass = "cB3]iL2@eZ1?cB2?"
+	//mainnet
+	//ChainNode_Host = "62.234.188.160:8332"
+	//ChainNode_User = "uprets"
+	//ChainNode_Pass = "pass"
 
 	//P2P
 	P2P_hostIp     = "127.0.0.1"
@@ -54,6 +58,28 @@ func init() {
 	ChainNode_Host = chainNode.Key("host").String()
 	ChainNode_User = chainNode.Key("user").String()
 	ChainNode_Pass = chainNode.Key("pass").String()
+	if ChainNode_Type == "main" {
+		chainNodeMain, err := Cfg.GetSection("chainNodeMain")
+		if err != nil {
+			log.Println(err)
+			return
+		}
+		ChainNode_Host = chainNodeMain.Key("host").String()
+		ChainNode_User = chainNodeMain.Key("user").String()
+		ChainNode_Pass = chainNodeMain.Key("pass").String()
+	}
+	if len(ChainNode_Host) == 0 {
+		log.Println("empty omnicore host")
+		return
+	}
+	if len(ChainNode_User) == 0 {
+		log.Println("empty omnicore account")
+		return
+	}
+	if len(ChainNode_Pass) == 0 {
+		log.Println("empty omnicore password")
+		return
+	}
 
 	p2pNode, err := Cfg.GetSection("p2p")
 	if err != nil {
@@ -69,6 +95,10 @@ func init() {
 		log.Println(err)
 		return
 	}
+	if len(tracker.Key("hostIp").String()) == 0 {
+		panic("empty tracker hostIp")
+	}
+
 	TrackerServerPort = tracker.Key("port").MustInt(60060)
 	TrackerHost = tracker.Key("hostIp").MustString("localhost") + ":" + strconv.Itoa(TrackerServerPort)
 }

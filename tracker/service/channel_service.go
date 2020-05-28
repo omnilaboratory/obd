@@ -4,10 +4,12 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/asdine/storm/q"
+	"github.com/gin-gonic/gin"
 	"github.com/omnilaboratory/obd/tool"
 	"github.com/omnilaboratory/obd/tracker/bean"
 	"github.com/omnilaboratory/obd/tracker/dao"
 	"log"
+	"net/http"
 	"sync"
 	"time"
 )
@@ -16,7 +18,7 @@ type channelManager struct {
 	mu sync.Mutex
 }
 
-var channelService channelManager
+var ChannelService channelManager
 
 func (manager *channelManager) updateChannelInfo(obdClient *ObdNode, msgData string) (err error) {
 	manager.mu.Lock()
@@ -71,4 +73,30 @@ func (manager *channelManager) updateChannelInfo(obdClient *ObdNode, msgData str
 		}
 	}
 	return err
+}
+
+func (manager *channelManager) GetChannelState(context *gin.Context) {
+	manager.mu.Lock()
+	defer manager.mu.Unlock()
+
+	reqData := &bean.GetChannelStateRequest{}
+	reqData.ChannelId = context.Query("channelId")
+	if tool.CheckIsString(&reqData.ChannelId) == false {
+		context.JSON(http.StatusInternalServerError, gin.H{
+			"msg": "error channelId",
+		})
+		return
+	}
+
+	info := &dao.ChannelInfo{}
+	_ = db.Select(q.Eq("ChannelId", reqData.ChannelId)).First(info)
+	retData := make(map[string]interface{})
+	retData["state"] = 0
+	if info.Id > 0 {
+		retData["state"] = info.CurrState
+	}
+	context.JSON(http.StatusOK, gin.H{
+		"msg":  "channelState",
+		"data": retData,
+	})
 }

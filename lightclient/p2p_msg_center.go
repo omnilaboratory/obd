@@ -171,6 +171,20 @@ func routerOfP2PNode(msgType enum.MsgType, data string, client *Client) (retData
 			return string(retData), nil
 		}
 		defaultErr = err
+	case enum.MsgType_Atomic_Swap_N80:
+		node, err := service.AtomicSwapService.BeforeSignAtomicSwapAtBobSide(data, client.User)
+		if err == nil {
+			retData, _ := json.Marshal(node)
+			return string(retData), nil
+		}
+		defaultErr = err
+	case enum.MsgType_Atomic_Swap_Accept_N81:
+		node, err := service.AtomicSwapService.BeforeSignAtomicSwapAcceptedAtAliceSide(data, client.User)
+		if err == nil {
+			retData, _ := json.Marshal(node)
+			return string(retData), nil
+		}
+		defaultErr = err
 	default:
 		status = true
 	}

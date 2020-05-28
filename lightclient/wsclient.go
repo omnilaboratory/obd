@@ -162,6 +162,11 @@ func (client *Client) Read() {
 							client.sendToMyself(msg.Type, false, err.Error())
 							continue
 						}
+					} else {
+						if flag := service.HttpGetUserStateFromTracker(msg.RecipientUserPeerId); flag == 0 {
+							client.sendToMyself(msg.Type, false, errors.New("recipient_user_peer_id not online").Error())
+							continue
+						}
 					}
 				}
 

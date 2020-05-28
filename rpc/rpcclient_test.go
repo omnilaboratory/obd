@@ -19,9 +19,17 @@ func TestClient_GetMiningInfo(t *testing.T) {
 	log.Println(err)
 	log.Println(result)
 
-	//client.send("importaddress", []interface{}{"msbtApWsDVihfJwDv3AF2u4hfbfmi59BtB", "", true})
+	result, err = client.ListUnspent("12A7mKppn4XsYBzPDGg8HY1L2zRS1uFeWS")
+	log.Println(err)
+	log.Println(result)
+	//
+	//result, err = client.ListUnspent("1FuiQiycRNxfWy5twwEbQbQkWyFUntgbCG")
+	//log.Println(err)
+	//log.Println(result)
+
+	//client.send("importaddress", []interface{}{"12A7mKppn4XsYBzPDGg8HY1L2zRS1uFeWS", "", true})
 	//log.Println(1)
-	//client.send("importaddress", []interface{}{"myFUMkCNPm9oJXFuK838of9EHRdudaa5Um", "", true})
+	//client.send("importaddress", []interface{}{"1KoMjWRTRRZogAEZKYAhNKgtejzb4wGPPW", "", true})
 	//log.Println(2)
 	//client.send("importaddress", []interface{}{"mqnj5uu2jRwY5pe3Y8YyQqpJ6UKgEyqKuY", "", true})
 	//log.Println(3)

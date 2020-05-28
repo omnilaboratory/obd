@@ -19,6 +19,8 @@ func InitRouter() *gin.Engine {
 	apiv1 := router.Group("/api/v1")
 	{
 		apiv1.GET("/getHtlcTxState", service.HtlcService.GetHtlcCurrState)
+		apiv1.GET("/getChannelState", service.ChannelService.GetChannelState)
+		apiv1.GET("/getUserState", service.NodeAccountService.GetUserState)
 	}
 
 	return router

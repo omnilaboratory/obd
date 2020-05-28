@@ -302,7 +302,7 @@ func (client *Client) atomicSwapModule(msg bean.RequestMessage) (enum.SendTarget
 	data := ""
 	switch msg.Type {
 	case enum.MsgType_Atomic_Swap_N80:
-		outData, targetUser, err := service.AtomicSwapService.AtomicSwap(msg.Data, *client.User)
+		outData, err := service.AtomicSwapService.AtomicSwap(msg, *client.User)
 		if err != nil {
 			data = err.Error()
 		} else {
@@ -312,13 +312,13 @@ func (client *Client) atomicSwapModule(msg bean.RequestMessage) (enum.SendTarget
 			} else {
 				data = string(bytes)
 				status = true
-				_ = client.sendToSomeone(msg.Type, status, targetUser, data)
+				_ = client.sendDataToP2PUser(msg, status, data)
 			}
 		}
 		client.sendToMyself(msg.Type, status, data)
 		break
 	case enum.MsgType_Atomic_Swap_Accept_N81:
-		outData, targetUser, err := service.AtomicSwapService.AtomicSwapAccepted(msg.Data, *client.User)
+		outData, err := service.AtomicSwapService.AtomicSwapAccepted(msg, *client.User)
 		if err != nil {
 			data = err.Error()
 		} else {
@@ -328,7 +328,7 @@ func (client *Client) atomicSwapModule(msg bean.RequestMessage) (enum.SendTarget
 			} else {
 				data = string(bytes)
 				status = true
-				_ = client.sendToSomeone(msg.Type, status, targetUser, data)
+				_ = client.sendDataToP2PUser(msg, status, data)
 			}
 		}
 		client.sendToMyself(msg.Type, status, data)

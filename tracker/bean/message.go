@@ -54,10 +54,15 @@ const (
 	HtlcTxState_ConfirmPayMoney = 1
 )
 
-//newHtlcTx
+//GetHtlcTxStateRequest
 type GetHtlcTxStateRequest struct {
 	Path string `json:"path"`
 	H    string `json:"h"`
+}
+
+//GetChannelStateRequest
+type GetChannelStateRequest struct {
+	ChannelId string `json:"channel_id"`
 }
 
 //newHtlcTx
