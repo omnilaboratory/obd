@@ -21,7 +21,8 @@ type ReplyMessage struct {
 
 //节点登录
 type ObdNodeLoginRequest struct {
-	NodeId string `json:"node_id"`
+	NodeId     string `json:"node_id"`
+	P2PAddress string `json:"p2p_address"`
 }
 
 //节点的用户登录

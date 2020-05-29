@@ -82,6 +82,8 @@ func (this *ObdNode) Read() {
 			sendDataBackToSender(this, msgType, path, err)
 		case enum.MsgType_Tracker_UpdateHtlcTxState_352:
 			_ = HtlcService.updateHtlcInfo(this, msgData)
+		case enum.MsgType_Tracker_UpdateUserInfo_353:
+			_ = NodeAccountService.updateUsers(this, msgData)
 		}
 	}
 }

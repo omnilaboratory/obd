@@ -11,15 +11,14 @@ import (
 	"github.com/libp2p/go-libp2p-core/network"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/libp2p/go-libp2p-core/peerstore"
+	"github.com/multiformats/go-multiaddr"
 	"github.com/omnilaboratory/obd/bean"
 	"github.com/omnilaboratory/obd/config"
 	"github.com/omnilaboratory/obd/service"
 	"github.com/omnilaboratory/obd/tool"
 	"log"
-	mrand "math/rand"
+	"math/rand"
 	"strings"
-
-	"github.com/multiformats/go-multiaddr"
 )
 
 type P2PChannel struct {
@@ -38,9 +37,10 @@ var p2pChannelMap map[string]*P2PChannel
 
 func generatePrivateKey() (crypto.PrivKey, error) {
 	if privateKey == nil {
-		r := mrand.New(mrand.NewSource(int64(config.P2P_sourcePort)))
-		// Creates a new RSA key pair for this host.
-		prvKey, _, err := crypto.GenerateKeyPairWithReader(crypto.RSA, 2048, r)
+		//r := rand.New(rand.NewSource(time.Now().UnixNano()))
+		r := rand.New(rand.NewSource(int64(config.P2P_sourcePort)))
+		//prvKey, _, err := crypto.GenerateKeyPairWithReader(crypto.RSA, 2048, r)
+		prvKey, _, err := crypto.GenerateECDSAKeyPair(r)
 		if err != nil {
 			log.Println(err)
 			return nil, err
@@ -70,7 +70,7 @@ func StartP2PServer() {
 	P2PLocalPeerId = host.ID().Pretty()
 	service.P2PLocalPeerId = P2PLocalPeerId
 
-	localServerDest = fmt.Sprintf("local p2p address: /ip4/%s/tcp/%v/p2p/%s", config.P2P_hostIp, config.P2P_sourcePort, host.ID().Pretty())
+	localServerDest = fmt.Sprintf("/ip4/%s/tcp/%v/p2p/%s", config.P2P_hostIp, config.P2P_sourcePort, host.ID().Pretty())
 	log.Println(localServerDest)
 
 	//把自己也作为终点放进去，阻止自己连接自己

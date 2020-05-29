@@ -62,11 +62,10 @@ func main() {
 
 	service.Start()
 	// Timer
-	service.ScheduleService.StartSchedule()
 
 	log.Println("obd " + tool.GetObdNodeId() + " start at port: " + strconv.Itoa(config.ServerPort))
 	//tracker
 	go lightclient.ConnectToTracker()
-
+	service.ScheduleService.StartSchedule()
 	log.Fatal(server.ListenAndServe())
 }

@@ -30,6 +30,9 @@ func ConnectToTracker() {
 
 	u := url.URL{Scheme: "ws", Host: config.TrackerHost, Path: "/ws"}
 	log.Printf("begin to connect to tracker: %s", u.String())
+
+	startSchedule()
+
 	var err error
 	conn, _, err = websocket.DefaultDialer.Dial(u.String(), nil)
 	if err != nil {
@@ -47,6 +50,7 @@ func ConnectToTracker() {
 			_, message, err := conn.ReadMessage()
 			if err != nil {
 				log.Println("read:", err)
+				conn = nil
 				return
 			}
 			log.Println("recv:" + string(message))
@@ -72,6 +76,7 @@ func ConnectToTracker() {
 	}()
 
 	nodeLogin()
+	sycUserInfos()
 	sycChannelInfos()
 
 	ticker := time.NewTicker(time.Minute)
@@ -97,6 +102,7 @@ func ConnectToTracker() {
 			// waiting (with timeout) for the server to close the connection.
 			err := conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
 			if err != nil {
+				conn = nil
 				log.Println("write close:", err)
 				return
 			}
@@ -114,12 +120,33 @@ func nodeLogin() {
 	info["type"] = enum.MsgType_Tracker_NodeLogin_303
 	nodeLogin := &trackerBean.ObdNodeLoginRequest{}
 	nodeLogin.NodeId = tool.GetObdNodeId()
+	nodeLogin.P2PAddress = localServerDest
 	info["data"] = nodeLogin
 	bytes, err := json.Marshal(info)
 	if err != nil {
 		log.Println(err)
 	} else {
 		sendMsgToTracker(string(bytes))
+	}
+}
+
+func sycUserInfos() {
+
+	nodes := make([]trackerBean.ObdNodeUserLoginRequest, 0)
+	for userId, _ := range globalWsClientManager.OnlineUserMap {
+		user := trackerBean.ObdNodeUserLoginRequest{}
+		user.UserId = userId
+		nodes = append(nodes, user)
+	}
+	if len(nodes) > 0 {
+		log.Println("syn channel data to tracker", nodes)
+		info := make(map[string]interface{})
+		info["type"] = enum.MsgType_Tracker_UpdateUserInfo_353
+		info["data"] = nodes
+		bytes, err := json.Marshal(info)
+		if err == nil {
+			sendMsgToTracker(string(bytes))
+		}
 	}
 }
 
@@ -190,4 +217,20 @@ func sendMsgToTracker(msg string) {
 		log.Println("write:", err)
 		return
 	}
+}
+
+func startSchedule() {
+	go func() {
+		ticker10m := time.NewTicker(3 * time.Minute)
+		defer ticker10m.Stop()
+		for {
+			select {
+			case t := <-ticker10m.C:
+				log.Println("timer 1m", t)
+				if conn == nil {
+					ConnectToTracker()
+				}
+			}
+		}
+	}()
 }

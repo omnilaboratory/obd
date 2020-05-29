@@ -8,9 +8,11 @@ import (
 
 //ObdNodeInfo
 type ObdNodeInfo struct {
-	Id        int       `storm:"id,increment" json:"id"`
-	IsOnline  bool      `json:"is_online"`
-	OfflineAt time.Time `json:"offline_at"`
+	Id              int       `storm:"id,increment" json:"id"`
+	IsOnline        bool      `json:"is_online"`
+	LatestLoginIp   string    `json:"latest_login_ip"`
+	LatestLoginAt   time.Time `json:"latest_login_at"`
+	LatestOfflineAt time.Time `json:"latest_offline_at"`
 	bean.ObdNodeLoginRequest
 }
 

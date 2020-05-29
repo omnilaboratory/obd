@@ -47,6 +47,9 @@ func (this *obdNodeAccountManager) login(obdClient *ObdNode, msgData string) (re
 	}
 	info := &dao.ObdNodeInfo{}
 	_ = db.Select(q.Eq("NodeId", reqData.NodeId)).First(info)
+	info.LatestLoginAt = time.Now()
+	info.LatestLoginIp = obdClient.Socket.RemoteAddr().String()
+	info.P2PAddress = reqData.P2PAddress
 	if info.Id == 0 {
 		info.NodeId = reqData.NodeId
 		info.IsOnline = true
@@ -73,7 +76,7 @@ func (this *obdNodeAccountManager) logout(obdClient *ObdNode) (err error) {
 		return err
 	}
 
-	info.OfflineAt = time.Now()
+	info.LatestOfflineAt = time.Now()
 	info.IsOnline = false
 	_ = db.Update(info)
 	_ = db.UpdateField(info, "IsOnline", info.IsOnline)
@@ -126,6 +129,37 @@ func (this *obdNodeAccountManager) userLogin(obdClient *ObdNode, msgData string)
 	userOfOnlineMap[info.UserId] = *info
 	retData = "login successfully"
 	return retData, err
+}
+
+func (this *obdNodeAccountManager) updateUsers(obdClient *ObdNode, msgData string) (err error) {
+	if tool.CheckIsString(&msgData) == false {
+		return errors.New("wrong inputData")
+	}
+
+	infos := make([]bean.ObdNodeUserLoginRequest, 0)
+	err = json.Unmarshal([]byte(msgData), &infos)
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+
+	for _, item := range infos {
+		userInfo := &dao.UserInfo{}
+		_ = db.Select(q.Eq("ObdNodeId", obdClient.Id), q.Eq("UserId", item.UserId)).First(userInfo)
+		if userInfo.Id == 0 {
+			userInfo.UserId = item.UserId
+			userInfo.ObdNodeId = obdClient.Id
+			userInfo.IsOnline = true
+			_ = db.Save(userInfo)
+		} else {
+			if userInfo.IsOnline == false {
+				userInfo.IsOnline = true
+				_ = db.Update(userInfo)
+			}
+		}
+		userOfOnlineMap[userInfo.UserId] = *userInfo
+	}
+	return err
 }
 
 func (this *obdNodeAccountManager) userLogout(obdClient *ObdNode, msgData string) (err error) {
