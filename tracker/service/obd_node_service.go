@@ -222,19 +222,31 @@ func (this *obdNodeAccountManager) GetAllUsers(context *gin.Context) {
 	if pageNum <= 0 {
 		pageNum = 1
 	}
-	pageNum -= 1
+
 	pageSizeStr := context.Query("pageSize")
 	pageSize, _ := strconv.Atoi(pageSizeStr)
 	if pageSize <= 0 || pageSize > 20 {
 		pageSize = 10
 	}
 
-	infoes := []dao.UserInfo{}
 	totalCount, _ := db.Count(&dao.UserInfo{})
-	_ = db.Select(q.True()).OrderBy("Id").Reverse().Skip(pageNum * pageSize).Limit(pageSize).Find(&infoes)
+	totalPage := totalCount / pageSize
+	if totalCount%pageSize != 0 {
+		totalPage += 1
+	}
+	if pageNum > totalPage {
+		pageNum = totalPage
+	}
+
+	var infos []dao.UserInfo
+	pageNum -= 1
+	_ = db.Select(q.True()).OrderBy("Id").Reverse().Skip(pageNum * pageSize).Limit(pageSize).Find(&infos)
 	context.JSON(http.StatusOK, gin.H{
-		"data":       infoes,
+		"data":       infos,
 		"totalCount": totalCount,
+		"totalPage":  totalPage,
+		"pageNum":    pageNum + 1,
+		"pageSize":   pageSize,
 	})
 }
 func (this *obdNodeAccountManager) GetAllObdNodes(context *gin.Context) {
@@ -246,18 +258,30 @@ func (this *obdNodeAccountManager) GetAllObdNodes(context *gin.Context) {
 	if pageNum <= 0 {
 		pageNum = 1
 	}
-	pageNum -= 1
+
 	pageSizeStr := context.Query("pageSize")
 	pageSize, _ := strconv.Atoi(pageSizeStr)
 	if pageSize <= 0 || pageSize > 20 {
 		pageSize = 10
 	}
 
-	infoes := []dao.ObdNodeInfo{}
 	totalCount, _ := db.Count(&dao.ObdNodeInfo{})
-	_ = db.Select(q.True()).OrderBy("Id").Reverse().Skip(pageNum * pageSize).Limit(pageSize).Find(&infoes)
+	totalPage := totalCount / pageSize
+	if totalCount%pageSize != 0 {
+		totalPage += 1
+	}
+	if pageNum > totalPage {
+		pageNum = totalPage
+	}
+
+	var infos []dao.ObdNodeInfo
+	pageNum -= 1
+	_ = db.Select(q.True()).OrderBy("Id").Reverse().Skip(pageNum * pageSize).Limit(pageSize).Find(&infos)
 	context.JSON(http.StatusOK, gin.H{
-		"data":       infoes,
+		"data":       infos,
 		"totalCount": totalCount,
+		"totalPage":  totalPage,
+		"pageNum":    pageNum + 1,
+		"pageSize":   pageSize,
 	})
 }

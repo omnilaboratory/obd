@@ -40,7 +40,7 @@ func init() {
 // gox compile  https://blog.csdn.net/han0373/article/details/81391455
 // gox -os "windows linux darwin" -arch amd64
 // gox -os "windows" -arch amd64
-func main() {
+func main1() {
 
 	err := rpc.NewClient().CheckVersion()
 	if err != nil {

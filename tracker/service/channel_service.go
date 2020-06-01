@@ -108,18 +108,30 @@ func (manager *channelManager) GetChannels(context *gin.Context) {
 	if pageNum <= 0 {
 		pageNum = 1
 	}
-	pageNum -= 1
 	pageSizeStr := context.Query("pageSize")
 	pageSize, _ := strconv.Atoi(pageSizeStr)
 	if pageSize <= 0 || pageSize > 20 {
 		pageSize = 10
 	}
 
-	infoes := []dao.ChannelInfo{}
 	totalCount, _ := db.Count(&dao.ChannelInfo{})
-	_ = db.Select(q.True()).OrderBy("Id").Reverse().Skip(pageNum * pageSize).Limit(pageSize).Find(&infoes)
+
+	totalPage := totalCount / pageSize
+	if totalCount%pageSize != 0 {
+		totalPage += 1
+	}
+	if pageNum > totalPage {
+		pageNum = totalPage
+	}
+
+	pageNum -= 1
+	var infos []dao.ChannelInfo
+	_ = db.Select(q.True()).OrderBy("Id").Reverse().Skip(pageNum * pageSize).Limit(pageSize).Find(&infos)
 	context.JSON(http.StatusOK, gin.H{
-		"data":       infoes,
+		"data":       infos,
 		"totalCount": totalCount,
+		"totalPage":  totalPage,
+		"pageNum":    pageNum + 1,
+		"pageSize":   pageSize,
 	})
 }
