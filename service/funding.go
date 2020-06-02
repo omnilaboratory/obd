@@ -692,7 +692,7 @@ func (service *fundingTransactionManager) AssetFundingCreated(jsonData string, u
 		return nil, err
 	}
 
-	//为了生成通道id
+	//生成通道id
 	hash, _ := chainhash.NewHashFromStr(fundingTxid)
 	op := &bean.OutPoint{
 		Hash:  *hash,
@@ -701,20 +701,23 @@ func (service *fundingTransactionManager) AssetFundingCreated(jsonData string, u
 
 	needCreateC1a := false
 	fundingTransaction := &dao.FundingTransaction{}
+	fundingTransaction.TemporaryChannelId = reqData.TemporaryChannelId
 	fundingTransaction.ChannelId = bean.ChannelIdService.NewChanIDFromOutPoint(op)
 	if tool.CheckIsString(&channelInfo.ChannelId) { //不是第一次发送请求
 		if fundingTransaction.ChannelId != channelInfo.ChannelId { //不同的充值交易id
-			//如果不是相同的充值交易，则会生成不同的通道id，这个通道id就需要去检测唯一性
-			count, err := tx.Select(q.Eq("ChannelId", fundingTransaction.ChannelId)).Count(channelInfo)
-			if err != nil || count != 0 {
-				err = errors.New("fundingTx have been used")
-				log.Println(err)
-				return nil, err
-			}
 			needCreateC1a = true
 		}
 	} else { //第一次发送请求
 		needCreateC1a = true
+	}
+
+	if needCreateC1a {
+		flag := httpGetChannelStateFromTracker(fundingTransaction.ChannelId)
+		if flag != 0 && flag != int(dao.ChannelState_WaitFundAsset) {
+			err = errors.New("fundingTx have been used")
+			log.Println(err)
+			return nil, err
+		}
 	}
 
 	fundingTransaction.ChannelInfoId = channelInfo.Id
@@ -751,9 +754,6 @@ func (service *fundingTransactionManager) AssetFundingCreated(jsonData string, u
 
 	var commitmentTxInfo *dao.CommitmentTransaction
 	if needCreateC1a {
-		// TODO 创建C1a 充值交易的output是通道地址的input，这个input需要在双方签名的基础上才能开销，
-		//  C1a的资产分配，就是把充值的额度全部给alice，
-		//  不过alice不能直接获取到这个钱，需要用一个临时多签去锁住，且赎回条件是bob同意并且需要等待1000个区块高度
 		//region  create C1 tx
 		funder := user.PeerId
 		var outputBean = commitmentOutputBean{}
@@ -836,7 +836,6 @@ func (service *fundingTransactionManager) AssetFundingCreated(jsonData string, u
 
 	node := make(map[string]interface{})
 	node["temporary_channel_id"] = reqData.TemporaryChannelId
-	node["channel_id"] = fundingTransaction.ChannelId
 	node["funding_omni_hex"] = fundingTransaction.FundingTxHex
 	node["c1a_rsmc_hex"] = commitmentTxInfo.RSMCTxHex
 	node["rsmc_temp_address_pub_key"] = commitmentTxInfo.RSMCTempAddressPubKey
@@ -846,11 +845,10 @@ func (service *fundingTransactionManager) AssetFundingCreated(jsonData string, u
 func (service *fundingTransactionManager) BeforeBobSignOmniFundingAtBobSide(data string, user *bean.User) (outData interface{}, err error) {
 	jsonObj := gjson.Parse(data)
 	temporaryChannelId := jsonObj.Get("temporary_channel_id").String()
-	channelId := jsonObj.Get("channel_id").String()
 	fundingTxHex := jsonObj.Get("funding_omni_hex").String()
 	c1aRemcHex := jsonObj.Get("c1a_rsmc_hex").String()
 	rsmcTempAddressPubKey := jsonObj.Get("rsmc_temp_address_pub_key").String()
-	if tool.CheckIsString(&channelId) == false {
+	if tool.CheckIsString(&temporaryChannelId) == false {
 		err = errors.New("wrong temporaryChannelId ")
 		log.Println(err)
 		return nil, err
@@ -906,24 +904,23 @@ func (service *fundingTransactionManager) BeforeBobSignOmniFundingAtBobSide(data
 		return nil, err
 	}
 
+	//生成通道id
+	hash, _ := chainhash.NewHashFromStr(fundingTxid)
+	op := &bean.OutPoint{
+		Hash:  *hash,
+		Index: fundingOutputIndex,
+	}
+	channelId := bean.ChannelIdService.NewChanIDFromOutPoint(op)
+
 	fundingTransaction := &dao.FundingTransaction{}
 	err = tx.Select(
 		q.Eq("ChannelId", channelId),
+		q.Eq("TemporaryChannelId", temporaryChannelId),
 		q.Eq("FundingTxid", fundingTxid)).
 		OrderBy("CreateAt").Reverse().
 		First(fundingTransaction)
 	if fundingTransaction.Id == 0 {
-		//为了生成通道id
-		hash, _ := chainhash.NewHashFromStr(fundingTxid)
-		op := &bean.OutPoint{
-			Hash:  *hash,
-			Index: fundingOutputIndex,
-		}
-		fundingTransaction.ChannelId = bean.ChannelIdService.NewChanIDFromOutPoint(op)
-		if fundingTransaction.ChannelId != channelId {
-			return nil, errors.New("error funding tx hex")
-		}
-
+		fundingTransaction.ChannelId = channelId
 		fundingTxHexDecode, err := rpcClient.OmniDecodeTransaction(fundingTxHex)
 		if err != nil {
 			err = errors.New("TxHex  parse fail " + err.Error())
@@ -955,6 +952,7 @@ func (service *fundingTransactionManager) BeforeBobSignOmniFundingAtBobSide(data
 				}
 			}
 		}
+		fundingTransaction.TemporaryChannelId = temporaryChannelId
 		fundingTransaction.ChannelInfoId = channelInfo.Id
 		fundingTransaction.PropertyId = propertyId
 		fundingTransaction.PeerIdA = channelInfo.PeerIdA
@@ -998,6 +996,11 @@ func (service *fundingTransactionManager) BeforeBobSignOmniFundingAtBobSide(data
 			fundingTransaction.RsmcTempAddressPubKey = rsmcTempAddressPubKey
 			_ = tx.Update(fundingTransaction)
 		}
+		if tool.CheckIsString(&fundingTransaction.TemporaryChannelId) == false {
+			fundingTransaction.TemporaryChannelId = temporaryChannelId
+			_ = tx.Update(fundingTransaction)
+
+		}
 	}
 
 	if tool.CheckIsString(&channelInfo.ChannelId) == false {
@@ -1015,7 +1018,7 @@ func (service *fundingTransactionManager) BeforeBobSignOmniFundingAtBobSide(data
 		return nil, err
 	}
 	node := make(map[string]interface{})
-	node["channel_id"] = fundingTransaction.ChannelId
+	node["temporary_channel_id"] = temporaryChannelId
 	node["funding_omni_hex"] = fundingTransaction.FundingTxHex
 	node["c1a_rsmc_hex"] = c1aRemcHex
 	return node, err
@@ -1028,8 +1031,8 @@ func (service *fundingTransactionManager) AssetFundingSigned(jsonData string, si
 		return nil, err
 	}
 
-	if tool.CheckIsString(&reqData.ChannelId) == false {
-		return nil, errors.New("wrong ChannelId")
+	if tool.CheckIsString(&reqData.TemporaryChannelId) == false {
+		return nil, errors.New("wrong temporary_channel_id")
 	}
 
 	tx, err := signer.Db.Begin(true)
@@ -1041,7 +1044,7 @@ func (service *fundingTransactionManager) AssetFundingSigned(jsonData string, si
 
 	channelInfo := &dao.ChannelInfo{}
 	err = tx.Select(
-		q.Eq("ChannelId", reqData.ChannelId),
+		q.Eq("TemporaryChannelId", reqData.TemporaryChannelId),
 		q.Eq("CurrState", dao.ChannelState_WaitFundAsset),
 		q.Or(
 			q.Eq("PeerIdA", signer.PeerId),
@@ -1051,15 +1054,17 @@ func (service *fundingTransactionManager) AssetFundingSigned(jsonData string, si
 	if err != nil {
 		channelInfo = nil
 	}
+
 	if channelInfo == nil {
-		err = errors.New("not found channel " + reqData.ChannelId)
+		err = errors.New("not found channel " + reqData.TemporaryChannelId)
 		log.Println(err)
 		return nil, err
 	}
 
 	fundingTransaction := &dao.FundingTransaction{}
 	err = tx.Select(
-		q.Eq("ChannelId", reqData.ChannelId),
+		q.Eq("TemporaryChannelId", reqData.TemporaryChannelId),
+		q.Eq("ChannelId", channelInfo.ChannelId),
 		q.Eq("CurrState", dao.FundingTransactionState_Create)).
 		OrderBy("CreateAt").Reverse().
 		First(fundingTransaction)
@@ -1082,19 +1087,21 @@ func (service *fundingTransactionManager) AssetFundingSigned(jsonData string, si
 	}
 
 	node := make(map[string]interface{})
-	node["channel_id"] = channelInfo.ChannelId
+	node["temporary_channel_id"] = channelInfo.TemporaryChannelId
 	node["approval"] = reqData.Approval
 	fundingTransaction.FundeeSignAt = time.Now()
 	//如果不同意这次充值
 	if reqData.Approval == false {
 		fundingTransaction.CurrState = dao.FundingTransactionState_Defuse
-		err = db.Update(fundingTransaction)
+		err = tx.Update(fundingTransaction)
 		if err != nil {
 			return nil, err
 		}
+		_ = tx.Commit()
 		return node, nil
 	}
-
+	channelInfo.ChannelId = fundingTransaction.ChannelId
+	node["channel_id"] = channelInfo.ChannelId
 	if tool.CheckIsString(&reqData.FundeeChannelAddressPrivateKey) == false {
 		return nil, errors.New("wrong FundeeChannelAddressPrivateKey")
 	}
@@ -1208,7 +1215,7 @@ func (service *fundingTransactionManager) AssetFundingSigned(jsonData string, si
 
 func (service *fundingTransactionManager) AfterBobSignOmniFundingAtAilceSide(data string, user *bean.User) (outData interface{}, err error) {
 	jsonObj := gjson.Parse(data)
-	channelId := jsonObj.Get("channel_id").String()
+	temporaryChannelId := jsonObj.Get("temporary_channel_id").String()
 	rsmcSignedHex := jsonObj.Get("rsmc_signed_hex").String()
 	rdHex := jsonObj.Get("rd_hex").String()
 	approval := jsonObj.Get("approval").Bool()
@@ -1222,7 +1229,7 @@ func (service *fundingTransactionManager) AfterBobSignOmniFundingAtAilceSide(dat
 
 	channelInfo := &dao.ChannelInfo{}
 	err = tx.Select(
-		q.Eq("ChannelId", channelId),
+		q.Eq("TemporaryChannelId", temporaryChannelId),
 		q.Eq("CurrState", dao.ChannelState_WaitFundAsset),
 		q.Or(
 			q.Eq("PeerIdA", user.PeerId),
@@ -1235,16 +1242,12 @@ func (service *fundingTransactionManager) AfterBobSignOmniFundingAtAilceSide(dat
 		return nil, err
 	}
 	fundingTransaction := &dao.FundingTransaction{}
-	err = tx.Select(q.Eq("ChannelId", channelId), q.Eq("CurrState", dao.FundingTransactionState_Create)).First(fundingTransaction)
+	err = tx.Select(
+		q.Eq("TemporaryChannelId", temporaryChannelId),
+		q.Eq("ChannelId", channelInfo.ChannelId),
+		q.Eq("CurrState", dao.FundingTransactionState_Create)).First(fundingTransaction)
 	if err != nil {
 		err = errors.New("not found the fundingTransaction")
-		log.Println(err)
-		return nil, err
-	}
-
-	tempPrivKey := tempAddrPrivateKeyMap[fundingTransaction.FunderPubKey2ForCommitment]
-	if tool.CheckIsString(&tempPrivKey) == false {
-		err = errors.New("not found the FunderPrivKey2ForCommitment")
 		log.Println(err)
 		return nil, err
 	}
@@ -1258,6 +1261,13 @@ func (service *fundingTransactionManager) AfterBobSignOmniFundingAtAilceSide(dat
 		_ = tx.Update(fundingTransaction)
 		_ = tx.Commit()
 		return node, nil
+	}
+
+	tempPrivKey := tempAddrPrivateKeyMap[fundingTransaction.FunderPubKey2ForCommitment]
+	if tool.CheckIsString(&tempPrivKey) == false {
+		err = errors.New("not found the FunderPrivKey2ForCommitment")
+		log.Println(err)
+		return nil, err
 	}
 
 	commitmentTxInfo := &dao.CommitmentTransaction{}

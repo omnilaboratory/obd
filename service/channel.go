@@ -372,7 +372,7 @@ func (this *channelManager) RequestCloseChannel(msg bean.RequestMessage, user *b
 	}
 
 	if channelInfo.CurrState == dao.ChannelState_HtlcTx {
-		flag := httpGetHtlcStateFromTracker(lastCommitmentTx.HtlcChannelPath, lastCommitmentTx.HtlcH)
+		flag := httpGetHtlcStateFromTracker(lastCommitmentTx.HtlcRoutingPacket, lastCommitmentTx.HtlcH)
 		if flag == 1 {
 			return nil, errors.New("R is backward")
 		}

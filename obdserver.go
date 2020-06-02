@@ -34,7 +34,7 @@ func init() {
 	}
 	fileAndStdoutWriter := io.MultiWriter(writers...)
 	log.SetOutput(fileAndStdoutWriter)
-	log.SetFlags(log.Ldate | log.Ltime | log.Llongfile)
+	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
 }
 
 // gox compile  https://blog.csdn.net/han0373/article/details/81391455

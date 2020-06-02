@@ -59,7 +59,7 @@ type OpenChannelInfo struct {
 	HtlcMinimumMsat          uint64              `json:"htlc_minimum_msat"`
 	FeeRatePerKw             uint32              `json:"fee_rate_per_kw"`
 	ToSelfDelay              uint16              `json:"to_self_delay"`
-	MaxAcceptedHtlcs         uint16              `json:"max_accepted_htlcs"`
+	MaxAcceptedHtlcs         uint16              `json:"max_accepted_htlcs"` //最多可以接受多少给hltc请求 500
 	FundingPubKey            string              `json:"funding_pubkey"`
 	FundingAddress           string              `json:"funding_address"`
 	RevocationBasePoint      chainhash.Point     `json:"revocation_base_point"`
@@ -121,7 +121,7 @@ type FundingBtcSigned struct {
 
 //type: -35 (funding_signed)
 type FundingSigned struct {
-	ChannelId string `json:"channel_id"`
+	TemporaryChannelId string `json:"temporary_channel_id"`
 	//the omni address of funder Alice
 	FunderPubKey string `json:"funder_pub_key"`
 	// the id of the Omni asset
@@ -206,7 +206,8 @@ type AddHtlcRequest struct {
 	Amount                               float64 `json:"amount"`
 	Memo                                 string  `json:"memo"`
 	H                                    string  `json:"h"`
-	HtlcChannelPath                      string  `json:"htlc_channel_path"`
+	CltvExpiry                           int     `json:"cltv_expiry"` //发起者设定的总的等待的区块个数
+	RoutingPacket                        string  `json:"routing_packet"`
 	ChannelAddressPrivateKey             string  `json:"channel_address_private_key"`                 //	开通通道用到的地址的私钥
 	LastTempAddressPrivateKey            string  `json:"last_temp_address_private_key"`               //	上个RSMC委托交易用到的临时地址的私钥
 	CurrRsmcTempAddressPubKey            string  `json:"curr_rsmc_temp_address_pub_key"`              //	创建Cnx中的toRsmc的部分使用的临时地址的公钥
@@ -219,8 +220,7 @@ type AddHtlcRequest struct {
 
 //type -41: bob sign the request for the interNode
 type HtlcSignGetH struct {
-	RequestHash                   string `json:"request_hash"`
-	Approval                      bool   `json:"approval"`                           // true agree false disagree ,最后的收款节点，必须是true
+	AliceCommitmentTxHash         string `json:"alice_commitment_tx_hash"`
 	ChannelAddressPrivateKey      string `json:"channel_address_private_key"`        //	开通通道用到的私钥
 	LastTempAddressPrivateKey     string `json:"last_temp_address_private_key"`      //	上个RSMC委托交易用到的临时私钥
 	CurrRsmcTempAddressPubKey     string `json:"curr_rsmc_temp_address_pub_key"`     //	创建Cnx中的toRsmc的部分使用的临时地址的公钥

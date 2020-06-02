@@ -32,7 +32,7 @@ func init() {
 	}
 	fileAndStdoutWriter := io.MultiWriter(writers...)
 	log.SetOutput(fileAndStdoutWriter)
-	log.SetFlags(log.Ldate | log.Ltime | log.Llongfile)
+	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
 }
 
 // gox -os "windows linux darwin" -arch amd64

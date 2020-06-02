@@ -73,6 +73,7 @@ const (
 
 type FundingTransaction struct {
 	Id                         int                     `storm:"id,increment" json:"id"`
+	TemporaryChannelId         string                  `json:"temporary_channel_id"`
 	ChannelInfoId              int                     `json:"channel_info_id"`
 	CurrState                  FundingTransactionState `json:"curr_state"`
 	PeerIdA                    string                  `json:"peer_id_a"`
@@ -180,7 +181,8 @@ type CommitmentTransaction struct {
 	AmountToCounterparty           float64 `json:"amount_to_counterparty"`               //amount to bob(if Cna) or alice(if Cnb)
 	FromCounterpartySideForMeTxHex string  `json:"from_counterparty_side_for_me_tx_hex"` //对方给自己的转账部分，防止对方不广播此交易
 	//htlc
-	HtlcChannelPath              string  `json:"htlc_channel_path"`         //借道Path
+	HtlcRoutingPacket            string  `json:"htlc_routing_packet"`       //借道Path
+	HtlcCltvExpiry               int     `json:"htlc_cltv_expiry"`          //借道的最大超时 分钟为单位
 	BeginBlockHeight             int     `json:"begin_block_height"`        //借道时的区块高度
 	HTLCTempAddressPubKey        string  `json:"htlc_temp_address_pub_key"` //alice for htlc or bob for htlc
 	HTLCMultiAddress             string  `json:"htlc_multi_address"`        //output aliceTempHtlc&bob  or alice&bobTempHtlc  multiAddr

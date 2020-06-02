@@ -9,7 +9,6 @@ import (
 	"github.com/omnilaboratory/obd/dao"
 	"github.com/tidwall/gjson"
 	"log"
-	"strings"
 	"time"
 )
 
@@ -212,19 +211,6 @@ func createHtlcRDTxObj(owner string, channelInfo *dao.ChannelInfo, htlcTimeoutTx
 	htrd.LastEditTime = time.Now()
 
 	return htrd, nil
-}
-
-func getHtlcTimeout(htlcChannelPath string, currChannelId string) (htlcTimeOut int) {
-	channelIds := strings.Split(htlcChannelPath, ",")
-	var totalStep = len(channelIds)
-	var currStep = 0
-	for index, channelId := range channelIds {
-		if channelId == currChannelId {
-			currStep = index
-			break
-		}
-	}
-	return (totalStep - currStep) * singleHopPerHopDuration
 }
 
 //为alice生成HT1a

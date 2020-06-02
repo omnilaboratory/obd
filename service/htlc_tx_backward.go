@@ -145,7 +145,7 @@ func (service *htlcBackwardTxManager) SendRToPreviousNode_Step1(msg bean.Request
 		return nil, errors.New("fail to get blockHeight ,please try again later")
 	}
 
-	htlcTimeOut := getHtlcTimeout(latestCommitmentTxInfo.HtlcChannelPath, channelInfo.ChannelId)
+	htlcTimeOut := latestCommitmentTxInfo.HtlcCltvExpiry
 	maxHeight := latestCommitmentTxInfo.BeginBlockHeight + htlcTimeOut
 	if config.ChainNode_Type == "mainnet" {
 		if currBlockHeight > maxHeight {
@@ -453,9 +453,9 @@ func (service *htlcBackwardTxManager) SignHed1aAndUpdate_Step4(msgData string, u
 
 	//更新tracker的htlc的状态
 	txStateRequest := trackerBean.UpdateHtlcTxStateRequest{}
-	txStateRequest.Path = commitmentTxInfo.HtlcChannelPath
+	txStateRequest.Path = commitmentTxInfo.HtlcRoutingPacket
 	txStateRequest.H = commitmentTxInfo.HtlcH
-	if strings.HasSuffix(commitmentTxInfo.HtlcChannelPath, channelInfo.ChannelId) {
+	if strings.HasSuffix(commitmentTxInfo.HtlcRoutingPacket, channelInfo.ChannelId) {
 		txStateRequest.R = commitmentTxInfo.HtlcR
 	}
 	txStateRequest.DirectionFlag = trackerBean.HtlcTxState_ConfirmPayMoney

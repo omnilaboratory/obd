@@ -468,7 +468,7 @@ func signHTD1bTx(tx storm.Node, signedHtlcHex string, htd1bHex string, latestCco
 		owner = latestCcommitmentTxInfo.PeerIdB
 	}
 
-	htlcTimeOut := getHtlcTimeout(latestCcommitmentTxInfo.HtlcChannelPath, latestCcommitmentTxInfo.ChannelId)
+	htlcTimeOut := latestCcommitmentTxInfo.HtlcCltvExpiry
 	htlcTimeoutDeliveryTx := &dao.HTLCTimeoutDeliveryTxB{}
 	htlcTimeoutDeliveryTx.ChannelId = latestCcommitmentTxInfo.ChannelId
 	htlcTimeoutDeliveryTx.CommitmentTxId = latestCcommitmentTxInfo.Id
@@ -672,7 +672,7 @@ func sendMsgToTracker(msgType enum.MsgType, data interface{}) {
 	}
 }
 
-func httpGetHtlcStateFromTracker(path string, h string) (flag int64) {
+func httpGetHtlcStateFromTracker(path string, h string) (flag int) {
 	url := "http://" + config.TrackerHost + "/api/v1/getHtlcTxState?path=" + path + "&h=" + h
 	log.Println(url)
 	resp, err := http.Get(url)
@@ -683,12 +683,12 @@ func httpGetHtlcStateFromTracker(path string, h string) (flag int64) {
 	if resp.StatusCode == 200 {
 		body, _ := ioutil.ReadAll(resp.Body)
 		log.Println(string(body))
-		return gjson.Get(string(body), "data").Get("flag").Int()
+		return int(gjson.Get(string(body), "data").Get("flag").Int())
 	}
 	return 0
 }
 
-func httpGetChannelStateFromTracker(channelId string) (flag int64) {
+func httpGetChannelStateFromTracker(channelId string) (flag int) {
 	url := "http://" + config.TrackerHost + "/api/v1/getChannelState?channelId=" + channelId
 	log.Println(url)
 	resp, err := http.Get(url)
@@ -699,11 +699,11 @@ func httpGetChannelStateFromTracker(channelId string) (flag int64) {
 	if resp.StatusCode == 200 {
 		body, _ := ioutil.ReadAll(resp.Body)
 		log.Println(string(body))
-		return gjson.Get(string(body), "data").Get("state").Int()
+		return int(gjson.Get(string(body), "data").Get("state").Int())
 	}
 	return 0
 }
-func HttpGetUserStateFromTracker(userId string) (flag int64) {
+func HttpGetUserStateFromTracker(userId string) (flag int) {
 	url := "http://" + config.TrackerHost + "/api/v1/getUserState?userId=" + userId
 	log.Println(url)
 	resp, err := http.Get(url)
@@ -714,7 +714,7 @@ func HttpGetUserStateFromTracker(userId string) (flag int64) {
 	if resp.StatusCode == 200 {
 		body, _ := ioutil.ReadAll(resp.Body)
 		log.Println(string(body))
-		return gjson.Get(string(body), "data").Get("state").Int()
+		return int(gjson.Get(string(body), "data").Get("state").Int())
 	}
 	return 0
 }

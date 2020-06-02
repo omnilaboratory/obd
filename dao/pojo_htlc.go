@@ -14,7 +14,7 @@ type AddHtlcRequestInfo struct {
 	Amount                           float64     `json:"amount"`
 	Memo                             string      `json:"memo"`
 	H                                string      `json:"h"`
-	HtlcChannelPath                  string      `json:"htlc_channel_path"`
+	RoutingPacket                    string      `json:"routing_packet"`
 	LastTempAddressPrivateKey        string      `json:"last_temp_address_private_key"`           //	支付方的上一个RSMC委托交易用到的临时地址的私钥 存储在bob这边的请求
 	CurrRsmcTempAddressPubKey        string      `json:"curr_rsmc_temp_address_pub_key"`          //	创建Cnx中的toRsmc的部分使用的临时地址的公钥
 	CurrHtlcTempAddressPubKey        string      `json:"curr_htlc_temp_address_pub_key"`          //	创建Cnx中的toHtlc的部分使用的临时地址的公钥
