@@ -91,6 +91,10 @@ func (service *UserManager) UserLogin(user *bean.User) error {
 		return err
 	}
 
+	//temp := &dao.CommitmentTransaction{}
+	//err = userDB.One("Id", 13, temp)
+	//err = userDB.DeleteStruct(temp)
+
 	loginLog := &dao.UserLoginLog{}
 	loginLog.PeerId = user.PeerId
 	loginLog.LoginAt = time.Now()

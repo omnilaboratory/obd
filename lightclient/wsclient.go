@@ -470,22 +470,16 @@ func p2pMiddleNodeTransferData(msg *bean.RequestMessage, itemClient Client, data
 	}
 
 	if msg.Type == enum.MsgType_HTLC_PayerSignC3b_N42 {
-		jsonObj := gjson.Parse(data)
-		approval := jsonObj.Get("approval").Bool()
-		if approval {
-			newMsg := bean.RequestMessage{}
-			newMsg.Type = enum.MsgType_HTLC_PayeeCreateHTRD1a_N43
-			newMsg.SenderUserPeerId = itemClient.User.PeerId
-			newMsg.SenderNodePeerId = P2PLocalPeerId
-			newMsg.RecipientUserPeerId = msg.SenderUserPeerId
-			newMsg.RecipientNodePeerId = msg.SenderNodePeerId
-			newMsg.Data = data
-			//转发给bob
-			_ = itemClient.sendDataToP2PUser(newMsg, true, newMsg.Data)
-			return ""
-		} else {
-			msg.Type = enum.MsgType_HTLC_AddHTLCSigned_N41
-		}
+		newMsg := bean.RequestMessage{}
+		newMsg.Type = enum.MsgType_HTLC_PayeeCreateHTRD1a_N43
+		newMsg.SenderUserPeerId = itemClient.User.PeerId
+		newMsg.SenderNodePeerId = P2PLocalPeerId
+		newMsg.RecipientUserPeerId = msg.SenderUserPeerId
+		newMsg.RecipientNodePeerId = msg.SenderNodePeerId
+		newMsg.Data = data
+		//转发给bob
+		_ = itemClient.sendDataToP2PUser(newMsg, true, newMsg.Data)
+		return ""
 	}
 
 	//当43处理完成，就改成41的返回 42和43对用户是透明的
@@ -502,7 +496,7 @@ func p2pMiddleNodeTransferData(msg *bean.RequestMessage, itemClient Client, data
 		return ""
 	}
 
-	//当43处理完成，就改成41的返回 42和43对用户是透明的
+	//当44处理完成，就改成41的返回 42和43对用户是透明的
 	if msg.Type == enum.MsgType_HTLC_PayerSignHTRD1a_N44 {
 		msg.Type = enum.MsgType_HTLC_AddHTLCSigned_N41
 	}

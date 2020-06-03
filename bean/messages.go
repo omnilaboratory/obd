@@ -248,6 +248,23 @@ type AddHtlcRequest struct {
 	CurrHtlcTempAddressForHt1aPrivateKey string  `json:"curr_htlc_temp_address_for_ht1a_private_key"` //	创建Ht1a中生成ht1a的输出的Rmsc的临时地址的私钥
 }
 
+type AliceRequestAddHtlc struct {
+	ChannelId                        string  `json:"channel_id"`
+	Amount                           float64 `json:"amount"`
+	RoutingPacket                    string  `json:"routing_packet"`
+	CltvExpiry                       int     `json:"cltv_expiry"` //发起者设定的总的等待的区块个数
+	CommitmentTxHash                 string  `json:"commitment_tx_hash"`
+	Memo                             string  `json:"memo"`
+	H                                string  `json:"h"`
+	CounterpartyTxHex                string  `json:"counterparty_tx_hex"`
+	HtlcTxHex                        string  `json:"htlc_tx_hex"`
+	RsmcTxHex                        string  `json:"rsmc_tx_hex"`
+	LastTempAddressPrivateKey        string  `json:"last_temp_address_private_key"`
+	CurrRsmcTempAddressPubKey        string  `json:"curr_rsmc_temp_address_pub_key"`
+	CurrHtlcTempAddressPubKey        string  `json:"curr_htlc_temp_address_pub_key"`
+	CurrHtlcTempAddressForHt1aPubKey string  `json:"curr_htlc_temp_address_for_ht1a_pub_key"`
+}
+
 //type -41: bob sign the request for the interNode
 type HtlcSignGetH struct {
 	AliceCommitmentTxHash         string `json:"alice_commitment_tx_hash"`

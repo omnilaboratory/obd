@@ -214,10 +214,10 @@ func createHtlcRDTxObj(owner string, channelInfo *dao.ChannelInfo, htlcTimeoutTx
 }
 
 //为alice生成HT1a
-func createHT1aForAlice(aliceDataJson gjson.Result, signedHtlcHex string,
+func createHT1aForAlice(aliceDataJson bean.AliceRequestAddHtlc, signedHtlcHex string,
 	bobChannelPubKey string, bobChannelAddressPrivateKey string,
 	propertyId int64, amountToHtlc float64, htlcTimeOut int) (*string, error) {
-	aliceHtlcMultiAddr, err := rpcClient.CreateMultiSig(2, []string{aliceDataJson.Get("currHtlcTempAddressPubKey").String(), bobChannelPubKey})
+	aliceHtlcMultiAddr, err := rpcClient.CreateMultiSig(2, []string{aliceDataJson.CurrHtlcTempAddressPubKey, bobChannelPubKey})
 	if err != nil {
 		return nil, err
 	}
@@ -235,7 +235,7 @@ func createHT1aForAlice(aliceDataJson gjson.Result, signedHtlcHex string,
 		return nil, err
 	}
 
-	aliceHt1aMultiAddr, err := rpcClient.CreateMultiSig(2, []string{aliceDataJson.Get("currHtlcTempAddressForHt1aPubKey").String(), bobChannelPubKey})
+	aliceHt1aMultiAddr, err := rpcClient.CreateMultiSig(2, []string{aliceDataJson.CurrHtlcTempAddressForHt1aPubKey, bobChannelPubKey})
 	if err != nil {
 		return nil, err
 	}
@@ -312,10 +312,10 @@ func signHT1aForAlice(tx storm.Node, channelInfo dao.ChannelInfo, commitmentTran
 }
 
 // 收款方在41号协议用签名完成toHtlc的Hex，就用这个完整交易Hex，构建C3a方的Hlock交易
-func createHtlcLockByHForBobAtPayeeSide(aliceDataJson gjson.Result, signedHtlcHex string,
+func createHtlcLockByHForBobAtPayeeSide(aliceDataJson bean.AliceRequestAddHtlc, signedHtlcHex string,
 	bobChannelPubKey string, bobChannelAddressPrivateKey string,
 	propertyId int64, amountToHtlc float64) (*string, error) {
-	aliceHtlcMultiAddr, err := rpcClient.CreateMultiSig(2, []string{aliceDataJson.Get("currHtlcTempAddressPubKey").String(), bobChannelPubKey})
+	aliceHtlcMultiAddr, err := rpcClient.CreateMultiSig(2, []string{aliceDataJson.CurrHtlcTempAddressPubKey, bobChannelPubKey})
 	if err != nil {
 		return nil, err
 	}
@@ -333,7 +333,7 @@ func createHtlcLockByHForBobAtPayeeSide(aliceDataJson gjson.Result, signedHtlcHe
 		return nil, err
 	}
 
-	htlcLockByHMultiAddr, err := rpcClient.CreateMultiSig(2, []string{aliceDataJson.Get("h").String(), bobChannelPubKey})
+	htlcLockByHMultiAddr, err := rpcClient.CreateMultiSig(2, []string{aliceDataJson.H, bobChannelPubKey})
 	if err != nil {
 		return nil, err
 	}
