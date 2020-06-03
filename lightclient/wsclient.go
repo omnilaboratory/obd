@@ -444,15 +444,17 @@ func p2pMiddleNodeTransferData(msg *bean.RequestMessage, itemClient Client, data
 	//当前的353消息本身是从bob发给Alice的
 	if msg.Type == enum.MsgType_CommitmentTxSigned_ToAliceSign_N353 {
 		//	发给bob的信息
-		newMsg := bean.RequestMessage{}
-		newMsg.Type = enum.MsgType_CommitmentTxSigned_SecondToBobSign_N354
-		newMsg.SenderUserPeerId = itemClient.User.PeerId
-		newMsg.SenderNodePeerId = P2PLocalPeerId
-		newMsg.RecipientUserPeerId = msg.SenderUserPeerId
-		newMsg.RecipientNodePeerId = msg.SenderNodePeerId
-		payeeData := gjson.Parse(retData).Get("bobData").String()
-		//转发给bob，
-		_ = itemClient.sendDataToP2PUser(newMsg, true, payeeData)
+		if gjson.Parse(retData).Get("bobData").Exists() {
+			newMsg := bean.RequestMessage{}
+			newMsg.Type = enum.MsgType_CommitmentTxSigned_SecondToBobSign_N354
+			newMsg.SenderUserPeerId = itemClient.User.PeerId
+			newMsg.SenderNodePeerId = P2PLocalPeerId
+			newMsg.RecipientUserPeerId = msg.SenderUserPeerId
+			newMsg.RecipientNodePeerId = msg.SenderNodePeerId
+			payeeData := gjson.Parse(retData).Get("bobData").String()
+			//转发给bob，
+			_ = itemClient.sendDataToP2PUser(newMsg, true, payeeData)
+		}
 
 		//发给alice
 		msg.Type = enum.MsgType_CommitmentTxSigned_RevokeAndAcknowledgeCommitmentTransaction_N352

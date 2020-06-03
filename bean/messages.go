@@ -153,10 +153,40 @@ type CommitmentTx struct {
 	CurrTempAddressPrivateKey string  `json:"curr_temp_address_private_key"`
 }
 
+//p2p 351
+type AliceRequestCreateCommitmentTx struct {
+	ChannelId                 string  `json:"channel_id"` //the global channel id.
+	CommitmentTxHash          string  `json:"commitment_tx_hash"`
+	Amount                    float64 `json:"amount"` //amount of the payment
+	ToCounterpartyTxHex       string  `json:"to_counterparty_tx_hex"`
+	RsmcHex                   string  `json:"rsmc_hex"`
+	LastTempAddressPrivateKey string  `json:"last_temp_address_private_key"`
+	CurrTempAddressPubKey     string  `json:"curr_temp_address_pub_key"`
+}
+
+type AliceRequestCreateCommitmentTxToBobClient struct {
+	AliceRequestCreateCommitmentTx
+	MsgHash string `json:"msg_hash"`
+}
+
+//p2p 352
+type BobSignCommitmentTx struct {
+	ChannelId                 string `json:"channel_id"` //the global channel id.
+	CommitmentTxHash          string `json:"commitment_tx_hash"`
+	Approval                  bool   `json:"approval"`
+	ToCounterpartyTxHex       string `json:"to_counterparty_tx_hex"`
+	RsmcHex                   string `json:"rsmc_hex"`
+	LastTempAddressPrivateKey string `json:"last_temp_address_private_key"`
+	CurrTempAddressPubKey     string `json:"curr_temp_address_pub_key"`
+	SignedRsmcHex             string `json:"signed_rsmc_hex"`
+	SignedToCounterpartyTxHex string `json:"signed_to_counterparty_tx_hex"`
+	PayerRdHex                string `json:"payer_rd_hex"`
+}
+
 //type: -352 (commitment_tx_signed)
 type CommitmentTxSigned struct {
 	ChannelId                 string `json:"channel_id"`
-	RequestCommitmentHash     string `json:"request_commitment_hash"`
+	MsgHash                   string `json:"msg_hash"`
 	ChannelAddressPrivateKey  string `json:"channel_address_private_key"`   // bob private key
 	LastTempAddressPrivateKey string `json:"last_temp_address_private_key"` // bob2's private key
 	CurrTempAddressPubKey     string `json:"curr_temp_address_pub_key"`     // bob3 or alice3

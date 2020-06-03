@@ -70,7 +70,6 @@ func routerOfP2PNode(msgType enum.MsgType, data string, client *Client) (retData
 			retData, _ := json.Marshal(node)
 			return string(retData), nil
 		}
-
 		defaultErr = err
 	case enum.MsgType_CommitmentTxSigned_SecondToBobSign_N354:
 		node, err := service.CommitmentTxSignedService.AfterAliceSignCommitmentTranctionAtBobSide(data, client.User)

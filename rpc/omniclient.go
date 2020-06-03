@@ -359,13 +359,9 @@ func (client *Client) OmniCreateAndSignRawTransactionUseSingleInput(txType int, 
 	}
 
 	pMoney := config.GetOmniDustBtc()
-	if minerFee < config.GetOmniDustBtc() {
+	if minerFee < pMoney {
 		minerFee = config.GetMinerFee()
 	}
-
-	out, _ := decimal.NewFromFloat(pMoney).
-		Add(decimal.NewFromFloat(minerFee)).
-		Float64()
 
 	_, _ = client.ValidateAddress(fromBitCoinAddress)
 	_, _ = client.ValidateAddress(toBitCoinAddress)
@@ -390,7 +386,7 @@ func (client *Client) OmniCreateAndSignRawTransactionUseSingleInput(txType int, 
 			continue
 		}
 		inputAmount := item.Get("amount").Float()
-		if inputAmount >= out {
+		if inputAmount > pMoney {
 			node := make(map[string]interface{})
 			node["txid"] = item.Get("txid").String()
 			node["vout"] = item.Get("vout").Int()
@@ -409,6 +405,15 @@ func (client *Client) OmniCreateAndSignRawTransactionUseSingleInput(txType int, 
 		return "", "", "", errors.New("not found the miner fee input")
 	}
 
+	minMinerFee := config.GetMinMinerFee(len(inputs))
+	if minerFee < minMinerFee {
+		minerFee = minMinerFee
+	}
+
+	out, _ := decimal.NewFromFloat(pMoney).
+		Add(decimal.NewFromFloat(minerFee)).
+		Round(8).
+		Float64()
 	log.Println("1 balance", balance)
 	if balance < out {
 		return "", "", "", errors.New("not enough balance")
@@ -503,10 +508,6 @@ func (client *Client) OmniCreateAndSignRawTransactionUseRestInput(txType int, fr
 		minerFee = config.GetMinerFee()
 	}
 
-	out, _ := decimal.NewFromFloat(minerFee).
-		Add(decimal.NewFromFloat(pMoney)).
-		Float64()
-
 	_, _ = client.ValidateAddress(fromBitCoinAddress)
 	_, _ = client.ValidateAddress(toBitCoinAddress)
 
@@ -536,6 +537,15 @@ func (client *Client) OmniCreateAndSignRawTransactionUseRestInput(txType int, fr
 			inputs = append(inputs, node)
 		}
 	}
+
+	minMinerFee := config.GetMinMinerFee(len(inputs))
+	if minerFee < minMinerFee {
+		minerFee = minMinerFee
+	}
+	out, _ := decimal.NewFromFloat(minerFee).
+		Add(decimal.NewFromFloat(pMoney)).
+		Round(8).
+		Float64()
 
 	balance := 0.0
 	for _, item := range inputs {

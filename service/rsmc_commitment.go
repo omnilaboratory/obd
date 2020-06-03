@@ -24,7 +24,7 @@ type commitmentTxManager struct {
 
 var CommitmentTxService commitmentTxManager
 
-func (this *commitmentTxManager) CommitmentTransactionCreated(msg bean.RequestMessage, creator *bean.User) (retData map[string]interface{}, err error) {
+func (this *commitmentTxManager) CommitmentTransactionCreated(msg bean.RequestMessage, creator *bean.User) (retData *bean.AliceRequestCreateCommitmentTx, err error) {
 	if tool.CheckIsString(&msg.Data) == false {
 		return nil, errors.New("empty json reqData")
 	}
@@ -133,24 +133,24 @@ func (this *commitmentTxManager) CommitmentTransactionCreated(msg bean.RequestMe
 	tempAddrPrivateKeyMap[reqData.CurrTempAddressPubKey] = reqData.CurrTempAddressPrivateKey
 	//endregion
 
-	retData = make(map[string]interface{})
-	retData["channelId"] = channelInfo.ChannelId
-	retData["amount"] = reqData.Amount
-	retData["lastTempAddressPrivateKey"] = reqData.LastTempAddressPrivateKey
-	retData["currTempAddressPubKey"] = reqData.CurrTempAddressPubKey
+	retData = &bean.AliceRequestCreateCommitmentTx{}
+	retData.ChannelId = channelInfo.ChannelId
+	retData.Amount = reqData.Amount
+	retData.LastTempAddressPrivateKey = reqData.LastTempAddressPrivateKey
+	retData.CurrTempAddressPubKey = reqData.CurrTempAddressPubKey
 	if latestCommitmentTxInfo.CurrState == dao.TxInfoState_CreateAndSign {
 		//创建c2a omni的交易不能一个输入，多个输出，所以就是两个交易
 		newCommitmentTxInfo, err := createCommitmentTxHex(tx, true, reqData, channelInfo, latestCommitmentTxInfo, *creator)
 		if err != nil {
 			return nil, err
 		}
-		retData["rsmcHex"] = newCommitmentTxInfo.RSMCTxHex
-		retData["toOtherHex"] = newCommitmentTxInfo.ToCounterpartyTxHex
-		retData["commitmentHash"] = newCommitmentTxInfo.CurrHash
+		retData.RsmcHex = newCommitmentTxInfo.RSMCTxHex
+		retData.ToCounterpartyTxHex = newCommitmentTxInfo.ToCounterpartyTxHex
+		retData.CommitmentTxHash = newCommitmentTxInfo.CurrHash
 	} else {
-		retData["rsmcHex"] = latestCommitmentTxInfo.RSMCTxHex
-		retData["toOtherHex"] = latestCommitmentTxInfo.ToCounterpartyTxHex
-		retData["commitmentHash"] = latestCommitmentTxInfo.CurrHash
+		retData.RsmcHex = latestCommitmentTxInfo.RSMCTxHex
+		retData.ToCounterpartyTxHex = latestCommitmentTxInfo.ToCounterpartyTxHex
+		retData.CommitmentTxHash = latestCommitmentTxInfo.CurrHash
 	}
 	_ = tx.Commit()
 
@@ -159,23 +159,67 @@ func (this *commitmentTxManager) CommitmentTransactionCreated(msg bean.RequestMe
 
 //353 352的请求阶段完成，需要Alice这边签名C2b等相关的交易
 func (this *commitmentTxManager) AfterBobSignCommitmentTranctionAtAliceSide(data string, user *bean.User) (retData map[string]interface{}, needNoticeAlice bool, err error) {
-	jsonObj := gjson.Parse(data)
+	signCommitmentTx := &bean.BobSignCommitmentTx{}
+	_ = json.Unmarshal([]byte(data), signCommitmentTx)
 
 	//region 检测传入数据
-	var channelId = jsonObj.Get("channelId").String()
+	var channelId = signCommitmentTx.ChannelId
 	if tool.CheckIsString(&channelId) == false {
 		err = errors.New("wrong channelId")
 		log.Println(err)
 		return nil, false, err
 	}
-	var commitmentTxHash = jsonObj.Get("commitmentTxHash").String()
+	var commitmentTxHash = signCommitmentTx.CommitmentTxHash
 	if tool.CheckIsString(&commitmentTxHash) == false {
 		err = errors.New("wrong commitmentTxHash")
 		log.Println(err)
 		return nil, false, err
 	}
 
-	var signedRsmcHex = jsonObj.Get("signedRsmcHex").String()
+	tx, err := user.Db.Begin(true)
+	if err != nil {
+		log.Println(err)
+		return nil, true, err
+	}
+	defer tx.Rollback()
+
+	channelInfo := getChannelInfoByChannelId(tx, channelId, user.PeerId)
+	if channelInfo == nil {
+		return nil, true, errors.New("not found channelInfo at targetSide")
+	}
+
+	latestCommitmentTxInfo, err := getLatestCommitmentTxUseDbTx(tx, channelId, user.PeerId)
+	if err != nil {
+		err = errors.New("fail to find sender's commitmentTxInfo")
+		log.Println(err)
+		return nil, true, err
+	}
+
+	if latestCommitmentTxInfo.CurrHash != commitmentTxHash {
+		err = errors.New("wrong request hash")
+		log.Println(err)
+		return nil, false, err
+	}
+
+	if latestCommitmentTxInfo.CurrState != dao.TxInfoState_Create {
+		err = errors.New("wrong commitmentTxInfo state " + strconv.Itoa(int(latestCommitmentTxInfo.CurrState)))
+		log.Println(err)
+		return nil, false, err
+	}
+
+	aliceData := make(map[string]interface{})
+	aliceData["approval"] = signCommitmentTx.Approval
+	aliceData["channel_Id"] = signCommitmentTx.ChannelId
+
+	retData = make(map[string]interface{})
+	retData["aliceData"] = aliceData
+	if signCommitmentTx.Approval == false {
+		_ = tx.DeleteStruct(latestCommitmentTxInfo)
+		_ = tx.Commit()
+		return retData, false, nil
+	}
+
+	var signedRsmcHex = signCommitmentTx.SignedRsmcHex
 	if tool.CheckIsString(&signedRsmcHex) == false {
 		err = errors.New("wrong signedRsmcHex")
 		log.Println(err)
@@ -188,7 +232,7 @@ func (this *commitmentTxManager) AfterBobSignCommitmentTranctionAtAliceSide(data
 		return nil, false, err
 	}
 
-	var signedToOtherHex = jsonObj.Get("signedToOtherHex").String()
+	var signedToOtherHex = signCommitmentTx.SignedToCounterpartyTxHex
 	if tool.CheckIsString(&signedToOtherHex) == false {
 		err = errors.New("wrong signedToOtherHex")
 		log.Println(err)
@@ -201,7 +245,7 @@ func (this *commitmentTxManager) AfterBobSignCommitmentTranctionAtAliceSide(data
 		return nil, false, err
 	}
 
-	var aliceRdHex = jsonObj.Get("senderRdHex").String()
+	var aliceRdHex = signCommitmentTx.PayerRdHex
 	if tool.CheckIsString(&aliceRdHex) == false {
 		err = errors.New("wrong senderRdHex")
 		log.Println(err)
@@ -214,7 +258,7 @@ func (this *commitmentTxManager) AfterBobSignCommitmentTranctionAtAliceSide(data
 		return nil, false, err
 	}
 
-	var bobRsmcHex = jsonObj.Get("rsmcHex").String()
+	var bobRsmcHex = signCommitmentTx.RsmcHex
 	if tool.CheckIsString(&bobRsmcHex) == false {
 		err = errors.New("wrong rsmcHex")
 		log.Println(err)
@@ -227,59 +271,26 @@ func (this *commitmentTxManager) AfterBobSignCommitmentTranctionAtAliceSide(data
 		return nil, false, err
 	}
 
-	var bobCurrTempAddressPubKey = jsonObj.Get("currTempAddressPubKey").String()
+	var bobCurrTempAddressPubKey = signCommitmentTx.CurrTempAddressPubKey
 	if tool.CheckIsString(&bobCurrTempAddressPubKey) == false {
 		err = errors.New("wrong currTempAddressPubKey")
 		log.Println(err)
 		return nil, false, err
 	}
-	var bobToOtherHex = jsonObj.Get("toOtherHex").String()
-	if tool.CheckIsString(&bobToOtherHex) == false {
-		err = errors.New("wrong toOtherHex")
+	var bobToCounterpartyTxHex = signCommitmentTx.ToCounterpartyTxHex
+	if tool.CheckIsString(&bobToCounterpartyTxHex) == false {
+		err = errors.New("wrong toCounterpartyTxHex")
 		log.Println(err)
 		return nil, false, err
 	}
-	var bobLastTempAddressPrivateKey = jsonObj.Get("lastTempAddressPrivateKey").String()
+	var bobLastTempAddressPrivateKey = signCommitmentTx.LastTempAddressPrivateKey
 	//endregion
 
-	tx, err := user.Db.Begin(true)
-	if err != nil {
-		log.Println(err)
-		return nil, true, err
-	}
-	defer tx.Rollback()
-
-	aliceData := make(map[string]interface{})
-	aliceData["approval"] = true
 	bobData := make(map[string]interface{})
-
-	channelInfo := getChannelInfoByChannelId(tx, channelId, user.PeerId)
-	if channelInfo == nil {
-		return nil, true, errors.New("not found channelInfo at targetSide")
-	}
 
 	fundingTransaction := getFundingTransactionByChannelId(tx, channelId, user.PeerId)
 	if fundingTransaction == nil {
 		return nil, true, errors.New("not found fundingTransaction at targetSide")
-	}
-
-	latestCcommitmentTxInfo, err := getLatestCommitmentTxUseDbTx(tx, channelId, user.PeerId)
-	if err != nil {
-		err = errors.New("fail to find sender's commitmentTxInfo")
-		log.Println(err)
-		return nil, true, err
-	}
-
-	if latestCcommitmentTxInfo.CurrHash != commitmentTxHash {
-		err = errors.New("wrong request hash")
-		log.Println(err)
-		return nil, false, err
-	}
-
-	if latestCcommitmentTxInfo.CurrState != dao.TxInfoState_Create {
-		err = errors.New("wrong commitmentTxInfo state " + strconv.Itoa(int(latestCcommitmentTxInfo.CurrState)))
-		log.Println(err)
-		return nil, false, err
 	}
 
 	var myChannelPubKey = channelInfo.PubKeyA
@@ -293,7 +304,7 @@ func (this *commitmentTxManager) AfterBobSignCommitmentTranctionAtAliceSide(data
 	var myChannelPrivateKey = tempAddrPrivateKeyMap[myChannelPubKey]
 
 	//region 根据对方传过来的上一个交易的临时rsmc私钥，签名上一次的BR交易，保证对方确实放弃了上一个承诺交易
-	err = signLastBR(tx, dao.BRType_Rmsc, *channelInfo, user.PeerId, bobLastTempAddressPrivateKey, latestCcommitmentTxInfo.LastCommitmentTxId)
+	err = signLastBR(tx, dao.BRType_Rmsc, *channelInfo, user.PeerId, bobLastTempAddressPrivateKey, latestCommitmentTxInfo.LastCommitmentTxId)
 	if err != nil {
 		log.Println(err)
 		return nil, false, err
@@ -301,30 +312,30 @@ func (this *commitmentTxManager) AfterBobSignCommitmentTranctionAtAliceSide(data
 	//endregion
 
 	// region 对自己的RD 二次签名
-	err = signRdTx(tx, channelInfo, signedRsmcHex, aliceRdHex, *latestCcommitmentTxInfo, myChannelAddress, user)
+	err = signRdTx(tx, channelInfo, signedRsmcHex, aliceRdHex, *latestCommitmentTxInfo, myChannelAddress, user)
 	if err != nil {
 		return nil, true, err
 	}
 	// endregion
 
 	//更新alice的当前承诺交易
-	latestCcommitmentTxInfo.SignAt = time.Now()
-	latestCcommitmentTxInfo.CurrState = dao.TxInfoState_CreateAndSign
-	latestCcommitmentTxInfo.RSMCTxHex = signedRsmcHex
-	latestCcommitmentTxInfo.ToCounterpartyTxHex = signedToOtherHex
-	bytes, err := json.Marshal(latestCcommitmentTxInfo)
+	latestCommitmentTxInfo.SignAt = time.Now()
+	latestCommitmentTxInfo.CurrState = dao.TxInfoState_CreateAndSign
+	latestCommitmentTxInfo.RSMCTxHex = signedRsmcHex
+	latestCommitmentTxInfo.ToCounterpartyTxHex = signedToOtherHex
+	bytes, err := json.Marshal(latestCommitmentTxInfo)
 	msgHash := tool.SignMsgWithSha256(bytes)
-	latestCcommitmentTxInfo.CurrHash = msgHash
-	_ = tx.Update(latestCcommitmentTxInfo)
+	latestCommitmentTxInfo.CurrHash = msgHash
+	_ = tx.Update(latestCommitmentTxInfo)
 
 	lastCommitmentTxInfo := dao.CommitmentTransaction{}
-	err = tx.One("Id", latestCcommitmentTxInfo.LastCommitmentTxId, &lastCommitmentTxInfo)
+	err = tx.One("Id", latestCommitmentTxInfo.LastCommitmentTxId, &lastCommitmentTxInfo)
 	if err == nil {
 		lastCommitmentTxInfo.CurrState = dao.TxInfoState_Abord
 		_ = tx.Update(lastCommitmentTxInfo)
 	}
 
-	aliceData["latestCcommitmentTxInfo"] = latestCcommitmentTxInfo
+	aliceData["latest_commitment_tx_info"] = latestCommitmentTxInfo
 	//处理对方的数据
 	//签名对方传过来的rsmcHex
 	bobRsmcTxid, bobSignedRsmcHex, err := rpcClient.BtcSignRawTransaction(bobRsmcHex, myChannelPrivateKey)
@@ -338,7 +349,7 @@ func (this *commitmentTxManager) AfterBobSignCommitmentTranctionAtAliceSide(data
 	if gjson.Parse(testResult).Array()[0].Get("allowed").Bool() == false {
 		return nil, false, errors.New(gjson.Parse(testResult).Array()[0].Get("reject-reason").String())
 	}
-	err = checkBobRemcData(bobSignedRsmcHex, latestCcommitmentTxInfo)
+	err = checkBobRemcData(bobSignedRsmcHex, latestCommitmentTxInfo)
 	if err != nil {
 		return nil, false, err
 	}
@@ -376,7 +387,7 @@ func (this *commitmentTxManager) AfterBobSignCommitmentTranctionAtAliceSide(data
 		partnerChannelAddress,
 		channelInfo.FundingAddress,
 		channelInfo.PropertyId,
-		latestCcommitmentTxInfo.AmountToCounterparty,
+		latestCommitmentTxInfo.AmountToCounterparty,
 		0,
 		1000,
 		&bobRsmcRedeemScript)
@@ -389,7 +400,7 @@ func (this *commitmentTxManager) AfterBobSignCommitmentTranctionAtAliceSide(data
 
 	//region 根据对对方的Rsmc签名，生成惩罚对方，自己获益BR
 	bobCommitmentTx := &dao.CommitmentTransaction{}
-	bobCommitmentTx.Id = latestCcommitmentTxInfo.Id
+	bobCommitmentTx.Id = latestCommitmentTxInfo.Id
 	bobCommitmentTx.PropertyId = channelInfo.PropertyId
 	bobCommitmentTx.RSMCTempAddressPubKey = bobCurrTempAddressPubKey
 	bobCommitmentTx.RSMCMultiAddress = bobRsmcMultiAddress
@@ -397,7 +408,7 @@ func (this *commitmentTxManager) AfterBobSignCommitmentTranctionAtAliceSide(data
 	bobCommitmentTx.RSMCMultiAddressScriptPubKey = bobRsmcMultiAddressScriptPubKey
 	bobCommitmentTx.RSMCTxHex = bobSignedRsmcHex
 	bobCommitmentTx.RSMCTxid = bobRsmcTxid
-	bobCommitmentTx.AmountToRSMC = latestCcommitmentTxInfo.AmountToCounterparty
+	bobCommitmentTx.AmountToRSMC = latestCommitmentTxInfo.AmountToCounterparty
 	err = createCurrCommitmentTxBR(tx, dao.BRType_Rmsc, channelInfo, bobCommitmentTx, inputs, myChannelAddress, myChannelPrivateKey, *user)
 	if err != nil {
 		log.Println(err)
@@ -406,7 +417,7 @@ func (this *commitmentTxManager) AfterBobSignCommitmentTranctionAtAliceSide(data
 	//endregion
 
 	//签名对方传过来的toOtherHex
-	_, bobSignedToOtherHex, err := rpcClient.BtcSignRawTransaction(bobToOtherHex, myChannelPrivateKey)
+	_, bobSignedToOtherHex, err := rpcClient.BtcSignRawTransaction(bobToCounterpartyTxHex, myChannelPrivateKey)
 	if err != nil {
 		return nil, false, errors.New("fail to sign toOther hex ")
 	}
@@ -422,13 +433,8 @@ func (this *commitmentTxManager) AfterBobSignCommitmentTranctionAtAliceSide(data
 	_ = tx.Commit()
 
 	//同步通道信息到tracker
-	sendChannelStateToTracker(*channelInfo, *latestCcommitmentTxInfo)
-
-	aliceData["channelId"] = channelId
+	sendChannelStateToTracker(*channelInfo, *latestCommitmentTxInfo)
 	bobData["channelId"] = channelId
-
-	retData = make(map[string]interface{})
-	retData["aliceData"] = aliceData
 	retData["bobData"] = bobData
 	return retData, true, nil
 }
@@ -454,14 +460,13 @@ type commitmentTxSignedManager struct {
 
 var CommitmentTxSignedService commitmentTxSignedManager
 
-func (this *commitmentTxSignedManager) BeforeBobSignCommitmentTranctionAtBobSide(data string, user *bean.User) (retData map[string]interface{}, err error) {
+func (this *commitmentTxSignedManager) BeforeBobSignCommitmentTranctionAtBobSide(data string, user *bean.User) (retData *bean.AliceRequestCreateCommitmentTxToBobClient, err error) {
 
-	jsonObj := gjson.Parse(data)
-	retData = make(map[string]interface{})
-	retData["channelId"] = jsonObj.Get("channelId").String()
-	retData["amount"] = jsonObj.Get("amount").Float()
-	retData["rsmcHex"] = jsonObj.Get("rsmcHex").String()
-	retData["toOtherHex"] = jsonObj.Get("toOtherHex").String()
+	requestCreateCommitmentTx := &bean.AliceRequestCreateCommitmentTx{}
+	_ = json.Unmarshal([]byte(data), requestCreateCommitmentTx)
+
+	retData = &bean.AliceRequestCreateCommitmentTxToBobClient{}
+	retData.AliceRequestCreateCommitmentTx = *requestCreateCommitmentTx
 
 	tx, err := user.Db.Begin(true)
 	if err != nil {
@@ -470,7 +475,7 @@ func (this *commitmentTxSignedManager) BeforeBobSignCommitmentTranctionAtBobSide
 	}
 	defer tx.Rollback()
 
-	channelInfo := getChannelInfoByChannelId(tx, jsonObj.Get("channelId").String(), user.PeerId)
+	channelInfo := getChannelInfoByChannelId(tx, retData.ChannelId, user.PeerId)
 	if channelInfo == nil {
 		return nil, errors.New("not found channelInfo at targetSide")
 	}
@@ -480,13 +485,13 @@ func (this *commitmentTxSignedManager) BeforeBobSignCommitmentTranctionAtBobSide
 		senderPeerId = channelInfo.PeerIdB
 	}
 	messageHash := MessageService.saveMsgUseTx(tx, senderPeerId, user.PeerId, data)
-	retData["msgHash"] = messageHash
+	retData.MsgHash = messageHash
 	_ = tx.Commit()
 
 	return retData, nil
 }
 
-func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction(msg bean.RequestMessage, signer *bean.User) (retData map[string]interface{}, targetUser string, err error) {
+func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction(msg bean.RequestMessage, signer *bean.User) (retData *bean.BobSignCommitmentTx, targetUser string, err error) {
 	if tool.CheckIsString(&msg.Data) == false {
 		err := errors.New("empty json reqData")
 		log.Println(err)
@@ -500,8 +505,8 @@ func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction
 		return nil, "", err
 	}
 
-	if tool.CheckIsString(&reqData.RequestCommitmentHash) == false {
-		err = errors.New("wrong RequestCommitmentHash")
+	if tool.CheckIsString(&reqData.MsgHash) == false {
+		err = errors.New("wrong msg_hash")
 		log.Println(err)
 		return nil, "", err
 	}
@@ -513,16 +518,17 @@ func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction
 	}
 	defer tx.Rollback()
 	//region 确认是给自己的信息
-	message, err := MessageService.getMsgUseTx(tx, reqData.RequestCommitmentHash)
+	message, err := MessageService.getMsgUseTx(tx, reqData.MsgHash)
 	if err != nil {
-		return nil, "", errors.New("wrong request_hash")
+		return nil, "", errors.New("wrong msg_hash")
 	}
 	if message.Receiver != signer.PeerId {
 		return nil, "", errors.New("you are not the operator")
 	}
 
-	aliceDataJson := gjson.Parse(message.Data)
-	reqData.RequestCommitmentHash = aliceDataJson.Get("commitmentHash").String()
+	aliceDataJson := &bean.AliceRequestCreateCommitmentTx{}
+	_ = json.Unmarshal([]byte(message.Data), aliceDataJson)
+	reqData.MsgHash = aliceDataJson.CommitmentTxHash
 	//endregion
 
 	if tool.CheckIsString(&reqData.ChannelId) == false {
@@ -557,9 +563,10 @@ func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction
 		return nil, "", errors.New("recipient_user_peer_id")
 	}
 
-	retData = make(map[string]interface{})
-	retData["channelId"] = channelInfo.ChannelId
-	retData["approval"] = reqData.Approval
+	retData = &bean.BobSignCommitmentTx{}
+	retData.ChannelId = channelInfo.ChannelId
+	retData.CommitmentTxHash = reqData.MsgHash
+	retData.Approval = reqData.Approval
 	if reqData.Approval == false {
 		return retData, targetUser, nil
 	}
@@ -602,7 +609,7 @@ func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction
 	tempAddrPrivateKeyMap[reqData.CurrTempAddressPubKey] = reqData.CurrTempAddressPrivateKey
 
 	//for br
-	creatorLastTempAddressPrivateKey := aliceDataJson.Get("lastTempAddressPrivateKey").String()
+	creatorLastTempAddressPrivateKey := aliceDataJson.LastTempAddressPrivateKey
 	if tool.CheckIsString(&creatorLastTempAddressPrivateKey) == false {
 		err = errors.New("fail to get the starter's last temp address  private key")
 		log.Println(err)
@@ -615,12 +622,11 @@ func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction
 		return nil, "", errors.New("not found fundingTransaction")
 	}
 
-	retData["commitmentTxHash"] = reqData.RequestCommitmentHash
-	retData["lastTempAddressPrivateKey"] = reqData.LastTempAddressPrivateKey
-	retData["currTempAddressPubKey"] = reqData.CurrTempAddressPubKey
+	retData.LastTempAddressPrivateKey = reqData.LastTempAddressPrivateKey
+	retData.CurrTempAddressPubKey = reqData.CurrTempAddressPubKey
 
 	//region 1、签名对方传过来的rsmcHex
-	aliceRsmcTxId, signedRsmcHex, err := rpcClient.BtcSignRawTransaction(aliceDataJson.Get("rsmcHex").String(), reqData.ChannelAddressPrivateKey)
+	aliceRsmcTxId, signedRsmcHex, err := rpcClient.BtcSignRawTransaction(aliceDataJson.RsmcHex, reqData.ChannelAddressPrivateKey)
 	if err != nil {
 		return nil, targetUser, errors.New("fail to sign rsmc hex ")
 	}
@@ -633,7 +639,7 @@ func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction
 	}
 
 	// region 根据alice的临时地址+bob的通道address,获取alice2+bob的多签地址，并得到AliceSignedRsmcHex签名后的交易的input，为创建alice的RD和bob的BR做准备
-	aliceMultiAddr, err := rpcClient.CreateMultiSig(2, []string{aliceDataJson.Get("currTempAddressPubKey").String(), currNodeChannelPubKey})
+	aliceMultiAddr, err := rpcClient.CreateMultiSig(2, []string{aliceDataJson.CurrTempAddressPubKey, currNodeChannelPubKey})
 	if err != nil {
 		return nil, "", err
 	}
@@ -650,24 +656,24 @@ func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction
 		log.Println(err)
 		return nil, "", err
 	}
-	retData["signedRsmcHex"] = signedRsmcHex
+	retData.SignedRsmcHex = signedRsmcHex
 	//endregion
 
 	//endregion
 
 	// region 2、签名对方传过来的toOtherHex
-	_, signedToOtherHex, err := rpcClient.BtcSignRawTransaction(aliceDataJson.Get("toOtherHex").String(), reqData.ChannelAddressPrivateKey)
+	_, signedToCounterpartyTxHex, err := rpcClient.BtcSignRawTransaction(aliceDataJson.ToCounterpartyTxHex, reqData.ChannelAddressPrivateKey)
 	if err != nil {
-		return nil, targetUser, errors.New("fail to sign toOther hex ")
+		return nil, targetUser, errors.New("fail to sign ToCounterpartyTxHex ")
 	}
-	testResult, err = rpcClient.TestMemPoolAccept(signedToOtherHex)
+	testResult, err = rpcClient.TestMemPoolAccept(signedToCounterpartyTxHex)
 	if err != nil {
 		return nil, targetUser, err
 	}
 	if gjson.Parse(testResult).Array()[0].Get("allowed").Bool() == false {
 		return nil, targetUser, errors.New(gjson.Parse(testResult).Array()[0].Get("reject-reason").String())
 	}
-	retData["signedToOtherHex"] = signedToOtherHex
+	retData.SignedToCounterpartyTxHex = signedToCounterpartyTxHex
 	//endregion
 
 	//获取bob最新的承诺交易
@@ -709,7 +715,7 @@ func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction
 	//如果是本轮的第一次请求交易
 	if isFirstRequest {
 		//region 3、根据对方传过来的上一个交易的临时rsmc私钥，签名最近的BR交易，保证对方确实放弃了上一个承诺交易
-		err := signLastBR(tx, dao.BRType_Rmsc, *channelInfo, signer.PeerId, aliceDataJson.Get("lastTempAddressPrivateKey").String(), latestCommitmentTxInfo.Id)
+		err := signLastBR(tx, dao.BRType_Rmsc, *channelInfo, signer.PeerId, aliceDataJson.LastTempAddressPrivateKey, latestCommitmentTxInfo.Id)
 		if err != nil {
 			log.Println(err)
 			return nil, "", err
@@ -719,7 +725,7 @@ func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction
 		//region 4、创建C2b
 		commitmentTxRequest := &bean.CommitmentTx{}
 		commitmentTxRequest.ChannelId = channelInfo.ChannelId
-		commitmentTxRequest.Amount = aliceDataJson.Get("amount").Float()
+		commitmentTxRequest.Amount = aliceDataJson.Amount
 		commitmentTxRequest.ChannelAddressPrivateKey = reqData.ChannelAddressPrivateKey
 		commitmentTxRequest.CurrTempAddressPubKey = reqData.CurrTempAddressPubKey
 		commitmentTxRequest.CurrTempAddressPrivateKey = reqData.CurrTempAddressPrivateKey
@@ -730,8 +736,8 @@ func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction
 		}
 		amountToOther = newCommitmentTxInfo.AmountToCounterparty
 
-		retData["rsmcHex"] = newCommitmentTxInfo.RSMCTxHex
-		retData["toOtherHex"] = newCommitmentTxInfo.ToCounterpartyTxHex
+		retData.RsmcHex = newCommitmentTxInfo.RSMCTxHex
+		retData.ToCounterpartyTxHex = newCommitmentTxInfo.ToCounterpartyTxHex
 		//endregion
 
 		// region 5、根据alice的Rsmc，创建对应的BR,为下一个交易做准备，create BR2b tx  for bob
@@ -742,7 +748,7 @@ func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction
 		senderCommitmentTx := &dao.CommitmentTransaction{}
 		senderCommitmentTx.Id = newCommitmentTxInfo.Id
 		senderCommitmentTx.PropertyId = fundingTransaction.PropertyId
-		senderCommitmentTx.RSMCTempAddressPubKey = aliceDataJson.Get("currTempAddressPubKey").String()
+		senderCommitmentTx.RSMCTempAddressPubKey = aliceDataJson.CurrTempAddressPubKey
 		senderCommitmentTx.RSMCMultiAddress = aliceRsmcMultiAddress
 		senderCommitmentTx.RSMCRedeemScript = aliceRsmcRedeemScript
 		senderCommitmentTx.RSMCMultiAddressScriptPubKey = aliceRsmcMultiAddressScriptPubKey
@@ -757,8 +763,8 @@ func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction
 		//endregion
 
 	} else {
-		retData["rsmcHex"] = latestCommitmentTxInfo.RSMCTxHex
-		retData["toOtherHex"] = latestCommitmentTxInfo.ToCounterpartyTxHex
+		retData.RsmcHex = latestCommitmentTxInfo.RSMCTxHex
+		retData.ToCounterpartyTxHex = latestCommitmentTxInfo.ToCounterpartyTxHex
 		amountToOther = latestCommitmentTxInfo.AmountToCounterparty
 	}
 
@@ -767,7 +773,7 @@ func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction
 	if signer.PeerId == channelInfo.PeerIdA {
 		outputAddress = channelInfo.AddressB
 	}
-	_, senderRdhex, err := rpcClient.OmniCreateAndSignRawTransactionUseUnsendInput(
+	_, payerRdhex, err := rpcClient.OmniCreateAndSignRawTransactionUseUnsendInput(
 		aliceRsmcMultiAddress,
 		[]string{
 			reqData.ChannelAddressPrivateKey,
@@ -784,7 +790,7 @@ func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction
 		log.Println(err)
 		return nil, targetUser, errors.New("fail to create rd")
 	}
-	retData["senderRdHex"] = senderRdhex
+	retData.PayerRdHex = payerRdhex
 	//endregion create RD tx for alice
 
 	_ = MessageService.updateMsgStateUseTx(tx, message)
@@ -816,15 +822,15 @@ func (this *commitmentTxSignedManager) AfterAliceSignCommitmentTranctionAtBobSid
 		return nil, errors.New("not found channelInfo at targetSide")
 	}
 
-	latestCcommitmentTxInfo, err := getLatestCommitmentTxUseDbTx(tx, channelId, user.PeerId)
+	latestCommitmentTxInfo, err := getLatestCommitmentTxUseDbTx(tx, channelId, user.PeerId)
 	if err != nil {
 		err = errors.New("fail to find sender's commitmentTxInfo")
 		log.Println(err)
 		return nil, err
 	}
 
-	if latestCcommitmentTxInfo.CurrState != dao.TxInfoState_Create {
-		err = errors.New("wrong commitmentTxInfo state " + strconv.Itoa(int(latestCcommitmentTxInfo.CurrState)))
+	if latestCommitmentTxInfo.CurrState != dao.TxInfoState_Create {
+		err = errors.New("wrong commitmentTxInfo state " + strconv.Itoa(int(latestCommitmentTxInfo.CurrState)))
 		log.Println(err)
 		return nil, err
 	}
@@ -834,23 +840,23 @@ func (this *commitmentTxSignedManager) AfterAliceSignCommitmentTranctionAtBobSid
 		myChannelAddress = channelInfo.AddressA
 	}
 
-	err = signRdTx(tx, channelInfo, signedRsmcHex, rdHex, *latestCcommitmentTxInfo, myChannelAddress, user)
+	err = signRdTx(tx, channelInfo, signedRsmcHex, rdHex, *latestCommitmentTxInfo, myChannelAddress, user)
 	if err != nil {
 		return nil, err
 	}
 
 	//更新alice的当前承诺交易
-	latestCcommitmentTxInfo.SignAt = time.Now()
-	latestCcommitmentTxInfo.CurrState = dao.TxInfoState_CreateAndSign
-	latestCcommitmentTxInfo.RSMCTxHex = signedRsmcHex
-	latestCcommitmentTxInfo.ToCounterpartyTxHex = signedToOtherHex
-	bytes, err := json.Marshal(latestCcommitmentTxInfo)
+	latestCommitmentTxInfo.SignAt = time.Now()
+	latestCommitmentTxInfo.CurrState = dao.TxInfoState_CreateAndSign
+	latestCommitmentTxInfo.RSMCTxHex = signedRsmcHex
+	latestCommitmentTxInfo.ToCounterpartyTxHex = signedToOtherHex
+	bytes, err := json.Marshal(latestCommitmentTxInfo)
 	msgHash := tool.SignMsgWithSha256(bytes)
-	latestCcommitmentTxInfo.CurrHash = msgHash
-	_ = tx.Update(latestCcommitmentTxInfo)
+	latestCommitmentTxInfo.CurrHash = msgHash
+	_ = tx.Update(latestCommitmentTxInfo)
 
 	lastCommitmentTxInfo := dao.CommitmentTransaction{}
-	err = tx.One("Id", latestCcommitmentTxInfo.LastCommitmentTxId, &lastCommitmentTxInfo)
+	err = tx.One("Id", latestCommitmentTxInfo.LastCommitmentTxId, &lastCommitmentTxInfo)
 	if err == nil {
 		lastCommitmentTxInfo.CurrState = dao.TxInfoState_Abord
 		_ = tx.Update(lastCommitmentTxInfo)
@@ -859,7 +865,7 @@ func (this *commitmentTxSignedManager) AfterAliceSignCommitmentTranctionAtBobSid
 	_ = tx.Commit()
 
 	retData = make(map[string]interface{})
-	retData["latestCcommitmentTxInfo"] = latestCcommitmentTxInfo
+	retData["latest_commitment_tx_info"] = latestCommitmentTxInfo
 	return retData, nil
 }
 

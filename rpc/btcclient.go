@@ -39,7 +39,7 @@ func (client *Client) GetTransactionById(txid string) (result string, err error)
 func (client *Client) TestMemPoolAccept(signedhex string) (result string, err error) {
 	rawtxs := make([]string, 0)
 	rawtxs = append(rawtxs, signedhex)
-	return client.send("testmempoolaccept ", []interface{}{rawtxs})
+	return client.send("testmempoolaccept", []interface{}{rawtxs})
 }
 
 func (client *Client) GetTxOut(txid string, num int) (result string, err error) {
