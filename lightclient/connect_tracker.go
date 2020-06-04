@@ -196,8 +196,8 @@ func sycChannelInfos() {
 					}
 				}
 			}
+			_ = db.Close()
 		}
-		_ = db.Close()
 	}
 	if len(nodes) > 0 {
 		log.Println("syn channel data to tracker", nodes)
