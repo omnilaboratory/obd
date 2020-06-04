@@ -79,7 +79,7 @@ func ConnectToTracker() {
 	sycUserInfos()
 	sycChannelInfos()
 
-	ticker := time.NewTicker(time.Minute)
+	ticker := time.NewTicker(time.Minute * 2)
 	defer ticker.Stop()
 
 	for {
@@ -166,13 +166,13 @@ func sycChannelInfos() {
 	for _, dbName := range dbNames {
 		db, err := storm.Open(_dir + "/" + dbName)
 		if err == nil {
-			channelInfos := []dao.ChannelInfo{}
-			err := db.All(&channelInfos)
+			var channelInfos []dao.ChannelInfo
+			err = db.All(&channelInfos)
 			if err == nil {
 				for _, channelInfo := range channelInfos {
 					if len(channelInfo.ChannelId) > 0 {
 						commitmentTransaction := dao.CommitmentTransaction{}
-						err := db.Select(q.Eq("ChannelId", channelInfo.ChannelId)).OrderBy("CreateAt").Reverse().First(&commitmentTransaction)
+						err = db.Select(q.Eq("ChannelId", channelInfo.ChannelId)).OrderBy("CreateAt").Reverse().First(&commitmentTransaction)
 						if err == nil {
 							request := trackerBean.ChannelInfoRequest{}
 							request.ChannelId = channelInfo.ChannelId
