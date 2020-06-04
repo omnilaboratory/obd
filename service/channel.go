@@ -124,18 +124,27 @@ func (this *channelManager) BobAcceptChannel(jsonData string, user *bean.User) (
 			log.Println(err)
 			return nil, err
 		}
-		channelInfo.ChannelAddress = gjson.Get(multiSig, "address").String()
-		channelInfo.ChannelAddressRedeemScript = gjson.Get(multiSig, "redeemScript").String()
 
-		addrInfoStr, err := rpcClient.GetAddressInfo(channelInfo.ChannelAddress)
-		if err != nil {
-			log.Println(err)
-			return nil, err
+		channelAddress := gjson.Get(multiSig, "address").String()
+		count, _ := user.Db.Select(q.Eq("ChannelAddress", channelAddress)).Count(&dao.ChannelInfo{})
+		if count == 0 {
+			channelInfo.ChannelAddress = gjson.Get(multiSig, "address").String()
+			channelInfo.ChannelAddressRedeemScript = gjson.Get(multiSig, "redeemScript").String()
+
+			addrInfoStr, err := rpcClient.GetAddressInfo(channelInfo.ChannelAddress)
+			if err != nil {
+				log.Println(err)
+				return nil, err
+			}
+			channelInfo.ChannelAddressScriptPubKey = gjson.Parse(addrInfoStr).Get("scriptPubKey").String()
+			channelInfo.CurrState = dao.ChannelState_WaitFundAsset
+		} else {
+			channelInfo.CurrState = dao.ChannelState_OpenChannelRefuse
+			channelInfo.RefuseReason = channelAddress + " channelAddress has been used"
 		}
-		channelInfo.ChannelAddressScriptPubKey = gjson.Parse(addrInfoStr).Get("scriptPubKey").String()
-		channelInfo.CurrState = dao.ChannelState_WaitFundAsset
 	} else {
-		channelInfo.CurrState = dao.ChannelState_OpenChannelDefuse
+		channelInfo.CurrState = dao.ChannelState_OpenChannelRefuse
+		channelInfo.RefuseReason = user.PeerId + " do not agree with it"
 	}
 
 	channelInfo.AcceptAt = time.Now()
@@ -148,14 +157,14 @@ func (this *channelManager) BobAcceptChannel(jsonData string, user *bean.User) (
 }
 
 //当bob操作完，发送信息到Alice所在的obd，obd处理先从bob得到发给alice的信息，然后再发给Alice的轻客户端
-func (this *channelManager) AfterBobAcceptChannelAtAliceSide(jsonData string, user *bean.User) (channelInfo *dao.ChannelInfo, err error) {
+func (this *channelManager) AfterBobAcceptChannelAtAliceSide(jsonData string, user *bean.User) (outputData interface{}, err error) {
 	bobChannelInfo := &dao.ChannelInfo{}
 	err = json.Unmarshal([]byte(jsonData), &bobChannelInfo)
 	if err != nil {
 		return nil, err
 	}
 
-	channelInfo = &dao.ChannelInfo{}
+	channelInfo := &dao.ChannelInfo{}
 	err = user.Db.Select(
 		q.Eq("TemporaryChannelId", bobChannelInfo.TemporaryChannelId),
 		q.Eq("PeerIdA", user.PeerId),
@@ -175,7 +184,8 @@ func (this *channelManager) AfterBobAcceptChannelAtAliceSide(jsonData string, us
 		channelInfo.ChannelAddressScriptPubKey = bobChannelInfo.ChannelAddressScriptPubKey
 		channelInfo.CurrState = dao.ChannelState_WaitFundAsset
 	} else {
-		channelInfo.CurrState = dao.ChannelState_OpenChannelDefuse
+		channelInfo.CurrState = dao.ChannelState_OpenChannelRefuse
+		channelInfo.RefuseReason = bobChannelInfo.RefuseReason
 	}
 	channelInfo.AcceptAt = time.Now()
 	err = user.Db.Update(channelInfo)

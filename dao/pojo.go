@@ -27,8 +27,7 @@ const (
 	ChannelState_CanUse            ChannelState = 20
 	ChannelState_Close             ChannelState = 21
 	ChannelState_HtlcTx            ChannelState = 22
-	ChannelState_OpenChannelDefuse ChannelState = 30
-	ChannelState_FundingDefuse     ChannelState = 31
+	ChannelState_OpenChannelRefuse ChannelState = 30
 )
 
 type ChannelInfo struct {
@@ -46,6 +45,7 @@ type ChannelInfo struct {
 	ChannelAddressScriptPubKey string       `json:"channel_address_script_pub_key"`
 	PropertyId                 int64        `json:"property_id"`
 	CurrState                  ChannelState `json:"curr_state"`
+	RefuseReason               string       `json:"refuse_reason"`
 	CreateBy                   string       `json:"create_by"`
 	CreateAt                   time.Time    `json:"create_at"`
 	AcceptAt                   time.Time    `json:"accept_at"`

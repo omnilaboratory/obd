@@ -226,7 +226,7 @@ func startSchedule() {
 		for {
 			select {
 			case t := <-ticker10m.C:
-				log.Println("timer 1m", t)
+				log.Println("timer 3min", t)
 				if conn == nil {
 					ConnectToTracker()
 				}

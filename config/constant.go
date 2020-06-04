@@ -29,9 +29,12 @@ func GetHtlcFee() float64 {
 func GetMinerFee() float64 {
 	price := httpGetRecommendedMiner()
 	if price == 0 {
-		price = 10
+		price = 6
 	} else {
 		price = price / 6
+	}
+	if price < 4 {
+		price = 4
 	}
 	txSize := 150 + 68 + 90
 	result, _ := decimal.NewFromFloat(float64(txSize) * price).Div(decimal.NewFromFloat(100000000)).Round(8).Float64()
@@ -66,10 +69,10 @@ func httpGetRecommendedMiner() (price float64) {
 
 func GetMinMinerFee(ins int) float64 {
 	txSize := ins*150 + 68 + 90
-	result, _ := decimal.NewFromFloat(float64(txSize) * 8).Div(decimal.NewFromFloat(100000000)).Round(8).Float64()
+	result, _ := decimal.NewFromFloat(float64(txSize) * 3.5).Div(decimal.NewFromFloat(100000000)).Round(8).Float64()
 	return result
 }
 
 func GetOmniDustBtc() float64 {
-	return 0.0000054
+	return 0.00000546
 }

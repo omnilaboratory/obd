@@ -319,21 +319,30 @@ func getReplyObj(data string, msgType enum.MsgType, status bool, fromClient, toC
 }
 
 func getP2PReplyObj(data string, msgType enum.MsgType, status bool, fromId, toClientId string) []byte {
-	var jsonMessage []byte
-	node := make(map[string]interface{})
-	err := json.Unmarshal([]byte(data), &node)
-	if err == nil {
-		parse := gjson.Parse(data)
-		jsonMessage, _ = json.Marshal(&bean.ReplyMessage{Type: msgType, Status: status, From: fromId, To: toClientId, Result: parse.Value()})
-	} else {
-		if strings.Contains(err.Error(), " array into Go value of type map") {
-			parse := gjson.Parse(data)
-			jsonMessage, _ = json.Marshal(&bean.ReplyMessage{Type: msgType, Status: status, From: fromId, To: toClientId, Result: parse.Value()})
-		} else {
-			jsonMessage, _ = json.Marshal(&bean.ReplyMessage{Type: msgType, Status: status, From: fromId, To: toClientId, Result: data})
-		}
+
+	parse := gjson.Parse(data)
+	result := parse.Value()
+	if parse.Exists() == false {
+		result = data
 	}
+	jsonMessage, _ := json.Marshal(&bean.ReplyMessage{Type: msgType, Status: status, From: fromId, To: toClientId, Result: result})
 	return jsonMessage
+
+	//var jsonMessage []byte
+	//node := make(map[string]interface{})
+	//err := json.Unmarshal([]byte(data), &node)
+	//if err == nil {
+	//	parse := gjson.Parse(data)
+	//	jsonMessage, _ = json.Marshal(&bean.ReplyMessage{Type: msgType, Status: status, From: fromId, To: toClientId, Result: parse.Value()})
+	//} else {
+	//	if strings.Contains(err.Error(), " array into Go value of type map") {
+	//		parse := gjson.Parse(data)
+	//		jsonMessage, _ = json.Marshal(&bean.ReplyMessage{Type: msgType, Status: status, From: fromId, To: toClientId, Result: parse.Value()})
+	//	} else {
+	//		jsonMessage, _ = json.Marshal(&bean.ReplyMessage{Type: msgType, Status: status, From: fromId, To: toClientId, Result: data})
+	//	}
+	//}
+	//return jsonMessage
 }
 
 func (client *Client) sendToMyself(msgType enum.MsgType, status bool, data string) {
