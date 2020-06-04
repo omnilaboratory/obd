@@ -42,7 +42,7 @@ func TestCommitmentTxManager_GetItemById(t *testing.T) {
 
 func TestDelDemoChannelInfoData(t *testing.T) {
 
-	info, err := rpcClient.OmniGetinfo()
+	info, err := rpcClient.OmniGetInfo()
 	log.Println(info)
 	log.Println(err)
 	return

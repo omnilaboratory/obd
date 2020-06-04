@@ -95,7 +95,7 @@ func (client *Client) NextID() uint64 {
 	return atomic.AddUint64(&client.id, 1)
 }
 func (client *Client) CheckVersion() error {
-	result, err := client.OmniGetinfo()
+	result, err := client.OmniGetInfo()
 	if err != nil {
 		return err
 	}

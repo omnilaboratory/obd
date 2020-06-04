@@ -13,7 +13,7 @@ import (
 
 //https://github.com/OmniLayer/omnicore/blob/master/src/omnicore/doc/rpc-api.md
 //Returns various state information of the client and protocol.
-func (client *Client) OmniGetinfo() (result string, err error) {
+func (client *Client) OmniGetInfo() (result string, err error) {
 	return client.send("omni_getinfo", nil)
 }
 
@@ -47,9 +47,9 @@ func (client *Client) OmniSendIssuanceFixed(fromAddress string, ecosystem int, d
 	if amount < 0 {
 		return "", errors.New("error amount")
 	}
-	amoutStr := strconv.FormatFloat(amount, 'f', 8, 64)
+	amountStr := strconv.FormatFloat(amount, 'f', 8, 64)
 	if divisibleType == 1 {
-		amoutStr = strconv.FormatFloat(amount, 'f', 0, 64)
+		amountStr = strconv.FormatFloat(amount, 'f', 0, 64)
 	}
 	if tool.CheckIsString(&data) == false {
 		data = ""
@@ -57,7 +57,7 @@ func (client *Client) OmniSendIssuanceFixed(fromAddress string, ecosystem int, d
 
 	_, _ = client.ValidateAddress(fromAddress)
 
-	return client.send("omni_sendissuancefixed", []interface{}{fromAddress, ecosystem, divisibleType, 0, "", "", name, "", data, amoutStr})
+	return client.send("omni_sendissuancefixed", []interface{}{fromAddress, ecosystem, divisibleType, 0, "", "", name, "", data, amountStr})
 }
 
 //Create new tokens with manageable supply. https://github.com/OmniLayer/omnicore/blob/master/src/omnicore/doc/rpc-api.md#omni_sendissuancemanaged
@@ -97,15 +97,15 @@ func (client *Client) OmniSendGrant(fromAddress string, propertyId int64, amount
 	if amount < 0 {
 		return "", errors.New("error amout")
 	}
-	amoutStr := strconv.FormatFloat(amount, 'f', 0, 64)
+	amountStr := strconv.FormatFloat(amount, 'f', 0, 64)
 	divisible := gjson.Get(s, "divisible").Bool()
 	if divisible {
-		amoutStr = strconv.FormatFloat(amount, 'f', 8, 64)
+		amountStr = strconv.FormatFloat(amount, 'f', 8, 64)
 	}
 	if tool.CheckIsString(&memo) == false {
 		memo = ""
 	}
-	return client.send("omni_sendgrant", []interface{}{fromAddress, "", propertyId, amoutStr, memo})
+	return client.send("omni_sendgrant", []interface{}{fromAddress, "", propertyId, amountStr, memo})
 }
 
 // Revoke units of managed tokens. https://github.com/OmniLayer/omnicore/blob/master/src/omnicore/doc/rpc-api.md#omni_sendrevoke
@@ -124,10 +124,10 @@ func (client *Client) OmniSendRevoke(fromAddress string, propertyId int64, amoun
 	if err != nil {
 		return "", err
 	}
-	amoutStr := strconv.FormatFloat(amount, 'f', 0, 64)
+	amountStr := strconv.FormatFloat(amount, 'f', 0, 64)
 	divisible := gjson.Get(s, "divisible").Bool()
 	if divisible {
-		amoutStr = strconv.FormatFloat(amount, 'f', 8, 64)
+		amountStr = strconv.FormatFloat(amount, 'f', 8, 64)
 	}
 
 	if tool.CheckIsString(&memo) == false {
@@ -136,7 +136,7 @@ func (client *Client) OmniSendRevoke(fromAddress string, propertyId int64, amoun
 
 	_, _ = client.ValidateAddress(fromAddress)
 
-	return client.send("omni_sendrevoke", []interface{}{fromAddress, propertyId, amoutStr, memo})
+	return client.send("omni_sendrevoke", []interface{}{fromAddress, propertyId, amountStr, memo})
 }
 
 func (client *Client) OmniGetbalance(address string, propertyId int) (result string, err error) {
