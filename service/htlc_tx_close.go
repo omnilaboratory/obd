@@ -699,21 +699,21 @@ func (service *htlcCloseTxManager) AfterBobCloseHTLCSigned_AtAliceSide(data stri
 		return nil, true, errors.New("not found fundingTransaction at targetSide")
 	}
 
-	latestCcommitmentTxInfo, err := getLatestCommitmentTxUseDbTx(tx, channelId, user.PeerId)
+	latestCommitmentTxInfo, err := getLatestCommitmentTxUseDbTx(tx, channelId, user.PeerId)
 	if err != nil {
 		err = errors.New("fail to find sender's commitmentTxInfo")
 		log.Println(err)
 		return nil, true, err
 	}
 
-	if latestCcommitmentTxInfo.CurrHash != commitmentTxHash {
+	if latestCommitmentTxInfo.CurrHash != commitmentTxHash {
 		err = errors.New("wrong request hash")
 		log.Println(err)
 		return nil, false, err
 	}
 
-	if latestCcommitmentTxInfo.CurrState != dao.TxInfoState_Create {
-		err = errors.New("wrong commitmentTxInfo state " + strconv.Itoa(int(latestCcommitmentTxInfo.CurrState)))
+	if latestCommitmentTxInfo.CurrState != dao.TxInfoState_Create {
+		err = errors.New("wrong commitmentTxInfo state " + strconv.Itoa(int(latestCommitmentTxInfo.CurrState)))
 		log.Println(err)
 		return nil, false, err
 	}
@@ -732,17 +732,17 @@ func (service *htlcCloseTxManager) AfterBobCloseHTLCSigned_AtAliceSide(data stri
 	var bobLastRsmcTempAddressPrivateKey = jsonObj.Get("lastRsmcTempAddressPrivateKey").String()
 	var bobLastHtlcTempAddressPrivateKey = jsonObj.Get("lastHtlcTempAddressPrivateKey").String()
 	var bobLastHtlcTempAddressForHtnxPrivateKey = jsonObj.Get("lastHtlcTempAddressForHtnxPrivateKey").String()
-	err = signLastBR(tx, dao.BRType_Rmsc, *channelInfo, user.PeerId, bobLastRsmcTempAddressPrivateKey, latestCcommitmentTxInfo.LastCommitmentTxId)
+	err = signLastBR(tx, dao.BRType_Rmsc, *channelInfo, user.PeerId, bobLastRsmcTempAddressPrivateKey, latestCommitmentTxInfo.LastCommitmentTxId)
 	if err != nil {
 		log.Println(err)
 		return nil, false, err
 	}
-	err = signLastBR(tx, dao.BRType_Htlc, *channelInfo, user.PeerId, bobLastHtlcTempAddressPrivateKey, latestCcommitmentTxInfo.LastCommitmentTxId)
+	err = signLastBR(tx, dao.BRType_Htlc, *channelInfo, user.PeerId, bobLastHtlcTempAddressPrivateKey, latestCommitmentTxInfo.LastCommitmentTxId)
 	if err != nil {
 		log.Println(err)
 		return nil, false, err
 	}
-	err = signLastBR(tx, dao.BRType_HE1b, *channelInfo, user.PeerId, bobLastHtlcTempAddressForHtnxPrivateKey, latestCcommitmentTxInfo.LastCommitmentTxId)
+	err = signLastBR(tx, dao.BRType_HE1b, *channelInfo, user.PeerId, bobLastHtlcTempAddressForHtnxPrivateKey, latestCommitmentTxInfo.LastCommitmentTxId)
 	if err != nil {
 		log.Println(err)
 		return nil, false, err
@@ -750,30 +750,30 @@ func (service *htlcCloseTxManager) AfterBobCloseHTLCSigned_AtAliceSide(data stri
 	//endregion
 
 	// region 对自己的RD 二次签名
-	err = signRdTx(tx, channelInfo, signedRsmcHex, aliceRdHex, latestCcommitmentTxInfo, myChannelAddress, user)
+	err = signRdTx(tx, channelInfo, signedRsmcHex, aliceRdHex, latestCommitmentTxInfo, myChannelAddress, user)
 	if err != nil {
 		return nil, true, err
 	}
 	// endregion
 
 	//更新alice的当前承诺交易
-	latestCcommitmentTxInfo.SignAt = time.Now()
-	latestCcommitmentTxInfo.CurrState = dao.TxInfoState_CreateAndSign
-	latestCcommitmentTxInfo.RSMCTxHex = signedRsmcHex
-	latestCcommitmentTxInfo.ToCounterpartyTxHex = signedToOtherHex
-	bytes, err := json.Marshal(latestCcommitmentTxInfo)
+	latestCommitmentTxInfo.SignAt = time.Now()
+	latestCommitmentTxInfo.CurrState = dao.TxInfoState_CreateAndSign
+	latestCommitmentTxInfo.RSMCTxHex = signedRsmcHex
+	latestCommitmentTxInfo.ToCounterpartyTxHex = signedToOtherHex
+	bytes, err := json.Marshal(latestCommitmentTxInfo)
 	msgHash := tool.SignMsgWithSha256(bytes)
-	latestCcommitmentTxInfo.CurrHash = msgHash
-	_ = tx.Update(latestCcommitmentTxInfo)
+	latestCommitmentTxInfo.CurrHash = msgHash
+	_ = tx.Update(latestCommitmentTxInfo)
 
 	lastCommitmentTxInfo := dao.CommitmentTransaction{}
-	err = tx.One("Id", latestCcommitmentTxInfo.LastCommitmentTxId, &lastCommitmentTxInfo)
+	err = tx.One("Id", latestCommitmentTxInfo.LastCommitmentTxId, &lastCommitmentTxInfo)
 	if err == nil {
 		lastCommitmentTxInfo.CurrState = dao.TxInfoState_Abord
 		_ = tx.Update(lastCommitmentTxInfo)
 	}
 
-	aliceData["latestCcommitmentTxInfo"] = latestCcommitmentTxInfo
+	aliceData["latestCommitmentTxInfo"] = latestCommitmentTxInfo
 	//处理对方的数据
 	//签名对方传过来的rsmcHex
 	bobRsmcTxid, bobSignedRsmcHex, err := rpcClient.BtcSignRawTransaction(bobRsmcHex, myChannelPrivateKey)
@@ -787,7 +787,7 @@ func (service *htlcCloseTxManager) AfterBobCloseHTLCSigned_AtAliceSide(data stri
 	if gjson.Parse(testResult).Array()[0].Get("allowed").Bool() == false {
 		return nil, false, errors.New(gjson.Parse(testResult).Array()[0].Get("reject-reason").String())
 	}
-	err = checkBobRemcData(bobSignedRsmcHex, latestCcommitmentTxInfo)
+	err = checkBobRemcData(bobSignedRsmcHex, latestCommitmentTxInfo)
 	if err != nil {
 		return nil, false, err
 	}
@@ -821,7 +821,7 @@ func (service *htlcCloseTxManager) AfterBobCloseHTLCSigned_AtAliceSide(data stri
 		partnerChannelAddress,
 		channelInfo.FundingAddress,
 		channelInfo.PropertyId,
-		latestCcommitmentTxInfo.AmountToCounterparty,
+		latestCommitmentTxInfo.AmountToCounterparty,
 		0,
 		1000,
 		&bobRsmcRedeemScript)
@@ -834,7 +834,7 @@ func (service *htlcCloseTxManager) AfterBobCloseHTLCSigned_AtAliceSide(data stri
 
 	//region 根据对对方的Rsmc签名，生成惩罚对方，自己获益BR
 	bobCommitmentTx := &dao.CommitmentTransaction{}
-	bobCommitmentTx.Id = latestCcommitmentTxInfo.Id
+	bobCommitmentTx.Id = latestCommitmentTxInfo.Id
 	bobCommitmentTx.PropertyId = channelInfo.PropertyId
 	bobCommitmentTx.RSMCTempAddressPubKey = bobCurrTempAddressPubKey
 	bobCommitmentTx.RSMCMultiAddress = bobRsmcMultiAddress
@@ -842,7 +842,7 @@ func (service *htlcCloseTxManager) AfterBobCloseHTLCSigned_AtAliceSide(data stri
 	bobCommitmentTx.RSMCMultiAddressScriptPubKey = bobRsmcMultiAddressScriptPubKey
 	bobCommitmentTx.RSMCTxHex = bobSignedRsmcHex
 	bobCommitmentTx.RSMCTxid = bobRsmcTxid
-	bobCommitmentTx.AmountToRSMC = latestCcommitmentTxInfo.AmountToCounterparty
+	bobCommitmentTx.AmountToRSMC = latestCommitmentTxInfo.AmountToCounterparty
 	err = createCurrCommitmentTxBR(tx, dao.BRType_Rmsc, channelInfo, bobCommitmentTx, inputs, myChannelAddress, myChannelPrivateKey, *user)
 	if err != nil {
 		log.Println(err)
@@ -870,7 +870,7 @@ func (service *htlcCloseTxManager) AfterBobCloseHTLCSigned_AtAliceSide(data stri
 	_ = tx.Commit()
 
 	//同步通道信息到tracker
-	sendChannelStateToTracker(*channelInfo, *latestCcommitmentTxInfo)
+	sendChannelStateToTracker(*channelInfo, *latestCommitmentTxInfo)
 
 	bobData["channelId"] = channelId
 	retData = make(map[string]interface{})
@@ -906,15 +906,15 @@ func (service *htlcCloseTxManager) AfterAliceSignCloseHTLCAtBobSide(data string,
 		return nil, errors.New("not found channelInfo at targetSide")
 	}
 
-	latestCcommitmentTxInfo, err := getLatestCommitmentTxUseDbTx(tx, channelId, user.PeerId)
+	latestCommitmentTxInfo, err := getLatestCommitmentTxUseDbTx(tx, channelId, user.PeerId)
 	if err != nil {
 		err = errors.New("fail to find sender's commitmentTxInfo")
 		log.Println(err)
 		return nil, err
 	}
 
-	if latestCcommitmentTxInfo.CurrState != dao.TxInfoState_Create {
-		err = errors.New("wrong commitmentTxInfo state " + strconv.Itoa(int(latestCcommitmentTxInfo.CurrState)))
+	if latestCommitmentTxInfo.CurrState != dao.TxInfoState_Create {
+		err = errors.New("wrong commitmentTxInfo state " + strconv.Itoa(int(latestCommitmentTxInfo.CurrState)))
 		log.Println(err)
 		return nil, err
 	}
@@ -924,23 +924,23 @@ func (service *htlcCloseTxManager) AfterAliceSignCloseHTLCAtBobSide(data string,
 		myChannelAddress = channelInfo.AddressA
 	}
 
-	err = signRdTx(tx, channelInfo, signedRsmcHex, rdHex, latestCcommitmentTxInfo, myChannelAddress, user)
+	err = signRdTx(tx, channelInfo, signedRsmcHex, rdHex, latestCommitmentTxInfo, myChannelAddress, user)
 	if err != nil {
 		return nil, err
 	}
 
 	//更新alice的当前承诺交易
-	latestCcommitmentTxInfo.SignAt = time.Now()
-	latestCcommitmentTxInfo.CurrState = dao.TxInfoState_CreateAndSign
-	latestCcommitmentTxInfo.RSMCTxHex = signedRsmcHex
-	latestCcommitmentTxInfo.ToCounterpartyTxHex = signedToOtherHex
-	bytes, err := json.Marshal(latestCcommitmentTxInfo)
+	latestCommitmentTxInfo.SignAt = time.Now()
+	latestCommitmentTxInfo.CurrState = dao.TxInfoState_CreateAndSign
+	latestCommitmentTxInfo.RSMCTxHex = signedRsmcHex
+	latestCommitmentTxInfo.ToCounterpartyTxHex = signedToOtherHex
+	bytes, err := json.Marshal(latestCommitmentTxInfo)
 	msgHash := tool.SignMsgWithSha256(bytes)
-	latestCcommitmentTxInfo.CurrHash = msgHash
-	_ = tx.Update(latestCcommitmentTxInfo)
+	latestCommitmentTxInfo.CurrHash = msgHash
+	_ = tx.Update(latestCommitmentTxInfo)
 
 	lastCommitmentTxInfo := dao.CommitmentTransaction{}
-	err = tx.One("Id", latestCcommitmentTxInfo.LastCommitmentTxId, &lastCommitmentTxInfo)
+	err = tx.One("Id", latestCommitmentTxInfo.LastCommitmentTxId, &lastCommitmentTxInfo)
 	if err == nil {
 		lastCommitmentTxInfo.CurrState = dao.TxInfoState_Abord
 		_ = tx.Update(lastCommitmentTxInfo)
@@ -952,7 +952,7 @@ func (service *htlcCloseTxManager) AfterAliceSignCloseHTLCAtBobSide(data string,
 	_ = tx.Commit()
 
 	retData = make(map[string]interface{})
-	retData["latestCcommitmentTxInfo"] = latestCcommitmentTxInfo
+	retData["latestCommitmentTxInfo"] = latestCommitmentTxInfo
 	return retData, nil
 }
 
