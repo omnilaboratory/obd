@@ -962,7 +962,7 @@ func (service *htlcForwardTxManager) AfterBobSignAddHtlcAtAliceSide_42(msgData s
 		//endregion
 
 		//region 6 更新收到的签名交易
-		retData2, needNoticePayee, err := checkHexAndUpdateC3aOn42Protocal(tx, jsonObjFromPayee, *htlcRequestInfo, *channelInfo, *commitmentTransaction, user)
+		retData2, needNoticePayee, err := checkHexAndUpdateC3aOn42Protocal(tx, jsonObjFromPayee, *htlcRequestInfo, *channelInfo, commitmentTransaction, user)
 		if err != nil {
 			return nil, needNoticePayee, err
 		}
@@ -1113,7 +1113,7 @@ func (service *htlcForwardTxManager) AfterAliceSignAddHtlcAtBobSide_43(msgData s
 func (service *htlcForwardTxManager) AfterBobCreateHTRDAtAliceSide_44(msgData string, user bean.User) (data interface{}, needNoticeOtherSide bool, err error) {
 	jsonObj := gjson.Parse(msgData)
 
-	aliceHt1aRDhex := jsonObj.Get("aliceHt1aRDhex").String()
+	aliceHt1aRDHex := jsonObj.Get("aliceHt1aRDhex").String()
 	aliceCommitmentTxHash := jsonObj.Get("aliceCommitmentTxHash").String()
 	tx, err := user.Db.Begin(true)
 	if err != nil {
@@ -1129,7 +1129,7 @@ func (service *htlcForwardTxManager) AfterBobCreateHTRDAtAliceSide_44(msgData st
 	}
 
 	if latestCommitmentTransaction.CurrState == dao.TxInfoState_Htlc_WaitHTRD1aSign {
-		_, err := signHtRD1a(tx, aliceHt1aRDhex, *latestCommitmentTransaction, user)
+		_, err := signHtRD1a(tx, aliceHt1aRDHex, *latestCommitmentTransaction, user)
 		if err != nil {
 			log.Println(err.Error())
 			return nil, true, err
@@ -1461,7 +1461,7 @@ func htlcPayeeCreateCommitmentTx_C3b(tx storm.Node, channelInfo *dao.ChannelInfo
 
 // 当付款方节点收到收款方签名后的C3a后，对传入的数据进行处理
 func checkHexAndUpdateC3aOn42Protocal(tx storm.Node, jsonObj gjson.Result, htlcRequestInfo dao.AddHtlcRequestInfo,
-	channelInfo dao.ChannelInfo, commitmentTransaction dao.CommitmentTransaction, user bean.User) (retData map[string]interface{}, needNoticePayee bool, err error) {
+	channelInfo dao.ChannelInfo, commitmentTransaction *dao.CommitmentTransaction, user bean.User) (retData map[string]interface{}, needNoticePayee bool, err error) {
 
 	payeePubKey := channelInfo.PubKeyB
 	payerAddress := channelInfo.AddressA
@@ -1919,7 +1919,7 @@ func checkHexAndUpdateC3bOn43Protocal(tx storm.Node, jsonObj gjson.Result, chann
 			return nil, true, err
 		}
 
-		err = signRdTx(tx, &channelInfo, signedRsmcHex, payeeRsmcRdHex, *latestCommitmentTx, bobChannelAddress, &user)
+		err = signRdTx(tx, &channelInfo, signedRsmcHex, payeeRsmcRdHex, latestCommitmentTx, bobChannelAddress, &user)
 		if err != nil {
 			return nil, false, err
 		}
@@ -1933,7 +1933,7 @@ func checkHexAndUpdateC3bOn43Protocal(tx storm.Node, jsonObj gjson.Result, chann
 		log.Println(err)
 		return nil, true, err
 	}
-	_, err = signHtlcLockByHForBobAtPayeeSide(tx, channelInfo, *latestCommitmentTx, lockByHForBobHex, user)
+	_, err = signHtlcLockByHForBobAtPayeeSide(tx, channelInfo, latestCommitmentTx, lockByHForBobHex, user)
 	if err != nil {
 		err = errors.New("fail to signHtlcLockByHTxAtPayerSide at 41 protocol")
 		log.Println(err)

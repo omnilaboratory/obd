@@ -139,8 +139,7 @@ func (this *channelManager) BobAcceptChannel(jsonData string, user *bean.User) (
 			channelInfo.ChannelAddressScriptPubKey = gjson.Parse(addrInfoStr).Get("scriptPubKey").String()
 			channelInfo.CurrState = dao.ChannelState_WaitFundAsset
 		} else {
-			channelInfo.CurrState = dao.ChannelState_OpenChannelRefuse
-			channelInfo.RefuseReason = channelAddress + " channelAddress has been used"
+			return nil, errors.New("the generated address " + channelAddress + " has been exist, please change your pubKey " + reqData.FundingPubKey)
 		}
 	} else {
 		channelInfo.CurrState = dao.ChannelState_OpenChannelRefuse

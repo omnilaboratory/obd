@@ -748,7 +748,7 @@ func (service *htlcCloseTxManager) AfterBobCloseHTLCSigned_AtAliceSide(data stri
 	//endregion
 
 	// region 对自己的RD 二次签名
-	err = signRdTx(tx, channelInfo, signedRsmcHex, aliceRdHex, *latestCcommitmentTxInfo, myChannelAddress, user)
+	err = signRdTx(tx, channelInfo, signedRsmcHex, aliceRdHex, latestCcommitmentTxInfo, myChannelAddress, user)
 	if err != nil {
 		return nil, true, err
 	}
@@ -924,7 +924,7 @@ func (service *htlcCloseTxManager) AfterAliceSignCloseHTLCAtBobSide(data string,
 		myChannelAddress = channelInfo.AddressA
 	}
 
-	err = signRdTx(tx, channelInfo, signedRsmcHex, rdHex, *latestCcommitmentTxInfo, myChannelAddress, user)
+	err = signRdTx(tx, channelInfo, signedRsmcHex, rdHex, latestCcommitmentTxInfo, myChannelAddress, user)
 	if err != nil {
 		return nil, err
 	}

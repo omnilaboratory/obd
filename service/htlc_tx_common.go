@@ -146,7 +146,7 @@ func createHtlcHLockTxObj(tx storm.Node, owner string, channelInfo dao.ChannelIn
 	return henxTx, nil
 }
 
-func createHtlcTimeoutTxObj(tx storm.Node, owner string, channelInfo dao.ChannelInfo, commitmentTxInfo dao.CommitmentTransaction, outputBean commitmentOutputBean, timeout int, user bean.User) (*dao.HTLCTimeoutTxForAAndExecutionForB, error) {
+func createHtlcTimeoutTxObj(tx storm.Node, owner string, channelInfo dao.ChannelInfo, commitmentTxInfo *dao.CommitmentTransaction, outputBean commitmentOutputBean, timeout int, user bean.User) (*dao.HTLCTimeoutTxForAAndExecutionForB, error) {
 	htlcTimeoutTx := &dao.HTLCTimeoutTxForAAndExecutionForB{}
 	htlcTimeoutTx.ChannelId = channelInfo.ChannelId
 	htlcTimeoutTx.CommitmentTxId = commitmentTxInfo.Id
@@ -260,7 +260,7 @@ func createHT1aForAlice(aliceDataJson bean.AliceRequestAddHtlc, signedHtlcHex st
 	return &aliceHt1ahex, nil
 }
 
-func signHT1aForAlice(tx storm.Node, channelInfo dao.ChannelInfo, commitmentTransaction dao.CommitmentTransaction,
+func signHT1aForAlice(tx storm.Node, channelInfo dao.ChannelInfo, commitmentTransaction *dao.CommitmentTransaction,
 	unsignedHt1aHex string, htlcTempPubKey string, payeePubKey string, htlaTempPubKey string, htlcTimeOut int, user bean.User) (htlcTimeoutTx *dao.HTLCTimeoutTxForAAndExecutionForB, err error) {
 
 	outputBean := commitmentOutputBean{}
@@ -360,7 +360,7 @@ func createHtlcLockByHForBobAtPayeeSide(aliceDataJson bean.AliceRequestAddHtlc, 
 
 // 付款方在42号协议，签名Hlock交易，用H+收款方地址构建的多签地址，锁住给收款方的钱
 func signHtlcLockByHTxAtPayerSide(tx storm.Node, channelInfo dao.ChannelInfo,
-	commitmentTransaction dao.CommitmentTransaction, lockByHForBobHex string, user bean.User) (henxTx *dao.HtlcLockTxByH, err error) {
+	commitmentTransaction *dao.CommitmentTransaction, lockByHForBobHex string, user bean.User) (henxTx *dao.HtlcLockTxByH, err error) {
 	payeePubKey := channelInfo.PubKeyB
 	if user.PeerId == channelInfo.PeerIdB {
 		payeePubKey = channelInfo.PubKeyA
@@ -369,7 +369,7 @@ func signHtlcLockByHTxAtPayerSide(tx storm.Node, channelInfo dao.ChannelInfo,
 	outputBean["amount"] = commitmentTransaction.AmountToHtlc
 	outputBean["otherSideChannelPubKey"] = payeePubKey
 
-	hlockTx, err := createHtlcHLockTxObj(tx, user.PeerId, channelInfo, commitmentTransaction.HtlcH, commitmentTransaction, outputBean, 0, user)
+	hlockTx, err := createHtlcHLockTxObj(tx, user.PeerId, channelInfo, commitmentTransaction.HtlcH, *commitmentTransaction, outputBean, 0, user)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -460,7 +460,7 @@ func createHtlcLockByHForBobAtPayerSide(bobDataJson gjson.Result, signedHtlcHex 
 
 // 收款方在43号协议，签名Hlock交易
 func signHtlcLockByHForBobAtPayeeSide(tx storm.Node, channelInfo dao.ChannelInfo,
-	commitmentTransaction dao.CommitmentTransaction, lockByHForBobHex string, user bean.User) (henxTx *dao.HtlcLockTxByH, err error) {
+	commitmentTransaction *dao.CommitmentTransaction, lockByHForBobHex string, user bean.User) (henxTx *dao.HtlcLockTxByH, err error) {
 	payeePubKey := channelInfo.PubKeyB
 	if user.PeerId == channelInfo.PeerIdA {
 		payeePubKey = channelInfo.PubKeyA
@@ -469,7 +469,7 @@ func signHtlcLockByHForBobAtPayeeSide(tx storm.Node, channelInfo dao.ChannelInfo
 	outputBean["amount"] = commitmentTransaction.AmountToHtlc
 	outputBean["otherSideChannelPubKey"] = payeePubKey
 
-	hlock, err := createHtlcHLockTxObj(tx, user.PeerId, channelInfo, commitmentTransaction.HtlcH, commitmentTransaction, outputBean, 0, user)
+	hlock, err := createHtlcHLockTxObj(tx, user.PeerId, channelInfo, commitmentTransaction.HtlcH, *commitmentTransaction, outputBean, 0, user)
 	if err != nil {
 		log.Println(err)
 		return nil, err

@@ -312,7 +312,7 @@ func (this *commitmentTxManager) AfterBobSignCommitmentTranctionAtAliceSide(data
 	//endregion
 
 	// region 对自己的RD 二次签名
-	err = signRdTx(tx, channelInfo, signedRsmcHex, aliceRdHex, *latestCommitmentTxInfo, myChannelAddress, user)
+	err = signRdTx(tx, channelInfo, signedRsmcHex, aliceRdHex, latestCommitmentTxInfo, myChannelAddress, user)
 	if err != nil {
 		return nil, true, err
 	}
@@ -840,7 +840,7 @@ func (this *commitmentTxSignedManager) AfterAliceSignCommitmentTranctionAtBobSid
 		myChannelAddress = channelInfo.AddressA
 	}
 
-	err = signRdTx(tx, channelInfo, signedRsmcHex, rdHex, *latestCommitmentTxInfo, myChannelAddress, user)
+	err = signRdTx(tx, channelInfo, signedRsmcHex, rdHex, latestCommitmentTxInfo, myChannelAddress, user)
 	if err != nil {
 		return nil, err
 	}

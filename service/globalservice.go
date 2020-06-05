@@ -402,13 +402,13 @@ func getFundingTransactionByChannelId(dbTx storm.Node, channelId string, userPee
 	return fundingTransaction
 }
 
-func signRdTx(tx storm.Node, channelInfo *dao.ChannelInfo, signedRsmcHex string, rdHex string, latestCcommitmentTxInfo dao.CommitmentTransaction, outputAddress string, user *bean.User) (err error) {
-	inputs, err := getInputsForNextTxByParseTxHashVout(signedRsmcHex, latestCcommitmentTxInfo.RSMCMultiAddress, latestCcommitmentTxInfo.RSMCMultiAddressScriptPubKey, latestCcommitmentTxInfo.RSMCRedeemScript)
+func signRdTx(tx storm.Node, channelInfo *dao.ChannelInfo, signedRsmcHex string, rdHex string, latestCommitmentTxInfo *dao.CommitmentTransaction, outputAddress string, user *bean.User) (err error) {
+	inputs, err := getInputsForNextTxByParseTxHashVout(signedRsmcHex, latestCommitmentTxInfo.RSMCMultiAddress, latestCommitmentTxInfo.RSMCMultiAddressScriptPubKey, latestCommitmentTxInfo.RSMCRedeemScript)
 	if err != nil {
 		log.Println(err)
 		return err
 	}
-	_, signedRdHex, err := rpcClient.OmniSignRawTransactionForUnsend(rdHex, inputs, tempAddrPrivateKeyMap[latestCcommitmentTxInfo.RSMCTempAddressPubKey])
+	_, signedRdHex, err := rpcClient.OmniSignRawTransactionForUnsend(rdHex, inputs, tempAddrPrivateKeyMap[latestCommitmentTxInfo.RSMCTempAddressPubKey])
 	if err != nil {
 		return err
 	}
@@ -426,7 +426,7 @@ func signRdTx(tx storm.Node, channelInfo *dao.ChannelInfo, signedRsmcHex string,
 	if aliceRdTxid == "" {
 		return errors.New("rdtx has wrong output address")
 	}
-	rdTransaction, err := createRDTx(user.PeerId, channelInfo, &latestCcommitmentTxInfo, outputAddress, user)
+	rdTransaction, err := createRDTx(user.PeerId, channelInfo, latestCommitmentTxInfo, outputAddress, user)
 	if err != nil {
 		log.Println(err)
 		return err
