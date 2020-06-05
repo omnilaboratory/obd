@@ -27,7 +27,7 @@ type htlcBackwardTxManager struct {
 var HtlcBackwardTxService htlcBackwardTxManager
 
 // -45 at payee side
-func (service *htlcBackwardTxManager) SendRToPreviousNode_Step1(msg bean.RequestMessage, user bean.User) (responseData map[string]interface{}, err error) {
+func (service *htlcBackwardTxManager) SendRToPreviousNode_Step1(msg bean.RequestMessage, user bean.User) (responseData *bean.BobSendROfP2p, err error) {
 	if tool.CheckIsString(&msg.Data) == false {
 		return nil, errors.New("empty json data")
 	}
@@ -168,21 +168,21 @@ func (service *htlcBackwardTxManager) SendRToPreviousNode_Step1(msg bean.Request
 	_ = tx.Update(latestCommitmentTxInfo)
 	_ = tx.Commit()
 
-	responseData = make(map[string]interface{})
-	responseData["channelId"] = reqData.ChannelId
-	responseData["r"] = reqData.R
-	responseData["he1bHex"] = he1b.RSMCTxHex
-	responseData["he1bTempPubKey"] = reqData.CurrHtlcTempAddressForHE1bPubKey
-	responseData["herd1bHex"] = herd.TxHex
+	responseData = &bean.BobSendROfP2p{}
+	responseData.ChannelId = reqData.ChannelId
+	responseData.R = reqData.R
+	responseData.He1bHex = he1b.RSMCTxHex
+	responseData.He1bTempPubKey = reqData.CurrHtlcTempAddressForHE1bPubKey
+	responseData.Herd1bHex = herd.TxHex
 
 	return responseData, nil
 }
 
 // -45 at payer side
-func (service *htlcBackwardTxManager) BeforeSendRInfoToPayerAtAliceSide_Step2(msgData string, user bean.User) (data map[string]interface{}, needNoticeOtherSide bool, err error) {
-
-	jsonObjFromPayee := gjson.Parse(msgData)
-	channelId := jsonObjFromPayee.Get("channelId").String()
+func (service *htlcBackwardTxManager) BeforeSendRInfoToPayerAtAliceSide_Step2(msgData string, user bean.User) (data *bean.BobSendROfWs, needNoticeOtherSide bool, err error) {
+	bobSendRInfo := &bean.BobSendROfP2p{}
+	_ = json.Unmarshal([]byte(msgData), bobSendRInfo)
+	channelId := bobSendRInfo.ChannelId
 
 	tx, err := user.Db.Begin(true)
 	if err != nil {
@@ -207,13 +207,11 @@ func (service *htlcBackwardTxManager) BeforeSendRInfoToPayerAtAliceSide_Step2(ms
 		senderPeerId = channelInfo.PeerIdA
 	}
 	messageHash := MessageService.saveMsgUseTx(tx, senderPeerId, user.PeerId, msgData)
-	returnData := make(map[string]interface{})
+	returnData := &bean.BobSendROfWs{}
 	_ = tx.Commit()
 
-	returnData["channelId"] = channelId
-	returnData["r"] = jsonObjFromPayee.Get("r").String()
-	returnData["msgHash"] = messageHash
-
+	returnData.BobSendROfP2p = *bobSendRInfo
+	returnData.MsgHash = messageHash
 	return returnData, false, nil
 }
 
@@ -229,8 +227,8 @@ func (service *htlcBackwardTxManager) VerifyRAndCreateTxs_Step3(msg bean.Request
 		return nil, err
 	}
 
-	if tool.CheckIsString(&reqData.RequestHash) == false {
-		err = errors.New("empty request_hash")
+	if tool.CheckIsString(&reqData.MsgHash) == false {
+		err = errors.New("empty msg_hash")
 		log.Println(err)
 		return nil, err
 	}
@@ -242,9 +240,9 @@ func (service *htlcBackwardTxManager) VerifyRAndCreateTxs_Step3(msg bean.Request
 	}
 	defer tx.Rollback()
 
-	message, err := MessageService.getMsgUseTx(tx, reqData.RequestHash)
+	message, err := MessageService.getMsgUseTx(tx, reqData.MsgHash)
 	if err != nil {
-		return nil, errors.New("wrong request_hash")
+		return nil, errors.New("wrong msg_hash")
 	}
 	if message.Receiver != user.PeerId {
 		return nil, errors.New("you are not the operator")

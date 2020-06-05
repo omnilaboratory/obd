@@ -248,23 +248,6 @@ type AddHtlcRequest struct {
 	CurrHtlcTempAddressForHt1aPrivateKey string  `json:"curr_htlc_temp_address_for_ht1a_private_key"` //	创建Ht1a中生成ht1a的输出的Rmsc的临时地址的私钥
 }
 
-type AliceRequestAddHtlc struct {
-	ChannelId                        string  `json:"channel_id"`
-	Amount                           float64 `json:"amount"`
-	RoutingPacket                    string  `json:"routing_packet"`
-	CltvExpiry                       int     `json:"cltv_expiry"` //发起者设定的总的等待的区块个数
-	CommitmentTxHash                 string  `json:"commitment_tx_hash"`
-	Memo                             string  `json:"memo"`
-	H                                string  `json:"h"`
-	CounterpartyTxHex                string  `json:"counterparty_tx_hex"`
-	HtlcTxHex                        string  `json:"htlc_tx_hex"`
-	RsmcTxHex                        string  `json:"rsmc_tx_hex"`
-	LastTempAddressPrivateKey        string  `json:"last_temp_address_private_key"`
-	CurrRsmcTempAddressPubKey        string  `json:"curr_rsmc_temp_address_pub_key"`
-	CurrHtlcTempAddressPubKey        string  `json:"curr_htlc_temp_address_pub_key"`
-	CurrHtlcTempAddressForHt1aPubKey string  `json:"curr_htlc_temp_address_for_ht1a_pub_key"`
-}
-
 //type -41: bob sign the request for the interNode
 type HtlcSignGetH struct {
 	AliceCommitmentTxHash         string `json:"alice_commitment_tx_hash"`
@@ -313,7 +296,7 @@ type HtlcSendR struct {
 type HtlcCheckRAndCreateTx struct {
 	ChannelId                string `json:"channel_id"`
 	R                        string `json:"r"`
-	RequestHash              string `json:"request_hash"`
+	MsgHash                  string `json:"msg_hash"`
 	ChannelAddressPrivateKey string `json:"channel_address_private_key"` // The key of creator tx. Example Bob send R to Alice, that is Alice's.
 }
 
@@ -330,7 +313,7 @@ type HtlcRequestCloseCurrTx struct {
 
 //type -50: receiver sign the close request
 type HtlcSignCloseCurrTx struct {
-	RequestHash                          string `json:"request_hash"`
+	MsgHash                              string `json:"msg_hash"`
 	ChannelAddressPrivateKey             string `json:"channel_address_private_key"` //	开通通道用到的私钥
 	LastRsmcTempAddressPrivateKey        string `json:"last_rsmc_temp_address_private_key"`
 	LastHtlcTempAddressPrivateKey        string `json:"last_htlc_temp_address_private_key"`
@@ -342,6 +325,39 @@ type HtlcSignCloseCurrTx struct {
 type HtlcCloseChannelReq CloseChannel
 type HtlcCloseChannelSign CloseChannelSign
 type ChannelIdReq CloseChannel
+
+// 付款人的obd发给收款人的obd的消息体 在请求htlc交易
+type AliceRequestAddHtlc struct {
+	ChannelId                        string  `json:"channel_id"`
+	Amount                           float64 `json:"amount"`
+	RoutingPacket                    string  `json:"routing_packet"`
+	CltvExpiry                       int     `json:"cltv_expiry"` //发起者设定的总的等待的区块个数
+	CommitmentTxHash                 string  `json:"commitment_tx_hash"`
+	Memo                             string  `json:"memo"`
+	H                                string  `json:"h"`
+	CounterpartyTxHex                string  `json:"counterparty_tx_hex"`
+	HtlcTxHex                        string  `json:"htlc_tx_hex"`
+	RsmcTxHex                        string  `json:"rsmc_tx_hex"`
+	LastTempAddressPrivateKey        string  `json:"last_temp_address_private_key"`
+	CurrRsmcTempAddressPubKey        string  `json:"curr_rsmc_temp_address_pub_key"`
+	CurrHtlcTempAddressPubKey        string  `json:"curr_htlc_temp_address_pub_key"`
+	CurrHtlcTempAddressForHt1aPubKey string  `json:"curr_htlc_temp_address_for_ht1a_pub_key"`
+}
+
+//  p2p消息 收款人的obd发给付款人的obd的消息体 在获得R后
+type BobSendROfP2p struct {
+	ChannelId      string `json:"channel_id"`
+	R              string `json:"r"`
+	He1bHex        string `json:"he1b_hex"`
+	He1bTempPubKey string `json:"he1b_temp_pub_key"`
+	Herd1bHex      string `json:"herd1b_hex"`
+}
+
+// ws消息 收款人的obd发给付款人的obd的消息体 在获得R后
+type BobSendROfWs struct {
+	BobSendROfP2p
+	MsgHash string `json:"msg_hash"`
+}
 
 //type -80: MsgType_Atomic_Swap_N80
 type AtomicSwapRequest struct {

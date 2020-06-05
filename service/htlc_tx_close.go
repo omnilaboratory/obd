@@ -270,8 +270,8 @@ func (service *htlcCloseTxManager) CloseHTLCSigned(msg bean.RequestMessage, user
 	}
 
 	// region check data
-	if tool.CheckIsString(&reqData.RequestHash) == false {
-		err = errors.New("empty request_hash")
+	if tool.CheckIsString(&reqData.MsgHash) == false {
+		err = errors.New("empty msg_hash")
 		log.Println(err)
 		return nil, err
 	}
@@ -283,9 +283,9 @@ func (service *htlcCloseTxManager) CloseHTLCSigned(msg bean.RequestMessage, user
 	}
 	defer tx.Rollback()
 
-	message, err := MessageService.getMsgUseTx(tx, reqData.RequestHash)
+	message, err := MessageService.getMsgUseTx(tx, reqData.MsgHash)
 	if err != nil {
-		return nil, errors.New("wrong request_hash")
+		return nil, errors.New("wrong msg_hash")
 	}
 	if message.Receiver != user.PeerId {
 		return nil, errors.New("you are not the operator")
