@@ -23,7 +23,7 @@ type htlcCloseTxManager struct {
 var HtlcCloseTxService htlcCloseTxManager
 
 // -49 request close htlc
-func (service *htlcCloseTxManager) RequestCloseHtlc(msg bean.RequestMessage, user bean.User) (retData map[string]interface{}, err error) {
+func (service *htlcCloseTxManager) RequestCloseHtlc(msg bean.RequestMessage, user bean.User) (retData *bean.RequestCloseHtlcTxOfP2p, err error) {
 	if tool.CheckIsString(&msg.Data) == false {
 		return nil, errors.New("empty json data")
 	}
@@ -186,12 +186,12 @@ func (service *htlcCloseTxManager) RequestCloseHtlc(msg bean.RequestMessage, use
 	tempAddrPrivateKeyMap[reqData.CurrRsmcTempAddressPubKey] = reqData.CurrRsmcTempAddressPrivateKey
 	tempAddrPrivateKeyMap[requesterPubKey] = reqData.ChannelAddressPrivateKey
 
-	retData = make(map[string]interface{})
-	retData["channelId"] = channelInfo.ChannelId
-	retData["lastRsmcTempAddressPrivateKey"] = reqData.LastRsmcTempAddressPrivateKey
-	retData["lastHtlcTempAddressPrivateKey"] = reqData.LastHtlcTempAddressPrivateKey
-	retData["lastHtlcTempAddressForHtnxPrivateKey"] = reqData.LastHtlcTempAddressForHtnxPrivateKey
-	retData["currRsmcTempAddressPubKey"] = reqData.CurrRsmcTempAddressPubKey
+	retData = &bean.RequestCloseHtlcTxOfP2p{}
+	retData.ChannelId = channelInfo.ChannelId
+	retData.LastRsmcTempAddressPrivateKey = reqData.LastRsmcTempAddressPrivateKey
+	retData.LastHtlcTempAddressPrivateKey = reqData.LastHtlcTempAddressPrivateKey
+	retData.LastHtlcTempAddressForHtnxPrivateKey = reqData.LastHtlcTempAddressForHtnxPrivateKey
+	retData.CurrRsmcTempAddressPubKey = reqData.CurrRsmcTempAddressPubKey
 
 	//如果是第一次请求，前面没有请求失败
 	if latestCommitmentTxInfo.CurrState == dao.TxInfoState_Htlc_GetR {
@@ -204,13 +204,13 @@ func (service *htlcCloseTxManager) RequestCloseHtlc(msg bean.RequestMessage, use
 		if err != nil {
 			return nil, err
 		}
-		retData["rsmcHex"] = newCommitmentTxInfo.RSMCTxHex
-		retData["toOtherHex"] = newCommitmentTxInfo.ToCounterpartyTxHex
-		retData["commitmentHash"] = newCommitmentTxInfo.CurrHash
+		retData.RsmcHex = newCommitmentTxInfo.RSMCTxHex
+		retData.ToCounterpartyTxHex = newCommitmentTxInfo.ToCounterpartyTxHex
+		retData.CommitmentTxHash = newCommitmentTxInfo.CurrHash
 	} else {
-		retData["rsmcHex"] = latestCommitmentTxInfo.RSMCTxHex
-		retData["toOtherHex"] = latestCommitmentTxInfo.ToCounterpartyTxHex
-		retData["commitmentHash"] = latestCommitmentTxInfo.CurrHash
+		retData.RsmcHex = latestCommitmentTxInfo.RSMCTxHex
+		retData.ToCounterpartyTxHex = latestCommitmentTxInfo.ToCounterpartyTxHex
+		retData.CommitmentTxHash = latestCommitmentTxInfo.CurrHash
 	}
 	_ = tx.Commit()
 	return retData, nil

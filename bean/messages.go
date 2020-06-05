@@ -368,7 +368,7 @@ type RequestCloseHtlcTxOfP2p struct {
 	CurrRsmcTempAddressPubKey            string `json:"curr_rsmc_temp_address_pub_key"`
 	RsmcHex                              string `json:"rsmc_hex"`
 	ToCounterpartyTxHex                  string `json:"to_counterparty_tx_hex"`
-	CommitmentHash                       string `json:"commitment_hash"`
+	CommitmentTxHash                     string `json:"commitment_tx_hash"`
 }
 
 // ws消息 收款人的obd发给付款人的obd的消息体 在获得R后
