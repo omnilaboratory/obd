@@ -217,12 +217,10 @@ func (service *htlcCloseTxManager) RequestCloseHtlc(msg bean.RequestMessage, use
 }
 
 // -49 接收方节点的信息缓存处理
-func (service *htlcCloseTxManager) BeforeBobSignCloseHtlcAtBobSide(data string, user *bean.User) (retData map[string]interface{}, err error) {
-	jsonObj := gjson.Parse(data)
-	retData = make(map[string]interface{})
-	retData["channelId"] = jsonObj.Get("channelId").String()
-	retData["rsmcHex"] = jsonObj.Get("rsmcHex").String()
-	retData["toOtherHex"] = jsonObj.Get("toOtherHex").String()
+func (service *htlcCloseTxManager) BeforeBobSignCloseHtlcAtBobSide(data string, user *bean.User) (retData *bean.RequestCloseHtlcTxOfWs, err error) {
+
+	closeHtlcTxOfP2p := &bean.RequestCloseHtlcTxOfP2p{}
+	_ = json.Unmarshal([]byte(data), closeHtlcTxOfP2p)
 
 	tx, err := user.Db.Begin(true)
 	if err != nil {
@@ -233,7 +231,7 @@ func (service *htlcCloseTxManager) BeforeBobSignCloseHtlcAtBobSide(data string, 
 
 	channelInfo := &dao.ChannelInfo{}
 	err = tx.Select(
-		q.Eq("ChannelId", jsonObj.Get("channelId").String()),
+		q.Eq("ChannelId", closeHtlcTxOfP2p.ChannelId),
 		q.Or(
 			q.Eq("PeerIdA", user.PeerId),
 			q.Eq("PeerIdB", user.PeerId))).
@@ -250,10 +248,13 @@ func (service *htlcCloseTxManager) BeforeBobSignCloseHtlcAtBobSide(data string, 
 		senderPeerId = channelInfo.PeerIdB
 	}
 	messageHash := MessageService.saveMsgUseTx(tx, senderPeerId, user.PeerId, data)
-	retData["msgHash"] = messageHash
 	_ = tx.Commit()
 
-	return retData, nil
+	closeHtlcTxOfWs := &bean.RequestCloseHtlcTxOfWs{}
+	closeHtlcTxOfWs.RequestCloseHtlcTxOfP2p = *closeHtlcTxOfP2p
+	closeHtlcTxOfWs.MsgHash = messageHash
+
+	return closeHtlcTxOfWs, nil
 }
 
 // -50 sign close htlc
@@ -290,7 +291,8 @@ func (service *htlcCloseTxManager) CloseHTLCSigned(msg bean.RequestMessage, user
 	if message.Receiver != user.PeerId {
 		return nil, errors.New("you are not the operator")
 	}
-	aliceDataJson := gjson.Parse(message.Data)
+	closeHtlcTxOfP2p := &bean.RequestCloseHtlcTxOfP2p{}
+	_ = json.Unmarshal([]byte(message.Data), closeHtlcTxOfP2p)
 
 	if tool.CheckIsString(&reqData.ChannelAddressPrivateKey) == false {
 		err = errors.New("empty channel_address_private_key")
@@ -333,7 +335,7 @@ func (service *htlcCloseTxManager) CloseHTLCSigned(msg bean.RequestMessage, user
 
 	channelInfo := &dao.ChannelInfo{}
 	err = tx.Select(
-		q.Eq("ChannelId", aliceDataJson.Get("channelId").String()),
+		q.Eq("ChannelId", closeHtlcTxOfP2p.ChannelId),
 		q.Or(
 			q.Eq("PeerIdA", user.PeerId),
 			q.Eq("PeerIdB", user.PeerId))).
@@ -439,7 +441,7 @@ func (service *htlcCloseTxManager) CloseHTLCSigned(msg bean.RequestMessage, user
 
 	// region 签名requester的承诺交易
 	// 签名对方传过来的rsmcHex
-	aliceRsmcTxId, signedRsmcHex, err := rpcClient.BtcSignRawTransaction(aliceDataJson.Get("rsmcHex").String(), reqData.ChannelAddressPrivateKey)
+	aliceRsmcTxId, signedRsmcHex, err := rpcClient.BtcSignRawTransaction(closeHtlcTxOfP2p.RsmcHex, reqData.ChannelAddressPrivateKey)
 	if err != nil {
 		return nil, errors.New("fail to sign rsmc hex ")
 	}
@@ -452,7 +454,7 @@ func (service *htlcCloseTxManager) CloseHTLCSigned(msg bean.RequestMessage, user
 	}
 
 	//  根据alice的临时地址+bob的通道address,获取alice2+bob的多签地址，并得到AliceSignedRsmcHex签名后的交易的input，为创建alice的RD和bob的BR做准备
-	aliceMultiAddr, err := rpcClient.CreateMultiSig(2, []string{aliceDataJson.Get("currRsmcTempAddressPubKey").String(), signerPubKey})
+	aliceMultiAddr, err := rpcClient.CreateMultiSig(2, []string{closeHtlcTxOfP2p.CurrRsmcTempAddressPubKey, signerPubKey})
 	if err != nil {
 		return nil, err
 	}
@@ -472,7 +474,7 @@ func (service *htlcCloseTxManager) CloseHTLCSigned(msg bean.RequestMessage, user
 	retData["signedRsmcHex"] = signedRsmcHex
 
 	//  签名对方传过来的toOtherHex
-	_, signedToOtherHex, err := rpcClient.BtcSignRawTransaction(aliceDataJson.Get("toOtherHex").String(), reqData.ChannelAddressPrivateKey)
+	_, signedToOtherHex, err := rpcClient.BtcSignRawTransaction(closeHtlcTxOfP2p.ToCounterpartyTxHex, reqData.ChannelAddressPrivateKey)
 	if err != nil {
 		return nil, errors.New("fail to sign toOther hex ")
 	}
@@ -490,17 +492,17 @@ func (service *htlcCloseTxManager) CloseHTLCSigned(msg bean.RequestMessage, user
 	var amountToCounterparty = 0.0
 	if latestCommitmentTxInfo.TxType == dao.CommitmentTransactionType_Htlc {
 		//region 3、根据对方传过来的上一个交易的临时rsmc私钥，签名最近的BR交易，保证对方确实放弃了上一个承诺交易
-		err = signLastBR(tx, dao.BRType_Rmsc, *channelInfo, user.PeerId, aliceDataJson.Get("lastRsmcTempAddressPrivateKey").String(), latestCommitmentTxInfo.Id)
+		err = signLastBR(tx, dao.BRType_Rmsc, *channelInfo, user.PeerId, closeHtlcTxOfP2p.LastRsmcTempAddressPrivateKey, latestCommitmentTxInfo.Id)
 		if err != nil {
 			log.Println(err)
 			return nil, err
 		}
-		err = signLastBR(tx, dao.BRType_Htlc, *channelInfo, user.PeerId, aliceDataJson.Get("lastHtlcTempAddressPrivateKey").String(), latestCommitmentTxInfo.Id)
+		err = signLastBR(tx, dao.BRType_Htlc, *channelInfo, user.PeerId, closeHtlcTxOfP2p.LastHtlcTempAddressPrivateKey, latestCommitmentTxInfo.Id)
 		if err != nil {
 			log.Println(err)
 			return nil, err
 		}
-		err = signLastBR(tx, dao.BRType_Ht1a, *channelInfo, user.PeerId, aliceDataJson.Get("lastHtlcTempAddressForHtnxPrivateKey").String(), latestCommitmentTxInfo.Id)
+		err = signLastBR(tx, dao.BRType_Ht1a, *channelInfo, user.PeerId, closeHtlcTxOfP2p.LastHtlcTempAddressForHtnxPrivateKey, latestCommitmentTxInfo.Id)
 		if err != nil {
 			log.Println(err)
 			return nil, err
@@ -533,7 +535,7 @@ func (service *htlcCloseTxManager) CloseHTLCSigned(msg bean.RequestMessage, user
 		senderCommitmentTx := &dao.CommitmentTransaction{}
 		senderCommitmentTx.Id = newCommitmentTxInfo.Id
 		senderCommitmentTx.PropertyId = fundingTransaction.PropertyId
-		senderCommitmentTx.RSMCTempAddressPubKey = aliceDataJson.Get("currTempAddressPubKey").String()
+		senderCommitmentTx.RSMCTempAddressPubKey = closeHtlcTxOfP2p.CurrRsmcTempAddressPubKey
 		senderCommitmentTx.RSMCMultiAddress = aliceRsmcMultiAddress
 		senderCommitmentTx.RSMCRedeemScript = aliceRsmcRedeemScript
 		senderCommitmentTx.RSMCMultiAddressScriptPubKey = aliceRsmcMultiAddressScriptPubKey
@@ -575,7 +577,7 @@ func (service *htlcCloseTxManager) CloseHTLCSigned(msg bean.RequestMessage, user
 		return nil, errors.New("fail to create rd")
 	}
 	retData["senderRdHex"] = senderRdhex
-	retData["commitmentTxHash"] = aliceDataJson.Get("commitmentHash").Str
+	retData["commitmentTxHash"] = closeHtlcTxOfP2p.CommitmentTxHash
 	//endregion create RD tx for alice
 
 	_ = MessageService.updateMsgStateUseTx(tx, message)
@@ -870,9 +872,7 @@ func (service *htlcCloseTxManager) AfterBobCloseHTLCSigned_AtAliceSide(data stri
 	//同步通道信息到tracker
 	sendChannelStateToTracker(*channelInfo, *latestCcommitmentTxInfo)
 
-	aliceData["channelId"] = channelId
 	bobData["channelId"] = channelId
-
 	retData = make(map[string]interface{})
 	retData["aliceData"] = aliceData
 	retData["bobData"] = bobData

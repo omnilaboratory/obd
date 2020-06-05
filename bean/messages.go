@@ -348,9 +348,9 @@ type AliceRequestAddHtlc struct {
 type BobSendROfP2p struct {
 	ChannelId      string `json:"channel_id"`
 	R              string `json:"r"`
-	He1bHex        string `json:"he1b_hex"`
+	He1bTxHex      string `json:"he1b_tx_hex"`
 	He1bTempPubKey string `json:"he1b_temp_pub_key"`
-	Herd1bHex      string `json:"herd1b_hex"`
+	Herd1bTxHex    string `json:"herd1b_tx_hex"`
 }
 
 // ws消息 收款人的obd发给付款人的obd的消息体 在获得R后

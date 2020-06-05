@@ -171,9 +171,9 @@ func (service *htlcBackwardTxManager) SendRToPreviousNode_Step1(msg bean.Request
 	responseData = &bean.BobSendROfP2p{}
 	responseData.ChannelId = reqData.ChannelId
 	responseData.R = reqData.R
-	responseData.He1bHex = he1b.RSMCTxHex
+	responseData.He1bTxHex = he1b.RSMCTxHex
 	responseData.He1bTempPubKey = reqData.CurrHtlcTempAddressForHE1bPubKey
-	responseData.Herd1bHex = herd.TxHex
+	responseData.Herd1bTxHex = herd.TxHex
 
 	return responseData, nil
 }
@@ -247,7 +247,8 @@ func (service *htlcBackwardTxManager) VerifyRAndCreateTxs_Step3(msg bean.Request
 	if message.Receiver != user.PeerId {
 		return nil, errors.New("you are not the operator")
 	}
-	jsonDataFromPayee := gjson.Parse(message.Data)
+	senderSendROfP2p := &bean.BobSendROfP2p{}
+	_ = json.Unmarshal([]byte(message.Data), senderSendROfP2p)
 
 	if tool.CheckIsString(&reqData.ChannelAddressPrivateKey) == false {
 		err = errors.New("channel_address_private_key is empty")
@@ -292,7 +293,7 @@ func (service *htlcBackwardTxManager) VerifyRAndCreateTxs_Step3(msg bean.Request
 		log.Println(err)
 		return nil, err
 	}
-	if jsonDataFromPayee.Get("r").String() != reqData.R {
+	if senderSendROfP2p.R != reqData.R {
 		err = errors.New("your r not equal payee's r")
 		log.Println(err)
 		return nil, err
@@ -332,7 +333,7 @@ func (service *htlcBackwardTxManager) VerifyRAndCreateTxs_Step3(msg bean.Request
 	//endregion
 
 	//region 2 签名herd1b
-	signedHerd1bHex, err := signHerd1bAtPayerSide_at46(jsonDataFromPayee, payerChannelPubKey, *reqData)
+	signedHerd1bHex, err := signHerd1bAtPayerSide_at46(*senderSendROfP2p, payerChannelPubKey, *reqData)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -341,9 +342,9 @@ func (service *htlcBackwardTxManager) VerifyRAndCreateTxs_Step3(msg bean.Request
 
 	//region  3 创建HEBR1b for payer
 	if latestCommitmentTxInfo.CurrState == dao.TxInfoState_Htlc_GetH {
-		he1bTempPubKey := jsonDataFromPayee.Get("he1bTempPubKey").Str
+		he1bTempPubKey := senderSendROfP2p.He1bTempPubKey
 		helbOutAddress, helbOutAddressRedeemScript, helbOutAddressScriptPubKey, err := createMultiSig(he1bTempPubKey, payerChannelPubKey)
-		he1bTxHex := jsonDataFromPayee.Get("he1bHex").String()
+		he1bTxHex := senderSendROfP2p.He1bTxHex
 		he1bOutputs, err := getInputsForNextTxByParseTxHashVout(he1bTxHex, helbOutAddress, helbOutAddressScriptPubKey, helbOutAddressRedeemScript)
 		if err != nil || len(he1bOutputs) == 0 {
 			log.Println(err)
@@ -650,7 +651,7 @@ func createHerd1bAtPayeeSide_at45(tx storm.Node, channelInfo dao.ChannelInfo, he
 		channelInfo.FundingAddress,
 		channelInfo.PropertyId,
 		he1b.RSMCOutAmount,
-		0.00001,
+		0,
 		herd.Sequence,
 		&he1b.RSMCRedeemScript)
 	if err != nil {
@@ -674,13 +675,13 @@ func createHerd1bAtPayeeSide_at45(tx storm.Node, channelInfo dao.ChannelInfo, he
 }
 
 // 46 签名收款方的HERD1b
-func signHerd1bAtPayerSide_at46(jsonDataFromPayee gjson.Result, payerChannelPubKey string, reqData bean.HtlcCheckRAndCreateTx) (signedHerd1bHex string, err error) {
+func signHerd1bAtPayerSide_at46(senderSendROfP2p bean.BobSendROfP2p, payerChannelPubKey string, reqData bean.HtlcCheckRAndCreateTx) (signedHerd1bHex string, err error) {
 
-	herd1bHex := jsonDataFromPayee.Get("herd1bHex").Str
+	herd1bHex := senderSendROfP2p.Herd1bTxHex
+	he1bTempPubKey := senderSendROfP2p.He1bTempPubKey
 
-	he1bTempPubKey := jsonDataFromPayee.Get("he1bTempPubKey").Str
 	helbOutAddress, he1bRedeemScript, helbOutAddressScriptPubKey, err := createMultiSig(he1bTempPubKey, payerChannelPubKey)
-	he1bTxHex := jsonDataFromPayee.Get("he1bHex").String()
+	he1bTxHex := senderSendROfP2p.He1bTxHex
 	he1bOutputs, err := getInputsForNextTxByParseTxHashVout(he1bTxHex, helbOutAddress, helbOutAddressScriptPubKey, he1bRedeemScript)
 	if err != nil || len(he1bOutputs) == 0 {
 		log.Println(err)
