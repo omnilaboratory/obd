@@ -75,7 +75,7 @@
 	MsgType_Mnemonic_GetAddressByIndex_3001 MsgType = -103001
 
 	//Omni充值列表
-	MsgType_FundingCreate_Asset_ALlItem_3100 MsgType = -103100
+	MsgType_FundingCreate_Asset_AllItem_3100 MsgType = -103100
 	//Omni充值根据id获取充值详情
 	MsgType_FundingCreate_Asset_ItemById_3101 MsgType = -103101
 	//Omni充值根据通道id获取充值详情
@@ -83,10 +83,10 @@
 	//Omni充值充值总次数
 	MsgType_FundingCreate_Asset_Count_3103 MsgType = -103103
 	//Btc充值充值列表
-	MsgType_FundingCreate_Btc_ALlItem_3104                      MsgType = -103104
+	MsgType_FundingCreate_Btc_AllItem_3104                      MsgType = -103104
 	MsgType_FundingCreate_Btc_ItemById_3105                     MsgType = -103105
 	MsgType_FundingCreate_Btc_ItemByTempChannelId_3106          MsgType = -103106
-	MsgType_FundingCreate_Btc_RDALlItem_3107                    MsgType = -103107
+	MsgType_FundingCreate_Btc_RDAllItem_3107                    MsgType = -103107
 	MsgType_FundingCreate_Btc_ItemRDById_3108                   MsgType = -103108
 	MsgType_FundingCreate_Btc_ItemRDByTempChannelId_3109        MsgType = -103109
 	MsgType_FundingCreate_Btc_ItemRDByTempChannelIdAndTxId_3110 MsgType = -103110
@@ -181,7 +181,6 @@
 	MsgType_HTLC_CloseHtlcUpdateCnb_52     MsgType = -52
 	MsgType_HTLC_RecvCloseSigned_50        MsgType = -110050
 
-	
 	MsgType_Atomic_SendSwap_80        MsgType = -100080
 	MsgType_Atomic_Swap_N80           MsgType = -80
 	MsgType_Atomic_RecvSwap_N80       MsgType = -110080
