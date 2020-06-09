@@ -75,10 +75,10 @@ const (
 	//Omni充值充值总次数
 	MsgType_FundingCreate_Asset_Count_3103 MsgType = -103103
 	//Btc充值充值列表
-	MsgType_FundingCreate_Btc_ALlItem_3104                      MsgType = -103104
+	MsgType_FundingCreate_Btc_AllItem_3104                      MsgType = -103104
 	MsgType_FundingCreate_Btc_ItemById_3105                     MsgType = -103105
 	MsgType_FundingCreate_Btc_ItemByTempChannelId_3106          MsgType = -103106
-	MsgType_FundingCreate_Btc_RDALlItem_3107                    MsgType = -103107
+	MsgType_FundingCreate_Btc_RDAllItem_3107                    MsgType = -103107
 	MsgType_FundingCreate_Btc_ItemRDById_3108                   MsgType = -103108
 	MsgType_FundingCreate_Btc_ItemRDByTempChannelId_3109        MsgType = -103109
 	MsgType_FundingCreate_Btc_ItemRDByTempChannelIdAndTxId_3110 MsgType = -103110
@@ -267,13 +267,13 @@ func CheckExist(msgType MsgType) bool {
 		return true
 	case MsgType_FundingCreate_SendBtcFundingCreated_340:
 		return true
-	case MsgType_FundingCreate_Btc_ALlItem_3104:
+	case MsgType_FundingCreate_Btc_AllItem_3104:
 		return true
 	case MsgType_FundingCreate_Btc_ItemById_3105:
 		return true
 	case MsgType_FundingCreate_Btc_ItemByTempChannelId_3106:
 		return true
-	case MsgType_FundingCreate_Btc_RDALlItem_3107:
+	case MsgType_FundingCreate_Btc_RDAllItem_3107:
 		return true
 	case MsgType_FundingCreate_Btc_ItemRDById_3108:
 		return true

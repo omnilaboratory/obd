@@ -38,7 +38,7 @@ func (client *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.Se
 		}
 		msg.Type = enum.MsgType_FundingCreate_SendBtcFundingCreated_340
 		client.sendToMyself(msg.Type, status, data)
-	case enum.MsgType_FundingCreate_Btc_ALlItem_3104:
+	case enum.MsgType_FundingCreate_Btc_AllItem_3104:
 		node, err := service.FundingTransactionService.BtcFundingAllItem(*client.User)
 		if err != nil {
 			data = err.Error()
@@ -86,7 +86,7 @@ func (client *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.Se
 		}
 		client.sendToMyself(msg.Type, status, data)
 
-	case enum.MsgType_FundingCreate_Btc_RDALlItem_3107:
+	case enum.MsgType_FundingCreate_Btc_RDAllItem_3107:
 		node, err := service.FundingTransactionService.BtcFundingRDAllItem(*client.User)
 		if err != nil {
 			data = err.Error()
