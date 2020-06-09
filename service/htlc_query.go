@@ -107,25 +107,6 @@ func (service *htlcHMessageManager) GetHtlcCreatedRandHInfoList(user *bean.User)
 	return rAndHInfoList, nil
 }
 
-//转账发起方通过Id获取H结构体详细
-func (service *htlcHMessageManager) GetHtlcCreatedRandHInfoItemById(msgData string, user *bean.User) (data interface{}, err error) {
-	id, err := strconv.Atoi(msgData)
-	if err != nil {
-		log.Println(err.Error())
-		return nil, err
-	}
-	var rAndHInfo dao.HtlcRAndHInfo
-	err = db.Select(
-		q.Eq("Id", id),
-		q.Eq("CreateBy", user.PeerId)).
-		First(&rAndHInfo)
-	if err != nil {
-		return nil, err
-	}
-	rAndHInfo.R = ""
-	return rAndHInfo, nil
-}
-
 //htlc最终收款方获取HR的结构体列表
 func (service *htlcHMessageManager) GetHtlcSignedRandHInfoList(user *bean.User) (data interface{}, err error) {
 	var rAndHInfoList []dao.HtlcRAndHInfo

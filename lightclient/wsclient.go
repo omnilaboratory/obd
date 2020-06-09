@@ -9,7 +9,6 @@ import (
 	"github.com/omnilaboratory/obd/service"
 	"github.com/omnilaboratory/obd/tool"
 	"log"
-	"strconv"
 	"strings"
 
 	"github.com/gorilla/websocket"
@@ -114,8 +113,13 @@ func (client *Client) Read() {
 		status := false
 		var dataOut []byte
 		var needLogin = true
-		if msg.Type < 1000 && msg.Type >= 0 {
-			if msg.Type == enum.MsgType_GetMnemonic_101 {
+
+		if msg.Type <= enum.MsgType_UserLogin_2001 && msg.Type >= enum.MsgType_Common_End_2999 {
+			needLogin = false
+		}
+
+		if msg.Type <= enum.MsgType_UserLogin_2001 && msg.Type > enum.MsgType_User_End_2099 {
+			if msg.Type == enum.MsgType_GetMnemonic_2004 {
 				sendType, dataOut, status = client.hdWalletModule(msg)
 			} else {
 				sendType, dataOut, status = client.userModule(msg)
@@ -123,7 +127,7 @@ func (client *Client) Read() {
 			needLogin = false
 		}
 
-		if msg.Type > 1000 {
+		if msg.Type <= enum.MsgType_Core_GetNewAddress_2101 && msg.Type > enum.MsgType_Core_Omni_End_2199 {
 			sendType, dataOut, status = client.omniCoreModule(msg)
 			needLogin = false
 		}
@@ -135,16 +139,15 @@ func (client *Client) Read() {
 				continue
 			} else { // already login
 
-				if msg.Type == enum.MsgType_ChannelOpen_N32 || msg.Type == enum.MsgType_ChannelAccept_N33 ||
-					msg.Type == enum.MsgType_FundingCreate_BtcFundingCreated_N3400 || msg.Type == enum.MsgType_FundingSign_BtcSign_N3500 ||
-					msg.Type == enum.MsgType_FundingCreate_AssetFundingCreated_N34 || msg.Type == enum.MsgType_FundingSign_AssetFundingSigned_N35 ||
-					msg.Type == enum.MsgType_CommitmentTxSigned_RevokeAndAcknowledgeCommitmentTransaction_N352 ||
-					msg.Type == enum.MsgType_CommitmentTx_CommitmentTransactionCreated_N351 ||
-					msg.Type == enum.MsgType_CloseChannelRequest_N38 || msg.Type == enum.MsgType_CloseChannelSign_N39 ||
-					msg.Type == enum.MsgType_HTLC_AddHTLC_N40 || msg.Type == enum.MsgType_HTLC_AddHTLCSigned_N41 ||
-					msg.Type == enum.MsgType_HTLC_SendR_N45 || msg.Type == enum.MsgType_HTLC_VerifyR_N46 ||
-					msg.Type == enum.MsgType_HTLC_RequestCloseCurrTx_N49 || msg.Type == enum.MsgType_HTLC_CloseSigned_N50 ||
-					msg.Type == enum.MsgType_Atomic_Swap_N80 || msg.Type == enum.MsgType_Atomic_Swap_Accept_N81 {
+				if msg.Type == enum.MsgType_SendChannelOpen_32 || msg.Type == enum.MsgType_SendChannelAccept_33 ||
+					msg.Type == enum.MsgType_FundingCreate_SendBtcFundingCreated_340 || msg.Type == enum.MsgType_FundingSign_SendBtcSign_350 ||
+					msg.Type == enum.MsgType_FundingCreate_SendAssetFundingCreated_34 || msg.Type == enum.MsgType_FundingSign_SendAssetFundingSigned_35 ||
+					msg.Type == enum.MsgType_CommitmentTx_CommitmentTransactionCreated_351 ||
+					msg.Type == enum.MsgType_HTLC_SendAddHTLC_40 || msg.Type == enum.MsgType_HTLC_SendAddHTLCSigned_41 ||
+					msg.Type == enum.MsgType_HTLC_SendVerifyR_45 || msg.Type == enum.MsgType_HTLC_SendSignVerifyR_46 ||
+					msg.Type == enum.MsgType_HTLC_SendRequestCloseCurrTx_49 || msg.Type == enum.MsgType_HTLC_SendCloseSigned_50 ||
+					msg.Type == enum.MsgType_Atomic_SendSwap_80 || msg.Type == enum.MsgType_Atomic_SendSwapAccept_81 ||
+					msg.Type == enum.MsgType_SendCloseChannelRequest_38 || msg.Type == enum.MsgType_SendCloseChannelSign_39 {
 					if tool.CheckIsString(&msg.RecipientUserPeerId) == false {
 						client.sendToMyself(msg.Type, false, "error recipient_user_peer_id")
 						continue
@@ -172,88 +175,84 @@ func (client *Client) Read() {
 
 				msg.SenderUserPeerId = client.User.PeerId
 				for {
-					typeStr := strconv.Itoa(int(msg.Type))
-					//-200 -201
-					if msg.Type <= enum.MsgType_Mnemonic_CreateAddress_N200 && msg.Type >= enum.MsgType_Mnemonic_GetAddressByIndex_201 {
+					//-3000 -3001
+					if msg.Type <= enum.MsgType_Mnemonic_CreateAddress_3000 &&
+						msg.Type >= enum.MsgType_Mnemonic_GetAddressByIndex_3001 {
 						sendType, dataOut, status = client.hdWalletModule(msg)
 						break
 					}
 
-					//-32 -3201 -3202 -3203 -3204
-					if strings.HasPrefix(typeStr, strconv.Itoa(int(enum.MsgType_ChannelOpen_N32))) {
+					//-32 -33  及查询
+					if msg.Type == enum.MsgType_SendChannelOpen_32 ||
+						msg.Type == enum.MsgType_SendChannelAccept_33 ||
+						(msg.Type <= enum.MsgType_ChannelOpen_AllItem_3150 &&
+							msg.Type >= enum.MsgType_GetChannelInfoByChanId_3155) {
 						sendType, dataOut, status = client.channelModule(msg)
 						break
 					}
-					//-33 -3301 -3302 -3303 -3304
-					if strings.HasPrefix(typeStr, strconv.Itoa(int(enum.MsgType_ChannelAccept_N33))) {
-						sendType, dataOut, status = client.channelModule(msg)
-						break
-					}
-					//-34 -3400 -3401 -3402 -3403 -3404
-					if strings.HasPrefix(typeStr, strconv.Itoa(int(enum.MsgType_FundingCreate_AssetFundingCreated_N34))) {
+
+					//-34 -340 及查询
+					if msg.Type == enum.MsgType_FundingCreate_SendAssetFundingCreated_34 ||
+						msg.Type == enum.MsgType_FundingCreate_SendBtcFundingCreated_340 ||
+						(msg.Type <= enum.MsgType_FundingCreate_Asset_ALlItem_3100 &&
+							msg.Type >= enum.MsgType_FundingCreate_Btc_ItemRDByTempChannelIdAndTxId_3110) {
 						sendType, dataOut, status = client.fundingTransactionModule(msg)
 						break
 					}
 
-					//-35 -3500
-					if msg.Type == enum.MsgType_FundingSign_AssetFundingSigned_N35 ||
-						msg.Type == enum.MsgType_FundingSign_BtcSign_N3500 {
+					//-35 -350
+					if msg.Type == enum.MsgType_FundingSign_SendAssetFundingSigned_35 ||
+						msg.Type == enum.MsgType_FundingSign_SendBtcSign_350 {
 						sendType, dataOut, status = client.fundingSignModule(msg)
 						break
 					}
 
-					if strings.HasPrefix(typeStr, strconv.Itoa(int(enum.MsgType_FundingSign_AssetFundingSigned_N35))) {
-						//-351 -35101 -35102 -35103 -35104
-						if strings.HasPrefix(typeStr, strconv.Itoa(int(enum.MsgType_CommitmentTx_CommitmentTransactionCreated_N351))) {
-							sendType, dataOut, status = client.commitmentTxModule(msg)
-							break
-						}
-						//-352 -35201 -35202 -35203 -35204
-						if strings.HasPrefix(typeStr, strconv.Itoa(int(enum.MsgType_CommitmentTxSigned_RevokeAndAcknowledgeCommitmentTransaction_N352))) {
-							sendType, dataOut, status = client.commitmentTxSignModule(msg)
-							break
-						}
-						//-353 -35301 -35302 -35303 -35304
-						if strings.HasPrefix(typeStr, strconv.Itoa(int(enum.MsgType_CommitmentTxSigned_ToAliceSign_N353))) {
-							sendType, dataOut, status = client.otherModule(msg)
-							break
-						}
-						//-354 -35401 -35402 -35403 -35404
-						if strings.HasPrefix(typeStr, strconv.Itoa(int(enum.MsgType_CommitmentTxSigned_SecondToBobSign_N354))) {
-							sendType, dataOut, status = client.otherModule(msg)
-							break
-						}
+					//-351 及查询
+					if msg.Type == enum.MsgType_CommitmentTx_SendCommitmentTransactionCreated_351 ||
+						(msg.Type <= enum.MsgType_CommitmentTx_ItemsByChanId_3200 &&
+							msg.Type >= enum.MsgType_CommitmentTx_AllBRByChanId_3208) {
+						sendType, dataOut, status = client.commitmentTxModule(msg)
+						break
 					}
 
-					//-38
-					if msg.Type == enum.MsgType_CloseChannelRequest_N38 ||
-						msg.Type == enum.MsgType_CloseChannelSign_N39 {
+					//-352
+					if msg.Type == enum.MsgType_CommitmentTxSigned_SendRevokeAndAcknowledgeCommitmentTransaction_352 {
+						sendType, dataOut, status = client.commitmentTxSignModule(msg)
+						break
+					}
+
+					//-38 -39
+					if msg.Type == enum.MsgType_SendCloseChannelRequest_38 ||
+						msg.Type == enum.MsgType_SendCloseChannelSign_39 {
 						sendType, dataOut, status = client.channelModule(msg)
 						break
 					}
 
 					//-40 -41
-					if strings.HasPrefix(typeStr, strconv.Itoa(int(enum.MsgType_HTLC_AddHTLC_N40))) ||
-						strings.HasPrefix(typeStr, strconv.Itoa(int(enum.MsgType_HTLC_AddHTLCSigned_N41))) {
-						sendType, dataOut, status = client.htlcHDealModule(msg)
+					if msg.Type == enum.MsgType_HTLC_FindPath_401 ||
+						msg.Type == enum.MsgType_HTLC_Invoice_402 ||
+						msg.Type == enum.MsgType_HTLC_SendAddHTLC_40 ||
+						msg.Type == enum.MsgType_HTLC_SendAddHTLCSigned_41 {
+						sendType, dataOut, status = client.htlcHModule(msg)
 						break
 					}
 
 					//-42 -43 -44 -45 -46 -47
-					if msg.Type <= enum.MsgType_HTLC_PayerSignC3b_N42 && msg.Type >= enum.MsgType_HTLC_VerifyR_N46 {
+					if msg.Type == enum.MsgType_HTLC_SendVerifyR_45 ||
+						msg.Type == enum.MsgType_HTLC_SendSignVerifyR_46 {
 						sendType, dataOut, status = client.htlcTxModule(msg)
 						break
 					}
 
 					// -48 -49
-					if msg.Type == enum.MsgType_HTLC_RequestCloseCurrTx_N49 ||
-						msg.Type == enum.MsgType_HTLC_CloseSigned_N50 {
+					if msg.Type == enum.MsgType_HTLC_SendRequestCloseCurrTx_49 ||
+						msg.Type == enum.MsgType_HTLC_SendCloseSigned_50 {
 						sendType, dataOut, status = client.htlcCloseModule(msg)
 						break
 					}
 					// -80 -81
-					if msg.Type == enum.MsgType_Atomic_Swap_Accept_N81 ||
-						msg.Type == enum.MsgType_Atomic_Swap_N80 {
+					if msg.Type == enum.MsgType_Atomic_SendSwap_80 ||
+						msg.Type == enum.MsgType_Atomic_SendSwapAccept_81 {
 						sendType, dataOut, status = client.atomicSwapModule(msg)
 						break
 					}
@@ -327,22 +326,6 @@ func getP2PReplyObj(data string, msgType enum.MsgType, status bool, fromId, toCl
 	}
 	jsonMessage, _ := json.Marshal(&bean.ReplyMessage{Type: msgType, Status: status, From: fromId, To: toClientId, Result: result})
 	return jsonMessage
-
-	//var jsonMessage []byte
-	//node := make(map[string]interface{})
-	//err := json.Unmarshal([]byte(data), &node)
-	//if err == nil {
-	//	parse := gjson.Parse(data)
-	//	jsonMessage, _ = json.Marshal(&bean.ReplyMessage{Type: msgType, Status: status, From: fromId, To: toClientId, Result: parse.Value()})
-	//} else {
-	//	if strings.Contains(err.Error(), " array into Go value of type map") {
-	//		parse := gjson.Parse(data)
-	//		jsonMessage, _ = json.Marshal(&bean.ReplyMessage{Type: msgType, Status: status, From: fromId, To: toClientId, Result: parse.Value()})
-	//	} else {
-	//		jsonMessage, _ = json.Marshal(&bean.ReplyMessage{Type: msgType, Status: status, From: fromId, To: toClientId, Result: data})
-	//	}
-	//}
-	//return jsonMessage
 }
 
 func (client *Client) sendToMyself(msgType enum.MsgType, status bool, data string) {
@@ -451,11 +434,52 @@ func getDataFromP2PSomeone(msg bean.RequestMessage) error {
 func p2pMiddleNodeTransferData(msg *bean.RequestMessage, itemClient Client, data string, retData string) string {
 	//需要节点之间本身的通信 bob的节点响应352后，发送353到alice节点，353处理完成后，需要对353的结果消息进行分发
 	//当前的353消息本身是从bob发给Alice的
-	if msg.Type == enum.MsgType_CommitmentTxSigned_ToAliceSign_N353 {
+
+	if msg.Type == enum.MsgType_ChannelOpen_32 {
+		msg.Type = enum.MsgType_RecvChannelOpen_32
+	}
+
+	if msg.Type == enum.MsgType_ChannelAccept_33 {
+		msg.Type = enum.MsgType_RecvChannelAccept_33
+	}
+
+	if msg.Type == enum.MsgType_FundingCreate_AssetFundingCreated_34 {
+		msg.Type = enum.MsgType_FundingCreate_RecvAssetFundingCreated_34
+	}
+
+	if msg.Type == enum.MsgType_FundingSign_AssetFundingSigned_35 {
+		msg.Type = enum.MsgType_FundingSign_RecvAssetFundingSigned_35
+	}
+
+	if msg.Type == enum.MsgType_FundingCreate_BtcFundingCreated_340 {
+		msg.Type = enum.MsgType_FundingCreate_RecvBtcFundingCreated_340
+	}
+
+	if msg.Type == enum.MsgType_FundingSign_BtcSign_350 {
+		msg.Type = enum.MsgType_FundingSign_RecvBtcSign_350
+	}
+
+	if msg.Type == enum.MsgType_CommitmentTx_CommitmentTransactionCreated_351 {
+		msg.Type = enum.MsgType_CommitmentTx_RecvCommitmentTransactionCreated_351
+	}
+
+	if msg.Type == enum.MsgType_CloseChannelRequest_38 {
+		msg.Type = enum.MsgType_RecvCloseChannelRequest_38
+	}
+
+	if msg.Type == enum.MsgType_CloseChannelSign_39 {
+		msg.Type = enum.MsgType_RecvCloseChannelSign_39
+	}
+
+	if msg.Type == enum.MsgType_HTLC_AddHTLC_40 {
+		msg.Type = enum.MsgType_HTLC_RecvAddHTLC_40
+	}
+
+	if msg.Type == enum.MsgType_CommitmentTxSigned_ToAliceSign_353 {
 		//	发给bob的信息
 		if gjson.Parse(retData).Get("bobData").Exists() {
 			newMsg := bean.RequestMessage{}
-			newMsg.Type = enum.MsgType_CommitmentTxSigned_SecondToBobSign_N354
+			newMsg.Type = enum.MsgType_CommitmentTxSigned_SecondToBobSign_354
 			newMsg.SenderUserPeerId = itemClient.User.PeerId
 			newMsg.SenderNodePeerId = P2PLocalPeerId
 			newMsg.RecipientUserPeerId = msg.SenderUserPeerId
@@ -466,21 +490,21 @@ func p2pMiddleNodeTransferData(msg *bean.RequestMessage, itemClient Client, data
 		}
 
 		//发给alice
-		msg.Type = enum.MsgType_CommitmentTxSigned_RevokeAndAcknowledgeCommitmentTransaction_N352
+		msg.Type = enum.MsgType_CommitmentTxSigned_RecvRevokeAndAcknowledgeCommitmentTransaction_352
 		payerData := gjson.Parse(retData).Get("aliceData").String()
 		data = payerData
 	}
 
 	//当354处理完成，就改成352的返回 353和354对用户是透明的
-	if msg.Type == enum.MsgType_CommitmentTxSigned_SecondToBobSign_N354 {
-		msg.Type = enum.MsgType_CommitmentTxSigned_RevokeAndAcknowledgeCommitmentTransaction_N352
+	if msg.Type == enum.MsgType_CommitmentTxSigned_SecondToBobSign_354 {
+		msg.Type = enum.MsgType_CommitmentTxSigned_SendRevokeAndAcknowledgeCommitmentTransaction_352
 		msg.SenderUserPeerId = msg.RecipientUserPeerId
 		msg.SenderNodePeerId = msg.RecipientNodePeerId
 	}
 
-	if msg.Type == enum.MsgType_HTLC_PayerSignC3b_N42 {
+	if msg.Type == enum.MsgType_HTLC_PayerSignC3b_42 {
 		newMsg := bean.RequestMessage{}
-		newMsg.Type = enum.MsgType_HTLC_PayeeCreateHTRD1a_N43
+		newMsg.Type = enum.MsgType_HTLC_PayeeCreateHTRD1a_43
 		newMsg.SenderUserPeerId = itemClient.User.PeerId
 		newMsg.SenderNodePeerId = P2PLocalPeerId
 		newMsg.RecipientUserPeerId = msg.SenderUserPeerId
@@ -492,9 +516,9 @@ func p2pMiddleNodeTransferData(msg *bean.RequestMessage, itemClient Client, data
 	}
 
 	//当43处理完成，就改成41的返回 42和43对用户是透明的
-	if msg.Type == enum.MsgType_HTLC_PayeeCreateHTRD1a_N43 {
+	if msg.Type == enum.MsgType_HTLC_PayeeCreateHTRD1a_43 {
 		newMsg := bean.RequestMessage{}
-		newMsg.Type = enum.MsgType_HTLC_PayerSignHTRD1a_N44
+		newMsg.Type = enum.MsgType_HTLC_PayerSignHTRD1a_44
 		newMsg.SenderUserPeerId = itemClient.User.PeerId
 		newMsg.SenderNodePeerId = P2PLocalPeerId
 		newMsg.RecipientUserPeerId = msg.SenderUserPeerId
@@ -506,15 +530,19 @@ func p2pMiddleNodeTransferData(msg *bean.RequestMessage, itemClient Client, data
 	}
 
 	//当44处理完成，就改成41的返回 42和43对用户是透明的
-	if msg.Type == enum.MsgType_HTLC_PayerSignHTRD1a_N44 {
-		msg.Type = enum.MsgType_HTLC_AddHTLCSigned_N41
+	if msg.Type == enum.MsgType_HTLC_PayerSignHTRD1a_44 {
+		msg.Type = enum.MsgType_HTLC_RecvAddHTLCSigned_41
+	}
+
+	if msg.Type == enum.MsgType_HTLC_VerifyR_45 {
+		msg.Type = enum.MsgType_HTLC_RecvVerifyR_45
 	}
 
 	//当47处理完成，发送48号协议给收款方
-	if msg.Type == enum.MsgType_HTLC_SendHerdHex_N47 {
+	if msg.Type == enum.MsgType_HTLC_SendHerdHex_47 {
 
 		newMsg := bean.RequestMessage{}
-		newMsg.Type = enum.MsgType_HTLC_SignHedHex_N48
+		newMsg.Type = enum.MsgType_HTLC_SignHedHex_48
 		newMsg.SenderUserPeerId = itemClient.User.PeerId
 		newMsg.SenderNodePeerId = P2PLocalPeerId
 		newMsg.RecipientUserPeerId = msg.SenderUserPeerId
@@ -524,22 +552,26 @@ func p2pMiddleNodeTransferData(msg *bean.RequestMessage, itemClient Client, data
 		_ = itemClient.sendDataToP2PUser(newMsg, true, payerData)
 
 		//发给bob的
-		msg.Type = enum.MsgType_HTLC_VerifyR_N46
+		msg.Type = enum.MsgType_HTLC_RecvSignVerifyR_46
 		payeeData := gjson.Parse(retData).Get("payeeData").String()
 		data = payeeData
 	}
 
 	//当48理完成，就改成46的返回 47和48对用户是透明的
-	if msg.Type == enum.MsgType_HTLC_SignHedHex_N48 {
+	if msg.Type == enum.MsgType_HTLC_SignHedHex_48 {
 		msg.SenderUserPeerId = msg.RecipientUserPeerId
 		msg.SenderNodePeerId = msg.RecipientNodePeerId
-		msg.Type = enum.MsgType_HTLC_VerifyR_N46
+		msg.Type = enum.MsgType_HTLC_SendSignVerifyR_46
 	}
 
-	if msg.Type == enum.MsgType_HTLC_CloseHtlcRequestSignBR_N51 {
+	if msg.Type == enum.MsgType_HTLC_RequestCloseCurrTx_49 {
+		msg.Type = enum.MsgType_HTLC_RecvRequestCloseCurrTx_49
+	}
+
+	if msg.Type == enum.MsgType_HTLC_CloseHtlcRequestSignBR_51 {
 		//	发给bob的信息
 		newMsg := bean.RequestMessage{}
-		newMsg.Type = enum.MsgType_HTLC_CloseHtlcUpdateCnb_N52
+		newMsg.Type = enum.MsgType_HTLC_CloseHtlcUpdateCnb_52
 		newMsg.SenderUserPeerId = itemClient.User.PeerId
 		newMsg.SenderNodePeerId = P2PLocalPeerId
 		newMsg.RecipientUserPeerId = msg.SenderUserPeerId
@@ -548,16 +580,25 @@ func p2pMiddleNodeTransferData(msg *bean.RequestMessage, itemClient Client, data
 		//转发给bob，
 		_ = itemClient.sendDataToP2PUser(newMsg, true, payeeData)
 		//发给alice
-		msg.Type = enum.MsgType_HTLC_CloseSigned_N50
+		msg.Type = enum.MsgType_HTLC_RecvCloseSigned_50
 		payerData := gjson.Parse(retData).Get("aliceData").String()
 		data = payerData
 	}
 
-	if msg.Type == enum.MsgType_HTLC_CloseHtlcUpdateCnb_N52 {
+	if msg.Type == enum.MsgType_HTLC_CloseHtlcUpdateCnb_52 {
 		msg.SenderUserPeerId = msg.RecipientUserPeerId
 		msg.SenderNodePeerId = msg.RecipientNodePeerId
-		msg.Type = enum.MsgType_HTLC_CloseSigned_N50
+		msg.Type = enum.MsgType_HTLC_SendCloseSigned_50
 	}
+
+	if msg.Type == enum.MsgType_Atomic_Swap_N80 {
+		msg.Type = enum.MsgType_Atomic_RecvSwap_N80
+	}
+
+	if msg.Type == enum.MsgType_Atomic_SwapAccept_N81 {
+		msg.Type = enum.MsgType_Atomic_RecvSwapAccept_N81
+	}
+
 	return data
 }
 

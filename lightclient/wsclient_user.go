@@ -24,7 +24,7 @@ func (client *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, 
 	var sendType = enum.SendTargetType_SendToNone
 	var data string
 	switch msg.Type {
-	case enum.MsgType_UserLogin_1:
+	case enum.MsgType_UserLogin_2001:
 
 		mnemonic := gjson.Get(msg.Data, "mnemonic").String()
 		if client.User != nil {
@@ -66,7 +66,7 @@ func (client *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, 
 				sendType = enum.SendTargetType_SendToSomeone
 			}
 		}
-	case enum.MsgType_UserLogout_2:
+	case enum.MsgType_UserLogout_2002:
 		if client.User != nil {
 			data = client.User.PeerId + " logout"
 			status = true
@@ -81,7 +81,7 @@ func (client *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, 
 			client.sendToMyself(msg.Type, status, "please login")
 			sendType = enum.SendTargetType_SendToSomeone
 		}
-	case enum.MsgType_p2p_ConnectServer_3:
+	case enum.MsgType_p2p_ConnectServer_2003:
 		localP2PAddress, err := ConnP2PServer(msg.Data)
 		if err != nil {
 			data = err.Error()
@@ -91,12 +91,10 @@ func (client *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, 
 		}
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
-	case enum.MsgType_p2p_SendDataToServer_4:
-		SendP2PMsg(msg.RecipientNodePeerId, msg.RawData)
 
 	// Added by Kevin 2019-11-25
 	// Process GetMnemonic
-	case enum.MsgType_GetMnemonic_101:
+	case enum.MsgType_GetMnemonic_2004:
 		if client.User != nil { // The user already login.
 			client.sendToMyself(msg.Type, true, "already login")
 			sendType = enum.SendTargetType_SendToSomeone

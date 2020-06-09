@@ -46,6 +46,11 @@ type User struct {
 	Db              *storm.DB //db
 }
 
+// -100032
+type SendChannelOpen struct {
+	FundingPubKey string `json:"funding_pubkey"`
+}
+
 //https://github.com/obdlayer/Omni-BOLT-spec/blob/master/OmniBOLT-03-RSMC-and-OmniLayer-Transactions.md
 //type = -32
 type OpenChannelInfo struct {
@@ -60,6 +65,7 @@ type OpenChannelInfo struct {
 	FeeRatePerKw             uint32              `json:"fee_rate_per_kw"`
 	ToSelfDelay              uint16              `json:"to_self_delay"`
 	MaxAcceptedHtlcs         uint16              `json:"max_accepted_htlcs"` //最多可以接受多少给hltc请求 500
+	FunderPeerId             string              `json:"funder_peer_id"`
 	FundingPubKey            string              `json:"funding_pubkey"`
 	FundingAddress           string              `json:"funding_address"`
 	RevocationBasePoint      chainhash.Point     `json:"revocation_base_point"`
@@ -68,10 +74,14 @@ type OpenChannelInfo struct {
 	HtlcBasePoint            chainhash.Point     `json:"htlc_base_point"`
 }
 
-//type = -33
-type AcceptChannelInfo struct {
-	OpenChannelInfo
-	Approval bool `json:"approval"`
+//-110032
+type RecvChannelOpen OpenChannelInfo
+
+// -100033
+type SendAcceptChannelInfo struct {
+	FundingPubKey      string `json:"funding_pubkey"`
+	TemporaryChannelId string `json:"temporary_channel_id"`
+	Approval           bool   `json:"approval"`
 }
 
 //type: -38 (close_channel)
@@ -92,6 +102,7 @@ type SendBreachRemedyTransaction struct {
 	ChannelAddressPrivateKey string `json:"channel_address_private_key"` // openChannel address
 }
 
+// -100034
 //type: -34 (funding_created)
 type FundingCreated struct {
 	TemporaryChannelId       string  `json:"temporary_channel_id"`
@@ -138,7 +149,7 @@ type FundingSigned struct {
 	RedeemScript string `json:"redeem_script"`
 	//hash of redeemScript
 	P2shAddress string `json:"p2sh_address"`
-	Approval    bool   `json:"approval"`
+	//Approval    bool   `json:"approval"`
 }
 
 //type: -351 (commitment_tx)

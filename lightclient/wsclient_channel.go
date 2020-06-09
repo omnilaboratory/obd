@@ -14,7 +14,7 @@ func (client *Client) channelModule(msg bean.RequestMessage) (enum.SendTargetTyp
 	data := ""
 	switch msg.Type {
 	//get openChannelReq from funder then send to fundee
-	case enum.MsgType_ChannelOpen_N32:
+	case enum.MsgType_SendChannelOpen_32:
 		if msg.RecipientUserPeerId == client.User.PeerId {
 			data = "can not open channel to yourself"
 		} else {
@@ -31,17 +31,20 @@ func (client *Client) channelModule(msg bean.RequestMessage) (enum.SendTargetTyp
 				}
 			}
 		}
+
 		if status {
+			msg.Type = enum.MsgType_ChannelOpen_32
 			err := client.sendDataToP2PUser(msg, status, data)
 			if err != nil {
 				data = err.Error()
 				status = false
 			}
 		}
+		msg.Type = enum.MsgType_SendChannelOpen_32
 
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
-	case enum.MsgType_ChannelOpen_AllItem_N3201:
+	case enum.MsgType_ChannelOpen_AllItem_3150:
 		nodes, err := service.ChannelService.AllItem(*client.User)
 		if err != nil {
 			data = err.Error()
@@ -58,7 +61,7 @@ func (client *Client) channelModule(msg bean.RequestMessage) (enum.SendTargetTyp
 			}
 		}
 		client.sendToMyself(msg.Type, status, data)
-	case enum.MsgType_ChannelOpen_ItemByTempId_N3202:
+	case enum.MsgType_ChannelOpen_ItemByTempId_3151:
 		node, err := service.ChannelService.GetChannelByTemporaryChanId(msg.Data, *client.User)
 		if err != nil {
 			data = err.Error()
@@ -73,7 +76,7 @@ func (client *Client) channelModule(msg bean.RequestMessage) (enum.SendTargetTyp
 		}
 		client.sendToMyself(msg.Type, status, data)
 
-	case enum.MsgType_ChannelOpen_Count_N3203:
+	case enum.MsgType_ChannelOpen_Count_3152:
 		node, err := service.ChannelService.TotalCount(*client.User)
 		if err != nil {
 			data = err.Error()
@@ -82,7 +85,7 @@ func (client *Client) channelModule(msg bean.RequestMessage) (enum.SendTargetTyp
 			status = true
 		}
 		client.sendToMyself(msg.Type, status, data)
-	case enum.MsgType_ChannelOpen_DelItemByTempId_N3204:
+	case enum.MsgType_ChannelOpen_DelItemByTempId_3153:
 		node, err := service.ChannelService.DelChannelByTemporaryChanId(msg.Data, *client.User)
 		if err != nil {
 			data = err.Error()
@@ -96,7 +99,7 @@ func (client *Client) channelModule(msg bean.RequestMessage) (enum.SendTargetTyp
 			}
 		}
 		client.sendToMyself(msg.Type, status, data)
-	case enum.MsgType_GetChannelInfoByChanId_N3206:
+	case enum.MsgType_GetChannelInfoByChanId_3154:
 		node, err := service.ChannelService.GetChannelInfoByChannelId(msg.Data, *client.User)
 		if err != nil {
 			data = err.Error()
@@ -111,7 +114,7 @@ func (client *Client) channelModule(msg bean.RequestMessage) (enum.SendTargetTyp
 		}
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
-	case enum.MsgType_GetChannelInfoByChanId_N3207:
+	case enum.MsgType_GetChannelInfoByChanId_3155:
 		node, err := service.ChannelService.GetChannelInfoById(msg.Data, *client.User)
 		if err != nil {
 			data = err.Error()
@@ -126,7 +129,7 @@ func (client *Client) channelModule(msg bean.RequestMessage) (enum.SendTargetTyp
 		}
 		client.sendToMyself(msg.Type, status, data)
 	//get acceptChannelReq from fundee then send to funder
-	case enum.MsgType_ChannelAccept_N33:
+	case enum.MsgType_SendChannelAccept_33:
 		node, err := service.ChannelService.BobAcceptChannel(msg.Data, client.User)
 		if err != nil {
 			data = err.Error()
@@ -140,15 +143,17 @@ func (client *Client) channelModule(msg bean.RequestMessage) (enum.SendTargetTyp
 			}
 		}
 		if status {
+			msg.Type = enum.MsgType_ChannelAccept_33
 			err := client.sendDataToP2PUser(msg, status, data)
 			if err != nil {
 				data = err.Error()
 				status = false
 			}
 		}
+		msg.Type = enum.MsgType_SendChannelAccept_33
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
-	case enum.MsgType_CloseChannelRequest_N38:
+	case enum.MsgType_SendCloseChannelRequest_38:
 		node, err := service.ChannelService.RequestCloseChannel(msg, client.User)
 		if err != nil {
 			data = err.Error()
@@ -162,10 +167,12 @@ func (client *Client) channelModule(msg bean.RequestMessage) (enum.SendTargetTyp
 			}
 		}
 		if status {
+			msg.Type = enum.MsgType_CloseChannelRequest_38
 			_ = client.sendDataToP2PUser(msg, status, data)
 		}
+		msg.Type = enum.MsgType_SendCloseChannelRequest_38
 		client.sendToMyself(msg.Type, status, data)
-	case enum.MsgType_CloseChannelSign_N39:
+	case enum.MsgType_SendCloseChannelSign_39:
 		node, err := service.ChannelService.SignCloseChannel(msg, *client.User)
 		if err != nil {
 			data = err.Error()
@@ -179,8 +186,10 @@ func (client *Client) channelModule(msg bean.RequestMessage) (enum.SendTargetTyp
 			}
 		}
 		if status {
+			msg.Type = enum.MsgType_CloseChannelSign_39
 			_ = client.sendDataToP2PUser(msg, status, data)
 		}
+		msg.Type = enum.MsgType_SendCloseChannelSign_39
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	}

@@ -32,18 +32,18 @@ func htlcTrackerDealModule(msg bean.RequestMessage) {
 				status = true
 			}
 		}
-		client.sendToMyself(enum.MsgType_HTLC_FindPath_N4001, status, data)
+		client.sendToMyself(enum.MsgType_HTLC_FindPath_401, status, data)
 	}
 }
 
 //htlc h module
-func (client *Client) htlcHDealModule(msg bean.RequestMessage) (enum.SendTargetType, []byte, bool) {
+func (client *Client) htlcHModule(msg bean.RequestMessage) (enum.SendTargetType, []byte, bool) {
 	status := false
 	var sendType = enum.SendTargetType_SendToNone
 	data := ""
 
 	switch msg.Type {
-	case enum.MsgType_HTLC_Invoice_N4003:
+	case enum.MsgType_HTLC_Invoice_402:
 		htlcHRequest := &bean.HtlcRequestFindPath{}
 		err := json.Unmarshal([]byte(msg.Data), htlcHRequest)
 		if err != nil {
@@ -68,7 +68,7 @@ func (client *Client) htlcHDealModule(msg bean.RequestMessage) (enum.SendTargetT
 		}
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
-	case enum.MsgType_HTLC_FindPath_N4001:
+	case enum.MsgType_HTLC_FindPath_401:
 		_, err := service.HtlcForwardTxService.PayerRequestFindPath(msg.Data, *client.User)
 		if err != nil {
 			data = err.Error()
@@ -76,7 +76,7 @@ func (client *Client) htlcHDealModule(msg bean.RequestMessage) (enum.SendTargetT
 		} else {
 			tempClientMap[client.User.PeerId] = client
 		}
-	case enum.MsgType_HTLC_AddHTLC_N40:
+	case enum.MsgType_HTLC_SendAddHTLC_40:
 		respond, err := service.HtlcForwardTxService.UpdateAddHtlc_40(msg, *client.User)
 		if err != nil {
 			data = err.Error()
@@ -90,10 +90,12 @@ func (client *Client) htlcHDealModule(msg bean.RequestMessage) (enum.SendTargetT
 			}
 		}
 		if status {
+			msg.Type = enum.MsgType_HTLC_AddHTLC_40
 			_ = client.sendDataToP2PUser(msg, true, data)
 		}
+		msg.Type = enum.MsgType_HTLC_SendAddHTLC_40
 		client.sendToMyself(msg.Type, status, data)
-	case enum.MsgType_HTLC_AddHTLCSigned_N41:
+	case enum.MsgType_HTLC_SendAddHTLCSigned_41:
 		returnData, err := service.HtlcForwardTxService.PayeeSignGetAddHtlc_41(msg.Data, *client.User)
 		if err != nil {
 			data = err.Error()
@@ -107,7 +109,7 @@ func (client *Client) htlcHDealModule(msg bean.RequestMessage) (enum.SendTargetT
 				status = true
 			}
 			if status {
-				msg.Type = enum.MsgType_HTLC_PayerSignC3b_N42
+				msg.Type = enum.MsgType_HTLC_PayerSignC3b_42
 				_ = client.sendDataToP2PUser(msg, status, data)
 			}
 			if approval == false {
@@ -115,99 +117,9 @@ func (client *Client) htlcHDealModule(msg bean.RequestMessage) (enum.SendTargetT
 			}
 		}
 		if err != nil {
+			msg.Type = enum.MsgType_HTLC_SendAddHTLCSigned_41
 			client.sendToMyself(msg.Type, status, data)
 		}
-	case enum.MsgType_HTLC_CreatedRAndHInfoItem_N4002:
-		respond, err := service.HtlcHMessageService.GetHtlcCreatedRandHInfoItemById(msg.Data, client.User)
-		if err != nil {
-			data = err.Error()
-		} else {
-			bytes, err := json.Marshal(respond)
-			if err != nil {
-				data = err.Error()
-			} else {
-				data = string(bytes)
-				status = true
-			}
-		}
-		client.sendToMyself(msg.Type, status, data)
-		sendType = enum.SendTargetType_SendToSomeone
-
-	case enum.MsgType_HTLC_SignedRAndHInfoList_N4101:
-		respond, err := service.HtlcHMessageService.GetHtlcSignedRandHInfoList(client.User)
-		if err != nil {
-			data = err.Error()
-		} else {
-			bytes, err := json.Marshal(respond)
-			if err != nil {
-				data = err.Error()
-			} else {
-				data = string(bytes)
-				status = true
-			}
-		}
-		client.sendToMyself(msg.Type, status, data)
-		sendType = enum.SendTargetType_SendToSomeone
-	case enum.MsgType_HTLC_SignedRAndHInfoItem_N4102:
-		respond, err := service.HtlcHMessageService.GetHtlcSignedRandHInfoItem(msg.Data, client.User)
-		if err != nil {
-			data = err.Error()
-		} else {
-			bytes, err := json.Marshal(respond)
-			if err != nil {
-				data = err.Error()
-			} else {
-				data = string(bytes)
-				status = true
-			}
-		}
-		client.sendToMyself(msg.Type, status, data)
-		sendType = enum.SendTargetType_SendToSomeone
-	case enum.MsgType_HTLC_GetRFromLCommitTx_N4103:
-		respond, err := service.HtlcQueryService.GetRFromCommitmentTx(msg.Data, *client.User)
-		if err != nil {
-			data = err.Error()
-		} else {
-			bytes, err := json.Marshal(respond)
-			if err != nil {
-				data = err.Error()
-			} else {
-				data = string(bytes)
-				status = true
-			}
-		}
-		client.sendToMyself(msg.Type, status, data)
-		sendType = enum.SendTargetType_SendToSomeone
-	case enum.MsgType_HTLC_GetPathInfoByH_N4104:
-		respond, err := service.HtlcQueryService.GetPathInfoByH(msg.Data, *client.User)
-		if err != nil {
-			data = err.Error()
-		} else {
-			bytes, err := json.Marshal(respond)
-			if err != nil {
-				data = err.Error()
-			} else {
-				data = string(bytes)
-				status = true
-			}
-		}
-		client.sendToMyself(msg.Type, status, data)
-		sendType = enum.SendTargetType_SendToSomeone
-	case enum.MsgType_HTLC_GetRInfoByHOfOwner_N4105:
-		respond, err := service.HtlcQueryService.GetRByHOfReceiver(msg.Data, *client.User)
-		if err != nil {
-			data = err.Error()
-		} else {
-			bytes, err := json.Marshal(respond)
-			if err != nil {
-				data = err.Error()
-			} else {
-				data = string(bytes)
-				status = true
-			}
-		}
-		client.sendToMyself(msg.Type, status, data)
-		sendType = enum.SendTargetType_SendToSomeone
 	}
 	return sendType, []byte(data), status
 }
@@ -219,7 +131,7 @@ func (client *Client) htlcTxModule(msg bean.RequestMessage) (enum.SendTargetType
 	data := ""
 	switch msg.Type {
 	// Coding by Kevin 2019-10-28
-	case enum.MsgType_HTLC_SendR_N45:
+	case enum.MsgType_HTLC_SendVerifyR_45:
 		respond, err := service.HtlcBackwardTxService.SendRToPreviousNode_Step1(msg, *client.User)
 		if err != nil {
 			data = err.Error()
@@ -230,11 +142,13 @@ func (client *Client) htlcTxModule(msg bean.RequestMessage) (enum.SendTargetType
 			} else {
 				data = string(bytes)
 				status = true
+				msg.Type = enum.MsgType_HTLC_VerifyR_45
 				_ = client.sendDataToP2PUser(msg, status, data)
 			}
 		}
+		msg.Type = enum.MsgType_HTLC_SendVerifyR_45
 		client.sendToMyself(msg.Type, status, data)
-	case enum.MsgType_HTLC_VerifyR_N46:
+	case enum.MsgType_HTLC_SendSignVerifyR_46:
 		respond, err := service.HtlcBackwardTxService.VerifyRAndCreateTxs_Step3(msg, *client.User)
 		if err != nil {
 			data = err.Error()
@@ -245,7 +159,7 @@ func (client *Client) htlcTxModule(msg bean.RequestMessage) (enum.SendTargetType
 			} else {
 				data = string(bytes)
 				status = true
-				msg.Type = enum.MsgType_HTLC_SendHerdHex_N47
+				msg.Type = enum.MsgType_HTLC_SendHerdHex_47
 				_ = client.sendDataToP2PUser(msg, status, data)
 			}
 		}
@@ -259,7 +173,7 @@ func (client *Client) htlcCloseModule(msg bean.RequestMessage) (enum.SendTargetT
 	var sendType = enum.SendTargetType_SendToNone
 	data := ""
 	switch msg.Type {
-	case enum.MsgType_HTLC_RequestCloseCurrTx_N49:
+	case enum.MsgType_HTLC_SendRequestCloseCurrTx_49:
 		outData, err := service.HtlcCloseTxService.RequestCloseHtlc(msg, *client.User)
 		if err != nil {
 			data = err.Error()
@@ -270,12 +184,14 @@ func (client *Client) htlcCloseModule(msg bean.RequestMessage) (enum.SendTargetT
 			} else {
 				data = string(bytes)
 				status = true
+				msg.Type = enum.MsgType_HTLC_RequestCloseCurrTx_49
 				_ = client.sendDataToP2PUser(msg, status, data)
 			}
 		}
+		msg.Type = enum.MsgType_HTLC_SendRequestCloseCurrTx_49
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
-	case enum.MsgType_HTLC_CloseSigned_N50:
+	case enum.MsgType_HTLC_SendCloseSigned_50:
 		outData, err := service.HtlcCloseTxService.CloseHTLCSigned(msg, *client.User)
 		if err != nil {
 			data = err.Error()
@@ -286,7 +202,7 @@ func (client *Client) htlcCloseModule(msg bean.RequestMessage) (enum.SendTargetT
 			} else {
 				data = string(bytes)
 				status = true
-				msg.Type = enum.MsgType_HTLC_CloseHtlcRequestSignBR_N51
+				msg.Type = enum.MsgType_HTLC_CloseHtlcRequestSignBR_51
 				_ = client.sendDataToP2PUser(msg, status, data)
 			}
 		}
@@ -301,7 +217,7 @@ func (client *Client) atomicSwapModule(msg bean.RequestMessage) (enum.SendTarget
 	var sendType = enum.SendTargetType_SendToNone
 	data := ""
 	switch msg.Type {
-	case enum.MsgType_Atomic_Swap_N80:
+	case enum.MsgType_Atomic_SendSwap_80:
 		outData, err := service.AtomicSwapService.AtomicSwap(msg, *client.User)
 		if err != nil {
 			data = err.Error()
@@ -312,12 +228,14 @@ func (client *Client) atomicSwapModule(msg bean.RequestMessage) (enum.SendTarget
 			} else {
 				data = string(bytes)
 				status = true
+				msg.Type = enum.MsgType_Atomic_Swap_N80
 				_ = client.sendDataToP2PUser(msg, status, data)
 			}
 		}
+		msg.Type = enum.MsgType_Atomic_SendSwap_80
 		client.sendToMyself(msg.Type, status, data)
 		break
-	case enum.MsgType_Atomic_Swap_Accept_N81:
+	case enum.MsgType_Atomic_SendSwapAccept_81:
 		outData, err := service.AtomicSwapService.AtomicSwapAccepted(msg, *client.User)
 		if err != nil {
 			data = err.Error()
@@ -328,9 +246,11 @@ func (client *Client) atomicSwapModule(msg bean.RequestMessage) (enum.SendTarget
 			} else {
 				data = string(bytes)
 				status = true
+				msg.Type = enum.MsgType_Atomic_SwapAccept_N81
 				_ = client.sendDataToP2PUser(msg, status, data)
 			}
 		}
+		msg.Type = enum.MsgType_Atomic_SendSwapAccept_81
 		client.sendToMyself(msg.Type, status, data)
 		break
 	}

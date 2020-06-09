@@ -1088,18 +1088,18 @@ func (service *fundingTransactionManager) AssetFundingSigned(jsonData string, si
 
 	node := make(map[string]interface{})
 	node["temporary_channel_id"] = channelInfo.TemporaryChannelId
-	node["approval"] = reqData.Approval
+	//node["approval"] = reqData.Approval
 	fundingTransaction.FundeeSignAt = time.Now()
 	//如果不同意这次充值
-	if reqData.Approval == false {
-		fundingTransaction.CurrState = dao.FundingTransactionState_Defuse
-		err = tx.Update(fundingTransaction)
-		if err != nil {
-			return nil, err
-		}
-		_ = tx.Commit()
-		return node, nil
-	}
+	//if reqData.Approval == false {
+	//	fundingTransaction.CurrState = dao.FundingTransactionState_Defuse
+	//	err = tx.Update(fundingTransaction)
+	//	if err != nil {
+	//		return nil, err
+	//	}
+	//	_ = tx.Commit()
+	//	return node, nil
+	//}
 	channelInfo.ChannelId = fundingTransaction.ChannelId
 	node["channel_id"] = channelInfo.ChannelId
 	if tool.CheckIsString(&reqData.FundeeChannelAddressPrivateKey) == false {
@@ -1218,7 +1218,7 @@ func (service *fundingTransactionManager) AfterBobSignOmniFundingAtAilceSide(dat
 	temporaryChannelId := jsonObj.Get("temporary_channel_id").String()
 	rsmcSignedHex := jsonObj.Get("rsmc_signed_hex").String()
 	rdHex := jsonObj.Get("rd_hex").String()
-	approval := jsonObj.Get("approval").Bool()
+	//approval := jsonObj.Get("approval").Bool()
 
 	tx, err := user.Db.Begin(true)
 	if err != nil {
@@ -1255,13 +1255,13 @@ func (service *fundingTransactionManager) AfterBobSignOmniFundingAtAilceSide(dat
 	node := make(map[string]interface{})
 	fundingTransaction.FundeeSignAt = time.Now()
 	node["temporary_channel_id"] = channelInfo.TemporaryChannelId
-	node["approval"] = approval
-	if approval == false {
-		fundingTransaction.CurrState = dao.FundingTransactionState_Defuse
-		_ = tx.Update(fundingTransaction)
-		_ = tx.Commit()
-		return node, nil
-	}
+	//node["approval"] = approval
+	//if approval == false {
+	//	fundingTransaction.CurrState = dao.FundingTransactionState_Defuse
+	//	_ = tx.Update(fundingTransaction)
+	//	_ = tx.Commit()
+	//	return node, nil
+	//}
 
 	tempPrivKey := tempAddrPrivateKeyMap[fundingTransaction.FunderPubKey2ForCommitment]
 	if tool.CheckIsString(&tempPrivKey) == false {

@@ -14,7 +14,7 @@ func (client *Client) commitmentTxModule(msg bean.RequestMessage) (enum.SendTarg
 	var sendType = enum.SendTargetType_SendToNone
 	data := ""
 	switch msg.Type {
-	case enum.MsgType_CommitmentTx_CommitmentTransactionCreated_N351:
+	case enum.MsgType_CommitmentTx_SendCommitmentTransactionCreated_351:
 		retData, err := service.CommitmentTxService.CommitmentTransactionCreated(msg, client.User)
 		if err != nil {
 			data = err.Error()
@@ -28,14 +28,16 @@ func (client *Client) commitmentTxModule(msg bean.RequestMessage) (enum.SendTarg
 			}
 		}
 		if status {
+			msg.Type = enum.MsgType_CommitmentTx_CommitmentTransactionCreated_351
 			err = client.sendDataToP2PUser(msg, status, data)
 			if err != nil {
 				data = err.Error()
 				status = false
 			}
 		}
+		msg.Type = enum.MsgType_CommitmentTx_SendCommitmentTransactionCreated_351
 		client.sendToMyself(msg.Type, status, data)
-	case enum.MsgType_CommitmentTx_ItemsByChanId_N35101:
+	case enum.MsgType_CommitmentTx_ItemsByChanId_3200:
 		nodes, count, err := service.CommitmentTxService.GetItemsByChannelId(msg.Data, client.User)
 		if err != nil {
 			data = err.Error()
@@ -53,7 +55,7 @@ func (client *Client) commitmentTxModule(msg bean.RequestMessage) (enum.SendTarg
 			}
 		}
 		client.sendToMyself(msg.Type, status, data)
-	case enum.MsgType_CommitmentTx_ItemById_N35102:
+	case enum.MsgType_CommitmentTx_ItemById_3201:
 		id, err := strconv.Atoi(msg.Data)
 		if err != nil {
 			log.Println(err)
@@ -73,7 +75,7 @@ func (client *Client) commitmentTxModule(msg bean.RequestMessage) (enum.SendTarg
 			}
 		}
 		client.sendToMyself(msg.Type, status, data)
-	case enum.MsgType_CommitmentTx_Count_N35103:
+	case enum.MsgType_CommitmentTx_Count_3202:
 		count, err := service.CommitmentTxService.TotalCount(msg.Data, *client.User)
 		if err != nil {
 			data = err.Error()
@@ -82,7 +84,7 @@ func (client *Client) commitmentTxModule(msg bean.RequestMessage) (enum.SendTarg
 			status = true
 		}
 		client.sendToMyself(msg.Type, status, data)
-	case enum.MsgType_CommitmentTx_LatestCommitmentTxByChanId_N35104:
+	case enum.MsgType_CommitmentTx_LatestCommitmentTxByChanId_3203:
 		node, err := service.CommitmentTxService.GetLatestCommitmentTxByChannelId(msg.Data, client.User)
 		if err != nil {
 			data = err.Error()
@@ -96,7 +98,7 @@ func (client *Client) commitmentTxModule(msg bean.RequestMessage) (enum.SendTarg
 			}
 		}
 		client.sendToMyself(msg.Type, status, data)
-	case enum.MsgType_CommitmentTx_LatestRDByChanId_N35105:
+	case enum.MsgType_CommitmentTx_LatestRDByChanId_3204:
 		node, err := service.CommitmentTxService.GetLatestRDTxByChannelId(msg.Data, client.User)
 		if err != nil {
 			data = err.Error()
@@ -110,7 +112,7 @@ func (client *Client) commitmentTxModule(msg bean.RequestMessage) (enum.SendTarg
 			}
 		}
 		client.sendToMyself(msg.Type, status, data)
-	case enum.MsgType_CommitmentTx_LatestBRByChanId_N35106:
+	case enum.MsgType_CommitmentTx_LatestBRByChanId_3205:
 		node, err := service.CommitmentTxService.GetLatestBRTxByChannelId(msg.Data, client.User)
 		if err != nil {
 			data = err.Error()
@@ -124,7 +126,7 @@ func (client *Client) commitmentTxModule(msg bean.RequestMessage) (enum.SendTarg
 			}
 		}
 		client.sendToMyself(msg.Type, status, data)
-	case enum.MsgType_SendBreachRemedyTransaction_N35107:
+	case enum.MsgType_SendBreachRemedyTransaction_3206:
 		node, err := service.ChannelService.SendBreachRemedyTransaction(msg.Data, client.User)
 		if err != nil {
 			data = err.Error()
@@ -138,7 +140,7 @@ func (client *Client) commitmentTxModule(msg bean.RequestMessage) (enum.SendTarg
 			}
 		}
 		client.sendToMyself(msg.Type, status, data)
-	case enum.MsgType_CommitmentTx_AllRDByChanId_N35108:
+	case enum.MsgType_CommitmentTx_AllRDByChanId_3207:
 		node, err := service.CommitmentTxService.GetAllRDByChannelId(msg.Data, client.User)
 		if err != nil {
 			data = err.Error()
@@ -152,7 +154,7 @@ func (client *Client) commitmentTxModule(msg bean.RequestMessage) (enum.SendTarg
 			}
 		}
 		client.sendToMyself(msg.Type, status, data)
-	case enum.MsgType_CommitmentTx_AllBRByChanId_N35109:
+	case enum.MsgType_CommitmentTx_AllBRByChanId_3208:
 		node, err := service.CommitmentTxService.GetAllBRByChannelId(msg.Data, client.User)
 		if err != nil {
 			data = err.Error()
@@ -174,7 +176,7 @@ func (client *Client) commitmentTxSignModule(msg bean.RequestMessage) (enum.Send
 	var sendType = enum.SendTargetType_SendToNone
 	data := ""
 	switch msg.Type {
-	case enum.MsgType_CommitmentTxSigned_RevokeAndAcknowledgeCommitmentTransaction_N352:
+	case enum.MsgType_CommitmentTxSigned_SendRevokeAndAcknowledgeCommitmentTransaction_352:
 		retData, _, err := service.CommitmentTxSignedService.RevokeAndAcknowledgeCommitmentTransaction(msg, client.User)
 		if err != nil {
 			data = err.Error()
@@ -188,42 +190,16 @@ func (client *Client) commitmentTxSignModule(msg bean.RequestMessage) (enum.Send
 			}
 		}
 		if status {
-			msg.Type = enum.MsgType_CommitmentTxSigned_ToAliceSign_N353
+			msg.Type = enum.MsgType_CommitmentTxSigned_ToAliceSign_353
 			_ = client.sendDataToP2PUser(msg, status, data)
 
 			if retData.Approval == false {
-				msg.Type = enum.MsgType_CommitmentTxSigned_RevokeAndAcknowledgeCommitmentTransaction_N352
+				msg.Type = enum.MsgType_CommitmentTxSigned_SendRevokeAndAcknowledgeCommitmentTransaction_352
 				client.sendToMyself(msg.Type, status, data)
 			}
 		} else {
 			client.sendToMyself(msg.Type, status, data)
 		}
 	}
-	return sendType, []byte(data), status
-}
-
-func (client *Client) otherModule(msg bean.RequestMessage) (enum.SendTargetType, []byte, bool) {
-	status := false
-	var sendType = enum.SendTargetType_SendToNone
-	data := ""
-	switch msg.Type {
-	case enum.MsgType_CommitmentTxSigned_ToAliceSign_N353:
-		node, err := service.CommitmentTxService.GetLatestCommitmentTxByChannelId(msg.Data, client.User)
-		if err != nil {
-			data = err.Error()
-		} else {
-			bytes, err := json.Marshal(node)
-			if err != nil {
-				data = err.Error()
-			} else {
-				data = string(bytes)
-				status = true
-			}
-		}
-		client.sendToMyself(enum.MsgType_CommitmentTxSigned_SecondToBobSign_N354, status, data)
-		sendType = enum.SendTargetType_SendToSomeone
-	default:
-	}
-
 	return sendType, []byte(data), status
 }

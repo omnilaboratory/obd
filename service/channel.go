@@ -21,37 +21,40 @@ type channelManager struct{}
 var ChannelService = channelManager{}
 
 // AliceOpenChannel init ChannelInfo
-func (this *channelManager) AliceOpenChannel(msg bean.RequestMessage, user *bean.User) (channelInfo *dao.ChannelInfo, err error) {
+func (this *channelManager) AliceOpenChannel(msg bean.RequestMessage, user *bean.User) (openChannelInfo *bean.OpenChannelInfo, err error) {
 	if tool.CheckIsString(&msg.Data) == false {
 		return nil, errors.New("empty inputData")
 	}
 
-	reqData := &bean.OpenChannelInfo{}
+	reqData := &bean.SendChannelOpen{}
 	err = json.Unmarshal([]byte(msg.Data), &reqData)
 	if err != nil {
 		return nil, err
 	}
 
-	reqData.FundingAddress, err = getAddressFromPubKey(reqData.FundingPubKey)
+	openChannelInfo = &bean.OpenChannelInfo{}
+	openChannelInfo.FundingAddress, err = getAddressFromPubKey(reqData.FundingPubKey)
 	if err != nil {
 		return nil, err
 	}
 
-	reqData.ChainHash = config.Init_node_chain_hash
-	reqData.TemporaryChannelId = bean.ChannelIdService.NextTemporaryChanID()
+	openChannelInfo.ChainHash = config.Init_node_chain_hash
+	openChannelInfo.TemporaryChannelId = bean.ChannelIdService.NextTemporaryChanID()
+	openChannelInfo.FunderPeerId = user.PeerId
+	openChannelInfo.FundingPubKey = reqData.FundingPubKey
 
-	channelInfo = &dao.ChannelInfo{}
-	channelInfo.OpenChannelInfo = *reqData
+	channelInfo := &dao.ChannelInfo{}
+	channelInfo.OpenChannelInfo = *openChannelInfo
 	channelInfo.PeerIdA = user.PeerId
 	channelInfo.PeerIdB = msg.RecipientUserPeerId
 	channelInfo.PubKeyA = reqData.FundingPubKey
-	channelInfo.AddressA = reqData.FundingAddress
+	channelInfo.AddressA = openChannelInfo.FundingAddress
 	channelInfo.CurrState = dao.ChannelState_Create
 	channelInfo.CreateAt = time.Now()
 	channelInfo.CreateBy = user.PeerId
 
 	err = user.Db.Save(channelInfo)
-	return channelInfo, err
+	return openChannelInfo, err
 }
 
 // obd init ChannelInfo for Bob
@@ -60,17 +63,18 @@ func (this *channelManager) BeforeBobOpenChannelAtBobSide(msg string, user *bean
 		return errors.New("empty inputData")
 	}
 
-	aliceChannelInfo := &dao.ChannelInfo{}
-	err = json.Unmarshal([]byte(msg), &aliceChannelInfo)
+	aliceOpenChannelInfo := bean.OpenChannelInfo{}
+	err = json.Unmarshal([]byte(msg), &aliceOpenChannelInfo)
 	if err != nil {
 		return err
 	}
+
 	channelInfo := &dao.ChannelInfo{}
-	channelInfo.OpenChannelInfo = aliceChannelInfo.OpenChannelInfo
-	channelInfo.PeerIdA = aliceChannelInfo.PeerIdA
+	channelInfo.OpenChannelInfo = aliceOpenChannelInfo
+	channelInfo.PeerIdA = aliceOpenChannelInfo.FunderPeerId
 	channelInfo.PeerIdB = user.PeerId
-	channelInfo.PubKeyA = aliceChannelInfo.FundingPubKey
-	channelInfo.AddressA = aliceChannelInfo.FundingAddress
+	channelInfo.PubKeyA = aliceOpenChannelInfo.FundingPubKey
+	channelInfo.AddressA = aliceOpenChannelInfo.FundingAddress
 	channelInfo.CurrState = dao.ChannelState_Create
 	channelInfo.CreateAt = time.Now()
 	channelInfo.CreateBy = user.PeerId
@@ -79,7 +83,7 @@ func (this *channelManager) BeforeBobOpenChannelAtBobSide(msg string, user *bean
 }
 
 func (this *channelManager) BobAcceptChannel(jsonData string, user *bean.User) (channelInfo *dao.ChannelInfo, err error) {
-	reqData := &bean.AcceptChannelInfo{}
+	reqData := &bean.SendAcceptChannelInfo{}
 	err = json.Unmarshal([]byte(jsonData), &reqData)
 
 	if err != nil {
@@ -90,12 +94,13 @@ func (this *channelManager) BobAcceptChannel(jsonData string, user *bean.User) (
 		return nil, errors.New("wrong TemporaryChannelId")
 	}
 
+	bobFundingAddress := ""
 	if reqData.Approval {
 		if tool.CheckIsString(&reqData.FundingPubKey) == false {
 			return nil, errors.New("wrong FundingPubKey")
 		}
 
-		reqData.FundingAddress, err = getAddressFromPubKey(reqData.FundingPubKey)
+		bobFundingAddress, err = getAddressFromPubKey(reqData.FundingPubKey)
 		if err != nil {
 			return nil, err
 		}
@@ -118,7 +123,7 @@ func (this *channelManager) BobAcceptChannel(jsonData string, user *bean.User) (
 
 	if reqData.Approval {
 		channelInfo.PubKeyB = reqData.FundingPubKey
-		channelInfo.AddressB = reqData.FundingAddress
+		channelInfo.AddressB = bobFundingAddress
 		multiSig, err := rpcClient.CreateMultiSig(2, []string{channelInfo.PubKeyA, channelInfo.PubKeyB})
 		if err != nil {
 			log.Println(err)
