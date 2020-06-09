@@ -1,35 +1,43 @@
-package enum
+1、免登录的
+	-100100					登录
+	-100101					p2p节点连接	
+	-101009					btc预交易
+	-102001					omni预交易
+2、需要登录访问的协议
+	-100200					获取新的地址
+3、和协议相关的接口
+	-100032，-32，-110032 请求开通通道
+	-100033，-33，-110033 签收开通通道
+		
+	-100340，-340，-110340 请求btc充值
+	-100350，-350，-110350 签收btc充值
+		
+	-100034，-34，-110034 请求omni充值
+	-100035，-35，-110035 签收omni充值
+		
+	-100351，-351，-110351 请求rsmc
+	-100352，-353，-354，-110352 签收rsmc
+	
+	-100040，-40，-110040 请求传递htlc的H
+	-100041，-42，-43，-44，-110041 签收传递htlc的H
+	
+	-100045，-45，-110045 请求传递htlc的R
+	-100046，-47，-48，-110046 签收传递htlc的R
+	
+	-100049，-49，-110049 请求关闭htlc
+	-100050，-51，-52，-110050 签收关闭htlc
+	
+	-100080，-80，-110080 原子交换第一步
+	-100081，-81，-110081 原子交换第二步
+	
+	
+交易相关接口： p2p的协议号是在[0,-1000]，再预留1000，设定为	[-100000,-102000]
+公用接口： 客户端不需要登录的接口设定为					[-102000,-103000]
+用户中心： 客户端需要登录和p2p协议号无关的的接口设定为		[-103000,-104000]
 
-type SendTargetType int
 
-const (
-	SendTargetType_SendToNone     SendTargetType = -1
-	SendTargetType_SendToAll      SendTargetType = 0
-	SendTargetType_SendToSomeone  SendTargetType = 1
-	SendTargetType_SendToExceptMe SendTargetType = 2
-)
 
-type MsgType int
-
-const (
-	MsgType_Tracker_Connect_301           MsgType = 301
-	MsgType_Tracker_HeartBeat_302         MsgType = 302
-	MsgType_Tracker_NodeLogin_303         MsgType = 303
-	MsgType_Tracker_UserLogin_304         MsgType = 304
-	MsgType_Tracker_UserLogout_305        MsgType = 305
-	MsgType_Tracker_UpdateChannelInfo_350 MsgType = 350
-	MsgType_Tracker_GetHtlcPath_351       MsgType = 351
-	MsgType_Tracker_UpdateHtlcTxState_352 MsgType = 352
-	MsgType_Tracker_UpdateUserInfo_353    MsgType = 353
-)
-
-// 交易相关接口，需要登录 transaction [-100000,-102000]
-// 通用接口，不需要登录 common [-102000,-103000]
-// 用户中心，需要登录 user center [-103000,-104000]
-const (
-	MsgType_Error_0 MsgType = 0
-
-	// region 通用接口，不需要登录 common [-102000,-102000]
+// region 通用接口，不需要登录 common [-102000,-102000]
 	MsgType_UserLogin_2001         MsgType = -102001
 	MsgType_UserLogout_2002        MsgType = -102002
 	MsgType_p2p_ConnectServer_2003 MsgType = -102003
@@ -173,164 +181,10 @@ const (
 	MsgType_HTLC_CloseHtlcUpdateCnb_52     MsgType = -52
 	MsgType_HTLC_RecvCloseSigned_50        MsgType = -110050
 
-	//https://github.com/LightningOnOmnilayer/Omni-BOLT-spec/blob/master/OmniBOLT-05-Atomic-Swap-among-Channels.md
+	
 	MsgType_Atomic_SendSwap_80        MsgType = -100080
 	MsgType_Atomic_Swap_N80           MsgType = -80
 	MsgType_Atomic_RecvSwap_N80       MsgType = -110080
 	MsgType_Atomic_SendSwapAccept_81  MsgType = -100081
 	MsgType_Atomic_SwapAccept_N81     MsgType = -81
 	MsgType_Atomic_RecvSwapAccept_N81 MsgType = -110081
-	//endregion
-)
-
-func CheckExist(msgType MsgType) bool {
-	switch msgType {
-	case MsgType_Error_0:
-		return true
-	case MsgType_UserLogin_2001:
-		return true
-	case MsgType_UserLogout_2002:
-		return true
-	case MsgType_p2p_ConnectServer_2003:
-		return true
-	case MsgType_Core_GetNewAddress_2101:
-		return true
-	case MsgType_Core_GetMiningInfo_2102:
-		return true
-	case MsgType_Core_GetNetworkInfo_2103:
-		return true
-	case MsgType_Core_SignMessageWithPrivKey_2104:
-		return true
-	case MsgType_Core_VerifyMessage_2105:
-		return true
-	case MsgType_Core_DumpPrivKey_2106:
-		return true
-	case MsgType_Core_ListUnspent_2107:
-		return true
-	case MsgType_Core_BalanceByAddress_2108:
-		return true
-	case MsgType_Core_FundingBTC_2109:
-		return true
-	case MsgType_Core_BtcCreateMultiSig_2110:
-		return true
-	case MsgType_Core_Btc_ImportPrivKey_2111:
-		return true
-	case MsgType_Core_Omni_GetBalance_2112:
-		return true
-	case MsgType_Core_Omni_CreateNewTokenFixed_2113:
-		return true
-	case MsgType_Core_Omni_CreateNewTokenManaged_2114:
-		return true
-	case MsgType_Core_Omni_GrantNewUnitsOfManagedToken_2115:
-		return true
-	case MsgType_Core_Omni_RevokeUnitsOfManagedToken_2116:
-		return true
-	case MsgType_Core_Omni_ListProperties_2117:
-		return true
-	case MsgType_Core_Omni_GetTransaction_2118:
-		return true
-	case MsgType_Core_Omni_GetProperty_2119:
-		return true
-	case MsgType_Core_Omni_FundingAsset_2120:
-		return true
-	case MsgType_GetMnemonic_2004:
-		return true
-	case MsgType_Mnemonic_CreateAddress_3000:
-		return true
-	case MsgType_Mnemonic_GetAddressByIndex_3001:
-		return true
-	case MsgType_SendChannelOpen_32:
-		return true
-	case MsgType_ChannelOpen_AllItem_3150:
-		return true
-	case MsgType_ChannelOpen_ItemByTempId_3151:
-		return true
-	case MsgType_ChannelOpen_Count_3152:
-		return true
-	case MsgType_ChannelOpen_DelItemByTempId_3153:
-		return true
-	case MsgType_GetChannelInfoByChanId_3154:
-		return true
-	case MsgType_GetChannelInfoByChanId_3155:
-		return true
-	case MsgType_SendChannelAccept_33:
-		return true
-	case MsgType_FundingCreate_SendAssetFundingCreated_34:
-		return true
-	case MsgType_FundingCreate_Asset_ALlItem_3100:
-		return true
-	case MsgType_FundingCreate_Asset_ItemById_3101:
-		return true
-	case MsgType_FundingCreate_Asset_ItemByChannelId_3102:
-		return true
-	case MsgType_FundingCreate_Asset_Count_3103:
-		return true
-	case MsgType_FundingCreate_SendBtcFundingCreated_340:
-		return true
-	case MsgType_FundingCreate_Btc_ALlItem_3104:
-		return true
-	case MsgType_FundingCreate_Btc_ItemById_3105:
-		return true
-	case MsgType_FundingCreate_Btc_ItemByTempChannelId_3106:
-		return true
-	case MsgType_FundingCreate_Btc_RDALlItem_3107:
-		return true
-	case MsgType_FundingCreate_Btc_ItemRDById_3108:
-		return true
-	case MsgType_FundingCreate_Btc_ItemRDByTempChannelId_3109:
-		return true
-	case MsgType_FundingCreate_Btc_ItemRDByTempChannelIdAndTxId_3110:
-		return true
-	case MsgType_FundingSign_SendAssetFundingSigned_35:
-		return true
-	case MsgType_FundingSign_SendBtcSign_350:
-		return true
-	case MsgType_CommitmentTx_SendCommitmentTransactionCreated_351:
-		return true
-	case MsgType_CommitmentTxSigned_SendRevokeAndAcknowledgeCommitmentTransaction_352:
-		return true
-	case MsgType_CommitmentTx_ItemsByChanId_3200:
-		return true
-	case MsgType_CommitmentTx_ItemById_3201:
-		return true
-	case MsgType_CommitmentTx_Count_3202:
-		return true
-	case MsgType_CommitmentTx_LatestCommitmentTxByChanId_3203:
-		return true
-	case MsgType_CommitmentTx_LatestRDByChanId_3204:
-		return true
-	case MsgType_CommitmentTx_LatestBRByChanId_3205:
-		return true
-	case MsgType_SendBreachRemedyTransaction_3206:
-		return true
-	case MsgType_CommitmentTx_AllRDByChanId_3207:
-		return true
-	case MsgType_CommitmentTx_AllBRByChanId_3208:
-		return true
-	case MsgType_SendCloseChannelRequest_38:
-		return true
-	case MsgType_SendCloseChannelSign_39:
-		return true
-	case MsgType_HTLC_FindPath_401:
-		return true
-	case MsgType_HTLC_Invoice_402:
-		return true
-	case MsgType_HTLC_SendAddHTLC_40:
-		return true
-	case MsgType_HTLC_SendAddHTLCSigned_41:
-		return true
-	case MsgType_HTLC_SendVerifyR_45:
-		return true
-	case MsgType_HTLC_SendSignVerifyR_46:
-		return true
-	case MsgType_HTLC_SendRequestCloseCurrTx_49:
-		return true
-	case MsgType_HTLC_SendCloseSigned_50:
-		return true
-	case MsgType_Atomic_SendSwap_80:
-		return true
-	case MsgType_Atomic_SendSwapAccept_81:
-		return true
-	}
-	return false
-}
