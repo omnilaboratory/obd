@@ -178,7 +178,7 @@ func (client *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.Se
 		}
 		msg.Type = enum.MsgType_FundingCreate_SendAssetFundingCreated_34
 		client.sendToMyself(msg.Type, status, data)
-	case enum.MsgType_FundingCreate_Asset_ALlItem_3100:
+	case enum.MsgType_FundingCreate_Asset_AllItem_3100:
 		node, err := service.FundingTransactionService.OmniFundingAllItem(*client.User)
 		if err != nil {
 			data = err.Error()

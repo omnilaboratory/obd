@@ -194,7 +194,7 @@ func (client *Client) Read() {
 					//-34 -340 及查询
 					if msg.Type == enum.MsgType_FundingCreate_SendAssetFundingCreated_34 ||
 						msg.Type == enum.MsgType_FundingCreate_SendBtcFundingCreated_340 ||
-						(msg.Type <= enum.MsgType_FundingCreate_Asset_ALlItem_3100 &&
+						(msg.Type <= enum.MsgType_FundingCreate_Asset_AllItem_3100 &&
 							msg.Type >= enum.MsgType_FundingCreate_Btc_ItemRDByTempChannelIdAndTxId_3110) {
 						sendType, dataOut, status = client.fundingTransactionModule(msg)
 						break

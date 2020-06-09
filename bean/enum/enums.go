@@ -67,7 +67,7 @@ const (
 	MsgType_Mnemonic_GetAddressByIndex_3001 MsgType = -103001
 
 	//Omni充值列表
-	MsgType_FundingCreate_Asset_ALlItem_3100 MsgType = -103100
+	MsgType_FundingCreate_Asset_AllItem_3100 MsgType = -103100
 	//Omni充值根据id获取充值详情
 	MsgType_FundingCreate_Asset_ItemById_3101 MsgType = -103101
 	//Omni充值根据通道id获取充值详情
@@ -257,7 +257,7 @@ func CheckExist(msgType MsgType) bool {
 		return true
 	case MsgType_FundingCreate_SendAssetFundingCreated_34:
 		return true
-	case MsgType_FundingCreate_Asset_ALlItem_3100:
+	case MsgType_FundingCreate_Asset_AllItem_3100:
 		return true
 	case MsgType_FundingCreate_Asset_ItemById_3101:
 		return true
