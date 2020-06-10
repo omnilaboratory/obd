@@ -171,27 +171,29 @@ func sycChannelInfos() {
 			if err == nil {
 				for _, channelInfo := range channelInfos {
 					if len(channelInfo.ChannelId) > 0 {
-						commitmentTransaction := dao.CommitmentTransaction{}
-						err = db.Select(q.Eq("ChannelId", channelInfo.ChannelId)).OrderBy("CreateAt").Reverse().First(&commitmentTransaction)
-						if err == nil {
-							request := trackerBean.ChannelInfoRequest{}
-							request.ChannelId = channelInfo.ChannelId
-							request.PropertyId = channelInfo.PropertyId
-							request.PeerIdA = channelInfo.PeerIdA
-							request.PeerIdB = channelInfo.PeerIdB
-							request.CurrState = channelInfo.CurrState
-							request.AmountA = commitmentTransaction.AmountToRSMC
-							request.AmountB = commitmentTransaction.AmountToCounterparty
-							request.IsAlice = false
-							if commitmentTransaction.Owner == channelInfo.PeerIdA {
-								request.IsAlice = true
+						if channelInfo.CurrState == dao.ChannelState_CanUse || channelInfo.CurrState == dao.ChannelState_Close || channelInfo.CurrState == dao.ChannelState_HtlcTx {
+							commitmentTransaction := dao.CommitmentTransaction{}
+							err = db.Select(q.Eq("ChannelId", channelInfo.ChannelId)).OrderBy("CreateAt").Reverse().First(&commitmentTransaction)
+							if err == nil {
+								request := trackerBean.ChannelInfoRequest{}
+								request.ChannelId = channelInfo.ChannelId
+								request.PropertyId = channelInfo.PropertyId
+								request.PeerIdA = channelInfo.PeerIdA
+								request.PeerIdB = channelInfo.PeerIdB
+								request.CurrState = channelInfo.CurrState
 								request.AmountA = commitmentTransaction.AmountToRSMC
 								request.AmountB = commitmentTransaction.AmountToCounterparty
-							} else {
-								request.AmountB = commitmentTransaction.AmountToRSMC
-								request.AmountA = commitmentTransaction.AmountToCounterparty
+								request.IsAlice = false
+								if commitmentTransaction.Owner == channelInfo.PeerIdA {
+									request.IsAlice = true
+									request.AmountA = commitmentTransaction.AmountToRSMC
+									request.AmountB = commitmentTransaction.AmountToCounterparty
+								} else {
+									request.AmountB = commitmentTransaction.AmountToRSMC
+									request.AmountA = commitmentTransaction.AmountToCounterparty
+								}
+								nodes = append(nodes, request)
 							}
-							nodes = append(nodes, request)
 						}
 					}
 				}

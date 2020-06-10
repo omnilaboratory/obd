@@ -52,7 +52,7 @@ func (client *Client) htlcHModule(msg bean.RequestMessage) (enum.SendTargetType,
 			if _, err := client.FindUser(&htlcHRequest.RecipientUserPeerId); err != nil {
 				data = err.Error()
 			} else {
-				respond, err := service.HtlcHMessageService.AddHTLC(msg.Data, client.User)
+				respond, err := service.HtlcForwardTxService.PayerRequestFindPath(msg.Data, *client.User)
 				if err != nil {
 					data = err.Error()
 				} else {

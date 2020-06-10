@@ -81,7 +81,7 @@ func (service *htlcBackwardTxManager) SendRToPreviousNode_Step1(msg bean.Request
 		return nil, errors.New("recipientUserPeerId is wrong")
 	}
 	if msg.RecipientNodePeerId == P2PLocalPeerId {
-		err = FindUserIsOnline(payerPeerId)
+		err = findUserIsOnline(payerPeerId)
 		if err != nil {
 			log.Println(err)
 			return nil, err

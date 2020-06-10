@@ -52,7 +52,7 @@ func (service *htlcForwardTxManager) PayerRequestFindPath(msgData string, user b
 	}
 
 	if requestData.RecipientNodePeerId == P2PLocalPeerId {
-		if err := FindUserIsOnline(requestData.RecipientUserPeerId); err != nil {
+		if err := findUserIsOnline(requestData.RecipientUserPeerId); err != nil {
 			return nil, err
 		}
 	}

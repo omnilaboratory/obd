@@ -12,26 +12,6 @@ import (
 	"time"
 )
 
-func TestDemoChannelTreeData(t *testing.T) {
-	PathService.CreateDemoChannelNetwork("A", "F", 6, nil, true)
-
-	for index, node := range PathService.openList {
-		log.Println(index, node)
-	}
-	log.Println()
-
-	for index, node := range PathService.openList {
-		if node.IsTarget {
-			log.Println("findPath:", index, node)
-		}
-	}
-
-	//for key, node := range branchMap {
-	//	log.Println(key, node)
-	//}
-
-}
-
 func TestCommitmentTxManager_GetItemById(t *testing.T) {
 	amount := 2.0009
 	decimal.DivisionPrecision = 8
@@ -87,77 +67,6 @@ func TestDelDemoChannelInfoOne(t *testing.T) {
 	log.Println(err)
 }
 
-func TestGetDemoChannelInfoData(t *testing.T) {
-	var nodes []dao.DemoChannelInfo
-	db.All(&nodes)
-	for _, value := range nodes {
-		log.Println(value)
-	}
-}
-
-func TestCreateDemoChannelInfoDataSingle(t *testing.T) {
-	node := &dao.DemoChannelInfo{
-		PeerIdA: "D",
-		AmountA: 10,
-		PeerIdB: "F",
-		AmountB: 18,
-	}
-	db.Save(node)
-}
-
-func TestCreateDemoChannelInfoData(t *testing.T) {
-	node := &dao.DemoChannelInfo{
-		PeerIdA: "A",
-		AmountA: 18,
-		PeerIdB: "B",
-		AmountB: 0,
-	}
-	db.Save(node)
-	node = &dao.DemoChannelInfo{
-		PeerIdA: "B",
-		AmountA: 16,
-		PeerIdB: "C",
-		AmountB: 0,
-	}
-	db.Save(node)
-	node = &dao.DemoChannelInfo{
-		PeerIdA: "C",
-		AmountA: 14,
-		PeerIdB: "D",
-		AmountB: 0,
-	}
-	db.Save(node)
-	node = &dao.DemoChannelInfo{
-		PeerIdA: "D",
-		AmountA: 12,
-		PeerIdB: "E",
-		AmountB: 0,
-	}
-	db.Save(node)
-	node = &dao.DemoChannelInfo{
-		PeerIdA: "E",
-		AmountA: 10,
-		PeerIdB: "F",
-		AmountB: 0,
-	}
-	db.Save(node)
-	node = &dao.DemoChannelInfo{
-		PeerIdA: "F",
-		AmountA: 8,
-		PeerIdB: "G",
-		AmountB: 0,
-	}
-	db.Save(node)
-	node = &dao.DemoChannelInfo{
-		PeerIdA: "G",
-		AmountA: 6,
-		PeerIdB: "H",
-		AmountB: 0,
-	}
-	db.Save(node)
-
-}
-
 func TestPathManager_GetPath(t *testing.T) {
 	multiAddr, err := rpcClient.CreateMultiSig(2, []string{"039ee94a8131ef437059383bd0bb9ca3b7fd9cae0554f9df8b7d786ebf173f1c20", "0216847047b926a1ff88e97fb0ebed8d0482c69521e9f8bc499c06b108a4972b82"})
 	rsmcMultiAddress := gjson.Get(multiAddr, "address").String()
@@ -185,15 +94,6 @@ func TestDecodeTx(t *testing.T) {
 	result, err = rpcClient.DecodeRawTransaction(hex)
 	log.Println(err)
 	log.Println(result)
-	//txid, hex, err := rpcClient.BtcSignRawTransaction(hex, "cTPtw7uhNXWeBroEzFur3WZQr8WgPojE4WipsxTNBqbGsruMJG33")
-	//log.Println(err)
-	//log.Println(txid)
-	//log.Println(result)
-	//hex = "02000000012ecd34ce812f36a876d6f5b3ab2ccb3478eea69e6af4a337fb1941ae8b8a625100000000d9004730440220514b3ed6d636c69b2c936f9a57ecc248f00618c46e61bee5e8408192c4a25570022045d1c1b191a9b6c4ee56a51129baf9d79a26852d5ccbe572d8fcd961b360e8c80147304402200cad5e9707d489534823a5e100e6e020d555d6ac87cab285b23c4fc706eb689402204c7d3962ad0cb27c81295dbfaed216325c26a1b099ed328eefff81212501903a0147522103f1603966fc3986d7681a7bf7a1e6b8b44c6009939c28da21f065c1b991aeff12210216847047b926a1ff88e97fb0ebed8d0482c69521e9f8bc499c06b108a4972b8252aeffffffff033c1900000000000017a9140ff6b304e80589566854573a3c528ee0cb7dfbe4870000000000000000166a146f6d6e69000000000000007900000000773594001c0200000000000017a9140ff6b304e80589566854573a3c528ee0cb7dfbe48700000000"
-	//result, err = rpcClient.TestMemPoolAccept(hex)
-	//log.Println(err)
-	//log.Println(result)
-
 }
 
 func TestGetBalance(t *testing.T) {

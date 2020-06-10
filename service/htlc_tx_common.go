@@ -5,106 +5,11 @@ import (
 	"github.com/asdine/storm"
 	"github.com/asdine/storm/q"
 	"github.com/omnilaboratory/obd/bean"
-	"github.com/omnilaboratory/obd/config"
 	"github.com/omnilaboratory/obd/dao"
 	"github.com/tidwall/gjson"
 	"log"
 	"time"
 )
-
-func checkChannelCanBeUseAsInterNode(item dao.ChannelInfo, user bean.User, reqData bean.HtlcRequestFindPath) *dao.ChannelInfo {
-	flag := false
-	if item.PeerIdA == user.PeerId && item.PeerIdB == reqData.RecipientUserPeerId {
-		flag = true
-	}
-	if item.PeerIdB == user.PeerId && item.PeerIdA == reqData.RecipientUserPeerId {
-		flag = true
-	}
-	if flag {
-		commitmentTxInfo, err := getLatestCommitmentTxUseDbTx(user.Db, item.ChannelId, user.PeerId)
-		if err == nil {
-			if commitmentTxInfo.PropertyId == reqData.PropertyId &&
-				commitmentTxInfo.CurrState == dao.TxInfoState_CreateAndSign &&
-				commitmentTxInfo.AmountToRSMC >= reqData.Amount {
-				return &item
-			}
-		}
-	}
-	return nil
-}
-
-func getTwoChannelOfSingleHop(htlcRAndHInfo dao.HtlcRAndHInfo, channelAliceInfos []dao.ChannelInfo, channelCarlInfos []dao.ChannelInfo) (string, *dao.ChannelInfo, *dao.ChannelInfo) {
-	for _, aliceChannel := range channelAliceInfos {
-		if aliceChannel.PeerIdA == htlcRAndHInfo.SenderPeerId {
-			bobPeerId := aliceChannel.PeerIdB
-			carlChannel, err := getCarlChannelHasInterNodeBob(htlcRAndHInfo, aliceChannel, channelCarlInfos, aliceChannel.PeerIdA, bobPeerId)
-			if err == nil {
-				return bobPeerId, &aliceChannel, carlChannel
-			}
-		} else {
-			bobPeerId := aliceChannel.PeerIdA
-			carlChannel, err := getCarlChannelHasInterNodeBob(htlcRAndHInfo, aliceChannel, channelCarlInfos, aliceChannel.PeerIdB, bobPeerId)
-			if err == nil {
-				return bobPeerId, &aliceChannel, carlChannel
-			}
-		}
-	}
-	return "", nil, nil
-}
-
-func getCarlChannelHasInterNodeBob(htlcRAndHInfo dao.HtlcRAndHInfo, aliceChannel dao.ChannelInfo, channelCarlInfos []dao.ChannelInfo, alicePeerId, bobPeerId string) (*dao.ChannelInfo, error) {
-	//whether bob is online
-	if err := FindUserIsOnline(bobPeerId); err != nil {
-		return nil, err
-	}
-
-	//alice and bob's channel, whether alice has enough money
-	aliceCommitmentTxInfo, err := getLatestCommitmentTx(aliceChannel.ChannelId, alicePeerId)
-	if err != nil {
-		return nil, err
-	}
-	if aliceCommitmentTxInfo.AmountToRSMC < (htlcRAndHInfo.Amount + config.GetHtlcFee()) {
-		return nil, errors.New("channel not have enough money")
-	}
-
-	//bob and carl's channel,whether bob has enough money
-	for _, carlChannel := range channelCarlInfos {
-		if (carlChannel.PeerIdA == bobPeerId && carlChannel.PeerIdB == htlcRAndHInfo.RecipientPeerId) ||
-			(carlChannel.PeerIdB == bobPeerId && carlChannel.PeerIdA == htlcRAndHInfo.RecipientPeerId) {
-			commitmentTxInfo, err := getLatestCommitmentTx(carlChannel.ChannelId, bobPeerId)
-			if err != nil {
-				continue
-			}
-			if commitmentTxInfo.AmountToRSMC < htlcRAndHInfo.Amount {
-				continue
-			}
-			return &carlChannel, nil
-		}
-	}
-	return nil, errors.New("not found the channel")
-}
-
-func getAllChannels(peerId string) (channelInfos []dao.ChannelInfo) {
-	channelInfos = make([]dao.ChannelInfo, 0)
-	_ = db.Select(
-		q.Or(
-			q.Eq("PeerIdA", peerId),
-			q.Eq("PeerIdB", peerId)),
-		q.Eq("CurrState", dao.ChannelState_CanUse)).
-		Find(&channelInfos)
-	return channelInfos
-}
-
-func getAllChannelsByUser(user bean.User) (channelInfos []dao.ChannelInfo) {
-	channelInfos = make([]dao.ChannelInfo, 0)
-	_ = user.Db.Select(
-		q.Or(
-			q.Eq("PeerIdA", user.PeerId),
-			q.Eq("PeerIdB", user.PeerId)),
-		q.Eq("CurrState", dao.ChannelState_CanUse)).
-		Find(&channelInfos)
-	return channelInfos
-}
 
 func createHtlcHLockTxObj(tx storm.Node, owner string, channelInfo dao.ChannelInfo, h string, commitmentTxInfo dao.CommitmentTransaction, outputBean map[string]interface{}, timeout int, user bean.User) (henxTx *dao.HtlcLockTxByH, err error) {
 	henxTx = &dao.HtlcLockTxByH{}

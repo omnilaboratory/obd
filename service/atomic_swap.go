@@ -47,7 +47,7 @@ func (this *atomicSwapManager) AtomicSwap(msg bean.RequestMessage, user bean.Use
 	}
 
 	if P2PLocalPeerId == msg.RecipientNodePeerId {
-		err = FindUserIsOnline(reqData.RecipientUserPeerId)
+		err = findUserIsOnline(reqData.RecipientUserPeerId)
 		if err != nil {
 			return nil, err
 		}
@@ -198,7 +198,7 @@ func (this *atomicSwapManager) AtomicSwapAccepted(msg bean.RequestMessage, user 
 		return nil, errors.New("wrong recipient_user_peer_id")
 	}
 	if msg.RecipientNodePeerId == P2PLocalPeerId {
-		err = FindUserIsOnline(reqData.RecipientUserPeerId)
+		err = findUserIsOnline(reqData.RecipientUserPeerId)
 		if err != nil {
 			return nil, err
 		}

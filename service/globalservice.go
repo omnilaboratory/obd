@@ -31,7 +31,7 @@ var TrackerWsConn *websocket.Conn
 var tempAddrPrivateKeyMap = make(map[string]string)
 var OnlineUserMap = make(map[string]bool)
 
-func FindUserIsOnline(peerId string) error {
+func findUserIsOnline(peerId string) error {
 	if tool.CheckIsString(&peerId) {
 		value, exists := OnlineUserMap[peerId]
 		if exists && value == true {
@@ -349,15 +349,6 @@ func getInputsForNextTxByParseTxHashVout(hex string, toAddress, scriptPubKey, re
 		return inputs, nil
 	}
 	return nil, errors.New("no inputs")
-}
-
-func getLatestCommitmentTx(channelId string, owner string) (commitmentTxInfo *dao.CommitmentTransaction, err error) {
-	commitmentTxInfo = &dao.CommitmentTransaction{}
-	err = db.Select(
-		q.Eq("ChannelId", channelId),
-		q.Eq("Owner", owner)).
-		OrderBy("CreateAt").Reverse().First(commitmentTxInfo)
-	return commitmentTxInfo, err
 }
 
 func getLatestCommitmentTxUseDbTx(tx storm.Node, channelId string, owner string) (commitmentTxInfo *dao.CommitmentTransaction, err error) {

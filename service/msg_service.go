@@ -25,27 +25,6 @@ type messageManage struct {
 
 var MessageService messageManage
 
-func (this *messageManage) saveMsg(sender, receiver, data string) string {
-	tool.CheckIsString(&data)
-	msg := &Message{
-		Sender:    sender,
-		Receiver:  receiver,
-		Data:      data,
-		CreateAt:  time.Now(),
-		CurrState: dao.NS_Create,
-	}
-
-	bytes, err := json.Marshal(msg)
-	if err == nil {
-		msg.HashValue = tool.SignMsgWithSha256(bytes)
-		err = db.Save(msg)
-		if err == nil {
-			return msg.HashValue
-		}
-	}
-	return ""
-}
-
 func (this *messageManage) saveMsgUseTx(tx storm.Node, sender, receiver, data string) string {
 	tool.CheckIsString(&data)
 	msg := &Message{
@@ -64,17 +43,6 @@ func (this *messageManage) saveMsgUseTx(tx storm.Node, sender, receiver, data st
 		}
 	}
 	return ""
-}
-func (this *messageManage) getMsg(hashValue string) (*Message, error) {
-	msg := &Message{}
-	err := db.Select(q.Eq("HashValue", hashValue)).First(msg)
-	if err == nil {
-		msg.CurrState = dao.NS_Finish
-		msg.ReadAt = time.Now()
-		_ = db.Update(msg)
-		return msg, nil
-	}
-	return nil, err
 }
 func (this *messageManage) getMsgUseTx(tx storm.Node, hashValue string) (*Message, error) {
 	msg := &Message{}

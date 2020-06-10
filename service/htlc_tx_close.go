@@ -113,7 +113,7 @@ func (service *htlcCloseTxManager) RequestCloseHtlc(msg bean.RequestMessage, use
 		return nil, errors.New("RecipientUserPeerId is wrong")
 	}
 	if P2PLocalPeerId == msg.RecipientNodePeerId {
-		if err := FindUserIsOnline(targetUser); err != nil {
+		if err := findUserIsOnline(targetUser); err != nil {
 			return nil, err
 		}
 	}
@@ -355,7 +355,7 @@ func (service *htlcCloseTxManager) CloseHTLCSigned(msg bean.RequestMessage, user
 	}
 
 	if P2PLocalPeerId == msg.RecipientNodePeerId {
-		err = FindUserIsOnline(senderPeerId)
+		err = findUserIsOnline(senderPeerId)
 		if err != nil {
 			return nil, err
 		}
