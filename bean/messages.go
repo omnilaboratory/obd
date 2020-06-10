@@ -346,7 +346,7 @@ type AliceRequestAddHtlc struct {
 	CommitmentTxHash                 string  `json:"commitment_tx_hash"`
 	Memo                             string  `json:"memo"`
 	H                                string  `json:"h"`
-	CounterpartyTxHex                string  `json:"counterparty_tx_hex"`
+	ToCounterpartyTxHex              string  `json:"to_counterparty_tx_hex"`
 	HtlcTxHex                        string  `json:"htlc_tx_hex"`
 	RsmcTxHex                        string  `json:"rsmc_tx_hex"`
 	LastTempAddressPrivateKey        string  `json:"last_temp_address_private_key"`

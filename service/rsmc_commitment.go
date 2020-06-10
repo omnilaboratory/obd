@@ -104,30 +104,30 @@ func (this *commitmentTxManager) CommitmentTransactionCreated(msg bean.RequestMe
 		if balance < reqData.Amount {
 			return nil, errors.New("not enough payment amount")
 		}
-		if _, err := tool.GetPubKeyFromWifAndCheck(reqData.LastTempAddressPrivateKey, latestCommitmentTxInfo.RSMCTempAddressPubKey); err != nil {
+		if _, err = tool.GetPubKeyFromWifAndCheck(reqData.LastTempAddressPrivateKey, latestCommitmentTxInfo.RSMCTempAddressPubKey); err != nil {
 			return nil, errors.New(reqData.LastTempAddressPrivateKey + " is wrong private key for the last RSMCTempAddressPubKey " + latestCommitmentTxInfo.RSMCTempAddressPubKey)
 		}
 
 	} else {
 		lastCommitmentTx := &dao.CommitmentTransaction{}
 		_ = tx.One("Id", latestCommitmentTxInfo.LastCommitmentTxId, lastCommitmentTx)
-		if _, err := tool.GetPubKeyFromWifAndCheck(reqData.LastTempAddressPrivateKey, lastCommitmentTx.RSMCTempAddressPubKey); err != nil {
+		if _, err = tool.GetPubKeyFromWifAndCheck(reqData.LastTempAddressPrivateKey, lastCommitmentTx.RSMCTempAddressPubKey); err != nil {
 			return nil, errors.New(reqData.LastTempAddressPrivateKey + " is wrong private key for the last RSMCTempAddressPubKey " + latestCommitmentTxInfo.RSMCTempAddressPubKey)
 		}
 	}
 
-	if _, err := tool.GetPubKeyFromWifAndCheck(reqData.ChannelAddressPrivateKey, senderPubKey); err != nil {
+	if _, err = tool.GetPubKeyFromWifAndCheck(reqData.ChannelAddressPrivateKey, senderPubKey); err != nil {
 		return nil, errors.New(reqData.ChannelAddressPrivateKey + " is wrong private key for the funding address " + senderPubKey)
 	}
 	tempAddrPrivateKeyMap[senderPubKey] = reqData.ChannelAddressPrivateKey
 
-	if _, err := getAddressFromPubKey(reqData.CurrTempAddressPubKey); err != nil {
+	if _, err = getAddressFromPubKey(reqData.CurrTempAddressPubKey); err != nil {
 		return nil, errors.New("wrong curr_temp_address_pub_key")
 	}
 	if tool.CheckIsString(&reqData.CurrTempAddressPrivateKey) == false {
 		return nil, errors.New("wrong curr_temp_address_private_key")
 	}
-	if _, err := tool.GetPubKeyFromWifAndCheck(reqData.CurrTempAddressPrivateKey, reqData.CurrTempAddressPubKey); err != nil {
+	if _, err = tool.GetPubKeyFromWifAndCheck(reqData.CurrTempAddressPrivateKey, reqData.CurrTempAddressPubKey); err != nil {
 		return nil, errors.New(reqData.CurrTempAddressPrivateKey + " and " + reqData.CurrTempAddressPubKey + " not the pair key")
 	}
 	tempAddrPrivateKeyMap[reqData.CurrTempAddressPubKey] = reqData.CurrTempAddressPrivateKey
@@ -493,7 +493,7 @@ func (this *commitmentTxSignedManager) BeforeBobSignCommitmentTranctionAtBobSide
 
 func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction(msg bean.RequestMessage, signer *bean.User) (retData *bean.BobSignCommitmentTx, targetUser string, err error) {
 	if tool.CheckIsString(&msg.Data) == false {
-		err := errors.New("empty json reqData")
+		err = errors.New("empty json reqData")
 		log.Println(err)
 		return nil, "", err
 	}
@@ -592,7 +592,7 @@ func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction
 	tempAddrPrivateKeyMap[currNodeChannelPubKey] = reqData.ChannelAddressPrivateKey
 
 	//for rsmc
-	if _, err := getAddressFromPubKey(reqData.CurrTempAddressPubKey); err != nil {
+	if _, err = getAddressFromPubKey(reqData.CurrTempAddressPubKey); err != nil {
 		err = errors.New("error curr_temp_address_pub_key")
 		log.Println(err)
 		return nil, "", err
@@ -603,7 +603,7 @@ func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction
 		log.Println(err)
 		return nil, "", err
 	}
-	if _, err := tool.GetPubKeyFromWifAndCheck(reqData.CurrTempAddressPrivateKey, reqData.CurrTempAddressPubKey); err != nil {
+	if _, err = tool.GetPubKeyFromWifAndCheck(reqData.CurrTempAddressPrivateKey, reqData.CurrTempAddressPubKey); err != nil {
 		return nil, "", errors.New(reqData.CurrTempAddressPrivateKey + " and " + reqData.CurrTempAddressPubKey + " not the pair key")
 	}
 	tempAddrPrivateKeyMap[reqData.CurrTempAddressPubKey] = reqData.CurrTempAddressPrivateKey
@@ -690,7 +690,7 @@ func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction
 
 		if latestCommitmentTxInfo.CurrState == dao.TxInfoState_Create && latestCommitmentTxInfo.LastCommitmentTxId > 0 {
 			lastCommitmentTx := &dao.CommitmentTransaction{}
-			err := tx.Select(q.Eq("Id", latestCommitmentTxInfo.LastCommitmentTxId)).First(lastCommitmentTx)
+			err = tx.Select(q.Eq("Id", latestCommitmentTxInfo.LastCommitmentTxId)).First(lastCommitmentTx)
 			if err != nil {
 				return nil, "", errors.New("not found lastCommitmentTx")
 			}

@@ -167,7 +167,7 @@ func (service *htlcForwardTxManager) UpdateAddHtlc_40(msg bean.RequestMessage, u
 		}
 	}
 	if channelInfo == nil {
-		return nil, errors.New("not found  channel info from  htlc_channel_path")
+		return nil, errors.New("not found  channel info from  routing_packet")
 	}
 
 	if requestData.CltvExpiry < (totalStep - currStep) {
@@ -192,7 +192,7 @@ func (service *htlcForwardTxManager) UpdateAddHtlc_40(msg bean.RequestMessage, u
 	}
 	_, err = tool.GetPubKeyFromWifAndCheck(requestData.ChannelAddressPrivateKey, myChannelPubKey)
 	if err != nil {
-		return nil, errors.New("channel_address_private_key is wrong")
+		return nil, errors.New("channel_address_private_key is wrong for " + myChannelPubKey)
 	}
 
 	if tool.CheckIsString(&requestData.LastTempAddressPrivateKey) == false {
@@ -206,7 +206,7 @@ func (service *htlcForwardTxManager) UpdateAddHtlc_40(msg bean.RequestMessage, u
 		if latestCommitmentTx.CurrState == dao.TxInfoState_CreateAndSign {
 			_, err = tool.GetPubKeyFromWifAndCheck(requestData.LastTempAddressPrivateKey, latestCommitmentTx.RSMCTempAddressPubKey)
 			if err != nil {
-				return nil, errors.New("last_temp_address_private_key is wrong")
+				return nil, errors.New("last_temp_address_private_key is wrong for " + latestCommitmentTx.RSMCTempAddressPubKey)
 			}
 		}
 		if latestCommitmentTx.CurrState == dao.TxInfoState_Create {
@@ -215,7 +215,7 @@ func (service *htlcForwardTxManager) UpdateAddHtlc_40(msg bean.RequestMessage, u
 				_ = tx.One("Id", latestCommitmentTx.LastCommitmentTxId, lastCommitmentTx)
 				_, err = tool.GetPubKeyFromWifAndCheck(requestData.LastTempAddressPrivateKey, lastCommitmentTx.RSMCTempAddressPubKey)
 				if err != nil {
-					return nil, errors.New("last_temp_address_private_key is wrong")
+					return nil, errors.New("last_temp_address_private_key is wrong for " + lastCommitmentTx.RSMCTempAddressPubKey)
 				}
 			}
 		}
@@ -321,7 +321,7 @@ func (service *htlcForwardTxManager) UpdateAddHtlc_40(msg bean.RequestMessage, u
 	returnData.CommitmentTxHash = latestCommitmentTx.CurrHash
 	returnData.RsmcTxHex = latestCommitmentTx.RSMCTxHex
 	returnData.HtlcTxHex = latestCommitmentTx.HtlcTxHex
-	returnData.CounterpartyTxHex = latestCommitmentTx.ToCounterpartyTxHex
+	returnData.ToCounterpartyTxHex = latestCommitmentTx.ToCounterpartyTxHex
 	return returnData, nil
 }
 
@@ -407,7 +407,7 @@ func (service *htlcForwardTxManager) PayeeSignGetAddHtlc_41(jsonData string, use
 			q.Eq("PeerIdB", user.PeerId))).
 		First(channelInfo)
 	if err != nil {
-		return nil, errors.New("not found  channel info from  htlc_channel_path")
+		return nil, errors.New("not found  channel info from  routing_packet")
 	}
 
 	err = checkBtcFundFinish(channelInfo.ChannelAddress)
@@ -429,7 +429,7 @@ func (service *htlcForwardTxManager) PayeeSignGetAddHtlc_41(jsonData string, use
 
 	_, err = tool.GetPubKeyFromWifAndCheck(requestData.ChannelAddressPrivateKey, bobChannelPubKey)
 	if err != nil {
-		return nil, errors.New("channel_address_private_key is wrong")
+		return nil, errors.New("channel_address_private_key is wrong for " + bobChannelPubKey)
 	}
 
 	latestCommitmentTxInfo, _ := getLatestCommitmentTxUseDbTx(tx, channelInfo.ChannelId, user.PeerId)
@@ -444,7 +444,7 @@ func (service *htlcForwardTxManager) PayeeSignGetAddHtlc_41(jsonData string, use
 		if latestCommitmentTxInfo.CurrState == dao.TxInfoState_CreateAndSign {
 			_, err = tool.GetPubKeyFromWifAndCheck(requestData.LastTempAddressPrivateKey, latestCommitmentTxInfo.RSMCTempAddressPubKey)
 			if err != nil {
-				return nil, errors.New("last_temp_address_private_key is wrong")
+				return nil, errors.New("last_temp_address_private_key is wrong for " + latestCommitmentTxInfo.RSMCTempAddressPubKey)
 			}
 		}
 		if latestCommitmentTxInfo.CurrState == dao.TxInfoState_Create {
@@ -453,7 +453,7 @@ func (service *htlcForwardTxManager) PayeeSignGetAddHtlc_41(jsonData string, use
 				_ = tx.One("Id", latestCommitmentTxInfo.LastCommitmentTxId, lastCommitmentTx)
 				_, err = tool.GetPubKeyFromWifAndCheck(requestData.LastTempAddressPrivateKey, lastCommitmentTx.RSMCTempAddressPubKey)
 				if err != nil {
-					return nil, errors.New("last_temp_address_private_key is wrong")
+					return nil, errors.New("last_temp_address_private_key is wrong for " + lastCommitmentTx.RSMCTempAddressPubKey)
 				}
 			}
 		}
@@ -528,10 +528,10 @@ func (service *htlcForwardTxManager) PayeeSignGetAddHtlc_41(jsonData string, use
 
 	// region 2、签名对方传过来的 toCounterpartyTxHex
 	signedToOtherHex := ""
-	if len(payerRequestAddHtlc.CounterpartyTxHex) > 0 {
-		_, signedToOtherHex, err = rpcClient.BtcSignRawTransaction(payerRequestAddHtlc.CounterpartyTxHex, requestData.ChannelAddressPrivateKey)
+	if len(payerRequestAddHtlc.ToCounterpartyTxHex) > 0 {
+		_, signedToOtherHex, err = rpcClient.BtcSignRawTransaction(payerRequestAddHtlc.ToCounterpartyTxHex, requestData.ChannelAddressPrivateKey)
 		if err != nil {
-			return nil, errors.New("fail to sign payer toOther hex ")
+			return nil, errors.New("fail to sign payer to_counterparty_tx_hex ")
 		}
 		testResult, err = rpcClient.TestMemPoolAccept(signedToOtherHex)
 		if err != nil {

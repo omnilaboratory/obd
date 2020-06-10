@@ -61,6 +61,7 @@ const (
 	// endregion
 
 	//region  用户中心，需要登录 user center [-103000,-104000]
+
 	//通过助记词创建新地址
 	MsgType_Mnemonic_CreateAddress_3000 MsgType = -103000
 	//通过助记词和索引获取地址信息
@@ -99,7 +100,6 @@ const (
 	MsgType_SendBreachRemedyTransaction_3206             MsgType = -103206
 	MsgType_CommitmentTx_AllRDByChanId_3207              MsgType = -103207
 	MsgType_CommitmentTx_AllBRByChanId_3208              MsgType = -103208
-
 	//endregion
 
 	// region 交易相关接口，需要登录 transaction [-100000,-102000]
