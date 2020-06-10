@@ -29,7 +29,7 @@ const (
 const (
 	MsgType_Error_0 MsgType = 0
 
-	// region 通用接口，不需要登录 common [-102000,-102000]
+	// region 通用接口，不需要登录 common [-102000,-103000]
 	MsgType_UserLogin_2001         MsgType = -102001
 	MsgType_UserLogout_2002        MsgType = -102002
 	MsgType_p2p_ConnectServer_2003 MsgType = -102003
