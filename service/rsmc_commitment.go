@@ -38,11 +38,11 @@ func (this *commitmentTxManager) CommitmentTransactionCreated(msg bean.RequestMe
 	}
 
 	if tool.CheckIsString(&reqData.LastTempAddressPrivateKey) == false {
-		return nil, errors.New("wrong LastTempAddressPrivateKey")
+		return nil, errors.New("wrong last_temp_address_private_key")
 	}
 
 	if tool.CheckIsString(&reqData.ChannelAddressPrivateKey) == false {
-		return nil, errors.New("wrong ChannelAddressPrivateKey")
+		return nil, errors.New("wrong channel_address_private_key")
 	}
 
 	if reqData.Amount <= 0 {
@@ -122,10 +122,10 @@ func (this *commitmentTxManager) CommitmentTransactionCreated(msg bean.RequestMe
 	tempAddrPrivateKeyMap[senderPubKey] = reqData.ChannelAddressPrivateKey
 
 	if _, err := getAddressFromPubKey(reqData.CurrTempAddressPubKey); err != nil {
-		return nil, errors.New("wrong CurrTempAddressPubKey")
+		return nil, errors.New("wrong curr_temp_address_pub_key")
 	}
 	if tool.CheckIsString(&reqData.CurrTempAddressPrivateKey) == false {
-		return nil, errors.New("wrong CurrTempAddressPrivateKey")
+		return nil, errors.New("wrong curr_temp_address_private_key")
 	}
 	if _, err := tool.GetPubKeyFromWifAndCheck(reqData.CurrTempAddressPrivateKey, reqData.CurrTempAddressPubKey); err != nil {
 		return nil, errors.New(reqData.CurrTempAddressPrivateKey + " and " + reqData.CurrTempAddressPubKey + " not the pair key")
