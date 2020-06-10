@@ -105,19 +105,19 @@ func (this *commitmentTxManager) CommitmentTransactionCreated(msg bean.RequestMe
 			return nil, errors.New("not enough payment amount")
 		}
 		if _, err := tool.GetPubKeyFromWifAndCheck(reqData.LastTempAddressPrivateKey, latestCommitmentTxInfo.RSMCTempAddressPubKey); err != nil {
-			return nil, errors.New(reqData.LastTempAddressPrivateKey + " is wrong private key for the last RSMCTempAddressPubKey")
+			return nil, errors.New(reqData.LastTempAddressPrivateKey + " is wrong private key for the last RSMCTempAddressPubKey " + latestCommitmentTxInfo.RSMCTempAddressPubKey)
 		}
 
 	} else {
 		lastCommitmentTx := &dao.CommitmentTransaction{}
 		_ = tx.One("Id", latestCommitmentTxInfo.LastCommitmentTxId, lastCommitmentTx)
 		if _, err := tool.GetPubKeyFromWifAndCheck(reqData.LastTempAddressPrivateKey, lastCommitmentTx.RSMCTempAddressPubKey); err != nil {
-			return nil, errors.New(reqData.LastTempAddressPrivateKey + " is wrong private key for the last RSMCTempAddressPubKey")
+			return nil, errors.New(reqData.LastTempAddressPrivateKey + " is wrong private key for the last RSMCTempAddressPubKey " + latestCommitmentTxInfo.RSMCTempAddressPubKey)
 		}
 	}
 
 	if _, err := tool.GetPubKeyFromWifAndCheck(reqData.ChannelAddressPrivateKey, senderPubKey); err != nil {
-		return nil, errors.New(reqData.ChannelAddressPrivateKey + " is wrong private key for the funder address")
+		return nil, errors.New(reqData.ChannelAddressPrivateKey + " is wrong private key for the funding address " + senderPubKey)
 	}
 	tempAddrPrivateKeyMap[senderPubKey] = reqData.ChannelAddressPrivateKey
 
@@ -158,7 +158,7 @@ func (this *commitmentTxManager) CommitmentTransactionCreated(msg bean.RequestMe
 }
 
 //353 352的请求阶段完成，需要Alice这边签名C2b等相关的交易
-func (this *commitmentTxManager) AfterBobSignCommitmentTranctionAtAliceSide(data string, user *bean.User) (retData map[string]interface{}, needNoticeAlice bool, err error) {
+func (this *commitmentTxManager) AfterBobSignCommitmentTrancationAtAliceSide(data string, user *bean.User) (retData map[string]interface{}, needNoticeAlice bool, err error) {
 	signCommitmentTx := &bean.BobSignCommitmentTx{}
 	_ = json.Unmarshal([]byte(data), signCommitmentTx)
 
@@ -532,7 +532,7 @@ func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction
 	//endregion
 
 	if tool.CheckIsString(&reqData.ChannelId) == false {
-		err = errors.New("wrong ChannelId")
+		err = errors.New("wrong channel_id")
 		log.Println(err)
 		return nil, "", err
 	}
@@ -576,7 +576,7 @@ func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction
 
 	//for c rd br
 	if tool.CheckIsString(&reqData.ChannelAddressPrivateKey) == false {
-		err = errors.New("fail to get the signer's channel address private key")
+		err = errors.New("fail to get the channel_address_private_key")
 		log.Println(err)
 		return nil, "", err
 	}
@@ -587,19 +587,19 @@ func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction
 	}
 
 	if _, err := tool.GetPubKeyFromWifAndCheck(reqData.ChannelAddressPrivateKey, currNodeChannelPubKey); err != nil {
-		return nil, "", errors.New(reqData.ChannelAddressPrivateKey + " is wrong private key for the fund address")
+		return nil, "", errors.New(reqData.ChannelAddressPrivateKey + " is wrong private key for the funding address " + currNodeChannelPubKey)
 	}
 	tempAddrPrivateKeyMap[currNodeChannelPubKey] = reqData.ChannelAddressPrivateKey
 
 	//for rsmc
 	if _, err := getAddressFromPubKey(reqData.CurrTempAddressPubKey); err != nil {
-		err = errors.New("fail to get the signer's curr temp address pub key")
+		err = errors.New("error curr_temp_address_pub_key")
 		log.Println(err)
 		return nil, "", err
 	}
 	//for rsmc
 	if tool.CheckIsString(&reqData.CurrTempAddressPrivateKey) == false {
-		err = errors.New("fail to get the signer's curr temp address private key")
+		err = errors.New("fail to get curr_temp_address_private_key")
 		log.Println(err)
 		return nil, "", err
 	}
@@ -696,14 +696,14 @@ func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction
 			}
 			_, err = tool.GetPubKeyFromWifAndCheck(reqData.LastTempAddressPrivateKey, lastCommitmentTx.RSMCTempAddressPubKey)
 			if err != nil {
-				return nil, "", errors.New("last_temp_address_private_key is wrong")
+				return nil, "", errors.New("last_temp_address_private_key is wrong for " + lastCommitmentTx.RSMCTempAddressPubKey)
 			}
 		}
 
 		if latestCommitmentTxInfo.CurrState == dao.TxInfoState_CreateAndSign { //有上一次的承诺交易
 			_, err = tool.GetPubKeyFromWifAndCheck(reqData.LastTempAddressPrivateKey, latestCommitmentTxInfo.RSMCTempAddressPubKey)
 			if err != nil {
-				return nil, "", errors.New("last_temp_address_private_key is wrong")
+				return nil, "", errors.New("last_temp_address_private_key is wrong for " + latestCommitmentTxInfo.RSMCTempAddressPubKey)
 			}
 			isFirstRequest = true
 		}
