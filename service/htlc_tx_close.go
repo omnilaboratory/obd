@@ -43,38 +43,38 @@ func (service *htlcCloseTxManager) RequestCloseHtlc(msg bean.RequestMessage, use
 	}
 
 	if tool.CheckIsString(&reqData.CurrRsmcTempAddressPubKey) == false {
-		err = errors.New("empty CurrRsmcTempAddressPubKey")
+		err = errors.New("empty curr_rsmc_temp_address_pub_key")
 		log.Println(err)
 		return nil, err
 	}
 	if tool.CheckIsString(&reqData.CurrRsmcTempAddressPrivateKey) == false {
-		err = errors.New("empty CurrRsmcTempAddressPrivateKey")
+		err = errors.New("empty curr_rsmc_temp_address_private_key")
 		log.Println(err)
 		return nil, err
 	}
 
 	_, err = tool.GetPubKeyFromWifAndCheck(reqData.CurrRsmcTempAddressPrivateKey, reqData.CurrRsmcTempAddressPubKey)
 	if err != nil {
-		return nil, errors.New("CurrRsmcTempAddressPrivateKey is wrong")
+		return nil, errors.New("curr_rsmc_temp_address_private_key is wrong for " + reqData.CurrRsmcTempAddressPubKey)
 	}
 
 	if tool.CheckIsString(&reqData.LastHtlcTempAddressForHtnxPrivateKey) == false {
-		err = errors.New("empty LastHtlcTempAddressForHtnxPrivateKey")
+		err = errors.New("empty last_htlc_temp_address_for_htnx_private_key")
 		log.Println(err)
 		return nil, err
 	}
 	if tool.CheckIsString(&reqData.LastHtlcTempAddressPrivateKey) == false {
-		err = errors.New("empty LastHtlcTempAddressPrivateKey")
+		err = errors.New("empty last_htlc_temp_address_private_key")
 		log.Println(err)
 		return nil, err
 	}
 	if tool.CheckIsString(&reqData.LastRsmcTempAddressPrivateKey) == false {
-		err = errors.New("empty LastRsmcTempAddressPrivateKey")
+		err = errors.New("empty last_rsmc_temp_address_private_key")
 		log.Println(err)
 		return nil, err
 	}
 	if tool.CheckIsString(&reqData.ChannelAddressPrivateKey) == false {
-		err = errors.New("empty ChannelAddressPrivateKey")
+		err = errors.New("empty channel_address_private_key")
 		log.Println(err)
 		return nil, err
 	}
@@ -110,7 +110,7 @@ func (service *htlcCloseTxManager) RequestCloseHtlc(msg bean.RequestMessage, use
 		targetUser = channelInfo.PeerIdA
 	}
 	if msg.RecipientUserPeerId != targetUser {
-		return nil, errors.New("RecipientUserPeerId is wrong")
+		return nil, errors.New("recipient_user_peer_id is wrong")
 	}
 	if P2PLocalPeerId == msg.RecipientNodePeerId {
 		if err := findUserIsOnline(targetUser); err != nil {
@@ -119,7 +119,7 @@ func (service *htlcCloseTxManager) RequestCloseHtlc(msg bean.RequestMessage, use
 	}
 	_, err = tool.GetPubKeyFromWifAndCheck(reqData.ChannelAddressPrivateKey, requesterPubKey)
 	if err != nil {
-		return nil, errors.New("ChannelAddressPrivateKey is wrong")
+		return nil, errors.New("channel_address_private_key is wrong for " + requesterPubKey)
 	}
 
 	latestCommitmentTxInfo, err := getLatestCommitmentTxUseDbTx(tx, reqData.ChannelId, user.PeerId)
@@ -137,11 +137,11 @@ func (service *htlcCloseTxManager) RequestCloseHtlc(msg bean.RequestMessage, use
 	if latestCommitmentTxInfo.CurrState == dao.TxInfoState_Htlc_GetR {
 		_, err = tool.GetPubKeyFromWifAndCheck(reqData.LastRsmcTempAddressPrivateKey, latestCommitmentTxInfo.RSMCTempAddressPubKey)
 		if err != nil {
-			return nil, errors.New("LastRsmcTempAddressPrivateKey is wrong")
+			return nil, errors.New("last_rsmc_temp_address_private_key is wrong for " + latestCommitmentTxInfo.RSMCTempAddressPubKey)
 		}
 		_, err = tool.GetPubKeyFromWifAndCheck(reqData.LastHtlcTempAddressPrivateKey, latestCommitmentTxInfo.HTLCTempAddressPubKey)
 		if err != nil {
-			return nil, errors.New("LastHtlcTempAddressPrivateKey is wrong")
+			return nil, errors.New("last_htlc_temp_address_private_key is wrong for " + latestCommitmentTxInfo.HTLCTempAddressPubKey)
 		}
 
 		err = tx.Select(
@@ -162,11 +162,11 @@ func (service *htlcCloseTxManager) RequestCloseHtlc(msg bean.RequestMessage, use
 		}
 		_, err = tool.GetPubKeyFromWifAndCheck(reqData.LastRsmcTempAddressPrivateKey, lastCommitmentTxInfo.RSMCTempAddressPubKey)
 		if err != nil {
-			return nil, errors.New("LastRsmcTempAddressPrivateKey is wrong")
+			return nil, errors.New("last_rsmc_temp_address_private_key is wrong for " + lastCommitmentTxInfo.RSMCTempAddressPubKey)
 		}
 		_, err = tool.GetPubKeyFromWifAndCheck(reqData.LastHtlcTempAddressPrivateKey, lastCommitmentTxInfo.HTLCTempAddressPubKey)
 		if err != nil {
-			return nil, errors.New("LastHtlcTempAddressPrivateKey is wrong")
+			return nil, errors.New("last_htlc_temp_address_private_key is wrong for " + lastCommitmentTxInfo.HTLCTempAddressPubKey)
 		}
 		err = tx.Select(
 			q.Eq("ChannelId", channelInfo.ChannelId),
@@ -181,7 +181,7 @@ func (service *htlcCloseTxManager) RequestCloseHtlc(msg bean.RequestMessage, use
 
 	_, err = tool.GetPubKeyFromWifAndCheck(reqData.LastHtlcTempAddressForHtnxPrivateKey, ht1aOrHe1b.RSMCTempAddressPubKey)
 	if err != nil {
-		return nil, errors.New("LastHtlcTempAddressForHtnxPrivateKey is wrong")
+		return nil, errors.New("last_htlc_temp_address_for_htnx_private_key is wrong for" + ht1aOrHe1b.RSMCTempAddressPubKey)
 	}
 	tempAddrPrivateKeyMap[reqData.CurrRsmcTempAddressPubKey] = reqData.CurrRsmcTempAddressPrivateKey
 	tempAddrPrivateKeyMap[requesterPubKey] = reqData.ChannelAddressPrivateKey
@@ -312,7 +312,7 @@ func (service *htlcCloseTxManager) CloseHTLCSigned(msg bean.RequestMessage, user
 	}
 	_, err = tool.GetPubKeyFromWifAndCheck(reqData.CurrRsmcTempAddressPrivateKey, reqData.CurrRsmcTempAddressPubKey)
 	if err != nil {
-		return nil, errors.New("CurrRsmcTempAddressPrivateKey is wrong")
+		return nil, errors.New("curr_rsmc_temp_address_private_key is wrong for" + reqData.CurrRsmcTempAddressPubKey)
 	}
 	tempAddrPrivateKeyMap[reqData.CurrRsmcTempAddressPubKey] = reqData.CurrRsmcTempAddressPrivateKey
 
@@ -351,7 +351,7 @@ func (service *htlcCloseTxManager) CloseHTLCSigned(msg bean.RequestMessage, user
 		signerPubKey = channelInfo.PubKeyA
 	}
 	if senderPeerId != msg.RecipientUserPeerId {
-		return nil, errors.New("wrong RecipientUserPeerId")
+		return nil, errors.New("wrong recipient_user_peer_id")
 	}
 
 	if P2PLocalPeerId == msg.RecipientNodePeerId {
@@ -363,7 +363,7 @@ func (service *htlcCloseTxManager) CloseHTLCSigned(msg bean.RequestMessage, user
 
 	_, err = tool.GetPubKeyFromWifAndCheck(reqData.ChannelAddressPrivateKey, signerPubKey)
 	if err != nil {
-		return nil, errors.New("LastRsmcTempAddressPrivateKey is wrong")
+		return nil, errors.New("channel_address_private_key is wrong for" + signerPubKey)
 	}
 	tempAddrPrivateKeyMap[signerPubKey] = reqData.ChannelAddressPrivateKey
 
@@ -381,11 +381,11 @@ func (service *htlcCloseTxManager) CloseHTLCSigned(msg bean.RequestMessage, user
 	if latestCommitmentTxInfo.TxType == dao.CommitmentTransactionType_Htlc {
 		_, err = tool.GetPubKeyFromWifAndCheck(reqData.LastRsmcTempAddressPrivateKey, latestCommitmentTxInfo.RSMCTempAddressPubKey)
 		if err != nil {
-			return nil, errors.New("LastRsmcTempAddressPrivateKey is wrong")
+			return nil, errors.New("last_rsmc_temp_address_private_key is wrong for " + latestCommitmentTxInfo.RSMCTempAddressPubKey)
 		}
 		_, err = tool.GetPubKeyFromWifAndCheck(reqData.LastHtlcTempAddressPrivateKey, latestCommitmentTxInfo.HTLCTempAddressPubKey)
 		if err != nil {
-			return nil, errors.New("LastHtlcTempAddressPrivateKey is wrong")
+			return nil, errors.New("last_htlc_temp_address_private_key is wrong for " + latestCommitmentTxInfo.HTLCTempAddressPubKey)
 		}
 		err = tx.Select(
 			q.Eq("ChannelId", channelInfo.ChannelId),
@@ -404,11 +404,11 @@ func (service *htlcCloseTxManager) CloseHTLCSigned(msg bean.RequestMessage, user
 		}
 		_, err = tool.GetPubKeyFromWifAndCheck(reqData.LastRsmcTempAddressPrivateKey, lastCommitTxInfo.RSMCTempAddressPubKey)
 		if err != nil {
-			return nil, errors.New("LastRsmcTempAddressPrivateKey is wrong")
+			return nil, errors.New("last_rsmc_temp_address_private_key is wrong for " + lastCommitTxInfo.RSMCTempAddressPubKey)
 		}
 		_, err = tool.GetPubKeyFromWifAndCheck(reqData.LastHtlcTempAddressPrivateKey, lastCommitTxInfo.HTLCTempAddressPubKey)
 		if err != nil {
-			return nil, errors.New("LastHtlcTempAddressPrivateKey is wrong")
+			return nil, errors.New("last_htlc_temp_address_private_key is wrong for " + lastCommitTxInfo.HTLCTempAddressPubKey)
 		}
 
 		err = tx.Select(
@@ -423,7 +423,7 @@ func (service *htlcCloseTxManager) CloseHTLCSigned(msg bean.RequestMessage, user
 	}
 	_, err = tool.GetPubKeyFromWifAndCheck(reqData.LastHtlcTempAddressForHtnxPrivateKey, he1b.RSMCTempAddressPubKey)
 	if err != nil {
-		return nil, errors.New("LastHtlcTempAddressForHtnxPrivateKey is wrong")
+		return nil, errors.New("last_htlc_temp_address_for_htnx_private_key is wrong for " + he1b.RSMCTempAddressPubKey)
 	}
 
 	retData = make(map[string]interface{})

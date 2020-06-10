@@ -78,7 +78,7 @@ func (service *htlcBackwardTxManager) SendRToPreviousNode_Step1(msg bean.Request
 	}
 
 	if payerPeerId != msg.RecipientUserPeerId {
-		return nil, errors.New("recipientUserPeerId is wrong")
+		return nil, errors.New("recipient_user_peer_id is wrong")
 	}
 	if msg.RecipientNodePeerId == P2PLocalPeerId {
 		err = findUserIsOnline(payerPeerId)
@@ -90,7 +90,7 @@ func (service *htlcBackwardTxManager) SendRToPreviousNode_Step1(msg bean.Request
 
 	_, err = tool.GetPubKeyFromWifAndCheck(reqData.ChannelAddressPrivateKey, payeeChannelPubKey)
 	if err != nil {
-		return nil, errors.New("ChannelAddressPrivateKey is wrong")
+		return nil, errors.New("channel_address_private_key is wrong for" + payeeChannelPubKey)
 	}
 	tempAddrPrivateKeyMap[payeeChannelPubKey] = reqData.ChannelAddressPrivateKey
 
@@ -136,7 +136,7 @@ func (service *htlcBackwardTxManager) SendRToPreviousNode_Step1(msg bean.Request
 	}
 	_, err = tool.GetPubKeyFromWifAndCheck(reqData.CurrHtlcTempAddressForHE1bPrivateKey, reqData.CurrHtlcTempAddressForHE1bPubKey)
 	if err != nil {
-		return nil, errors.New("CurrHtlcTempAddressForHE1bPrivateKey is wrong")
+		return nil, errors.New("curr_htlc_temp_address_for_he1b_private_key is wrong")
 	}
 	// endregion
 
@@ -282,14 +282,14 @@ func (service *htlcBackwardTxManager) VerifyRAndCreateTxs_Step3(msg bean.Request
 
 	_, err = tool.GetPubKeyFromWifAndCheck(reqData.ChannelAddressPrivateKey, payerChannelPubKey)
 	if err != nil {
-		err = errors.New("channel_address_private_key is wrong")
+		err = errors.New("channel_address_private_key is wrong for " + payerChannelPubKey)
 		log.Println(err)
 		return nil, err
 	}
 	tempAddrPrivateKeyMap[payerChannelPubKey] = reqData.ChannelAddressPrivateKey
 
 	if tool.CheckIsString(&reqData.R) == false {
-		err = errors.New("channel_address_private_key is empty")
+		err = errors.New("r is empty")
 		log.Println(err)
 		return nil, err
 	}
