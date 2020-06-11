@@ -100,7 +100,6 @@ func (client *Client) htlcHModule(msg bean.RequestMessage) (enum.SendTargetType,
 		if err != nil {
 			data = err.Error()
 		} else {
-			approval := returnData["approval"]
 			bytes, err := json.Marshal(returnData)
 			if err != nil {
 				data = err.Error()
@@ -111,9 +110,6 @@ func (client *Client) htlcHModule(msg bean.RequestMessage) (enum.SendTargetType,
 			if status {
 				msg.Type = enum.MsgType_HTLC_PayerSignC3b_42
 				_ = client.sendDataToP2PUser(msg, status, data)
-			}
-			if approval == false {
-				client.sendToMyself(msg.Type, status, data)
 			}
 		}
 		if err != nil {

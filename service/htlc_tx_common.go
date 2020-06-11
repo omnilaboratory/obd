@@ -317,10 +317,10 @@ func signHtlcLockByHTxAtPayerSide(tx storm.Node, channelInfo dao.ChannelInfo,
 }
 
 // 付款方在42号协议，用签名完成toHtlc的Hex，就用这个完整交易Hex，构建C3b方的Hlock交易
-func createHtlcLockByHForBobAtPayerSide(bobDataJson gjson.Result, signedHtlcHex string, h string, payeeChannelPubKey string,
+func createHtlcLockByHForBobAtPayerSide(bobDataJson bean.AfterBobSignAddHtlcToAlice, signedHtlcHex string, h string, payeeChannelPubKey string,
 	aliceChannelPubKey string, aliceChannelAddressPrivateKey string,
 	propertyId int64, amountToHtlc float64) (*string, error) {
-	bobHtlcMultiAddr, err := rpcClient.CreateMultiSig(2, []string{bobDataJson.Get("currHtlcTempAddressPubKey").String(), aliceChannelPubKey})
+	bobHtlcMultiAddr, err := rpcClient.CreateMultiSig(2, []string{bobDataJson.PayeeCurrHtlcTempAddressPubKey, aliceChannelPubKey})
 	if err != nil {
 		return nil, err
 	}

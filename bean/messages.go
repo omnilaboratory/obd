@@ -233,7 +233,7 @@ type GetBalanceRespond struct {
 	Frozen float64 `json:"frozen"`
 }
 
-//type -4001: alice tell carl ,she wanna transfer some money to Carl
+//type -401: alice tell carl ,she wanna transfer some money to Carl
 type HtlcRequestFindPath struct {
 	RecipientNodePeerId string  `json:"recipient_node_peer_id"`
 	RecipientUserPeerId string  `json:"recipient_user_peer_id"`
@@ -259,7 +259,7 @@ type AddHtlcRequest struct {
 	CurrHtlcTempAddressForHt1aPrivateKey string  `json:"curr_htlc_temp_address_for_ht1a_private_key"` //	创建Ht1a中生成ht1a的输出的Rmsc的临时地址的私钥
 }
 
-//type -41: bob sign the request for the interNode
+//type -100041: bob sign the request for the interNode
 type HtlcSignGetH struct {
 	AliceCommitmentTxHash         string `json:"alice_commitment_tx_hash"`
 	ChannelAddressPrivateKey      string `json:"channel_address_private_key"`        //	开通通道用到的私钥
@@ -270,15 +270,43 @@ type HtlcSignGetH struct {
 	CurrHtlcTempAddressPrivateKey string `json:"curr_htlc_temp_address_private_key"` //	创建Cnx中的toHtlc的部分使用的临时地址的私钥
 }
 
-//type -41: carl tell alice the H,and he ca
-// Deprecated: h and r create by transfer, do not need tell the receiver
-type HtlcHRespond struct {
-	RequestHash string  `json:"request_hash"`
-	Approval    bool    `json:"approval"` // true agree false disagree
-	PropertyId  int     `json:"property_id"`
-	Amount      float64 `json:"amount"`
-	H           string  `json:"h"` // pubKey
-	R           string  `json:"r"` // privateKey
+// -42 msg
+type AfterBobSignAddHtlcToAlice struct {
+	ChannelId                      string `json:"channel_id"`
+	PayerCommitmentTxHash          string `json:"payer_commitment_tx_hash"`
+	PayerSignedRsmcHex             string `json:"payer_signed_rsmc_hex"`
+	PayerSignedToCounterpartyHex   string `json:"payer_signed_to_counterparty_hex"`
+	PayerSignedHtlcHex             string `json:"payer_signed_htlc_hex"`
+	PayerRsmcRdHex                 string `json:"payer_rsmc_rd_hex"`
+	PayerLockByHForBobHex          string `json:"payer_lock_by_h_for_bob_hex"`
+	PayerHt1aHex                   string `json:"payer_ht_1_a_hex"`
+	PayeeLastTempAddressPrivateKey string `json:"payee_last_temp_address_private_key"`
+	PayeeCurrRsmcTempAddressPubKey string `json:"payee_curr_rsmc_temp_address_pub_key"`
+	PayeeCurrHtlcTempAddressPubKey string `json:"payee_curr_htlc_temp_address_pub_key"`
+	PayeeCommitmentTxHash          string `json:"payee_commitment_tx_hash"`
+	PayeeRsmcHex                   string `json:"payee_rsmc_hex"`
+	PayeeToCounterpartyTxHex       string `json:"payee_to_counterparty_tx_hex"`
+	PayeeHtlcHex                   string `json:"payee_htlc_hex"`
+}
+
+// -43 付款人签名收款人的承诺交易的三个hex及创建对应的子交易
+type AfterAliceSignAddHtlcToBob struct {
+	PayerCommitmentTxHash                 string `json:"payer_commitment_tx_hash"`
+	PayerCurrHtlcTempAddressForHt1aPubKey string `json:"payer_curr_htlc_temp_address_for_ht1a_pub_key"`
+	PayerHt1aSignedHex                    string `json:"payer_ht1a_signed_hex"`
+	PayeeCommitmentTxHash                 string `json:"payee_commitment_tx_hash"`
+	PayeeSignedRsmcHex                    string `json:"payee_signed_rsmc_hex"`
+	PayeeRsmcRdHex                        string `json:"payee_rsmc_rd_hex"`
+	PayeeSignedToCounterpartyHex          string `json:"payee_signed_to_counterparty_hex"`
+	PayeeSignedHtlcHex                    string `json:"payee_signed_htlc_hex"`
+	PayeeHtd1bHex                         string `json:"payee_htd1b_hex"`
+	PayeeHlockHex                         string `json:"payee_hlock_hex"`
+}
+
+// -44 收款人更加签名后的ht1a，创建这个交易的RD
+type PayeeCreateHt1aRDForPayer struct {
+	PayerCommitmentTxHash string `json:"payer_commitment_tx_hash"`
+	PayerHt1aRDHex        string `json:"payer_ht1a_rd_hex"`
 }
 
 //type -45: sender request obd  to open htlc tx
@@ -294,7 +322,7 @@ type HtlcRequestOpen struct {
 	CurrHtlcTempAddressForHt1aPrivateKey string `json:"curr_htlc_temp_address_for_ht1a_private_key"` //	创建Ht1a中生成ht1a的输出的Rmsc的临时地址的私钥
 }
 
-//type -46: Send R to previous node. and create commitment transactions.
+//type -45: Send R to previous node. and create commitment transactions.
 type HtlcSendR struct {
 	ChannelId                            string `json:"channel_id"`
 	R                                    string `json:"r"`
@@ -303,12 +331,26 @@ type HtlcSendR struct {
 	CurrHtlcTempAddressForHE1bPrivateKey string `json:"curr_htlc_temp_address_for_he1b_private_key"`
 }
 
-//type -47: Middleman node check out if R is correct
+//type -46: Middleman node check out if R is correct
 type HtlcCheckRAndCreateTx struct {
 	ChannelId                string `json:"channel_id"`
 	R                        string `json:"r"`
 	MsgHash                  string `json:"msg_hash"`
 	ChannelAddressPrivateKey string `json:"channel_address_private_key"` // The key of creator tx. Example Bob send R to Alice, that is Alice's.
+}
+
+// -47
+type HtlcRPayerVerifyRInfoToPayee struct {
+	ChannelId            string `json:"channel_id"`
+	PayerHlockTxHex      string `json:"payer_hlock_tx_hex"`
+	PayerHed1aHex        string `json:"payer_hed1a_hex"`
+	PayeeSignedHerd1bHex string `json:"payee_signed_herd1b_hex"`
+}
+
+// -48
+type HtlcRPayeeSignHed1aToPayer struct {
+	ChannelId           string `json:"channel_id"`
+	PayerSignedHed1aHex string `json:"payer_signed_hed1a_hex"`
 }
 
 //type -49: user wanna close htlc tx when tx is on getH state
@@ -343,7 +385,7 @@ type AliceRequestAddHtlc struct {
 	Amount                           float64 `json:"amount"`
 	RoutingPacket                    string  `json:"routing_packet"`
 	CltvExpiry                       int     `json:"cltv_expiry"` //发起者设定的总的等待的区块个数
-	CommitmentTxHash                 string  `json:"commitment_tx_hash"`
+	PayerCommitmentTxHash            string  `json:"payer_commitment_tx_hash"`
 	Memo                             string  `json:"memo"`
 	H                                string  `json:"h"`
 	ToCounterpartyTxHex              string  `json:"to_counterparty_tx_hex"`

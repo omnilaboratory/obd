@@ -216,7 +216,7 @@ func (service *htlcBackwardTxManager) BeforeSendRInfoToPayerAtAliceSide_Step2(ms
 }
 
 // -46 at Payer side
-func (service *htlcBackwardTxManager) VerifyRAndCreateTxs_Step3(msg bean.RequestMessage, user bean.User) (responseData map[string]interface{}, err error) {
+func (service *htlcBackwardTxManager) VerifyRAndCreateTxs_Step3(msg bean.RequestMessage, user bean.User) (responseData *bean.HtlcRPayerVerifyRInfoToPayee, err error) {
 	if tool.CheckIsString(&msg.Data) == false {
 		return nil, errors.New("empty json responseData")
 	}
@@ -374,22 +374,23 @@ func (service *htlcBackwardTxManager) VerifyRAndCreateTxs_Step3(msg bean.Request
 
 	_ = tx.Commit()
 
-	responseData = make(map[string]interface{})
-	responseData["channelId"] = channelInfo.ChannelId
-	responseData["payerHlockTxHex"] = hlockTx.TxHex
-	responseData["payerHed1aHex"] = hed1aHex //需要让收款方签名，支付给收款方，是从H+收款方地址的多签地址的支出
-	responseData["signedHerd1bHex"] = signedHerd1bHex
+	responseData = &bean.HtlcRPayerVerifyRInfoToPayee{}
+	responseData.ChannelId = channelInfo.ChannelId
+	responseData.PayerHlockTxHex = hlockTx.TxHex
+	responseData.PayerHed1aHex = hed1aHex //需要让收款方签名，支付给收款方，是从H+收款方地址的多签地址的支出
+	responseData.PayeeSignedHerd1bHex = signedHerd1bHex
 	return responseData, nil
 }
 
 // -47 at Payee side
 func (service *htlcBackwardTxManager) SignHed1aAndUpdate_Step4(msgData string, user bean.User) (responseData map[string]interface{}, err error) {
-	jsonObjFromPayer := gjson.Parse(msgData)
+	jsonObjFromPayer := &bean.HtlcRPayerVerifyRInfoToPayee{}
+	_ = json.Unmarshal([]byte(msgData), jsonObjFromPayer)
 
-	channelId := jsonObjFromPayer.Get("channelId").Str
-	payerHlockTxHex := jsonObjFromPayer.Get("payerHlockTxHex").Str
-	payerHed1aHex := jsonObjFromPayer.Get("payerHed1aHex").Str
-	signedHerd1bHex := jsonObjFromPayer.Get("signedHerd1bHex").Str
+	channelId := jsonObjFromPayer.ChannelId
+	payerHlockTxHex := jsonObjFromPayer.PayerHlockTxHex
+	payerHed1aHex := jsonObjFromPayer.PayerHed1aHex
+	signedHerd1bHex := jsonObjFromPayer.PayeeSignedHerd1bHex
 
 	tx, err := user.Db.Begin(true)
 	if err != nil {
@@ -462,9 +463,9 @@ func (service *htlcBackwardTxManager) SignHed1aAndUpdate_Step4(msgData string, u
 	sendMsgToTracker(enum.MsgType_Tracker_UpdateHtlcTxState_352, txStateRequest)
 
 	responseData = make(map[string]interface{})
-	payerData := make(map[string]interface{})
-	payerData["channelId"] = channelId
-	payerData["signedHed1aHex"] = signedHed1aHex
+	payerData := bean.HtlcRPayeeSignHed1aToPayer{}
+	payerData.ChannelId = channelId
+	payerData.PayerSignedHed1aHex = signedHed1aHex
 
 	payeeData := make(map[string]interface{})
 	payeeData["commitmentTxInfo"] = commitmentTxInfo
@@ -476,10 +477,11 @@ func (service *htlcBackwardTxManager) SignHed1aAndUpdate_Step4(msgData string, u
 
 // -48 at Payer side
 func (service *htlcBackwardTxManager) CheckHed1aHex_Step5(msgData string, user bean.User) (responseData map[string]interface{}, err error) {
-	jsonObjFromPayee := gjson.Parse(msgData)
+	jsonObjFromPayee := &bean.HtlcRPayeeSignHed1aToPayer{}
+	_ = json.Unmarshal([]byte(msgData), jsonObjFromPayee)
 
-	channelId := jsonObjFromPayee.Get("channelId").Str
-	signedHed1aHex := jsonObjFromPayee.Get("signedHed1aHex").Str
+	channelId := jsonObjFromPayee.ChannelId
+	signedHed1aHex := jsonObjFromPayee.PayerSignedHed1aHex
 
 	tx, err := user.Db.Begin(true)
 	if err != nil {
