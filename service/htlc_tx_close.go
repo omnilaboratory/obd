@@ -258,7 +258,7 @@ func (service *htlcCloseTxManager) BeforeBobSignCloseHtlcAtBobSide(data string, 
 }
 
 // -50 sign close htlc
-func (service *htlcCloseTxManager) CloseHTLCSigned(msg bean.RequestMessage, user bean.User) (retData map[string]interface{}, err error) {
+func (service *htlcCloseTxManager) CloseHTLCSigned(msg bean.RequestMessage, user bean.User) (retData *bean.HtlcCloseCloseeSignedInfoToCloser, err error) {
 	if tool.CheckIsString(&msg.Data) == false {
 		return nil, errors.New("empty json data")
 	}
@@ -426,12 +426,12 @@ func (service *htlcCloseTxManager) CloseHTLCSigned(msg bean.RequestMessage, user
 		return nil, errors.New("last_htlc_temp_address_for_htnx_private_key is wrong for " + he1b.RSMCTempAddressPubKey)
 	}
 
-	retData = make(map[string]interface{})
-	retData["channelId"] = channelInfo.ChannelId
-	retData["lastRsmcTempAddressPrivateKey"] = reqData.LastRsmcTempAddressPrivateKey
-	retData["lastHtlcTempAddressPrivateKey"] = reqData.LastHtlcTempAddressPrivateKey
-	retData["lastHtlcTempAddressForHtnxPrivateKey"] = reqData.LastHtlcTempAddressForHtnxPrivateKey
-	retData["currRsmcTempAddressPubKey"] = reqData.CurrRsmcTempAddressPubKey
+	retData = &bean.HtlcCloseCloseeSignedInfoToCloser{}
+	retData.ChannelId = channelInfo.ChannelId
+	retData.CloseeLastRsmcTempAddressPrivateKey = reqData.LastRsmcTempAddressPrivateKey
+	retData.CloseeLastHtlcTempAddressPrivateKey = reqData.LastHtlcTempAddressPrivateKey
+	retData.CloseeLastHtlcTempAddressForHtnxPrivateKey = reqData.LastHtlcTempAddressForHtnxPrivateKey
+	retData.CloseeCurrRsmcTempAddressPubKey = reqData.CurrRsmcTempAddressPubKey
 
 	// get the funding transaction
 	fundingTransaction := getFundingTransactionByChannelId(tx, channelInfo.ChannelId, user.PeerId)
@@ -471,7 +471,7 @@ func (service *htlcCloseTxManager) CloseHTLCSigned(msg bean.RequestMessage, user
 		log.Println(err)
 		return nil, err
 	}
-	retData["signedRsmcHex"] = signedRsmcHex
+	retData.CloserSignedRsmcHex = signedRsmcHex
 
 	//  签名对方传过来的toOtherHex
 	_, signedToOtherHex, err := rpcClient.BtcSignRawTransaction(closeHtlcTxOfP2p.ToCounterpartyTxHex, reqData.ChannelAddressPrivateKey)
@@ -485,7 +485,7 @@ func (service *htlcCloseTxManager) CloseHTLCSigned(msg bean.RequestMessage, user
 	if gjson.Parse(testResult).Array()[0].Get("allowed").Bool() == false {
 		return nil, errors.New(gjson.Parse(testResult).Array()[0].Get("reject-reason").String())
 	}
-	retData["signedToOtherHex"] = signedToOtherHex
+	retData.CloserSignedToCounterpartyTxHex = signedToOtherHex
 	//endregion
 
 	//第一次签名，不是失败后的重试
@@ -523,8 +523,8 @@ func (service *htlcCloseTxManager) CloseHTLCSigned(msg bean.RequestMessage, user
 		}
 		amountToCounterparty = newCommitmentTxInfo.AmountToCounterparty
 
-		retData["rsmcHex"] = newCommitmentTxInfo.RSMCTxHex
-		retData["toOtherHex"] = newCommitmentTxInfo.ToCounterpartyTxHex
+		retData.CloseeRsmcHex = newCommitmentTxInfo.RSMCTxHex
+		retData.CloseeToCounterpartyTxHex = newCommitmentTxInfo.ToCounterpartyTxHex
 		//endregion
 
 		// region 5、根据alice的Rsmc，创建对应的BR,为下一个交易做准备，create BR2b tx  for bob
@@ -549,8 +549,8 @@ func (service *htlcCloseTxManager) CloseHTLCSigned(msg bean.RequestMessage, user
 		}
 		//endregion
 	} else {
-		retData["rsmcHex"] = latestCommitmentTxInfo.RSMCTxHex
-		retData["toOtherHex"] = latestCommitmentTxInfo.ToCounterpartyTxHex
+		retData.CloseeRsmcHex = latestCommitmentTxInfo.RSMCTxHex
+		retData.CloseeToCounterpartyTxHex = latestCommitmentTxInfo.ToCounterpartyTxHex
 		amountToCounterparty = latestCommitmentTxInfo.AmountToCounterparty
 	}
 
@@ -576,8 +576,8 @@ func (service *htlcCloseTxManager) CloseHTLCSigned(msg bean.RequestMessage, user
 		log.Println(err)
 		return nil, errors.New("fail to create rd")
 	}
-	retData["senderRdHex"] = senderRdhex
-	retData["commitmentTxHash"] = closeHtlcTxOfP2p.CommitmentTxHash
+	retData.CloserRsmcRdHex = senderRdhex
+	retData.CloserCommitmentTxHash = closeHtlcTxOfP2p.CommitmentTxHash
 	//endregion create RD tx for alice
 
 	_ = MessageService.updateMsgStateUseTx(tx, message)
@@ -591,23 +591,24 @@ func (service *htlcCloseTxManager) CloseHTLCSigned(msg bean.RequestMessage, user
 
 // -51 alice根据得到的bob的临时私钥签名
 func (service *htlcCloseTxManager) AfterBobCloseHTLCSigned_AtAliceSide(data string, user *bean.User) (retData map[string]interface{}, needNoticeAlice bool, err error) {
-	jsonObj := gjson.Parse(data)
+	jsonObj := &bean.HtlcCloseCloseeSignedInfoToCloser{}
+	_ = json.Unmarshal([]byte(data), jsonObj)
 
 	//region 检测传入数据
-	var channelId = jsonObj.Get("channelId").String()
+	var channelId = jsonObj.ChannelId
 	if tool.CheckIsString(&channelId) == false {
 		err = errors.New("wrong channelId")
 		log.Println(err)
 		return nil, false, err
 	}
-	var commitmentTxHash = jsonObj.Get("commitmentTxHash").String()
+	var commitmentTxHash = jsonObj.CloserCommitmentTxHash
 	if tool.CheckIsString(&commitmentTxHash) == false {
 		err = errors.New("wrong commitmentHash")
 		log.Println(err)
 		return nil, false, err
 	}
 
-	var signedRsmcHex = jsonObj.Get("signedRsmcHex").String()
+	var signedRsmcHex = jsonObj.CloserSignedRsmcHex
 	if tool.CheckIsString(&signedRsmcHex) == false {
 		err = errors.New("wrong signedRsmcHex")
 		log.Println(err)
@@ -620,7 +621,7 @@ func (service *htlcCloseTxManager) AfterBobCloseHTLCSigned_AtAliceSide(data stri
 		return nil, false, err
 	}
 
-	var signedToOtherHex = jsonObj.Get("signedToOtherHex").String()
+	var signedToOtherHex = jsonObj.CloserSignedToCounterpartyTxHex
 	if tool.CheckIsString(&signedToOtherHex) == false {
 		err = errors.New("wrong signedToOtherHex")
 		log.Println(err)
@@ -633,7 +634,7 @@ func (service *htlcCloseTxManager) AfterBobCloseHTLCSigned_AtAliceSide(data stri
 		return nil, false, err
 	}
 
-	var aliceRdHex = jsonObj.Get("senderRdHex").String()
+	var aliceRdHex = jsonObj.CloserRsmcRdHex
 	if tool.CheckIsString(&aliceRdHex) == false {
 		err = errors.New("wrong senderRdHex")
 		log.Println(err)
@@ -646,7 +647,7 @@ func (service *htlcCloseTxManager) AfterBobCloseHTLCSigned_AtAliceSide(data stri
 		return nil, false, err
 	}
 
-	var bobRsmcHex = jsonObj.Get("rsmcHex").String()
+	var bobRsmcHex = jsonObj.CloseeRsmcHex
 	if tool.CheckIsString(&bobRsmcHex) == false {
 		err = errors.New("wrong rsmcHex")
 		log.Println(err)
@@ -659,13 +660,13 @@ func (service *htlcCloseTxManager) AfterBobCloseHTLCSigned_AtAliceSide(data stri
 		return nil, false, err
 	}
 
-	var bobCurrTempAddressPubKey = jsonObj.Get("currRsmcTempAddressPubKey").String()
+	var bobCurrTempAddressPubKey = jsonObj.CloseeCurrRsmcTempAddressPubKey
 	if tool.CheckIsString(&bobCurrTempAddressPubKey) == false {
 		err = errors.New("wrong currTempAddressPubKey")
 		log.Println(err)
 		return nil, false, err
 	}
-	var bobToOtherHex = jsonObj.Get("toOtherHex").String()
+	var bobToOtherHex = jsonObj.CloseeToCounterpartyTxHex
 	if tool.CheckIsString(&bobToOtherHex) == false {
 		err = errors.New("wrong toOtherHex")
 		log.Println(err)
@@ -681,11 +682,11 @@ func (service *htlcCloseTxManager) AfterBobCloseHTLCSigned_AtAliceSide(data stri
 	defer tx.Rollback()
 
 	aliceData := make(map[string]interface{})
-	bobData := make(map[string]interface{})
+	bobData := bean.HtlcCloseCloserSignTxInfoToClosee{}
 
 	channelInfo := &dao.ChannelInfo{}
 	err = tx.Select(
-		q.Eq("ChannelId", jsonObj.Get("channelId").String()),
+		q.Eq("ChannelId", jsonObj.ChannelId),
 		q.Or(
 			q.Eq("PeerIdA", user.PeerId),
 			q.Eq("PeerIdB", user.PeerId))).
@@ -729,9 +730,9 @@ func (service *htlcCloseTxManager) AfterBobCloseHTLCSigned_AtAliceSide(data stri
 	var myChannelPrivateKey = tempAddrPrivateKeyMap[myChannelPubKey]
 
 	//region 根据对方传过来的上一个交易的临时rsmc私钥，签名上一次的BR交易，保证对方确实放弃了上一个承诺交易
-	var bobLastRsmcTempAddressPrivateKey = jsonObj.Get("lastRsmcTempAddressPrivateKey").String()
-	var bobLastHtlcTempAddressPrivateKey = jsonObj.Get("lastHtlcTempAddressPrivateKey").String()
-	var bobLastHtlcTempAddressForHtnxPrivateKey = jsonObj.Get("lastHtlcTempAddressForHtnxPrivateKey").String()
+	var bobLastRsmcTempAddressPrivateKey = jsonObj.CloseeLastRsmcTempAddressPrivateKey
+	var bobLastHtlcTempAddressPrivateKey = jsonObj.CloseeLastHtlcTempAddressPrivateKey
+	var bobLastHtlcTempAddressForHtnxPrivateKey = jsonObj.CloseeLastHtlcTempAddressForHtnxPrivateKey
 	err = signLastBR(tx, dao.BRType_Rmsc, *channelInfo, user.PeerId, bobLastRsmcTempAddressPrivateKey, latestCommitmentTxInfo.LastCommitmentTxId)
 	if err != nil {
 		log.Println(err)
@@ -791,7 +792,7 @@ func (service *htlcCloseTxManager) AfterBobCloseHTLCSigned_AtAliceSide(data stri
 	if err != nil {
 		return nil, false, err
 	}
-	bobData["signedRsmcHex"] = bobSignedRsmcHex
+	bobData.CloseeSignedRsmcHex = bobSignedRsmcHex
 
 	//region create RD tx for bob
 	bobMultiAddr, err := rpcClient.CreateMultiSig(2, []string{bobCurrTempAddressPubKey, myChannelPubKey})
@@ -829,7 +830,7 @@ func (service *htlcCloseTxManager) AfterBobCloseHTLCSigned_AtAliceSide(data stri
 		log.Println(err)
 		return nil, false, errors.New("fail to create rd")
 	}
-	bobData["rdHex"] = bobRdhex
+	bobData.CloseeRsmcRdHex = bobRdhex
 	//endregion create RD tx for alice
 
 	//region 根据对对方的Rsmc签名，生成惩罚对方，自己获益BR
@@ -862,7 +863,7 @@ func (service *htlcCloseTxManager) AfterBobCloseHTLCSigned_AtAliceSide(data stri
 	if gjson.Parse(testResult).Array()[0].Get("allowed").Bool() == false {
 		return nil, false, errors.New(gjson.Parse(testResult).Array()[0].Get("reject-reason").String())
 	}
-	bobData["signedToOtherHex"] = bobSignedToOtherHex
+	bobData.CloseeSignedToCounterpartyTxHex = bobSignedToOtherHex
 
 	channelInfo.CurrState = dao.ChannelState_CanUse
 	_ = tx.Update(channelInfo)
@@ -872,7 +873,7 @@ func (service *htlcCloseTxManager) AfterBobCloseHTLCSigned_AtAliceSide(data stri
 	//同步通道信息到tracker
 	sendChannelStateToTracker(*channelInfo, *latestCommitmentTxInfo)
 
-	bobData["channelId"] = channelId
+	bobData.ChannelId = channelId
 	retData = make(map[string]interface{})
 	retData["aliceData"] = aliceData
 	retData["bobData"] = bobData
@@ -881,12 +882,13 @@ func (service *htlcCloseTxManager) AfterBobCloseHTLCSigned_AtAliceSide(data stri
 
 //52 bob保存更新自己的交易
 func (service *htlcCloseTxManager) AfterAliceSignCloseHTLCAtBobSide(data string, user *bean.User) (retData map[string]interface{}, err error) {
-	jsonObj := gjson.Parse(data)
+	jsonObj := &bean.HtlcCloseCloserSignTxInfoToClosee{}
+	_ = json.Unmarshal([]byte(data), jsonObj)
 
-	var channelId = jsonObj.Get("channelId").String()
-	var signedRsmcHex = jsonObj.Get("signedRsmcHex").String()
-	var signedToOtherHex = jsonObj.Get("signedToOtherHex").String()
-	var rdHex = jsonObj.Get("rdHex").String()
+	var channelId = jsonObj.ChannelId
+	var signedRsmcHex = jsonObj.CloseeSignedRsmcHex
+	var signedToOtherHex = jsonObj.CloseeSignedToCounterpartyTxHex
+	var rdHex = jsonObj.CloseeRsmcRdHex
 
 	tx, err := user.Db.Begin(true)
 	if err != nil {
@@ -897,7 +899,7 @@ func (service *htlcCloseTxManager) AfterAliceSignCloseHTLCAtBobSide(data string,
 
 	channelInfo := &dao.ChannelInfo{}
 	err = tx.Select(
-		q.Eq("ChannelId", jsonObj.Get("channelId").String()),
+		q.Eq("ChannelId", jsonObj.ChannelId),
 		q.Or(
 			q.Eq("PeerIdA", user.PeerId),
 			q.Eq("PeerIdB", user.PeerId))).

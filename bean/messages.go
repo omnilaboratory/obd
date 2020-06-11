@@ -375,11 +375,34 @@ type HtlcSignCloseCurrTx struct {
 	CurrRsmcTempAddressPrivateKey        string `json:"curr_rsmc_temp_address_private_key"`
 }
 
+//50->51
+type HtlcCloseCloseeSignedInfoToCloser struct {
+	ChannelId                                  string `json:"channel_id"`
+	CloseeLastRsmcTempAddressPrivateKey        string `json:"closee_last_rsmc_temp_address_private_key"`
+	CloseeLastHtlcTempAddressPrivateKey        string `json:"closee_last_htlc_temp_address_private_key"`
+	CloseeLastHtlcTempAddressForHtnxPrivateKey string `json:"closee_last_htlc_temp_address_for_htnx_private_key"`
+	CloseeCurrRsmcTempAddressPubKey            string `json:"closee_curr_rsmc_temp_address_pub_key"`
+	CloseeRsmcHex                              string `json:"closee_rsmc_hex"`
+	CloseeToCounterpartyTxHex                  string `json:"closee_to_counterparty_tx_hex"`
+	CloserCommitmentTxHash                     string `json:"closer_commitment_tx_hash"`
+	CloserSignedRsmcHex                        string `json:"closer_signed_rsmc_hex"`
+	CloserRsmcRdHex                            string `json:"closer_rsmc_rd_hex"`
+	CloserSignedToCounterpartyTxHex            string `json:"closer_signed_to_counterparty_tx_hex"`
+}
+
+//51->52
+type HtlcCloseCloserSignTxInfoToClosee struct {
+	ChannelId                       string `json:"channel_id"`
+	CloseeSignedRsmcHex             string `json:"closee_signed_rsmc_hex"`
+	CloseeRsmcRdHex                 string `json:"closee_rsmc_rd_hex"`
+	CloseeSignedToCounterpartyTxHex string `json:"closee_signed_to_counterparty_tx_hex"`
+}
+
 type HtlcCloseChannelReq CloseChannel
 type HtlcCloseChannelSign CloseChannelSign
 type ChannelIdReq CloseChannel
 
-// 付款人的obd发给收款人的obd的消息体 在请求htlc交易
+// 付款人的obd发给收款人的obd的消息体 在请求htlc交易 40->41
 type AliceRequestAddHtlc struct {
 	ChannelId                        string  `json:"channel_id"`
 	Amount                           float64 `json:"amount"`
