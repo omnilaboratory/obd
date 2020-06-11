@@ -99,7 +99,7 @@ func (client *Client) channelModule(msg bean.RequestMessage) (enum.SendTargetTyp
 			}
 		}
 		client.sendToMyself(msg.Type, status, data)
-	case enum.MsgType_GetChannelInfoByChanId_3154:
+	case enum.MsgType_GetChannelInfoByChannelId_3154:
 		node, err := service.ChannelService.GetChannelInfoByChannelId(msg.Data, *client.User)
 		if err != nil {
 			data = err.Error()
@@ -114,7 +114,7 @@ func (client *Client) channelModule(msg bean.RequestMessage) (enum.SendTargetTyp
 		}
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
-	case enum.MsgType_GetChannelInfoByChanId_3155:
+	case enum.MsgType_GetChannelInfoByDbId_3155:
 		node, err := service.ChannelService.GetChannelInfoById(msg.Data, *client.User)
 		if err != nil {
 			data = err.Error()

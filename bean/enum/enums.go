@@ -88,8 +88,8 @@ const (
 	MsgType_ChannelOpen_ItemByTempId_3151    MsgType = -103151
 	MsgType_ChannelOpen_Count_3152           MsgType = -103152
 	MsgType_ChannelOpen_DelItemByTempId_3153 MsgType = -103153
-	MsgType_GetChannelInfoByChanId_3154      MsgType = -103154
-	MsgType_GetChannelInfoByChanId_3155      MsgType = -103155
+	MsgType_GetChannelInfoByChannelId_3154   MsgType = -103154
+	MsgType_GetChannelInfoByDbId_3155        MsgType = -103155
 
 	MsgType_CommitmentTx_ItemsByChanId_3200              MsgType = -103200
 	MsgType_CommitmentTx_ItemById_3201                   MsgType = -103201
@@ -249,9 +249,9 @@ func CheckExist(msgType MsgType) bool {
 		return true
 	case MsgType_ChannelOpen_DelItemByTempId_3153:
 		return true
-	case MsgType_GetChannelInfoByChanId_3154:
+	case MsgType_GetChannelInfoByChannelId_3154:
 		return true
-	case MsgType_GetChannelInfoByChanId_3155:
+	case MsgType_GetChannelInfoByDbId_3155:
 		return true
 	case MsgType_SendChannelAccept_33:
 		return true
