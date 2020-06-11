@@ -405,7 +405,7 @@ type RequestCloseHtlcTxOfWs struct {
 	MsgHash string `json:"msg_hash"`
 }
 
-//type -80: MsgType_Atomic_Swap_N80
+//type -80: MsgType_Atomic_Swap_80
 type AtomicSwapRequest struct {
 	ChannelIdFrom       string  `json:"channel_id_from"`
 	ChannelIdTo         string  `json:"channel_id_to"`

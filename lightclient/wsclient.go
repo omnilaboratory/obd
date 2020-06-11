@@ -592,12 +592,12 @@ func p2pMiddleNodeTransferData(msg *bean.RequestMessage, itemClient Client, data
 		msg.Type = enum.MsgType_HTLC_SendCloseSigned_50
 	}
 
-	if msg.Type == enum.MsgType_Atomic_Swap_N80 {
-		msg.Type = enum.MsgType_Atomic_RecvSwap_N80
+	if msg.Type == enum.MsgType_Atomic_Swap_80 {
+		msg.Type = enum.MsgType_Atomic_RecvSwap_80
 	}
 
-	if msg.Type == enum.MsgType_Atomic_SwapAccept_N81 {
-		msg.Type = enum.MsgType_Atomic_RecvSwapAccept_N81
+	if msg.Type == enum.MsgType_Atomic_SwapAccept_81 {
+		msg.Type = enum.MsgType_Atomic_RecvSwapAccept_81
 	}
 
 	return data

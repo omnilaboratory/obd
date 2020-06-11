@@ -224,7 +224,7 @@ func (client *Client) atomicSwapModule(msg bean.RequestMessage) (enum.SendTarget
 			} else {
 				data = string(bytes)
 				status = true
-				msg.Type = enum.MsgType_Atomic_Swap_N80
+				msg.Type = enum.MsgType_Atomic_Swap_80
 				_ = client.sendDataToP2PUser(msg, status, data)
 			}
 		}
@@ -242,7 +242,7 @@ func (client *Client) atomicSwapModule(msg bean.RequestMessage) (enum.SendTarget
 			} else {
 				data = string(bytes)
 				status = true
-				msg.Type = enum.MsgType_Atomic_SwapAccept_N81
+				msg.Type = enum.MsgType_Atomic_SwapAccept_81
 				_ = client.sendDataToP2PUser(msg, status, data)
 			}
 		}

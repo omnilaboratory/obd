@@ -174,12 +174,12 @@ const (
 	MsgType_HTLC_RecvCloseSigned_50        MsgType = -110050
 
 	//https://github.com/LightningOnOmnilayer/Omni-BOLT-spec/blob/master/OmniBOLT-05-Atomic-Swap-among-Channels.md
-	MsgType_Atomic_SendSwap_80        MsgType = -100080
-	MsgType_Atomic_Swap_N80           MsgType = -80
-	MsgType_Atomic_RecvSwap_N80       MsgType = -110080
-	MsgType_Atomic_SendSwapAccept_81  MsgType = -100081
-	MsgType_Atomic_SwapAccept_N81     MsgType = -81
-	MsgType_Atomic_RecvSwapAccept_N81 MsgType = -110081
+	MsgType_Atomic_SendSwap_80       MsgType = -100080
+	MsgType_Atomic_Swap_80           MsgType = -80
+	MsgType_Atomic_RecvSwap_80       MsgType = -110080
+	MsgType_Atomic_SendSwapAccept_81 MsgType = -100081
+	MsgType_Atomic_SwapAccept_81     MsgType = -81
+	MsgType_Atomic_RecvSwapAccept_81 MsgType = -110081
 	//endregion
 )
 
