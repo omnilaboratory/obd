@@ -68,7 +68,6 @@ type FundingTransactionState int
 const (
 	FundingTransactionState_Create FundingTransactionState = 10
 	FundingTransactionState_Accept FundingTransactionState = 20
-	FundingTransactionState_Defuse FundingTransactionState = 30
 )
 
 type FundingTransaction struct {
@@ -131,16 +130,6 @@ type MinerFeeRedeemTransaction struct {
 	Hex                string    `json:"hex"`
 	Txid               string    `json:"txid"`
 	CreateAt           time.Time `json:"create_at"`
-}
-
-type CommitmentTxRequestInfo struct {
-	Id int `storm:"id,increment" json:"id" `
-	bean.CommitmentTx
-	ChannelId             string
-	UserId                string
-	LastTempAddressPubKey string
-	CreateAt              time.Time
-	IsEnable              bool
 }
 
 type CommitmentTransactionType int

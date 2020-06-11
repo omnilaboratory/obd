@@ -4,8 +4,6 @@ import (
 	"time"
 )
 
-type HTLCCommitmentTransaction CommitmentTransaction
-
 type AddHtlcRequestInfo struct {
 	Id                               int         `storm:"id,increment" json:"id" `
 	ChannelId                        string      `json:"channel_id"`
@@ -126,76 +124,3 @@ const (
 	NS_Finish NormalState = 20
 	NS_Refuse NormalState = 30
 )
-
-type HtlcRAndHInfo struct {
-	Id              int         `storm:"id,increment" json:"id" `
-	SenderPeerId    string      `json:"sender_peer_id"`
-	RecipientPeerId string      `json:"recipient_peer_id"`
-	PropertyId      int64       `json:"property_id"`
-	Amount          float64     `json:"amount"`
-	H               string      `json:"h"`
-	R               string      `json:"r"`
-	RequestHash     string      `json:"request_hash"`
-	CurrState       NormalState `json:"curr_state"`
-	CreateBy        string      `json:"create_by"`
-	CreateAt        time.Time   `json:"create_at"`
-	Memo            string      `json:"memo"`
-}
-
-type HtlcPathInfoState int
-
-const (
-	HtlcPathInfoState_Created            HtlcPathInfoState = 0
-	HtlcPathInfoState_Forward            HtlcPathInfoState = 10
-	HtlcPathInfoState_Backward           HtlcPathInfoState = 11
-	HtlcPathInfoState_RefusedByInterNode HtlcPathInfoState = -1
-)
-
-type HtlcPathInfo struct {
-	Id                   int               `storm:"id,increment" json:"id" `
-	HAndRInfoRequestHash string            `json:"h_and_r_info_request_hash"`
-	H                    string            `json:"h"`
-	ChannelIdArr         []int             `json:"channel_id_arr"`
-	CurrState            HtlcPathInfoState `json:"curr_state"`
-	BeginBlockHeight     int               `json:"begin_block_height"`
-	TotalStep            int               `json:"total_step"`
-	CurrStep             int               `json:"curr_step"`
-	CreateBy             string            `json:"create_by"`
-	CreateAt             time.Time         `json:"create_at"`
-	CurrRsmcTempPubKey   string            `json:"curr_rsmc_temp_pub_key"` // for cnb output1 temp data
-	CurrHtlcTempPubKey   string            `json:"curr_htlc_temp_pub_key"` // for cnb output2 temp data
-	//CurrHtlcTempForHe1bOfHPubKey string            `json:"curr_htlc_temp_for_he1b_ofh_pub_key"` // temp data when get h for he1b  那个变通交易，用H锁住
-	CurrHtlcTempForHe1bPubKey string `json:"curr_htlc_temp_for_he1b_pub_key"` // temp data when get r for he1b
-}
-
-// 为记录-49的关闭htlc的请求数据
-type HtlcRequestCloseCurrTxInfo struct {
-	Id                        int         `storm:"id,increment" json:"id" `
-	RequestHash               string      `json:"request_hash"`
-	ChannelId                 string      `json:"channel_id"`
-	CurrRsmcTempAddressPubKey string      `json:"curr_rsmc_temp_address_pub_key"`
-	CreateBy                  string      `json:"create_by"`
-	CurrState                 NormalState `json:"curr_state"`
-	CreateAt                  time.Time   `json:"create_at"`
-}
-
-// to punish alice do not admit the latest commitment tx
-type HTLCBreachRemedyTransaction BreachRemedyTransaction
-type HTLCTimeoutBreachRemedyTransaction struct {
-	Id                                  int         `storm:"id,increment" json:"id" `
-	ChannelId                           string      `json:"channel_id"`
-	CommitmentTxId                      int         `json:"commitment_tx_id"` // parent commitmentTx id
-	HTLCTimeoutTxForAAndExecutionForBId int         `json:"htlc_timeout_tx_for_a_and_execution_for_b_id"`
-	PropertyId                          int64       `json:"property_id"`
-	InputHex                            string      `json:"input_hex"`
-	Amount                              float64     `json:"amount"` // output bob amount
-	TxHex                               string      `json:"tx_hex"`
-	Txid                                string      `json:"txid"`
-	CurrState                           TxInfoState `json:"curr_state"`
-	CreateBy                            string      `json:"create_by"`
-	CreateAt                            time.Time   `json:"create_at"`
-	SignAt                              time.Time   `json:"sign_at"`
-	SendAt                              time.Time   `json:"send_at"`
-	LastEditTime                        time.Time   `json:"last_edit_time"`
-	Owner                               string      `json:"owner"`
-}
