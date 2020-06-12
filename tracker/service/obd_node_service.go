@@ -189,6 +189,35 @@ func (this *obdNodeAccountManager) userLogout(obdClient *ObdNode, msgData string
 	return err
 }
 
+func (this *obdNodeAccountManager) GetNodeDbId(context *gin.Context) {
+	this.mu.Lock()
+	defer this.mu.Unlock()
+
+	nodeId := context.Query("nodeId")
+	if tool.CheckIsString(&nodeId) == false {
+		context.JSON(http.StatusInternalServerError, gin.H{
+			"msg": "error nodeId",
+		})
+		return
+	}
+
+	info := &dao.ObdNodeInfo{}
+	err := db.Select(q.Eq("NodeId", nodeId)).First(info)
+	if err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{
+			"msg": "error nodeId",
+		})
+		return
+	}
+
+	retData := make(map[string]interface{})
+	retData["id"] = info.Id
+	context.JSON(http.StatusOK, gin.H{
+		"msg":  "GetUserState",
+		"data": retData,
+	})
+}
+
 func (this *obdNodeAccountManager) GetUserState(context *gin.Context) {
 	this.mu.Lock()
 	defer this.mu.Unlock()

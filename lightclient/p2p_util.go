@@ -16,8 +16,11 @@ import (
 	"github.com/omnilaboratory/obd/config"
 	"github.com/omnilaboratory/obd/service"
 	"github.com/omnilaboratory/obd/tool"
+	"github.com/tidwall/gjson"
+	"io/ioutil"
 	"log"
 	"math/rand"
+	"net/http"
 	"strings"
 )
 
@@ -38,7 +41,12 @@ var p2pChannelMap map[string]*P2PChannel
 func generatePrivateKey() (crypto.PrivKey, error) {
 	if privateKey == nil {
 		//r := rand.New(rand.NewSource(time.Now().UnixNano()))
-		r := rand.New(rand.NewSource(int64(config.P2P_sourcePort)))
+
+		nodeId := httpGetNodeIdFromTracker()
+		if nodeId == 0 {
+			return nil, errors.New("fail to get nodeId from tracker")
+		}
+		r := rand.New(rand.NewSource(int64(8080 + nodeId)))
 		//prvKey, _, err := crypto.GenerateKeyPairWithReader(crypto.RSA, 2048, r)
 		prvKey, _, err := crypto.GenerateECDSAKeyPair(r)
 		if err != nil {
@@ -50,8 +58,26 @@ func generatePrivateKey() (crypto.PrivKey, error) {
 	return privateKey, nil
 }
 
-func StartP2PServer() {
-	prvKey, _ := generatePrivateKey()
+func httpGetNodeIdFromTracker() (nodeId int) {
+	url := "http://" + config.TrackerHost + "/api/v1/getNodeDbId?nodeId=" + tool.GetObdNodeId()
+	resp, err := http.Get(url)
+	if err != nil {
+		return 0
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode == 200 {
+		body, _ := ioutil.ReadAll(resp.Body)
+		log.Println(string(body))
+		return int(gjson.Get(string(body), "data").Get("id").Int())
+	}
+	return 0
+}
+
+func StartP2PServer() (err error) {
+	prvKey, err := generatePrivateKey()
+	if err != nil {
+		return err
+	}
 	// 0.0.0.0 will listen on any interface device.
 	sourceMultiAddr, _ := multiaddr.NewMultiaddr(fmt.Sprintf("/ip4/0.0.0.0/tcp/%d", config.P2P_sourcePort))
 
@@ -64,7 +90,7 @@ func StartP2PServer() {
 	)
 	if err != nil {
 		log.Println(err)
-		return
+		return err
 	}
 	p2pChannelMap = make(map[string]*P2PChannel)
 	P2PLocalPeerId = host.ID().Pretty()
@@ -79,6 +105,7 @@ func StartP2PServer() {
 		Address:        localServerDest,
 	}
 	host.SetStreamHandler(pid, handleStream)
+	return nil
 }
 
 func ConnP2PServer(dest string) (string, error) {

@@ -45,11 +45,19 @@ func main() {
 	err := rpc.NewClient().CheckVersion()
 	if err != nil {
 		log.Println(err)
-		log.Println("obd fail to start")
+		log.Println("because get wrong omnicore version, obd fail to start")
+		return
+	}
+	//tracker
+	go lightclient.ConnectToTracker()
+
+	err = lightclient.StartP2PServer()
+	if err != nil {
+		log.Println(err)
+		log.Println("because fail to start P2PServer, obd fail to start")
 		return
 	}
 
-	lightclient.StartP2PServer()
 	routersInit := lightclient.InitRouter(nil)
 	addr := ":" + strconv.Itoa(config.ServerPort)
 	server := &http.Server{
@@ -64,8 +72,7 @@ func main() {
 	// Timer
 
 	log.Println("obd " + tool.GetObdNodeId() + " start at port: " + strconv.Itoa(config.ServerPort))
-	//tracker
-	go lightclient.ConnectToTracker()
+
 	service.ScheduleService.StartSchedule()
 	log.Fatal(server.ListenAndServe())
 }
