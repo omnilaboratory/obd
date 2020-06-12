@@ -50,6 +50,7 @@ func main() {
 	}
 	//tracker
 	go lightclient.ConnectToTracker()
+	log.Println("obd " + tool.GetObdNodeId() + " start at port: " + strconv.Itoa(config.ServerPort))
 
 	err = lightclient.StartP2PServer()
 	if err != nil {
@@ -69,10 +70,8 @@ func main() {
 	}
 
 	service.Start()
+
 	// Timer
-
-	log.Println("obd " + tool.GetObdNodeId() + " start at port: " + strconv.Itoa(config.ServerPort))
-
 	service.ScheduleService.StartSchedule()
 	log.Fatal(server.ListenAndServe())
 }
