@@ -2,7 +2,7 @@
 [![](https://img.shields.io/badge/license-MIT-blue)](https://github.com/omnilaboratory/obd/blob/master/LICENSE) [![](https://img.shields.io/badge/standard%20readme-OK-brightgreen)](https://github.com/omnilaboratory/obd/blob/master/README.md) [![](https://img.shields.io/badge/golang-%3E%3D1.9.0-orange)](https://golang.org/dl/) [![](https://img.shields.io/badge/protocol-OmniBOLT-brightgreen)](https://github.com/omnilaboratory/OmniBOLT-spec) 
 [![](https://img.shields.io/badge/API%20V0.3-Document-blue)](https://api.omnilab.online) 
 
-obd implements the [OmniBOLT](https://github.com/omnilaboratory/OmniBOLT-spec) specification, which enables Lightning network to be Omnilayer assets aware. Compile the source code and run the binary executable file, we will have an OmniBOLT deamon(OBD) providing all services for lightning network.   
+OBD implements the [OmniBOLT](https://github.com/omnilaboratory/OmniBOLT-spec) specification, and it is an open source, off-chain decentralized platform, build upon BTC/OmniLayer network, implements basic HTLC operations on the graph/network of smart [assets enabled lightning channels](https://github.com/omnilaboratory/OmniBOLT-spec/blob/master/OmniBOLT-02-peer-protocol.md#omni-address). Clone and compile the source code and run the binary executable file, you will have a featured OmniBOLT deamon(OBD) to start the journey of lightning network.   
 
 
 # Table of Contents
@@ -12,9 +12,12 @@ obd implements the [OmniBOLT](https://github.com/omnilaboratory/OmniBOLT-spec) s
 	* [Step 1: fetch the source code](https://github.com/omnilaboratory/obd#step-1-fetch-the-source-code)
 	* [Step 2: set up OmniCore node](https://github.com/omnilaboratory/obd#step-2)
 	* [Step 3: compile and run OmniBOLT daemon](https://github.com/omnilaboratory/obd#step-3-compile-and-run-omnibolt-daemon)
-	* [Step 4: test channel operations using Websocket testing tool](https://github.com/omnilaboratory/obd#step-4-test-channel-operations-using-websocket-testing-tool)
+	* [Step 4: test channel operations using GUI testing tool](https://github.com/omnilaboratory/obd#step-4-test-channel-operations-using-websocket-testing-tool)
 	* [Step 5: channel operations on test site](https://github.com/omnilaboratory/obd#step-5-channel-operations-on-test-site)
+		* [sign up](https://github.com/omnilaboratory/obd#sign-up)	
 		* [login](https://github.com/omnilaboratory/obd#login)
+		* [normal operations](https://github.com/omnilaboratory/obd#normal-operations)
+
 	<!-- Removed by Neo Carmack 2020-06-09 -->		
 	<!-- 	* [create channel](https://github.com/omnilaboratory/obd#create-channel)
 		* [deposit](https://github.com/omnilaboratory/obd#deposit)
@@ -117,11 +120,16 @@ The terminal displays:
 Which tells us the daemon is running. We are going to use WebSocket online testing tools to test our lightning commands.
 
 
-## Step 4: Test channel operations using Websocket testing tool.
+## Step 4: Test channel operations using GUI testing tool.
 
 **NOTE: You should replace all of relevant data by the exact value that your own OBD generates for you**
 
 OmniBOLT deamon(OBD) exposes WebSocket services for client interaction. For ease of use, we released GUI tool to help users to get started. Go to the [GUI tool repository](https://github.com/omnilaboratory/DebuggingTool) to download and try it.
+
+<p align="center">
+  <img width="500" alt="Debugging Tool Screenshot" src="https://github.com/omnilaboratory/DebuggingTool/blob/master/doc/img/image_screen.png">
+</p>
+
 
 Another option is to use web socket test client for Chrome to do experiments. Install it from:
 ```
@@ -301,11 +309,13 @@ Alice's id is: 7da8d2441e0ad67040a274902f1965ee1a5c3fdd86f1ddc3280eda5230e006f2
 Bob's   id is: f38e72f6bf69c69ad1cdc0040550bafb86d5c4d35bd04542fcf5fc5ecb2135be
 
 
-Following operations can be found in the instruction of GUI tool or the online API document:
+### Normal operations
+Following operations can be found in the instruction of GUI tool or the [online API document.](https://api.omnilab.online):
 
 
 # API Document
 Please visit OBD [online API documentation](https://api.omnilab.online) for the lastest update.
+
 
 # How to Contribute
 OmniBOLT Daemon is MIT licensed open source software. Hopefully you can get started by going through the above steps, but Lightning network is not that easy to develop. Anyone is welcome to join us in this journey, and please be nice to each other, don't bring any illegal/private stuff, abuse or racial into our community.
@@ -325,8 +335,9 @@ Guidelines:
 
 Join us in [OmniBOLT slack channel](https://join.slack.com/t/omnibolt/shared_invite/enQtNzY2MDIzNzY0MzU5LTFlZTNlZjJhMzQxZTU2M2NhYmFjYjc1ZGZmODYwMWE3YmM0YjNhZWQyMDU2Y2VlMWIxYWFjN2YwMjlmYjUxNzA)
 
-# Current Features (Jun 10, 2020)
+# Current Features
 
+(Jun 10, 2020)
 * Generate OBD(OmniBOLT Daemon) addresss for users.  
 * Open Poon-Dryja Channel.  
 * BTC and Omni assets in funding and transaction.  
