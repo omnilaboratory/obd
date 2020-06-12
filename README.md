@@ -34,6 +34,7 @@ OBD implements the [OmniBOLT](https://github.com/omnilaboratory/OmniBOLT-spec) s
  * [How to Contribute](https://github.com/omnilaboratory/obd#how-to-contribute)
  * [Current Features](https://github.com/omnilaboratory/obd#current-features)
  * [Comming Features](https://github.com/omnilaboratory/obd#comming-features)
+ * [Experimental Features](https://github.com/omnilaboratory/obd#experimental-features)
  * [Related Projects](https://github.com/omnilaboratory/obd#related-projects)
 
 # Dependency
@@ -354,13 +355,14 @@ Join us in [OmniBOLT slack channel](https://join.slack.com/t/omnibolt/shared_inv
 * Multiple channel management for a single OBD instance, scaling out in performance.  
 * Multi hop payment using HTLC.  
 * Light client implementation.  
+* Invoice system.  
 * Peer to peer communication module.  
 * GUI tool.  
 * Atomic swap among channels.  
 
 # Comming Features
 
-* Invoice system.   
+* Tracker for network statistics.  
 * Balance and transaction history.  
 * Plugin for current lnd and c-lightning implementation.  
 * Interoperability of obd and lnd.  
