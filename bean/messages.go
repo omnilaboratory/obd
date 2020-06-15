@@ -14,7 +14,6 @@ type RequestMessage struct {
 	RecipientUserPeerId string       `json:"recipient_user_peer_id"`
 	RecipientNodePeerId string       `json:"recipient_node_peer_id"`
 	Data                string       `json:"data"`
-	RawData             string       `json:"raw_data"`
 	PubKey              string       `json:"pub_key"`
 	Signature           string       `json:"signature"`
 }
