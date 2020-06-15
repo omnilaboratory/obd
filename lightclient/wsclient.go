@@ -79,7 +79,7 @@ func (client *Client) Read() {
 		msg.Data = parse.Get("data").String()
 		msg.SenderUserPeerId = parse.Get("sender_user_peer_id").String()
 		if len(msg.SenderUserPeerId) == 0 && client.User != nil {
-			msg.SenderNodePeerId = client.User.PeerId
+			msg.SenderUserPeerId = client.User.PeerId
 		}
 		if len(msg.SenderNodePeerId) == 0 {
 			msg.SenderNodePeerId = localServerDest
