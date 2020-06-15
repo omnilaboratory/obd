@@ -18,6 +18,7 @@ func (client *Client) channelModule(msg bean.RequestMessage) (enum.SendTargetTyp
 		if msg.RecipientUserPeerId == client.User.PeerId {
 			data = "can not open channel to yourself"
 		} else {
+			msg.SenderNodePeerId = localServerDest
 			node, err := service.ChannelService.AliceOpenChannel(msg, client.User)
 			if err != nil {
 				data = err.Error()

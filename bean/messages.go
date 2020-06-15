@@ -65,6 +65,7 @@ type OpenChannelInfo struct {
 	FeeRatePerKw             uint32              `json:"fee_rate_per_kw"`
 	ToSelfDelay              uint16              `json:"to_self_delay"`
 	MaxAcceptedHtlcs         uint16              `json:"max_accepted_htlcs"` //最多可以接受多少给hltc请求 500
+	FunderNodeAddress        string              `json:"funder_node_address"`
 	FunderPeerId             string              `json:"funder_peer_id"`
 	FundingPubKey            string              `json:"funding_pubkey"`
 	FundingAddress           string              `json:"funding_address"`

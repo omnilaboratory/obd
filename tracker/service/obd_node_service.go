@@ -213,7 +213,6 @@ func (this *obdNodeAccountManager) GetNodeDbId(context *gin.Context) {
 	retData := make(map[string]interface{})
 	retData["id"] = info.Id
 	context.JSON(http.StatusOK, gin.H{
-		"msg":  "GetUserState",
 		"data": retData,
 	})
 }

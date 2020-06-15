@@ -40,6 +40,7 @@ func (this *channelManager) AliceOpenChannel(msg bean.RequestMessage, user *bean
 
 	openChannelInfo.ChainHash = config.Init_node_chain_hash
 	openChannelInfo.TemporaryChannelId = bean.ChannelIdService.NextTemporaryChanID()
+	openChannelInfo.FundingAddress = msg.SenderNodePeerId
 	openChannelInfo.FunderPeerId = user.PeerId
 	openChannelInfo.FundingPubKey = reqData.FundingPubKey
 

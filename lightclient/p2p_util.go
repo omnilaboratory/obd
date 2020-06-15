@@ -67,7 +67,6 @@ func httpGetNodeIdFromTracker() (nodeId int) {
 	defer resp.Body.Close()
 	if resp.StatusCode == 200 {
 		body, _ := ioutil.ReadAll(resp.Body)
-		log.Println(string(body))
 		return int(gjson.Get(string(body), "data").Get("id").Int())
 	}
 	return 0
