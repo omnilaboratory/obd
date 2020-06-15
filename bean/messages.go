@@ -1,10 +1,12 @@
 package bean
 
 import (
+	"fmt"
 	"github.com/asdine/storm"
 	"github.com/omnilaboratory/obd/bean/chainhash"
 	"github.com/omnilaboratory/obd/bean/enum"
 	"github.com/tyler-smith/go-bip32"
+	"time"
 )
 
 type RequestMessage struct {
@@ -200,6 +202,41 @@ type CommitmentTxSigned struct {
 	CurrTempAddressPubKey     string `json:"curr_temp_address_pub_key"`     // bob3 or alice3
 	CurrTempAddressPrivateKey string `json:"curr_temp_address_private_key"`
 	Approval                  bool   `json:"approval"` // true agree false disagree
+}
+
+// 设置时间格式
+const (
+	timeFormat = "2006-01-02"
+)
+
+// 自定义类型
+type JsonDate time.Time
+
+// JsonDate反序列化
+func (t *JsonDate) UnmarshalJSON(data []byte) (err error) {
+	newTime, err := time.ParseInLocation("\""+timeFormat+"\"", string(data), time.Local)
+	*t = JsonDate(newTime)
+	return
+}
+
+// JsonDate序列化
+func (t JsonDate) MarshalJSON() ([]byte, error) {
+	timeStr := fmt.Sprintf("\"%s\"", time.Time(t).Format(timeFormat))
+	return []byte(timeStr), nil
+}
+
+// string方法
+func (t JsonDate) String() string {
+	return time.Time(t).Format(timeFormat)
+}
+
+//type -100402: invoice
+type HtlcRequestInvoice struct {
+	H           string   `json:"h"`
+	ExpiryTime  JsonDate `json:"expiry_time"`
+	PropertyId  int64    `json:"property_id"`
+	Amount      float64  `json:"amount"`
+	Description string   `json:"description"`
 }
 
 //type -401: alice tell carl ,she wanna transfer some money to Carl

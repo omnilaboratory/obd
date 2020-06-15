@@ -1,6 +1,7 @@
 package service
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"github.com/asdine/storm"
@@ -30,7 +31,89 @@ type htlcForwardTxManager struct {
 // htlc pay money  付款
 var HtlcForwardTxService htlcForwardTxManager
 
-// 4001 find htlc find path
+func (service *htlcForwardTxManager) CreateHtlcInvoice(msg bean.RequestMessage, user bean.User) (data interface{}, err error) {
+
+	if tool.CheckIsString(&msg.Data) == false {
+		return nil, errors.New("empty json data")
+	}
+
+	requestData := &bean.HtlcRequestInvoice{}
+	err = json.Unmarshal([]byte(msg.Data), requestData)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+
+	addr := ""
+	//obbc,obtb,obcrt
+	if strings.Contains(config.ChainNode_Type, "main") {
+		addr = "obbc"
+	}
+	if strings.Contains(config.ChainNode_Type, "test") {
+		addr = "obtb"
+	}
+	if strings.Contains(config.ChainNode_Type, "reg") {
+		addr = "obcrt"
+	}
+	if requestData.Amount < config.GetOmniDustBtc() {
+		return nil, errors.New("wrong amount")
+	} else {
+		requestData.Amount *= 100000000
+		temp := int(requestData.Amount)
+		addr += strconv.Itoa(temp) + "s"
+	}
+
+	length := 0
+	if requestData.PropertyId < 0 {
+		return nil, errors.New("wrong property_id")
+	}
+	_, err = rpcClient.OmniGetProperty(requestData.PropertyId)
+	if err != nil {
+		return nil, err
+	} else {
+		propertyId := hex.EncodeToString([]byte(strconv.Itoa(int(requestData.PropertyId))))
+		length = len(propertyId)
+		addr += "pl" + strconv.Itoa(length) + propertyId
+	}
+
+	length = len(msg.SenderNodePeerId)
+	addr += "npl" + strconv.Itoa(length) + msg.SenderNodePeerId
+
+	length = len(msg.SenderUserPeerId)
+	addr += "upl" + strconv.Itoa(length) + msg.SenderUserPeerId
+
+	if tool.CheckIsString(&requestData.H) == false {
+		return nil, errors.New("wrong h")
+	} else {
+		//ph payment H
+		length = len(requestData.H)
+		addr += "phl" + strconv.Itoa(length) + requestData.H
+	}
+
+	if time.Time(requestData.ExpiryTime).IsZero() {
+		return nil, errors.New("wrong expiry_time")
+	} else {
+		expiryTime := hex.EncodeToString([]byte(strconv.Itoa(int(time.Time(requestData.ExpiryTime).Unix()))))
+		length = len(expiryTime)
+		addr += "exl" + strconv.Itoa(length) + expiryTime
+	}
+	if len(requestData.Description) > 0 {
+		length = len(requestData.Description)
+		addr += "dl" + strconv.Itoa(length) + requestData.Description
+	}
+
+	bytes := []byte(addr)
+	sum := 0
+	for _, item := range bytes {
+		sum += int(item)
+	}
+	checkSum := hex.EncodeToString([]byte(strconv.Itoa(sum)))
+	addr += checkSum
+
+	return addr, nil
+}
+
+// 401 find htlc find path
 func (service *htlcForwardTxManager) PayerRequestFindPath(msgData string, user bean.User) (data interface{}, err error) {
 	if tool.CheckIsString(&msgData) == false {
 		return nil, errors.New("empty json data")

@@ -82,7 +82,7 @@ func (client *Client) Read() {
 			msg.SenderUserPeerId = client.User.PeerId
 		}
 		if len(msg.SenderNodePeerId) == 0 {
-			msg.SenderNodePeerId = localServerDest
+			msg.SenderNodePeerId = P2PLocalPeerId
 		}
 
 		msg.RecipientUserPeerId = parse.Get("recipient_user_peer_id").String()
@@ -308,19 +308,27 @@ func getReplyObj(data string, msgType enum.MsgType, status bool, fromClient, toC
 	if strings.Contains(fromId, "@/") == false {
 		fromId = fromId + "@" + localServerDest
 	}
-	node := make(map[string]interface{})
-	err := json.Unmarshal([]byte(data), &node)
-	if err == nil {
-		parse := gjson.Parse(data)
-		jsonMessage, _ = json.Marshal(&bean.ReplyMessage{Type: msgType, Status: status, From: fromId, To: toClientId, Result: parse.Value()})
-	} else {
-		if strings.Contains(err.Error(), " array into Go value of type map") {
-			parse := gjson.Parse(data)
-			jsonMessage, _ = json.Marshal(&bean.ReplyMessage{Type: msgType, Status: status, From: fromId, To: toClientId, Result: parse.Value()})
-		} else {
-			jsonMessage, _ = json.Marshal(&bean.ReplyMessage{Type: msgType, Status: status, From: fromId, To: toClientId, Result: data})
-		}
+	//node := make(map[string]interface{})
+	//err := json.Unmarshal([]byte(data), &node)
+
+	parse := gjson.Parse(data)
+	result := parse.Value()
+	if parse.Exists() == false {
+		result = data
 	}
+	jsonMessage, _ = json.Marshal(&bean.ReplyMessage{Type: msgType, Status: status, From: fromId, To: toClientId, Result: result})
+
+	//if err == nil {
+	//	parse := gjson.Parse(data)
+	//	jsonMessage, _ = json.Marshal(&bean.ReplyMessage{Type: msgType, Status: status, From: fromId, To: toClientId, Result: parse.Value()})
+	//} else {
+	//	if strings.Contains(err.Error(), " array into Go value of type map") {
+	//		parse := gjson.Parse(data)
+	//		jsonMessage, _ = json.Marshal(&bean.ReplyMessage{Type: msgType, Status: status, From: fromId, To: toClientId, Result: parse.Value()})
+	//	} else {
+	//		jsonMessage, _ = json.Marshal(&bean.ReplyMessage{Type: msgType, Status: status, From: fromId, To: toClientId, Result: data})
+	//	}
+	//}
 	return jsonMessage
 }
 

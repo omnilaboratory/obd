@@ -49,20 +49,16 @@ func (client *Client) htlcHModule(msg bean.RequestMessage) (enum.SendTargetType,
 		if err != nil {
 			data = err.Error()
 		} else {
-			if _, err := client.FindUser(&htlcHRequest.RecipientUserPeerId); err != nil {
+			respond, err := service.HtlcForwardTxService.CreateHtlcInvoice(msg, *client.User)
+			if err != nil {
 				data = err.Error()
 			} else {
-				respond, err := service.HtlcForwardTxService.PayerRequestFindPath(msg.Data, *client.User)
+				bytes, err := json.Marshal(respond)
 				if err != nil {
 					data = err.Error()
 				} else {
-					bytes, err := json.Marshal(respond)
-					if err != nil {
-						data = err.Error()
-					} else {
-						data = string(bytes)
-						status = true
-					}
+					data = string(bytes)
+					status = true
 				}
 			}
 		}
