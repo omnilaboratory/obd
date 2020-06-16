@@ -15,6 +15,10 @@ func TestDemo6(t *testing.T) {
 }
 
 func TestDemo5(t *testing.T) {
+
+	code, err := GetMsgLengthFromInt(8)
+	log.Println(err)
+	log.Println(code)
 }
 
 func TestDemo4(t *testing.T) {

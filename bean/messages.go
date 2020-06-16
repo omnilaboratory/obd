@@ -11,7 +11,7 @@ import (
 
 // 设置时间格式
 const (
-	timeFormat = "2006/01/02"
+	timeFormat = "2006-01-02"
 )
 
 // 自定义类型
