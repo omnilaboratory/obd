@@ -81,13 +81,18 @@ func (client *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, 
 			client.sendToMyself(msg.Type, status, "please login")
 			sendType = enum.SendTargetType_SendToSomeone
 		}
-	case enum.MsgType_p2p_ConnectServer_2003:
-		localP2PAddress, err := ConnP2PServer(msg.Data)
-		if err != nil {
-			data = err.Error()
+	case enum.MsgType_p2p_ConnectPeer_2003:
+		remoteNodeAddress := gjson.Get(msg.Data, "remote_node_address")
+		if remoteNodeAddress.Exists() == false {
+			data = errors.New("remote_node_address not exist").Error()
 		} else {
-			status = true
-			data = localP2PAddress
+			localP2PAddress, err := ConnP2PServer(remoteNodeAddress.Str)
+			if err != nil {
+				data = err.Error()
+			} else {
+				status = true
+				data = localP2PAddress
+			}
 		}
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
