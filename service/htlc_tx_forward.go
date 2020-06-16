@@ -1,7 +1,6 @@
 package service
 
 import (
-	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"github.com/asdine/storm"
@@ -65,7 +64,6 @@ func (service *htlcForwardTxManager) CreateHtlcInvoice(msg bean.RequestMessage, 
 
 	addr += "1"
 
-	length := 0
 	if requestData.PropertyId < 0 {
 		return nil, errors.New("wrong property_id")
 	}
@@ -73,35 +71,55 @@ func (service *htlcForwardTxManager) CreateHtlcInvoice(msg bean.RequestMessage, 
 	if err != nil {
 		return nil, err
 	} else {
-		propertyId := hex.EncodeToString([]byte(strconv.Itoa(int(requestData.PropertyId))))
-		length = len(propertyId)
-		addr += "pl" + strconv.Itoa(length) + propertyId
+		propertyId := ""
+		tool.ConvertNumToString(int(requestData.PropertyId), &propertyId)
+		code, err := tool.GetMsgLengthFromInt(len(propertyId))
+		if err != nil {
+			return nil, err
+		}
+		addr += "p" + code + propertyId
 	}
 
-	length = len(msg.SenderNodePeerId)
-	addr += "nl" + strconv.Itoa(length) + msg.SenderNodePeerId
+	code, err := tool.GetMsgLengthFromInt(len(msg.SenderNodePeerId))
+	if err != nil {
+		return nil, err
+	}
+	addr += "n" + code + msg.SenderNodePeerId
 
-	length = len(msg.SenderUserPeerId)
-	addr += "ul" + strconv.Itoa(length) + msg.SenderUserPeerId
+	code, err = tool.GetMsgLengthFromInt(len(msg.SenderUserPeerId))
+	if err != nil {
+		return nil, err
+	}
+	addr += "u" + code + msg.SenderUserPeerId
 
 	if tool.CheckIsString(&requestData.H) == false {
 		return nil, errors.New("wrong h")
 	} else {
 		//ph payment H
-		length = len(requestData.H)
-		addr += "hl" + strconv.Itoa(length) + requestData.H
+		code, err = tool.GetMsgLengthFromInt(len(requestData.H))
+		if err != nil {
+			return nil, err
+		}
+		addr += "h" + code + requestData.H
 	}
 
 	if time.Time(requestData.ExpiryTime).IsZero() {
 		return nil, errors.New("wrong expiry_time")
 	} else {
-		expiryTime := hex.EncodeToString([]byte(strconv.Itoa(int(time.Time(requestData.ExpiryTime).Unix()))))
-		length = len(expiryTime)
-		addr += "xl" + strconv.Itoa(length) + expiryTime
+		expiryTime := ""
+		tool.ConvertNumToString(int(time.Time(requestData.ExpiryTime).Unix()), &expiryTime)
+		code, err = tool.GetMsgLengthFromInt(len(expiryTime))
+		if err != nil {
+			return nil, err
+		}
+		addr += "x" + code + expiryTime
 	}
 	if len(requestData.Description) > 0 {
-		length = len(requestData.Description)
-		addr += "dl" + strconv.Itoa(length) + requestData.Description
+		code, err = tool.GetMsgLengthFromInt(len(requestData.Description))
+		if err != nil {
+			return nil, err
+		}
+		addr += "d" + code + requestData.Description
 	}
 
 	bytes := []byte(addr)
@@ -109,7 +127,9 @@ func (service *htlcForwardTxManager) CreateHtlcInvoice(msg bean.RequestMessage, 
 	for _, item := range bytes {
 		sum += int(item)
 	}
-	checkSum := hex.EncodeToString([]byte(strconv.Itoa(sum)))
+	checkSum := ""
+	tool.ConvertNumToString(sum, &checkSum)
+
 	addr += checkSum
 
 	return addr, nil

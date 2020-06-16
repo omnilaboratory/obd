@@ -16,9 +16,9 @@ func TestDemo6(t *testing.T) {
 
 func TestDemo5(t *testing.T) {
 
-	code, err := GetMsgLengthFromInt(8)
+	toNum, err := DecodeInvoiceObjFromCodes("obtb400000000s1pqzyfnpwQmVEoTmyofsbEnsoFwQXHngafECHJuVfEgGyb2bZtyiontuzq1f1dbb3518c1fb12f263d065c1d18576d13f88dff55bfc25ef52afaa2c97a5d2hzz035be1bc8f26ac7318d83663bd5dab10c843a74d11e573731a6a9abee5b9d46933xq8p0sm45qdqtdescriptionjf4")
 	log.Println(err)
-	log.Println(code)
+	log.Println(toNum)
 }
 
 func TestDemo4(t *testing.T) {
