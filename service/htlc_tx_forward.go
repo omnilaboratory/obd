@@ -63,6 +63,8 @@ func (service *htlcForwardTxManager) CreateHtlcInvoice(msg bean.RequestMessage, 
 		addr += strconv.Itoa(temp) + "s"
 	}
 
+	addr += "1"
+
 	length := 0
 	if requestData.PropertyId < 0 {
 		return nil, errors.New("wrong property_id")
@@ -77,17 +79,17 @@ func (service *htlcForwardTxManager) CreateHtlcInvoice(msg bean.RequestMessage, 
 	}
 
 	length = len(msg.SenderNodePeerId)
-	addr += "npl" + strconv.Itoa(length) + msg.SenderNodePeerId
+	addr += "nl" + strconv.Itoa(length) + msg.SenderNodePeerId
 
 	length = len(msg.SenderUserPeerId)
-	addr += "upl" + strconv.Itoa(length) + msg.SenderUserPeerId
+	addr += "ul" + strconv.Itoa(length) + msg.SenderUserPeerId
 
 	if tool.CheckIsString(&requestData.H) == false {
 		return nil, errors.New("wrong h")
 	} else {
 		//ph payment H
 		length = len(requestData.H)
-		addr += "phl" + strconv.Itoa(length) + requestData.H
+		addr += "hl" + strconv.Itoa(length) + requestData.H
 	}
 
 	if time.Time(requestData.ExpiryTime).IsZero() {
@@ -95,7 +97,7 @@ func (service *htlcForwardTxManager) CreateHtlcInvoice(msg bean.RequestMessage, 
 	} else {
 		expiryTime := hex.EncodeToString([]byte(strconv.Itoa(int(time.Time(requestData.ExpiryTime).Unix()))))
 		length = len(expiryTime)
-		addr += "exl" + strconv.Itoa(length) + expiryTime
+		addr += "xl" + strconv.Itoa(length) + expiryTime
 	}
 	if len(requestData.Description) > 0 {
 		length = len(requestData.Description)

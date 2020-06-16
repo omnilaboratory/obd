@@ -2,6 +2,7 @@ package service
 
 import (
 	"github.com/asdine/storm/q"
+	"github.com/btcsuite/btcutil/bech32"
 	"github.com/omnilaboratory/obd/config"
 	"github.com/omnilaboratory/obd/dao"
 	"github.com/omnilaboratory/obd/rpc"
@@ -11,6 +12,21 @@ import (
 	"testing"
 	"time"
 )
+
+func TestCreateCustomMuiltAddress(t *testing.T) {
+
+	data := []byte("10")
+	conv, err := bech32.ConvertBits(data, 8, 5, true)
+	encode, err := bech32.Encode("500p", conv)
+	log.Println(err)
+	log.Println(encode)
+
+	decode, bytes, err := bech32.Decode(encode)
+	log.Println(err)
+	log.Println(string(bytes))
+	log.Println(decode)
+
+}
 
 func TestCommitmentTxManager_GetItemById(t *testing.T) {
 	amount := 2.0009
