@@ -23,9 +23,10 @@ import (
 )
 
 var conn *websocket.Conn
+var interrupt chan os.Signal
 
 func ConnectToTracker() {
-	interrupt := make(chan os.Signal, 1)
+	interrupt = make(chan os.Signal, 1)
 	signal.Notify(interrupt, os.Interrupt)
 
 	u := url.URL{Scheme: "ws", Host: config.TrackerHost, Path: "/ws"}
@@ -39,11 +40,13 @@ func ConnectToTracker() {
 		log.Println("error ================ fail to dial tracker:", err)
 		return
 	}
+	service.TrackerWsConn = conn
+}
+
+func SynData() {
+
 	defer conn.Close()
 	done := make(chan struct{})
-
-	service.TrackerWsConn = conn
-
 	go func() {
 		defer close(done)
 		for {

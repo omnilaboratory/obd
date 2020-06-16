@@ -96,7 +96,7 @@ func StartP2PServer() (err error) {
 	service.P2PLocalPeerId = P2PLocalPeerId
 
 	localServerDest = fmt.Sprintf("/ip4/%s/tcp/%v/p2p/%s", config.P2P_hostIp, config.P2P_sourcePort, host.ID().Pretty())
-	log.Println(localServerDest)
+	log.Println("localServerDest: " + localServerDest)
 
 	//把自己也作为终点放进去，阻止自己连接自己
 	p2pChannelMap[P2PLocalPeerId] = &P2PChannel{
