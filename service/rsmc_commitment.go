@@ -24,11 +24,11 @@ type commitmentTxManager struct {
 
 var CommitmentTxService commitmentTxManager
 
-func (this *commitmentTxManager) CommitmentTransactionCreated(msg bean.RequestMessage, creator *bean.User) (retData *bean.AliceRequestCreateCommitmentTx, err error) {
+func (this *commitmentTxManager) CommitmentTransactionCreated(msg bean.RequestMessage, creator *bean.User) (retData *bean.PayerRequestCommitmentTx, err error) {
 	if tool.CheckIsString(&msg.Data) == false {
 		return nil, errors.New("empty json reqData")
 	}
-	reqData := &bean.CommitmentTx{}
+	reqData := &bean.SendRequestCommitmentTx{}
 	err = json.Unmarshal([]byte(msg.Data), reqData)
 	if err != nil {
 		return nil, err
@@ -133,7 +133,7 @@ func (this *commitmentTxManager) CommitmentTransactionCreated(msg bean.RequestMe
 	tempAddrPrivateKeyMap[reqData.CurrTempAddressPubKey] = reqData.CurrTempAddressPrivateKey
 	//endregion
 
-	retData = &bean.AliceRequestCreateCommitmentTx{}
+	retData = &bean.PayerRequestCommitmentTx{}
 	retData.ChannelId = channelInfo.ChannelId
 	retData.Amount = reqData.Amount
 	retData.LastTempAddressPrivateKey = reqData.LastTempAddressPrivateKey
@@ -159,7 +159,7 @@ func (this *commitmentTxManager) CommitmentTransactionCreated(msg bean.RequestMe
 
 //353 352的请求阶段完成，需要Alice这边签名C2b等相关的交易
 func (this *commitmentTxManager) AfterBobSignCommitmentTrancationAtAliceSide(data string, user *bean.User) (retData map[string]interface{}, needNoticeAlice bool, err error) {
-	signCommitmentTx := &bean.BobSignCommitmentTx{}
+	signCommitmentTx := &bean.PayeeSignCommitmentTxOfP2p{}
 	_ = json.Unmarshal([]byte(data), signCommitmentTx)
 
 	//region 检测传入数据
@@ -460,13 +460,13 @@ type commitmentTxSignedManager struct {
 
 var CommitmentTxSignedService commitmentTxSignedManager
 
-func (this *commitmentTxSignedManager) BeforeBobSignCommitmentTranctionAtBobSide(data string, user *bean.User) (retData *bean.AliceRequestCreateCommitmentTxToBobClient, err error) {
+func (this *commitmentTxSignedManager) BeforeBobSignCommitmentTranctionAtBobSide(data string, user *bean.User) (retData *bean.PayerRequestCommitmentTxToBobClient, err error) {
 
-	requestCreateCommitmentTx := &bean.AliceRequestCreateCommitmentTx{}
+	requestCreateCommitmentTx := &bean.PayerRequestCommitmentTx{}
 	_ = json.Unmarshal([]byte(data), requestCreateCommitmentTx)
 
-	retData = &bean.AliceRequestCreateCommitmentTxToBobClient{}
-	retData.AliceRequestCreateCommitmentTx = *requestCreateCommitmentTx
+	retData = &bean.PayerRequestCommitmentTxToBobClient{}
+	retData.PayerRequestCommitmentTx = *requestCreateCommitmentTx
 
 	tx, err := user.Db.Begin(true)
 	if err != nil {
@@ -491,14 +491,14 @@ func (this *commitmentTxSignedManager) BeforeBobSignCommitmentTranctionAtBobSide
 	return retData, nil
 }
 
-func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction(msg bean.RequestMessage, signer *bean.User) (retData *bean.BobSignCommitmentTx, targetUser string, err error) {
+func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction(msg bean.RequestMessage, signer *bean.User) (retData *bean.PayeeSignCommitmentTxOfP2p, targetUser string, err error) {
 	if tool.CheckIsString(&msg.Data) == false {
 		err = errors.New("empty json reqData")
 		log.Println(err)
 		return nil, "", err
 	}
 
-	reqData := &bean.CommitmentTxSigned{}
+	reqData := &bean.PayeeSendSignCommitmentTx{}
 	err = json.Unmarshal([]byte(msg.Data), reqData)
 	if err != nil {
 		log.Println(err)
@@ -526,7 +526,7 @@ func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction
 		return nil, "", errors.New("you are not the operator")
 	}
 
-	aliceDataJson := &bean.AliceRequestCreateCommitmentTx{}
+	aliceDataJson := &bean.PayerRequestCommitmentTx{}
 	_ = json.Unmarshal([]byte(message.Data), aliceDataJson)
 	reqData.MsgHash = aliceDataJson.CommitmentTxHash
 	//endregion
@@ -563,7 +563,7 @@ func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction
 		return nil, "", errors.New("recipient_user_peer_id")
 	}
 
-	retData = &bean.BobSignCommitmentTx{}
+	retData = &bean.PayeeSignCommitmentTxOfP2p{}
 	retData.ChannelId = channelInfo.ChannelId
 	retData.CommitmentTxHash = reqData.MsgHash
 	retData.Approval = reqData.Approval
@@ -723,7 +723,7 @@ func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction
 		//endregion
 
 		//region 4、创建C2b
-		commitmentTxRequest := &bean.CommitmentTx{}
+		commitmentTxRequest := &bean.SendRequestCommitmentTx{}
 		commitmentTxRequest.ChannelId = channelInfo.ChannelId
 		commitmentTxRequest.Amount = aliceDataJson.Amount
 		commitmentTxRequest.ChannelAddressPrivateKey = reqData.ChannelAddressPrivateKey

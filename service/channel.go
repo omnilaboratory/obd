@@ -21,7 +21,7 @@ type channelManager struct{}
 var ChannelService = channelManager{}
 
 // AliceOpenChannel init ChannelInfo
-func (this *channelManager) AliceOpenChannel(msg bean.RequestMessage, user *bean.User) (openChannelInfo *bean.OpenChannelInfo, err error) {
+func (this *channelManager) AliceOpenChannel(msg bean.RequestMessage, user *bean.User) (openChannelInfo *bean.RequestOpenChannel, err error) {
 	if tool.CheckIsString(&msg.Data) == false {
 		return nil, errors.New("empty inputData")
 	}
@@ -32,7 +32,7 @@ func (this *channelManager) AliceOpenChannel(msg bean.RequestMessage, user *bean
 		return nil, err
 	}
 
-	openChannelInfo = &bean.OpenChannelInfo{}
+	openChannelInfo = &bean.RequestOpenChannel{}
 	openChannelInfo.FundingAddress, err = getAddressFromPubKey(reqData.FundingPubKey)
 	if err != nil {
 		return nil, err
@@ -45,7 +45,7 @@ func (this *channelManager) AliceOpenChannel(msg bean.RequestMessage, user *bean
 	openChannelInfo.FundingPubKey = reqData.FundingPubKey
 
 	channelInfo := &dao.ChannelInfo{}
-	channelInfo.OpenChannelInfo = *openChannelInfo
+	channelInfo.RequestOpenChannel = *openChannelInfo
 	channelInfo.PeerIdA = user.PeerId
 	channelInfo.PeerIdB = msg.RecipientUserPeerId
 	channelInfo.PubKeyA = reqData.FundingPubKey
@@ -64,14 +64,14 @@ func (this *channelManager) BeforeBobOpenChannelAtBobSide(msg string, user *bean
 		return errors.New("empty inputData")
 	}
 
-	aliceOpenChannelInfo := bean.OpenChannelInfo{}
+	aliceOpenChannelInfo := bean.RequestOpenChannel{}
 	err = json.Unmarshal([]byte(msg), &aliceOpenChannelInfo)
 	if err != nil {
 		return err
 	}
 
 	channelInfo := &dao.ChannelInfo{}
-	channelInfo.OpenChannelInfo = aliceOpenChannelInfo
+	channelInfo.RequestOpenChannel = aliceOpenChannelInfo
 	channelInfo.PeerIdA = aliceOpenChannelInfo.FunderPeerId
 	channelInfo.PeerIdB = user.PeerId
 	channelInfo.PubKeyA = aliceOpenChannelInfo.FundingPubKey
@@ -84,7 +84,7 @@ func (this *channelManager) BeforeBobOpenChannelAtBobSide(msg string, user *bean
 }
 
 func (this *channelManager) BobAcceptChannel(jsonData string, user *bean.User) (channelInfo *dao.ChannelInfo, err error) {
-	reqData := &bean.SendAcceptChannelInfo{}
+	reqData := &bean.SendSignOpenChannel{}
 	err = json.Unmarshal([]byte(jsonData), &reqData)
 
 	if err != nil {

@@ -150,7 +150,7 @@ func (client *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.Se
 
 	case enum.MsgType_FundingCreate_SendAssetFundingCreated_34:
 		//check target whether is online
-		fundingInfo := &bean.FundingCreated{}
+		fundingInfo := &bean.RequestAssetFunding{}
 		err := json.Unmarshal([]byte(msg.Data), fundingInfo)
 		if err != nil {
 			data = err.Error()

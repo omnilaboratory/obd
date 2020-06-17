@@ -5,7 +5,6 @@ import (
 	"errors"
 	"github.com/omnilaboratory/obd/bean"
 	"github.com/omnilaboratory/obd/bean/enum"
-	"github.com/omnilaboratory/obd/rpc"
 	"github.com/omnilaboratory/obd/service"
 	"github.com/omnilaboratory/obd/tool"
 	"log"
@@ -87,8 +86,6 @@ func (client *Client) Read() {
 
 		msg.RecipientUserPeerId = parse.Get("recipient_user_peer_id").String()
 		msg.RecipientNodePeerId = parse.Get("recipient_node_peer_id").String()
-		msg.PubKey = parse.Get("pub_key").String()
-		msg.Signature = parse.Get("signature").String()
 
 		// check the Recipient is online
 		if tool.CheckIsString(&msg.RecipientUserPeerId) {
@@ -98,20 +95,6 @@ func (client *Client) Read() {
 					client.sendToMyself(msg.Type, false, "can not find target user")
 					continue
 				}
-			}
-		}
-
-		// check the data whether is right signature
-		if tool.CheckIsString(&msg.PubKey) && tool.CheckIsString(&msg.Signature) {
-			rpcClient := rpc.NewClient()
-			result, err := rpcClient.VerifyMessage(msg.PubKey, msg.Signature, msg.Data)
-			if err != nil {
-				client.sendToMyself(msg.Type, false, err.Error())
-				continue
-			}
-			if gjson.Parse(result).Bool() == false {
-				client.sendToMyself(msg.Type, false, "error signature")
-				continue
 			}
 		}
 

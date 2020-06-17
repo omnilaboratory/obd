@@ -31,7 +31,7 @@ const (
 )
 
 type ChannelInfo struct {
-	bean.OpenChannelInfo
+	bean.RequestOpenChannel
 	Id                         int          `storm:"id,increment" json:"id"`
 	ChannelId                  string       `json:"channel_id"`
 	PeerIdA                    string       `storm:"index" json:"peer_id_a"`

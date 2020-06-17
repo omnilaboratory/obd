@@ -196,7 +196,7 @@ func (service *htlcCloseTxManager) RequestCloseHtlc(msg bean.RequestMessage, use
 	//如果是第一次请求，前面没有请求失败
 	if latestCommitmentTxInfo.CurrState == dao.TxInfoState_Htlc_GetR {
 		//创建c2a omni的交易不能一个输入，多个输出，所以就是两个交易
-		reqTempData := &bean.CommitmentTx{}
+		reqTempData := &bean.SendRequestCommitmentTx{}
 		reqTempData.CurrTempAddressPubKey = reqData.CurrRsmcTempAddressPubKey
 		reqTempData.ChannelAddressPrivateKey = reqData.ChannelAddressPrivateKey
 		reqTempData.Amount = 0
@@ -510,7 +510,7 @@ func (service *htlcCloseTxManager) CloseHTLCSigned(msg bean.RequestMessage, user
 		//endregion
 
 		//region 4、创建C2b
-		commitmentTxRequest := &bean.CommitmentTx{}
+		commitmentTxRequest := &bean.SendRequestCommitmentTx{}
 		commitmentTxRequest.ChannelId = channelInfo.ChannelId
 		commitmentTxRequest.Amount = 0
 		commitmentTxRequest.ChannelAddressPrivateKey = reqData.ChannelAddressPrivateKey

@@ -25,7 +25,7 @@ type fundingTransactionManager struct {
 var FundingTransactionService fundingTransactionManager
 
 func (service *fundingTransactionManager) BTCFundingCreated(data bean.RequestMessage, user *bean.User) (fundingTransaction map[string]interface{}, targetUser string, err error) {
-	reqData := &bean.FundingBtcCreated{}
+	reqData := &bean.RequestFundingBtc{}
 	err = json.Unmarshal([]byte(data.Data), reqData)
 	if err != nil {
 		log.Println(err)
@@ -311,7 +311,7 @@ func (service *fundingTransactionManager) BeforeBobSignBtcFundingAtBobSide(data 
 }
 
 func (service *fundingTransactionManager) FundingBtcTxSigned(msg bean.RequestMessage, user *bean.User) (outData interface{}, funder string, err error) {
-	reqData := &bean.FundingBtcSigned{}
+	reqData := &bean.SignFundingBtc{}
 	err = json.Unmarshal([]byte(msg.Data), reqData)
 	if err != nil {
 		log.Println(err)
@@ -556,7 +556,7 @@ func (service *fundingTransactionManager) AfterBobSignBtcFundingAtAliceSide(data
 
 //funder request to fund to the multiAddr (channel)
 func (service *fundingTransactionManager) AssetFundingCreated(jsonData string, user *bean.User) (outputData interface{}, err error) {
-	reqData := &bean.FundingCreated{}
+	reqData := &bean.RequestAssetFunding{}
 	err = json.Unmarshal([]byte(jsonData), reqData)
 	if err != nil {
 		log.Println(err)
@@ -1025,7 +1025,7 @@ func (service *fundingTransactionManager) BeforeBobSignOmniFundingAtBobSide(data
 }
 
 func (service *fundingTransactionManager) AssetFundingSigned(jsonData string, signer *bean.User) (outputData interface{}, err error) {
-	reqData := &bean.FundingSigned{}
+	reqData := &bean.SignAssetFunding{}
 	err = json.Unmarshal([]byte(jsonData), reqData)
 	if err != nil {
 		return nil, err

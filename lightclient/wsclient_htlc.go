@@ -44,7 +44,7 @@ func (client *Client) htlcHModule(msg bean.RequestMessage) (enum.SendTargetType,
 
 	switch msg.Type {
 	case enum.MsgType_HTLC_Invoice_402:
-		htlcHRequest := &bean.HtlcRequestFindPath{}
+		htlcHRequest := &bean.HtlcRequestInvoice{}
 		err := json.Unmarshal([]byte(msg.Data), htlcHRequest)
 		if err != nil {
 			data = err.Error()

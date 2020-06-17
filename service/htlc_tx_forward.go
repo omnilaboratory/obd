@@ -148,39 +148,40 @@ func (service *htlcForwardTxManager) PayerRequestFindPath(msgData string, user b
 		return nil, err
 	}
 
-	if tool.CheckIsString(&requestData.RecipientUserPeerId) == false {
-		return nil, errors.New("wrong recipient_user_peer_id")
+	if tool.CheckIsString(&requestData.Invoice) == false {
+		return nil, errors.New("empty invoice")
 	}
 
-	if tool.CheckIsString(&requestData.RecipientNodePeerId) == false {
-		return nil, errors.New("wrong recipient_node_peer_id")
+	htlcRequestInvoice, err := tool.DecodeInvoiceObjFromCodes(requestData.Invoice)
+	if err != nil {
+		return nil, errors.New("invalid invoice")
 	}
 
-	if requestData.RecipientNodePeerId == P2PLocalPeerId {
-		if err := findUserIsOnline(requestData.RecipientUserPeerId); err != nil {
+	if htlcRequestInvoice.RecipientNodePeerId == P2PLocalPeerId {
+		if err := findUserIsOnline(htlcRequestInvoice.RecipientUserPeerId); err != nil {
 			return nil, err
 		}
 	}
 
-	if requestData.PropertyId < 0 {
+	if htlcRequestInvoice.PropertyId < 0 {
 		return nil, errors.New("wrong property_id")
 	}
 
-	_, err = rpcClient.OmniGetProperty(requestData.PropertyId)
+	_, err = rpcClient.OmniGetProperty(htlcRequestInvoice.PropertyId)
 	if err != nil {
 		return nil, err
 	}
 
-	if requestData.Amount < config.GetOmniDustBtc() {
+	if htlcRequestInvoice.Amount < config.GetOmniDustBtc() {
 		return nil, errors.New("wrong amount")
 	}
 
 	//tracker find path
 	pathRequest := trackerBean.HtlcPathRequest{}
-	pathRequest.PropertyId = requestData.PropertyId
-	pathRequest.Amount = requestData.Amount
+	pathRequest.PropertyId = htlcRequestInvoice.PropertyId
+	pathRequest.Amount = htlcRequestInvoice.Amount
 	pathRequest.RealPayerPeerId = user.PeerId
-	pathRequest.PayeePeerId = requestData.RecipientUserPeerId
+	pathRequest.PayeePeerId = htlcRequestInvoice.RecipientUserPeerId
 	sendMsgToTracker(enum.MsgType_Tracker_GetHtlcPath_351, pathRequest)
 
 	return nil, nil
