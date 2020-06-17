@@ -24,9 +24,9 @@ type fundingTransactionManager struct {
 
 var FundingTransactionService fundingTransactionManager
 
-func (service *fundingTransactionManager) BTCFundingCreated(data bean.RequestMessage, user *bean.User) (fundingTransaction map[string]interface{}, targetUser string, err error) {
-	reqData := &bean.RequestFundingBtc{}
-	err = json.Unmarshal([]byte(data.Data), reqData)
+func (service *fundingTransactionManager) BTCFundingCreated(msg bean.RequestMessage, user *bean.User) (fundingTransaction interface{}, targetUser string, err error) {
+	reqData := &bean.SendRequestFundingBtc{}
+	err = json.Unmarshal([]byte(msg.Data), reqData)
 	if err != nil {
 		log.Println(err)
 		return nil, "", err
@@ -80,7 +80,7 @@ func (service *fundingTransactionManager) BTCFundingCreated(data bean.RequestMes
 		targetUser = channelInfo.PeerIdA
 	}
 
-	if data.RecipientUserPeerId != targetUser {
+	if msg.RecipientUserPeerId != targetUser {
 		return nil, "", errors.New("error RecipientUserPeerId")
 	}
 
@@ -197,11 +197,13 @@ func (service *fundingTransactionManager) BTCFundingCreated(data bean.RequestMes
 		return nil, "", err
 	}
 
-	node := make(map[string]interface{})
-	node["temporary_channel_id"] = reqData.TemporaryChannelId
-	node["funding_txid"] = fundingTxid
-	node["funding_btc_hex"] = reqData.FundingTxHex
-	node["funding_redeem_hex"] = minerFeeRedeemTransaction.Hex
+	node := bean.FundingBtcOfP2p{}
+	node.TemporaryChannelId = reqData.TemporaryChannelId
+	node.FundingTxid = fundingTxid
+	node.FundingBtcHex = reqData.FundingTxHex
+	node.FundingRedeemHex = minerFeeRedeemTransaction.Hex
+	node.FunderNodeAddress = msg.SenderNodePeerId
+	node.FunderPeerId = msg.SenderUserPeerId
 	return node, targetUser, nil
 }
 
@@ -311,7 +313,7 @@ func (service *fundingTransactionManager) BeforeBobSignBtcFundingAtBobSide(data 
 }
 
 func (service *fundingTransactionManager) FundingBtcTxSigned(msg bean.RequestMessage, user *bean.User) (outData interface{}, funder string, err error) {
-	reqData := &bean.SignFundingBtc{}
+	reqData := &bean.SendSignFundingBtc{}
 	err = json.Unmarshal([]byte(msg.Data), reqData)
 	if err != nil {
 		log.Println(err)
@@ -555,9 +557,9 @@ func (service *fundingTransactionManager) AfterBobSignBtcFundingAtAliceSide(data
 }
 
 //funder request to fund to the multiAddr (channel)
-func (service *fundingTransactionManager) AssetFundingCreated(jsonData string, user *bean.User) (outputData interface{}, err error) {
-	reqData := &bean.RequestAssetFunding{}
-	err = json.Unmarshal([]byte(jsonData), reqData)
+func (service *fundingTransactionManager) AssetFundingCreated(msg bean.RequestMessage, user *bean.User) (outputData interface{}, err error) {
+	reqData := &bean.SendRequestAssetFunding{}
+	err = json.Unmarshal([]byte(msg.Data), reqData)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -834,11 +836,13 @@ func (service *fundingTransactionManager) AssetFundingCreated(jsonData string, u
 		return nil, err
 	}
 
-	node := make(map[string]interface{})
-	node["temporary_channel_id"] = reqData.TemporaryChannelId
-	node["funding_omni_hex"] = fundingTransaction.FundingTxHex
-	node["c1a_rsmc_hex"] = commitmentTxInfo.RSMCTxHex
-	node["rsmc_temp_address_pub_key"] = commitmentTxInfo.RSMCTempAddressPubKey
+	node := bean.FundingAssetOfP2p{}
+	node.TemporaryChannelId = reqData.TemporaryChannelId
+	node.FundingOmnicHex = fundingTransaction.FundingTxHex
+	node.C1aRsmcHex = commitmentTxInfo.RSMCTxHex
+	node.RsmcTempAddressPubKey = commitmentTxInfo.RSMCTempAddressPubKey
+	node.FunderNodeAddress = msg.SenderNodePeerId
+	node.FunderPeerId = msg.SenderUserPeerId
 	return node, err
 }
 

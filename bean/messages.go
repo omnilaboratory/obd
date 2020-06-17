@@ -128,17 +128,26 @@ type SendBreachRemedyTransaction struct {
 }
 
 // type: -100340
-//type: -340 (RequestFundingBtc)
-// type: -110340
-type RequestFundingBtc struct {
+type SendRequestFundingBtc struct {
 	TemporaryChannelId       string `json:"temporary_channel_id"`
 	FundingTxHex             string `json:"funding_tx_hex"`
 	ChannelAddressPrivateKey string `json:"channel_address_private_key"`
 	TypeLengthValue
 }
 
-//type: -100350 (SignFundingBtc)
-type SignFundingBtc struct {
+// type: -340
+// type: -110340
+type FundingBtcOfP2p struct {
+	TemporaryChannelId string `json:"temporary_channel_id"`
+	FundingTxid        string `json:"funding_txid"`
+	FundingBtcHex      string `json:"funding_btc_hex"`
+	FundingRedeemHex   string `json:"funding_redeem_hex"`
+	FunderNodeAddress  string `json:"funder_node_address"`
+	FunderPeerId       string `json:"funder_peer_id"`
+}
+
+//type: -100350 (SendSignFundingBtc)
+type SendSignFundingBtc struct {
 	TemporaryChannelId       string `json:"temporary_channel_id"`
 	FundingTxid              string `json:"funding_txid"`
 	ChannelAddressPrivateKey string `json:"channel_address_private_key"`
@@ -147,8 +156,7 @@ type SignFundingBtc struct {
 }
 
 // -100034
-//type: -34 (funding_created)
-type RequestAssetFunding struct {
+type SendRequestAssetFunding struct {
 	TemporaryChannelId       string  `json:"temporary_channel_id"`
 	PropertyId               int64   `json:"property_id"`
 	MaxAssets                float64 `json:"max_assets"`
@@ -158,6 +166,17 @@ type RequestAssetFunding struct {
 	TempAddressPrivateKey    string  `json:"temp_address_private_key"`
 	ChannelAddressPrivateKey string  `json:"channel_address_private_key"`
 	TypeLengthValue
+}
+
+// type: -340
+// type: -110034
+type FundingAssetOfP2p struct {
+	TemporaryChannelId    string `json:"temporary_channel_id"`
+	FundingOmnicHex       string `json:"funding_omnic_hex"`
+	C1aRsmcHex            string `json:"c1a_rsmc_hex"`
+	RsmcTempAddressPubKey string `json:"rsmc_temp_address_pub_key"`
+	FunderNodeAddress     string `json:"funder_node_address"`
+	FunderPeerId          string `json:"funder_peer_id"`
 }
 
 //type: -35 (funding_signed)
@@ -195,7 +214,7 @@ type SendRequestCommitmentTx struct {
 }
 
 //p2p 351
-type PayerRequestCommitmentTx struct {
+type PayerRequestCommitmentTxOfP2p struct {
 	ChannelId                 string  `json:"channel_id"` //the global channel id.
 	CommitmentTxHash          string  `json:"commitment_tx_hash"`
 	Amount                    float64 `json:"amount"` //amount of the payment
@@ -203,11 +222,13 @@ type PayerRequestCommitmentTx struct {
 	RsmcHex                   string  `json:"rsmc_hex"`
 	LastTempAddressPrivateKey string  `json:"last_temp_address_private_key"`
 	CurrTempAddressPubKey     string  `json:"curr_temp_address_pub_key"`
+	PayerNodeAddress          string  `json:"payer_node_address"`
+	PayerPeerId               string  `json:"payer_peer_id"`
 }
 
 // -110351
 type PayerRequestCommitmentTxToBobClient struct {
-	PayerRequestCommitmentTx
+	PayerRequestCommitmentTxOfP2p
 	MsgHash string `json:"msg_hash"`
 }
 
@@ -423,15 +444,20 @@ type AliceRequestAddHtlc struct {
 	CurrRsmcTempAddressPubKey        string  `json:"curr_rsmc_temp_address_pub_key"`
 	CurrHtlcTempAddressPubKey        string  `json:"curr_htlc_temp_address_pub_key"`
 	CurrHtlcTempAddressForHt1aPubKey string  `json:"curr_htlc_temp_address_for_ht1a_pub_key"`
+	PayerNodeAddress                 string  `json:"payer_node_address"`
+	PayerPeerId                      string  `json:"payer_peer_id"`
 }
 
 //  p2p消息 收款人的obd发给付款人的obd的消息体 在获得R后
+// -100045 -> -45
 type BobSendROfP2p struct {
-	ChannelId      string `json:"channel_id"`
-	R              string `json:"r"`
-	He1bTxHex      string `json:"he1b_tx_hex"`
-	He1bTempPubKey string `json:"he1b_temp_pub_key"`
-	Herd1bTxHex    string `json:"herd1b_tx_hex"`
+	ChannelId        string `json:"channel_id"`
+	R                string `json:"r"`
+	He1bTxHex        string `json:"he1b_tx_hex"`
+	He1bTempPubKey   string `json:"he1b_temp_pub_key"`
+	Herd1bTxHex      string `json:"herd1b_tx_hex"`
+	PayeeNodeAddress string `json:"payee_node_address"`
+	PayeePeerId      string `json:"payee_peer_id"`
 }
 
 // ws消息 收款人的obd发给付款人的obd的消息体 在获得R后

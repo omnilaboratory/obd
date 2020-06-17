@@ -27,7 +27,7 @@ type htlcBackwardTxManager struct {
 var HtlcBackwardTxService htlcBackwardTxManager
 
 // -45 at payee side
-func (service *htlcBackwardTxManager) SendRToPreviousNode_Step1(msg bean.RequestMessage, user bean.User) (responseData *bean.BobSendROfP2p, err error) {
+func (service *htlcBackwardTxManager) SendRToPreviousNode_Step1(msg bean.RequestMessage, user bean.User) (retData *bean.BobSendROfP2p, err error) {
 	if tool.CheckIsString(&msg.Data) == false {
 		return nil, errors.New("empty json data")
 	}
@@ -168,14 +168,16 @@ func (service *htlcBackwardTxManager) SendRToPreviousNode_Step1(msg bean.Request
 	_ = tx.Update(latestCommitmentTxInfo)
 	_ = tx.Commit()
 
-	responseData = &bean.BobSendROfP2p{}
-	responseData.ChannelId = reqData.ChannelId
-	responseData.R = reqData.R
-	responseData.He1bTxHex = he1b.RSMCTxHex
-	responseData.He1bTempPubKey = reqData.CurrHtlcTempAddressForHE1bPubKey
-	responseData.Herd1bTxHex = herd.TxHex
+	retData = &bean.BobSendROfP2p{}
+	retData.ChannelId = reqData.ChannelId
+	retData.R = reqData.R
+	retData.He1bTxHex = he1b.RSMCTxHex
+	retData.He1bTempPubKey = reqData.CurrHtlcTempAddressForHE1bPubKey
+	retData.Herd1bTxHex = herd.TxHex
+	retData.PayeeNodeAddress = msg.SenderNodePeerId
+	retData.PayeePeerId = msg.SenderUserPeerId
 
-	return responseData, nil
+	return retData, nil
 }
 
 // -45 at payer side

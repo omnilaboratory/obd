@@ -413,22 +413,24 @@ func (service *htlcForwardTxManager) UpdateAddHtlc_40(msg bean.RequestMessage, u
 	}
 	_ = tx.Commit()
 
-	returnData := &bean.AliceRequestAddHtlc{}
-	returnData.RoutingPacket = requestData.RoutingPacket
-	returnData.ChannelId = channelInfo.ChannelId
-	returnData.H = requestData.H
-	returnData.Amount = requestData.Amount
-	returnData.Memo = requestData.Memo
-	returnData.CltvExpiry = requestData.CltvExpiry
-	returnData.LastTempAddressPrivateKey = requestData.LastTempAddressPrivateKey
-	returnData.CurrRsmcTempAddressPubKey = requestData.CurrRsmcTempAddressPubKey
-	returnData.CurrHtlcTempAddressPubKey = requestData.CurrHtlcTempAddressPubKey
-	returnData.CurrHtlcTempAddressForHt1aPubKey = requestData.CurrHtlcTempAddressForHt1aPubKey
-	returnData.PayerCommitmentTxHash = latestCommitmentTx.CurrHash
-	returnData.RsmcTxHex = latestCommitmentTx.RSMCTxHex
-	returnData.HtlcTxHex = latestCommitmentTx.HtlcTxHex
-	returnData.ToCounterpartyTxHex = latestCommitmentTx.ToCounterpartyTxHex
-	return returnData, nil
+	retData := &bean.AliceRequestAddHtlc{}
+	retData.RoutingPacket = requestData.RoutingPacket
+	retData.ChannelId = channelInfo.ChannelId
+	retData.H = requestData.H
+	retData.Amount = requestData.Amount
+	retData.Memo = requestData.Memo
+	retData.CltvExpiry = requestData.CltvExpiry
+	retData.LastTempAddressPrivateKey = requestData.LastTempAddressPrivateKey
+	retData.CurrRsmcTempAddressPubKey = requestData.CurrRsmcTempAddressPubKey
+	retData.CurrHtlcTempAddressPubKey = requestData.CurrHtlcTempAddressPubKey
+	retData.CurrHtlcTempAddressForHt1aPubKey = requestData.CurrHtlcTempAddressForHt1aPubKey
+	retData.PayerCommitmentTxHash = latestCommitmentTx.CurrHash
+	retData.RsmcTxHex = latestCommitmentTx.RSMCTxHex
+	retData.HtlcTxHex = latestCommitmentTx.HtlcTxHex
+	retData.ToCounterpartyTxHex = latestCommitmentTx.ToCounterpartyTxHex
+	retData.PayerNodeAddress = msg.SenderNodePeerId
+	retData.PayerPeerId = msg.SenderUserPeerId
+	return retData, nil
 }
 
 // 40号协议 收款方的obd节点对来自付款方obd节点的消息的处理并通过ws转发给收款方

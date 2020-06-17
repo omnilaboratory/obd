@@ -97,6 +97,7 @@ func DecodeInvoiceObjFromCodes(encode string) (invoice bean.HtlcRequestInvoice, 
 	invoice.Amount = float64(amount / 100000000)
 	amountStr = amountStr + "s1"
 	encode = strings.TrimPrefix(encode, amountStr)
+
 	//propertyId
 	prefix := encode[0:1]
 	if prefix != "p" {

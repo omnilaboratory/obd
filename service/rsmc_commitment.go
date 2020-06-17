@@ -24,7 +24,7 @@ type commitmentTxManager struct {
 
 var CommitmentTxService commitmentTxManager
 
-func (this *commitmentTxManager) CommitmentTransactionCreated(msg bean.RequestMessage, creator *bean.User) (retData *bean.PayerRequestCommitmentTx, err error) {
+func (this *commitmentTxManager) CommitmentTransactionCreated(msg bean.RequestMessage, creator *bean.User) (retData *bean.PayerRequestCommitmentTxOfP2p, err error) {
 	if tool.CheckIsString(&msg.Data) == false {
 		return nil, errors.New("empty json reqData")
 	}
@@ -133,7 +133,7 @@ func (this *commitmentTxManager) CommitmentTransactionCreated(msg bean.RequestMe
 	tempAddrPrivateKeyMap[reqData.CurrTempAddressPubKey] = reqData.CurrTempAddressPrivateKey
 	//endregion
 
-	retData = &bean.PayerRequestCommitmentTx{}
+	retData = &bean.PayerRequestCommitmentTxOfP2p{}
 	retData.ChannelId = channelInfo.ChannelId
 	retData.Amount = reqData.Amount
 	retData.LastTempAddressPrivateKey = reqData.LastTempAddressPrivateKey
@@ -152,6 +152,9 @@ func (this *commitmentTxManager) CommitmentTransactionCreated(msg bean.RequestMe
 		retData.ToCounterpartyTxHex = latestCommitmentTxInfo.ToCounterpartyTxHex
 		retData.CommitmentTxHash = latestCommitmentTxInfo.CurrHash
 	}
+
+	retData.PayerNodeAddress = msg.SenderNodePeerId
+	retData.PayerPeerId = msg.SenderUserPeerId
 	_ = tx.Commit()
 
 	return retData, err
@@ -462,11 +465,11 @@ var CommitmentTxSignedService commitmentTxSignedManager
 
 func (this *commitmentTxSignedManager) BeforeBobSignCommitmentTranctionAtBobSide(data string, user *bean.User) (retData *bean.PayerRequestCommitmentTxToBobClient, err error) {
 
-	requestCreateCommitmentTx := &bean.PayerRequestCommitmentTx{}
+	requestCreateCommitmentTx := &bean.PayerRequestCommitmentTxOfP2p{}
 	_ = json.Unmarshal([]byte(data), requestCreateCommitmentTx)
 
 	retData = &bean.PayerRequestCommitmentTxToBobClient{}
-	retData.PayerRequestCommitmentTx = *requestCreateCommitmentTx
+	retData.PayerRequestCommitmentTxOfP2p = *requestCreateCommitmentTx
 
 	tx, err := user.Db.Begin(true)
 	if err != nil {
@@ -526,7 +529,7 @@ func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction
 		return nil, "", errors.New("you are not the operator")
 	}
 
-	aliceDataJson := &bean.PayerRequestCommitmentTx{}
+	aliceDataJson := &bean.PayerRequestCommitmentTxOfP2p{}
 	_ = json.Unmarshal([]byte(message.Data), aliceDataJson)
 	reqData.MsgHash = aliceDataJson.CommitmentTxHash
 	//endregion
