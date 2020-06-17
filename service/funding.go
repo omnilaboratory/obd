@@ -209,10 +209,11 @@ func (service *fundingTransactionManager) BTCFundingCreated(msg bean.RequestMess
 
 //bob签收btc充值之前的obd的操作
 func (service *fundingTransactionManager) BeforeBobSignBtcFundingAtBobSide(data string, user *bean.User) (outData interface{}, err error) {
-	jsonObj := gjson.Parse(data)
-	temporaryChannelId := jsonObj.Get("temporary_channel_id").String()
-	fundingBtcHex := jsonObj.Get("funding_btc_hex").String()
-	fundingRedeemHex := jsonObj.Get("funding_redeem_hex").String()
+	jsonObj := bean.FundingBtcOfP2p{}
+	_ = json.Unmarshal([]byte(data), &jsonObj)
+	temporaryChannelId := jsonObj.TemporaryChannelId
+	fundingBtcHex := jsonObj.FundingBtcHex
+	fundingRedeemHex := jsonObj.FundingRedeemHex
 	if tool.CheckIsString(&temporaryChannelId) == false {
 		err = errors.New("wrong temporaryChannelId ")
 		log.Println(err)
@@ -847,11 +848,12 @@ func (service *fundingTransactionManager) AssetFundingCreated(msg bean.RequestMe
 }
 
 func (service *fundingTransactionManager) BeforeBobSignOmniFundingAtBobSide(data string, user *bean.User) (outData interface{}, err error) {
-	jsonObj := gjson.Parse(data)
-	temporaryChannelId := jsonObj.Get("temporary_channel_id").String()
-	fundingTxHex := jsonObj.Get("funding_omni_hex").String()
-	c1aRemcHex := jsonObj.Get("c1a_rsmc_hex").String()
-	rsmcTempAddressPubKey := jsonObj.Get("rsmc_temp_address_pub_key").String()
+	jsonObj := bean.FundingAssetOfP2p{}
+	_ = json.Unmarshal([]byte(data), &jsonObj)
+	temporaryChannelId := jsonObj.TemporaryChannelId
+	fundingTxHex := jsonObj.FundingOmniHex
+	c1aRemcHex := jsonObj.C1aRsmcHex
+	rsmcTempAddressPubKey := jsonObj.RsmcTempAddressPubKey
 	if tool.CheckIsString(&temporaryChannelId) == false {
 		err = errors.New("wrong temporaryChannelId ")
 		log.Println(err)
@@ -1009,7 +1011,7 @@ func (service *fundingTransactionManager) BeforeBobSignOmniFundingAtBobSide(data
 
 	if tool.CheckIsString(&channelInfo.ChannelId) == false {
 		channelInfo.ChannelId = fundingTransaction.ChannelId
-		err := tx.Update(channelInfo)
+		err = tx.Update(channelInfo)
 		if err != nil {
 			log.Println(err)
 			return nil, err
@@ -1021,11 +1023,11 @@ func (service *fundingTransactionManager) BeforeBobSignOmniFundingAtBobSide(data
 		log.Println(err)
 		return nil, err
 	}
-	node := make(map[string]interface{})
-	node["temporary_channel_id"] = temporaryChannelId
-	node["funding_omni_hex"] = fundingTransaction.FundingTxHex
-	node["c1a_rsmc_hex"] = c1aRemcHex
-	return node, err
+	//node := make(map[string]interface{})
+	//node["temporary_channel_id"] = temporaryChannelId
+	//node["funding_omni_hex"] = fundingTransaction.FundingTxHex
+	//node["c1a_rsmc_hex"] = c1aRemcHex
+	return nil, nil
 }
 
 func (service *fundingTransactionManager) AssetFundingSigned(jsonData string, signer *bean.User) (outputData interface{}, err error) {
