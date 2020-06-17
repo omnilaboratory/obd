@@ -88,8 +88,11 @@ func DecodeInvoiceObjFromCodes(encode string) (invoice bean.HtlcRequestInvoice, 
 		return invoice, errors.New("error encode")
 	}
 	encode = strings.TrimPrefix(encode, invoice.NetType)
-	amoutEndIndex := strings.Index(encode, "s1p")
-	amountStr := encode[0:amoutEndIndex]
+	amountEndIndex := strings.Index(encode, "s1p")
+	if amountEndIndex == -1 {
+		return invoice, errors.New("error encode")
+	}
+	amountStr := encode[0:amountEndIndex]
 	amount, err := strconv.Atoi(amountStr)
 	invoice.Amount = float64(amount / 100000000)
 	amountStr = amountStr + "s1"
