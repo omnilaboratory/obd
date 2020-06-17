@@ -192,6 +192,8 @@ func (service *htlcCloseTxManager) RequestCloseHtlc(msg bean.RequestMessage, use
 	retData.LastHtlcTempAddressPrivateKey = reqData.LastHtlcTempAddressPrivateKey
 	retData.LastHtlcTempAddressForHtnxPrivateKey = reqData.LastHtlcTempAddressForHtnxPrivateKey
 	retData.CurrRsmcTempAddressPubKey = reqData.CurrRsmcTempAddressPubKey
+	retData.SenderNodeAddress = msg.SenderNodePeerId
+	retData.SenderPeerId = msg.SenderUserPeerId
 
 	//如果是第一次请求，前面没有请求失败
 	if latestCommitmentTxInfo.CurrState == dao.TxInfoState_Htlc_GetR {

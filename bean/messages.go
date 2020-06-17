@@ -476,9 +476,12 @@ type RequestCloseHtlcTxOfP2p struct {
 	RsmcHex                              string `json:"rsmc_hex"`
 	ToCounterpartyTxHex                  string `json:"to_counterparty_tx_hex"`
 	CommitmentTxHash                     string `json:"commitment_tx_hash"`
+	SenderNodeAddress                    string `json:"sender_node_address"`
+	SenderPeerId                         string `json:"sender_peer_id"`
 }
 
 // ws消息 收款人的obd发给付款人的obd的消息体 在获得R后
+// -110050
 type RequestCloseHtlcTxOfWs struct {
 	RequestCloseHtlcTxOfP2p
 	MsgHash string `json:"msg_hash"`
