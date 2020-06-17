@@ -838,7 +838,7 @@ func (service *fundingTransactionManager) AssetFundingCreated(msg bean.RequestMe
 
 	node := bean.FundingAssetOfP2p{}
 	node.TemporaryChannelId = reqData.TemporaryChannelId
-	node.FundingOmnicHex = fundingTransaction.FundingTxHex
+	node.FundingOmniHex = fundingTransaction.FundingTxHex
 	node.C1aRsmcHex = commitmentTxInfo.RSMCTxHex
 	node.RsmcTempAddressPubKey = commitmentTxInfo.RSMCTempAddressPubKey
 	node.FunderNodeAddress = msg.SenderNodePeerId
