@@ -69,7 +69,7 @@ type TypeLengthValue struct {
 
 // -100032
 type SendChannelOpen struct {
-	//充值pubKey
+	//充值的pubKey
 	FundingPubKey string `json:"funding_pubkey"`
 	TypeLengthValue
 }
