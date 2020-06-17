@@ -171,6 +171,7 @@ type SendRequestAssetFunding struct {
 // type: -340
 // type: -110034
 type FundingAssetOfP2p struct {
+	//临时通道id
 	TemporaryChannelId    string `json:"temporary_channel_id"`
 	FundingOmniHex        string `json:"funding_omni_hex"`
 	C1aRsmcHex            string `json:"c1a_rsmc_hex"`
