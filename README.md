@@ -43,7 +43,7 @@ Clone, compile the source code and run the binary executable file, you will have
 
 Blockchain industry requires a much more flexible, extensible and cheaper smart assets circulation solution to solve the main chain scalability problem. Lightning network is a solid technology to this problem, but currently only BTC(and some of its forks) is supported. Lack of the support of smart assets limits the creativity of upper layer applications.  
 
-We proposed [OmniBOLT](https://github.com/omnilaboratory/OmniBOLT-spec) to widen the perspective of the original BTC-only lightning theory and technology. Interested reader please go to the [spec repository](https://github.com/omnilaboratory/OmniBOLT-spec) for further understanding of advantages and how it works.  
+We propose [OmniBOLT](https://github.com/omnilaboratory/OmniBOLT-spec), the smart asset lightning network, to widen the perspective of the original BTC-only lightning theory and technology. OBD is the golang implementation. Interested readers please go to the [spec repository](https://github.com/omnilaboratory/OmniBOLT-spec) for further understanding of advantages and how it works.  
 
 
 # Dependency
