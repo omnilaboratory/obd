@@ -283,7 +283,7 @@ func (client *Client) OmniCreateAndSignRawTransaction(fromBitCoinAddress string,
 	}
 
 	outputs := make(map[string]interface{})
-	//outputs["data"]="e4bda0e5a5bdefbc8ce4b896e7958ce38082"
+
 	//3.CreateRawTransaction
 	createrawtransactionStr, err := client.CreateRawTransaction(inputs, outputs)
 	if err != nil {
