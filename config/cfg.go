@@ -52,7 +52,6 @@ func init() {
 		log.Println(err)
 		return
 	}
-	ChainNode_Type = chainNode.Key("netType").String()
 	ChainNode_Host = chainNode.Key("host").String()
 	ChainNode_User = chainNode.Key("user").String()
 	ChainNode_Pass = chainNode.Key("pass").String()

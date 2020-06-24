@@ -175,7 +175,7 @@ func sycUserInfos() {
 
 //同步通道信息
 func sycChannelInfos() {
-	_dir := "dbdata"
+	_dir := "dbdata" + config.ChainNode_Type
 	files, _ := ioutil.ReadDir(_dir)
 	dbNames := make([]string, 0)
 	for _, f := range files {

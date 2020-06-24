@@ -21,9 +21,9 @@ var userOfOnlineMap map[string]dao.UserInfo
 
 var db *storm.DB
 
-func Start() {
+func Start(chainType string) {
 	var err error
-	db, err = dao.DBService.GetTrackerDB()
+	db, err = dao.DBService.GetTrackerDB(chainType)
 	if err != nil {
 		log.Println(err)
 	}
