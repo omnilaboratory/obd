@@ -1,12 +1,14 @@
-# Lightning On Omnilayer | OmniBOLT Daemon
+# OmniBOLT Daemon | Smart Asset Lightning Network
 [![](https://img.shields.io/badge/license-MIT-blue)](https://github.com/omnilaboratory/obd/blob/master/LICENSE) [![](https://img.shields.io/badge/standard%20readme-OK-brightgreen)](https://github.com/omnilaboratory/obd/blob/master/README.md) [![](https://img.shields.io/badge/golang-%3E%3D1.9.0-orange)](https://golang.org/dl/) [![](https://img.shields.io/badge/protocol-OmniBOLT-brightgreen)](https://github.com/omnilaboratory/OmniBOLT-spec) 
 [![](https://img.shields.io/badge/API%20V0.3-Document-blue)](https://api.omnilab.online) 
 
-OBD implements the [OmniBOLT](https://github.com/omnilaboratory/OmniBOLT-spec) specification, and it is an open source, off-chain decentralized platform, build upon BTC/OmniLayer network, implements basic HTLC operations on the graph/network of smart [assets enabled lightning channels](https://github.com/omnilaboratory/OmniBOLT-spec/blob/master/OmniBOLT-02-peer-protocol.md#omni-address). Clone and compile the source code and run the binary executable file, you will have a featured OmniBOLT deamon(OBD) to start the journey of lightning network.   
+OBD implements the [OmniBOLT](https://github.com/omnilaboratory/OmniBOLT-spec) specification, and it is an open source, off-chain decentralized platform, build upon BTC/OmniLayer network, implements basic HTLC payment, multi-currency atomic swap, and more off-chain contracts on the network of [smart assets enabled lightning channels](https://github.com/omnilaboratory/OmniBOLT-spec/blob/master/OmniBOLT-02-peer-protocol.md#omni-address).  
+
+Clone, compile the source code and run the binary executable file, you will have a featured OmniBOLT deamon(OBD) to start the journey of lightning network.   
 
 
 # Table of Contents
-
+ * [Background](https://github.com/omnilaboratory/obd#background)
  * [Dependency](https://github.com/omnilaboratory/obd#dependency)
  * [Installation](https://github.com/omnilaboratory/obd#installation)
 	* [Step 1: fetch the source code](https://github.com/omnilaboratory/obd#step-1-fetch-the-source-code)
@@ -37,11 +39,16 @@ OBD implements the [OmniBOLT](https://github.com/omnilaboratory/OmniBOLT-spec) s
  * [Experimental Features](https://github.com/omnilaboratory/obd#experimental-features)
  * [Related Projects](https://github.com/omnilaboratory/obd#related-projects)
 
+# Background
+
+Blockchain industry requires a much more flexible, extensible and cheaper smart assets circulation solution to solve the main chain scalability problem. Lightning network is a solid technology to this problem.  
+
+We propose [OmniBOLT](https://github.com/omnilaboratory/OmniBOLT-spec) to enable lightning network to be smart asset aware. OBD is the golang implementation. Interested readers please go to the [spec repository](https://github.com/omnilaboratory/OmniBOLT-spec) for further understanding of advantages and how it works.  
+
+
 # Dependency
 
-[Omnicore 0.18](https://github.com/OmniLayer/omnicore/tree/develop), which is currently in develop branch, and will be to finalize the release soon. 
-
-Omnicore 0.18 integrates the latest BTC core 0.18, which enables relative time locker used in RSM contracts and HTL contracts.
+[Omnicore 0.18](https://github.com/OmniLayer/omnicore) or later integrates the latest BTC core 0.18, which enables relative time locker used in RSM contracts and HTL contracts.
 
 # Installation
 The following instruction works for Ubuntu 14.04.4 LTS, golang 1.10 or later.
