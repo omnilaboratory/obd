@@ -2,6 +2,7 @@ package lightclient
 
 import (
 	"encoding/json"
+	"errors"
 	"github.com/asdine/storm"
 	"github.com/asdine/storm/q"
 	"github.com/gorilla/websocket"
@@ -12,8 +13,10 @@ import (
 	"github.com/omnilaboratory/obd/service"
 	"github.com/omnilaboratory/obd/tool"
 	trackerBean "github.com/omnilaboratory/obd/tracker/bean"
+	"github.com/tidwall/gjson"
 	"io/ioutil"
 	"log"
+	"net/http"
 	"net/url"
 	"os"
 	"os/signal"
@@ -25,22 +28,25 @@ import (
 var conn *websocket.Conn
 var interrupt chan os.Signal
 
-func ConnectToTracker() {
+func ConnectToTracker() (err error) {
 	interrupt = make(chan os.Signal, 1)
 	signal.Notify(interrupt, os.Interrupt)
 
 	u := url.URL{Scheme: "ws", Host: config.TrackerHost, Path: "/ws"}
 	log.Printf("begin to connect to tracker: %s", u.String())
 
-	startSchedule()
-
-	var err error
 	conn, _, err = websocket.DefaultDialer.Dial(u.String(), nil)
 	if err != nil {
 		log.Println("error ================ fail to dial tracker:", err)
-		return
+		return err
 	}
 	service.TrackerWsConn = conn
+	nodeId := httpCheckChainTypeByTracker()
+	if nodeId == 0 {
+		return errors.New("fail to login tracker")
+	}
+	startSchedule()
+	return nil
 }
 
 func SynData() {
@@ -56,7 +62,7 @@ func SynData() {
 				conn = nil
 				return
 			}
-			log.Println("recv:" + string(message))
+			log.Println("recv from tracker: " + string(message))
 
 			replyMessage := bean.ReplyMessage{}
 			err = json.Unmarshal(message, &replyMessage)
@@ -77,8 +83,7 @@ func SynData() {
 			}
 		}
 	}()
-
-	nodeLogin()
+	updateP2pAddressLogin()
 	sycUserInfos()
 	sycChannelInfos()
 
@@ -118,13 +123,27 @@ func SynData() {
 	}
 }
 
-func nodeLogin() {
+func httpCheckChainTypeByTracker() (nodeId int) {
+	url := "http://" + config.TrackerHost + "/api/v1/checkChainType?nodeId=" + tool.GetObdNodeId() + "&chainType=" + config.ChainNode_Type
+	resp, err := http.Get(url)
+	if err != nil {
+		return 0
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode == 200 {
+		body, _ := ioutil.ReadAll(resp.Body)
+		return int(gjson.Get(string(body), "data").Get("id").Int())
+	}
+	return 0
+}
+
+func updateP2pAddressLogin() {
 	info := make(map[string]interface{})
 	info["type"] = enum.MsgType_Tracker_NodeLogin_303
-	nodeLogin := &trackerBean.ObdNodeLoginRequest{}
-	nodeLogin.NodeId = tool.GetObdNodeId()
-	nodeLogin.P2PAddress = localServerDest
-	info["data"] = nodeLogin
+	nodeLoginInfo := &trackerBean.ObdNodeLoginRequest{}
+	nodeLoginInfo.NodeId = tool.GetObdNodeId()
+	nodeLoginInfo.P2PAddress = localServerDest
+	info["data"] = nodeLoginInfo
 	bytes, err := json.Marshal(info)
 	if err != nil {
 		log.Println(err)
@@ -205,7 +224,6 @@ func sycChannelInfos() {
 		}
 	}
 	if len(nodes) > 0 {
-		log.Println("syn channel data to tracker", nodes)
 		info := make(map[string]interface{})
 		info["type"] = enum.MsgType_Tracker_UpdateChannelInfo_350
 		info["data"] = nodes

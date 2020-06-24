@@ -96,6 +96,16 @@ func (client *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, 
 		}
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
+	case enum.MsgType_GetObdNodeInfo_2005:
+		bytes, err := json.Marshal(bean.MyObdNodeInfo)
+		if err != nil {
+			data = err.Error()
+		} else {
+			status = true
+			data = string(bytes)
+		}
+		client.sendToMyself(msg.Type, true, data)
+		sendType = enum.SendTargetType_SendToSomeone
 
 	// Added by Kevin 2019-11-25
 	// Process GetMnemonic

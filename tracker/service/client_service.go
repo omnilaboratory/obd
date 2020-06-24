@@ -143,7 +143,7 @@ func sendToSomeObdNode(msgType enum.MsgType, status bool, recipientObdId string,
 func getReplyObj(data string, msgType enum.MsgType, status bool, fromClient, toClient *ObdNode) []byte {
 	parse := gjson.Parse(data)
 	result := parse.Value()
-	if parse.Exists() == false {
+	if result == nil || parse.Exists() == false {
 		result = data
 	}
 	jsonMessage, _ := json.Marshal(&bean.ReplyMessage{Type: msgType, Status: status, From: fromClient.Id, To: toClient.Id, Result: result})

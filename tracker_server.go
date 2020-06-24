@@ -40,6 +40,10 @@ func init() {
 func main() {
 
 	routersInit := tracker.InitRouter()
+	if routersInit == nil {
+		log.Println("fail to start tracker")
+		return
+	}
 	addr := ":" + strconv.Itoa(config.TrackerServerPort)
 	server := &http.Server{
 		Addr:           addr,
@@ -50,6 +54,6 @@ func main() {
 	}
 	service.Start()
 
-	log.Println("tracker " + tool.GetTrackerNodeId() + " start at port: " + strconv.Itoa(config.TrackerServerPort))
+	log.Println("tracker " + tool.GetTrackerNodeId() + " start at port: " + strconv.Itoa(config.TrackerServerPort) + " in " + service.ChannelService.BtcChainType)
 	log.Fatal(server.ListenAndServe())
 }

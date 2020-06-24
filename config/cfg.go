@@ -11,7 +11,6 @@ import (
 var (
 	Cfg               *ini.File
 	ServerPort        = 60020
-	GrpcPort          = 60021
 	ReadTimeout       = 5 * time.Second
 	WriteTimeout      = 10 * time.Second
 	TrackerHost       = "localhost:60060"
@@ -22,13 +21,13 @@ var (
 	ChainNode_User = "omniwallet"
 	ChainNode_Pass = "cB3]iL2@eZ1?cB2?"
 	//mainnet
-	//ChainNode_Host = "62.234.188.160:8332"
-	//ChainNode_User = "uprets"
-	//ChainNode_Pass = "pass"
+	//	//ChainNode_Host = "62.234.188.160:8332"
+	//	//ChainNode_User = "uprets"
+	//	//ChainNode_Pass = "pass"
 
 	//P2P
 	P2P_hostIp     = "127.0.0.1"
-	P2P_sourcePort = 3001
+	P2P_sourcePort = 4001
 )
 
 func init() {
@@ -45,7 +44,6 @@ func init() {
 		return
 	}
 	ServerPort = section.Key("port").MustInt(60020)
-	GrpcPort = section.Key("grpcPort").MustInt(60021)
 	ReadTimeout = time.Duration(section.Key("readTimeout").MustInt(5)) * time.Second
 	WriteTimeout = time.Duration(section.Key("writeTimeout").MustInt(5)) * time.Second
 

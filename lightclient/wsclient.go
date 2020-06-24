@@ -61,7 +61,7 @@ func (client *Client) Read() {
 		log.Println("request data: ", string(dataReq))
 		parse := gjson.Parse(string(dataReq))
 
-		if parse.Exists() == false {
+		if parse.Value() == nil || parse.Exists() == false {
 			log.Println("wrong json input")
 			client.sendToMyself(enum.MsgType_Error_0, false, string(dataReq))
 			continue
@@ -291,27 +291,14 @@ func getReplyObj(data string, msgType enum.MsgType, status bool, fromClient, toC
 	if strings.Contains(fromId, "@/") == false {
 		fromId = fromId + "@" + localServerDest
 	}
-	//node := make(map[string]interface{})
-	//err := json.Unmarshal([]byte(data), &node)
 
 	parse := gjson.Parse(data)
 	result := parse.Value()
-	if parse.Exists() == false {
+	if result == nil || parse.Exists() == false {
 		result = data
 	}
 	jsonMessage, _ = json.Marshal(&bean.ReplyMessage{Type: msgType, Status: status, From: fromId, To: toClientId, Result: result})
 
-	//if err == nil {
-	//	parse := gjson.Parse(data)
-	//	jsonMessage, _ = json.Marshal(&bean.ReplyMessage{Type: msgType, Status: status, From: fromId, To: toClientId, Result: parse.Value()})
-	//} else {
-	//	if strings.Contains(err.Error(), " array into Go value of type map") {
-	//		parse := gjson.Parse(data)
-	//		jsonMessage, _ = json.Marshal(&bean.ReplyMessage{Type: msgType, Status: status, From: fromId, To: toClientId, Result: parse.Value()})
-	//	} else {
-	//		jsonMessage, _ = json.Marshal(&bean.ReplyMessage{Type: msgType, Status: status, From: fromId, To: toClientId, Result: data})
-	//	}
-	//}
 	return jsonMessage
 }
 
@@ -319,7 +306,7 @@ func getP2PReplyObj(data string, msgType enum.MsgType, status bool, fromId, toCl
 
 	parse := gjson.Parse(data)
 	result := parse.Value()
-	if parse.Exists() == false {
+	if result == nil || parse.Exists() == false {
 		result = data
 	}
 	jsonMessage, _ := json.Marshal(&bean.ReplyMessage{Type: msgType, Status: status, From: fromId, To: toClientId, Result: result})

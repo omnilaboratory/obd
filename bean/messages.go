@@ -12,6 +12,17 @@ const (
 	timeFormat = "2006-01-02"
 )
 
+var MyObdNodeInfo ObdNodeInfo
+
+type ObdNodeInfo struct {
+	ChainNetworkType string `json:"chain_network_type"`
+	OmniCoreVersion  string `json:"omni_core_version"`
+	BtcCoreVersion   string `json:"btc_core_version"`
+	TrackerNodeId    string `json:"tracker_node_id"`
+	P2pAddress       string `json:"p2p_address"`
+	WebsocketLink    string `json:"websocket_link"`
+}
+
 // 自定义类型
 type JsonDate time.Time
 

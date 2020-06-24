@@ -36,6 +36,45 @@ type obdNodeAccountManager struct {
 
 var NodeAccountService obdNodeAccountManager
 
+func (this *obdNodeAccountManager) InitNodeAndCheckChainType(context *gin.Context) {
+	nodeId := context.Query("nodeId")
+	chainType := context.Query("chainType")
+	if tool.CheckIsString(&nodeId) == false {
+		context.JSON(http.StatusInternalServerError, gin.H{
+			"msg": "error nodeId",
+		})
+		return
+	}
+	if tool.CheckIsString(&chainType) == false {
+		context.JSON(http.StatusInternalServerError, gin.H{
+			"msg": "error chainType",
+		})
+		return
+	}
+	if chainType != ChannelService.BtcChainType {
+		context.JSON(http.StatusInternalServerError, gin.H{
+			"msg": "wrong chainType",
+		})
+		return
+	}
+
+	info := &dao.ObdNodeInfo{}
+	_ = db.Select(q.Eq("NodeId", nodeId)).First(info)
+	info.LatestLoginAt = time.Now()
+	info.IsOnline = true
+	if info.Id == 0 {
+		info.NodeId = nodeId
+		_ = db.Save(info)
+	} else {
+		_ = db.Update(info)
+	}
+	retData := make(map[string]interface{})
+	retData["id"] = info.Id
+	context.JSON(http.StatusOK, gin.H{
+		"data": retData,
+	})
+}
+
 func (this *obdNodeAccountManager) login(obdClient *ObdNode, msgData string) (retData interface{}, err error) {
 	reqData := &bean.ObdNodeLoginRequest{}
 	err = json.Unmarshal([]byte(msgData), reqData)
@@ -45,6 +84,7 @@ func (this *obdNodeAccountManager) login(obdClient *ObdNode, msgData string) (re
 	if tool.CheckIsString(&reqData.NodeId) == false {
 		return nil, errors.New("error node_id")
 	}
+
 	info := &dao.ObdNodeInfo{}
 	_ = db.Select(q.Eq("NodeId", reqData.NodeId)).First(info)
 	info.LatestLoginAt = time.Now()
@@ -66,6 +106,7 @@ func (this *obdNodeAccountManager) login(obdClient *ObdNode, msgData string) (re
 	retData = "login successfully"
 	return retData, err
 }
+
 func (this *obdNodeAccountManager) logout(obdClient *ObdNode) (err error) {
 	if obdClient.IsLogin == false {
 		return nil
@@ -189,10 +230,32 @@ func (this *obdNodeAccountManager) userLogout(obdClient *ObdNode, msgData string
 	return err
 }
 
-func (this *obdNodeAccountManager) GetNodeDbId(context *gin.Context) {
-	this.mu.Lock()
-	defer this.mu.Unlock()
+func (this *obdNodeAccountManager) GetNodeInfoByP2pAddress(context *gin.Context) {
+	p2pAddress := context.Query("p2pAddress")
+	if tool.CheckIsString(&p2pAddress) == false {
+		context.JSON(http.StatusInternalServerError, gin.H{
+			"msg": "error p2pAddress",
+		})
+		return
+	}
 
+	info := &dao.ObdNodeInfo{}
+	err := db.Select(q.Eq("p2p_address", p2pAddress), q.Eq("is_online", true)).First(info)
+	if err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{
+			"msg": "error p2pAddress",
+		})
+		return
+	}
+
+	retData := make(map[string]interface{})
+	retData["id"] = info.Id
+	context.JSON(http.StatusOK, gin.H{
+		"data": retData,
+	})
+}
+
+func (this *obdNodeAccountManager) GetNodeDbIdByNodeId(context *gin.Context) {
 	nodeId := context.Query("nodeId")
 	if tool.CheckIsString(&nodeId) == false {
 		context.JSON(http.StatusInternalServerError, gin.H{
@@ -218,9 +281,6 @@ func (this *obdNodeAccountManager) GetNodeDbId(context *gin.Context) {
 }
 
 func (this *obdNodeAccountManager) GetUserState(context *gin.Context) {
-	this.mu.Lock()
-	defer this.mu.Unlock()
-
 	reqData := &bean.ObdNodeUserLoginRequest{}
 	reqData.UserId = context.Query("userId")
 	if tool.CheckIsString(&reqData.UserId) == false {
@@ -242,9 +302,6 @@ func (this *obdNodeAccountManager) GetUserState(context *gin.Context) {
 }
 
 func (this *obdNodeAccountManager) GetAllUsers(context *gin.Context) {
-	this.mu.Lock()
-	defer this.mu.Unlock()
-
 	pageNumStr := context.Query("pageNum")
 	pageNum, _ := strconv.Atoi(pageNumStr)
 	if pageNum <= 0 {
@@ -278,9 +335,6 @@ func (this *obdNodeAccountManager) GetAllUsers(context *gin.Context) {
 	})
 }
 func (this *obdNodeAccountManager) GetAllObdNodes(context *gin.Context) {
-	this.mu.Lock()
-	defer this.mu.Unlock()
-
 	pageNumStr := context.Query("pageNum")
 	pageNum, _ := strconv.Atoi(pageNumStr)
 	if pageNum <= 0 {

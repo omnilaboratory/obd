@@ -163,7 +163,7 @@ func GetMacAddrs() (macAddrs string) {
 // get obd node id
 func GetObdNodeId() string {
 	source := GetMacAddrs() + ":" + strconv.Itoa(config.ServerPort)
-	return SignMsgWithSha256([]byte(source))
+	return SignMsgWithSha256([]byte(source)) + config.ChainNode_Type
 }
 
 // get tracker node id

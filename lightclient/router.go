@@ -3,11 +3,12 @@ package lightclient
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
+	"github.com/omnilaboratory/obd/bean"
+	"github.com/omnilaboratory/obd/config"
 	"github.com/satori/go.uuid"
-	"github.com/tidwall/gjson"
 	"google.golang.org/grpc"
-	"log"
 	"net/http"
+	"strconv"
 )
 
 func InitRouter(conn *grpc.ClientConn) *gin.Engine {
@@ -17,20 +18,11 @@ func InitRouter(conn *grpc.ClientConn) *gin.Engine {
 	router.Use(gin.Recovery())
 
 	go globalWsClientManager.Start()
-	router.GET("/ws", wsClientConnect)
+	bean.MyObdNodeInfo.WebsocketLink = "ws://" + config.P2P_hostIp + ":" + strconv.Itoa(config.ServerPort) + "/ws" + config.ChainNode_Type
+	router.GET("/ws"+config.ChainNode_Type, wsClientConnect)
 
 	return router
 
-}
-
-func handlerRpcReq(c *gin.Context) {
-	bytes, _ := c.GetRawData()
-	log.Println(string(bytes))
-	parse := gjson.Parse(string(bytes))
-	log.Println(parse)
-	c.JSON(http.StatusOK, gin.H{
-		"result": parse.Raw,
-	})
 }
 
 func wsClientConnect(c *gin.Context) {

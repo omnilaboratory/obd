@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
+	"github.com/omnilaboratory/obd/rpc"
 	"github.com/omnilaboratory/obd/tracker/service"
 	"github.com/satori/go.uuid"
+	"github.com/tidwall/gjson"
 	"net/http"
 	"strings"
 )
@@ -16,6 +18,10 @@ func InitRouter() *gin.Engine {
 	router.Use(gin.Logger())
 	router.Use(gin.Recovery())
 	router.Use(cors())
+	err := getBtcChainInfo()
+	if err != nil {
+		return nil
+	}
 	go service.ObdNodeManager.TrackerStart()
 	router.GET("/ws", wsClientConnect)
 
@@ -23,8 +29,10 @@ func InitRouter() *gin.Engine {
 	{
 		apiv1.GET("/getHtlcTxState", service.HtlcService.GetHtlcCurrState)
 		apiv1.GET("/getChannelState", service.ChannelService.GetChannelState)
+		apiv1.GET("/checkChainType", service.NodeAccountService.InitNodeAndCheckChainType)
 		apiv1.GET("/getUserState", service.NodeAccountService.GetUserState)
-		apiv1.GET("/getNodeDbId", service.NodeAccountService.GetNodeDbId)
+		apiv1.GET("/getNodeDbId", service.NodeAccountService.GetNodeDbIdByNodeId)
+		apiv1.GET("/getNodeInfoByP2pAddress", service.NodeAccountService.GetNodeInfoByP2pAddress)
 	}
 	apiv2 := router.Group("/api/common")
 	{
@@ -34,6 +42,15 @@ func InitRouter() *gin.Engine {
 	}
 
 	return router
+}
+
+func getBtcChainInfo() (err error) {
+	result, err := rpc.NewClient().GetBlockChainInfo()
+	if err != nil {
+		return err
+	}
+	service.ChannelService.BtcChainType = gjson.Get(result, "chain").Str
+	return nil
 }
 
 //跨域

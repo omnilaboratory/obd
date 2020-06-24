@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/lestrrat-go/file-rotatelogs"
+	"github.com/omnilaboratory/obd/bean"
 	"github.com/omnilaboratory/obd/config"
 	"github.com/omnilaboratory/obd/lightclient"
 	"github.com/omnilaboratory/obd/rpc"
@@ -49,8 +50,11 @@ func main() {
 		return
 	}
 	//tracker
-	lightclient.ConnectToTracker()
-	log.Println("obd " + tool.GetObdNodeId() + " start at port: " + strconv.Itoa(config.ServerPort))
+	err = lightclient.ConnectToTracker()
+	if err != nil {
+		log.Println(err)
+		return
+	}
 
 	//StartP2PServer
 	err = lightclient.StartP2PServer()
@@ -76,5 +80,8 @@ func main() {
 	go lightclient.SynData()
 	// Timer
 	service.ScheduleService.StartSchedule()
+
+	log.Println("obd " + tool.GetObdNodeId() + " start at  " + config.P2P_hostIp + ":" + strconv.Itoa(config.ServerPort) + " in " + config.ChainNode_Type)
+	log.Println("wsAddress: " + bean.MyObdNodeInfo.WebsocketLink)
 	log.Fatal(server.ListenAndServe())
 }
