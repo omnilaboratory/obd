@@ -124,6 +124,7 @@ func SynData() {
 }
 
 func httpCheckChainTypeByTracker() (nodeId int) {
+	bean.MyObdNodeInfo.TrackerNodeId = tool.GetObdNodeId()
 	url := "http://" + config.TrackerHost + "/api/v1/checkChainType?nodeId=" + tool.GetObdNodeId() + "&chainType=" + config.ChainNode_Type
 	resp, err := http.Get(url)
 	if err != nil {
