@@ -12,6 +12,9 @@ import (
 )
 
 //https://developer.bitcoin.org/reference/rpc/index.html
+func (client *Client) GetBlockChainInfo() (result string, err error) {
+	return client.send("getblockchaininfo", nil)
+}
 func (client *Client) CreateMultiSig(minSignNum int, keys []string) (result string, err error) {
 	return client.send("createmultisig", []interface{}{minSignNum, keys})
 }

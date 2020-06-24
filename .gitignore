@@ -4,3 +4,5 @@
 /.idea
 /log
 /tracker_linux_amd64
+/obd_darwin_amd64
+/obd_windows_amd64.exe

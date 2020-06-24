@@ -58,20 +58,6 @@ func generatePrivateKey() (crypto.PrivKey, error) {
 	return privateKey, nil
 }
 
-func httpGetNodeIdFromTracker() (nodeId int) {
-	url := "http://" + config.TrackerHost + "/api/v1/getNodeDbId?nodeId=" + tool.GetObdNodeId()
-	resp, err := http.Get(url)
-	if err != nil {
-		return 0
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode == 200 {
-		body, _ := ioutil.ReadAll(resp.Body)
-		return int(gjson.Get(string(body), "data").Get("id").Int())
-	}
-	return 0
-}
-
 func StartP2PServer() (err error) {
 	prvKey, err := generatePrivateKey()
 	if err != nil {
@@ -96,7 +82,7 @@ func StartP2PServer() (err error) {
 	service.P2PLocalPeerId = P2PLocalPeerId
 
 	localServerDest = fmt.Sprintf("/ip4/%s/tcp/%v/p2p/%s", config.P2P_hostIp, config.P2P_sourcePort, host.ID().Pretty())
-	log.Println("localServerDest: " + localServerDest)
+	bean.MyObdNodeInfo.P2pAddress = localServerDest
 
 	//把自己也作为终点放进去，阻止自己连接自己
 	p2pChannelMap[P2PLocalPeerId] = &P2PChannel{
@@ -111,6 +97,11 @@ func ConnP2PServer(dest string) (string, error) {
 	if tool.CheckIsString(&dest) == false {
 		log.Println("wrong dest address")
 		return "", errors.New("wrong dest address")
+	}
+
+	id := httpGetNodeInfoByP2pAddressFromTracker(dest)
+	if id == 0 {
+		return "", errors.New("target dest address not exist or online")
 	}
 
 	sourceMultiAddr, _ := multiaddr.NewMultiaddr(fmt.Sprintf("/ip4/0.0.0.0/tcp/%d", config.P2P_sourcePort))
@@ -214,4 +205,33 @@ func SendP2PMsg(remoteP2PPeerId string, msg string) error {
 		_ = channel.rw.Flush()
 	}
 	return nil
+}
+
+func httpGetNodeInfoByP2pAddressFromTracker(p2pAddress string) (id int) {
+	url := "http://" + config.TrackerHost + "/api/v1/getNodeInfoByP2pAddress?p2pAddress=" + p2pAddress
+	log.Println(url)
+	resp, err := http.Get(url)
+	if err != nil {
+		return 0
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode == 200 {
+		body, _ := ioutil.ReadAll(resp.Body)
+		return int(gjson.Get(string(body), "data").Get("id").Int())
+	}
+	return 0
+}
+
+func httpGetNodeIdFromTracker() (nodeId int) {
+	url := "http://" + config.TrackerHost + "/api/v1/getNodeDbId?nodeId=" + tool.GetObdNodeId()
+	resp, err := http.Get(url)
+	if err != nil {
+		return 0
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode == 200 {
+		body, _ := ioutil.ReadAll(resp.Body)
+		return int(gjson.Get(string(body), "data").Get("id").Int())
+	}
+	return 0
 }
