@@ -6,14 +6,17 @@ import (
 )
 
 type User struct {
-	Id int `storm:"id,increment" `
-	bean.User
-	CurrState       int       `json:"curr_state"`
-	CreateAt        time.Time `json:"create_at"`
-	LatestLoginTime time.Time `json:"latest_login_time"`
+	Id              int            `storm:"id,increment" json:"id" `
+	PeerId          string         `json:"peer_id"`
+	P2PLocalAddress string         `json:"p2p_local_address"`
+	P2PLocalPeerId  string         `json:"p2p_local_peer_id"`
+	CurrAddrIndex   int            `json:"curr_addr_index"`
+	CurrState       bean.UserState `json:"curr_state"`
+	CreateAt        time.Time      `json:"create_at"`
+	LatestLoginTime time.Time      `json:"latest_login_time"`
 }
 type UserLoginLog struct {
-	Id       int       `storm:"id,increment" `
+	Id       int       `storm:"id,increment" json:"id" `
 	PeerId   string    `json:"peer_id"`
 	LoginAt  time.Time `json:"login_at"`
 	LogoutAt time.Time `json:"logout_at"`

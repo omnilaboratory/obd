@@ -69,18 +69,18 @@ func (service *UserManager) UserLogin(user *bean.User) error {
 	err = userDB.Select(q.Eq("PeerId", user.PeerId)).First(&node)
 	if node.Id == 0 {
 		node = dao.User{}
+		node.PeerId = user.PeerId
 		node.P2PLocalPeerId = user.P2PLocalPeerId
 		node.P2PLocalAddress = user.P2PLocalAddress
-		node.PeerId = user.PeerId
-		node.State = bean.UserState_OnLine
+		node.CurrState = bean.UserState_OnLine
 		node.CreateAt = time.Now()
 		node.LatestLoginTime = node.CreateAt
-		node.CurrAddrIndex = -1
+		node.CurrAddrIndex = 0
 		err = userDB.Save(&node)
 	} else {
 		node.P2PLocalPeerId = user.P2PLocalPeerId
 		node.P2PLocalAddress = user.P2PLocalAddress
-		node.State = bean.UserState_OnLine
+		node.CurrState = bean.UserState_OnLine
 		node.LatestLoginTime = time.Now()
 		err = userDB.Update(&node)
 	}
@@ -91,16 +91,12 @@ func (service *UserManager) UserLogin(user *bean.User) error {
 		return err
 	}
 
-	//temp := &dao.CommitmentTransaction{}
-	//err = userDB.One("Id", 13, temp)
-	//err = userDB.DeleteStruct(temp)
-
 	loginLog := &dao.UserLoginLog{}
 	loginLog.PeerId = user.PeerId
 	loginLog.LoginAt = time.Now()
 	_ = userDB.Save(loginLog)
 
-	user.State = node.State
+	user.State = node.CurrState
 	user.CurrAddrIndex = node.CurrAddrIndex
 	user.ChangeExtKey = changeExtKey
 	user.Db = userDB
@@ -117,11 +113,12 @@ func (service *UserManager) UserLogout(user *bean.User) error {
 		return err
 	}
 	node.CurrAddrIndex = user.CurrAddrIndex
-	node.State = bean.UserState_Offline
+	node.CurrState = bean.UserState_Offline
 	err = user.Db.Update(&node)
 	if err != nil {
 		log.Println(err)
 	}
+	_ = user.Db.UpdateField(&node, "CurrState", bean.UserState_Offline)
 	loginLog := &dao.UserLoginLog{}
 	_ = user.Db.Select(q.Eq("PeerId", user.PeerId)).OrderBy("LoginAt").Reverse().First(loginLog)
 	if loginLog.Id > 0 {

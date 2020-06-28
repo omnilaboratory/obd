@@ -27,6 +27,7 @@ import (
 
 var conn *websocket.Conn
 var interrupt chan os.Signal
+var ticker3m *time.Ticker
 
 func ConnectToTracker() (err error) {
 	interrupt = make(chan os.Signal, 1)
@@ -45,7 +46,9 @@ func ConnectToTracker() (err error) {
 	if nodeId == 0 {
 		return errors.New("fail to login tracker")
 	}
-	startSchedule()
+	if ticker3m != nil {
+		startSchedule()
+	}
 	return nil
 }
 
@@ -244,15 +247,16 @@ func sendMsgToTracker(msg string) {
 }
 
 func startSchedule() {
+
 	go func() {
-		ticker10m := time.NewTicker(3 * time.Minute)
-		defer ticker10m.Stop()
+		ticker3m = time.NewTicker(3 * time.Minute)
+		defer ticker3m.Stop()
 		for {
 			select {
-			case t := <-ticker10m.C:
+			case t := <-ticker3m.C:
 				log.Println("timer 3min", t)
 				if conn == nil {
-					ConnectToTracker()
+					_ = ConnectToTracker()
 				}
 			}
 		}
