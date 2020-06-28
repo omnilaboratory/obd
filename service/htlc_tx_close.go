@@ -625,13 +625,13 @@ func (service *htlcCloseTxManager) AfterBobCloseHTLCSigned_AtAliceSide(data stri
 
 	var signedToCounterpartyHex = jsonObj.CloserSignedToCounterpartyTxHex
 	if tool.CheckIsString(&signedToCounterpartyHex) == false {
-		err = errors.New("wrong signedToOtherHex")
+		err = errors.New("wrong signedToCounterpartyHex")
 		log.Println(err)
 		return nil, false, err
 	}
 	toCounterpartyTxid, err := rpcClient.TestMemPoolAccept(signedToCounterpartyHex)
 	if err != nil {
-		err = errors.New("wrong signedToOtherHex")
+		err = errors.New("wrong signedToCounterpartyHex")
 		log.Println(err)
 		return nil, false, err
 	}

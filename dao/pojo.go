@@ -44,6 +44,7 @@ type ChannelInfo struct {
 	ChannelAddressRedeemScript string       `json:"channel_address_redeem_script"`
 	ChannelAddressScriptPubKey string       `json:"channel_address_script_pub_key"`
 	PropertyId                 int64        `json:"property_id"`
+	Amount                     float64      `json:"amount"`
 	CurrState                  ChannelState `json:"curr_state"`
 	RefuseReason               string       `json:"refuse_reason"`
 	CreateBy                   string       `json:"create_by"`

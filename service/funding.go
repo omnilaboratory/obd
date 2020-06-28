@@ -753,6 +753,7 @@ func (service *fundingTransactionManager) AssetFundingCreated(msg bean.RequestMe
 
 	channelInfo.ChannelId = fundingTransaction.ChannelId
 	channelInfo.PropertyId = propertyId
+	channelInfo.Amount = amountA
 	channelInfo.FundingAddress = fundingTransaction.FunderAddress
 
 	var commitmentTxInfo *dao.CommitmentTransaction
@@ -1174,6 +1175,7 @@ func (service *fundingTransactionManager) AssetFundingSigned(jsonData string, si
 	//endregion create RD tx for alice
 
 	channelInfo.PropertyId = fundingTransaction.PropertyId
+	channelInfo.Amount = funderAmount
 	channelInfo.FundingAddress = fundingTransaction.FunderAddress
 	// region create BR1b tx  for bob
 	lastCommitmentTx := &dao.CommitmentTransaction{}
