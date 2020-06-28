@@ -173,14 +173,17 @@ func (client *Client) OmniGetAllBalancesForAddress(address string) (result strin
 
 //List wallet transactions, optionally filtered by an address and block boundaries.
 //https://github.com/OmniLayer/omnicore/blob/master/src/omnicore/doc/rpc-api.md#omni_listtransactions
-func (client *Client) OmniListTransactions(count int, skip int) (result string, err error) {
+func (client *Client) OmniListTransactions(address string, count int, skip int) (result string, err error) {
+	if tool.CheckIsString(&address) == false {
+		address = "*"
+	}
 	if count < 0 {
 		count = 10
 	}
 	if skip < 0 {
 		skip = 0
 	}
-	return client.send("omni_listtransactions", []interface{}{"*", count, skip})
+	return client.send("omni_listtransactions", []interface{}{address, count, skip})
 }
 
 func (client *Client) omniCreatePayloadSimpleSend(propertyId int64, amount float64) (result string, err error) {

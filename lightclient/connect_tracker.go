@@ -62,7 +62,7 @@ func SynData() {
 				conn = nil
 				return
 			}
-			log.Println("recv from tracker: " + string(message))
+			//log.Println("recv from tracker: " + string(message))
 
 			replyMessage := bean.ReplyMessage{}
 			err = json.Unmarshal(message, &replyMessage)

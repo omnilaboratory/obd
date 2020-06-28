@@ -31,8 +31,6 @@ func (service *scheduleManager) StartSchedule() {
 				log.Println("timer 10m", t)
 				sendRdTx()
 				checkBR()
-				//case t := <-ticker.C:
-				//	log.Println("timer 10s ", t)
 			}
 		}
 	}()
@@ -64,7 +62,7 @@ func checkBR() {
 							}
 							balance := gjson.Get(result, "balance").Float()
 							if balance < channelInfo.Amount {
-								transactionsStr, err := rpcClient.OmniListTransactions(100, 3)
+								transactionsStr, err := rpcClient.OmniListTransactions(channelInfo.ChannelAddress, 100, 1)
 								if err != nil {
 									continue
 								}
