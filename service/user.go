@@ -129,21 +129,6 @@ func (service *UserManager) UserLogout(user *bean.User) error {
 	return user.Db.Close()
 }
 
-func (service *UserManager) UserInfo(email string) (user *dao.User, e error) {
-
-	db, e := dao.DBService.GetGlobalDB()
-	if e != nil {
-		return nil, errors.New("db is not exist")
-	}
-
-	var node dao.User
-	e = db.One("PeerId", email, &node)
-	if node.Id == 0 {
-		return nil, errors.New("user not exist")
-	}
-	return &node, nil
-}
-
 func noticeTrackerUserLogin(user dao.User) {
 	loginRequest := trackerBean.ObdNodeUserLoginRequest{}
 	loginRequest.UserId = user.PeerId

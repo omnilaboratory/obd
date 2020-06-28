@@ -16,7 +16,7 @@ func TestCreateCustomMuiltAddress(t *testing.T) {
 
 	Start()
 
-	result, err := rpcClient.OmniListTransactions("2NGHZ9JufB156TNGjoxn3hywNDF8ABfKw8M", 100, 0)
+	result, err := rpcClient.ListReceivedByAddress("2NCoYSdWujZfwE5tKT9fFdTqce4u8KJzYjB")
 	log.Println(err)
 	log.Println(result)
 

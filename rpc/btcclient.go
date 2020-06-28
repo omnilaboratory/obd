@@ -38,6 +38,11 @@ func (client *Client) GetTransactionById(txid string) (result string, err error)
 	return client.send("gettransaction", []interface{}{txid})
 }
 
+func (client *Client) ListReceivedByAddress(address string) (result string, err error) {
+	_, _ = client.ValidateAddress(address)
+	return client.send("listreceivedbyaddress", []interface{}{0, false, true, address})
+}
+
 //https://bitcoin.org/en/developer-reference#testmempoolaccept
 func (client *Client) TestMemPoolAccept(signedhex string) (result string, err error) {
 	rawtxs := make([]string, 0)

@@ -132,8 +132,21 @@ func (this *channelManager) BobAcceptChannel(jsonData string, user *bean.User) (
 		}
 
 		channelAddress := gjson.Get(multiSig, "address").String()
+
+		existAddress := false
+		result, err := rpcClient.ListReceivedByAddress(channelAddress)
+		if err == nil {
+			array := gjson.Parse(result).Array()
+			if len(array) > 0 {
+				existAddress = true
+			}
+		}
+
 		count, _ := user.Db.Select(q.Eq("ChannelAddress", channelAddress)).Count(&dao.ChannelInfo{})
-		if count == 0 {
+		if count > 0 {
+			existAddress = true
+		}
+		if existAddress == false {
 			channelInfo.ChannelAddress = gjson.Get(multiSig, "address").String()
 			channelInfo.ChannelAddressRedeemScript = gjson.Get(multiSig, "redeemScript").String()
 
@@ -145,6 +158,7 @@ func (this *channelManager) BobAcceptChannel(jsonData string, user *bean.User) (
 			channelInfo.ChannelAddressScriptPubKey = gjson.Parse(addrInfoStr).Get("scriptPubKey").String()
 			channelInfo.CurrState = dao.ChannelState_WaitFundAsset
 		} else {
+
 			return nil, errors.New("the generated address " + channelAddress + " has been exist, please change your pubKey " + reqData.FundingPubKey)
 		}
 	} else {
