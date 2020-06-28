@@ -616,20 +616,20 @@ func (service *htlcCloseTxManager) AfterBobCloseHTLCSigned_AtAliceSide(data stri
 		log.Println(err)
 		return nil, false, err
 	}
-	_, err = rpcClient.TestMemPoolAccept(signedRsmcHex)
+	rsmcTxid, err := rpcClient.TestMemPoolAccept(signedRsmcHex)
 	if err != nil {
 		err = errors.New("wrong signedRsmcHex")
 		log.Println(err)
 		return nil, false, err
 	}
 
-	var signedToOtherHex = jsonObj.CloserSignedToCounterpartyTxHex
-	if tool.CheckIsString(&signedToOtherHex) == false {
+	var signedToCounterpartyHex = jsonObj.CloserSignedToCounterpartyTxHex
+	if tool.CheckIsString(&signedToCounterpartyHex) == false {
 		err = errors.New("wrong signedToOtherHex")
 		log.Println(err)
 		return nil, false, err
 	}
-	_, err = rpcClient.TestMemPoolAccept(signedToOtherHex)
+	toCounterpartyTxid, err := rpcClient.TestMemPoolAccept(signedToCounterpartyHex)
 	if err != nil {
 		err = errors.New("wrong signedToOtherHex")
 		log.Println(err)
@@ -763,7 +763,9 @@ func (service *htlcCloseTxManager) AfterBobCloseHTLCSigned_AtAliceSide(data stri
 	latestCommitmentTxInfo.SignAt = time.Now()
 	latestCommitmentTxInfo.CurrState = dao.TxInfoState_CreateAndSign
 	latestCommitmentTxInfo.RSMCTxHex = signedRsmcHex
-	latestCommitmentTxInfo.ToCounterpartyTxHex = signedToOtherHex
+	latestCommitmentTxInfo.RSMCTxid = rsmcTxid
+	latestCommitmentTxInfo.ToCounterpartyTxHex = signedToCounterpartyHex
+	latestCommitmentTxInfo.ToCounterpartyTxid = toCounterpartyTxid
 	bytes, err := json.Marshal(latestCommitmentTxInfo)
 	msgHash := tool.SignMsgWithSha256(bytes)
 	latestCommitmentTxInfo.CurrHash = msgHash

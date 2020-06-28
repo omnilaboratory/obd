@@ -2,7 +2,6 @@ package service
 
 import (
 	"github.com/asdine/storm/q"
-	"github.com/btcsuite/btcutil/bech32"
 	"github.com/omnilaboratory/obd/config"
 	"github.com/omnilaboratory/obd/dao"
 	"github.com/omnilaboratory/obd/rpc"
@@ -15,16 +14,11 @@ import (
 
 func TestCreateCustomMuiltAddress(t *testing.T) {
 
-	data := []byte("10")
-	conv, err := bech32.ConvertBits(data, 8, 5, true)
-	encode, err := bech32.Encode("500p", conv)
-	log.Println(err)
-	log.Println(encode)
+	Start()
 
-	decode, bytes, err := bech32.Decode(encode)
+	result, err := rpcClient.TestMemPoolAccept("0200000001284b260d2cdf4dab0d98b09e070e220fd35335d1320e10e366be233f088fce1700000000d90047304402204474bc24dfaedb3265c9b794328e0616ca929484b58d8316d5e5021d2700c50c02203de25c92995a1e007d6d00e51138a1b50f1a46251bbbb7caffbe0ee91b98b99401473044022076795e3bd38ecbdd88bc058915358f2aa7981578fe7dbd562df892ac06e14cf0022036cece6f4a7e12f3b9c85824afecab91cb59d69c0dc98d874203a7339eec04b30147522102c57b02d24356e1d31d34d2e3a09f7d68a4bdec6c0556595bb6391ce5d6d4fc6621031d9690f47b555ca1fd956671236ee2823bd8ee5eb164ee50c452908d308b712352aeffffffff034c4000000000000017a91450637bd5ddd2e045e6a7d66907eec41bdb9cd144870000000000000000166a146f6d6e690000000000000089000000009af8da001c0200000000000017a91450637bd5ddd2e045e6a7d66907eec41bdb9cd1448700000000")
 	log.Println(err)
-	log.Println(string(bytes))
-	log.Println(decode)
+	log.Println(result)
 
 }
 

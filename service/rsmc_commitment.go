@@ -228,7 +228,7 @@ func (this *commitmentTxManager) AfterBobSignCommitmentTrancationAtAliceSide(dat
 		log.Println(err)
 		return nil, false, err
 	}
-	_, err = rpcClient.TestMemPoolAccept(signedRsmcHex)
+	rsmcTxid, err := rpcClient.TestMemPoolAccept(signedRsmcHex)
 	if err != nil {
 		err = errors.New("wrong signedRsmcHex")
 		log.Println(err)
@@ -241,7 +241,7 @@ func (this *commitmentTxManager) AfterBobSignCommitmentTrancationAtAliceSide(dat
 		log.Println(err)
 		return nil, false, err
 	}
-	_, err = rpcClient.TestMemPoolAccept(signedToOtherHex)
+	toCounterpartyTxid, err := rpcClient.TestMemPoolAccept(signedToOtherHex)
 	if err != nil {
 		err = errors.New("wrong signedToOtherHex")
 		log.Println(err)
@@ -322,10 +322,13 @@ func (this *commitmentTxManager) AfterBobSignCommitmentTrancationAtAliceSide(dat
 	// endregion
 
 	//更新alice的当前承诺交易
+
 	latestCommitmentTxInfo.SignAt = time.Now()
 	latestCommitmentTxInfo.CurrState = dao.TxInfoState_CreateAndSign
 	latestCommitmentTxInfo.RSMCTxHex = signedRsmcHex
+	latestCommitmentTxInfo.RSMCTxid = rsmcTxid
 	latestCommitmentTxInfo.ToCounterpartyTxHex = signedToOtherHex
+	latestCommitmentTxInfo.ToCounterpartyTxid = toCounterpartyTxid
 	bytes, err := json.Marshal(latestCommitmentTxInfo)
 	msgHash := tool.SignMsgWithSha256(bytes)
 	latestCommitmentTxInfo.CurrHash = msgHash

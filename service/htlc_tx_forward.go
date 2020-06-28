@@ -1585,20 +1585,20 @@ func checkHexAndUpdateC3aOn42Protocal(tx storm.Node, jsonObj bean.AfterBobSignAd
 
 	//region 1、检测 signedToOtherHex
 	if len(commitmentTransaction.ToCounterpartyTxHex) > 0 {
-		signedToOtherHex := jsonObj.PayerSignedToCounterpartyHex
-		if tool.CheckIsString(&signedToOtherHex) == false {
+		signedToCounterpartyHex := jsonObj.PayerSignedToCounterpartyHex
+		if tool.CheckIsString(&signedToCounterpartyHex) == false {
 			err = errors.New("signedToOtherHex is empty at 41 protocol")
 			log.Println(err)
 			return nil, true, err
 		}
-		_, err = rpcClient.TestMemPoolAccept(signedToOtherHex)
+		_, err = rpcClient.TestMemPoolAccept(signedToCounterpartyHex)
 		if err != nil {
 			err = errors.New("wrong signedToOtherHex at 41 protocol")
 			log.Println(err)
 			return nil, true, err
 		}
 
-		result, err := rpcClient.OmniDecodeTransaction(signedToOtherHex)
+		result, err := rpcClient.OmniDecodeTransaction(signedToCounterpartyHex)
 		if err != nil {
 			return nil, true, err
 		}
@@ -1624,7 +1624,7 @@ func checkHexAndUpdateC3aOn42Protocal(tx storm.Node, jsonObj bean.AfterBobSignAd
 			log.Println(err)
 			return nil, true, err
 		}
-		commitmentTransaction.ToCounterpartyTxHex = signedToOtherHex
+		commitmentTransaction.ToCounterpartyTxHex = signedToCounterpartyHex
 		commitmentTransaction.ToCounterpartyTxid = hexJsonObj.Get("txid").String()
 	}
 	//endregion
