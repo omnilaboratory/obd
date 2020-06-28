@@ -61,9 +61,9 @@ func (client *Client) Read() {
 		log.Println("request data: ", string(dataReq))
 		parse := gjson.Parse(string(dataReq))
 
-		if parse.Value() == nil || parse.Exists() == false {
+		if parse.Value() == nil || parse.Exists() == false || parse.IsObject() == false {
 			log.Println("wrong json input")
-			client.sendToMyself(enum.MsgType_Error_0, false, string(dataReq))
+			client.sendToMyself(enum.MsgType_Error_0, false, "wrong json input")
 			continue
 		}
 
