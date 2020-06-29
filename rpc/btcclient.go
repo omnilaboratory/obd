@@ -9,6 +9,7 @@ import (
 	"log"
 	"math"
 	"strconv"
+	"time"
 )
 
 //https://developer.bitcoin.org/reference/rpc/index.html
@@ -307,6 +308,7 @@ func (client *Client) BtcCreateAndSignRawTransaction(fromBitCoinAddress string, 
 
 //创建btc的raw交易：输入为未广播的预交易,输出为交易hex，支持单签和多签，如果是单签，就需要后续步骤再签名
 func (client *Client) BtcCreateAndSignRawTransactionForUnsendInputTx(fromBitCoinAddress string, privkeys []string, inputItems []TransactionInputItem, outputItems []TransactionOutputItem, minerFee float64, sequence int, redeemScript *string) (txid string, hex string, err error) {
+	beginTime := time.Now()
 	if len(fromBitCoinAddress) < 1 {
 		return "", "", errors.New("fromBitCoinAddress is empty")
 	}
@@ -420,6 +422,8 @@ func (client *Client) BtcCreateAndSignRawTransactionForUnsendInputTx(fromBitCoin
 	decodeHex, _ = client.DecodeRawTransaction(hex)
 	txid = gjson.Get(decodeHex, "txid").String()
 	log.Println("SignRawTransactionWithKey DecodeRawTransaction", decodeHex)
+	log.Println("endTime.Sub(beginTime)", time.Now().Sub(beginTime).String())
+
 	return txid, hex, err
 }
 

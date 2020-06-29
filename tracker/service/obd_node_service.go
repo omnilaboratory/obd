@@ -240,7 +240,7 @@ func (this *obdNodeAccountManager) GetNodeInfoByP2pAddress(context *gin.Context)
 	}
 
 	info := &dao.ObdNodeInfo{}
-	err := db.Select(q.Eq("p2p_address", p2pAddress), q.Eq("is_online", true)).First(info)
+	err := db.Select(q.Eq("P2PAddress", p2pAddress), q.Eq("IsOnline", true)).First(info)
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{
 			"msg": "error p2pAddress",

@@ -59,8 +59,17 @@ func (client *Client) Read() {
 
 		var msg bean.RequestMessage
 		log.Println("request data: ", string(dataReq))
-		parse := gjson.Parse(string(dataReq))
 
+		temp := make(map[string]interface{})
+		err = json.Unmarshal(dataReq, &temp)
+		if err != nil {
+			log.Println(err)
+			client.sendToMyself(enum.MsgType_Error_0, false, "error json format")
+			continue
+		}
+		temp = nil
+
+		parse := gjson.Parse(string(dataReq))
 		if parse.Value() == nil || parse.Exists() == false || parse.IsObject() == false {
 			log.Println("wrong json input")
 			client.sendToMyself(enum.MsgType_Error_0, false, "wrong json input")

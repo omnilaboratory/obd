@@ -9,6 +9,7 @@ import (
 	"log"
 	"strconv"
 	"strings"
+	"time"
 )
 
 //https://github.com/OmniLayer/omnicore/blob/master/src/omnicore/doc/rpc-api.md
@@ -224,6 +225,8 @@ func (client *Client) OmniRawTransaction(fromBitCoinAddress string, privkeys []s
 }
 
 func (client *Client) OmniCreateAndSignRawTransaction(fromBitCoinAddress string, privkeys []string, toBitCoinAddress string, propertyId int64, amount float64, minerFee float64, sequence int) (txid, hex string, err error) {
+	beginTime := time.Now()
+	log.Println("OmniCreateAndSignRawTransaction beginTime", beginTime.String())
 	if tool.CheckIsString(&fromBitCoinAddress) == false {
 		return "", "", errors.New("fromBitCoinAddress is empty")
 	}
@@ -347,12 +350,14 @@ func (client *Client) OmniCreateAndSignRawTransaction(fromBitCoinAddress string,
 	} else {
 		log.Println(err)
 	}
-
+	log.Println("OmniCreateAndSignRawTransaction endTime.Sub(beginTime)", time.Now().Sub(beginTime).String())
 	return txid, hex, nil
 }
 
 // From channelAddress to temp multi address, to Create CommitmentTx
 func (client *Client) OmniCreateAndSignRawTransactionUseSingleInput(txType int, fromBitCoinAddress string, privkeys []string, toBitCoinAddress string, propertyId int64, amount float64, minerFee float64, sequence int, redeemScript *string, usedTxid string) (txid, hex string, currUseTxid string, err error) {
+	beginTime := time.Now()
+	log.Println("OmniCreateAndSignRawTransactionUseSingleInput beginTime", beginTime.String())
 	if tool.CheckIsString(&fromBitCoinAddress) == false {
 		return "", "", "", errors.New("fromBitCoinAddress is empty")
 	}
@@ -493,11 +498,12 @@ func (client *Client) OmniCreateAndSignRawTransactionUseSingleInput(txType int, 
 	} else {
 		log.Println(err)
 	}
-
+	log.Println("OmniCreateAndSignRawTransaction endTime.Sub(beginTime)", time.Now().Sub(beginTime).String())
 	return txid, hex, currUseTxid, nil
 }
 
 func (client *Client) OmniCreateAndSignRawTransactionUseRestInput(txType int, fromBitCoinAddress string, usedTxid string, privkeys []string, toBitCoinAddress, changeToAddress string, propertyId int64, amount float64, minerFee float64, sequence int, redeemScript *string) (txid, hex string, err error) {
+	beginTime := time.Now()
 	if tool.CheckIsString(&fromBitCoinAddress) == false {
 		return "", "", errors.New("fromBitCoinAddress is empty")
 	}
@@ -634,7 +640,7 @@ func (client *Client) OmniCreateAndSignRawTransactionUseRestInput(txType int, fr
 	} else {
 		log.Println(err)
 	}
-
+	log.Println("OmniCreateAndSignRawTransactionUseRestInput endTime.Sub(beginTime)", time.Now().Sub(beginTime).String())
 	return txid, hex, nil
 }
 
