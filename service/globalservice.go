@@ -650,7 +650,7 @@ func sendMsgToTracker(msgType enum.MsgType, data interface{}) {
 	dataStr := string(dataBytes)
 	parse := gjson.Parse(dataStr)
 	result := parse.Value()
-	if result == nil || parse.Exists() == false {
+	if result == nil || parse.Exists() == false || parse.IsObject() == false {
 		result = dataStr
 	}
 	message.Data = result
