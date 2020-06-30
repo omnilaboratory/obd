@@ -314,6 +314,8 @@ func (this *commitmentTxManager) AfterBobSignCommitmentTrancationAtAliceSide(dat
 	}
 	//endregion
 
+	latestCommitmentTxInfo.RSMCTxHex = signedRsmcHex
+	latestCommitmentTxInfo.RSMCTxid = gjson.Parse(rsmcTxid).Array()[0].Get("txid").Str
 	// region 对自己的RD 二次签名
 	err = signRdTx(tx, channelInfo, signedRsmcHex, aliceRdHex, latestCommitmentTxInfo, myChannelAddress, user)
 	if err != nil {
@@ -322,13 +324,11 @@ func (this *commitmentTxManager) AfterBobSignCommitmentTrancationAtAliceSide(dat
 	// endregion
 
 	//更新alice的当前承诺交易
-
-	latestCommitmentTxInfo.SignAt = time.Now()
 	latestCommitmentTxInfo.CurrState = dao.TxInfoState_CreateAndSign
-	latestCommitmentTxInfo.RSMCTxHex = signedRsmcHex
-	latestCommitmentTxInfo.RSMCTxid = gjson.Parse(rsmcTxid).Array()[0].Get("txid").Str
 	latestCommitmentTxInfo.ToCounterpartyTxHex = signedToOtherHex
 	latestCommitmentTxInfo.ToCounterpartyTxid = gjson.Parse(toCounterpartyTxid).Array()[0].Get("txid").Str
+	latestCommitmentTxInfo.SignAt = time.Now()
+
 	bytes, err := json.Marshal(latestCommitmentTxInfo)
 	msgHash := tool.SignMsgWithSha256(bytes)
 	latestCommitmentTxInfo.CurrHash = msgHash
@@ -860,18 +860,18 @@ func (this *commitmentTxSignedManager) AfterAliceSignCommitmentTranctionAtBobSid
 		return nil, err
 	}
 
+	latestCommitmentTxInfo.RSMCTxHex = signedRsmcHex
+	latestCommitmentTxInfo.RSMCTxid = gjson.Get(decodeRsmcHex, "txid").Str
 	err = signRdTx(tx, channelInfo, signedRsmcHex, rdHex, latestCommitmentTxInfo, myChannelAddress, user)
 	if err != nil {
 		return nil, err
 	}
 
 	//更新alice的当前承诺交易
-	latestCommitmentTxInfo.SignAt = time.Now()
 	latestCommitmentTxInfo.CurrState = dao.TxInfoState_CreateAndSign
-	latestCommitmentTxInfo.RSMCTxHex = signedRsmcHex
-	latestCommitmentTxInfo.RSMCTxid = gjson.Get(decodeRsmcHex, "txid").Str
 	latestCommitmentTxInfo.ToCounterpartyTxHex = signedToOtherHex
 	latestCommitmentTxInfo.ToCounterpartyTxid = gjson.Get(decodeSignedToOtherHex, "txid").Str
+	latestCommitmentTxInfo.SignAt = time.Now()
 
 	bytes, err := json.Marshal(latestCommitmentTxInfo)
 	msgHash := tool.SignMsgWithSha256(bytes)

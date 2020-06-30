@@ -165,6 +165,7 @@ func createRDTx(owner string, channelInfo *dao.ChannelInfo, commitmentTxInfo *da
 	rda.Owner = owner
 
 	//input
+	rda.InputTxHex = commitmentTxInfo.RSMCTxHex
 	rda.InputTxid = commitmentTxInfo.RSMCTxid
 	rda.InputVout = 0
 	rda.InputAmount = commitmentTxInfo.AmountToRSMC
