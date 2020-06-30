@@ -29,12 +29,12 @@ var TrackerWsConn *websocket.Conn
 
 //for store the privateKey
 var tempAddrPrivateKeyMap = make(map[string]string)
-var OnlineUserMap = make(map[string]bool)
+var OnlineUserMap = make(map[string]*bean.User)
 
 func findUserIsOnline(peerId string) error {
 	if tool.CheckIsString(&peerId) {
 		value, exists := OnlineUserMap[peerId]
-		if exists && value == true {
+		if exists && value != nil {
 			return nil
 		}
 	}

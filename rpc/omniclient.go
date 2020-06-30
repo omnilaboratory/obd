@@ -381,7 +381,7 @@ func (client *Client) OmniCreateAndSignRawTransactionUseSingleInput(txType int, 
 		return "", "", "", err
 	}
 	arrayListUnspent := gjson.Parse(resultListUnspent).Array()
-	log.Println("listunspent", arrayListUnspent)
+	//log.Println("listunspent", arrayListUnspent)
 	inputCount := 3 + txType
 	if len(arrayListUnspent) < inputCount {
 		return "", "", "", errors.New("wrong input num, need " + strconv.Itoa(inputCount) + " input:one for omni token, " + strconv.Itoa(inputCount-1) + "  btc  inputs for miner fee ")
@@ -424,7 +424,7 @@ func (client *Client) OmniCreateAndSignRawTransactionUseSingleInput(txType int, 
 		Add(decimal.NewFromFloat(minerFee)).
 		Round(8).
 		Float64()
-	log.Println("1 balance", balance)
+	//log.Println("1 balance", balance)
 	if balance < out {
 		return "", "", "", errors.New("not enough balance")
 	}
@@ -434,7 +434,7 @@ func (client *Client) OmniCreateAndSignRawTransactionUseSingleInput(txType int, 
 	if err != nil {
 		return "", "", "", err
 	}
-	log.Println("2 payload " + payload)
+	//log.Println("2 payload " + payload)
 
 	outputs := make(map[string]interface{})
 	//3.CreateRawTransaction
@@ -442,21 +442,21 @@ func (client *Client) OmniCreateAndSignRawTransactionUseSingleInput(txType int, 
 	if err != nil {
 		return "", "", "", err
 	}
-	log.Println("3 createrawtransactionStr", createrawtransactionStr)
+	//log.Println("3 createrawtransactionStr", createrawtransactionStr)
 
 	//4.Omni_createrawtx_opreturn
 	opreturn, err := client.omniCreateRawtxOpreturn(createrawtransactionStr, payload)
 	if err != nil {
 		return "", "", "", err
 	}
-	log.Println("4 opreturn", opreturn)
+	//log.Println("4 opreturn", opreturn)
 
 	//5. Omni_createrawtx_reference
 	reference, err := client.omniCreateRawtxReference(opreturn, toBitCoinAddress)
 	if err != nil {
 		return "", "", "", err
 	}
-	log.Println("5 reference", reference)
+	//log.Println("5 reference", reference)
 
 	//6.Omni_createrawtx_change
 	prevtxs := make([]map[string]interface{}, 0, len(inputs))
@@ -487,9 +487,9 @@ func (client *Client) OmniCreateAndSignRawTransactionUseSingleInput(txType int, 
 	}
 
 	hex = gjson.Get(signHex, "hex").String()
-	log.Println("7 SignRawTransactionWithKey", hex)
+	//log.Println("7 SignRawTransactionWithKey", hex)
 	decodeHex, _ := client.DecodeRawTransaction(hex)
-	log.Println("7 DecodeSignRawTransactionWithKey", decodeHex)
+	//log.Println("7 DecodeSignRawTransactionWithKey", decodeHex)
 	txid = gjson.Get(decodeHex, "txid").String()
 
 	result, err := client.OmniDecodeTransaction(hex)
@@ -498,12 +498,13 @@ func (client *Client) OmniCreateAndSignRawTransactionUseSingleInput(txType int, 
 	} else {
 		log.Println(err)
 	}
-	log.Println("OmniCreateAndSignRawTransaction endTime.Sub(beginTime)", time.Now().Sub(beginTime).String())
+	log.Println("OmniCreateAndSignRawTransactionUseSingleInput endTime.Sub(beginTime)", time.Now().Sub(beginTime).String())
 	return txid, hex, currUseTxid, nil
 }
 
 func (client *Client) OmniCreateAndSignRawTransactionUseRestInput(txType int, fromBitCoinAddress string, usedTxid string, privkeys []string, toBitCoinAddress, changeToAddress string, propertyId int64, amount float64, minerFee float64, sequence int, redeemScript *string) (txid, hex string, err error) {
 	beginTime := time.Now()
+	log.Println("OmniCreateAndSignRawTransactionUseRestInput begin time ", beginTime.String())
 	if tool.CheckIsString(&fromBitCoinAddress) == false {
 		return "", "", errors.New("fromBitCoinAddress is empty")
 	}
@@ -645,6 +646,8 @@ func (client *Client) OmniCreateAndSignRawTransactionUseRestInput(txType int, fr
 }
 
 func (client *Client) OmniCreateAndSignRawTransactionUseUnsendInput(fromBitCoinAddress string, privkeys []string, inputItems []TransactionInputItem, toBitCoinAddress, changeToAddress string, propertyId int64, amount float64, minerFee float64, sequence int, redeemScript *string) (txid string, hex string, err error) {
+	beginTime := time.Now()
+	log.Println("OmniCreateAndSignRawTransactionUseUnsendInput begin time ", beginTime.String())
 	if tool.CheckIsString(&fromBitCoinAddress) == false {
 		return "", "", errors.New("fromBitCoinAddress is empty")
 	}
@@ -786,7 +789,7 @@ func (client *Client) OmniCreateAndSignRawTransactionUseUnsendInput(fromBitCoinA
 		log.Println(err)
 	}
 	//log.Println(result)
-
+	log.Println("OmniCreateAndSignRawTransactionUseRestInput endTime.Sub(beginTime)", time.Now().Sub(beginTime).String())
 	return txid, hex, nil
 }
 

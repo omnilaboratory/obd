@@ -763,9 +763,9 @@ func (service *htlcCloseTxManager) AfterBobCloseHTLCSigned_AtAliceSide(data stri
 	latestCommitmentTxInfo.SignAt = time.Now()
 	latestCommitmentTxInfo.CurrState = dao.TxInfoState_CreateAndSign
 	latestCommitmentTxInfo.RSMCTxHex = signedRsmcHex
-	latestCommitmentTxInfo.RSMCTxid = rsmcTxid
+	latestCommitmentTxInfo.RSMCTxid = gjson.Parse(rsmcTxid).Array()[0].Get("txid").Str
 	latestCommitmentTxInfo.ToCounterpartyTxHex = signedToCounterpartyHex
-	latestCommitmentTxInfo.ToCounterpartyTxid = toCounterpartyTxid
+	latestCommitmentTxInfo.ToCounterpartyTxid = gjson.Parse(toCounterpartyTxid).Array()[0].Get("txid").Str
 	bytes, err := json.Marshal(latestCommitmentTxInfo)
 	msgHash := tool.SignMsgWithSha256(bytes)
 	latestCommitmentTxInfo.CurrHash = msgHash
@@ -930,6 +930,16 @@ func (service *htlcCloseTxManager) AfterAliceSignCloseHTLCAtBobSide(data string,
 		myChannelAddress = channelInfo.AddressA
 	}
 
+	decodeRsmcHex, err := rpcClient.OmniDecodeTransaction(signedRsmcHex)
+	if err != nil {
+		return nil, err
+	}
+
+	decodeSignedToOtherHex, err := rpcClient.OmniDecodeTransaction(signedToOtherHex)
+	if err != nil {
+		return nil, err
+	}
+
 	err = signRdTx(tx, channelInfo, signedRsmcHex, rdHex, latestCommitmentTxInfo, myChannelAddress, user)
 	if err != nil {
 		return nil, err
@@ -939,7 +949,10 @@ func (service *htlcCloseTxManager) AfterAliceSignCloseHTLCAtBobSide(data string,
 	latestCommitmentTxInfo.SignAt = time.Now()
 	latestCommitmentTxInfo.CurrState = dao.TxInfoState_CreateAndSign
 	latestCommitmentTxInfo.RSMCTxHex = signedRsmcHex
+	latestCommitmentTxInfo.RSMCTxid = gjson.Get(decodeRsmcHex, "txid").Str
 	latestCommitmentTxInfo.ToCounterpartyTxHex = signedToOtherHex
+	latestCommitmentTxInfo.RSMCTxid = gjson.Get(decodeSignedToOtherHex, "txid").Str
+
 	bytes, err := json.Marshal(latestCommitmentTxInfo)
 	msgHash := tool.SignMsgWithSha256(bytes)
 	latestCommitmentTxInfo.CurrHash = msgHash

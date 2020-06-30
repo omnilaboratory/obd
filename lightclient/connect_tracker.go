@@ -180,14 +180,38 @@ func sycUserInfos() {
 func sycChannelInfos() {
 	_dir := "dbdata" + config.ChainNode_Type
 	files, _ := ioutil.ReadDir(_dir)
+
 	dbNames := make([]string, 0)
+	userPeerIds := make([]string, 0)
 	for _, f := range files {
 		if strings.HasPrefix(f.Name(), "user_") && strings.HasSuffix(f.Name(), ".db") {
-			dbNames = append(dbNames, f.Name())
+			peerId := strings.TrimPrefix(f.Name(), "user_")
+			peerId = strings.TrimSuffix(peerId, ".db")
+			value, exists := globalWsClientManager.OnlineUserMap[peerId]
+			if exists && value != nil {
+				userPeerIds = append(userPeerIds, peerId)
+			} else {
+				dbNames = append(dbNames, f.Name())
+			}
 		}
 	}
 
 	nodes := make([]trackerBean.ChannelInfoRequest, 0)
+
+	for _, peerId := range userPeerIds {
+		client, _ := globalWsClientManager.OnlineUserMap[peerId]
+		if client != nil {
+			checkChannel(client.User.Db, nodes)
+		}
+	}
+
+	for _, dbName := range dbNames {
+		db, err := storm.Open(_dir + "/" + dbName)
+		if err == nil {
+			checkChannel(db, nodes)
+			_ = db.Close()
+		}
+	}
 
 	for _, dbName := range dbNames {
 		db, err := storm.Open(_dir + "/" + dbName)
@@ -234,6 +258,41 @@ func sycChannelInfos() {
 		bytes, err := json.Marshal(info)
 		if err == nil {
 			sendMsgToTracker(string(bytes))
+		}
+	}
+}
+
+func checkChannel(db storm.Node, nodes []trackerBean.ChannelInfoRequest) {
+	var channelInfos []dao.ChannelInfo
+	err := db.All(&channelInfos)
+	if err == nil {
+		for _, channelInfo := range channelInfos {
+			if len(channelInfo.ChannelId) > 0 {
+				if channelInfo.CurrState == dao.ChannelState_CanUse || channelInfo.CurrState == dao.ChannelState_Close || channelInfo.CurrState == dao.ChannelState_HtlcTx {
+					commitmentTransaction := dao.CommitmentTransaction{}
+					err = db.Select(q.Eq("ChannelId", channelInfo.ChannelId)).OrderBy("CreateAt").Reverse().First(&commitmentTransaction)
+					if err == nil {
+						request := trackerBean.ChannelInfoRequest{}
+						request.ChannelId = channelInfo.ChannelId
+						request.PropertyId = channelInfo.PropertyId
+						request.PeerIdA = channelInfo.PeerIdA
+						request.PeerIdB = channelInfo.PeerIdB
+						request.CurrState = channelInfo.CurrState
+						request.AmountA = commitmentTransaction.AmountToRSMC
+						request.AmountB = commitmentTransaction.AmountToCounterparty
+						request.IsAlice = false
+						if commitmentTransaction.Owner == channelInfo.PeerIdA {
+							request.IsAlice = true
+							request.AmountA = commitmentTransaction.AmountToRSMC
+							request.AmountB = commitmentTransaction.AmountToCounterparty
+						} else {
+							request.AmountB = commitmentTransaction.AmountToRSMC
+							request.AmountA = commitmentTransaction.AmountToCounterparty
+						}
+						nodes = append(nodes, request)
+					}
+				}
+			}
 		}
 	}
 }

@@ -326,9 +326,9 @@ func (this *commitmentTxManager) AfterBobSignCommitmentTrancationAtAliceSide(dat
 	latestCommitmentTxInfo.SignAt = time.Now()
 	latestCommitmentTxInfo.CurrState = dao.TxInfoState_CreateAndSign
 	latestCommitmentTxInfo.RSMCTxHex = signedRsmcHex
-	latestCommitmentTxInfo.RSMCTxid = rsmcTxid
+	latestCommitmentTxInfo.RSMCTxid = gjson.Parse(rsmcTxid).Array()[0].Get("txid").Str
 	latestCommitmentTxInfo.ToCounterpartyTxHex = signedToOtherHex
-	latestCommitmentTxInfo.ToCounterpartyTxid = toCounterpartyTxid
+	latestCommitmentTxInfo.ToCounterpartyTxid = gjson.Parse(toCounterpartyTxid).Array()[0].Get("txid").Str
 	bytes, err := json.Marshal(latestCommitmentTxInfo)
 	msgHash := tool.SignMsgWithSha256(bytes)
 	latestCommitmentTxInfo.CurrHash = msgHash
@@ -498,6 +498,8 @@ func (this *commitmentTxSignedManager) BeforeBobSignCommitmentTranctionAtBobSide
 }
 
 func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction(msg bean.RequestMessage, signer *bean.User) (retData *bean.PayeeSignCommitmentTxOfP2p, targetUser string, err error) {
+	var beginTime = time.Now()
+	log.Println("RevokeAndAcknowledgeCommitmentTransaction beginTime", beginTime.String())
 	if tool.CheckIsString(&msg.Data) == false {
 		err = errors.New("empty json reqData")
 		log.Println(err)
@@ -805,6 +807,8 @@ func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction
 		log.Println(err)
 		return nil, "", err
 	}
+
+	log.Println("RevokeAndAcknowledgeCommitmentTransaction endTime", time.Now().Sub(beginTime).String())
 	return retData, "", err
 }
 
@@ -846,6 +850,16 @@ func (this *commitmentTxSignedManager) AfterAliceSignCommitmentTranctionAtBobSid
 		myChannelAddress = channelInfo.AddressA
 	}
 
+	decodeRsmcHex, err := rpcClient.OmniDecodeTransaction(signedRsmcHex)
+	if err != nil {
+		return nil, err
+	}
+
+	decodeSignedToOtherHex, err := rpcClient.OmniDecodeTransaction(signedToOtherHex)
+	if err != nil {
+		return nil, err
+	}
+
 	err = signRdTx(tx, channelInfo, signedRsmcHex, rdHex, latestCommitmentTxInfo, myChannelAddress, user)
 	if err != nil {
 		return nil, err
@@ -855,7 +869,10 @@ func (this *commitmentTxSignedManager) AfterAliceSignCommitmentTranctionAtBobSid
 	latestCommitmentTxInfo.SignAt = time.Now()
 	latestCommitmentTxInfo.CurrState = dao.TxInfoState_CreateAndSign
 	latestCommitmentTxInfo.RSMCTxHex = signedRsmcHex
+	latestCommitmentTxInfo.RSMCTxid = gjson.Get(decodeRsmcHex, "txid").Str
 	latestCommitmentTxInfo.ToCounterpartyTxHex = signedToOtherHex
+	latestCommitmentTxInfo.ToCounterpartyTxid = gjson.Get(decodeSignedToOtherHex, "txid").Str
+
 	bytes, err := json.Marshal(latestCommitmentTxInfo)
 	msgHash := tool.SignMsgWithSha256(bytes)
 	latestCommitmentTxInfo.CurrHash = msgHash

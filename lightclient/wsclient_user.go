@@ -56,7 +56,7 @@ func (client *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, 
 			if err == nil {
 				client.User = &user
 				globalWsClientManager.OnlineUserMap[user.PeerId] = client
-				service.OnlineUserMap[user.PeerId] = true
+				service.OnlineUserMap[user.PeerId] = &user
 				data = loginRetData(*client)
 				status = true
 				client.sendToMyself(msg.Type, status, data)
