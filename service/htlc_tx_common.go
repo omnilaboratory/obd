@@ -103,6 +103,7 @@ func createHtlcRDTxObj(owner string, channelInfo *dao.ChannelInfo, htlcTimeoutTx
 	htrd.RDType = 1
 
 	//input
+	htrd.InputTxHex = htlcTimeoutTx.RSMCTxHex
 	htrd.InputTxid = htlcTimeoutTx.RSMCTxid
 	htrd.InputVout = 0
 	htrd.InputAmount = htlcTimeoutTx.RSMCOutAmount

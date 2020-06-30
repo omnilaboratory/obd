@@ -55,9 +55,9 @@ type HTLCTimeoutDeliveryTxB struct {
 	ChannelId      string      `json:"channel_id"`
 	CommitmentTxId int         `json:"commitment_tx_id"`
 	PropertyId     int64       `json:"property_id"`
+	InputTxid      string      `json:"input_txid"`
 	InputHex       string      `json:"input_hex"`
 	Timeout        int         `json:"timeout"`
-	InputAmount    float64     `json:"input_amount"`   //input amount
 	OutputAddress  string      `json:"output_address"` //output Sender Alice(if alice is sender) or Bob(if bob is sender)
 	OutAmount      float64     `json:"out_amount"`
 	TxHex          string      `json:"tx_hex"`
@@ -76,10 +76,8 @@ type HtlcLockTxByH struct {
 	PropertyId         int64       `json:"property_id"`
 	CommitmentTxId     int         `json:"commitment_tx_id"`
 	InputHex           string      `json:"input_hex"`
-	InputTxid          string      `json:"input_txid"`   // input txid  from commitTx aliceTempHtlc&bob multtaddr, so need  sign of aliceTempHtlc and bob
-	InputVout          uint32      `json:"input_vout"`   // input vout
-	InputAmount        float64     `json:"input_amount"` // input amount
-	HtlcH              string      `json:"htlc_h"`       // H(公钥，双签地址之一)
+	InputTxid          string      `json:"input_txid"` // input txid  from commitTx aliceTempHtlc&bob multtaddr, so need  sign of aliceTempHtlc and bob
+	HtlcH              string      `json:"htlc_h"`     // H(公钥，双签地址之一)
 	PayeeChannelPubKey string      `json:"payee_channel_pub_key"`
 	OutputAddress      string      `json:"output_address"` // 双签地址 锁定支付资金
 	RedeemScript       string      `json:"redeem_script"`  // 双签地址对应的赎回脚本

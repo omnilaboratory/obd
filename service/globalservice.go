@@ -466,6 +466,7 @@ func signHTD1bTx(tx storm.Node, signedHtlcHex string, htd1bHex string, latestCco
 	htlcTimeoutDeliveryTx.CommitmentTxId = latestCcommitmentTxInfo.Id
 	htlcTimeoutDeliveryTx.PropertyId = latestCcommitmentTxInfo.PropertyId
 	htlcTimeoutDeliveryTx.OutputAddress = outputAddress
+	htlcTimeoutDeliveryTx.InputTxid = latestCcommitmentTxInfo.HTLCTxid
 	htlcTimeoutDeliveryTx.InputHex = latestCcommitmentTxInfo.HtlcTxHex
 	htlcTimeoutDeliveryTx.OutAmount = latestCcommitmentTxInfo.AmountToHtlc
 	htlcTimeoutDeliveryTx.Owner = owner
