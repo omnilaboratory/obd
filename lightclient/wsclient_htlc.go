@@ -53,13 +53,8 @@ func (client *Client) htlcHModule(msg bean.RequestMessage) (enum.SendTargetType,
 			if err != nil {
 				data = err.Error()
 			} else {
-				bytes, err := json.Marshal(respond)
-				if err != nil {
-					data = err.Error()
-				} else {
-					data = string(bytes)
-					status = true
-				}
+				status = true
+				data = respond.(string)
 			}
 		}
 		client.sendToMyself(msg.Type, status, data)
