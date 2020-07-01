@@ -114,10 +114,15 @@ $ CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build obdserver.go
 ```
 you will see an obdserver.exe file generated under the same directory.
 
+### Startup  
 Run:
 ```
-$ ./obdserver
+$ ./obdserver 
 ```
+
+By default, the configuration file `./config/conf.ini` will be loaded. 
+To override this set the optional `--configFile <path>` program argument.
+
 The terminal displays:
 ```
 2019/08/23 23:05:15 rpcclient.go:23: &{62.234.216.108:18332 omniwallet cB3]iL2@eZ1?cB2?}

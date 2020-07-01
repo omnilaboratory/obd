@@ -1,6 +1,7 @@
 package config
 
 import (
+	"flag"
 	"log"
 	"strconv"
 	"time"
@@ -9,7 +10,7 @@ import (
 )
 
 var (
-	Cfg               *ini.File
+	configPath        = flag.String("configPath", "config/conf.ini", "Config file path")
 	ServerPort        = 60020
 	ReadTimeout       = 5 * time.Second
 	WriteTimeout      = 10 * time.Second
@@ -31,9 +32,10 @@ var (
 )
 
 func init() {
+	flag.Parse()
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
 
-	Cfg, err := ini.Load("config/conf.ini")
+	Cfg, err := ini.Load(*configPath)
 	if err != nil {
 		log.Println(err)
 		return
