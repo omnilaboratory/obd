@@ -789,7 +789,7 @@ func (client *Client) OmniCreateAndSignRawTransactionUseUnsendInput(fromBitCoinA
 		log.Println(err)
 	}
 	//log.Println(result)
-	log.Println("OmniCreateAndSignRawTransactionUseRestInput endTime.Sub(beginTime)", time.Now().Sub(beginTime).String())
+	log.Println("OmniCreateAndSignRawTransactionUseUnsendInput endTime.Sub(beginTime)", time.Now().Sub(beginTime).String())
 	return txid, hex, nil
 }
 

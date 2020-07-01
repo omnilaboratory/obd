@@ -109,7 +109,6 @@ type HTLCExecutionDeliveryOfR struct {
 	Txid           string      `json:"txid"`
 	CurrState      TxInfoState `json:"curr_state"`
 	Owner          string      `json:"owner"`
-	IsEnable       bool        `json:"is_enable"`
 	CreateAt       time.Time   `json:"create_at"`
 	SendAt         time.Time   `json:"send_at"`
 	CreateBy       string      `json:"create_by"`

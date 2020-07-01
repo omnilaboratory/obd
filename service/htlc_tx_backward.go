@@ -835,7 +835,7 @@ func createAndSaveHed1a_at48(tx storm.Node, signedHed1aHex string, channelInfo d
 		return err
 	}
 
-	hed1a := dao.HTLCExecutionDeliveryOfR{}
+	hed1a := &dao.HTLCExecutionDeliveryOfR{}
 	_ = tx.Select(
 		q.Eq("ChannelId", channelInfo.ChannelId),
 		q.Eq("CommitmentTxId", commitmentTxInfo.Id),
