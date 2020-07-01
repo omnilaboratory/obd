@@ -8,6 +8,7 @@ import (
 	"github.com/omnilaboratory/obd/tracker/service"
 	"github.com/satori/go.uuid"
 	"github.com/tidwall/gjson"
+	"log"
 	"net/http"
 	"strings"
 )
@@ -20,6 +21,7 @@ func InitRouter() *gin.Engine {
 	router.Use(cors())
 	err := getBtcChainInfo()
 	if err != nil {
+		log.Println(err)
 		return nil
 	}
 	go service.ObdNodeManager.TrackerStart()
