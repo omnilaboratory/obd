@@ -303,9 +303,10 @@ func getReplyObj(data string, msgType enum.MsgType, status bool, fromClient, toC
 
 	parse := gjson.Parse(data)
 	result := parse.Value()
-	if result == nil || parse.Exists() == false || parse.IsObject() == false {
+	if strings.HasPrefix(data, "{") == false && strings.HasPrefix(data, "[") == false {
 		result = data
 	}
+
 	jsonMessage, _ = json.Marshal(&bean.ReplyMessage{Type: msgType, Status: status, From: fromId, To: toClientId, Result: result})
 
 	return jsonMessage
@@ -315,9 +316,10 @@ func getP2PReplyObj(data string, msgType enum.MsgType, status bool, fromId, toCl
 
 	parse := gjson.Parse(data)
 	result := parse.Value()
-	if result == nil || parse.Exists() == false || parse.IsObject() == false {
+	if strings.HasPrefix(data, "{") == false && strings.HasPrefix(data, "[") == false {
 		result = data
 	}
+
 	jsonMessage, _ := json.Marshal(&bean.ReplyMessage{Type: msgType, Status: status, From: fromId, To: toClientId, Result: result})
 	return jsonMessage
 }

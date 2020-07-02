@@ -16,6 +16,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/asdine/storm"
@@ -650,11 +651,13 @@ func sendMsgToTracker(msgType enum.MsgType, data interface{}) {
 
 	dataBytes, _ := json.Marshal(data)
 	dataStr := string(dataBytes)
+
 	parse := gjson.Parse(dataStr)
 	result := parse.Value()
-	if result == nil || parse.Exists() == false || parse.IsObject() == false {
+	if strings.HasPrefix(dataStr, "{") == false && strings.HasPrefix(dataStr, "[") == false {
 		result = dataStr
 	}
+
 	message.Data = result
 
 	bytes, _ := json.Marshal(message)
