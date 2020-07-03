@@ -16,7 +16,7 @@ func TestDemo6(t *testing.T) {
 
 func TestDemo5(t *testing.T) {
 
-	toNum, err := DecodeInvoiceObjFromCodes("obtb400000000s1pqzyfnpwQmVEoTmyofsbEnsoFwQXHngafECHJuVfEgGyb2bZtyiontuzq1f1dbb3518c1fb12f263d065c1d18576d13f88dff55bfc25ef52afaa2c97a5d2hzz035be1bc8f26ac7318d83663bd5dab10c843a74d11e573731a6a9abee5b9d46933xq8p0sm45qdqtdescriptionjf4")
+	toNum, err := DecodeInvoiceObjFromCodes("obtb1000000s1pqzranpwQmdwxVvGb5kGpGHxiYjCp24aKhwTYiHSK6MRfkQGbk2JA8uzqd3c2a88f4d4e54f3b8b3e95258af29051057df1da9d9bbacd1714cdaa58892echzz02ceebcd6884b8d25e902941e6a7207b5b5950462963fd564856e3a42db5cd4c35xq8p00upyqdqvtest invoice369")
 	log.Println(err)
 	log.Println(toNum)
 }

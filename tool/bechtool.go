@@ -4,6 +4,7 @@ import (
 	"errors"
 	"github.com/ethereum/go-ethereum/common/math"
 	"github.com/omnilaboratory/obd/bean"
+	"github.com/shopspring/decimal"
 	"strconv"
 	"strings"
 	"time"
@@ -94,7 +95,10 @@ func DecodeInvoiceObjFromCodes(encode string) (invoice bean.HtlcRequestInvoice, 
 	}
 	amountStr := encode[0:amountEndIndex]
 	amount, err := strconv.Atoi(amountStr)
-	invoice.Amount = float64(amount / 100000000)
+	if err != nil {
+		return invoice, err
+	}
+	invoice.Amount, _ = decimal.NewFromInt(int64(amount)).Div(decimal.NewFromInt(100000000)).Float64()
 	amountStr = amountStr + "s1"
 	encode = strings.TrimPrefix(encode, amountStr)
 
