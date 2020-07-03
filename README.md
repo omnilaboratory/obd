@@ -140,6 +140,7 @@ OmniBOLT deamon(OBD) exposes WebSocket services for client interaction. For ease
   <img width="500" alt="Debugging Tool Screenshot" src="https://github.com/omnilaboratory/DebuggingTool/blob/master/doc/img/image_screen.png">
 </p>
 
+If you dont want to deploy obd to start with, there is a list of testnet nodes in that repo that you can connect to.  
 
 Another option is to use web socket test client for Chrome to do experiments. Install it from:
 ```
@@ -151,7 +152,7 @@ Make sure your browser supports WebSocket, as displayed in this screenshot.
   <img width="500" alt="Screenshot of Websocket online testing site" src="https://github.com/omnilaboratory/OmniBOLT-spec/blob/master/imgs/WebSocketTestSite.png">
 </p>
 
-Input `ws://127.0.0.1:60020/ws`, press `Open`. If on the right text pannel, displays `OPENED`, then we are ready to send messeages to OBD.
+Input `ws://127.0.0.1:60020/wstest`, press `Open`. If on the right text pannel, displays `OPENED`, then we are ready to send messeages to OBD.
 
 The first message is to sign up as `Alice`. input the following request into the Request box, and press `SEND`:
 
