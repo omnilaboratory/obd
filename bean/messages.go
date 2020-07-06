@@ -313,7 +313,7 @@ type AddHtlcRequest struct {
 
 //type -100041: bob sign the request for the interNode
 type HtlcSignGetH struct {
-	AliceCommitmentTxHash         string `json:"alice_commitment_tx_hash"`
+	PayerCommitmentTxHash         string `json:"payer_commitment_tx_hash"`
 	ChannelAddressPrivateKey      string `json:"channel_address_private_key"`        //	开通通道用到的私钥
 	LastTempAddressPrivateKey     string `json:"last_temp_address_private_key"`      //	上个RSMC委托交易用到的临时私钥
 	CurrRsmcTempAddressPubKey     string `json:"curr_rsmc_temp_address_pub_key"`     //	创建Cnx中的toRsmc的部分使用的临时地址的公钥
