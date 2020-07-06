@@ -194,8 +194,9 @@ func (service *htlcForwardTxManager) GetResponseFromTrackerOfPayerRequestFindPat
 		log.Println(err)
 		return nil, err
 	}
-
-	splitArr := strings.Split(channelPath, ",")
+	dataArr := strings.Split(channelPath, "_")
+	h := dataArr[0]
+	splitArr := strings.Split(dataArr[1], ",")
 	currChannelInfo := dao.ChannelInfo{}
 	err = user.Db.Select(
 		q.Eq("ChannelId", splitArr[0]),
@@ -213,9 +214,10 @@ func (service *htlcForwardTxManager) GetResponseFromTrackerOfPayerRequestFindPat
 		nextNodePeerId = currChannelInfo.PeerIdA
 	}
 
-	arrLength := len(strings.Split(channelPath, ","))
+	arrLength := len(strings.Split(dataArr[1], ","))
 	retData := make(map[string]interface{})
-	retData["routing_packet"] = channelPath
+	retData["h"] = h
+	retData["routing_packet"] = dataArr[1]
 	retData["min_cltv_expiry"] = arrLength
 	retData["next_node_peerId"] = nextNodePeerId
 	return retData, nil
@@ -630,6 +632,9 @@ func (service *htlcForwardTxManager) PayeeSignGetAddHtlc_41(jsonData string, use
 	if err != nil {
 		log.Println(err)
 		return nil, err
+	}
+	if len(aliceRsmcInputs) == 0 {
+		return nil, errors.New("wrong payer rsmc hex")
 	}
 	//endregion
 

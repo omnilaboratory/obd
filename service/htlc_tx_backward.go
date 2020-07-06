@@ -423,7 +423,7 @@ func (service *htlcBackwardTxManager) SignHed1aAndUpdate_Step4(msgData string, u
 	//region 1 签名hed1a
 	hlockMultiAddress, hlockRedeemScript, hlockMultiAddressScriptPubKey, err := createMultiSig(commitmentTxInfo.HtlcH, payeeChannelPubKey)
 	payerHLockOutputs, err := getInputsForNextTxByParseTxHashVout(payerHlockTxHex, hlockMultiAddress, hlockMultiAddressScriptPubKey, hlockRedeemScript)
-	if err != nil {
+	if err != nil || len(payerHLockOutputs) == 0 {
 		log.Println(err)
 		return nil, err
 	}
@@ -782,7 +782,7 @@ func checkSignedHerdHexAtPayeeSide_at47(tx storm.Node, signedHerd1bHex string, c
 	}
 
 	he1bOutputs, err := getInputsForNextTxByParseTxHashVout(he1b.RSMCTxHex, he1b.RSMCMultiAddress, he1b.RSMCMultiAddressScriptPubKey, he1b.RSMCRedeemScript)
-	if err != nil {
+	if err != nil || len(he1bOutputs) == 0 {
 		log.Println(err)
 		return err
 	}

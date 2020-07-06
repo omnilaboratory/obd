@@ -73,6 +73,7 @@ func (manager *htlcManager) getPath(obdClient *ObdNode, msgData string) (path in
 	}
 	retNode := make(map[string]interface{})
 	retNode["senderPeerId"] = pathRequest.RealPayerPeerId
+	retNode["h"] = pathRequest.H
 	retNode["path"] = ""
 	if resultIndex != -1 {
 		splitArr := strings.Split(manager.openList[resultIndex].ChannelIds, ",")

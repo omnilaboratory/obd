@@ -348,7 +348,9 @@ func getInputsForNextTxByParseTxHashVout(hex string, toAddress, scriptPubKey, re
 				}
 			}
 		}
-		return inputs, nil
+		if len(inputs) > 0 {
+			return inputs, nil
+		}
 	}
 	return nil, errors.New("no inputs")
 }
@@ -397,7 +399,7 @@ func getFundingTransactionByChannelId(dbTx storm.Node, channelId string, userPee
 
 func signRdTx(tx storm.Node, channelInfo *dao.ChannelInfo, signedRsmcHex string, rdHex string, latestCommitmentTxInfo *dao.CommitmentTransaction, outputAddress string, user *bean.User) (err error) {
 	inputs, err := getInputsForNextTxByParseTxHashVout(signedRsmcHex, latestCommitmentTxInfo.RSMCMultiAddress, latestCommitmentTxInfo.RSMCMultiAddressScriptPubKey, latestCommitmentTxInfo.RSMCRedeemScript)
-	if err != nil {
+	if err != nil || len(inputs) == 0 {
 		log.Println(err)
 		return err
 	}
@@ -438,7 +440,7 @@ func signRdTx(tx storm.Node, channelInfo *dao.ChannelInfo, signedRsmcHex string,
 
 func signHTD1bTx(tx storm.Node, signedHtlcHex string, htd1bHex string, latestCcommitmentTxInfo dao.CommitmentTransaction, outputAddress string, user *bean.User) (err error) {
 	inputs, err := getInputsForNextTxByParseTxHashVout(signedHtlcHex, latestCcommitmentTxInfo.HTLCMultiAddress, latestCcommitmentTxInfo.HTLCMultiAddressScriptPubKey, latestCcommitmentTxInfo.HTLCRedeemScript)
-	if err != nil {
+	if err != nil || len(inputs) == 0 {
 		log.Println(err)
 		return err
 	}

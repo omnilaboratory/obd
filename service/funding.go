@@ -1335,7 +1335,7 @@ func (service *fundingTransactionManager) AfterBobSignOmniFundingAtAilceSide(dat
 
 	// RD 二次签名
 	inputs, err := getInputsForNextTxByParseTxHashVout(rsmcSignedHex, commitmentTxInfo.RSMCMultiAddress, commitmentTxInfo.RSMCMultiAddressScriptPubKey, commitmentTxInfo.RSMCRedeemScript)
-	if err != nil {
+	if err != nil || len(inputs) == 0 {
 		log.Println(err)
 		return nil, err
 	}
