@@ -178,6 +178,7 @@ func (service *htlcForwardTxManager) PayerRequestFindPath(msgData string, user b
 
 	//tracker find path
 	pathRequest := trackerBean.HtlcPathRequest{}
+	pathRequest.H = htlcRequestInvoice.H
 	pathRequest.PropertyId = htlcRequestInvoice.PropertyId
 	pathRequest.Amount = htlcRequestInvoice.Amount
 	pathRequest.RealPayerPeerId = user.PeerId

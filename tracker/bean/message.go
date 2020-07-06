@@ -47,6 +47,7 @@ type HtlcPathRequest struct {
 	RealPayerPeerId string  `json:"real_payer_peer_id"`
 	PayeePeerId     string  `json:"payee_peer_id"`
 	PropertyId      int64   `json:"property_id"`
+	H               string  `json:"h"`
 	Amount          float64 `json:"amount"`
 }
 
