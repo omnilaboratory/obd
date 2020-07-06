@@ -489,12 +489,12 @@ func (service *htlcForwardTxManager) PayeeSignGetAddHtlc_41(jsonData string, use
 	defer tx.Rollback()
 
 	if tool.CheckIsString(&requestData.PayerCommitmentTxHash) == false {
-		return nil, errors.New("alice_commitment_tx_hash is empty")
+		return nil, errors.New("payer_commitment_tx_hash is empty")
 	}
 
 	aliceMsg := service.addHtlcTempDataAt40P[requestData.PayerCommitmentTxHash]
 	if tool.CheckIsString(&aliceMsg) == false {
-		return nil, errors.New("wrong alice_commitment_tx_hash")
+		return nil, errors.New("wrong payer_commitment_tx_hash")
 	}
 
 	payerRequestAddHtlc := &bean.AliceRequestAddHtlc{}
