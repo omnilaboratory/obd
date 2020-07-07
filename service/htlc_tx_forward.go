@@ -195,6 +195,10 @@ func (service *htlcForwardTxManager) GetResponseFromTrackerOfPayerRequestFindPat
 		return nil, err
 	}
 	dataArr := strings.Split(channelPath, "_")
+	if len(dataArr) != 2 {
+		return nil, errors.New("no channel path")
+	}
+
 	h := dataArr[0]
 	splitArr := strings.Split(dataArr[1], ",")
 	currChannelInfo := dao.ChannelInfo{}
