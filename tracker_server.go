@@ -14,7 +14,7 @@ import (
 	"time"
 )
 
-func init() {
+func initTrackerLog() {
 	_dir := "log"
 	_ = tool.PathExistsAndCreate(_dir)
 	path := "log/tracker"
@@ -38,6 +38,7 @@ func init() {
 // gox -os "windows linux darwin" -arch amd64
 // gox -os "windows" -arch amd64
 func main() {
+	initTrackerLog()
 
 	routersInit := tracker.InitRouter()
 	if routersInit == nil {

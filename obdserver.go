@@ -16,7 +16,7 @@ import (
 	"time"
 )
 
-func init() {
+func initObdLog() {
 	_dir := "log"
 	_ = tool.PathExistsAndCreate(_dir)
 	path := "log/obdServer"
@@ -42,6 +42,7 @@ func init() {
 // gox -os "windows linux darwin" -arch amd64
 // gox -os "windows" -arch amd64
 func main() {
+	initObdLog()
 
 	err := rpc.NewClient().CheckVersion()
 	if err != nil {
