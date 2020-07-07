@@ -147,11 +147,12 @@ func (service *htlcBackwardTxManager) SendRToPreviousNode_Step1(msg bean.Request
 
 	htlcTimeOut := latestCommitmentTxInfo.HtlcCltvExpiry
 	maxHeight := latestCommitmentTxInfo.BeginBlockHeight + htlcTimeOut
-	if config.ChainNode_Type == "mainnet" {
+	if strings.Contains(config.ChainNode_Type, "main") {
 		if currBlockHeight > maxHeight {
 			return nil, errors.New("timeout, can't transfer the R")
 		}
 	}
+
 	tempAddrPrivateKeyMap[reqData.CurrHtlcTempAddressForHE1bPubKey] = reqData.CurrHtlcTempAddressForHE1bPrivateKey
 
 	he1b, err := createHe1bAtPayeeSide_at45(tx, *channelInfo, latestCommitmentTxInfo.Id, *reqData, user)

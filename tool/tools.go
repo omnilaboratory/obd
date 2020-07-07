@@ -69,20 +69,25 @@ func GetAddressFromPubKey(pubKey string) (address string, err error) {
 	serializedPubKey, err := hex.DecodeString(pubKey)
 	if err != nil {
 		log.Println(err)
-		return "", errors.New("invalid pubkey")
+		return "", errors.New("invalid pubKey")
 	}
 	// test TestNet3Params
 	// main MainNetParams
 	var net *chaincfg.Params
-	if config.ChainNode_Type == "test" {
-		net = &chaincfg.TestNet3Params
-	} else {
+	if strings.Contains(config.ChainNode_Type, "main") {
 		net = &chaincfg.MainNetParams
 	}
+	if strings.Contains(config.ChainNode_Type, "test") {
+		net = &chaincfg.TestNet3Params
+	}
+	if strings.Contains(config.ChainNode_Type, "reg") {
+		net = &chaincfg.RegressionNetParams
+	}
+
 	netAddr, err := btcutil.NewAddressPubKey(serializedPubKey, net)
 	if err != nil {
 		log.Println(err)
-		return "", errors.New("invalid pubkey")
+		return "", errors.New("invalid pubKey")
 	}
 	netAddr.SetFormat(btcutil.PKFCompressed)
 	address = netAddr.EncodeAddress()

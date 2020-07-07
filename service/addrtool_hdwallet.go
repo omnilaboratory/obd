@@ -11,6 +11,7 @@ import (
 	"github.com/omnilaboratory/obd/tool"
 	"github.com/tyler-smith/go-bip32"
 	"github.com/tyler-smith/go-bip39"
+	"strings"
 )
 
 type Wallet struct {
@@ -44,9 +45,16 @@ func (service *hdWalletManager) GetAddressByIndex(user *bean.User, index uint32)
 
 func getWalletObj(addrIndexExtKey *bip32.Key, wallet *Wallet) (err error) {
 	net := &chaincfg.MainNetParams
-	if config.ChainNode_Type == "test" {
+	if strings.Contains(config.ChainNode_Type, "main") {
+		net = &chaincfg.MainNetParams
+	}
+	if strings.Contains(config.ChainNode_Type, "test") {
 		net = &chaincfg.TestNet3Params
 	}
+	if strings.Contains(config.ChainNode_Type, "reg") {
+		net = &chaincfg.RegressionNetParams
+	}
+
 	hash160Bytes := btcutil.Hash160(addrIndexExtKey.PublicKey().Key)
 	addr, err := btcutil.NewAddressPubKeyHash(hash160Bytes, net)
 	if err != nil {
@@ -101,9 +109,10 @@ func (service *hdWalletManager) CreateChangeExtKey(mnemonic string) (changeExtKe
 	purposeExtKey, _ := masterKey.NewChildKey(bip32.FirstHardenedChild + 44)
 	//m/purpose'/cointype'
 	coinType := 0
-	if config.ChainNode_Type == "test" {
+	if strings.Contains(config.ChainNode_Type, "main") == false {
 		coinType = 1
 	}
+
 	coinTypeExtKey, err := purposeExtKey.NewChildKey(bip32.FirstHardenedChild + uint32(coinType))
 	//m/purpose'/cointype'/account'
 	accountExtKey, _ := coinTypeExtKey.NewChildKey(bip32.FirstHardenedChild + 0)
