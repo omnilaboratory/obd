@@ -529,6 +529,9 @@ func createHe1bAtPayeeSide_at45(tx storm.Node, channelInfo dao.ChannelInfo, late
 		q.Eq("CommitmentTxId", latestCommitmentTxInfoId),
 		q.Eq("Owner", user.PeerId)).First(he1b)
 	if he1b.Id > 0 {
+		if he1b.RSMCTempAddressPubKey != reqData.CurrHtlcTempAddressForHE1bPubKey {
+			return nil, errors.New("curr_htlc_temp_address_for_he1b_pub_key is not the same one when create currTx ")
+		}
 		return he1b, nil
 	}
 

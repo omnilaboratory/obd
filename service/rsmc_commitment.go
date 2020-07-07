@@ -109,6 +109,11 @@ func (this *commitmentTxManager) CommitmentTransactionCreated(msg bean.RequestMe
 		}
 
 	} else {
+
+		if reqData.CurrTempAddressPubKey != latestCommitmentTxInfo.RSMCTempAddressPubKey {
+			return nil, errors.New("curr_temp_address_pub_key is not the same when create currTx")
+		}
+
 		lastCommitmentTx := &dao.CommitmentTransaction{}
 		_ = tx.One("Id", latestCommitmentTxInfo.LastCommitmentTxId, lastCommitmentTx)
 		if _, err = tool.GetPubKeyFromWifAndCheck(reqData.LastTempAddressPrivateKey, lastCommitmentTx.RSMCTempAddressPubKey); err != nil {
@@ -771,6 +776,11 @@ func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction
 		//endregion
 
 	} else {
+
+		if reqData.CurrTempAddressPubKey != latestCommitmentTxInfo.RSMCTempAddressPubKey {
+			return nil, "", errors.New("curr_temp_address_pub_key is not the same when create currTx")
+		}
+
 		retData.RsmcHex = latestCommitmentTxInfo.RSMCTxHex
 		retData.ToCounterpartyTxHex = latestCommitmentTxInfo.ToCounterpartyTxHex
 		amountToOther = latestCommitmentTxInfo.AmountToCounterparty

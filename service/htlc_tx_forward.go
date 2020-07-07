@@ -320,6 +320,14 @@ func (service *htlcForwardTxManager) UpdateAddHtlc_40(msg bean.RequestMessage, u
 		}
 		if latestCommitmentTx.CurrState == dao.TxInfoState_Create {
 			if latestCommitmentTx.LastCommitmentTxId > 0 {
+
+				if requestData.CurrRsmcTempAddressPubKey != latestCommitmentTx.RSMCTempAddressPubKey {
+					return nil, errors.New("curr_rsmc_temp_address_pub_key is not the same when create currTx")
+				}
+				if requestData.CurrHtlcTempAddressPubKey != latestCommitmentTx.HTLCTempAddressPubKey {
+					return nil, errors.New("curr_htlc_temp_address_pub_key is not the same when create currTx")
+				}
+
 				lastCommitmentTx := &dao.CommitmentTransaction{}
 				_ = tx.One("Id", latestCommitmentTx.LastCommitmentTxId, lastCommitmentTx)
 				_, err = tool.GetPubKeyFromWifAndCheck(requestData.LastTempAddressPrivateKey, lastCommitmentTx.RSMCTempAddressPubKey)
@@ -413,6 +421,10 @@ func (service *htlcForwardTxManager) UpdateAddHtlc_40(msg bean.RequestMessage, u
 		txStateRequest.DirectionFlag = trackerBean.HtlcTxState_PayMoney
 		txStateRequest.CurrChannelId = channelInfo.ChannelId
 		sendMsgToTracker(enum.MsgType_Tracker_UpdateHtlcTxState_352, txStateRequest)
+	} else {
+		if requestData.CurrHtlcTempAddressForHt1aPubKey != htlcRequestInfo.CurrHtlcTempAddressForHt1aPubKey {
+			return nil, errors.New("curr_htlc_temp_address_for_ht1a_pub_key is not the same when create currTx")
+		}
 	}
 	_ = tx.Commit()
 
@@ -560,6 +572,14 @@ func (service *htlcForwardTxManager) PayeeSignGetAddHtlc_41(jsonData string, use
 		}
 		if latestCommitmentTxInfo.CurrState == dao.TxInfoState_Create {
 			if latestCommitmentTxInfo.LastCommitmentTxId > 0 {
+
+				if requestData.CurrRsmcTempAddressPubKey != latestCommitmentTxInfo.RSMCTempAddressPubKey {
+					return nil, errors.New("curr_rsmc_temp_address_pub_key is not the same when create currTx")
+				}
+				if requestData.CurrHtlcTempAddressPubKey != latestCommitmentTxInfo.HTLCTempAddressPubKey {
+					return nil, errors.New("curr_htlc_temp_address_pub_key is not the same when create currTx")
+				}
+
 				lastCommitmentTx := &dao.CommitmentTransaction{}
 				_ = tx.One("Id", latestCommitmentTxInfo.LastCommitmentTxId, lastCommitmentTx)
 				_, err = tool.GetPubKeyFromWifAndCheck(requestData.LastTempAddressPrivateKey, lastCommitmentTx.RSMCTempAddressPubKey)

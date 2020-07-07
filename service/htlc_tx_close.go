@@ -154,6 +154,11 @@ func (service *htlcCloseTxManager) RequestCloseHtlc(msg bean.RequestMessage, use
 			return nil, err
 		}
 	} else {
+
+		if reqData.CurrRsmcTempAddressPubKey != latestCommitmentTxInfo.RSMCTempAddressPubKey {
+			return nil, errors.New("curr_rsmc_temp_address_pub_key is not the same when create currTx")
+		}
+
 		lastCommitmentTxInfo := &dao.CommitmentTransaction{}
 		err = tx.One("Id", latestCommitmentTxInfo.LastCommitmentTxId, lastCommitmentTxInfo)
 		if err != nil {
@@ -399,6 +404,9 @@ func (service *htlcCloseTxManager) CloseHTLCSigned(msg bean.RequestMessage, user
 			return nil, err
 		}
 	} else {
+		if reqData.CurrRsmcTempAddressPubKey != latestCommitmentTxInfo.RSMCTempAddressPubKey {
+			return nil, errors.New("curr_rsmc_temp_address_pub_key is not the same when create currTx")
+		}
 		lastCommitTxInfo := dao.CommitmentTransaction{}
 		err = tx.One("Id", latestCommitmentTxInfo.LastCommitmentTxId, &lastCommitTxInfo)
 		if err != nil {
