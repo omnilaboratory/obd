@@ -894,7 +894,10 @@ func (service *htlcForwardTxManager) AfterBobSignAddHtlcAtAliceSide_42(msgData s
 	err = tx.Select(
 		q.Eq("ChannelId", channelId),
 		q.Eq("H", commitmentTransaction.HtlcH),
-		q.Eq("PropertyId", channelInfo.PropertyId)).First(htlcRequestInfo)
+		q.Eq("PropertyId", channelInfo.PropertyId)).
+		OrderBy("CreateAt").
+		Reverse().
+		First(htlcRequestInfo)
 	if err != nil {
 		return nil, false, err
 	}
