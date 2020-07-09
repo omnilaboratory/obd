@@ -1152,7 +1152,7 @@ func (service *htlcForwardTxManager) AfterAliceSignAddHtlcAtBobSide_43(msgData s
 	aliceRetData := bean.PayeeCreateHt1aRDForPayer{}
 	aliceRetData.PayerCommitmentTxHash = jsonObj.PayerCommitmentTxHash
 
-	bobRetData := make(map[string]interface{})
+	//bobRetData := make(map[string]interface{})
 	bobCommitmentHash := jsonObj.PayeeCommitmentTxHash
 	latestCommitmentTx := &dao.CommitmentTransaction{}
 	err = tx.Select(q.Eq("CurrHash", bobCommitmentHash)).First(latestCommitmentTx)
@@ -1244,11 +1244,11 @@ func (service *htlcForwardTxManager) AfterAliceSignAddHtlcAtBobSide_43(msgData s
 	//同步通道信息到tracker
 	sendChannelStateToTracker(*channelInfo, *latestCommitmentTx)
 
-	bobRetData["commitmentTx"] = latestCommitmentTx
+	//bobRetData["commitmentTx"] = latestCommitmentTx
 
 	retData := make(map[string]interface{})
 	retData["aliceData"] = aliceRetData
-	retData["bobData"] = bobRetData
+	retData["bobData"] = latestCommitmentTx
 	return retData, true, nil
 }
 

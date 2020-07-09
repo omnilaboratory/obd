@@ -691,7 +691,6 @@ func (service *htlcCloseTxManager) AfterBobCloseHTLCSigned_AtAliceSide(data stri
 	}
 	defer tx.Rollback()
 
-	aliceData := make(map[string]interface{})
 	bobData := bean.HtlcCloseCloserSignTxInfoToClosee{}
 
 	channelInfo := &dao.ChannelInfo{}
@@ -787,7 +786,6 @@ func (service *htlcCloseTxManager) AfterBobCloseHTLCSigned_AtAliceSide(data stri
 		_ = tx.Update(lastCommitmentTxInfo)
 	}
 
-	aliceData["latestCommitmentTxInfo"] = latestCommitmentTxInfo
 	//处理对方的数据
 	//签名对方传过来的rsmcHex
 	bobRsmcTxid, bobSignedRsmcHex, err := rpcClient.BtcSignRawTransaction(bobRsmcHex, myChannelPrivateKey)
@@ -888,13 +886,13 @@ func (service *htlcCloseTxManager) AfterBobCloseHTLCSigned_AtAliceSide(data stri
 
 	bobData.ChannelId = channelId
 	retData = make(map[string]interface{})
-	retData["aliceData"] = aliceData
+	retData["aliceData"] = latestCommitmentTxInfo
 	retData["bobData"] = bobData
 	return retData, true, nil
 }
 
 //52 bob保存更新自己的交易
-func (service *htlcCloseTxManager) AfterAliceSignCloseHTLCAtBobSide(data string, user *bean.User) (retData map[string]interface{}, err error) {
+func (service *htlcCloseTxManager) AfterAliceSignCloseHTLCAtBobSide(data string, user *bean.User) (retData interface{}, err error) {
 	jsonObj := &bean.HtlcCloseCloserSignTxInfoToClosee{}
 	_ = json.Unmarshal([]byte(data), jsonObj)
 
@@ -979,9 +977,7 @@ func (service *htlcCloseTxManager) AfterAliceSignCloseHTLCAtBobSide(data string,
 
 	_ = tx.Commit()
 
-	retData = make(map[string]interface{})
-	retData["latestCommitmentTxInfo"] = latestCommitmentTxInfo
-	return retData, nil
+	return latestCommitmentTxInfo, nil
 }
 
 func addHT1aTxToWaitDB(htnx *dao.HTLCTimeoutTxForAAndExecutionForB, htrd *dao.RevocableDeliveryTransaction) error {

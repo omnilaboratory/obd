@@ -109,11 +109,9 @@ func (this *commitmentTxManager) CommitmentTransactionCreated(msg bean.RequestMe
 		}
 
 	} else {
-
 		if reqData.CurrTempAddressPubKey != latestCommitmentTxInfo.RSMCTempAddressPubKey {
 			return nil, errors.New("curr_temp_address_pub_key is not the same when create currTx")
 		}
-
 		lastCommitmentTx := &dao.CommitmentTransaction{}
 		_ = tx.One("Id", latestCommitmentTxInfo.LastCommitmentTxId, lastCommitmentTx)
 		if _, err = tool.GetPubKeyFromWifAndCheck(reqData.LastTempAddressPrivateKey, lastCommitmentTx.RSMCTempAddressPubKey); err != nil {
@@ -822,7 +820,7 @@ func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction
 	return retData, "", err
 }
 
-func (this *commitmentTxSignedManager) AfterAliceSignCommitmentTranctionAtBobSide(data string, user *bean.User) (retData map[string]interface{}, err error) {
+func (this *commitmentTxSignedManager) AfterAliceSignCommitmentTranctionAtBobSide(data string, user *bean.User) (retData interface{}, err error) {
 	jsonObj := gjson.Parse(data)
 
 	var channelId = jsonObj.Get("channelId").String()
@@ -897,9 +895,9 @@ func (this *commitmentTxSignedManager) AfterAliceSignCommitmentTranctionAtBobSid
 
 	_ = tx.Commit()
 
-	retData = make(map[string]interface{})
-	retData["latest_commitment_tx_info"] = latestCommitmentTxInfo
-	return retData, nil
+	//retData = make(map[string]interface{})
+	//retData["latest_commitment_tx_info"] = latestCommitmentTxInfo
+	return latestCommitmentTxInfo, nil
 }
 
 //创建BR

@@ -470,16 +470,16 @@ func (service *htlcBackwardTxManager) SignHed1aAndUpdate_Step4(msgData string, u
 	payerData.ChannelId = channelId
 	payerData.PayerSignedHed1aHex = signedHed1aHex
 
-	payeeData := make(map[string]interface{})
-	payeeData["commitmentTxInfo"] = commitmentTxInfo
+	//payeeData := make(map[string]interface{})
+	//payeeData["commitmentTxInfo"] = commitmentTxInfo
 
 	responseData["payerData"] = payerData
-	responseData["payeeData"] = payeeData
+	responseData["payeeData"] = commitmentTxInfo
 	return responseData, nil
 }
 
 // -48 at Payer side
-func (service *htlcBackwardTxManager) CheckHed1aHex_Step5(msgData string, user bean.User) (responseData map[string]interface{}, err error) {
+func (service *htlcBackwardTxManager) CheckHed1aHex_Step5(msgData string, user bean.User) (responseData interface{}, err error) {
 	jsonObjFromPayee := &bean.HtlcRPayeeSignHed1aToPayer{}
 	_ = json.Unmarshal([]byte(msgData), jsonObjFromPayee)
 
@@ -517,9 +517,7 @@ func (service *htlcBackwardTxManager) CheckHed1aHex_Step5(msgData string, user b
 	}
 
 	_ = tx.Commit()
-	responseData = make(map[string]interface{})
-	responseData["commitmentTxInfo"] = commitmentTxInfo
-	return responseData, nil
+	return commitmentTxInfo, nil
 }
 
 //45 创建He1b
