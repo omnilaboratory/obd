@@ -94,15 +94,66 @@ func checkRsmcAndSendBR(db storm.Node) {
 							if tool.CheckIsString(&txid) == false {
 								continue
 							}
-							breachRemedy := &dao.BreachRemedyTransaction{}
-							_ = db.Select(q.Eq("CurrState", dao.TxInfoState_CreateAndSign), q.Eq("InputTxid", txid)).First(breachRemedy)
-							if breachRemedy.Id > 0 {
-								_, err = rpcClient.SendRawTransaction(breachRemedy.BrTxHex)
+							rsmcBreachRemedy := &dao.BreachRemedyTransaction{}
+							_ = db.Select(q.Eq("CurrState", dao.TxInfoState_CreateAndSign), q.Eq("InputTxid", txid)).First(rsmcBreachRemedy)
+							if rsmcBreachRemedy.Id > 0 {
+								_, err = rpcClient.SendRawTransaction(rsmcBreachRemedy.BrTxHex)
 								if err != nil {
-									log.Println("send br by timer")
-									breachRemedy.CurrState = dao.TxInfoState_SendHex
-									breachRemedy.SendAt = time.Now()
-									_ = db.Update(breachRemedy)
+									log.Println("send rsmcBr by timer")
+									rsmcBreachRemedy.CurrState = dao.TxInfoState_SendHex
+									rsmcBreachRemedy.SendAt = time.Now()
+									_ = db.Update(rsmcBreachRemedy)
+								}
+
+								// htlc htlcbr
+								htlcBreachRemedy := &dao.BreachRemedyTransaction{}
+								_ = db.Select(
+									q.Eq("Type", dao.BRType_Htlc),
+									q.Eq("CurrState", dao.TxInfoState_CreateAndSign),
+									q.Eq("commitmentTxId", rsmcBreachRemedy.CommitmentTxId)).First(htlcBreachRemedy)
+								if htlcBreachRemedy.Id > 0 {
+									_, err = rpcClient.SendRawTransaction(htlcBreachRemedy.BrTxHex)
+									if err != nil {
+										log.Println("send htlcBr by timer")
+										htlcBreachRemedy.CurrState = dao.TxInfoState_SendHex
+										htlcBreachRemedy.SendAt = time.Now()
+										_ = db.Update(htlcBreachRemedy)
+									}
+								}
+							} else {
+								// htlc payer方的htbr
+								sentRsmcBreachRemedy := &dao.BreachRemedyTransaction{}
+								_ = db.Select(q.Eq("CurrState", dao.TxInfoState_SendHex), q.Eq("InputTxid", txid)).First(sentRsmcBreachRemedy)
+								if sentRsmcBreachRemedy.Id > 0 {
+									htBreachRemedy := &dao.BreachRemedyTransaction{}
+									_ = db.Select(
+										q.Eq("Type", dao.BRType_Ht1a),
+										q.Eq("CurrState", dao.TxInfoState_CreateAndSign),
+										q.Eq("commitmentTxId", sentRsmcBreachRemedy.CommitmentTxId)).First(htBreachRemedy)
+									if htBreachRemedy.Id > 0 {
+										_, err = rpcClient.SendRawTransaction(htBreachRemedy.BrTxHex)
+										if err != nil {
+											log.Println("send htBr by timer")
+											htBreachRemedy.CurrState = dao.TxInfoState_SendHex
+											htBreachRemedy.SendAt = time.Now()
+											_ = db.Update(htBreachRemedy)
+										}
+									}
+									// 或者 htlc payee方的hebr
+									heBreachRemedy := &dao.BreachRemedyTransaction{}
+									_ = db.Select(
+										q.Eq("Type", dao.BRType_HE1b),
+										q.Eq("CurrState", dao.TxInfoState_CreateAndSign),
+										q.Eq("commitmentTxId", sentRsmcBreachRemedy.CommitmentTxId)).First(heBreachRemedy)
+									if heBreachRemedy.Id > 0 {
+										_, err = rpcClient.SendRawTransaction(heBreachRemedy.BrTxHex)
+										if err != nil {
+											log.Println("send heBr by timer")
+											heBreachRemedy.CurrState = dao.TxInfoState_SendHex
+											heBreachRemedy.SendAt = time.Now()
+											_ = db.Update(heBreachRemedy)
+										}
+									}
 								}
 							}
 						}
