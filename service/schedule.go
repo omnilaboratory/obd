@@ -110,7 +110,8 @@ func checkRsmcAndSendBR(db storm.Node) {
 								_ = db.Select(
 									q.Eq("Type", dao.BRType_Htlc),
 									q.Eq("CurrState", dao.TxInfoState_CreateAndSign),
-									q.Eq("commitmentTxId", rsmcBreachRemedy.CommitmentTxId)).First(htlcBreachRemedy)
+									q.Eq("ChannelId", rsmcBreachRemedy.ChannelId),
+									q.Eq("CommitmentTxId", rsmcBreachRemedy.CommitmentTxId)).First(htlcBreachRemedy)
 								if htlcBreachRemedy.Id > 0 {
 									_, err = rpcClient.SendRawTransaction(htlcBreachRemedy.BrTxHex)
 									if err != nil {
@@ -129,7 +130,8 @@ func checkRsmcAndSendBR(db storm.Node) {
 									_ = db.Select(
 										q.Eq("Type", dao.BRType_Ht1a),
 										q.Eq("CurrState", dao.TxInfoState_CreateAndSign),
-										q.Eq("commitmentTxId", sentRsmcBreachRemedy.CommitmentTxId)).First(htBreachRemedy)
+										q.Eq("ChannelId", sentRsmcBreachRemedy.ChannelId),
+										q.Eq("CommitmentTxId", sentRsmcBreachRemedy.CommitmentTxId)).First(htBreachRemedy)
 									if htBreachRemedy.Id > 0 {
 										_, err = rpcClient.SendRawTransaction(htBreachRemedy.BrTxHex)
 										if err != nil {
@@ -144,7 +146,8 @@ func checkRsmcAndSendBR(db storm.Node) {
 									_ = db.Select(
 										q.Eq("Type", dao.BRType_HE1b),
 										q.Eq("CurrState", dao.TxInfoState_CreateAndSign),
-										q.Eq("commitmentTxId", sentRsmcBreachRemedy.CommitmentTxId)).First(heBreachRemedy)
+										q.Eq("ChannelId", sentRsmcBreachRemedy.ChannelId),
+										q.Eq("CommitmentTxId", sentRsmcBreachRemedy.CommitmentTxId)).First(heBreachRemedy)
 									if heBreachRemedy.Id > 0 {
 										_, err = rpcClient.SendRawTransaction(heBreachRemedy.BrTxHex)
 										if err != nil {
