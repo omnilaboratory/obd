@@ -96,7 +96,7 @@ func checkRsmcAndSendBR(db storm.Node) {
 							}
 							rsmcBreachRemedy := &dao.BreachRemedyTransaction{}
 							_ = db.Select(q.Eq("CurrState", dao.TxInfoState_CreateAndSign), q.Eq("InputTxid", txid)).First(rsmcBreachRemedy)
-							if rsmcBreachRemedy.Id > 0 {
+							if rsmcBreachRemedy != nil && rsmcBreachRemedy.Id > 0 {
 								_, err = rpcClient.SendRawTransaction(rsmcBreachRemedy.BrTxHex)
 								if err != nil {
 									log.Println("send rsmcBr by timer")
@@ -125,7 +125,7 @@ func checkRsmcAndSendBR(db storm.Node) {
 								// htlc payer方的htbr
 								sentRsmcBreachRemedy := &dao.BreachRemedyTransaction{}
 								_ = db.Select(q.Eq("CurrState", dao.TxInfoState_SendHex), q.Eq("InputTxid", txid)).First(sentRsmcBreachRemedy)
-								if sentRsmcBreachRemedy.Id > 0 {
+								if sentRsmcBreachRemedy != nil && sentRsmcBreachRemedy.Id > 0 {
 									htBreachRemedy := &dao.BreachRemedyTransaction{}
 									_ = db.Select(
 										q.Eq("Type", dao.BRType_Ht1a),
@@ -176,7 +176,7 @@ func sendRdTx() {
 
 	for _, node := range nodes {
 		if tool.CheckIsString(&node.TransactionHex) {
-			_, err := rpcClient.SendRawTransaction(node.TransactionHex)
+			_, err = rpcClient.SendRawTransaction(node.TransactionHex)
 			if err == nil {
 				if node.Type == 1 {
 					_ = addHTRD1aTxToWaitDB(node.HtnxIdAndHtnxRdId)
