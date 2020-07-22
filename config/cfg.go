@@ -4,6 +4,7 @@ import (
 	"flag"
 	"log"
 	"strconv"
+	"testing"
 	"time"
 
 	"github.com/go-ini/ini"
@@ -33,6 +34,7 @@ var (
 )
 
 func init() {
+	testing.Init()
 	flag.Parse()
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
 

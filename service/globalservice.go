@@ -285,7 +285,7 @@ func checkBtcTxHex(btcFeeTxHexDecode string, channelInfo *dao.ChannelInfo, peerI
 		}
 	}
 	if flag == false {
-		err = errors.New("wrong vout " + jsonFundingTxHexDecode.Get("vout").String())
+		err = errors.New(jsonFundingTxHexDecode.Get("vout").String())
 		log.Println(err)
 		return "", 0, 0, err
 	}
