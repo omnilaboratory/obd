@@ -30,12 +30,13 @@ const (
 	MsgType_Error_0 MsgType = 0
 
 	// region 通用接口，不需要登录 common [-102000,-103000]
-	MsgType_UserLogin_2001       MsgType = -102001
-	MsgType_UserLogout_2002      MsgType = -102002
-	MsgType_p2p_ConnectPeer_2003 MsgType = -102003
-	MsgType_GetMnemonic_2004     MsgType = -102004
-	MsgType_GetObdNodeInfo_2005  MsgType = -102005
-	MsgType_User_End_2099        MsgType = -102099
+	MsgType_UserLogin_2001            MsgType = -102001
+	MsgType_UserLogout_2002           MsgType = -102002
+	MsgType_p2p_ConnectPeer_2003      MsgType = -102003
+	MsgType_GetMnemonic_2004          MsgType = -102004
+	MsgType_GetObdNodeInfo_2005       MsgType = -102005
+	MsgType_GetMiniBtcFundAmount_2006 MsgType = -102006
+	MsgType_User_End_2099             MsgType = -102099
 
 	MsgType_Core_GetNewAddress_2101                    MsgType = -102101
 	MsgType_Core_GetMiningInfo_2102                    MsgType = -102102
@@ -197,6 +198,8 @@ func CheckExist(msgType MsgType) bool {
 	case MsgType_GetMnemonic_2004:
 		return true
 	case MsgType_GetObdNodeInfo_2005:
+		return true
+	case MsgType_GetMiniBtcFundAmount_2006:
 		return true
 	case MsgType_Core_GetNewAddress_2101:
 		return true

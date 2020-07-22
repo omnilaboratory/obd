@@ -5,6 +5,7 @@ import (
 	"errors"
 	"github.com/omnilaboratory/obd/bean"
 	"github.com/omnilaboratory/obd/bean/enum"
+	"github.com/omnilaboratory/obd/config"
 	"github.com/omnilaboratory/obd/service"
 	"github.com/omnilaboratory/obd/tool"
 	"github.com/tidwall/gjson"
@@ -106,7 +107,11 @@ func (client *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, 
 		}
 		client.sendToMyself(msg.Type, true, data)
 		sendType = enum.SendTargetType_SendToSomeone
-
+	case enum.MsgType_GetMiniBtcFundAmount_2006:
+		fee := config.GetMinerFee()
+		data = tool.FloatToString(fee, 8)
+		client.sendToMyself(msg.Type, true, data)
+		sendType = enum.SendTargetType_SendToSomeone
 	// Added by Kevin 2019-11-25
 	// Process GetMnemonic
 	case enum.MsgType_GetMnemonic_2004:

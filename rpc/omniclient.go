@@ -237,6 +237,11 @@ func (client *Client) OmniCreateAndSignRawTransaction(fromBitCoinAddress string,
 		return "", "", errors.New("wrong amount")
 	}
 
+	_, err = client.OmniGetProperty(propertyId)
+	if err != nil {
+		return "", "", err
+	}
+
 	pMoney := config.GetOmniDustBtc()
 	if minerFee < config.GetOmniDustBtc() {
 		minerFee = 0.00003
