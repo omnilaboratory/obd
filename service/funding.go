@@ -6,11 +6,9 @@ import (
 	"github.com/asdine/storm/q"
 	"github.com/omnilaboratory/obd/bean"
 	"github.com/omnilaboratory/obd/bean/chainhash"
-	"github.com/omnilaboratory/obd/config"
 	"github.com/omnilaboratory/obd/dao"
 	"github.com/omnilaboratory/obd/rpc"
 	"github.com/omnilaboratory/obd/tool"
-	"github.com/shopspring/decimal"
 	"github.com/tidwall/gjson"
 	"log"
 	"strings"
@@ -96,7 +94,7 @@ func (service *fundingTransactionManager) BTCFundingCreated(msg bean.RequestMess
 		return nil, "", err
 	}
 
-	out, _ := decimal.NewFromFloat(config.GetMinerFee()).Add(decimal.NewFromFloat(config.GetOmniDustBtc())).Mul(decimal.NewFromFloat(4.0)).Round(8).Float64()
+	out := GetBtcMinerFundMiniAmount()
 	if amount < out {
 		err = errors.New("error btc amount, must greater " + tool.FloatToString(out, 8))
 		log.Println(err)

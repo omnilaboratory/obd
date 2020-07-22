@@ -716,3 +716,8 @@ func HttpGetUserStateFromTracker(userId string) (flag int) {
 	}
 	return 0
 }
+
+func GetBtcMinerFundMiniAmount() float64 {
+	out, _ := decimal.NewFromFloat(config.GetMinerFee()).Add(decimal.NewFromFloat(config.GetOmniDustBtc())).Mul(decimal.NewFromFloat(4.0)).Round(8).Float64()
+	return out
+}
