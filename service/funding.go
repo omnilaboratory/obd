@@ -620,7 +620,7 @@ func (service *fundingTransactionManager) AssetFundingCreated(msg bean.RequestMe
 		return nil, err
 	}
 
-	err = checkBtcFundFinish(channelInfo.ChannelAddress)
+	err = checkBtcFundFinish(channelInfo.ChannelAddress, true)
 	if err != nil {
 		log.Println(err)
 		return nil, err

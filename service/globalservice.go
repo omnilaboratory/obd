@@ -61,7 +61,7 @@ func Start() {
 	rpcClient = rpc.NewClient()
 }
 
-func checkBtcFundFinish(address string) error {
+func checkBtcFundFinish(address string, isFundOmni bool) error {
 	result, err := rpcClient.ListUnspent(address)
 	if err != nil {
 		return err
@@ -72,17 +72,19 @@ func checkBtcFundFinish(address string) error {
 		return errors.New("btc fund have been not finished")
 	}
 
-	pMoney := config.GetOmniDustBtc()
-	out, _ := decimal.NewFromFloat(config.GetMinerFee()).Add(decimal.NewFromFloat(pMoney)).Mul(decimal.NewFromFloat(4.0)).Round(8).Float64()
-	count := 0
-	for _, item := range array {
-		amount := item.Get("amount").Float()
-		if amount >= out {
-			count++
+	if isFundOmni {
+		pMoney := config.GetOmniDustBtc()
+		out, _ := decimal.NewFromFloat(config.GetMinerFee()).Add(decimal.NewFromFloat(pMoney)).Mul(decimal.NewFromFloat(4.0)).Round(8).Float64()
+		count := 0
+		for _, item := range array {
+			amount := item.Get("amount").Float()
+			if amount >= out {
+				count++
+			}
 		}
-	}
-	if count < 3 {
-		return errors.New("btc amount error, must greater " + tool.FloatToString(out, 8))
+		if count < 3 {
+			return errors.New("btc amount error, must greater " + tool.FloatToString(out, 8))
+		}
 	}
 	return nil
 }

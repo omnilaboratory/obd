@@ -287,7 +287,7 @@ func (service *htlcForwardTxManager) UpdateAddHtlc_40(msg bean.RequestMessage, u
 		requestData.CltvExpiry = totalStep - currStep
 	}
 
-	err = checkBtcFundFinish(channelInfo.ChannelAddress)
+	err = checkBtcFundFinish(channelInfo.ChannelAddress, false)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -537,7 +537,7 @@ func (service *htlcForwardTxManager) PayeeSignGetAddHtlc_41(jsonData string, use
 		return nil, errors.New("not found  channel info from  routing_packet")
 	}
 
-	err = checkBtcFundFinish(channelInfo.ChannelAddress)
+	err = checkBtcFundFinish(channelInfo.ChannelAddress, false)
 	if err != nil {
 		log.Println(err)
 		return nil, err

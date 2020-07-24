@@ -63,7 +63,7 @@ func (this *commitmentTxManager) CommitmentTransactionCreated(msg bean.RequestMe
 		return nil, err
 	}
 
-	err = checkBtcFundFinish(channelInfo.ChannelAddress)
+	err = checkBtcFundFinish(channelInfo.ChannelAddress, false)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -554,7 +554,7 @@ func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction
 		log.Println(err)
 		return nil, "", err
 	}
-	err = checkBtcFundFinish(channelInfo.ChannelAddress)
+	err = checkBtcFundFinish(channelInfo.ChannelAddress, false)
 	if err != nil {
 		log.Println(err)
 		return nil, "", err
