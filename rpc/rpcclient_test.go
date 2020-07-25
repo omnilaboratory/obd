@@ -16,7 +16,7 @@ func TestClient_GetMiningInfo(t *testing.T) {
 
 	client := NewClient()
 
-	s, err := client.OmniGetbalance("mre4gBmjKiBm8gwZmpCNcnnHiDY7TXr2wD", 1037)
+	s, err := client.OmniGetbalance("mgXEzLqDxZWrhsALzXp2By3Erogf8CQxvs", 137)
 	log.Println(s)
 	log.Println(err)
 	return

@@ -390,14 +390,14 @@ func (client *Client) OmniCreateAndSignRawTransactionUseSingleInput(txType int, 
 	_, _ = client.ValidateAddress(fromBitCoinAddress)
 	_, _ = client.ValidateAddress(toBitCoinAddress)
 
-	balanceResult, err := client.OmniGetbalance(fromBitCoinAddress, int(propertyId))
-	if err != nil {
-		return "", "", "", err
-	}
-	omniBalance := gjson.Get(balanceResult, "balance").Float()
-	if omniBalance < amount {
-		return "", "", "", errors.New("not enough omni balance")
-	}
+	//balanceResult, err := client.OmniGetbalance(fromBitCoinAddress, int(propertyId))
+	//if err != nil {
+	//	return "", "", "", err
+	//}
+	//omniBalance := gjson.Get(balanceResult, "balance").Float()
+	//if omniBalance < amount {
+	//	return "", "", "", errors.New("not enough omni balance")
+	//}
 
 	resultListUnspent, err := client.ListUnspent(fromBitCoinAddress)
 	if err != nil {
@@ -543,14 +543,14 @@ func (client *Client) OmniCreateAndSignRawTransactionUseRestInput(txType int, fr
 		minerFee = config.GetMinerFee()
 	}
 
-	balanceResult, err := client.OmniGetbalance(fromBitCoinAddress, int(propertyId))
-	if err != nil {
-		return "", "", err
-	}
-	omniBalance := gjson.Get(balanceResult, "balance").Float()
-	if omniBalance < amount {
-		return "", "", errors.New("not enough omni balance")
-	}
+	//balanceResult, err := client.OmniGetbalance(fromBitCoinAddress, int(propertyId))
+	//if err != nil {
+	//	return "", "", err
+	//}
+	//omniBalance := gjson.Get(balanceResult, "balance").Float()
+	//if omniBalance < amount {
+	//	return "", "", errors.New("not enough omni balance")
+	//}
 
 	_, _ = client.ValidateAddress(fromBitCoinAddress)
 	_, _ = client.ValidateAddress(toBitCoinAddress)
@@ -700,14 +700,14 @@ func (client *Client) OmniCreateAndSignRawTransactionUseUnsendInput(fromBitCoinA
 		minerFee = config.GetMinerFee()
 	}
 
-	balanceResult, err := client.OmniGetbalance(fromBitCoinAddress, int(propertyId))
-	if err != nil {
-		return "", "", err
-	}
-	omniBalance := gjson.Get(balanceResult, "balance").Float()
-	if omniBalance < amount {
-		return "", "", errors.New("not enough omni balance")
-	}
+	//balanceResult, err := client.OmniGetbalance(fromBitCoinAddress, int(propertyId))
+	//if err != nil {
+	//	return "", "", err
+	//}
+	//omniBalance := gjson.Get(balanceResult, "balance").Float()
+	//if omniBalance < amount {
+	//	return "", "", errors.New("not enough omni balance")
+	//}
 
 	_, _ = client.ValidateAddress(fromBitCoinAddress)
 	_, _ = client.ValidateAddress(toBitCoinAddress)
