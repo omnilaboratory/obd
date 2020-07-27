@@ -8,10 +8,10 @@ Clone, compile the source code and run the binary executable file, you will have
 
 
 # Table of Contents
- * [Background](https://github.com/omnilaboratory/obd#background)
- * [Dependency](https://github.com/omnilaboratory/obd#dependency)
- * [Installation](https://github.com/omnilaboratory/obd#installation)
-	* [Step 1: fetch the source code](https://github.com/omnilaboratory/obd#step-1-fetch-the-source-code)
+ * [Background](#background)
+ * [Dependency](#dependency)
+ * [Installation](#installation)
+	* [Step 1: fetch the source code](#step-1-fetch-the-source-code)
 	* [Step 2: set up OmniCore node](https://github.com/omnilaboratory/obd#step-2)
 		* [option 1: remote omnicore node](https://github.com/omnilaboratory/obd#option-1-remote-omnicore-node)	
 		* [option 2: local omnicore node](https://github.com/omnilaboratory/obd#option-2-local-omnicore-node) 
