@@ -42,14 +42,31 @@ func ConnectToTracker() (err error) {
 		return err
 	}
 	service.TrackerWsConn = conn
+	if service.TrackerChan == nil {
+		service.TrackerChan = make(chan []byte)
+	}
+
 	nodeId := httpCheckChainTypeByTracker()
 	if nodeId == 0 {
 		return errors.New("fail to login tracker")
 	}
-	if ticker3m != nil {
+
+	if ticker3m == nil {
+		sendDataGoroutine()
 		startSchedule()
 	}
 	return nil
+}
+
+func sendDataGoroutine() {
+	go func() {
+		for {
+			select {
+			case msg := <-service.TrackerChan:
+				sendMsgToTracker(msg)
+			}
+		}
+	}()
 }
 
 func SynData() {
@@ -96,6 +113,7 @@ func SynData() {
 	for {
 		select {
 		case <-done:
+			conn = nil
 			return
 		case t := <-ticker.C:
 			info := make(map[string]interface{})
@@ -152,7 +170,7 @@ func updateP2pAddressLogin() {
 	if err != nil {
 		log.Println(err)
 	} else {
-		sendMsgToTracker(string(bytes))
+		sendMsgToTracker(bytes)
 	}
 }
 
@@ -171,7 +189,7 @@ func sycUserInfos() {
 		info["data"] = nodes
 		bytes, err := json.Marshal(info)
 		if err == nil {
-			sendMsgToTracker(string(bytes))
+			sendMsgToTracker(bytes)
 		}
 	}
 }
@@ -257,7 +275,7 @@ func sycChannelInfos() {
 		info["data"] = nodes
 		bytes, err := json.Marshal(info)
 		if err == nil {
-			sendMsgToTracker(string(bytes))
+			sendMsgToTracker(bytes)
 		}
 	}
 }
@@ -297,8 +315,16 @@ func checkChannel(db storm.Node, nodes []trackerBean.ChannelInfoRequest) {
 	}
 }
 
-func sendMsgToTracker(msg string) {
-	err := conn.WriteMessage(websocket.TextMessage, []byte(msg))
+func sendMsgToTracker(msg []byte) {
+	log.Println(string(msg))
+	if conn == nil {
+		err := ConnectToTracker()
+		if err != nil {
+			log.Println(err)
+			return
+		}
+	}
+	err := conn.WriteMessage(websocket.TextMessage, msg)
 	if err != nil {
 		log.Println("write:", err)
 		return
@@ -306,7 +332,6 @@ func sendMsgToTracker(msg string) {
 }
 
 func startSchedule() {
-
 	go func() {
 		ticker3m = time.NewTicker(3 * time.Minute)
 		defer ticker3m.Stop()

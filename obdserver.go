@@ -47,7 +47,7 @@ func main() {
 	err := rpc.NewClient().CheckVersion()
 	if err != nil {
 		log.Println(err)
-		log.Println("because get wrong omnicore version, obd fail to start")
+		log.Println("because get wrong omniCore version, obd fail to start")
 		return
 	}
 	//tracker

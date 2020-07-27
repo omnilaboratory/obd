@@ -27,6 +27,7 @@ var db *storm.DB
 var P2PLocalPeerId string
 var rpcClient *rpc.Client
 var TrackerWsConn *websocket.Conn
+var TrackerChan chan []byte
 
 //for store the privateKey
 var tempAddrPrivateKeyMap = make(map[string]string)
@@ -650,6 +651,7 @@ func sendChannelStateToTracker(channelInfo dao.ChannelInfo, commitmentTx dao.Com
 }
 
 func sendMsgToTracker(msgType enum.MsgType, data interface{}) {
+
 	message := trackerBean.RequestMessage{}
 	message.Type = msgType
 
@@ -665,10 +667,8 @@ func sendMsgToTracker(msgType enum.MsgType, data interface{}) {
 	message.Data = result
 
 	bytes, _ := json.Marshal(message)
-	err := TrackerWsConn.WriteMessage(websocket.TextMessage, bytes)
-	if err != nil {
-		log.Println("write:", err)
-		return
+	if TrackerChan != nil {
+		TrackerChan <- bytes
 	}
 }
 
