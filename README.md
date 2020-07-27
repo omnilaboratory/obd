@@ -12,15 +12,15 @@ Clone, compile the source code and run the binary executable file, you will have
  * [Dependency](#dependency)
  * [Installation](#installation)
 	* [Step 1: fetch the source code](#step-1-fetch-the-source-code)
-	* [Step 2: set up OmniCore node](https://github.com/omnilaboratory/obd#step-2)
-		* [option 1: remote omnicore node](https://github.com/omnilaboratory/obd#option-1-remote-omnicore-node)	
-		* [option 2: local omnicore node](https://github.com/omnilaboratory/obd#option-2-local-omnicore-node) 
-	* [Step 3: compile and run OmniBOLT daemon](https://github.com/omnilaboratory/obd#step-3-compile-and-run-omnibolt-daemon)
-	* [Step 4: test channel operations using GUI testing tool](https://github.com/omnilaboratory/obd#step-4-test-channel-operations-using-gui-testing-tool)
-	* [Step 5: channel operations on test site](https://github.com/omnilaboratory/obd#step-5-channel-operations-on-test-site)
-		* [sign up](https://github.com/omnilaboratory/obd#sign-up)	
-		* [login](https://github.com/omnilaboratory/obd#login)
-		* [normal operations](https://github.com/omnilaboratory/obd#normal-operations)
+	* [Step 2: set up OmniCore node](#step-2)
+		* [option 1: remote omnicore node](#option-1-remote-omnicore-node)	
+		* [option 2: local omnicore node](#option-2-local-omnicore-node) 
+	* [Step 3: compile and run OmniBOLT daemon](#step-3-compile-and-run-omnibolt-daemon)
+	* [Step 4: test channel operations using GUI testing tool](#step-4-test-channel-operations-using-gui-testing-tool)
+	* [Step 5: channel operations on test site](#step-5-channel-operations-on-test-site)
+		* [sign up](#sign-up)	
+		* [login](#login)
+		* [normal operations](#normal-operations)
 
 	<!-- Removed by Neo Carmack 2020-06-09 -->		
 	<!-- 	* [create channel](https://github.com/omnilaboratory/obd#create-channel)
@@ -32,12 +32,12 @@ Clone, compile the source code and run the binary executable file, you will have
 	<!-- Removed by Neo Carmack 2020-06-09 -->
 	<!-- 	* [Step 6: transfer assets through HTLC](https://github.com/omnilaboratory/obd#step-6-transfer-assets-through-HTLC) -->
 
- * [API Document](https://github.com/omnilaboratory/obd#api-document)
- * [How to Contribute](https://github.com/omnilaboratory/obd#how-to-contribute)
- * [Current Features](https://github.com/omnilaboratory/obd#current-features)
- * [Comming Features](https://github.com/omnilaboratory/obd#comming-features)
- * [Experimental Features](https://github.com/omnilaboratory/obd#experimental-features)
- * [Related Projects](https://github.com/omnilaboratory/obd#related-projects)
+ * [API Document](#api-document)
+ * [How to Contribute](#how-to-contribute)
+ * [Current Features](#current-features)
+ * [Comming Features](#comming-features)
+ * [Experimental Features](#experimental-features)
+ * [Related Projects](#related-projects)
 
 # Background
 
