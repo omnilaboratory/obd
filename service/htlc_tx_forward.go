@@ -1356,6 +1356,7 @@ func htlcPayerCreateCommitmentTx_C3a(tx storm.Node, channelInfo *dao.ChannelInfo
 			return nil, err
 		}
 		allUsedTxidTemp += usedTxid
+		newCommitmentTxInfo.RsmcInputTxid = usedTxid
 		newCommitmentTxInfo.RSMCTxid = txid
 		newCommitmentTxInfo.RSMCTxHex = hex
 	}
@@ -1517,6 +1518,7 @@ func htlcPayeeCreateCommitmentTx_C3b(tx storm.Node, channelInfo *dao.ChannelInfo
 			return nil, err
 		}
 		allUsedTxidTemp += usedTxid
+		newCommitmentTxInfo.RsmcInputTxid = usedTxid
 		newCommitmentTxInfo.RSMCTxid = txid
 		newCommitmentTxInfo.RSMCTxHex = hex
 	}
