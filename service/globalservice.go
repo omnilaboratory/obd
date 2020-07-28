@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/asdine/storm/q"
-	"github.com/gorilla/websocket"
 	"github.com/omnilaboratory/obd/bean"
 	"github.com/omnilaboratory/obd/bean/enum"
 	"github.com/omnilaboratory/obd/config"
@@ -26,7 +25,6 @@ import (
 var db *storm.DB
 var P2PLocalPeerId string
 var rpcClient *rpc.Client
-var TrackerWsConn *websocket.Conn
 var TrackerChan chan []byte
 
 //for store the privateKey

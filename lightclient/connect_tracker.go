@@ -41,7 +41,6 @@ func ConnectToTracker() (err error) {
 		log.Println("error ================ fail to dial tracker:", err)
 		return err
 	}
-	service.TrackerWsConn = conn
 	if service.TrackerChan == nil {
 		service.TrackerChan = make(chan []byte)
 	}
@@ -50,35 +49,28 @@ func ConnectToTracker() (err error) {
 	if nodeId == 0 {
 		return errors.New("fail to login tracker")
 	}
+	if isReset {
+		updateP2pAddressLogin()
+		go goroutine()
+	}
 
 	if ticker3m == nil {
-		sendDataGoroutine()
 		startSchedule()
 	}
 	return nil
 }
 
-func sendDataGoroutine() {
-	go func() {
-		for {
-			select {
-			case msg := <-service.TrackerChan:
-				sendMsgToTracker(msg)
-			}
-		}
-	}()
-}
+var isReset = true
 
-func SynData() {
-
+func goroutine() {
+	isReset = false
 	defer conn.Close()
-	done := make(chan struct{})
 	go func() {
-		defer close(done)
 		for {
 			_, message, err := conn.ReadMessage()
 			if err != nil {
-				log.Println("read:", err)
+				isReset = true
+				log.Println("socket to tracker get err:", err)
 				conn = nil
 				return
 			}
@@ -103,18 +95,12 @@ func SynData() {
 			}
 		}
 	}()
-	updateP2pAddressLogin()
-	sycUserInfos()
-	sycChannelInfos()
 
 	ticker := time.NewTicker(time.Minute * 2)
 	defer ticker.Stop()
 
 	for {
 		select {
-		case <-done:
-			conn = nil
-			return
 		case t := <-ticker.C:
 			info := make(map[string]interface{})
 			info["type"] = enum.MsgType_Tracker_HeartBeat_302
@@ -127,21 +113,23 @@ func SynData() {
 			}
 		case <-interrupt:
 			log.Println("ws to tracker interrupt")
-			// Cleanly close the connection by sending a close message and then
-			// waiting (with timeout) for the server to close the connection.
-			err := conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
-			if err != nil {
-				conn = nil
-				log.Println("write close:", err)
-				return
+			if conn != nil {
+				err := conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
+				if err != nil {
+					log.Println("write close:", err)
+				}
 			}
-			select {
-			case <-done:
-			case <-time.After(time.Second):
-			}
+			isReset = true
+			conn = nil
+			close(interrupt)
 			return
 		}
 	}
+}
+
+func SynData() {
+	sycUserInfos()
+	sycChannelInfos()
 }
 
 func httpCheckChainTypeByTracker() (nodeId int) {
@@ -316,8 +304,9 @@ func checkChannel(db storm.Node, nodes []trackerBean.ChannelInfoRequest) {
 }
 
 func sendMsgToTracker(msg []byte) {
-	log.Println(string(msg))
+	//log.Println("send to tracker", string(msg))
 	if conn == nil {
+		isReset = true
 		err := ConnectToTracker()
 		if err != nil {
 			log.Println(err)
@@ -332,6 +321,15 @@ func sendMsgToTracker(msg []byte) {
 }
 
 func startSchedule() {
+	go func() {
+		for {
+			select {
+			case msg := <-service.TrackerChan:
+				sendMsgToTracker(msg)
+			}
+		}
+	}()
+
 	go func() {
 		ticker3m = time.NewTicker(3 * time.Minute)
 		defer ticker3m.Stop()
