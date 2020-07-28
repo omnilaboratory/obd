@@ -128,13 +128,23 @@ func (service *htlcCloseTxManager) RequestCloseHtlc(msg bean.RequestMessage, use
 		return nil, err
 	}
 
-	if latestCommitmentTxInfo.CurrState != dao.TxInfoState_Htlc_GetR &&
-		latestCommitmentTxInfo.CurrState != dao.TxInfoState_Create {
-		return nil, errors.New("latestCommitmentTxInfo currState is not in TxInfoState_Htlc_GetR or TxInfoState_Create state")
+	//如果是第一次发起的关闭请求
+	if latestCommitmentTxInfo.TxType == dao.CommitmentTransactionType_Htlc {
+		if latestCommitmentTxInfo.CurrState != dao.TxInfoState_Htlc_GetH &&
+			latestCommitmentTxInfo.CurrState != dao.TxInfoState_Htlc_GetR {
+			return nil, errors.New("latestCommitmentTxInfo currState is not in TxInfoState_Htlc_GetH or TxInfoState_Htlc_GetR state")
+		}
+	}
+
+	//如果是第二次发起的请求，前面的请求失败了
+	if latestCommitmentTxInfo.TxType == dao.CommitmentTransactionType_Rsmc {
+		if latestCommitmentTxInfo.CurrState != dao.TxInfoState_Create {
+			return nil, errors.New("latestCommitmentTxInfo currState is not in  TxInfoState_Create state")
+		}
 	}
 
 	ht1aOrHe1b := dao.HTLCTimeoutTxForAAndExecutionForB{}
-	if latestCommitmentTxInfo.CurrState == dao.TxInfoState_Htlc_GetR {
+	if latestCommitmentTxInfo.TxType == dao.CommitmentTransactionType_Htlc {
 		_, err = tool.GetPubKeyFromWifAndCheck(reqData.LastRsmcTempAddressPrivateKey, latestCommitmentTxInfo.RSMCTempAddressPubKey)
 		if err != nil {
 			return nil, errors.New("last_rsmc_temp_address_private_key is wrong for " + latestCommitmentTxInfo.RSMCTempAddressPubKey)
@@ -144,17 +154,18 @@ func (service *htlcCloseTxManager) RequestCloseHtlc(msg bean.RequestMessage, use
 			return nil, errors.New("last_htlc_temp_address_private_key is wrong for " + latestCommitmentTxInfo.HTLCTempAddressPubKey)
 		}
 
-		err = tx.Select(
-			q.Eq("ChannelId", channelInfo.ChannelId),
-			q.Eq("CommitmentTxId", latestCommitmentTxInfo.Id),
-			q.Eq("Owner", user.PeerId)).
-			First(&ht1aOrHe1b)
-		if err != nil {
-			log.Println(err)
-			return nil, err
+		if latestCommitmentTxInfo.CurrState == dao.TxInfoState_Htlc_GetR {
+			err = tx.Select(
+				q.Eq("ChannelId", channelInfo.ChannelId),
+				q.Eq("CommitmentTxId", latestCommitmentTxInfo.Id),
+				q.Eq("Owner", user.PeerId)).
+				First(&ht1aOrHe1b)
+			if err != nil {
+				log.Println(err)
+				return nil, err
+			}
 		}
 	} else {
-
 		if reqData.CurrRsmcTempAddressPubKey != latestCommitmentTxInfo.RSMCTempAddressPubKey {
 			return nil, errors.New("curr_rsmc_temp_address_pub_key is not the same when create currTx")
 		}
@@ -173,35 +184,39 @@ func (service *htlcCloseTxManager) RequestCloseHtlc(msg bean.RequestMessage, use
 		if err != nil {
 			return nil, errors.New("last_htlc_temp_address_private_key is wrong for " + lastCommitmentTxInfo.HTLCTempAddressPubKey)
 		}
-		err = tx.Select(
-			q.Eq("ChannelId", channelInfo.ChannelId),
-			q.Eq("CommitmentTxId", lastCommitmentTxInfo.Id),
-			q.Eq("Owner", user.PeerId)).
-			First(&ht1aOrHe1b)
-		if err != nil {
-			log.Println(err)
-			return nil, err
+		if lastCommitmentTxInfo.CurrState == dao.TxInfoState_Htlc_GetR {
+			err = tx.Select(
+				q.Eq("ChannelId", channelInfo.ChannelId),
+				q.Eq("CommitmentTxId", lastCommitmentTxInfo.Id),
+				q.Eq("Owner", user.PeerId)).
+				First(&ht1aOrHe1b)
+			if err != nil {
+				log.Println(err)
+				return nil, err
+			}
 		}
 	}
 
-	_, err = tool.GetPubKeyFromWifAndCheck(reqData.LastHtlcTempAddressForHtnxPrivateKey, ht1aOrHe1b.RSMCTempAddressPubKey)
-	if err != nil {
-		return nil, errors.New("last_htlc_temp_address_for_htnx_private_key is wrong for" + ht1aOrHe1b.RSMCTempAddressPubKey)
+	retData = &bean.RequestCloseHtlcTxOfP2p{}
+	if ht1aOrHe1b.Id > 0 {
+		_, err = tool.GetPubKeyFromWifAndCheck(reqData.LastHtlcTempAddressForHtnxPrivateKey, ht1aOrHe1b.RSMCTempAddressPubKey)
+		if err != nil {
+			return nil, errors.New("last_htlc_temp_address_for_htnx_private_key is wrong for" + ht1aOrHe1b.RSMCTempAddressPubKey)
+		}
+		retData.LastHtlcTempAddressForHtnxPrivateKey = reqData.LastHtlcTempAddressForHtnxPrivateKey
 	}
 	tempAddrPrivateKeyMap[reqData.CurrRsmcTempAddressPubKey] = reqData.CurrRsmcTempAddressPrivateKey
 	tempAddrPrivateKeyMap[requesterPubKey] = reqData.ChannelAddressPrivateKey
 
-	retData = &bean.RequestCloseHtlcTxOfP2p{}
 	retData.ChannelId = channelInfo.ChannelId
 	retData.LastRsmcTempAddressPrivateKey = reqData.LastRsmcTempAddressPrivateKey
 	retData.LastHtlcTempAddressPrivateKey = reqData.LastHtlcTempAddressPrivateKey
-	retData.LastHtlcTempAddressForHtnxPrivateKey = reqData.LastHtlcTempAddressForHtnxPrivateKey
 	retData.CurrRsmcTempAddressPubKey = reqData.CurrRsmcTempAddressPubKey
 	retData.SenderNodeAddress = msg.SenderNodePeerId
 	retData.SenderPeerId = msg.SenderUserPeerId
 
-	//如果是第一次请求，前面没有请求失败
-	if latestCommitmentTxInfo.CurrState == dao.TxInfoState_Htlc_GetR {
+	//如果是第一次请求
+	if latestCommitmentTxInfo.TxType == dao.CommitmentTransactionType_Htlc {
 		//创建c2a omni的交易不能一个输入，多个输出，所以就是两个交易
 		reqTempData := &bean.SendRequestCommitmentTx{}
 		reqTempData.CurrTempAddressPubKey = reqData.CurrRsmcTempAddressPubKey
@@ -214,6 +229,7 @@ func (service *htlcCloseTxManager) RequestCloseHtlc(msg bean.RequestMessage, use
 		retData.RsmcHex = newCommitmentTxInfo.RSMCTxHex
 		retData.ToCounterpartyTxHex = newCommitmentTxInfo.ToCounterpartyTxHex
 		retData.CommitmentTxHash = newCommitmentTxInfo.CurrHash
+		//	上一次的请求出现异常，再次发起请求
 	} else {
 		retData.RsmcHex = latestCommitmentTxInfo.RSMCTxHex
 		retData.ToCounterpartyTxHex = latestCommitmentTxInfo.ToCounterpartyTxHex
@@ -380,8 +396,19 @@ func (service *htlcCloseTxManager) CloseHTLCSigned(msg bean.RequestMessage, user
 		return nil, err
 	}
 
-	if latestCommitmentTxInfo.CurrState != dao.TxInfoState_Htlc_GetR && latestCommitmentTxInfo.CurrState != dao.TxInfoState_Create {
-		return nil, errors.New("wrong commitment tx state " + strconv.Itoa(int(latestCommitmentTxInfo.CurrState)))
+	//如果是第一次收到的关闭请求
+	if latestCommitmentTxInfo.TxType == dao.CommitmentTransactionType_Htlc {
+		if latestCommitmentTxInfo.CurrState != dao.TxInfoState_Htlc_GetH &&
+			latestCommitmentTxInfo.CurrState != dao.TxInfoState_Htlc_GetR {
+			return nil, errors.New("wrong commitment tx state " + strconv.Itoa(int(latestCommitmentTxInfo.CurrState)))
+		}
+	}
+
+	//如果是第二次收到的请求，前面的请求有异常了
+	if latestCommitmentTxInfo.TxType == dao.CommitmentTransactionType_Rsmc {
+		if latestCommitmentTxInfo.CurrState != dao.TxInfoState_Create {
+			return nil, errors.New("latestCommitmentTxInfo currState is not in  TxInfoState_Create state")
+		}
 	}
 
 	he1b := dao.HTLCTimeoutTxForAAndExecutionForB{}
@@ -394,14 +421,16 @@ func (service *htlcCloseTxManager) CloseHTLCSigned(msg bean.RequestMessage, user
 		if err != nil {
 			return nil, errors.New("last_htlc_temp_address_private_key is wrong for " + latestCommitmentTxInfo.HTLCTempAddressPubKey)
 		}
-		err = tx.Select(
-			q.Eq("ChannelId", channelInfo.ChannelId),
-			q.Eq("CommitmentTxId", latestCommitmentTxInfo.Id),
-			q.Eq("Owner", user.PeerId)).
-			First(&he1b)
-		if err != nil {
-			log.Println(err)
-			return nil, err
+		if latestCommitmentTxInfo.CurrState == dao.TxInfoState_Htlc_GetR {
+			err = tx.Select(
+				q.Eq("ChannelId", channelInfo.ChannelId),
+				q.Eq("CommitmentTxId", latestCommitmentTxInfo.Id),
+				q.Eq("Owner", user.PeerId)).
+				First(&he1b)
+			if err != nil {
+				log.Println(err)
+				return nil, err
+			}
 		}
 	} else {
 		if reqData.CurrRsmcTempAddressPubKey != latestCommitmentTxInfo.RSMCTempAddressPubKey {
@@ -421,26 +450,31 @@ func (service *htlcCloseTxManager) CloseHTLCSigned(msg bean.RequestMessage, user
 			return nil, errors.New("last_htlc_temp_address_private_key is wrong for " + lastCommitTxInfo.HTLCTempAddressPubKey)
 		}
 
-		err = tx.Select(
-			q.Eq("ChannelId", channelInfo.ChannelId),
-			q.Eq("CommitmentTxId", lastCommitTxInfo.Id),
-			q.Eq("Owner", user.PeerId)).
-			First(&he1b)
-		if err != nil {
-			log.Println(err)
-			return nil, err
+		if lastCommitTxInfo.CurrState == dao.TxInfoState_Htlc_GetR {
+			err = tx.Select(
+				q.Eq("ChannelId", channelInfo.ChannelId),
+				q.Eq("CommitmentTxId", lastCommitTxInfo.Id),
+				q.Eq("Owner", user.PeerId)).
+				First(&he1b)
+			if err != nil {
+				log.Println(err)
+				return nil, err
+			}
 		}
-	}
-	_, err = tool.GetPubKeyFromWifAndCheck(reqData.LastHtlcTempAddressForHtnxPrivateKey, he1b.RSMCTempAddressPubKey)
-	if err != nil {
-		return nil, errors.New("last_htlc_temp_address_for_htnx_private_key is wrong for " + he1b.RSMCTempAddressPubKey)
 	}
 
 	retData = &bean.HtlcCloseCloseeSignedInfoToCloser{}
+	if he1b.Id > 0 {
+		_, err = tool.GetPubKeyFromWifAndCheck(reqData.LastHtlcTempAddressForHtnxPrivateKey, he1b.RSMCTempAddressPubKey)
+		if err != nil {
+			return nil, errors.New("last_htlc_temp_address_for_htnx_private_key is wrong for " + he1b.RSMCTempAddressPubKey)
+		}
+		retData.CloseeLastHtlcTempAddressForHtnxPrivateKey = reqData.LastHtlcTempAddressForHtnxPrivateKey
+	}
+
 	retData.ChannelId = channelInfo.ChannelId
 	retData.CloseeLastRsmcTempAddressPrivateKey = reqData.LastRsmcTempAddressPrivateKey
 	retData.CloseeLastHtlcTempAddressPrivateKey = reqData.LastHtlcTempAddressPrivateKey
-	retData.CloseeLastHtlcTempAddressForHtnxPrivateKey = reqData.LastHtlcTempAddressForHtnxPrivateKey
 	retData.CloseeCurrRsmcTempAddressPubKey = reqData.CurrRsmcTempAddressPubKey
 
 	// get the funding transaction
@@ -512,14 +546,16 @@ func (service *htlcCloseTxManager) CloseHTLCSigned(msg bean.RequestMessage, user
 			log.Println(err)
 			return nil, err
 		}
-		err = signLastBR(tx, dao.BRType_Ht1a, *channelInfo, user.PeerId, closeHtlcTxOfP2p.LastHtlcTempAddressForHtnxPrivateKey, latestCommitmentTxInfo.Id)
-		if err != nil {
-			log.Println(err)
-			return nil, err
+		if latestCommitmentTxInfo.CurrState == dao.TxInfoState_Htlc_GetR {
+			err = signLastBR(tx, dao.BRType_Ht1a, *channelInfo, user.PeerId, closeHtlcTxOfP2p.LastHtlcTempAddressForHtnxPrivateKey, latestCommitmentTxInfo.Id)
+			if err != nil {
+				log.Println(err)
+				return nil, err
+			}
 		}
 		//endregion
 
-		//region 4、创建C2b
+		//region 4、创建C3b
 		commitmentTxRequest := &bean.SendRequestCommitmentTx{}
 		commitmentTxRequest.ChannelId = channelInfo.ChannelId
 		commitmentTxRequest.Amount = 0
@@ -752,10 +788,12 @@ func (service *htlcCloseTxManager) AfterBobCloseHTLCSigned_AtAliceSide(data stri
 		log.Println(err)
 		return nil, false, err
 	}
-	err = signLastBR(tx, dao.BRType_HE1b, *channelInfo, user.PeerId, bobLastHtlcTempAddressForHtnxPrivateKey, latestCommitmentTxInfo.LastCommitmentTxId)
-	if err != nil {
-		log.Println(err)
-		return nil, false, err
+	if latestCommitmentTxInfo.CurrState == dao.TxInfoState_Htlc_GetR {
+		err = signLastBR(tx, dao.BRType_HE1b, *channelInfo, user.PeerId, bobLastHtlcTempAddressForHtnxPrivateKey, latestCommitmentTxInfo.LastCommitmentTxId)
+		if err != nil {
+			log.Println(err)
+			return nil, false, err
+		}
 	}
 	//endregion
 
@@ -982,7 +1020,7 @@ func (service *htlcCloseTxManager) AfterAliceSignCloseHTLCAtBobSide(data string,
 
 func addHT1aTxToWaitDB(htnx *dao.HTLCTimeoutTxForAAndExecutionForB, htrd *dao.RevocableDeliveryTransaction) error {
 	node := &dao.RDTxWaitingSend{}
-	count, err := db.Select(
+	count, err := obdGlobalDB.Select(
 		q.Eq("TransactionHex", htnx.RSMCTxHex)).
 		Count(node)
 	if err == nil {
@@ -998,7 +1036,7 @@ func addHT1aTxToWaitDB(htnx *dao.HTLCTimeoutTxForAAndExecutionForB, htrd *dao.Re
 	node.HtnxIdAndHtnxRdId = make([]int, 2)
 	node.HtnxIdAndHtnxRdId[0] = htnx.Id
 	node.HtnxIdAndHtnxRdId[1] = htrd.Id
-	err = db.Save(node)
+	err = obdGlobalDB.Save(node)
 	if err != nil {
 		return err
 	}
@@ -1009,19 +1047,19 @@ func addHTRD1aTxToWaitDB(htnxIdAndHtnxRdId []int) error {
 	htnxId := htnxIdAndHtnxRdId[0]
 	htrdId := htnxIdAndHtnxRdId[1]
 	htnx := dao.HTLCTimeoutTxForAAndExecutionForB{}
-	err := db.One("Id", htnxId, &htnx)
+	err := obdGlobalDB.One("Id", htnxId, &htnx)
 	if err != nil {
 		return err
 	}
 
 	htrd := dao.RevocableDeliveryTransaction{}
-	err = db.One("Id", htrdId, &htrd)
+	err = obdGlobalDB.One("Id", htrdId, &htrd)
 	if err != nil {
 		return err
 	}
 
 	node := &dao.RDTxWaitingSend{}
-	count, err := db.Select(
+	count, err := obdGlobalDB.Select(
 		q.Eq("TransactionHex", htrd.TxHex)).
 		Count(node)
 	if err == nil {
@@ -1035,14 +1073,14 @@ func addHTRD1aTxToWaitDB(htnxIdAndHtnxRdId []int) error {
 	node.Type = 0
 	node.IsEnable = true
 	node.CreateAt = time.Now()
-	err = db.Save(node)
+	err = obdGlobalDB.Save(node)
 	if err != nil {
 		return err
 	}
 
 	htnx.CurrState = dao.TxInfoState_SendHex
 	htnx.SendAt = time.Now()
-	_ = db.Update(htnx)
+	_ = obdGlobalDB.Update(htnx)
 
 	return nil
 }
@@ -1050,7 +1088,7 @@ func addHTRD1aTxToWaitDB(htnxIdAndHtnxRdId []int) error {
 //htlc timeout Delivery 1b
 func addHTDnxTxToWaitDB(txInfo *dao.HTLCTimeoutDeliveryTxB) (err error) {
 	node := &dao.RDTxWaitingSend{}
-	count, err := db.Select(
+	count, err := obdGlobalDB.Select(
 		q.Eq("TransactionHex", txInfo.TxHex)).
 		Count(node)
 	if err == nil {
@@ -1063,7 +1101,7 @@ func addHTDnxTxToWaitDB(txInfo *dao.HTLCTimeoutDeliveryTxB) (err error) {
 	node.Type = 2
 	node.IsEnable = true
 	node.CreateAt = time.Now()
-	err = db.Save(node)
+	err = obdGlobalDB.Save(node)
 	if err != nil {
 		return err
 	}

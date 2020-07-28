@@ -169,7 +169,7 @@ func checkRsmcAndSendBR(db storm.Node) {
 
 func sendRdTx() {
 	var nodes []dao.RDTxWaitingSend
-	err := db.Select(q.Eq("IsEnable", true)).Find(&nodes)
+	err := obdGlobalDB.Select(q.Eq("IsEnable", true)).Find(&nodes)
 	if err != nil {
 		return
 	}
@@ -181,8 +181,8 @@ func sendRdTx() {
 				if node.Type == 1 {
 					_ = addHTRD1aTxToWaitDB(node.HtnxIdAndHtnxRdId)
 				}
-				_ = db.UpdateField(&node, "IsEnable", false)
-				_ = db.UpdateField(&node, "FinishAt", time.Now())
+				_ = obdGlobalDB.UpdateField(&node, "IsEnable", false)
+				_ = obdGlobalDB.UpdateField(&node, "FinishAt", time.Now())
 			}
 		}
 	}

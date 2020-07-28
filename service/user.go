@@ -18,36 +18,6 @@ type UserManager struct {
 
 var UserService = UserManager{}
 
-// UserSignUp
-func (service *UserManager) UserSignUp(user *bean.User) error {
-	// Check data if correct.
-	if user == nil {
-		return errors.New("user is nil")
-	}
-
-	if tool.CheckIsString(&user.PeerId) == false {
-		return errors.New("Peer ID  is not correct.")
-	}
-
-	// Check out if the user already exists.
-	var node dao.User
-	err := db.Select(q.Eq("PeerId", user.PeerId)).First(&node)
-	if err == nil {
-		return errors.New("The user already exists.")
-	}
-
-	// A new user, sign up.
-	node.PeerId = user.PeerId
-	node.CreateAt = time.Now()
-
-	err = db.Save(&node)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func (service *UserManager) UserLogin(user *bean.User) error {
 	if user == nil {
 		return errors.New("user is nil")

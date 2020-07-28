@@ -261,7 +261,7 @@ func (this *channelManager) DelChannelByTemporaryChanId(jsonData string, user be
 		return nil, errors.New("can not delete the channel")
 	}
 	if err == nil {
-		err = db.DeleteStruct(node)
+		err = user.Db.DeleteStruct(node)
 	}
 	return node, err
 }
@@ -313,7 +313,7 @@ func (this *channelManager) SendBreachRemedyTransaction(jsonData string, user *b
 	}
 
 	channelInfo := &dao.ChannelInfo{}
-	err = db.Select(
+	err = obdGlobalDB.Select(
 		q.Eq("ChannelId", reqData.ChannelId),
 		q.Eq("CurrState", dao.ChannelState_Close)).
 		First(channelInfo)
@@ -323,7 +323,7 @@ func (this *channelManager) SendBreachRemedyTransaction(jsonData string, user *b
 	}
 
 	lastBRTx := &dao.BreachRemedyTransaction{}
-	err = db.Select(
+	err = obdGlobalDB.Select(
 		q.Eq("ChannelId", channelInfo.ChannelId),
 		q.Eq("CurrState", dao.TxInfoState_CreateAndSign),
 		q.Eq("Owner", user.PeerId)).
@@ -345,7 +345,7 @@ func (this *channelManager) SendBreachRemedyTransaction(jsonData string, user *b
 
 	lastBRTx.SendAt = time.Now()
 	lastBRTx.CurrState = dao.TxInfoState_SendHex
-	err = db.Update(lastBRTx)
+	err = obdGlobalDB.Update(lastBRTx)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -904,7 +904,7 @@ func addRDTxToWaitDB(lastRevocableDeliveryTx *dao.RevocableDeliveryTransaction) 
 		return errors.New("empty tx hex")
 	}
 	node := &dao.RDTxWaitingSend{}
-	count, err := db.Select(
+	count, err := obdGlobalDB.Select(
 		q.Eq("TransactionHex", lastRevocableDeliveryTx.TxHex)).
 		Count(node)
 	if count > 0 {
@@ -914,7 +914,7 @@ func addRDTxToWaitDB(lastRevocableDeliveryTx *dao.RevocableDeliveryTransaction) 
 	node.Type = 0
 	node.IsEnable = true
 	node.CreateAt = time.Now()
-	err = db.Save(node)
+	err = obdGlobalDB.Save(node)
 	if err != nil {
 		return err
 	}

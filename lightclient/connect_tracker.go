@@ -336,8 +336,8 @@ func startSchedule() {
 		for {
 			select {
 			case t := <-ticker3m.C:
-				log.Println("timer 3min", t)
 				if conn == nil {
+					log.Println("reconnect tracker ", t)
 					_ = ConnectToTracker()
 				}
 			}

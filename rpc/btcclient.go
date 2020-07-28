@@ -458,8 +458,8 @@ func (client *Client) BtcSignRawTransaction(hex string, privKey string) (string,
 	}
 	hex = gjson.Get(signHex, "hex").String()
 	decodeHex, err := client.DecodeRawTransaction(hex)
-	if err == nil {
-		log.Println(decodeHex)
+	if err != nil {
+		log.Println(err)
 	}
 	txId := gjson.Get(decodeHex, "txid").String()
 	if err != nil {

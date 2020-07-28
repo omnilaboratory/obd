@@ -22,7 +22,7 @@ import (
 	"github.com/tidwall/gjson"
 )
 
-var db *storm.DB
+var obdGlobalDB *storm.DB
 var P2PLocalPeerId string
 var rpcClient *rpc.Client
 var TrackerChan chan []byte
@@ -53,7 +53,7 @@ type commitmentOutputBean struct {
 
 func Start() {
 	var err error
-	db, err = dao.DBService.GetGlobalDB()
+	obdGlobalDB, err = dao.DBService.GetGlobalDB()
 	if err != nil {
 		log.Println(err)
 	}
@@ -540,10 +540,19 @@ func createCommitmentTxHex(dbTx storm.Node, isSender bool, reqData *bean.SendReq
 	}
 
 	if lastCommitmentTx.TxType == dao.CommitmentTransactionType_Htlc {
-		if lastCommitmentTx.HtlcSender == currUser.PeerId {
-			outputBean.AmountToCounterparty, _ = decimal.NewFromFloat(lastCommitmentTx.AmountToCounterparty).Add(decimal.NewFromFloat(lastCommitmentTx.AmountToHtlc)).Round(8).Float64()
+		if lastCommitmentTx.CurrState == dao.TxInfoState_Htlc_GetH {
+			if lastCommitmentTx.HtlcSender == currUser.PeerId {
+				outputBean.AmountToRsmc, _ = decimal.NewFromFloat(lastCommitmentTx.AmountToRSMC).Add(decimal.NewFromFloat(lastCommitmentTx.AmountToHtlc)).Round(8).Float64()
+			} else {
+				outputBean.AmountToCounterparty, _ = decimal.NewFromFloat(lastCommitmentTx.AmountToCounterparty).Add(decimal.NewFromFloat(lastCommitmentTx.AmountToHtlc)).Round(8).Float64()
+			}
+			//	TxInfoState_Htlc_GetR State
 		} else {
-			outputBean.AmountToRsmc, _ = decimal.NewFromFloat(lastCommitmentTx.AmountToRSMC).Add(decimal.NewFromFloat(lastCommitmentTx.AmountToHtlc)).Round(8).Float64()
+			if lastCommitmentTx.HtlcSender == currUser.PeerId {
+				outputBean.AmountToCounterparty, _ = decimal.NewFromFloat(lastCommitmentTx.AmountToCounterparty).Add(decimal.NewFromFloat(lastCommitmentTx.AmountToHtlc)).Round(8).Float64()
+			} else {
+				outputBean.AmountToRsmc, _ = decimal.NewFromFloat(lastCommitmentTx.AmountToRSMC).Add(decimal.NewFromFloat(lastCommitmentTx.AmountToHtlc)).Round(8).Float64()
+			}
 		}
 	}
 
