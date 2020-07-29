@@ -66,11 +66,11 @@ ws://62.234.188.160:60020/wstest
 ### Step 1: connect to an OBD node
 
 <p align="center">
-  <img width="750" alt="Connect Screenshot" src="https://github.com/omnilaboratory/DebuggingTool/blob/master/doc/img/connect.png">
+  <img width="750" alt="Connect Screenshot" src="assets/connect.png">
 </p>
 
 1. click "Connect to OBD node";  
-2. on the right panel, appears the input box. connect you local obd node or one of the [nodes in the testnet](https://github.com/omnilaboratory/DebuggingTool#Nodes-in-testnet), for example: `ws://62.234.216.108:60020/wstest`. Just replace the default `127.0.0.1:60020` by `62.234.216.108:60020`  
+2. on the right panel, appears the input box. connect you local obd node or one of the [nodes in the testnet](#Nodes-in-testnet), for example: `ws://62.234.216.108:60020/wstest`. Just replace the default `127.0.0.1:60020` by `62.234.216.108:60020`  
 3. click "connect". wait for several seconds, the status bar on top of the window will show the status "connected".
 
 If you want to build and deploy your own OBD, you shall go through the installation intruction at [obd repository](https://github.com/omnilaboratory/obd#installation).
@@ -78,7 +78,7 @@ If you want to build and deploy your own OBD, you shall go through the installat
 ### Step 2: signup a new user
 
 <p align="center">
-  <img width="750" alt="SignUp" src="https://github.com/omnilaboratory/DebuggingTool/blob/master/doc/img/signup.png">
+  <img width="750" alt="SignUp" src="assets/signup.png">
 </p>
 
 1. click "signUp";  
@@ -89,7 +89,7 @@ If you want to build and deploy your own OBD, you shall go through the installat
 ### Step 3: login using mnemonic words
 
 <p align="center">
-  <img width="750" alt="login" src="https://github.com/omnilaboratory/DebuggingTool/blob/master/doc/img/login.png">
+  <img width="750" alt="login" src="assets/login.png">
 </p>
 
 1. click "login";  
@@ -121,7 +121,7 @@ Open another browser window, open index.html, and signup another user to get his
 Switch back to Alice's window, we shall input Bob's `nodeAddress` and `userPeerId` to build connection with Bob.  
 
 <p align="center">
-  <img width="750" alt="connectNode" src="https://github.com/omnilaboratory/DebuggingTool/blob/master/doc/img/connectNode.png">
+  <img width="750" alt="connectNode" src="assets/connectNode.png">
 </p>
 
 1. switch back to Alice's window;  
@@ -138,7 +138,7 @@ In the other window you just opened in step 4 for Bob, you will see an incoming 
 ### Step 6: create an invoice
 
 <p align="center">
-  <img width="500" alt="connectNode" src="https://github.com/omnilaboratory/DebuggingTool/blob/master/doc/img/createInvoice.png">
+  <img width="500" alt="connectNode" src="assets/createInvoice.png">
 </p>
 
 
@@ -161,7 +161,7 @@ Online API documents lists all the channel operations step by step, and testing 
 During forwarding HTLCs, a channel shall construct tens of temporary unbroadcast transactions, so lots of private keys needed to be manually managed. Enable this mode, the obd will be your surrogate, will help you fill in all the private keys, and automatically answer the remote requests.
 
 <p align="center">
-  <img width="150" alt="auto_pilot_mode" src="https://github.com/omnilaboratory/DebuggingTool/blob/master/doc/img/auto_pilot_mode.png">
+  <img width="150" alt="auto_pilot_mode" src="assets/auto_pilot_mode.png">
 </p>
 
 ## JS SDK
