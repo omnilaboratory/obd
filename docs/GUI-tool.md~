@@ -11,22 +11,22 @@ In this tutorial, you can connect either your own OBD node, or the [nodes in the
 
 
 <p align="center">
-  <img width="500" alt="Debugging Tool Screenshot" src="https://github.com/omnilaboratory/DebuggingTool/blob/master/doc/img/image_screen.png">
+  <img width="500" alt="Debugging Tool Screenshot" src="assets/image_screen.png">
 </p>
 
-* [Installation](https://github.com/omnilaboratory/DebuggingTool#installation-clone-this-project-and-run-it-by-chrome)
-* [Nodes in the testnet](https://github.com/omnilaboratory/DebuggingTool#Nodes-in-testnet)
-* [Operations](https://github.com/omnilaboratory/DebuggingTool#operations) 
-	* [Step 1: connect to an OBD node](https://github.com/omnilaboratory/DebuggingTool#step-1-connect-to-an-obd-node)
-	* [Step 2: signup a new user](https://github.com/omnilaboratory/DebuggingTool#step-2-signup-a-new-user)
-	* [Step 3: login using mnemonic words](https://github.com/omnilaboratory/DebuggingTool#step-3-login-using-mnemonic-words)
-	* [Step 4: connect another user](https://github.com/omnilaboratory/DebuggingTool#step-4-connect-another-user)
-	* [Step 5: open channel](https://github.com/omnilaboratory/DebuggingTool#step-5-open-channel)
-	* [Step 6: create an invoice](https://github.com/omnilaboratory/DebuggingTool#step-6-create-an-invoice)
-	* [Step 7: channel operations](https://github.com/omnilaboratory/DebuggingTool#step-7-channel-operations)
-* [Auto pilot mode](https://github.com/omnilaboratory/DebuggingTool#auto-pilot-mode)
-* [JS-SDK](https://github.com/omnilaboratory/DebuggingTool#js-sdk)
-* [how to use APIs](https://github.com/omnilaboratory/DebuggingTool#how-to-use-apis)
+* [Installation](#installation-clone-this-project-and-run-it-by-chrome)
+* [Nodes in the testnet](#Nodes-in-testnet)
+* [Operations](#operations) 
+	* [Step 1: connect to an OBD node](#step-1-connect-to-an-obd-node)
+	* [Step 2: signup a new user](#step-2-signup-a-new-user)
+	* [Step 3: login using mnemonic words](#step-3-login-using-mnemonic-words)
+	* [Step 4: connect another user](#step-4-connect-another-user)
+	* [Step 5: open channel](#step-5-open-channel)
+	* [Step 6: create an invoice](#step-6-create-an-invoice)
+	* [Step 7: channel operations](#step-7-channel-operations)
+* [Auto pilot mode](#auto-pilot-mode)
+* [JS-SDK](#js-sdk)
+* [how to use APIs](#how-to-use-apis)
  	
 
 ## Installation: clone this project and run it by Chrome

@@ -11,7 +11,7 @@ In this tutorial, you can connect either your own OBD node, or the [nodes in the
 
 
 <p align="center">
-  <img width="500" alt="Debugging Tool Screenshot" src="https://github.com/omnilaboratory/DebuggingTool/blob/master/doc/img/image_screen.png">
+  <img width="500" alt="Debugging Tool Screenshot" src="assets/image_screen.png">
 </p>
 
 * [Installation](#installation-clone-this-project-and-run-it-by-chrome)
