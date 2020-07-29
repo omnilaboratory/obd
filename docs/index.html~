@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>OmniBOLT | Smart asset lightning network</title>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+  <meta name="description" content="OmniBOLT is a smart asset lightning network.">
+  <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+  <link rel="stylesheet" href="//unpkg.com/docsify/lib/themes/vue.css">
+</head>
+<body>
+  <div id="app"></div>
+  <script>
+    window.$docsify = {
+      name: 'OmniBOLT Daemon',
+      repo: 'https://github.com/omnilaboratory/obd',
+      auto2top: true,
+      loadSidebar: true,
+      subMaxLevel: 2,
+      <!-- themeColor: '#3FBB86' -->
+themeColor: '#64a19d'
+    }
+  </script>
+  <script src="//unpkg.com/docsify/lib/docsify.min.js"></script>
+</body>
+</html>
