@@ -296,63 +296,6 @@ func (this *channelManager) GetChannelInfoById(jsonData string, user bean.User) 
 	return info, err
 }
 
-func (this *channelManager) SendBreachRemedyTransaction(jsonData string, user *bean.User) (transaction *dao.BreachRemedyTransaction, err error) {
-	if tool.CheckIsString(&jsonData) == false {
-		return nil, errors.New("empty inputData")
-	}
-
-	reqData := &bean.SendBreachRemedyTransaction{}
-	err = json.Unmarshal([]byte(jsonData), reqData)
-	if err != nil {
-		log.Println(err)
-		return nil, err
-	}
-
-	if tool.CheckIsString(&reqData.ChannelId) == false {
-		return nil, errors.New("wrong channelId")
-	}
-
-	channelInfo := &dao.ChannelInfo{}
-	err = obdGlobalDB.Select(
-		q.Eq("ChannelId", reqData.ChannelId),
-		q.Eq("CurrState", dao.ChannelState_Close)).
-		First(channelInfo)
-	if err != nil {
-		log.Println(err)
-		return nil, err
-	}
-
-	lastBRTx := &dao.BreachRemedyTransaction{}
-	err = obdGlobalDB.Select(
-		q.Eq("ChannelId", channelInfo.ChannelId),
-		q.Eq("CurrState", dao.TxInfoState_CreateAndSign),
-		q.Eq("Owner", user.PeerId)).
-		OrderBy("CreateAt").Reverse().
-		First(lastBRTx)
-	if err != nil {
-		err = errors.New("not found the latest br")
-		log.Println(err)
-		return nil, err
-	}
-
-	brtxid, err := rpcClient.SendRawTransaction(lastBRTx.BrTxHex)
-	if err != nil {
-		err = errors.New("BtcSignAndSendRawTransaction: " + err.Error())
-		log.Println(err)
-		return nil, err
-	}
-	log.Println(brtxid)
-
-	lastBRTx.SendAt = time.Now()
-	lastBRTx.CurrState = dao.TxInfoState_SendHex
-	err = obdGlobalDB.Update(lastBRTx)
-	if err != nil {
-		log.Println(err)
-		return nil, err
-	}
-	return lastBRTx, nil
-}
-
 //请求关闭通道
 func (this *channelManager) RequestCloseChannel(msg bean.RequestMessage, user *bean.User) (interface{}, error) {
 	channelId, err := getChannelIdFromJson(msg.Data)

@@ -126,20 +126,6 @@ func (client *Client) commitmentTxModule(msg bean.RequestMessage) (enum.SendTarg
 			}
 		}
 		client.sendToMyself(msg.Type, status, data)
-	case enum.MsgType_SendBreachRemedyTransaction_3206:
-		node, err := service.ChannelService.SendBreachRemedyTransaction(msg.Data, client.User)
-		if err != nil {
-			data = err.Error()
-		} else {
-			bytes, err := json.Marshal(node)
-			if err != nil {
-				data = err.Error()
-			} else {
-				data = string(bytes)
-				status = true
-			}
-		}
-		client.sendToMyself(msg.Type, status, data)
 	case enum.MsgType_CommitmentTx_AllRDByChanId_3207:
 		node, err := service.CommitmentTxService.GetAllRDByChannelId(msg.Data, client.User)
 		if err != nil {

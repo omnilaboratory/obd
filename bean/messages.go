@@ -132,13 +132,6 @@ type CloseChannelSign struct {
 	TypeLengthValue
 }
 
-//type: -35107 (SendBreachRemedyTransaction)
-type SendBreachRemedyTransaction struct {
-	ChannelId                string `json:"channel_id"`
-	ChannelAddressPrivateKey string `json:"channel_address_private_key"` // openChannel address
-	TypeLengthValue
-}
-
 // type: -100340
 type SendRequestFundingBtc struct {
 	TemporaryChannelId       string `json:"temporary_channel_id"`
