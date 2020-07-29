@@ -102,14 +102,16 @@ func goroutine() {
 	for {
 		select {
 		case t := <-ticker.C:
-			info := make(map[string]interface{})
-			info["type"] = enum.MsgType_Tracker_HeartBeat_302
-			info["data"] = t.String()
-			bytes, err := json.Marshal(info)
-			err = conn.WriteMessage(websocket.TextMessage, bytes)
-			if err != nil {
-				log.Println("write:", err)
-				return
+			if conn != nil {
+				info := make(map[string]interface{})
+				info["type"] = enum.MsgType_Tracker_HeartBeat_302
+				info["data"] = t.String()
+				bytes, err := json.Marshal(info)
+				err = conn.WriteMessage(websocket.TextMessage, bytes)
+				if err != nil {
+					log.Println("write:", err)
+					return
+				}
 			}
 		case <-interrupt:
 			log.Println("ws to tracker interrupt")
