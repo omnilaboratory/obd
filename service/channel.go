@@ -83,6 +83,59 @@ func (this *channelManager) BeforeBobOpenChannelAtBobSide(msg string, user *bean
 	return err
 }
 
+func (this *channelManager) BobCheckChannelAddessExist(jsonData string, user *bean.User) (exist bool, err error) {
+	reqData := &bean.SendSignOpenChannel{}
+	err = json.Unmarshal([]byte(jsonData), &reqData)
+
+	if err != nil {
+		return false, err
+	}
+
+	if tool.CheckIsString(&reqData.TemporaryChannelId) == false {
+		return false, errors.New("wrong TemporaryChannelId")
+	}
+
+	channelInfo := &dao.ChannelInfo{}
+	err = user.Db.Select(
+		q.Eq("TemporaryChannelId", reqData.TemporaryChannelId),
+		q.Eq("PeerIdB", user.PeerId),
+		q.Eq("CurrState", dao.ChannelState_Create)).
+		First(channelInfo)
+	if err != nil {
+		log.Println(err)
+		return false, errors.New("can not find the channel " + reqData.TemporaryChannelId + " on Create state")
+	}
+
+	if channelInfo.PeerIdB != user.PeerId {
+		return false, errors.New("you are not the peerIdB")
+	}
+
+	channelInfo.PubKeyB = reqData.FundingPubKey
+	multiSig, err := rpcClient.CreateMultiSig(2, []string{channelInfo.PubKeyA, channelInfo.PubKeyB})
+	if err != nil {
+		log.Println(err)
+		return false, err
+	}
+	channelAddress := gjson.Get(multiSig, "address").String()
+
+	existAddress := false
+	result, err := rpcClient.ListReceivedByAddress(channelAddress)
+	if err == nil {
+		array := gjson.Parse(result).Array()
+		if len(array) > 0 {
+			existAddress = true
+		}
+	}
+	count, _ := user.Db.Select(q.Eq("ChannelAddress", channelAddress)).Count(&dao.ChannelInfo{})
+	if count > 0 {
+		existAddress = true
+	}
+	if existAddress == true {
+		return true, errors.New("the generated address " + channelAddress + " has been exist, please change your pubKey " + reqData.FundingPubKey)
+	}
+	return false, nil
+}
+
 func (this *channelManager) BobAcceptChannel(jsonData string, user *bean.User) (channelInfo *dao.ChannelInfo, err error) {
 	reqData := &bean.SendSignOpenChannel{}
 	err = json.Unmarshal([]byte(jsonData), &reqData)

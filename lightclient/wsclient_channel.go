@@ -128,6 +128,20 @@ func (client *Client) channelModule(msg bean.RequestMessage) (enum.SendTargetTyp
 			}
 		}
 		client.sendToMyself(msg.Type, status, data)
+	case enum.MsgType_CheckChannelAddessExist_3156:
+		node, err := service.ChannelService.BobCheckChannelAddessExist(msg.Data, client.User)
+		if err != nil {
+			data = err.Error()
+		} else {
+			bytes, err := json.Marshal(node)
+			if err != nil {
+				data = err.Error()
+			} else {
+				data = string(bytes)
+				status = true
+			}
+		}
+		client.sendToMyself(msg.Type, status, data)
 	//get acceptChannelReq from fundee then send to funder
 	case enum.MsgType_SendChannelAccept_33:
 		node, err := service.ChannelService.BobAcceptChannel(msg.Data, client.User)
