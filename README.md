@@ -32,11 +32,12 @@ Clone, compile the source code and run the binary executable file, you will have
 	<!-- Removed by Neo Carmack 2020-06-09 -->
 	<!-- 	* [Step 6: transfer assets through HTLC](https://github.com/omnilaboratory/obd#step-6-transfer-assets-through-HTLC) -->
 
- * [API Document](#api-document)
+ * [Document Site](#api-document)
  * [How to Contribute](#how-to-contribute)
  * [Current Features](#current-features)
  * [Comming Features](#comming-features)
  * [Experimental Features](#experimental-features)
+ * [Join US](#communities)
  * [Related Projects](#related-projects)
 
 # Background
@@ -330,8 +331,12 @@ Following operations can be found in the instruction of GUI tool or the [online 
 
 
 # API Document
+
+## API
 Please visit OBD [online API documentation](https://api.omnilab.online) for the lastest update.
 
+## Document Site
+[OmniBOLT document site](https://omnilaboratory.github.io/obd/) offers quick and entire view of OmniBOLT, including getting started documentation, tutorials, GUI tools, technology guide and bussiness applications.
 
 # How to Contribute
 OmniBOLT Daemon is MIT licensed open source software. Hopefully you can get started by going through the above steps, but Lightning network is not that easy to develop. Anyone is welcome to join us in this journey, and please be nice to each other, don't bring any illegal/private stuff, abuse or racial into our community.
@@ -385,6 +390,21 @@ Join us in [OmniBOLT slack channel](https://join.slack.com/t/omnibolt/shared_inv
 
 * Smart Contract System on top of OBD channel. 
 * "Payment is Settlement" theory.
+
+# Communities
+
+## Slack Channel
+
+invitation link:
+https://join.slack.com/t/omnibolt/shared_invite/zt-ad732myf-1G7lXpHPkFH_yRcilwT4Ig
+
+## Telegram
+
+https://t.me/OmniLayer
+
+## Twitter
+
+https://twitter.com/omni_bolt
 
 
 # Related projects: 
