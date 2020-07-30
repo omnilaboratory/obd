@@ -96,7 +96,7 @@ func goroutine() {
 		}
 	}()
 
-	ticker := time.NewTicker(time.Minute * 2)
+	ticker := time.NewTicker(time.Second * 10)
 	defer ticker.Stop()
 
 	for {
@@ -112,6 +112,8 @@ func goroutine() {
 					log.Println("write:", err)
 					return
 				}
+			} else {
+				return
 			}
 		case <-interrupt:
 			log.Println("ws to tracker interrupt")
