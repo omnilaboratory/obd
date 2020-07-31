@@ -130,10 +130,7 @@ func (this *channelManager) BobCheckChannelAddessExist(jsonData string, user *be
 	if count > 0 {
 		existAddress = true
 	}
-	if existAddress == true {
-		return true, errors.New("the generated address " + channelAddress + " has been exist, please change your pubKey " + reqData.FundingPubKey)
-	}
-	return false, nil
+	return existAddress, nil
 }
 
 func (this *channelManager) BobAcceptChannel(jsonData string, user *bean.User) (channelInfo *dao.ChannelInfo, err error) {
