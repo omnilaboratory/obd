@@ -6,6 +6,9 @@ OBD implements the [OmniBOLT](https://github.com/omnilaboratory/OmniBOLT-spec) s
 
 Clone, compile the source code and run the binary executable file, you will have a featured OmniBOLT deamon(OBD) to start the journey of lightning network.   
 
+<p align="center">
+  <img width="500" alt="OmniBOLT-Protocol-Suite" src="docs/assets/omni-lightning.png">
+</p>
 
 # Table of Contents
  * [Background](#background)
