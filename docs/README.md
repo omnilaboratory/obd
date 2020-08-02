@@ -10,7 +10,7 @@ In addition, OmniBOLT provides more flexible contracts for upper layer decentral
 
 
 <p align="center">
-  <img width="500" alt="OmniBOLT-Protocol-Suite" src="assets/omni-lightning.png">
+  <img width="750" alt="OmniBOLT-Protocol-Suite" src="assets/omni-lightning-2.png">
 </p>
 
 
