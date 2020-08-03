@@ -64,7 +64,15 @@ var isReset = true
 
 func goroutine() {
 	isReset = false
+
+	defer func() {
+		if r := recover(); r != nil {
+			conn = nil
+			isReset = true
+		}
+	}()
 	defer conn.Close()
+
 	go func() {
 		for {
 			_, message, err := conn.ReadMessage()
@@ -96,7 +104,7 @@ func goroutine() {
 		}
 	}()
 
-	ticker := time.NewTicker(time.Second * 10)
+	ticker := time.NewTicker(time.Minute * 2)
 	defer ticker.Stop()
 
 	for {
