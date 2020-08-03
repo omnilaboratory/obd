@@ -64,15 +64,19 @@ var isReset = true
 
 func goroutine() {
 	isReset = false
+	ticker := time.NewTicker(time.Minute * 2)
+	defer ticker.Stop()
 
-	defer func() {
+	defer func(ticker *time.Ticker) {
 		if r := recover(); r != nil {
+			ticker.Stop()
 			conn = nil
 			isReset = true
 		}
-	}()
+	}(ticker)
 	defer conn.Close()
 
+	// read message
 	go func() {
 		for {
 			_, message, err := conn.ReadMessage()
@@ -104,9 +108,7 @@ func goroutine() {
 		}
 	}()
 
-	ticker := time.NewTicker(time.Minute * 2)
-	defer ticker.Stop()
-
+	// heartbeat and check whether
 	for {
 		select {
 		case t := <-ticker.C:
