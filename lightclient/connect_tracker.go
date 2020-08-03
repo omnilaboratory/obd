@@ -18,20 +18,15 @@ import (
 	"log"
 	"net/http"
 	"net/url"
-	"os"
-	"os/signal"
 	"reflect"
 	"strings"
 	"time"
 )
 
 var conn *websocket.Conn
-var interrupt chan os.Signal
 var ticker3m *time.Ticker
 
 func ConnectToTracker() (err error) {
-	interrupt = make(chan os.Signal, 1)
-	signal.Notify(interrupt, os.Interrupt)
 
 	u := url.URL{Scheme: "ws", Host: config.TrackerHost, Path: "/ws"}
 	log.Printf("begin to connect to tracker: %s", u.String())
@@ -69,6 +64,7 @@ func goroutine() {
 
 	defer func(ticker *time.Ticker) {
 		if r := recover(); r != nil {
+			log.Println("tracker goroutine recover")
 			ticker.Stop()
 			conn = nil
 			isReset = true
@@ -125,18 +121,6 @@ func goroutine() {
 			} else {
 				return
 			}
-		case <-interrupt:
-			log.Println("ws to tracker interrupt")
-			if conn != nil {
-				err := conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
-				if err != nil {
-					log.Println("write close:", err)
-				}
-			}
-			isReset = true
-			conn = nil
-			close(interrupt)
-			return
 		}
 	}
 }
