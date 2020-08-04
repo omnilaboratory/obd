@@ -82,6 +82,7 @@ type TypeLengthValue struct {
 type SendChannelOpen struct {
 	//充值的pubKey
 	FundingPubKey string `json:"funding_pubkey"`
+	IsPrivate     bool   `json:"is_private"` // channel is a private channel, can not use htlc hop
 	TypeLengthValue
 }
 
@@ -268,20 +269,26 @@ type PayeeSignCommitmentTxOfP2p struct {
 
 //type -100402: invoice
 type HtlcRequestInvoice struct {
-	NetType             string   `json:"net_type"`               //解析用
-	RecipientNodePeerId string   `json:"recipient_node_peer_id"` //解析用
-	RecipientUserPeerId string   `json:"recipient_user_peer_id"` //解析用
+	NetType             string `json:"net_type"` //解析用
+	RecipientNodePeerId string `json:"recipient_node_peer_id"`
+	HtlcRequestFindPathInfo
+	TypeLengthValue
+}
+
+type HtlcRequestFindPathInfo struct {
+	RecipientUserPeerId string   `json:"recipient_user_peer_id"`
 	H                   string   `json:"h"`
 	ExpiryTime          JsonDate `json:"expiry_time"`
 	PropertyId          int64    `json:"property_id"`
 	Amount              float64  `json:"amount"`
 	Description         string   `json:"description"`
-	TypeLengthValue
+	IsPrivate           bool     `json:"is_private"`
 }
 
 //type --100401: alice tell carl ,she wanna transfer some money to Carl
 type HtlcRequestFindPath struct {
 	Invoice string `json:"invoice"`
+	HtlcRequestFindPathInfo
 	TypeLengthValue
 }
 

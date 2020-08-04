@@ -136,56 +136,112 @@ func (service *htlcForwardTxManager) CreateHtlcInvoice(msg bean.RequestMessage, 
 }
 
 // 401 find htlc find path
-func (service *htlcForwardTxManager) PayerRequestFindPath(msgData string, user bean.User) (data interface{}, err error) {
+func (service *htlcForwardTxManager) PayerRequestFindPath(msgData string, user bean.User) (data interface{}, isPrivate bool, err error) {
 	if tool.CheckIsString(&msgData) == false {
-		return nil, errors.New("empty json data")
+		return nil, false, errors.New("empty json data")
 	}
 
 	requestData := &bean.HtlcRequestFindPath{}
 	err = json.Unmarshal([]byte(msgData), requestData)
 	if err != nil {
 		log.Println(err.Error())
-		return nil, err
+		return nil, false, err
 	}
 
-	if tool.CheckIsString(&requestData.Invoice) == false {
-		return nil, errors.New("empty invoice")
-	}
+	var requestFindPathInfo bean.HtlcRequestFindPathInfo
 
-	htlcRequestInvoice, err := tool.DecodeInvoiceObjFromCodes(requestData.Invoice)
-	if err != nil {
-		return nil, errors.New("invalid invoice")
-	}
-
-	if htlcRequestInvoice.RecipientNodePeerId == P2PLocalPeerId {
-		if err := findUserIsOnline(htlcRequestInvoice.RecipientUserPeerId); err != nil {
-			return nil, err
+	if tool.CheckIsString(&requestData.Invoice) {
+		htlcRequestInvoice, err := tool.DecodeInvoiceObjFromCodes(requestData.Invoice)
+		if err != nil {
+			return nil, false, errors.New("invalid invoice")
+		}
+		if htlcRequestInvoice.RecipientNodePeerId == P2PLocalPeerId {
+			if err := findUserIsOnline(requestFindPathInfo.RecipientUserPeerId); err != nil {
+				return nil, false, err
+			}
+		}
+		requestFindPathInfo = htlcRequestInvoice.HtlcRequestFindPathInfo
+	} else {
+		requestFindPathInfo = requestData.HtlcRequestFindPathInfo
+		if tool.CheckIsString(&requestFindPathInfo.RecipientUserPeerId) == false {
+			return nil, false, errors.New("wrong recipient_user_peer_id")
+		}
+		if err := findUserIsOnline(requestFindPathInfo.RecipientUserPeerId); err != nil {
+			return nil, false, err
 		}
 	}
 
-	if htlcRequestInvoice.PropertyId < 0 {
-		return nil, errors.New("wrong property_id")
+	if requestFindPathInfo.PropertyId < 0 {
+		return nil, false, errors.New("wrong property_id")
 	}
 
-	_, err = rpcClient.OmniGetProperty(htlcRequestInvoice.PropertyId)
+	_, err = rpcClient.OmniGetProperty(requestFindPathInfo.PropertyId)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
-	if htlcRequestInvoice.Amount < config.GetOmniDustBtc() {
-		return nil, errors.New("wrong amount")
+	if requestFindPathInfo.Amount < config.GetOmniDustBtc() {
+		return nil, false, errors.New("wrong amount")
 	}
 
-	//tracker find path
-	pathRequest := trackerBean.HtlcPathRequest{}
-	pathRequest.H = htlcRequestInvoice.H
-	pathRequest.PropertyId = htlcRequestInvoice.PropertyId
-	pathRequest.Amount = htlcRequestInvoice.Amount
-	pathRequest.RealPayerPeerId = user.PeerId
-	pathRequest.PayeePeerId = htlcRequestInvoice.RecipientUserPeerId
-	sendMsgToTracker(enum.MsgType_Tracker_GetHtlcPath_351, pathRequest)
+	if requestData.IsPrivate == false {
+		//tracker find path
+		pathRequest := trackerBean.HtlcPathRequest{}
+		pathRequest.H = requestFindPathInfo.H
+		pathRequest.PropertyId = requestFindPathInfo.PropertyId
+		pathRequest.Amount = requestFindPathInfo.Amount
+		pathRequest.RealPayerPeerId = user.PeerId
+		pathRequest.PayeePeerId = requestFindPathInfo.RecipientUserPeerId
+		sendMsgToTracker(enum.MsgType_Tracker_GetHtlcPath_351, pathRequest)
+	} else {
+		return getPrivateChannelForHtlc(requestData, user)
+	}
+	return nil, false, nil
+}
 
-	return nil, nil
+func getPrivateChannelForHtlc(requestData *bean.HtlcRequestFindPath, user bean.User) (data interface{}, isPrivate bool, err error) {
+	tx, err := user.Db.Begin(true)
+	if err != nil {
+		log.Println(err)
+		return nil, true, err
+	}
+	defer tx.Rollback()
+	//get all private channel
+	var nodes []dao.ChannelInfo
+	err = tx.Select(
+		q.Eq("PropertyId", requestData.PropertyId),
+		q.Eq("IsPrivate", true),
+		q.Eq("CurrState", dao.ChannelState_CanUse),
+		q.Or(
+			q.And(
+				q.Eq("PeerIdB", requestData.RecipientUserPeerId),
+				q.Eq("PeerIdA", user.PeerId)),
+			q.And(
+				q.Eq("PeerIdB", user.PeerId),
+				q.Eq("PeerIdA", requestData.RecipientUserPeerId)),
+		)).
+		Find(&nodes)
+
+	retData := make(map[string]interface{})
+	if nodes != nil && len(nodes) > 0 {
+		for _, channel := range nodes {
+			commitmentTxInfo, err := getLatestCommitmentTxUseDbTx(tx, channel.ChannelId, user.PeerId)
+			if err == nil && commitmentTxInfo.Id > 0 {
+				if commitmentTxInfo.AmountToRSMC >= requestData.Amount {
+					retData["h"] = requestData.H
+					retData["routing_packet"] = channel.ChannelId
+					retData["min_cltv_expiry"] = 1
+					retData["next_node_peerId"] = requestData.RecipientUserPeerId
+					break
+				}
+			}
+		}
+	}
+	_ = tx.Commit()
+	if len(retData) == 0 {
+		return nil, true, errors.New("has no private channel path")
+	}
+	return retData, true, nil
 }
 
 func (service *htlcForwardTxManager) GetResponseFromTrackerOfPayerRequestFindPath(channelPath string, user bean.User) (data interface{}, err error) {
@@ -426,7 +482,15 @@ func (service *htlcForwardTxManager) UpdateAddHtlc_40(msg bean.RequestMessage, u
 		txStateRequest.CurrChannelId = channelInfo.ChannelId
 		sendMsgToTracker(enum.MsgType_Tracker_UpdateHtlcTxState_352, txStateRequest)
 	} else {
-		if requestData.CurrHtlcTempAddressForHt1aPubKey != htlcRequestInfo.CurrHtlcTempAddressForHt1aPubKey {
+		_ = tx.Select(
+			q.Eq("ChannelId", channelInfo.ChannelId),
+			q.Eq("PropertyId", requestData.PropertyId),
+			q.Eq("H", requestData.H),
+			q.Eq("Amount", requestData.Amount),
+			q.Eq("RoutingPacket", requestData.RoutingPacket),
+			q.Eq("RecipientUserPeerId", msg.RecipientUserPeerId)).First(htlcRequestInfo)
+		if htlcRequestInfo != nil &&
+			requestData.CurrHtlcTempAddressForHt1aPubKey != htlcRequestInfo.CurrHtlcTempAddressForHt1aPubKey {
 			return nil, errors.New("curr_htlc_temp_address_for_ht1a_pub_key is not the same when create currTx")
 		}
 	}
@@ -823,7 +887,7 @@ func (service *htlcForwardTxManager) PayeeSignGetAddHtlc_41(jsonData string, use
 		channelInfo.FundingAddress,
 		channelInfo.PropertyId,
 		amountToOther,
-		0,
+		getBtcMinerAmount(channelInfo.BtcAmount),
 		1000,
 		&aliceRsmcRedeemScript)
 	if err != nil {
@@ -834,7 +898,7 @@ func (service *htlcForwardTxManager) PayeeSignGetAddHtlc_41(jsonData string, use
 	//endregion create RD tx for alice
 
 	// region  10、h+bobChannelPubkey锁定给bob的付款金额
-	lockByHForBobHex, err := createHtlcLockByHForBobAtPayeeSide(*payerRequestAddHtlc, aliceSignedHtlcHex, bobChannelPubKey, requestData.ChannelAddressPrivateKey, channelInfo.PropertyId, amountToHtlc)
+	lockByHForBobHex, err := createHtlcLockByHForBobAtPayeeSide(*channelInfo, *payerRequestAddHtlc, aliceSignedHtlcHex, bobChannelPubKey, requestData.ChannelAddressPrivateKey, channelInfo.PropertyId, amountToHtlc)
 	if err != nil {
 		return nil, err
 	}
@@ -842,7 +906,7 @@ func (service *htlcForwardTxManager) PayeeSignGetAddHtlc_41(jsonData string, use
 	//endregion
 
 	// region 11、ht1a 根据signedHtlcHex（alice签名后C3a的第三个输出）作为输入生成
-	payerHt1aHex, err := createHT1aForAlice(*payerRequestAddHtlc, aliceSignedHtlcHex, bobChannelPubKey, requestData.ChannelAddressPrivateKey, channelInfo.PropertyId, amountToHtlc, htlcTimeOut)
+	payerHt1aHex, err := createHT1aForAlice(*channelInfo, *payerRequestAddHtlc, aliceSignedHtlcHex, bobChannelPubKey, requestData.ChannelAddressPrivateKey, channelInfo.PropertyId, amountToHtlc, htlcTimeOut)
 	if err != nil {
 		return nil, err
 	}
@@ -1000,7 +1064,7 @@ func (service *htlcForwardTxManager) AfterBobSignAddHtlcAtAliceSide_42(msgData s
 			channelInfo.FundingAddress,
 			channelInfo.PropertyId,
 			commitmentTransaction.AmountToCounterparty,
-			0,
+			getBtcMinerAmount(channelInfo.BtcAmount),
 			1000,
 			&bobRsmcRedeemScript)
 		if err != nil {
@@ -1032,7 +1096,7 @@ func (service *htlcForwardTxManager) AfterBobSignAddHtlcAtAliceSide_42(msgData s
 		channelInfo.FundingAddress,
 		channelInfo.PropertyId,
 		commitmentTransaction.AmountToHtlc,
-		0,
+		getBtcMinerAmount(channelInfo.BtcAmount),
 		htlcTimeOut,
 		&bobHtlcRedeemScript)
 	if err != nil {
@@ -1042,7 +1106,7 @@ func (service *htlcForwardTxManager) AfterBobSignAddHtlcAtAliceSide_42(msgData s
 	returnData.PayeeHtd1bHex = payeeHTD1bHex
 
 	//为payee 创建hlockHex
-	payeeHlockHex, err := createHtlcLockByHForBobAtPayerSide(*jsonObjFromPayee, bobSignedHtlcHex, commitmentTransaction.HtlcH, payeeChannelPubKey, payerChannelPubKey, tempAddrPrivateKeyMap[payerChannelPubKey], channelInfo.PropertyId, commitmentTransaction.AmountToHtlc)
+	payeeHlockHex, err := createHtlcLockByHForBobAtPayerSide(*channelInfo, *jsonObjFromPayee, bobSignedHtlcHex, commitmentTransaction.HtlcH, payeeChannelPubKey, payerChannelPubKey, tempAddrPrivateKeyMap[payerChannelPubKey], channelInfo.PropertyId, commitmentTransaction.AmountToHtlc)
 	if err != nil {
 		log.Println(err)
 		return nil, true, errors.New("fail to create HlockHex for C3b")
@@ -1199,7 +1263,7 @@ func (service *htlcForwardTxManager) AfterAliceSignAddHtlcAtBobSide_43(msgData s
 		channelInfo.FundingAddress,
 		channelInfo.PropertyId,
 		latestCommitmentTx.AmountToHtlc,
-		0,
+		getBtcMinerAmount(channelInfo.BtcAmount),
 		0,
 		&aliceHt1aRedeemScript)
 	if err != nil {
@@ -1410,7 +1474,7 @@ func htlcPayerCreateCommitmentTx_C3a(tx storm.Node, channelInfo *dao.ChannelInfo
 			channelInfo.FundingAddress,
 			channelInfo.PropertyId,
 			newCommitmentTxInfo.AmountToCounterparty,
-			0,
+			getBtcMinerAmount(channelInfo.BtcAmount),
 			0, &channelInfo.ChannelAddressRedeemScript)
 		if err != nil {
 			log.Println(err)
@@ -1571,7 +1635,7 @@ func htlcPayeeCreateCommitmentTx_C3b(tx storm.Node, channelInfo *dao.ChannelInfo
 			channelInfo.FundingAddress,
 			channelInfo.PropertyId,
 			newCommitmentTxInfo.AmountToCounterparty,
-			0,
+			getBtcMinerAmount(channelInfo.BtcAmount),
 			0, &channelInfo.ChannelAddressRedeemScript)
 		if err != nil {
 			log.Println(err)

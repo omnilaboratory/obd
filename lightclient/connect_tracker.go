@@ -231,6 +231,7 @@ func sycChannelInfos() {
 							if err == nil {
 								request := trackerBean.ChannelInfoRequest{}
 								request.ChannelId = channelInfo.ChannelId
+								request.IsPrivate = channelInfo.IsPrivate
 								request.PropertyId = channelInfo.PropertyId
 								request.PeerIdA = channelInfo.PeerIdA
 								request.PeerIdB = channelInfo.PeerIdB
@@ -278,6 +279,7 @@ func checkChannel(db storm.Node, nodes []trackerBean.ChannelInfoRequest) {
 					if err == nil {
 						request := trackerBean.ChannelInfoRequest{}
 						request.ChannelId = channelInfo.ChannelId
+						request.IsPrivate = channelInfo.IsPrivate
 						request.PropertyId = channelInfo.PropertyId
 						request.PeerIdA = channelInfo.PeerIdA
 						request.PeerIdB = channelInfo.PeerIdB

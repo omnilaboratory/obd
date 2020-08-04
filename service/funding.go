@@ -384,6 +384,9 @@ func (service *fundingTransactionManager) FundingBtcTxSigned(msg bean.RequestMes
 		return nil, "", err
 	}
 
+	channelInfo.BtcAmount = fundingBtcRequest.Amount
+	_ = tx.Update(channelInfo)
+
 	node := make(map[string]interface{})
 	node["temporary_channel_id"] = fundingBtcRequest.TemporaryChannelId
 	node["funding_txid"] = fundingBtcRequest.TxId
@@ -519,6 +522,9 @@ func (service *fundingTransactionManager) AfterBobSignBtcFundingAtAliceSide(data
 	if err != nil {
 		log.Println(err)
 	}
+
+	channelInfo.BtcAmount = fundingBtcRequest.Amount
+	_ = tx.Update(channelInfo)
 
 	node := make(map[string]interface{})
 	node["temporary_channel_id"] = fundingBtcRequest.TemporaryChannelId
@@ -1163,7 +1169,7 @@ func (service *fundingTransactionManager) AssetFundingSigned(jsonData string, si
 		changeToAddress,
 		fundingTransaction.PropertyId,
 		fundingTransaction.AmountA,
-		0,
+		getBtcMinerAmount(channelInfo.BtcAmount),
 		1000,
 		&rsmcRedeemScript)
 	if err != nil {

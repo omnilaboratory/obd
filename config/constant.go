@@ -52,7 +52,7 @@ func httpGetRecommendedMiner() (price float64) {
 		}
 	}
 	url := "https://bitcoinfees.earn.com/api/v1/fees/recommended"
-	client := http.Client{Timeout: 5 * time.Second}
+	client := http.Client{Timeout: time.Minute}
 	resp, err := client.Get(url)
 	if err != nil {
 		return 0

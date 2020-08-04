@@ -572,7 +572,7 @@ func createHe1bAtPayeeSide_at45(tx storm.Node, channelInfo dao.ChannelInfo, late
 		he1bMultiAddress,
 		channelInfo.PropertyId,
 		hlockTx.OutAmount,
-		0,
+		getBtcMinerAmount(channelInfo.BtcAmount),
 		0,
 		&hlockTx.RedeemScript)
 	if err != nil {
@@ -657,7 +657,7 @@ func createHerd1bAtPayeeSide_at45(tx storm.Node, channelInfo dao.ChannelInfo, he
 		channelInfo.FundingAddress,
 		channelInfo.PropertyId,
 		he1b.RSMCOutAmount,
-		0,
+		getBtcMinerAmount(channelInfo.BtcAmount),
 		herd.Sequence,
 		&he1b.RSMCRedeemScript)
 	if err != nil {
@@ -741,7 +741,7 @@ func createHed1aHexAtPayerSide_at46(tx storm.Node, channelInfo dao.ChannelInfo, 
 		channelInfo.FundingAddress,
 		channelInfo.PropertyId,
 		hlockTx.OutAmount,
-		0,
+		getBtcMinerAmount(channelInfo.BtcAmount),
 		0,
 		&hlockTx.RedeemScript)
 	if err != nil {

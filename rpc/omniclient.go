@@ -390,15 +390,6 @@ func (client *Client) OmniCreateAndSignRawTransactionUseSingleInput(txType int, 
 	_, _ = client.ValidateAddress(fromBitCoinAddress)
 	_, _ = client.ValidateAddress(toBitCoinAddress)
 
-	//balanceResult, err := client.OmniGetbalance(fromBitCoinAddress, int(propertyId))
-	//if err != nil {
-	//	return "", "", "", err
-	//}
-	//omniBalance := gjson.Get(balanceResult, "balance").Float()
-	//if omniBalance < amount {
-	//	return "", "", "", errors.New("not enough omni balance")
-	//}
-
 	resultListUnspent, err := client.ListUnspent(fromBitCoinAddress)
 	if err != nil {
 		return "", "", "", err
@@ -429,6 +420,7 @@ func (client *Client) OmniCreateAndSignRawTransactionUseSingleInput(txType int, 
 				node["redeemScript"] = *redeemScript
 			}
 			balance, _ = decimal.NewFromFloat(balance).Add(decimal.NewFromFloat(node["amount"].(float64))).Round(8).Float64()
+			minerFee = GetBtcMinerAmount(balance)
 			inputs = append(inputs, node)
 			break
 		}
@@ -539,18 +531,6 @@ func (client *Client) OmniCreateAndSignRawTransactionUseRestInput(txType int, fr
 	}
 
 	pMoney := config.GetOmniDustBtc()
-	if minerFee < config.GetOmniDustBtc() {
-		minerFee = config.GetMinerFee()
-	}
-
-	//balanceResult, err := client.OmniGetbalance(fromBitCoinAddress, int(propertyId))
-	//if err != nil {
-	//	return "", "", err
-	//}
-	//omniBalance := gjson.Get(balanceResult, "balance").Float()
-	//if omniBalance < amount {
-	//	return "", "", errors.New("not enough omni balance")
-	//}
 
 	_, _ = client.ValidateAddress(fromBitCoinAddress)
 	_, _ = client.ValidateAddress(toBitCoinAddress)
@@ -696,18 +676,6 @@ func (client *Client) OmniCreateAndSignRawTransactionUseUnsendInput(fromBitCoinA
 	}
 
 	pMoney := config.GetOmniDustBtc()
-	if minerFee < config.GetOmniDustBtc() {
-		minerFee = config.GetMinerFee()
-	}
-
-	//balanceResult, err := client.OmniGetbalance(fromBitCoinAddress, int(propertyId))
-	//if err != nil {
-	//	return "", "", err
-	//}
-	//omniBalance := gjson.Get(balanceResult, "balance").Float()
-	//if omniBalance < amount {
-	//	return "", "", errors.New("not enough omni balance")
-	//}
 
 	_, _ = client.ValidateAddress(fromBitCoinAddress)
 	_, _ = client.ValidateAddress(toBitCoinAddress)
@@ -870,4 +838,9 @@ func (client *Client) OmniSignRawTransactionForUnsend(hex string, inputItems []T
 	}
 
 	return txId, hex, nil
+}
+
+func GetBtcMinerAmount(total float64) float64 {
+	out, _ := decimal.NewFromFloat(total).Div(decimal.NewFromFloat(4.0)).Sub(decimal.NewFromFloat(config.GetOmniDustBtc())).Round(8).Float64()
+	return out
 }

@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/omnilaboratory/obd/bean"
-	"github.com/omnilaboratory/obd/config"
 	"github.com/omnilaboratory/obd/dao"
 	"github.com/omnilaboratory/obd/rpc"
 	"github.com/omnilaboratory/obd/tool"
@@ -397,7 +396,7 @@ func (this *commitmentTxManager) AfterBobSignCommitmentTrancationAtAliceSide(dat
 		channelInfo.FundingAddress,
 		channelInfo.PropertyId,
 		latestCommitmentTxInfo.AmountToCounterparty,
-		0,
+		getBtcMinerAmount(channelInfo.BtcAmount),
 		1000,
 		&bobRsmcRedeemScript)
 	if err != nil {
@@ -799,7 +798,7 @@ func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction
 		channelInfo.FundingAddress,
 		channelInfo.PropertyId,
 		amountToOther,
-		0,
+		getBtcMinerAmount(channelInfo.BtcAmount),
 		1000,
 		&aliceRsmcRedeemScript)
 	if err != nil {
@@ -929,7 +928,7 @@ func createCurrCommitmentTxBR(tx storm.Node, brType dao.BRType, channelInfo *dao
 				channelInfo.FundingAddress,
 				channelInfo.PropertyId,
 				breachRemedyTransaction.Amount,
-				config.GetMinerFee(),
+				getBtcMinerAmount(channelInfo.BtcAmount),
 				0,
 				&commitmentTx.RSMCRedeemScript)
 			if err != nil {

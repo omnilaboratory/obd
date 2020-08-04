@@ -615,7 +615,7 @@ func (service *htlcCloseTxManager) CloseHTLCSigned(msg bean.RequestMessage, user
 		channelInfo.FundingAddress,
 		channelInfo.PropertyId,
 		amountToCounterparty,
-		0,
+		getBtcMinerAmount(channelInfo.BtcAmount),
 		1000,
 		&aliceRsmcRedeemScript)
 	if err != nil {
@@ -872,7 +872,7 @@ func (service *htlcCloseTxManager) AfterBobCloseHTLCSigned_AtAliceSide(data stri
 		channelInfo.FundingAddress,
 		channelInfo.PropertyId,
 		latestCommitmentTxInfo.AmountToCounterparty,
-		0,
+		getBtcMinerAmount(channelInfo.BtcAmount),
 		1000,
 		&bobRsmcRedeemScript)
 	if err != nil {

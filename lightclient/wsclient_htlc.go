@@ -60,12 +60,23 @@ func (client *Client) htlcHModule(msg bean.RequestMessage) (enum.SendTargetType,
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_HTLC_FindPath_401:
-		_, err := service.HtlcForwardTxService.PayerRequestFindPath(msg.Data, *client.User)
+		respond, isPrivate, err := service.HtlcForwardTxService.PayerRequestFindPath(msg.Data, *client.User)
 		if err != nil {
 			data = err.Error()
 			client.sendToMyself(msg.Type, status, data)
 		} else {
-			tempClientMap[client.User.PeerId] = client
+			if isPrivate {
+				bytes, err := json.Marshal(respond)
+				if err != nil {
+					data = err.Error()
+				} else {
+					data = string(bytes)
+					status = true
+				}
+				client.sendToMyself(msg.Type, status, data)
+			} else {
+				tempClientMap[client.User.PeerId] = client
+			}
 		}
 	case enum.MsgType_HTLC_SendAddHTLC_40:
 		respond, err := service.HtlcForwardTxService.UpdateAddHtlc_40(msg, *client.User)

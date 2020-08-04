@@ -600,7 +600,7 @@ func createCommitmentTxHex(dbTx storm.Node, isSender bool, reqData *bean.SendReq
 			fundingTransaction.FunderAddress,
 			fundingTransaction.PropertyId,
 			commitmentTxInfo.AmountToCounterparty,
-			0,
+			getBtcMinerAmount(channelInfo.BtcAmount),
 			0, &channelInfo.ChannelAddressRedeemScript)
 		if err != nil {
 			log.Println(err)
@@ -638,6 +638,7 @@ func createCommitmentTxHex(dbTx storm.Node, isSender bool, reqData *bean.SendReq
 func sendChannelStateToTracker(channelInfo dao.ChannelInfo, commitmentTx dao.CommitmentTransaction) {
 	infoRequest := trackerBean.ChannelInfoRequest{}
 	infoRequest.ChannelId = channelInfo.ChannelId
+	infoRequest.IsPrivate = channelInfo.IsPrivate
 	infoRequest.PropertyId = channelInfo.PropertyId
 	infoRequest.CurrState = channelInfo.CurrState
 	infoRequest.PeerIdA = channelInfo.PeerIdA
@@ -727,6 +728,9 @@ func HttpGetUserStateFromTracker(userId string) (flag int) {
 }
 
 func GetBtcMinerFundMiniAmount() float64 {
-	out, _ := decimal.NewFromFloat(config.GetMinerFee()).Add(decimal.NewFromFloat(config.GetOmniDustBtc())).Mul(decimal.NewFromFloat(4.0)).Round(8).Float64()
+	out, _ := decimal.NewFromFloat(config.GetMinerFee()).Add(decimal.NewFromFloat(2 * config.GetOmniDustBtc())).Mul(decimal.NewFromFloat(4.0)).Round(8).Float64()
 	return out
+}
+func getBtcMinerAmount(total float64) float64 {
+	return rpc.GetBtcMinerAmount(total)
 }

@@ -571,6 +571,152 @@ func (this *channelManager) SignCloseChannel(msg bean.RequestMessage, user bean.
 	return retData, nil
 }
 
+//直接强制关闭通道
+func (this *channelManager) ForceCloseChannel(msg bean.RequestMessage, user *bean.User) (interface{}, error) {
+	channelId, err := getChannelIdFromJson(msg.Data)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	if tool.CheckIsString(&channelId) == false {
+		err = errors.New("empty channel_id")
+		log.Println(err)
+		return nil, err
+	}
+
+	tx, err := user.Db.Begin(true)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	defer tx.Rollback()
+
+	targetUser := user.PeerId
+	channelInfo := &dao.ChannelInfo{}
+	err = tx.Select(
+		q.Eq("ChannelId", channelId),
+		q.Or(
+			q.Eq("PeerIdA", targetUser),
+			q.Eq("PeerIdB", targetUser))).
+		First(channelInfo)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	latestCommitmentTx, err := getLatestCommitmentTxUseDbTx(tx, channelInfo.ChannelId, targetUser)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	if latestCommitmentTx.CurrState != dao.TxInfoState_Create &&
+		latestCommitmentTx.CurrState != dao.TxInfoState_Htlc_GetH &&
+		latestCommitmentTx.CurrState != dao.TxInfoState_CreateAndSign {
+		return nil, errors.New("latest commitment tx state is wrong")
+	}
+
+	// 当前是处于htlc的状态，且是获取到H
+	if channelInfo.CurrState == dao.ChannelState_HtlcTx {
+		_, err = this.CloseHtlcChannelSigned(tx, channelInfo, latestCommitmentTx, *user)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		if latestCommitmentTx.CurrState == dao.TxInfoState_Create {
+			err = tx.One("Id", latestCommitmentTx.LastCommitmentTxId, latestCommitmentTx)
+			if err != nil {
+				return nil, errors.New("not find the latestCommitmentTx")
+			}
+		}
+
+		if latestCommitmentTx.CurrState != dao.TxInfoState_CreateAndSign {
+			return nil, errors.New("latest commitment tx state is wrong")
+		}
+
+		//region 广播承诺交易 最近的rsmc的资产分配交易 因为是omni资产，承诺交易被拆分成了两个独立的交易
+		if tool.CheckIsString(&latestCommitmentTx.RSMCTxHex) {
+			commitmentTxid, err := rpcClient.SendRawTransaction(latestCommitmentTx.RSMCTxHex)
+			if err != nil {
+				log.Println(err)
+				return nil, err
+			}
+			log.Println(commitmentTxid)
+		}
+		if tool.CheckIsString(&latestCommitmentTx.ToCounterpartyTxHex) {
+			commitmentTxidToBob, err := rpcClient.SendRawTransaction(latestCommitmentTx.ToCounterpartyTxHex)
+			if err != nil {
+				log.Println(err)
+				return nil, err
+			}
+			log.Println(commitmentTxidToBob)
+		}
+		//endregion
+
+		//region 广播RD
+		latestRevocableDeliveryTx := &dao.RevocableDeliveryTransaction{}
+		err = tx.Select(
+			q.Eq("ChannelId", channelInfo.ChannelId),
+			q.Eq("Owner", targetUser)).
+			OrderBy("CreateAt").Reverse().
+			First(latestRevocableDeliveryTx)
+		if err != nil {
+			log.Println(err)
+			return nil, err
+		}
+
+		_, err = rpcClient.SendRawTransaction(latestRevocableDeliveryTx.TxHex)
+		if err != nil {
+			log.Println(err)
+			msg := err.Error()
+			//如果omnicore返回的信息里面包含了non-BIP68-final (code 64)， 则说明因为需要等待1000个区块高度，广播是对的
+			if strings.Contains(msg, "non-BIP68-final (code 64)") == false {
+				return nil, err
+			}
+		}
+		//endregion
+
+		// region update state
+		latestCommitmentTx.CurrState = dao.TxInfoState_SendHex
+		latestCommitmentTx.SendAt = time.Now()
+		err = tx.Update(latestCommitmentTx)
+		if err != nil {
+			return nil, err
+		}
+
+		latestRevocableDeliveryTx.CurrState = dao.TxInfoState_SendHex
+		latestRevocableDeliveryTx.SendAt = time.Now()
+		err = tx.Update(latestRevocableDeliveryTx)
+		if err != nil {
+			return nil, err
+		}
+
+		err = addRDTxToWaitDB(latestRevocableDeliveryTx)
+		if err != nil {
+			return nil, err
+		}
+		//endregion
+	}
+
+	channelInfo.CurrState = dao.ChannelState_Close
+	channelInfo.CloseAt = time.Now()
+	err = tx.Update(channelInfo)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	//同步通道信息到tracker
+	sendChannelStateToTracker(*channelInfo, *latestCommitmentTx)
+
+	return channelInfo, nil
+
+}
+
 //请求方节点处理关闭通道的操作
 func (this *channelManager) AfterBobSignCloseChannelAtAliceSide(jsonData string, user bean.User) (interface{}, error) {
 
@@ -646,7 +792,7 @@ func (this *channelManager) AfterBobSignCloseChannelAtAliceSide(jsonData string,
 
 	// 当前是处于htlc的状态，且是获取到H
 	if channelInfo.CurrState == dao.ChannelState_HtlcTx {
-		_, err = this.CloseHtlcChannelSigned(tx, channelInfo, closeChannelStarterData, latestCommitmentTx, user)
+		_, err = this.CloseHtlcChannelSigned(tx, channelInfo, latestCommitmentTx, user)
 		if err != nil {
 			return nil, err
 		}
@@ -737,12 +883,9 @@ func (this *channelManager) AfterBobSignCloseChannelAtAliceSide(jsonData string,
 }
 
 //  htlc  when getH close channel
-func (this *channelManager) CloseHtlcChannelSigned(tx storm.Node, channelInfo *dao.ChannelInfo, closeOpStaterReqData *dao.CloseChannel, latestCommitmentTx *dao.CommitmentTransaction, user bean.User) (outData interface{}, err error) {
+func (this *channelManager) CloseHtlcChannelSigned(tx storm.Node, channelInfo *dao.ChannelInfo, latestCommitmentTx *dao.CommitmentTransaction, user bean.User) (outData interface{}, err error) {
 	// 提现操作的发起者
-	closeOpStarter := channelInfo.PeerIdB
-	if user.PeerId == channelInfo.PeerIdB {
-		closeOpStarter = channelInfo.PeerIdA
-	}
+	closeOpStarter := user.PeerId
 
 	//region 广播主承诺交易 三笔
 	if tool.CheckIsString(&latestCommitmentTx.RSMCTxHex) {
@@ -798,7 +941,7 @@ func (this *channelManager) CloseHtlcChannelSigned(tx storm.Node, channelInfo *d
 
 	// region htlc的相关交易广播
 
-	// 提现人是这次htlc的转账接收者
+	// 提现人是这次htlc的转账发起者
 	if latestCommitmentTx.HtlcSender == closeOpStarter {
 		ht1a := &dao.HTLCTimeoutTxForAAndExecutionForB{}
 		err = tx.Select(
@@ -818,7 +961,7 @@ func (this *channelManager) CloseHtlcChannelSigned(tx storm.Node, channelInfo *d
 			if htrd.Id > 0 && tool.CheckIsString(&ht1a.RSMCTxHex) {
 				//广播alice的ht1a
 				_, err = rpcClient.SendRawTransaction(ht1a.RSMCTxHex)
-				if err == nil { //如果已经超时 比如alic的3天超时，bob的得到R后的交易的无等待锁定
+				if err == nil { //如果已经超时 比如alice的3天超时，bob得到R后的交易的无等待锁定
 					if tool.CheckIsString(&htrd.TxHex) {
 						_, err = rpcClient.SendRawTransaction(htrd.TxHex)
 						if err != nil {
@@ -845,7 +988,7 @@ func (this *channelManager) CloseHtlcChannelSigned(tx storm.Node, channelInfo *d
 			}
 		}
 	} else {
-		//如果还没有获取到R 执行HTD1b
+		//如果是htlc的转账接收者
 		htdnx := &dao.HTLCTimeoutDeliveryTxB{}
 		err = tx.Select(
 			q.Eq("CommitmentTxId", latestCommitmentTx.Id),

@@ -145,8 +145,8 @@ func (client *Client) Read() {
 					msg.Type == enum.MsgType_HTLC_SendAddHTLC_40 || msg.Type == enum.MsgType_HTLC_SendAddHTLCSigned_41 ||
 					msg.Type == enum.MsgType_HTLC_SendVerifyR_45 || msg.Type == enum.MsgType_HTLC_SendSignVerifyR_46 ||
 					msg.Type == enum.MsgType_HTLC_SendRequestCloseCurrTx_49 || msg.Type == enum.MsgType_HTLC_SendCloseSigned_50 ||
-					msg.Type == enum.MsgType_Atomic_SendSwap_80 || msg.Type == enum.MsgType_Atomic_SendSwapAccept_81 ||
-					msg.Type == enum.MsgType_SendCloseChannelRequest_38 || msg.Type == enum.MsgType_SendCloseChannelSign_39 {
+					msg.Type == enum.MsgType_Atomic_SendSwap_80 || msg.Type == enum.MsgType_Atomic_SendSwapAccept_81 {
+					//msg.Type == enum.MsgType_SendCloseChannelRequest_38 || msg.Type == enum.MsgType_SendCloseChannelSign_39 {
 					if tool.CheckIsString(&msg.RecipientUserPeerId) == false {
 						client.sendToMyself(msg.Type, false, "error recipient_user_peer_id")
 						continue

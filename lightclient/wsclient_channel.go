@@ -168,7 +168,7 @@ func (client *Client) channelModule(msg bean.RequestMessage) (enum.SendTargetTyp
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_SendCloseChannelRequest_38:
-		node, err := service.ChannelService.RequestCloseChannel(msg, client.User)
+		node, err := service.ChannelService.ForceCloseChannel(msg, client.User)
 		if err != nil {
 			data = err.Error()
 		} else {
@@ -180,11 +180,11 @@ func (client *Client) channelModule(msg bean.RequestMessage) (enum.SendTargetTyp
 				status = true
 			}
 		}
-		if status {
-			msg.Type = enum.MsgType_CloseChannelRequest_38
-			_ = client.sendDataToP2PUser(msg, status, data)
-		}
-		msg.Type = enum.MsgType_SendCloseChannelRequest_38
+		//if status {
+		//	msg.Type = enum.MsgType_CloseChannelRequest_38
+		//	_ = client.sendDataToP2PUser(msg, status, data)
+		//}
+		//msg.Type = enum.MsgType_SendCloseChannelRequest_38
 		client.sendToMyself(msg.Type, status, data)
 	case enum.MsgType_SendCloseChannelSign_39:
 		node, err := service.ChannelService.SignCloseChannel(msg, *client.User)
