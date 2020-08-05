@@ -43,6 +43,7 @@ func (this *channelManager) AliceOpenChannel(msg bean.RequestMessage, user *bean
 	openChannelInfo.FunderNodeAddress = P2PLocalPeerId
 	openChannelInfo.FunderPeerId = user.PeerId
 	openChannelInfo.FundingPubKey = reqData.FundingPubKey
+	openChannelInfo.IsPrivate = reqData.IsPrivate
 
 	channelInfo := &dao.ChannelInfo{}
 	channelInfo.RequestOpenChannel = *openChannelInfo
@@ -658,6 +659,7 @@ func (this *channelManager) ForceCloseChannel(msg bean.RequestMessage, user *bea
 		latestRevocableDeliveryTx := &dao.RevocableDeliveryTransaction{}
 		err = tx.Select(
 			q.Eq("ChannelId", channelInfo.ChannelId),
+			q.Eq("CommitmentTxId", latestCommitmentTx.Id),
 			q.Eq("Owner", targetUser)).
 			OrderBy("CreateAt").Reverse().
 			First(latestRevocableDeliveryTx)
