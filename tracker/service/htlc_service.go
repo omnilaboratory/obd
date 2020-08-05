@@ -218,7 +218,6 @@ func (manager *htlcManager) createChannelNetwork(realPayerPeerId, currPayeePeerI
 	var nodes []dao.ChannelInfo
 	err := db.Select(
 		q.Eq("PropertyId", propertyId),
-		q.Eq("IsPrivate", false),
 		q.Or(
 			q.Eq("PeerIdB", currPayeePeerId),
 			q.Eq("PeerIdA", currPayeePeerId))).

@@ -454,24 +454,23 @@ func (service *htlcBackwardTxManager) SignHed1aAndUpdate_Step4(msgData string, u
 	//endregion
 	_ = tx.Commit()
 
-	//更新tracker的htlc的状态
-	txStateRequest := trackerBean.UpdateHtlcTxStateRequest{}
-	txStateRequest.Path = commitmentTxInfo.HtlcRoutingPacket
-	txStateRequest.H = commitmentTxInfo.HtlcH
-	if strings.HasSuffix(commitmentTxInfo.HtlcRoutingPacket, channelInfo.ChannelId) {
-		txStateRequest.R = commitmentTxInfo.HtlcR
+	if channelInfo.IsPrivate == false {
+		//update htlc state on tracker
+		txStateRequest := trackerBean.UpdateHtlcTxStateRequest{}
+		txStateRequest.Path = commitmentTxInfo.HtlcRoutingPacket
+		txStateRequest.H = commitmentTxInfo.HtlcH
+		if strings.HasSuffix(commitmentTxInfo.HtlcRoutingPacket, channelInfo.ChannelId) {
+			txStateRequest.R = commitmentTxInfo.HtlcR
+		}
+		txStateRequest.DirectionFlag = trackerBean.HtlcTxState_ConfirmPayMoney
+		txStateRequest.CurrChannelId = channelInfo.ChannelId
+		sendMsgToTracker(enum.MsgType_Tracker_UpdateHtlcTxState_352, txStateRequest)
 	}
-	txStateRequest.DirectionFlag = trackerBean.HtlcTxState_ConfirmPayMoney
-	txStateRequest.CurrChannelId = channelInfo.ChannelId
-	sendMsgToTracker(enum.MsgType_Tracker_UpdateHtlcTxState_352, txStateRequest)
 
 	responseData = make(map[string]interface{})
 	payerData := bean.HtlcRPayeeSignHed1aToPayer{}
 	payerData.ChannelId = channelId
 	payerData.PayerSignedHed1aHex = signedHed1aHex
-
-	//payeeData := make(map[string]interface{})
-	//payeeData["commitmentTxInfo"] = commitmentTxInfo
 
 	responseData["payerData"] = payerData
 	responseData["payeeData"] = commitmentTxInfo

@@ -46,7 +46,6 @@ func (manager *channelManager) updateChannelInfo(obdClient *ObdNode, msgData str
 		_ = db.Select(q.Eq("ChannelId", item.ChannelId)).First(channelInfo)
 		if channelInfo.Id == 0 {
 			channelInfo.ChannelId = item.ChannelId
-			channelInfo.IsPrivate = item.IsPrivate
 			channelInfo.PropertyId = item.PropertyId
 			channelInfo.CurrState = item.CurrState
 			channelInfo.PeerIdA = item.PeerIdA
@@ -73,8 +72,6 @@ func (manager *channelManager) updateChannelInfo(obdClient *ObdNode, msgData str
 				channelInfo.ObdNodeIdB = obdClient.Id
 			}
 			_ = db.Update(channelInfo)
-			_ = db.UpdateField(channelInfo, "IsPrivate", item.IsPrivate)
-
 		}
 	}
 	return err

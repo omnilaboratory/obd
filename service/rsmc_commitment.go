@@ -10,6 +10,7 @@ import (
 	"github.com/tidwall/gjson"
 	"log"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -58,6 +59,12 @@ func (this *commitmentTxManager) CommitmentTransactionCreated(msg bean.RequestMe
 	channelInfo := getChannelInfoByChannelId(tx, reqData.ChannelId, creator.PeerId)
 	if channelInfo == nil {
 		err = errors.New("not found channel " + reqData.ChannelId)
+		log.Println(err)
+		return nil, err
+	}
+
+	if checkChannelOmniAssetAmount(*channelInfo) == false {
+		err = errors.New("total channel amount have changed")
 		log.Println(err)
 		return nil, err
 	}
@@ -447,6 +454,95 @@ func (this *commitmentTxManager) AfterBobSignCommitmentTrancationAtAliceSide(dat
 	return retData, true, nil
 }
 
+func (this *commitmentTxManager) SendSomeCommitmentById(data string, user *bean.User) (retData interface{}, err error) {
+	id, err := strconv.Atoi(data)
+	if err != nil {
+		return nil, err
+	}
+	tx, err := user.Db.Begin(true)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	defer tx.Rollback()
+
+	commitmentTransaction := &dao.CommitmentTransaction{}
+	err = tx.One("Id", id, commitmentTransaction)
+	if err != nil || commitmentTransaction.Id == 0 {
+		return nil, err
+	}
+	if commitmentTransaction.CurrState != dao.TxInfoState_CreateAndSign {
+		return nil, errors.New("wrong commitment state")
+	}
+
+	//region 广播承诺交易 最近的rsmc的资产分配交易 因为是omni资产，承诺交易被拆分成了两个独立的交易
+	if tool.CheckIsString(&commitmentTransaction.RSMCTxHex) {
+		commitmentTxid, err := rpcClient.SendRawTransaction(commitmentTransaction.RSMCTxHex)
+		if err != nil {
+			log.Println(err)
+			return nil, err
+		}
+		log.Println(commitmentTxid)
+	}
+	if tool.CheckIsString(&commitmentTransaction.ToCounterpartyTxHex) {
+		commitmentTxidToBob, err := rpcClient.SendRawTransaction(commitmentTransaction.ToCounterpartyTxHex)
+		if err != nil {
+			log.Println(err)
+			return nil, err
+		}
+		log.Println(commitmentTxidToBob)
+	}
+	//endregion
+
+	//region 广播RD
+	latestRevocableDeliveryTx := &dao.RevocableDeliveryTransaction{}
+	err = tx.Select(
+		q.Eq("ChannelId", commitmentTransaction.ChannelId),
+		q.Eq("CommitmentTxId", commitmentTransaction.Id),
+		q.Eq("Owner", user.PeerId)).
+		OrderBy("CreateAt").Reverse().
+		First(latestRevocableDeliveryTx)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	_, err = rpcClient.SendRawTransaction(latestRevocableDeliveryTx.TxHex)
+	if err != nil {
+		log.Println(err)
+		msg := err.Error()
+		//如果omnicore返回的信息里面包含了non-BIP68-final (code 64)， 则说明因为需要等待1000个区块高度，广播是对的
+		if strings.Contains(msg, "non-BIP68-final (code 64)") == false &&
+			strings.Contains(msg, "Code: -25,Msg: Missing inputs") == false {
+			return nil, err
+		}
+	}
+	//endregion
+
+	// region update state
+	commitmentTransaction.CurrState = dao.TxInfoState_SendHex
+	commitmentTransaction.SendAt = time.Now()
+	err = tx.Update(commitmentTransaction)
+	if err != nil {
+		return nil, err
+	}
+
+	latestRevocableDeliveryTx.CurrState = dao.TxInfoState_SendHex
+	latestRevocableDeliveryTx.SendAt = time.Now()
+	err = tx.Update(latestRevocableDeliveryTx)
+	if err != nil {
+		return nil, err
+	}
+
+	err = addRDTxToWaitDB(latestRevocableDeliveryTx)
+	if err != nil {
+		return nil, err
+	}
+	//endregion
+
+	return nil, nil
+}
+
 func checkBobRemcData(rsmcHex string, commitmentTransaction *dao.CommitmentTransaction) error {
 	result, err := rpcClient.OmniDecodeTransaction(rsmcHex)
 	if err != nil {
@@ -500,8 +596,6 @@ func (this *commitmentTxSignedManager) BeforeBobSignCommitmentTranctionAtBobSide
 }
 
 func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction(msg bean.RequestMessage, signer *bean.User) (retData *bean.PayeeSignCommitmentTxOfP2p, targetUser string, err error) {
-	var beginTime = time.Now()
-	log.Println("RevokeAndAcknowledgeCommitmentTransaction beginTime", beginTime.String())
 	if tool.CheckIsString(&msg.Data) == false {
 		err = errors.New("empty json reqData")
 		log.Println(err)
@@ -814,8 +908,6 @@ func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction
 		log.Println(err)
 		return nil, "", err
 	}
-
-	log.Println("RevokeAndAcknowledgeCommitmentTransaction endTime", time.Now().Sub(beginTime).String())
 	return retData, "", err
 }
 

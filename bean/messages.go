@@ -28,6 +28,9 @@ type JsonDate time.Time
 
 // JsonDate反序列化
 func (t *JsonDate) UnmarshalJSON(data []byte) (err error) {
+	if len(data) < 10 {
+		return
+	}
 	newTime, err := time.ParseInLocation("\""+timeFormat+"\"", string(data), time.Local)
 	*t = JsonDate(newTime)
 	return

@@ -72,8 +72,7 @@ func checkBtcFundFinish(address string, isFundOmni bool) error {
 	}
 
 	if isFundOmni {
-		pMoney := config.GetOmniDustBtc()
-		out, _ := decimal.NewFromFloat(config.GetMinerFee()).Add(decimal.NewFromFloat(pMoney)).Mul(decimal.NewFromFloat(4.0)).Round(8).Float64()
+		out := GetBtcMinerFundMiniAmount()
 		count := 0
 		for _, item := range array {
 			amount := item.Get("amount").Float()
@@ -636,9 +635,11 @@ func createCommitmentTxHex(dbTx storm.Node, isSender bool, reqData *bean.SendReq
 
 //同步通道信息到tracker
 func sendChannelStateToTracker(channelInfo dao.ChannelInfo, commitmentTx dao.CommitmentTransaction) {
+	if channelInfo.IsPrivate {
+		return
+	}
 	infoRequest := trackerBean.ChannelInfoRequest{}
 	infoRequest.ChannelId = channelInfo.ChannelId
-	infoRequest.IsPrivate = channelInfo.IsPrivate
 	infoRequest.PropertyId = channelInfo.PropertyId
 	infoRequest.CurrState = channelInfo.CurrState
 	infoRequest.PeerIdA = channelInfo.PeerIdA
@@ -731,6 +732,19 @@ func GetBtcMinerFundMiniAmount() float64 {
 	out, _ := decimal.NewFromFloat(config.GetMinerFee()).Add(decimal.NewFromFloat(2 * config.GetOmniDustBtc())).Mul(decimal.NewFromFloat(4.0)).Round(8).Float64()
 	return out
 }
+
 func getBtcMinerAmount(total float64) float64 {
 	return rpc.GetBtcMinerAmount(total)
+}
+
+func checkChannelOmniAssetAmount(channelInfo dao.ChannelInfo) bool {
+	result, err := rpcClient.OmniGetbalance(channelInfo.ChannelAddress, int(channelInfo.PropertyId))
+	if err != nil {
+		return false
+	}
+	balance := gjson.Get(result, "balance").Float()
+	if balance == channelInfo.Amount {
+		return true
+	}
+	return false
 }

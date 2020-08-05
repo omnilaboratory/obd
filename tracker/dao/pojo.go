@@ -35,7 +35,6 @@ type ChannelInfo struct {
 	ObdNodeIdA string           `json:"obd_node_ida"`
 	ObdNodeIdB string           `json:"obd_node_idb"`
 	ChannelId  string           `json:"channel_id"`
-	IsPrivate  bool             `json:"is_private"`
 	PropertyId int64            `json:"property_id"`
 	CurrState  dao.ChannelState `json:"curr_state"`
 	PeerIdA    string           `json:"peer_ida"`

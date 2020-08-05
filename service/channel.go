@@ -612,6 +612,7 @@ func (this *channelManager) ForceCloseChannel(msg bean.RequestMessage, user *bea
 	}
 	if latestCommitmentTx.CurrState != dao.TxInfoState_Create &&
 		latestCommitmentTx.CurrState != dao.TxInfoState_Htlc_GetH &&
+		latestCommitmentTx.CurrState != dao.TxInfoState_Htlc_GetR &&
 		latestCommitmentTx.CurrState != dao.TxInfoState_CreateAndSign {
 		return nil, errors.New("latest commitment tx state is wrong")
 	}

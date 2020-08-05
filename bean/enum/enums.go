@@ -100,6 +100,7 @@ const (
 	MsgType_CommitmentTx_LatestCommitmentTxByChanId_3203 MsgType = -103203
 	MsgType_CommitmentTx_LatestRDByChanId_3204           MsgType = -103204
 	MsgType_CommitmentTx_LatestBRByChanId_3205           MsgType = -103205
+	MsgType_CommitmentTx_SendSomeCommitmentById_3206     MsgType = -103206
 	MsgType_CommitmentTx_AllRDByChanId_3207              MsgType = -103207
 	MsgType_CommitmentTx_AllBRByChanId_3208              MsgType = -103208
 	//endregion
@@ -308,6 +309,8 @@ func CheckExist(msgType MsgType) bool {
 	case MsgType_CommitmentTx_LatestRDByChanId_3204:
 		return true
 	case MsgType_CommitmentTx_LatestBRByChanId_3205:
+		return true
+	case MsgType_CommitmentTx_SendSomeCommitmentById_3206:
 		return true
 	case MsgType_CommitmentTx_AllRDByChanId_3207:
 		return true

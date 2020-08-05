@@ -221,17 +221,21 @@ func sycChannelInfos() {
 		db, err := storm.Open(_dir + "/" + dbName)
 		if err == nil {
 			var channelInfos []dao.ChannelInfo
-			err = db.All(&channelInfos)
+			err = db.Select(
+				q.Eq("IsPrivate", false),
+				q.Or(
+					q.Eq("CurrState", dao.ChannelState_CanUse),
+					q.Eq("CurrState", dao.ChannelState_Close),
+					q.Eq("CurrState", dao.ChannelState_HtlcTx))).Find(&channelInfos)
 			if err == nil {
 				for _, channelInfo := range channelInfos {
-					if len(channelInfo.ChannelId) > 0 {
+					if len(channelInfo.ChannelId) > 0 && channelInfo.IsPrivate == false {
 						if channelInfo.CurrState == dao.ChannelState_CanUse || channelInfo.CurrState == dao.ChannelState_Close || channelInfo.CurrState == dao.ChannelState_HtlcTx {
 							commitmentTransaction := dao.CommitmentTransaction{}
 							err = db.Select(q.Eq("ChannelId", channelInfo.ChannelId)).OrderBy("CreateAt").Reverse().First(&commitmentTransaction)
 							if err == nil {
 								request := trackerBean.ChannelInfoRequest{}
 								request.ChannelId = channelInfo.ChannelId
-								request.IsPrivate = channelInfo.IsPrivate
 								request.PropertyId = channelInfo.PropertyId
 								request.PeerIdA = channelInfo.PeerIdA
 								request.PeerIdB = channelInfo.PeerIdB
@@ -269,17 +273,21 @@ func sycChannelInfos() {
 
 func checkChannel(db storm.Node, nodes []trackerBean.ChannelInfoRequest) {
 	var channelInfos []dao.ChannelInfo
-	err := db.All(&channelInfos)
+	err := db.Select(
+		q.Eq("IsPrivate", false),
+		q.Or(
+			q.Eq("CurrState", dao.ChannelState_CanUse),
+			q.Eq("CurrState", dao.ChannelState_Close),
+			q.Eq("CurrState", dao.ChannelState_HtlcTx))).Find(&channelInfos)
 	if err == nil {
 		for _, channelInfo := range channelInfos {
-			if len(channelInfo.ChannelId) > 0 {
+			if len(channelInfo.ChannelId) > 0 && channelInfo.IsPrivate == false {
 				if channelInfo.CurrState == dao.ChannelState_CanUse || channelInfo.CurrState == dao.ChannelState_Close || channelInfo.CurrState == dao.ChannelState_HtlcTx {
 					commitmentTransaction := dao.CommitmentTransaction{}
 					err = db.Select(q.Eq("ChannelId", channelInfo.ChannelId)).OrderBy("CreateAt").Reverse().First(&commitmentTransaction)
 					if err == nil {
 						request := trackerBean.ChannelInfoRequest{}
 						request.ChannelId = channelInfo.ChannelId
-						request.IsPrivate = channelInfo.IsPrivate
 						request.PropertyId = channelInfo.PropertyId
 						request.PeerIdA = channelInfo.PeerIdA
 						request.PeerIdB = channelInfo.PeerIdB

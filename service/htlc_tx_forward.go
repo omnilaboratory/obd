@@ -156,7 +156,7 @@ func (service *htlcForwardTxManager) PayerRequestFindPath(msgData string, user b
 			return nil, false, errors.New("invalid invoice")
 		}
 		if htlcRequestInvoice.RecipientNodePeerId == P2PLocalPeerId {
-			if err := findUserIsOnline(requestFindPathInfo.RecipientUserPeerId); err != nil {
+			if err := findUserIsOnline(htlcRequestInvoice.RecipientUserPeerId); err != nil {
 				return nil, false, err
 			}
 		}
@@ -339,6 +339,12 @@ func (service *htlcForwardTxManager) UpdateAddHtlc_40(msg bean.RequestMessage, u
 		return nil, errors.New("not found  channel info from  routing_packet")
 	}
 
+	if checkChannelOmniAssetAmount(*channelInfo) == false {
+		err = errors.New("total channel amount have changed")
+		log.Println(err)
+		return nil, err
+	}
+
 	if requestData.CltvExpiry < (totalStep - currStep) {
 		requestData.CltvExpiry = totalStep - currStep
 	}
@@ -475,12 +481,14 @@ func (service *htlcForwardTxManager) UpdateAddHtlc_40(msg bean.RequestMessage, u
 		}
 
 		//更新tracker的htlc的状态
-		txStateRequest := trackerBean.UpdateHtlcTxStateRequest{}
-		txStateRequest.Path = latestCommitmentTx.HtlcRoutingPacket
-		txStateRequest.H = latestCommitmentTx.HtlcH
-		txStateRequest.DirectionFlag = trackerBean.HtlcTxState_PayMoney
-		txStateRequest.CurrChannelId = channelInfo.ChannelId
-		sendMsgToTracker(enum.MsgType_Tracker_UpdateHtlcTxState_352, txStateRequest)
+		if channelInfo.IsPrivate == false {
+			txStateRequest := trackerBean.UpdateHtlcTxStateRequest{}
+			txStateRequest.Path = latestCommitmentTx.HtlcRoutingPacket
+			txStateRequest.H = latestCommitmentTx.HtlcH
+			txStateRequest.DirectionFlag = trackerBean.HtlcTxState_PayMoney
+			txStateRequest.CurrChannelId = channelInfo.ChannelId
+			sendMsgToTracker(enum.MsgType_Tracker_UpdateHtlcTxState_352, txStateRequest)
+		}
 	} else {
 		_ = tx.Select(
 			q.Eq("ChannelId", channelInfo.ChannelId),

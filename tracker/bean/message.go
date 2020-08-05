@@ -33,7 +33,6 @@ type ObdNodeUserLoginRequest struct {
 //更新通道
 type ChannelInfoRequest struct {
 	ChannelId  string           `json:"channel_id"`
-	IsPrivate  bool             `json:"is_private"`
 	PropertyId int64            `json:"property_id"`
 	CurrState  dao.ChannelState `json:"curr_state"`
 	IsAlice    bool             `json:"is_alice"` //是否是alice方的节点
