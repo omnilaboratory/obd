@@ -8,3 +8,4 @@
 
 - JS SDK
     - [Basic JS API](js-sdk.md) 
+    - [5 minutes to build a wallet app](js-sdk.md) 

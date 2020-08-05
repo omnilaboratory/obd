@@ -36,7 +36,6 @@ Third parameter is `globalCallback`. It's a callback function could be used to p
 #### Example Code:
 
 ```js
-
 // URL of an OBD node
 let nodeAddress = 'ws://62.234.216.108:60020/wstest';
 
@@ -48,7 +47,6 @@ connectToServer(nodeAddress, function(response) {
     // Example: Display the success or fail message on app screen.
 
 }, function(globalResponse) {
-
     // Your code to process the global callback data.
 
 });
@@ -66,7 +64,6 @@ Invoke **genMnemonic** function from [wallet.js](https://github.com/omnilaborato
 #### Example Code:
 
 ```js
-
 // SDK API
 let mnemonicWords = genMnemonic();
 
