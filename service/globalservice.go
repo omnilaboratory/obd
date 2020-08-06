@@ -327,7 +327,7 @@ func getInputsForNextTxByParseTxHashVout(hex string, toAddress, scriptPubKey, re
 		return nil, err
 	}
 	jsonHex := gjson.Parse(result)
-	log.Println(jsonHex)
+	//log.Println(jsonHex)
 	if jsonHex.Get("vout").IsArray() {
 		inputs = make([]rpc.TransactionInputItem, 0, 0)
 		for _, item := range jsonHex.Get("vout").Array() {

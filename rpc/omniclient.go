@@ -394,6 +394,7 @@ func (client *Client) OmniCreateAndSignRawTransactionUseSingleInput(txType int, 
 	if err != nil {
 		return "", "", "", err
 	}
+
 	arrayListUnspent := gjson.Parse(resultListUnspent).Array()
 	//log.Println("listunspent", arrayListUnspent)
 	inputCount := 3 + txType
@@ -443,7 +444,6 @@ func (client *Client) OmniCreateAndSignRawTransactionUseSingleInput(txType int, 
 	if balance < out {
 		return "", "", "", errors.New("not enough balance")
 	}
-
 	//2.Omni_createpayload_simplesend
 	payload, err := client.omniCreatePayloadSimpleSend(propertyId, amount)
 	if err != nil {
@@ -490,7 +490,7 @@ func (client *Client) OmniCreateAndSignRawTransactionUseSingleInput(txType int, 
 	if err != nil {
 		return "", "", "", err
 	}
-	log.Println("6 change", change)
+	//log.Println("6 change", change)
 
 	if privkeys == nil || len(privkeys) == 0 {
 		privkeys = nil
@@ -507,12 +507,12 @@ func (client *Client) OmniCreateAndSignRawTransactionUseSingleInput(txType int, 
 	//log.Println("7 DecodeSignRawTransactionWithKey", decodeHex)
 	txid = gjson.Get(decodeHex, "txid").String()
 
-	result, err := client.OmniDecodeTransaction(hex)
-	if err == nil {
-		log.Println(result)
-	} else {
-		log.Println(err)
-	}
+	//result, err := client.OmniDecodeTransaction(hex)
+	//if err == nil {
+	//	log.Println(result)
+	//} else {
+	//	log.Println(err)
+	//}
 	log.Println("OmniCreateAndSignRawTransactionUseSingleInput endTime.Sub(beginTime)", time.Now().Sub(beginTime).String())
 	return txid, hex, currUseTxid, nil
 }
@@ -597,7 +597,7 @@ func (client *Client) OmniCreateAndSignRawTransactionUseRestInput(txType int, fr
 	if err != nil {
 		return "", "", err
 	}
-	log.Println("3 createrawtransactionStr", createrawtransactionStr)
+	//log.Println("3 createrawtransactionStr", createrawtransactionStr)
 
 	//4.Omni_createrawtx_opreturn
 	opreturn, err := client.omniCreateRawtxOpreturn(createrawtransactionStr, payload)
@@ -647,12 +647,12 @@ func (client *Client) OmniCreateAndSignRawTransactionUseRestInput(txType int, fr
 	//log.Println("7 DecodeSignRawTransactionWithKey", decodeHex)
 	txid = gjson.Get(decodeHex, "txid").String()
 
-	result, err := client.OmniDecodeTransaction(hex)
-	if err == nil {
-		log.Println(result)
-	} else {
-		log.Println(err)
-	}
+	//result, err := client.OmniDecodeTransaction(hex)
+	//if err == nil {
+	//	log.Println(result)
+	//} else {
+	//	log.Println(err)
+	//}
 	log.Println("OmniCreateAndSignRawTransactionUseRestInput endTime.Sub(beginTime)", time.Now().Sub(beginTime).String())
 	return txid, hex, nil
 }
@@ -719,19 +719,18 @@ func (client *Client) OmniCreateAndSignRawTransactionUseUnsendInput(fromBitCoinA
 
 	//3.CreateRawTransaction
 	outputs := make(map[string]interface{})
-	//outputs["data"] = "e4bda0e5a5bdefbc8ce4b896e7958ce38082"
 
 	createrawtransactionStr, err := client.CreateRawTransaction(inputs, outputs)
 	if err != nil {
 		return "", "", err
 	}
 
-	log.Println("3 createrawtransactionStr", createrawtransactionStr)
-	result, err := client.DecodeRawTransaction(createrawtransactionStr)
-	if err != nil {
-		return "", "", err
-	}
-	log.Println(result)
+	//log.Println("3 createrawtransactionStr", createrawtransactionStr)
+	//result, err := client.DecodeRawTransaction(createrawtransactionStr)
+	//if err != nil {
+	//	return "", "", err
+	//}
+	//log.Println(result)
 
 	//4.Omni_createrawtx_opreturn
 	opreturn, err := client.omniCreateRawtxOpreturn(createrawtransactionStr, payload)
@@ -747,10 +746,10 @@ func (client *Client) OmniCreateAndSignRawTransactionUseUnsendInput(fromBitCoinA
 	}
 	//log.Println("5 reference", reference)
 
-	result, err = client.DecodeRawTransaction(reference)
-	if err != nil {
-		return "", "", err
-	}
+	//result, err = client.DecodeRawTransaction(reference)
+	//if err != nil {
+	//	return "", "", err
+	//}
 	//log.Println(result)
 	//6.Omni_createrawtx_change
 	prevtxs := make([]map[string]interface{}, 0, 0)
@@ -771,11 +770,11 @@ func (client *Client) OmniCreateAndSignRawTransactionUseUnsendInput(fromBitCoinA
 	}
 	//log.Println("6 change", change)
 
-	result, err = client.DecodeRawTransaction(change)
-	if err != nil {
-		return "", "", err
-	}
-	log.Println(result)
+	//result, err = client.DecodeRawTransaction(change)
+	//if err != nil {
+	//	return "", "", err
+	//}
+	//log.Println(result)
 
 	if privkeys == nil || len(privkeys) == 0 {
 		privkeys = nil
@@ -790,13 +789,13 @@ func (client *Client) OmniCreateAndSignRawTransactionUseUnsendInput(fromBitCoinA
 	hex = gjson.Get(signHex, "hex").String()
 	//log.Println("7 SignRawTransactionWithKey", hex)
 	decodeHex, _ := client.DecodeRawTransaction(hex)
-	log.Println("7 DecodeSignRawTransactionWithKey", decodeHex)
+	//log.Println("7 DecodeSignRawTransactionWithKey", decodeHex)
 	txid = gjson.Get(decodeHex, "txid").String()
 
-	result, err = client.OmniDecodeTransaction(hex)
-	if err != nil {
-		log.Println(err)
-	}
+	//result, err = client.OmniDecodeTransaction(hex)
+	//if err != nil {
+	//	log.Println(err)
+	//}
 	//log.Println(result)
 	log.Println("OmniCreateAndSignRawTransactionUseUnsendInput endTime.Sub(beginTime)", time.Now().Sub(beginTime).String())
 	return txid, hex, nil
@@ -821,7 +820,7 @@ func (client *Client) OmniSignRawTransactionForUnsend(hex string, inputItems []T
 	hex = gjson.Get(signHex, "hex").String()
 	decodeHex, err := client.DecodeRawTransaction(hex)
 	if err == nil {
-		log.Println(decodeHex)
+		//log.Println(decodeHex)
 	} else {
 		log.Println(err)
 	}
@@ -830,12 +829,12 @@ func (client *Client) OmniSignRawTransactionForUnsend(hex string, inputItems []T
 		return "", hex, err
 	}
 
-	result, err := client.OmniDecodeTransaction(hex)
-	if err == nil {
-		log.Println(result)
-	} else {
-		log.Println(err)
-	}
+	//result, err := client.OmniDecodeTransaction(hex)
+	//if err == nil {
+	//	log.Println(result)
+	//} else {
+	//	log.Println(err)
+	//}
 
 	return txId, hex, nil
 }
