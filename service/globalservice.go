@@ -746,5 +746,8 @@ func checkChannelOmniAssetAmount(channelInfo dao.ChannelInfo) bool {
 	if balance == channelInfo.Amount {
 		return true
 	}
+	if balance == 0 {
+		return true
+	}
 	return false
 }

@@ -98,7 +98,7 @@ func checkRsmcAndSendBR(db storm.Node) {
 							_ = db.Select(q.Eq("CurrState", dao.TxInfoState_CreateAndSign), q.Eq("InputTxid", txid)).First(rsmcBreachRemedy)
 							if rsmcBreachRemedy != nil && rsmcBreachRemedy.Id > 0 {
 								_, err = rpcClient.SendRawTransaction(rsmcBreachRemedy.BrTxHex)
-								if err != nil {
+								if err == nil {
 									log.Println("send rsmcBr by timer")
 									rsmcBreachRemedy.CurrState = dao.TxInfoState_SendHex
 									rsmcBreachRemedy.SendAt = time.Now()

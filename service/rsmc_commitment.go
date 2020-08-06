@@ -64,7 +64,7 @@ func (this *commitmentTxManager) CommitmentTransactionCreated(msg bean.RequestMe
 	}
 
 	if checkChannelOmniAssetAmount(*channelInfo) == false {
-		err = errors.New("total channel amount have changed")
+		err = errors.New("total channel amount not equal with balance")
 		log.Println(err)
 		return nil, err
 	}
