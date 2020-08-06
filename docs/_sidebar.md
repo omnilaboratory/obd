@@ -3,7 +3,7 @@
     - [Developers](OBD-README.md) 
     - [Communities](communities.md)
 
-- GUI Tool
+- GUI Playground
     - [5 minutes to get started](GUI-tool.md) 
 
 - JS SDK
