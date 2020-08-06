@@ -77,13 +77,13 @@ Full example code is at: [sdkGenMnemonic](https://github.com/omnilaboratory/Debu
 ## Step 3: Login
 
 <p align="center">
-  <img width="750" alt="login" src="prototype/loginWithSeed.png">
+  <img width="300" alt="login" src="prototype/loginWithSeed.png">
 </p>
 
 
 ## Step 4: connect another remote user
 <p align="center">
-  <img width="750" alt="login" src="prototype/connectRemoteUser.png">
+  <img width="300" alt="login" src="prototype/connectRemoteUser.png">
 </p>
 
 Connect a remote user, then you will be able to creat your first channel in the network. If you already have a channel, you can jump to the next step to pay or create invoices to collect money.
