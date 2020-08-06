@@ -62,3 +62,121 @@ let mnemonicWords = genMnemonic();
 ```
 
 Full example in GUI-tool you could be see [sdkGenMnemonic](https://github.com/omnilaboratory/DebuggingTool/blob/master/js/common.js) function.
+
+
+## Step 3: login using mnemonic words
+
+Invoke **logIn** function from [wallet.js](https://github.com/omnilaboratory/DebuggingTool/blob/master/sdk/wallet.js) of SDK.
+
+First parameter is `mnemonic`. It's mnemonic words generated from **genMnemonic** function.
+Second parameter is `callback`. It's a callback function could be used to process the return data.
+
+#### Example Code:
+
+```js
+let mnemonic = 'mnemonic words';
+
+// SDK API
+logIn(mnemonic, function(e) {
+    // Print the callback data
+    console.info('SDK: -102001 logIn = ' + JSON.stringify(e));
+
+    // SDK API: For auto pilot mode, register event for listening.
+    // @param netType --> true: testnet  false: mainnet
+    registerEvent(true);
+
+    // Your code to process the callback data.
+    // Example: Save mnemonic words used by a user to log in
+    // SDK API
+    saveMnemonic(e.userPeerId, mnemonic);
+});
+```
+
+Full example in GUI-tool you could be see [sdkLogIn](https://github.com/omnilaboratory/DebuggingTool/blob/master/js/common.js) function.
+
+
+## Step 4: connect another user
+
+Invoke **connectPeer** function from [wallet.js](https://github.com/omnilaboratory/DebuggingTool/blob/master/sdk/wallet.js) of SDK.
+
+First parameter is `P2PPeer object`. It contains node address you will connect to. The node address returned by **logIn** function. It looks like this:
+
+```
+/ip4/62.234.216.108/tcp/3001/p2p/QmP1mQMzDRV2bKWdhwvPWFubSAz1gqJY44RjdYm3G5DFeF
+```
+
+Second parameter is `callback`. It's a callback function could be used to process the return data.
+
+#### Example Code:
+
+```js
+let info                 = new P2PPeer();
+info.remote_node_address = 'node address';
+
+// SDK API
+connectPeer(info, function(e) {
+    // Print the callback data
+    console.info('SDK: -102003 connectPeer = ' + JSON.stringify(e));
+
+    // Your code to process the callback data.
+});
+```
+
+Full example in GUI-tool you could be see [sdkConnectP2PPeer](https://github.com/omnilaboratory/DebuggingTool/blob/master/js/common.js) function.
+
+
+## Step 5: open channel
+
+Invoke **openChannel** function from [basic.js](https://github.com/omnilaboratory/DebuggingTool/blob/master/sdk/basic.js) of SDK.
+
+First parameter is `myUserID`. It's the user id of logged in.
+
+Second parameter is `nodeID`. `nodeID` seam `nodePeerId` and it is part of the complete `nodeAddress`. Because on one server, there can be thousans of OBD running on it, every OBD has a unique `nodePeerId` to be identified. The `nodePeerId` returned by **logIn** function. It looks like this:
+
+```
+nodePeerId : QmP1mQMzDRV2bKWdhwvPWFubSAz1gqJY44RjdYm3G5DFeF
+``` 
+
+Third parameter is `userID`. `userID` seam `userPeerId` and it is the user id, which is used together with `nodeAddress` to tell someone else that "i'm here, please connect me by connectPeer". The `userPeerId` returned by **logIn** function. It looks like this:
+
+```
+userPeerId : 30dfbc0e1b42c4cb50410b7a08186ce405a92fff235480608425bf4b0207e5ad
+```
+
+Final parameter is `OpenChannelInfo object`. It contains `public key` of the address that you will use to create channel address. And `is_private` means the channel is public or private.
+
+#### Example Code:
+
+```js
+let nodeID  = 'nodePeerId';
+let userID  = 'userPeerId';
+
+let info            = new OpenChannelInfo();
+info.funding_pubkey = 'public key of an address';
+info.is_private     = true or false;
+
+// SDK API
+openChannel(myUserID, nodeID, userID, info);
+```
+
+Let's check out the `openChannel` function.
+
+```js
+function openChannel(myUserID, nodeID, userID, info) {
+    obdApi.openChannel(nodeID, userID, info, function(e) {
+        // Print the callback data
+        console.info('SDK: -100032 openChannel = ' + JSON.stringify(e));
+
+        // To simplify development, we save some data to local storage at client.
+        // All of this is SDK APIs.
+        saveCounterparties(myUserID, nodeID, userID);
+        saveChannelID(e.temporary_channel_id);
+        let privkey = getFundingPrivKeyFromPubKey(myUserID, info.funding_pubkey);
+        saveFundingPrivKey(myUserID, e.temporary_channel_id, privkey, kTbFundingPrivKey);
+    });
+}
+```
+
+In `openChannel` function we call the OBD's function `openChannel`. The final parameter is `callback`. To simplify development, we save some data of callback and others to local storage at client.
+
+Full example in GUI-tool you could be see [sdkOpenChannel](https://github.com/omnilaboratory/DebuggingTool/blob/master/js/common.js) function.
