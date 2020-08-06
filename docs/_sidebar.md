@@ -4,7 +4,8 @@
     - [Communities](communities.md)
 
 - GUI Tool
-    - [5 minuts to get started](GUI-tool.md) 
+    - [5 minutes to get started](GUI-tool.md) 
 
 - JS SDK
     - [Basic JS API](js-sdk.md) 
+    - [5 minutes to build a wallet app](js-sdk-5mins.md) 
