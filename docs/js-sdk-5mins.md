@@ -10,8 +10,8 @@ And, following these steps below in your code:
 * [Step 1: connect to an OBD node](#step-1-connect-to-an-obd-node)
 * [Step 2: signup a new user](#step-2-signup-a-new-user)
 * [Step 3: login using mnemonic words](#step-3-login-using-mnemonic-words)
-* [Step 4: connect another user](#step-4-connect-another-remote-user)
-* [Step 5: open channel](#step-5-create-channel)
+* [Step 4: connect another user](#step-4-connect-another-user)
+* [Step 5: open channel](#step-5-open-channel)
 * [Step 6: create an invoice](#step-6-create-an-invoice)
 
 ## Step 1: connect to an OBD node
@@ -82,6 +82,7 @@ Full example in GUI-tool you could be see [sdkGenMnemonic](https://github.com/om
 Invoke **logIn** function from [wallet.js](https://github.com/omnilaboratory/DebuggingTool/blob/master/sdk/wallet.js) of SDK.
 
 First parameter is `mnemonic`. It's mnemonic words generated from **genMnemonic** function.
+
 Second parameter is `callback`. It's a callback function could be used to process the return data.
 
 #### Example Code:
