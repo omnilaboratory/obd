@@ -1,5 +1,7 @@
 # 5 minutes to build a basic wallet app
 
+
+
 First, you should put all of [JS SDK](https://github.com/omnilaboratory/DebuggingTool/tree/master/sdk) files 
 to your path of project.
 
@@ -8,12 +10,16 @@ And, following these steps below in your code:
 * [Step 1: connect to an OBD node](#step-1-connect-to-an-obd-node)
 * [Step 2: signup a new user](#step-2-signup-a-new-user)
 * [Step 3: login using mnemonic words](#step-3-login-using-mnemonic-words)
-* [Step 4: connect another user](#step-4-connect-another-user)
-* [Step 5: open channel](#step-5-open-channel)
+* [Step 4: connect another user](#step-4-connect-another-remote-user)
+* [Step 5: open channel](#step-5-create-channel)
 * [Step 6: create an invoice](#step-6-create-an-invoice)
 * [Step 7: channel operations](#step-7-channel-operations)
 
 ## Step 1: connect to an OBD node
+
+<p align="center">
+  <img width="750" alt="login" src="prototype/connectOBD.png">
+</p>
 
 Invoke **connectToServer** function from [wallet.js](https://github.com/omnilaboratory/DebuggingTool/blob/master/sdk/wallet.js) of SDK.
 
@@ -47,6 +53,10 @@ Full example in GUI-tool you could be see [sdkConnect2OBD](https://github.com/om
 
 ## Step 2: signup a new user
 
+<p align="center">
+  <img width="750" alt="login" src="prototype/createAccount.png">
+</p>
+
 Invoke **genMnemonic** function from [wallet.js](https://github.com/omnilaboratory/DebuggingTool/blob/master/sdk/wallet.js) of SDK.
 
 `genMnemonic` function is used to sign up a new user by hirarchecal deterministic wallet system integrated in the local client. Client generates mnemonic words and the hash of the mnemonic words as the UserID.
@@ -61,4 +71,33 @@ let mnemonicWords = genMnemonic();
 // Example: Display the mnemonic words on app screen.
 ```
 
-Full example in GUI-tool you could be see [sdkGenMnemonic](https://github.com/omnilaboratory/DebuggingTool/blob/master/js/common.js) function.
+Full example code is at: [sdkGenMnemonic](https://github.com/omnilaboratory/DebuggingTool/blob/master/js/common.js) function.
+
+
+## Step 3: Login
+
+<p align="center">
+  <img width="750" alt="login" src="prototype/loginWithSeed.png">
+</p>
+
+
+## Step 4: connect another remote user
+<p align="center">
+  <img width="750" alt="login" src="prototype/connectRemoteUser.png">
+</p>
+
+Connect a remote user, then you will be able to creat your first channel in the network. If you already have a channel, you can jump to the next step to pay or create invoices to collect money.
+
+## Step 5: create channel
+
+to be done
+
+## Step 6: create an invoice 
+
+to be done
+
+
+
+
+
+
