@@ -205,4 +205,17 @@ Full example code is at: [sdkGenMnemonic](https://github.com/omnilaboratory/Debu
 
 ## Step 6: create an invoice 
 
+<p align="center">
+  <img width="300" alt="login" src="prototype/createInvoice.png">
+</p>
+
 to be done
+
+## Step 7: pay an invoice 
+
+<p align="center">
+  <img width="300" alt="login" src="prototype/payInvoice.png">
+</p>
+
+to be done
+ 
