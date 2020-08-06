@@ -13,7 +13,7 @@ And, following these steps below in your code:
 * [Step 4: connect another user](#step-4-connect-another-user)
 * [Step 5: open channel](#step-5-open-channel)
 * [Step 6: create an invoice](#step-6-create-an-invoice)
-* [Step 7: create an invoice](#step-6-pay-an-invoice)
+* [Step 7: pay an invoice](#step-6-pay-an-invoice)
   
 
 ## Step 1: connect to an OBD node
@@ -216,7 +216,7 @@ to be done
 ## Step 7: pay an invoice 
 
 <p align="center">
-  <img width="300" alt="login" src="prototype/payInvoice.png">
+  <img width="750" alt="login" src="prototype/payInvoice.png">
 </p>
 
 to be done
