@@ -8,4 +8,5 @@
 
 - JS SDK
     - [Basic JS API](js-sdk.md) 
-    - [to write your first lightning wallet](js-sdk-5mins.md) 
+    - [Step by step to write your first lightning wallet](js-sdk-5mins.md) 
+    - [Advanced topics](advanced.md) 
