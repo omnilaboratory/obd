@@ -1,4 +1,4 @@
-# 5 minutes to build a basic wallet app
+# Step by step to write your first lightning wallet
 
 
 
