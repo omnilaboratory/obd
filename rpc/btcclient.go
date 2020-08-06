@@ -141,6 +141,11 @@ func (client *Client) ValidateAddress(address string) (isValid bool, err error) 
 	if tool.CheckIsString(&address) == false {
 		return false, errors.New("address not exist")
 	}
+
+	if validatedAddress[address] {
+		return true, nil
+	}
+
 	result, err := client.GetAddressInfo(address)
 	if err != nil {
 		return false, err
@@ -149,6 +154,7 @@ func (client *Client) ValidateAddress(address string) (isValid bool, err error) 
 		_, _ = client.send("importaddress", []interface{}{address, "", false})
 	}
 	//log.Println(result)
+	validatedAddress[address] = true
 
 	return gjson.Get(result, "iswatchonly").Bool(), nil
 }
@@ -466,12 +472,12 @@ func (client *Client) BtcSignRawTransaction(hex string, privKey string) (string,
 		return "", hex, err
 	}
 
-	result, err := client.OmniDecodeTransaction(hex)
-	if err == nil {
-		log.Println(result)
-	} else {
-		log.Println(err)
-	}
+	//result, err := client.OmniDecodeTransaction(hex)
+	//if err == nil {
+	//	log.Println(result)
+	//} else {
+	//	log.Println(err)
+	//}
 
 	return txId, hex, nil
 }

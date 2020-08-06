@@ -18,6 +18,7 @@ import (
 )
 
 var connConfig *ConnConfig
+var validatedAddress map[string]bool
 
 func init() {
 	connConfig = &ConnConfig{
@@ -25,6 +26,8 @@ func init() {
 		User: config.ChainNode_User,
 		Pass: config.ChainNode_Pass,
 	}
+
+	validatedAddress = make(map[string]bool)
 	//log.Println(connConfig)
 }
 
