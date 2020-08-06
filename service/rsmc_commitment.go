@@ -63,10 +63,14 @@ func (this *commitmentTxManager) CommitmentTransactionCreated(msg bean.RequestMe
 		return nil, err
 	}
 
-	if checkChannelOmniAssetAmount(*channelInfo) == false {
-		err = errors.New("total channel amount not equal with balance")
-		log.Println(err)
-		return nil, err
+	fundingTransaction := getFundingTransactionByChannelId(tx, channelInfo.ChannelId, creator.PeerId)
+	duration := time.Now().Sub(fundingTransaction.CreateAt)
+	if duration > time.Minute*30 {
+		if checkChannelOmniAssetAmount(*channelInfo) == false {
+			err = errors.New("total channel amount not equal with balance")
+			log.Println(err)
+			return nil, err
+		}
 	}
 
 	err = checkBtcFundFinish(channelInfo.ChannelAddress, false)

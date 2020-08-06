@@ -339,10 +339,14 @@ func (service *htlcForwardTxManager) UpdateAddHtlc_40(msg bean.RequestMessage, u
 		return nil, errors.New("not found  channel info from  routing_packet")
 	}
 
-	if checkChannelOmniAssetAmount(*channelInfo) == false {
-		err = errors.New("total channel amount have changed")
-		log.Println(err)
-		return nil, err
+	fundingTransaction := getFundingTransactionByChannelId(tx, channelInfo.ChannelId, user.PeerId)
+	duration := time.Now().Sub(fundingTransaction.CreateAt)
+	if duration > time.Minute*30 {
+		if checkChannelOmniAssetAmount(*channelInfo) == false {
+			err = errors.New("total channel amount not equal with balance")
+			log.Println(err)
+			return nil, err
+		}
 	}
 
 	if requestData.CltvExpiry < (totalStep - currStep) {

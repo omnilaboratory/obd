@@ -1,9 +1,7 @@
 package service
 
 import (
-	"github.com/asdine/storm/q"
 	"github.com/omnilaboratory/obd/config"
-	"github.com/omnilaboratory/obd/dao"
 	"github.com/omnilaboratory/obd/rpc"
 	"github.com/shopspring/decimal"
 	"github.com/tidwall/gjson"
@@ -73,10 +71,16 @@ func TestDelDemoChannelInfoData(t *testing.T) {
 }
 
 func TestDelDemoChannelInfoOne(t *testing.T) {
-	err := db.Delete("DemoChannelInfo", 4)
+	parse, err := time.ParseInLocation("2006-01-02 15:04:05", "2020-08-06 10:40:00", time.Local)
 	log.Println(err)
-	err = db.Delete("DemoChannelInfo", 2)
-	log.Println(err)
+	log.Println(parse)
+	duration := time.Now().Sub(parse)
+	log.Println(duration)
+
+	if duration > time.Minute*5 {
+		log.Println(duration)
+	}
+	log.Println("aaaaaaaaaaa")
 }
 
 func TestPathManager_GetPath(t *testing.T) {
@@ -149,35 +153,4 @@ func TestChannelManager_Test(t *testing.T) {
 	result, err = rpcClient.DecodeRawTransaction(hexBR)
 	log.Println(err)
 	log.Println(result)
-}
-
-func TestTask(t *testing.T) {
-	log.Println("aaa")
-	node := &dao.RDTxWaitingSend{}
-	node.TransactionHex = "111"
-	node.IsEnable = true
-	node.CreateAt = time.Now()
-	db.Save(node)
-
-	var nodes []dao.RDTxWaitingSend
-	err := db.Select().Find(&nodes)
-	if err != nil {
-		return
-	}
-
-	for _, item := range nodes {
-		item.IsEnable = false
-		item.TransactionHex = "33333"
-		item.FinishAt = time.Now()
-		err := db.Update(&item)
-		log.Println(err)
-		db.UpdateField(&item, "IsEnable", false)
-	}
-	var nodes2 []dao.RDTxWaitingSend
-
-	db.Select(q.Eq("IsEnable", true)).Find(&nodes2)
-	if err != nil {
-		return
-	}
-
 }

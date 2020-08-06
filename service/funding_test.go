@@ -13,5 +13,4 @@ import (
 //}
 
 func TestFundingManager_DeleteItem(t *testing.T) {
-	checkBtcFundFinish("2NFh1BGVH2qvnxyRRDnQGbYe2gKBi8XhV2t")
 }
