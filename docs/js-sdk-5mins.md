@@ -151,9 +151,9 @@ Full example in GUI-tool you could be see [sdkConnectP2PPeer](https://github.com
 
 Invoke **openChannel** function from [basic.js](https://github.com/omnilaboratory/DebuggingTool/blob/master/sdk/basic.js) of SDK.
 
-First parameter is `myUserID`. It's the user id of logged in.
+First parameter is `myUserID`. It's the user id of the client currently logged in.
 
-Second and third parameter are `nodeID` and `userID`. Both returned by **logIn** function. Explanation is [here](https://omnilaboratory.github.io/obd/#/GUI-tool?id=step-3-login-using-mnemonic-words)
+Second and third parameter are `nodeID` and `remoteUserID`. Both returned by **logIn** function. Explanation is [here](https://omnilaboratory.github.io/obd/#/GUI-tool?id=step-3-login-using-mnemonic-words)
 
 Final parameter is `OpenChannelInfo object`. It contains `public key` of the address that you will use to create channel address. And `is_private` means the channel is public or private.
 
