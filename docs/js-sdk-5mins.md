@@ -13,7 +13,7 @@ And, following these steps below in your code:
 * [Step 4: connect another user](#step-4-connect-another-user)
 * [Step 5: open channel](#step-5-open-channel)
 * [Step 6: create an invoice](#step-6-create-an-invoice)
-* [Step 7: pay an invoice](#step-6-pay-an-invoice)
+* [Step 7: pay an invoice](#step-7-pay-an-invoice)
   
 
 ## Step 1: connect to an OBD node
@@ -153,45 +153,35 @@ Invoke **openChannel** function from [basic.js](https://github.com/omnilaborator
 
 First parameter is `myUserID`. It's the user id of logged in.
 
-Second parameter is `nodeID`. `nodeID` seam `nodePeerId` and it is part of the complete `nodeAddress`. Because on one server, there can be thousans of OBD running on it, every OBD has a unique `nodePeerId` to be identified. The `nodePeerId` returned by **logIn** function. It looks like this:
-
-```
-nodePeerId : QmP1mQMzDRV2bKWdhwvPWFubSAz1gqJY44RjdYm3G5DFeF
-``` 
-
-Third parameter is `userID`. `userID` seam `userPeerId` and it is the user id, which is used together with `nodeAddress` to tell someone else that "i'm here, please connect me by connectPeer". The `userPeerId` returned by **logIn** function. It looks like this:
-
-```
-userPeerId : 30dfbc0e1b42c4cb50410b7a08186ce405a92fff235480608425bf4b0207e5ad
-```
+Second and third parameter are `nodeID` and `userID`. Both returned by **logIn** function. Explanation is [here](https://omnilaboratory.github.io/obd/#/GUI-tool?id=step-3-login-using-mnemonic-words)
 
 Final parameter is `OpenChannelInfo object`. It contains `public key` of the address that you will use to create channel address. And `is_private` means the channel is public or private.
 
 #### Example Code:
 
 ```js
-let nodeID  = 'nodePeerId';
-let userID  = 'userPeerId';
+let nodeID       = 'nodePeerId';
+let remoteUserID = 'userPeerId';
 
 let info            = new OpenChannelInfo();
 info.funding_pubkey = 'public key of an address';
 info.is_private     = true or false;
 
 // SDK API
-openChannel(myUserID, nodeID, userID, info);
+openChannel(myUserID, nodeID, remoteUserID, info);
 ```
 
 Let's check out the `openChannel` function.
 
 ```js
-function openChannel(myUserID, nodeID, userID, info) {
-    obdApi.openChannel(nodeID, userID, info, function(e) {
+function openChannel(myUserID, nodeID, remoteUserID, info) {
+    obdApi.openChannel(nodeID, remoteUserID, info, function(e) {
         // Print the callback data
         console.info('SDK: -100032 openChannel = ' + JSON.stringify(e));
 
         // To simplify development, we save some data to local storage at client.
         // All of this is SDK APIs.
-        saveCounterparties(myUserID, nodeID, userID);
+        saveCounterparties(myUserID, nodeID, remoteUserID);
         saveChannelID(e.temporary_channel_id);
         let privkey = getFundingPrivKeyFromPubKey(myUserID, info.funding_pubkey);
         saveFundingPrivKey(myUserID, e.temporary_channel_id, privkey, kTbFundingPrivKey);
@@ -202,7 +192,6 @@ function openChannel(myUserID, nodeID, userID, info) {
 In `openChannel` function we call the OBD's function `openChannel`. The final parameter is `callback`. To simplify development, we save some data of callback and others to local storage at client.
 
 Full example in GUI-tool you could be see [sdkOpenChannel](https://github.com/omnilaboratory/DebuggingTool/blob/master/js/common.js) function.
-Full example code is at: [sdkGenMnemonic](https://github.com/omnilaboratory/DebuggingTool/blob/master/js/common.js) function.
 
 
 ## Step 6: create an invoice 
@@ -211,7 +200,35 @@ Full example code is at: [sdkGenMnemonic](https://github.com/omnilaboratory/Debu
   <img width="300" alt="login" src="prototype/createInvoice.png">
 </p>
 
-to be done
+Invoke **addInvoice** function from [htlc.js](https://github.com/omnilaboratory/DebuggingTool/blob/master/sdk/htlc.js) of SDK.
+
+First parameter is `InvoiceInfo object`. Explanation is [here](https://omnilaboratory.github.io/obd/#/GUI-tool?id=step-6-create-an-invoice)
+
+Second parameter is `callback`. It's a callback function could be used to process the return data.
+
+#### Example Code:
+
+```js
+let info         = new InvoiceInfo();
+info.property_id = 'property id of an asset';
+info.amount      = 'amount';
+info.h           = 'hash of r';
+info.expiry_time = 'expiry time';
+info.description = 'a memo';
+
+// SDK API
+addInvoice(info, function(e) {
+    // Print the callback data
+    console.info('SDK: -100402 addInvoice = ' + JSON.stringify(e));
+
+    // Your code to process the callback data.
+    // Example: create a QR code 
+    // makeQRCode(e);
+});
+```
+
+Full example in GUI-tool you could be see [sdkAddInvoice](https://github.com/omnilaboratory/DebuggingTool/blob/master/js/common.js) function.
+
 
 ## Step 7: pay an invoice 
 
@@ -219,5 +236,37 @@ to be done
   <img width="750" alt="login" src="prototype/payInvoice.png">
 </p>
 
-to be done
- 
+Invoke **payInvoice** function from [htlc.js](https://github.com/omnilaboratory/DebuggingTool/blob/master/sdk/htlc.js) of SDK.
+
+First parameter is `PayInvoiceInfo object`. 
+
+Pay an invoice 有两种情况：
+1）主动收款，就是处理收款方发来的一个invoice，那么PayInvoiceInfo只提供invoice信息。
+2）主动付款，就是付款方发起一个付款请求，PayInvoiceInfo 需要提供更多的信息，参见示例代码。
+
+Second parameter is `callback`. It's a callback function could be used to process the return data.
+
+#### Example Code:
+
+```js
+let info     = new PayInvoiceInfo();
+let isInvPay = true or false;
+
+if (isInvPay === true) { // 主动收款
+    info.invoice = 'invoice';
+} else { // 主动付款
+    info.recipient_user_peer_id = 'recipient user id';
+    info.property_id = 'property id of an asset';
+    info.amount      = 'amount';
+    info.h           = 'hash of r';
+    info.expiry_time = 'expiry time';
+    info.description = 'a memo';
+    info.is_private  = true or false;  // the channel is public or private
+}
+
+// SDK API
+payInvoice(info);
+```
+
+Full example in GUI-tool you could be see [sdkPayInvoice](https://github.com/omnilaboratory/DebuggingTool/blob/master/js/common.js) function.
+
