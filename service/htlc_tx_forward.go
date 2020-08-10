@@ -194,6 +194,7 @@ func (service *htlcForwardTxManager) PayerRequestFindPath(msgData string, user b
 		pathRequest.PayeePeerId = requestFindPathInfo.RecipientUserPeerId
 		sendMsgToTracker(enum.MsgType_Tracker_GetHtlcPath_351, pathRequest)
 	} else {
+		requestData.HtlcRequestFindPathInfo = requestFindPathInfo
 		return getPrivateChannelForHtlc(requestData, user)
 	}
 	return nil, false, nil
@@ -219,8 +220,7 @@ func getPrivateChannelForHtlc(requestData *bean.HtlcRequestFindPath, user bean.U
 			q.And(
 				q.Eq("PeerIdB", user.PeerId),
 				q.Eq("PeerIdA", requestData.RecipientUserPeerId)),
-		)).
-		Find(&nodes)
+		)).OrderBy("CreateAt").Reverse().Find(&nodes)
 
 	retData := make(map[string]interface{})
 	if nodes != nil && len(nodes) > 0 {
