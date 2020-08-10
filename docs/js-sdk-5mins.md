@@ -240,9 +240,10 @@ Invoke **payInvoice** function from [htlc.js](https://github.com/omnilaboratory/
 
 First parameter is `PayInvoiceInfo object`. 
 
-Pay an invoice 有两种情况：
-1）主动收款，就是处理收款方发来的一个invoice，那么PayInvoiceInfo只提供invoice信息。
-2）主动付款，就是付款方发起一个付款请求，PayInvoiceInfo 需要提供更多的信息，参见示例代码。
+Payment infomation is encoded in an invoice represented by a QR-code or a string. Payer either:
+1）call **payInvoice** to pay the invoice created by payee,  
+OR  
+2）call **payInvoice** by filling all the payment items manuely. The example lists all the payment items.  
 
 Second parameter is `callback`. It's a callback function could be used to process the return data.
 
@@ -252,9 +253,9 @@ Second parameter is `callback`. It's a callback function could be used to proces
 let info     = new PayInvoiceInfo();
 let isInvPay = true or false;
 
-if (isInvPay === true) { // 主动收款
+if (isInvPay === true) { // pay an invoice
     info.invoice = 'invoice';
-} else { // 主动付款
+} else { // pay to a user id without an invoice
     info.recipient_user_peer_id = 'recipient user id';
     info.property_id = 'property id of an asset';
     info.amount      = 'amount';
