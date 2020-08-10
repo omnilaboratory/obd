@@ -285,6 +285,8 @@ func (service *htlcCloseTxManager) CloseHTLCSigned(msg bean.RequestMessage, user
 	if tool.CheckIsString(&msg.Data) == false {
 		return nil, errors.New("empty json data")
 	}
+	beginTime := time.Now()
+	log.Println("CloseHTLCSigned beginTime", beginTime.String())
 
 	reqData := &bean.HtlcSignCloseCurrTx{}
 	err = json.Unmarshal([]byte(msg.Data), reqData)
@@ -555,6 +557,7 @@ func (service *htlcCloseTxManager) CloseHTLCSigned(msg bean.RequestMessage, user
 		}
 		//endregion
 
+		log.Println("closeHtlc endTime.Sub(beginTime)", time.Now().Sub(beginTime).String())
 		//region 4、创建C3b
 		commitmentTxRequest := &bean.SendRequestCommitmentTx{}
 		commitmentTxRequest.ChannelId = channelInfo.ChannelId

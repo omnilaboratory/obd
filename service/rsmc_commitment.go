@@ -28,6 +28,10 @@ func (this *commitmentTxManager) CommitmentTransactionCreated(msg bean.RequestMe
 	if tool.CheckIsString(&msg.Data) == false {
 		return nil, errors.New("empty json reqData")
 	}
+
+	beginTime := time.Now()
+	log.Println("CommitmentTransactionCreated beginTime", beginTime.String())
+
 	reqData := &bean.SendRequestCommitmentTx{}
 	err = json.Unmarshal([]byte(msg.Data), reqData)
 	if err != nil {
@@ -153,6 +157,7 @@ func (this *commitmentTxManager) CommitmentTransactionCreated(msg bean.RequestMe
 	retData.CurrTempAddressPubKey = reqData.CurrTempAddressPubKey
 	if latestCommitmentTxInfo.CurrState == dao.TxInfoState_CreateAndSign {
 		//创建c2a omni的交易不能一个输入，多个输出，所以就是两个交易
+		log.Println("CommitmentTransactionCreated endTime.Sub(beginTime)", time.Now().Sub(beginTime).String())
 		newCommitmentTxInfo, err := createCommitmentTxHex(tx, true, reqData, channelInfo, latestCommitmentTxInfo, *creator)
 		if err != nil {
 			return nil, err

@@ -381,15 +381,11 @@ func (client *Client) OmniCreateAndSignRawTransactionUseSingleInput(txType int, 
 	if amount < config.GetOmniDustBtc() {
 		return "", "", "", errors.New("wrong amount")
 	}
-
 	pMoney := config.GetOmniDustBtc()
-	if minerFee < pMoney {
-		minerFee = config.GetMinerFee()
-	}
 
 	_, _ = client.ValidateAddress(fromBitCoinAddress)
 	_, _ = client.ValidateAddress(toBitCoinAddress)
-
+	log.Println("OmniCreateAndSignRawTransactionUseSingleInput endTime.Sub(beginTime)", time.Now().Sub(beginTime).String())
 	resultListUnspent, err := client.ListUnspent(fromBitCoinAddress)
 	if err != nil {
 		return "", "", "", err
