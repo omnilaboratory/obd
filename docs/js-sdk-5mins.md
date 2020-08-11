@@ -5,7 +5,7 @@
 First, you should put all of [JS SDK](https://github.com/omnilaboratory/DebuggingTool/tree/master/sdk) files 
 to your path of project.
 
-And, following these steps below in your code:
+And, following steps below will help you to build your first lightning wallet, and the code can be embeded in any mobile or desktop applications that support JS:
 
 * [Step 1: connect to an OBD node](#step-1-connect-to-an-obd-node)
 * [Step 2: signup a new user](#step-2-signup-a-new-user)
