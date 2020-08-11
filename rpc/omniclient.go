@@ -575,7 +575,7 @@ func (client *Client) OmniCreateAndSignRawTransactionUseRestInput(txType int, fr
 		}
 	}
 
-	log.Println("1 balance")
+	//log.Println("1 balance")
 	if balance < out {
 		return "", "", errors.New("not enough balance")
 	}
@@ -585,7 +585,6 @@ func (client *Client) OmniCreateAndSignRawTransactionUseRestInput(txType int, fr
 	if err != nil {
 		return "", "", err
 	}
-	log.Println("2 payload ")
 
 	outputs := make(map[string]interface{})
 	//3.CreateRawTransaction
@@ -600,14 +599,12 @@ func (client *Client) OmniCreateAndSignRawTransactionUseRestInput(txType int, fr
 	if err != nil {
 		return "", "", err
 	}
-	log.Println("4 opreturn")
 
 	//5. Omni_createrawtx_reference
 	reference, err := client.omniCreateRawtxReference(opreturn, toBitCoinAddress)
 	if err != nil {
 		return "", "", err
 	}
-	log.Println("5 reference")
 
 	//6.Omni_createrawtx_change
 	prevtxs := make([]map[string]interface{}, 0, len(inputs))
@@ -626,7 +623,6 @@ func (client *Client) OmniCreateAndSignRawTransactionUseRestInput(txType int, fr
 	if err != nil {
 		return "", "", err
 	}
-	log.Println("6 change")
 
 	if privkeys == nil || len(privkeys) == 0 {
 		privkeys = nil
@@ -638,17 +634,9 @@ func (client *Client) OmniCreateAndSignRawTransactionUseRestInput(txType int, fr
 	}
 
 	hex = gjson.Get(signHex, "hex").String()
-	log.Println("7 SignRawTransactionWithKey")
 	decodeHex, _ := client.DecodeRawTransaction(hex)
-	//log.Println("7 DecodeSignRawTransactionWithKey", decodeHex)
 	txid = gjson.Get(decodeHex, "txid").String()
 
-	//result, err := client.OmniDecodeTransaction(hex)
-	//if err == nil {
-	//	log.Println(result)
-	//} else {
-	//	log.Println(err)
-	//}
 	log.Println("OmniCreateAndSignRawTransactionUseRestInput endTime.Sub(beginTime)", time.Now().Sub(beginTime).String())
 	return txid, hex, nil
 }
@@ -701,7 +689,7 @@ func (client *Client) OmniCreateAndSignRawTransactionUseUnsendInput(fromBitCoinA
 			break
 		}
 	}
-	log.Println("1 balance", balance)
+	//log.Println("1 balance", balance)
 	if balance < out {
 		return "", "", errors.New("not enough balance")
 	}

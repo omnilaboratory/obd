@@ -72,6 +72,20 @@ func (client *Client) omniCoreModule(msg bean.RequestMessage) (enum.SendTargetTy
 		}
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
+	case enum.MsgType_Core_Omni_Send_2121:
+		fromAddress := gjson.Get(msg.Data, "from_address").String()
+		toAddress := gjson.Get(msg.Data, "to_address").String()
+		propertyId := gjson.Get(msg.Data, "property_id").Int()
+		amount := gjson.Get(msg.Data, "amount").Float()
+		result, err := rpcClient.OmniSend(fromAddress, toAddress, int(propertyId), amount)
+		if err != nil {
+			data = err.Error()
+		} else {
+			data = result
+			status = true
+		}
+		client.sendToMyself(msg.Type, status, data)
+		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_Core_SignMessageWithPrivKey_2104:
 		privkey := gjson.Get(msg.Data, "privkey").String()
 		message := gjson.Get(msg.Data, "message").String()
