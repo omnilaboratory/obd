@@ -126,6 +126,7 @@ func goroutine() {
 }
 
 func SynData() {
+	updateP2pAddressLogin()
 	sycUserInfos()
 	sycChannelInfos()
 }
