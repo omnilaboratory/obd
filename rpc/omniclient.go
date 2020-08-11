@@ -28,7 +28,7 @@ func (client *Client) OmniSend(fromAddress string, toAddress string, propertyId 
 	if err != nil {
 		return "", err
 	}
-	return client.send("omni_send", []interface{}{fromAddress, toAddress, propertyId, amount})
+	return client.send("omni_send", []interface{}{fromAddress, toAddress, propertyId, tool.FloatToString(amount, 8)})
 }
 
 //Create new tokens with manageable supply. https://github.com/OmniLayer/omnicore/blob/master/src/omnicore/doc/rpc-api.md#omni_sendissuancemanaged
