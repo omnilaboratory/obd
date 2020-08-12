@@ -99,10 +99,10 @@ func ConnP2PServer(dest string) (string, error) {
 		return "", errors.New("wrong dest address")
 	}
 
-	id := httpGetNodeInfoByP2pAddressFromTracker(dest)
-	if id == 0 {
-		return "", errors.New("target dest address not exist or online")
-	}
+	//id := httpGetNodeInfoByP2pAddressFromTracker(dest)
+	//if id == 0 {
+	//	return "", errors.New("target dest address not exist or online")
+	//}
 
 	sourceMultiAddr, _ := multiaddr.NewMultiaddr(fmt.Sprintf("/ip4/0.0.0.0/tcp/%d", config.P2P_sourcePort))
 	prvKey, _ := generatePrivateKey()
@@ -130,7 +130,7 @@ func ConnP2PServer(dest string) (string, error) {
 	}
 	if p2pChannelMap[destHostInfo.ID.Pretty()] != nil {
 		log.Println("p2p channel has connect")
-		return "", errors.New("p2p channel has connect")
+		return localServerDest, nil
 	}
 	host.Peerstore().AddAddrs(destHostInfo.ID, destHostInfo.Addrs, peerstore.PermanentAddrTTL)
 	s, err := host.NewStream(context.Background(), destHostInfo.ID, pid)
