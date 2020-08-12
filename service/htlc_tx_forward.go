@@ -163,11 +163,21 @@ func (service *htlcForwardTxManager) PayerRequestFindPath(msgData string, user b
 		requestFindPathInfo = htlcRequestInvoice.HtlcRequestFindPathInfo
 	} else {
 		requestFindPathInfo = requestData.HtlcRequestFindPathInfo
+		if tool.CheckIsString(&requestFindPathInfo.RecipientNodePeerId) == false {
+			return nil, false, errors.New("wrong recipient_node_peer_id")
+		}
 		if tool.CheckIsString(&requestFindPathInfo.RecipientUserPeerId) == false {
 			return nil, false, errors.New("wrong recipient_user_peer_id")
 		}
-		if err := findUserIsOnline(requestFindPathInfo.RecipientUserPeerId); err != nil {
-			return nil, false, err
+		if P2PLocalPeerId == requestFindPathInfo.RecipientNodePeerId {
+			if err := findUserIsOnline(requestFindPathInfo.RecipientUserPeerId); err != nil {
+				return nil, false, err
+			}
+		} else {
+			flag := HttpGetUserStateFromTracker(requestFindPathInfo.RecipientUserPeerId)
+			if flag == 0 {
+				return nil, false, errors.New(requestFindPathInfo.RecipientUserPeerId + " not online")
+			}
 		}
 	}
 

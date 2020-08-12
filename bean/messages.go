@@ -272,13 +272,13 @@ type PayeeSignCommitmentTxOfP2p struct {
 
 //type -100402: invoice
 type HtlcRequestInvoice struct {
-	NetType             string `json:"net_type"` //解析用
-	RecipientNodePeerId string `json:"recipient_node_peer_id"`
+	NetType string `json:"net_type"` //解析用
 	HtlcRequestFindPathInfo
 	TypeLengthValue
 }
 
 type HtlcRequestFindPathInfo struct {
+	RecipientNodePeerId string   `json:"recipient_node_peer_id"`
 	RecipientUserPeerId string   `json:"recipient_user_peer_id"`
 	H                   string   `json:"h"`
 	ExpiryTime          JsonDate `json:"expiry_time"`
