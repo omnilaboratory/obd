@@ -75,6 +75,12 @@ func goroutine() {
 	// read message
 	go func() {
 		for {
+			if conn == nil {
+				isReset = true
+				conn = nil
+				return
+			}
+
 			_, message, err := conn.ReadMessage()
 			if err != nil {
 				isReset = true
