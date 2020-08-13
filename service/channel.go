@@ -283,14 +283,21 @@ type ChannelVO struct {
 	CreateAt           time.Time        `json:"create_at"`
 }
 
-// OmniFundingAllItem
-func (this *channelManager) AllItem(jsonData string, user bean.User) (data []ChannelVO, count *int, err error) {
-	data = make([]ChannelVO, 0)
+type pageVO struct {
+	Data       interface{} `json:"data"`
+	PageNum    int         `json:"pageNum"`
+	PageSize   int         `json:"pageSize"`
+	TotalCount int         `json:"totalCount"`
+	TotalPage  int         `json:"totalPage"`
+}
 
+// OmniFundingAllItem
+func (this *channelManager) AllItem(jsonData string, user bean.User) (data *pageVO, err error) {
+	data = &pageVO{}
 	tx, err := user.Db.Begin(true)
 	if err != nil {
 		log.Println(err)
-		return nil, nil, err
+		return nil, err
 	}
 	defer tx.Rollback()
 	pageIndex := gjson.Get(jsonData, "page_index").Int()
@@ -317,11 +324,21 @@ func (this *channelManager) AllItem(jsonData string, user bean.User) (data []Cha
 			q.Eq("PeerIdB", user.PeerId))).
 		Count(&dao.ChannelInfo{})
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
-	count = &tempCount
+
+	totalPage := int(tempCount) / int(pageSize)
+	if int(tempCount)%int(pageSize) != 0 {
+		totalPage += 1
+	}
+
+	data.TotalPage = totalPage
+	data.TotalCount = tempCount
+	data.PageNum = int(pageIndex)
+	data.PageSize = int(pageSize)
 
 	if infos != nil {
+		items := make([]ChannelVO, 0)
 		for _, info := range infos {
 			item := ChannelVO{}
 			item.TemporaryChannelId = info.TemporaryChannelId
@@ -344,11 +361,12 @@ func (this *channelManager) AllItem(jsonData string, user bean.User) (data []Cha
 					item.BalanceHtlc = commitmentTxInfo.AmountToHtlc
 				}
 			}
-			data = append(data, item)
+			items = append(items, item)
 		}
+		data.Data = items
 	}
 	_ = tx.Commit()
-	return data, count, err
+	return data, err
 }
 
 // OmniFundingTotalCount
