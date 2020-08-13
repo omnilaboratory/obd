@@ -270,6 +270,7 @@ type ChannelVO struct {
 	TemporaryChannelId string           `json:"temporary_channel_id"`
 	IsPrivate          bool             `json:"is_private"`
 	ChannelId          string           `json:"channel_id"`
+	ChannelAddress     string           `json:"channel_address"`
 	PropertyId         int64            `json:"property_id"`
 	CurrState          dao.ChannelState `json:"curr_state"`
 	PeerIdA            string           `json:"peer_ida"`
@@ -343,6 +344,7 @@ func (this *channelManager) AllItem(jsonData string, user bean.User) (data *page
 			item := ChannelVO{}
 			item.TemporaryChannelId = info.TemporaryChannelId
 			item.ChannelId = info.ChannelId
+			item.ChannelAddress = info.ChannelAddress
 			item.IsPrivate = info.IsPrivate
 			item.CurrState = info.CurrState
 			item.PropertyId = info.PropertyId
