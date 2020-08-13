@@ -284,23 +284,43 @@ type ChannelVO struct {
 }
 
 // OmniFundingAllItem
-func (this *channelManager) AllItem(user bean.User) (data []ChannelVO, err error) {
+func (this *channelManager) AllItem(jsonData string, user bean.User) (data []ChannelVO, count *int, err error) {
 	data = make([]ChannelVO, 0)
-	var infos []dao.ChannelInfo
 
 	tx, err := user.Db.Begin(true)
 	if err != nil {
 		log.Println(err)
-		return nil, err
+		return nil, nil, err
 	}
 	defer tx.Rollback()
+	pageIndex := gjson.Get(jsonData, "page_index").Int()
+	if pageIndex <= 0 {
+		pageIndex = 1
+	}
+	pageSize := gjson.Get(jsonData, "page_size").Int()
+	if pageSize <= 0 {
+		pageSize = 10
+	}
+	skip := (pageIndex - 1) * pageSize
 
+	var infos []dao.ChannelInfo
 	err = tx.Select(
 		q.Or(
 			q.Eq("PeerIdA", user.PeerId),
 			q.Eq("PeerIdB", user.PeerId))).
-		OrderBy("CreateAt").Reverse().
+		OrderBy("CreateAt").Reverse().Skip(int(skip)).Limit(int(pageSize)).
 		Find(&infos)
+
+	tempCount, err := tx.Select(
+		q.Or(
+			q.Eq("PeerIdA", user.PeerId),
+			q.Eq("PeerIdB", user.PeerId))).
+		Count(&dao.ChannelInfo{})
+	if err != nil {
+		return nil, nil, err
+	}
+	count = &tempCount
+
 	if infos != nil {
 		for _, info := range infos {
 			item := ChannelVO{}
@@ -328,7 +348,7 @@ func (this *channelManager) AllItem(user bean.User) (data []ChannelVO, err error
 		}
 	}
 	_ = tx.Commit()
-	return data, err
+	return data, count, err
 }
 
 // OmniFundingTotalCount

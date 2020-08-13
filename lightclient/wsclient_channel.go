@@ -45,12 +45,13 @@ func (client *Client) channelModule(msg bean.RequestMessage) (enum.SendTargetTyp
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_ChannelOpen_AllItem_3150:
-		nodes, err := service.ChannelService.AllItem(*client.User)
+		nodes, count, err := service.ChannelService.AllItem(msg.Data, *client.User)
 		if err != nil {
 			data = err.Error()
 		} else {
 			page := make(map[string]interface{})
 			page["count"] = len(nodes)
+			page["totalCount"] = count
 			page["body"] = nodes
 			bytes, err := json.Marshal(page)
 			if err != nil {
