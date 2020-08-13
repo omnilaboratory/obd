@@ -129,8 +129,8 @@ func ConnP2PServer(dest string) (string, error) {
 		return "", err
 	}
 	if p2pChannelMap[destHostInfo.ID.Pretty()] != nil {
-		log.Println("p2p channel has connect")
-		return localServerDest, nil
+		log.Println("Remote peer has been connected")
+		return " Remote peer has been connected", nil
 	}
 	host.Peerstore().AddAddrs(destHostInfo.ID, destHostInfo.Addrs, peerstore.PermanentAddrTTL)
 	s, err := host.NewStream(context.Background(), destHostInfo.ID, pid)

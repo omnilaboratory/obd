@@ -266,16 +266,69 @@ func (this *channelManager) AfterBobAcceptChannelAtAliceSide(jsonData string, us
 	return channelInfo, err
 }
 
+type ChannelVO struct {
+	TemporaryChannelId string           `json:"temporary_channel_id"`
+	IsPrivate          bool             `json:"is_private"`
+	ChannelId          string           `json:"channel_id"`
+	PropertyId         int64            `json:"property_id"`
+	CurrState          dao.ChannelState `json:"curr_state"`
+	PeerIdA            string           `json:"peer_ida"`
+	PeerIdB            string           `json:"peer_idb"`
+	BtcFundingTimes    int              `json:"btc_funding_times"`
+	BtcAmount          float64          `json:"btc_amount"`
+	AssetAmount        float64          `json:"asset_amount"`
+	BalanceA           float64          `json:"balance_a"`
+	BalanceB           float64          `json:"balance_b"`
+	BalanceHtlc        float64          `json:"balance_htlc"`
+	CreateAt           time.Time        `json:"create_at"`
+}
+
 // OmniFundingAllItem
-func (this *channelManager) AllItem(user bean.User) (data []dao.ChannelInfo, err error) {
+func (this *channelManager) AllItem(user bean.User) (data []ChannelVO, err error) {
+	data = make([]ChannelVO, 0)
 	var infos []dao.ChannelInfo
-	err = user.Db.Select(
+
+	tx, err := user.Db.Begin(true)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	defer tx.Rollback()
+
+	err = tx.Select(
 		q.Or(
 			q.Eq("PeerIdA", user.PeerId),
 			q.Eq("PeerIdB", user.PeerId))).
 		OrderBy("CreateAt").Reverse().
 		Find(&infos)
-	return infos, err
+	if infos != nil {
+		for _, info := range infos {
+			item := ChannelVO{}
+			item.TemporaryChannelId = info.TemporaryChannelId
+			item.ChannelId = info.ChannelId
+			item.IsPrivate = info.IsPrivate
+			item.CurrState = info.CurrState
+			item.PropertyId = info.PropertyId
+			item.AssetAmount = info.Amount
+			item.BtcAmount = info.BtcAmount
+			item.PeerIdA = info.PeerIdA
+			item.PeerIdB = info.PeerIdB
+			item.CreateAt = info.CreateAt
+			btcFundingTimes, _ := tx.Select(q.Eq("Owner", user.PeerId), q.Eq("TemporaryChannelId", info.TemporaryChannelId)).Count(&dao.MinerFeeRedeemTransaction{})
+			item.BtcFundingTimes = btcFundingTimes
+			if info.CurrState >= dao.ChannelState_CanUse {
+				commitmentTxInfo, _ := getLatestCommitmentTxUseDbTx(tx, info.ChannelId, user.PeerId)
+				if commitmentTxInfo.Id > 0 {
+					item.BalanceA = commitmentTxInfo.AmountToRSMC
+					item.BalanceB = commitmentTxInfo.AmountToCounterparty
+					item.BalanceHtlc = commitmentTxInfo.AmountToHtlc
+				}
+			}
+			data = append(data, item)
+		}
+	}
+	_ = tx.Commit()
+	return data, err
 }
 
 // OmniFundingTotalCount

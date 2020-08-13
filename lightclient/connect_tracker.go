@@ -102,6 +102,7 @@ func goroutine() {
 					if v.Kind() == reflect.Map {
 						dataMap := replyMessage.Result.(map[string]interface{})
 						requestMessage.RecipientUserPeerId = dataMap["senderPeerId"].(string)
+						//requestMessage.Data = dataMap["h"].(string) + "_" + dataMap["path"].(string)+"_" +dataMap["amount"].(string)
 						requestMessage.Data = dataMap["h"].(string) + "_" + dataMap["path"].(string)
 					}
 					htlcTrackerDealModule(requestMessage)

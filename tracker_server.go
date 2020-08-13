@@ -37,7 +37,7 @@ func initTrackerLog() {
 
 // gox -os "windows linux darwin" -arch amd64
 // gox -os "windows" -arch amd64
-func main1() {
+func main() {
 	initTrackerLog()
 
 	routersInit := tracker.InitRouter()
