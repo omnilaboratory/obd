@@ -353,7 +353,10 @@ func (this *channelManager) AllItem(jsonData string, user bean.User) (data *page
 			item.PeerIdA = info.PeerIdA
 			item.PeerIdB = info.PeerIdB
 			item.CreateAt = info.CreateAt
-			btcFundingTimes, _ := tx.Select(q.Eq("Owner", user.PeerId), q.Eq("TemporaryChannelId", info.TemporaryChannelId)).Count(&dao.MinerFeeRedeemTransaction{})
+			btcFundingTimes, _ := tx.Select(
+				q.Eq("Owner", user.PeerId),
+				q.Eq("IsFinish", true),
+				q.Eq("TemporaryChannelId", info.TemporaryChannelId)).Count(&dao.MinerFeeRedeemTransaction{})
 			item.BtcFundingTimes = btcFundingTimes
 			if info.CurrState >= dao.ChannelState_CanUse {
 				commitmentTxInfo, _ := getLatestCommitmentTxUseDbTx(tx, info.ChannelId, user.PeerId)

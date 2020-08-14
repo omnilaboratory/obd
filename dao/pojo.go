@@ -134,6 +134,7 @@ type MinerFeeRedeemTransaction struct {
 	FundingTxId        string    `json:"funding_tx_id"`
 	Hex                string    `json:"hex"`
 	Txid               string    `json:"txid"`
+	IsFinish           bool      `json:"is_finish"`
 	CreateAt           time.Time `json:"create_at"`
 }
 

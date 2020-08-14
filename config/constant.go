@@ -55,6 +55,7 @@ func httpGetRecommendedMiner() (price float64) {
 	client := http.Client{Timeout: time.Minute}
 	resp, err := client.Get(url)
 	if err != nil {
+		successGetMinerFeePriceAt = time.Now()
 		return 0
 	}
 	defer resp.Body.Close()

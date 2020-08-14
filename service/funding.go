@@ -66,7 +66,7 @@ func (service *fundingTransactionManager) BTCFundingCreated(msg bean.RequestMess
 		First(channelInfo)
 	if err != nil {
 		log.Println(err)
-		return nil, "", err
+		return nil, "", errors.New("not found the channel by temppraryChannelId" + reqData.TemporaryChannelId)
 	}
 
 	targetUser = channelInfo.PeerIdB
@@ -112,6 +112,20 @@ func (service *fundingTransactionManager) BTCFundingCreated(msg bean.RequestMess
 		err = errors.New("the tx have been send")
 		log.Println(err)
 		return nil, "", err
+	}
+
+	latestBtcFundingRequest := &dao.FundingBtcRequest{}
+	_ = tx.Select(
+		q.Eq("TemporaryChannelId", reqData.TemporaryChannelId),
+		q.Eq("Owner", user.PeerId),
+		q.Or(
+			q.Eq("IsFinish", false),
+			q.And(
+				q.Eq("IsFinish", true),
+				q.Eq("SignApproval", false)))).OrderBy("CreateAt").Reverse().
+		First(latestBtcFundingRequest)
+	if latestBtcFundingRequest.Id > 0 && latestBtcFundingRequest.TxId != fundingTxid {
+		return nil, "", errors.New("latest funding btc tx is running ,please wait")
 	}
 
 	fundingBtcRequest := &dao.FundingBtcRequest{}
@@ -173,11 +187,12 @@ func (service *fundingTransactionManager) BTCFundingCreated(msg bean.RequestMess
 		minerFeeRedeemTransaction.CreateAt = time.Now()
 		minerFeeRedeemTransaction.Owner = user.PeerId
 		minerFeeRedeemTransaction.TemporaryChannelId = reqData.TemporaryChannelId
+		minerFeeRedeemTransaction.IsFinish = false
 		_ = tx.Save(minerFeeRedeemTransaction)
 	} else {
 		if fundingBtcRequest.IsFinish {
 			fundingBtcRequest.IsFinish = false
-			tx.Update(fundingBtcRequest)
+			_ = tx.Update(fundingBtcRequest)
 		}
 
 		err := tx.Select(
@@ -547,6 +562,7 @@ func (service *fundingTransactionManager) AfterBobSignBtcFundingAtAliceSide(data
 			return nil, err
 		}
 		minerFeeRedeemTransaction.Hex = fundingRedeemHex
+		minerFeeRedeemTransaction.IsFinish = true
 		err = tx.Update(minerFeeRedeemTransaction)
 		if err != nil {
 			return nil, err

@@ -258,7 +258,11 @@ func (client *Client) fundingSignModule(msg bean.RequestMessage) (enum.SendTarge
 		}
 
 		if tool.CheckIsString(&funder) {
-			msg.Type = enum.MsgType_FundingSign_BtcSign_350
+			if status {
+				msg.Type = enum.MsgType_FundingSign_BtcSign_350
+			} else {
+				msg.Type = enum.MsgType_FundingSign_RecvBtcSign_350
+			}
 			err = client.sendDataToP2PUser(msg, status, data)
 			if err != nil {
 				data = err.Error()
