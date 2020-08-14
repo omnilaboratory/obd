@@ -16,6 +16,9 @@ import (
 func (client *Client) GetBlockChainInfo() (result string, err error) {
 	return client.send("getblockchaininfo", nil)
 }
+func (client *Client) EstimateSmartFee() (result string, err error) {
+	return client.send("estimatesmartfee", []interface{}{1000})
+}
 func (client *Client) CreateMultiSig(minSignNum int, keys []string) (result string, err error) {
 	return client.send("createmultisig", []interface{}{minSignNum, keys})
 }

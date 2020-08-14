@@ -125,7 +125,16 @@ func (service *fundingTransactionManager) BTCFundingCreated(msg bean.RequestMess
 				q.Eq("SignApproval", false)))).OrderBy("CreateAt").Reverse().
 		First(latestBtcFundingRequest)
 	if latestBtcFundingRequest.Id > 0 && latestBtcFundingRequest.TxId != fundingTxid {
-		return nil, "", errors.New("latest funding btc tx is running ,please wait")
+		result, err := rpcClient.TestMemPoolAccept(latestBtcFundingRequest.TxHash)
+		if err == nil {
+			allowed := gjson.Parse(result).Get("allowed").Bool()
+			if allowed == false {
+				latestBtcFundingRequest.IsFinish = true
+				_ = tx.Update(latestBtcFundingRequest)
+			} else {
+				return nil, "", errors.New("latest funding btc tx is running ,please wait")
+			}
+		}
 	}
 
 	fundingBtcRequest := &dao.FundingBtcRequest{}
