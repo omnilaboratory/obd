@@ -827,3 +827,21 @@ func GetBtcMinerAmount(total float64) float64 {
 	out, _ := decimal.NewFromFloat(total).Div(decimal.NewFromFloat(4.0)).Sub(decimal.NewFromFloat(config.GetOmniDustBtc())).Round(8).Float64()
 	return out
 }
+
+// ins*150 + outs*34 + 10 + 80 = transaction size
+// https://shimo.im/docs/5w9Fi1c9vm8yp1ly
+//https://bitcoinfees.earn.com/api/v1/fees/recommended
+func (client *Client) GetMinerFee() float64 {
+	price := client.EstimateSmartFee()
+	if price == 0 {
+		price = 6
+	} else {
+		price = price / 6
+	}
+	if price < 4 {
+		price = 4
+	}
+	txSize := 150 + 68 + 90
+	result, _ := decimal.NewFromFloat(float64(txSize) * price).Div(decimal.NewFromFloat(100000000)).Round(8).Float64()
+	return result
+}

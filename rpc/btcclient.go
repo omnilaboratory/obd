@@ -16,8 +16,14 @@ import (
 func (client *Client) GetBlockChainInfo() (result string, err error) {
 	return client.send("getblockchaininfo", nil)
 }
-func (client *Client) EstimateSmartFee() (result string, err error) {
-	return client.send("estimatesmartfee", []interface{}{1000})
+
+//https://developer.bitcoin.org/reference/rpc/estimatesmartfee.html
+func (client *Client) EstimateSmartFee() (feeRate float64) {
+	result, err := client.send("estimatesmartfee", []interface{}{10})
+	if err == nil {
+		return gjson.Get(result, "feerate").Float() * 100000
+	}
+	return 2
 }
 func (client *Client) CreateMultiSig(minSignNum int, keys []string) (result string, err error) {
 	return client.send("createmultisig", []interface{}{minSignNum, keys})
@@ -200,7 +206,7 @@ func (client *Client) BtcCreateAndSignRawTransaction(fromBitCoinAddress string, 
 	}
 
 	if minerFee <= 0 {
-		minerFee = config.GetMinerFee()
+		minerFee = client.GetMinerFee()
 	}
 
 	outTotalAmount := decimal.NewFromFloat(0)
@@ -331,7 +337,7 @@ func (client *Client) BtcCreateAndSignRawTransactionForUnsendInputTx(fromBitCoin
 	}
 
 	if minerFee <= config.GetOmniDustBtc() {
-		minerFee = config.GetMinerFee()
+		minerFee = client.GetMinerFee()
 	}
 
 	outAmount := decimal.NewFromFloat(0)

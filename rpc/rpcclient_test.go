@@ -18,10 +18,9 @@ func TestClient_GetMiningInfo(t *testing.T) {
 	//balance, err := client.OmniGetbalance("n4ExCKJY11hCu3xKkjDFLE1ZG4awjYsk3E", 137)
 	//log.Println(balance)
 
-	result, err := client.EstimateSmartFee()
+	result := client.EstimateSmartFee()
 	//result, err := client.DecodeRawTransaction("02000000018451f5b707c6f1a1eb0b3f3e9eb6d736b3a8e15c70d01e3cc136783449d13174000000006a473044022079bcf8b5a3daf409990ce5fb89b3b734f421b90b24f8262d4920f5c92630d92b02200200dbdd98029dff9bb02cbff638a446b4b5b7597a55a9b03f4e62756b1566370121022496530640e1c4c7a2a9a5878439b19eebb2fbce2fabf7a9d847402860d10813ffffffff02c43500000000000017a914129965444fa07857158de1178ace3aa3afc82efd87b00a0a00000000001976a91428272468efa366443623045f833f53e7d63aa4d388ac00000000")
 	log.Println(result)
-	log.Println(err)
 
 }
 
