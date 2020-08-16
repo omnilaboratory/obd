@@ -1,6 +1,5 @@
 ## pay invoice
 
-### Step 1: pay invoice
 
 <p align="center">
   <img width="750" alt="Connect Screenshot" src="assets/payInvoice.png">
