@@ -5,6 +5,8 @@
 
 - GUI Playground
     - [5 minutes to get started](GUI-tool.md) 
+    - [fund the channel](gui-fund-channel.md)
+    - [pay invoice](gui-pay-invoice.md)
 
 - JS SDK
     - [Basic JS API](js-sdk.md) 
