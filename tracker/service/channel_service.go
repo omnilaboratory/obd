@@ -61,7 +61,9 @@ func (manager *channelManager) updateChannelInfo(obdClient *ObdNode, msgData str
 			_ = db.Save(channelInfo)
 		} else {
 			channelInfo.PropertyId = item.PropertyId
-			channelInfo.CurrState = item.CurrState
+			if channelInfo.CurrState != 21 {
+				channelInfo.CurrState = item.CurrState
+			}
 			channelInfo.PeerIdA = item.PeerIdA
 			channelInfo.PeerIdB = item.PeerIdB
 			channelInfo.AmountA = item.AmountA

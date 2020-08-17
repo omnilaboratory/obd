@@ -66,7 +66,7 @@ func (service *fundingTransactionManager) BTCFundingCreated(msg bean.RequestMess
 		First(channelInfo)
 	if err != nil {
 		log.Println(err)
-		return nil, "", errors.New("not found the channel by temppraryChannelId" + reqData.TemporaryChannelId)
+		return nil, "", errors.New("not found the channel by temporaryChannelId " + reqData.TemporaryChannelId)
 	}
 
 	targetUser = channelInfo.PeerIdB
@@ -122,7 +122,9 @@ func (service *fundingTransactionManager) BTCFundingCreated(msg bean.RequestMess
 			q.Eq("IsFinish", false),
 			q.And(
 				q.Eq("IsFinish", true),
-				q.Eq("SignApproval", false)))).OrderBy("CreateAt").Reverse().
+				q.Eq("SignApproval", false)))).
+		OrderBy("CreateAt").
+		Reverse().
 		First(latestBtcFundingRequest)
 	if latestBtcFundingRequest.Id > 0 && latestBtcFundingRequest.TxId != fundingTxid {
 		result, err := rpcClient.TestMemPoolAccept(latestBtcFundingRequest.TxHash)

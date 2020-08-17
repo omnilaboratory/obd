@@ -219,6 +219,7 @@ func (manager *htlcManager) createChannelNetwork(realPayerPeerId, currPayeePeerI
 	var nodes []dao.ChannelInfo
 	err := db.Select(
 		q.Eq("PropertyId", propertyId),
+		q.Eq("CurrState", 20),
 		q.Or(
 			q.Eq("PeerIdB", currPayeePeerId),
 			q.Eq("PeerIdA", currPayeePeerId))).
@@ -233,11 +234,9 @@ func (manager *htlcManager) createChannelNetwork(realPayerPeerId, currPayeePeerI
 			}
 
 			if leftAmount >= amount {
-
 				if _, ok := userOfOnlineMap[interSender]; ok == false {
 					continue
 				}
-
 				channelIds := item.ChannelId
 				if tool.CheckIsString(&currNode.ChannelIds) {
 					channelIds = currNode.ChannelIds + "," + item.ChannelId
