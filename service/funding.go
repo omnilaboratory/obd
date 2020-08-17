@@ -1395,6 +1395,7 @@ func (service *fundingTransactionManager) AfterBobSignOmniFundingAtAilceSide(dat
 	rdTransaction.RDType = 0
 	rdTransaction.TxHex = signedRdHex
 	rdTransaction.Txid = txid
+	rdTransaction.SignAt = time.Now()
 	rdTransaction.CurrState = dao.TxInfoState_CreateAndSign
 	err = tx.Save(rdTransaction)
 	if err != nil {
@@ -1560,4 +1561,21 @@ func (service *fundingTransactionManager) OmniFundingTotalCount(user bean.User) 
 			q.Eq("PeerIdA", user.PeerId),
 			q.Eq("PeerIdB", user.PeerId))).
 		Count(&dao.FundingTransaction{})
+}
+
+func (service *fundingTransactionManager) BtcFundingItemByChannelId(channelId string, user bean.User) (node []dao.FundingBtcRequest, err error) {
+	if tool.CheckIsString(&channelId) == false {
+		return nil, errors.New("empty channelId")
+	}
+	channelInfo := dao.ChannelInfo{}
+	_ = user.Db.Select(q.Eq("ChannelId", channelId)).First(&channelInfo)
+	if channelInfo.Id == 0 {
+		return nil, errors.New("not found the channel by " + channelId)
+	}
+	var itemes []dao.FundingBtcRequest
+	err = user.Db.Select(q.Eq("TemporaryChannelId", channelInfo.TemporaryChannelId)).OrderBy("CreateAt").Reverse().Find(&itemes)
+	if err != nil {
+		return nil, err
+	}
+	return itemes, nil
 }

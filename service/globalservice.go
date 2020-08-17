@@ -296,20 +296,17 @@ func checkOmniTxHex(fundingTxHexDecode string, channelInfo *dao.ChannelInfo, use
 	jsonOmniTxHexDecode := gjson.Parse(fundingTxHexDecode)
 	fundingTxid = jsonOmniTxHexDecode.Get("txid").String()
 
-	funderAddress := channelInfo.AddressA
-	if user == channelInfo.PeerIdB {
-		funderAddress = channelInfo.AddressB
-	}
+	funderAddress := channelInfo.FundingAddress
 
 	sendingAddress := jsonOmniTxHexDecode.Get("sendingaddress").String()
 	if sendingAddress != funderAddress {
-		err = errors.New("wrong Tx input")
+		err = errors.New("the input address " + sendingAddress + " not equal with FunderAddress " + funderAddress)
 		log.Println(err)
 		return "", 0, 0, err
 	}
 	referenceAddress := jsonOmniTxHexDecode.Get("referenceaddress").String()
 	if referenceAddress != channelInfo.ChannelAddress {
-		err = errors.New("wrong Tx output")
+		err = errors.New("the output address " + referenceAddress + " not equal with ChannelAddress " + channelInfo.ChannelAddress)
 		log.Println(err)
 		return "", 0, 0, err
 	}
@@ -430,6 +427,7 @@ func signRdTx(tx storm.Node, channelInfo *dao.ChannelInfo, signedRsmcHex string,
 	rdTransaction.TxHex = signedRdHex
 	rdTransaction.Txid = aliceRdTxid
 	rdTransaction.CurrState = dao.TxInfoState_CreateAndSign
+	rdTransaction.SignAt = time.Now()
 	err = tx.Save(rdTransaction)
 	if err != nil {
 		log.Println(err)

@@ -194,7 +194,7 @@ func (client *Client) Read() {
 					if msg.Type == enum.MsgType_FundingCreate_SendAssetFundingCreated_34 ||
 						msg.Type == enum.MsgType_FundingCreate_SendBtcFundingCreated_340 ||
 						(msg.Type <= enum.MsgType_FundingCreate_Asset_AllItem_3100 &&
-							msg.Type >= enum.MsgType_FundingCreate_Btc_ItemRDByTempChannelIdAndTxId_3110) {
+							msg.Type >= enum.MsgType_FundingCreate_Btc_ItemByChannelId_3111) {
 						sendType, dataOut, status = client.fundingTransactionModule(msg)
 						break
 					}
@@ -262,6 +262,9 @@ func (client *Client) Read() {
 
 		if len(dataOut) == 0 {
 			dataOut = dataReq
+			if sendType == enum.SendTargetType_SendToNone {
+				client.sendToMyself(msg.Type, false, "the msgType can not process")
+			}
 		}
 
 		//broadcast except me

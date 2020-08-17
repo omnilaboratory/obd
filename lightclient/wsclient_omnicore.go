@@ -289,6 +289,21 @@ func (client *Client) omniCoreModule(msg bean.RequestMessage) (enum.SendTargetTy
 		}
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
+	case enum.MsgType_Core_GetTransactionByTxid_2122:
+		txid := gjson.Get(msg.Data, "txid").String()
+		if tool.CheckIsString(&txid) {
+			result, err := rpcClient.GetTransactionById(txid)
+			if err != nil {
+				data = err.Error()
+			} else {
+				data = result
+				status = true
+			}
+		} else {
+			data = "error txid"
+		}
+		client.sendToMyself(msg.Type, status, data)
+		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_Core_FundingBTC_2109:
 		sendInfo := &bean.FundingBtc{}
 		err := json.Unmarshal([]byte(msg.Data), sendInfo)

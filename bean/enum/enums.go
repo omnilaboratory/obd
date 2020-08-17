@@ -59,6 +59,7 @@ const (
 	MsgType_Core_Omni_GetProperty_2119                 MsgType = -102119
 	MsgType_Core_Omni_FundingAsset_2120                MsgType = -102120
 	MsgType_Core_Omni_Send_2121                        MsgType = -102121
+	MsgType_Core_GetTransactionByTxid_2122             MsgType = -102122
 	MsgType_Core_Omni_End_2199                         MsgType = -102199
 	MsgType_Common_End_2999                            MsgType = -102999
 	// endregion
@@ -86,6 +87,7 @@ const (
 	MsgType_FundingCreate_Btc_ItemRDById_3108                   MsgType = -103108
 	MsgType_FundingCreate_Btc_ItemRDByTempChannelId_3109        MsgType = -103109
 	MsgType_FundingCreate_Btc_ItemRDByTempChannelIdAndTxId_3110 MsgType = -103110
+	MsgType_FundingCreate_Btc_ItemByChannelId_3111              MsgType = -103111
 
 	MsgType_ChannelOpen_AllItem_3150         MsgType = -103150
 	MsgType_ChannelOpen_ItemByTempId_3151    MsgType = -103151
@@ -245,6 +247,8 @@ func CheckExist(msgType MsgType) bool {
 		return true
 	case MsgType_Core_Omni_Send_2121:
 		return true
+	case MsgType_Core_GetTransactionByTxid_2122:
+		return true
 	case MsgType_Mnemonic_CreateAddress_3000:
 		return true
 	case MsgType_Mnemonic_GetAddressByIndex_3001:
@@ -292,6 +296,8 @@ func CheckExist(msgType MsgType) bool {
 	case MsgType_FundingCreate_Btc_ItemRDByTempChannelId_3109:
 		return true
 	case MsgType_FundingCreate_Btc_ItemRDByTempChannelIdAndTxId_3110:
+		return true
+	case MsgType_FundingCreate_Btc_ItemByChannelId_3111:
 		return true
 	case MsgType_FundingSign_SendAssetFundingSigned_35:
 		return true
