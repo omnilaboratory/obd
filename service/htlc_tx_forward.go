@@ -106,6 +106,9 @@ func (service *htlcForwardTxManager) CreateHtlcInvoice(msg bean.RequestMessage, 
 	if time.Time(requestData.ExpiryTime).IsZero() {
 		return nil, errors.New("wrong expiry_time")
 	} else {
+		if time.Now().After(time.Time(requestData.ExpiryTime)) {
+			return nil, errors.New("wrong expiry_time")
+		}
 		expiryTime := ""
 		tool.ConvertNumToString(int(time.Time(requestData.ExpiryTime).Unix()), &expiryTime)
 		code, err = tool.GetMsgLengthFromInt(len(expiryTime))
@@ -114,6 +117,17 @@ func (service *htlcForwardTxManager) CreateHtlcInvoice(msg bean.RequestMessage, 
 		}
 		addr += "x" + code + expiryTime
 	}
+
+	code, err = tool.GetMsgLengthFromInt(1)
+	if err != nil {
+		return nil, err
+	}
+	isPrivate := "0"
+	if requestData.IsPrivate {
+		isPrivate = "1"
+	}
+	addr += "t" + code + isPrivate
+
 	if len(requestData.Description) > 0 {
 		code, err = tool.GetMsgLengthFromInt(len(requestData.Description))
 		if err != nil {
@@ -157,44 +171,48 @@ func (service *htlcForwardTxManager) PayerRequestFindPath(msgData string, user b
 		}
 		if htlcRequestInvoice.RecipientNodePeerId == P2PLocalPeerId {
 			if err := findUserIsOnline(htlcRequestInvoice.RecipientUserPeerId); err != nil {
-				return nil, false, err
+				return nil, requestFindPathInfo.IsPrivate, err
 			}
 		}
 		requestFindPathInfo = htlcRequestInvoice.HtlcRequestFindPathInfo
 	} else {
 		requestFindPathInfo = requestData.HtlcRequestFindPathInfo
 		if tool.CheckIsString(&requestFindPathInfo.RecipientNodePeerId) == false {
-			return nil, false, errors.New("wrong recipient_node_peer_id")
+			return nil, requestFindPathInfo.IsPrivate, errors.New("wrong recipient_node_peer_id")
 		}
 		if tool.CheckIsString(&requestFindPathInfo.RecipientUserPeerId) == false {
-			return nil, false, errors.New("wrong recipient_user_peer_id")
+			return nil, requestFindPathInfo.IsPrivate, errors.New("wrong recipient_user_peer_id")
 		}
 		if P2PLocalPeerId == requestFindPathInfo.RecipientNodePeerId {
 			if err := findUserIsOnline(requestFindPathInfo.RecipientUserPeerId); err != nil {
-				return nil, false, err
+				return nil, requestFindPathInfo.IsPrivate, err
 			}
 		} else {
 			flag := HttpGetUserStateFromTracker(requestFindPathInfo.RecipientUserPeerId)
 			if flag == 0 {
-				return nil, false, errors.New(requestFindPathInfo.RecipientUserPeerId + " not online")
+				return nil, requestFindPathInfo.IsPrivate, errors.New(requestFindPathInfo.RecipientUserPeerId + " not online")
 			}
 		}
 	}
 
 	if requestFindPathInfo.PropertyId < 0 {
-		return nil, false, errors.New("wrong property_id")
+		return nil, requestFindPathInfo.IsPrivate, errors.New("wrong property_id")
 	}
 
 	_, err = rpcClient.OmniGetProperty(requestFindPathInfo.PropertyId)
 	if err != nil {
-		return nil, false, err
+		return nil, requestFindPathInfo.IsPrivate, err
 	}
 
 	if requestFindPathInfo.Amount < config.GetOmniDustBtc() {
-		return nil, false, errors.New("wrong amount")
+		return nil, requestFindPathInfo.IsPrivate, errors.New("wrong amount")
 	}
 
-	if requestData.IsPrivate == false {
+	if time.Now().After(time.Time(requestFindPathInfo.ExpiryTime)) {
+		return nil, requestFindPathInfo.IsPrivate, errors.New("wrong expiry_time")
+	}
+
+	if requestFindPathInfo.IsPrivate == false {
 		//tracker find path
 		pathRequest := trackerBean.HtlcPathRequest{}
 		pathRequest.H = requestFindPathInfo.H
@@ -203,11 +221,11 @@ func (service *htlcForwardTxManager) PayerRequestFindPath(msgData string, user b
 		pathRequest.RealPayerPeerId = user.PeerId
 		pathRequest.PayeePeerId = requestFindPathInfo.RecipientUserPeerId
 		sendMsgToTracker(enum.MsgType_Tracker_GetHtlcPath_351, pathRequest)
+		return make(map[string]interface{}), requestFindPathInfo.IsPrivate, nil
 	} else {
 		requestData.HtlcRequestFindPathInfo = requestFindPathInfo
 		return getPrivateChannelForHtlc(requestData, user)
 	}
-	return nil, false, nil
 }
 
 func getPrivateChannelForHtlc(requestData *bean.HtlcRequestFindPath, user bean.User) (data interface{}, isPrivate bool, err error) {
@@ -239,6 +257,7 @@ func getPrivateChannelForHtlc(requestData *bean.HtlcRequestFindPath, user bean.U
 			if err == nil && commitmentTxInfo.Id > 0 {
 				if commitmentTxInfo.AmountToRSMC >= requestData.Amount {
 					retData["h"] = requestData.H
+					retData["isPrivate"] = requestData.IsPrivate
 					retData["amount"] = requestData.Amount
 					retData["routing_packet"] = channel.ChannelId
 					retData["min_cltv_expiry"] = 1
@@ -288,6 +307,7 @@ func (service *htlcForwardTxManager) GetResponseFromTrackerOfPayerRequestFindPat
 	arrLength := len(strings.Split(dataArr[1], ","))
 	retData := make(map[string]interface{})
 	retData["h"] = h
+	retData["isPrivate"] = false
 	retData["amount"] = dataArr[2]
 	retData["routing_packet"] = dataArr[1]
 	retData["min_cltv_expiry"] = arrLength

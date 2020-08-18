@@ -191,6 +191,26 @@ func DecodeInvoiceObjFromCodes(encode string) (invoice bean.HtlcRequestInvoice, 
 	invoice.ExpiryTime = bean.JsonDate(date)
 	encode = strings.TrimPrefix(encode, itemStr)
 
+	//isPrivate
+	prefix = encode[0:1]
+	if prefix != "t" {
+		return invoice, errors.New("error encode")
+	}
+	encode = strings.TrimPrefix(encode, prefix)
+	lengthStr = encode[0:2]
+	length, err = ConvertBechStringToNum(lengthStr)
+	if err != nil {
+		return invoice, errors.New("error encode")
+	}
+	encode = strings.TrimPrefix(encode, lengthStr)
+	itemStr = encode[0:length]
+	if itemStr == "1" {
+		invoice.IsPrivate = true
+	} else {
+		invoice.IsPrivate = false
+	}
+	encode = strings.TrimPrefix(encode, itemStr)
+
 	//Description
 	prefix = encode[0:1]
 	if prefix == "d" {
