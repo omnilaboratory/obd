@@ -421,15 +421,19 @@ func (service *htlcForwardTxManager) UpdateAddHtlc_40(msg bean.RequestMessage, u
 			}
 		}
 		if latestCommitmentTx.CurrState == dao.TxInfoState_Create {
+			if latestCommitmentTx.TxType != dao.CommitmentTransactionType_Htlc {
+				return nil, errors.New("error commitment tx type")
+			}
+
+			if requestData.CurrRsmcTempAddressPubKey != latestCommitmentTx.RSMCTempAddressPubKey {
+				return nil, errors.New("curr_rsmc_temp_address_pub_key is not the same when create currTx")
+			}
+
+			if requestData.CurrHtlcTempAddressPubKey != latestCommitmentTx.HTLCTempAddressPubKey {
+				return nil, errors.New("curr_htlc_temp_address_pub_key is not the same when create currTx")
+			}
+
 			if latestCommitmentTx.LastCommitmentTxId > 0 {
-
-				if requestData.CurrRsmcTempAddressPubKey != latestCommitmentTx.RSMCTempAddressPubKey {
-					return nil, errors.New("curr_rsmc_temp_address_pub_key is not the same when create currTx")
-				}
-				if requestData.CurrHtlcTempAddressPubKey != latestCommitmentTx.HTLCTempAddressPubKey {
-					return nil, errors.New("curr_htlc_temp_address_pub_key is not the same when create currTx")
-				}
-
 				lastCommitmentTx := &dao.CommitmentTransaction{}
 				_ = tx.One("Id", latestCommitmentTx.LastCommitmentTxId, lastCommitmentTx)
 				_, err = tool.GetPubKeyFromWifAndCheck(requestData.LastTempAddressPrivateKey, lastCommitmentTx.RSMCTempAddressPubKey)
@@ -493,7 +497,14 @@ func (service *htlcForwardTxManager) UpdateAddHtlc_40(msg bean.RequestMessage, u
 
 	//这次请求的第一次发起
 	htlcRequestInfo := &dao.AddHtlcRequestInfo{}
-	if latestCommitmentTx.Id == 0 || latestCommitmentTx.CurrState == dao.TxInfoState_CreateAndSign {
+	_ = tx.Select(
+		q.Eq("ChannelId", channelInfo.ChannelId),
+		q.Eq("PropertyId", requestData.PropertyId),
+		q.Eq("H", requestData.H),
+		q.Eq("Amount", requestData.Amount),
+		q.Eq("RoutingPacket", requestData.RoutingPacket),
+		q.Eq("RecipientUserPeerId", msg.RecipientUserPeerId)).First(htlcRequestInfo)
+	if htlcRequestInfo.Id == 0 || latestCommitmentTx.Id == 0 || latestCommitmentTx.CurrState == dao.TxInfoState_CreateAndSign {
 		htlcRequestInfo.RecipientUserPeerId = msg.RecipientUserPeerId
 		htlcRequestInfo.H = requestData.H
 		htlcRequestInfo.Memo = requestData.Memo
@@ -526,15 +537,7 @@ func (service *htlcForwardTxManager) UpdateAddHtlc_40(msg bean.RequestMessage, u
 			sendMsgToTracker(enum.MsgType_Tracker_UpdateHtlcTxState_352, txStateRequest)
 		}
 	} else {
-		_ = tx.Select(
-			q.Eq("ChannelId", channelInfo.ChannelId),
-			q.Eq("PropertyId", requestData.PropertyId),
-			q.Eq("H", requestData.H),
-			q.Eq("Amount", requestData.Amount),
-			q.Eq("RoutingPacket", requestData.RoutingPacket),
-			q.Eq("RecipientUserPeerId", msg.RecipientUserPeerId)).First(htlcRequestInfo)
-		if htlcRequestInfo != nil &&
-			requestData.CurrHtlcTempAddressForHt1aPubKey != htlcRequestInfo.CurrHtlcTempAddressForHt1aPubKey {
+		if requestData.CurrHtlcTempAddressForHt1aPubKey != htlcRequestInfo.CurrHtlcTempAddressForHt1aPubKey {
 			return nil, errors.New("curr_htlc_temp_address_for_ht1a_pub_key is not the same when create currTx")
 		}
 	}
@@ -683,15 +686,18 @@ func (service *htlcForwardTxManager) PayeeSignGetAddHtlc_41(jsonData string, use
 			}
 		}
 		if latestCommitmentTxInfo.CurrState == dao.TxInfoState_Create {
+			if latestCommitmentTxInfo.TxType != dao.CommitmentTransactionType_Htlc {
+				return nil, errors.New("error commitment tx type")
+			}
+
+			if requestData.CurrRsmcTempAddressPubKey != latestCommitmentTxInfo.RSMCTempAddressPubKey {
+				return nil, errors.New("curr_rsmc_temp_address_pub_key is not the same when create currTx")
+			}
+			if requestData.CurrHtlcTempAddressPubKey != latestCommitmentTxInfo.HTLCTempAddressPubKey {
+				return nil, errors.New("curr_htlc_temp_address_pub_key is not the same when create currTx")
+			}
+
 			if latestCommitmentTxInfo.LastCommitmentTxId > 0 {
-
-				if requestData.CurrRsmcTempAddressPubKey != latestCommitmentTxInfo.RSMCTempAddressPubKey {
-					return nil, errors.New("curr_rsmc_temp_address_pub_key is not the same when create currTx")
-				}
-				if requestData.CurrHtlcTempAddressPubKey != latestCommitmentTxInfo.HTLCTempAddressPubKey {
-					return nil, errors.New("curr_htlc_temp_address_pub_key is not the same when create currTx")
-				}
-
 				lastCommitmentTx := &dao.CommitmentTransaction{}
 				_ = tx.One("Id", latestCommitmentTxInfo.LastCommitmentTxId, lastCommitmentTx)
 				_, err = tool.GetPubKeyFromWifAndCheck(requestData.LastTempAddressPrivateKey, lastCommitmentTx.RSMCTempAddressPubKey)

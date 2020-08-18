@@ -229,8 +229,7 @@ func (service *htlcCloseTxManager) RequestCloseHtlc(msg bean.RequestMessage, use
 		retData.RsmcHex = newCommitmentTxInfo.RSMCTxHex
 		retData.ToCounterpartyTxHex = newCommitmentTxInfo.ToCounterpartyTxHex
 		retData.CommitmentTxHash = newCommitmentTxInfo.CurrHash
-		//	上一次的请求出现异常，再次发起请求
-	} else {
+	} else { //	上一次的请求出现异常，再次发起请求
 		retData.RsmcHex = latestCommitmentTxInfo.RSMCTxHex
 		retData.ToCounterpartyTxHex = latestCommitmentTxInfo.ToCounterpartyTxHex
 		retData.CommitmentTxHash = latestCommitmentTxInfo.CurrHash
@@ -522,7 +521,7 @@ func (service *htlcCloseTxManager) CloseHTLCSigned(msg bean.RequestMessage, user
 	//  签名对方传过来的toOtherHex
 	_, signedToOtherHex, err := rpcClient.BtcSignRawTransaction(closeHtlcTxOfP2p.ToCounterpartyTxHex, reqData.ChannelAddressPrivateKey)
 	if err != nil {
-		return nil, errors.New("fail to sign toOther hex ")
+		return nil, errors.New("fail to sign ToCounterpartyTxHex")
 	}
 	testResult, err = rpcClient.TestMemPoolAccept(signedToOtherHex)
 	if err != nil {

@@ -122,6 +122,7 @@ func (service *htlcBackwardTxManager) SendRToPreviousNode_Step1(msg bean.Request
 	if err != nil {
 		return nil, errors.New("r is wrong")
 	}
+
 	latestCommitmentTxInfo.HtlcR = reqData.R
 
 	if tool.CheckIsString(&reqData.CurrHtlcTempAddressForHE1bPubKey) == false {
@@ -374,6 +375,8 @@ func (service *htlcBackwardTxManager) VerifyRAndCreateTxs_Step3(msg bean.Request
 
 	latestCommitmentTxInfo.CurrState = dao.TxInfoState_Htlc_GetR
 	_ = tx.Update(latestCommitmentTxInfo)
+
+	_ = MessageService.updateMsgStateUseTx(tx, message)
 
 	_ = tx.Commit()
 
