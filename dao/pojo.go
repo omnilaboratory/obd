@@ -199,6 +199,13 @@ type CommitmentTransaction struct {
 	Owner        string      `json:"owner"`
 }
 
+type PayeeRevokeAndAcknowledgeCommitment struct {
+	Id               int    `storm:"id,increment" json:"id" `
+	ChannelId        string `json:"channel_id"`
+	CommitmentTxHash string `json:"commitment_tx_hash"`
+	Approval         bool   `json:"approval"`
+}
+
 // close channel , alice or bob wait 1000 sequence to drawback the balance
 type RevocableDeliveryTransaction struct {
 	Id             int         `storm:"id,increment" json:"id" `

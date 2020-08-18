@@ -66,11 +66,15 @@ func routerOfP2PNode(msgType enum.MsgType, data string, client *Client) (retData
 		}
 		defaultErr = err
 	case enum.MsgType_CommitmentTxSigned_ToAliceSign_353:
-		node, _, err := service.CommitmentTxService.AfterBobSignCommitmentTrancationAtAliceSide(data, client.User)
+		node, needNoticeAlice, err := service.CommitmentTxService.AfterBobSignCommitmentTransactionAtAliceSide(data, client.User)
 		if err == nil {
 			status = true
 			retData, _ := json.Marshal(node)
 			return string(retData), nil
+		} else {
+			if needNoticeAlice {
+				client.sendToMyself(enum.MsgType_CommitmentTxSigned_RecvRevokeAndAcknowledgeCommitmentTransaction_352, true, string(err.Error()))
+			}
 		}
 		defaultErr = err
 	case enum.MsgType_CommitmentTxSigned_SecondToBobSign_354:

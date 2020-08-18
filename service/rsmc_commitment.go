@@ -179,7 +179,7 @@ func (this *commitmentTxManager) CommitmentTransactionCreated(msg bean.RequestMe
 }
 
 //353 352的请求阶段完成，需要Alice这边签名C2b等相关的交易
-func (this *commitmentTxManager) AfterBobSignCommitmentTrancationAtAliceSide(data string, user *bean.User) (retData map[string]interface{}, needNoticeAlice bool, err error) {
+func (this *commitmentTxManager) AfterBobSignCommitmentTransactionAtAliceSide(data string, user *bean.User) (retData map[string]interface{}, needNoticeAlice bool, err error) {
 	signCommitmentTx := &bean.PayeeSignCommitmentTxOfP2p{}
 	_ = json.Unmarshal([]byte(data), signCommitmentTx)
 
@@ -217,9 +217,9 @@ func (this *commitmentTxManager) AfterBobSignCommitmentTrancationAtAliceSide(dat
 	}
 
 	if latestCommitmentTxInfo.CurrHash != commitmentTxHash {
-		err = errors.New("wrong request hash")
+		err = errors.New("wrong request hash, Please notice payee,")
 		log.Println(err)
-		return nil, false, err
+		return nil, true, err
 	}
 
 	if latestCommitmentTxInfo.CurrState != dao.TxInfoState_Create {
@@ -619,7 +619,7 @@ func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction
 	}
 
 	if tool.CheckIsString(&reqData.MsgHash) == false {
-		err = errors.New("wrong msg_hash")
+		err = errors.New("wrong msg_hash,")
 		log.Println(err)
 		return nil, "", err
 	}
@@ -633,7 +633,7 @@ func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction
 	//region 确认是给自己的信息
 	message, err := MessageService.getMsgUseTx(tx, reqData.MsgHash)
 	if err != nil {
-		return nil, "", errors.New("wrong msg_hash")
+		return nil, "", errors.New("the msg_hash has been dealt ")
 	}
 	if message.Receiver != signer.PeerId {
 		return nil, "", errors.New("you are not the operator")
@@ -662,6 +662,12 @@ func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction
 		return nil, "", err
 	}
 
+	payeeRevokeAndAcknowledgeCommitment := &dao.PayeeRevokeAndAcknowledgeCommitment{}
+	_ = tx.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("CommitmentTxHash", reqData.MsgHash)).First(payeeRevokeAndAcknowledgeCommitment)
+	if payeeRevokeAndAcknowledgeCommitment.Id > 0 {
+		return nil, "", errors.New("the transaction has been finished,do not deal again")
+	}
+
 	//Make sure who creates the transaction, who will sign the transaction.
 	//The default creator is Alice, and Bob is the signer.
 	//While if ALice is the signer, then Bob creates the transaction.
@@ -680,7 +686,19 @@ func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction
 	retData.ChannelId = channelInfo.ChannelId
 	retData.CommitmentTxHash = reqData.MsgHash
 	retData.Approval = reqData.Approval
+
+	payeeRevokeAndAcknowledgeCommitment.ChannelId = reqData.ChannelId
+	payeeRevokeAndAcknowledgeCommitment.CommitmentTxHash = retData.CommitmentTxHash
+	payeeRevokeAndAcknowledgeCommitment.Approval = retData.Approval
+	_ = tx.Save(payeeRevokeAndAcknowledgeCommitment)
+
 	if reqData.Approval == false {
+		_ = MessageService.updateMsgStateUseTx(tx, message)
+		err = tx.Commit()
+		if err != nil {
+			log.Println(err)
+			return nil, "", err
+		}
 		return retData, targetUser, nil
 	}
 
@@ -699,7 +717,7 @@ func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction
 		currNodeChannelPubKey = channelInfo.PubKeyA
 	}
 
-	if _, err := tool.GetPubKeyFromWifAndCheck(reqData.ChannelAddressPrivateKey, currNodeChannelPubKey); err != nil {
+	if _, err = tool.GetPubKeyFromWifAndCheck(reqData.ChannelAddressPrivateKey, currNodeChannelPubKey); err != nil {
 		return nil, "", errors.New(reqData.ChannelAddressPrivateKey + " is wrong private key for the funding address " + currNodeChannelPubKey)
 	}
 	tempAddrPrivateKeyMap[currNodeChannelPubKey] = reqData.ChannelAddressPrivateKey
