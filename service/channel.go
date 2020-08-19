@@ -6,6 +6,7 @@ import (
 	"github.com/asdine/storm"
 	"github.com/asdine/storm/q"
 	"github.com/omnilaboratory/obd/bean"
+	"github.com/omnilaboratory/obd/bean/enum"
 	"github.com/omnilaboratory/obd/config"
 	"github.com/omnilaboratory/obd/dao"
 	"github.com/omnilaboratory/obd/tool"
@@ -23,7 +24,7 @@ var ChannelService = channelManager{}
 // AliceOpenChannel init ChannelInfo
 func (this *channelManager) AliceOpenChannel(msg bean.RequestMessage, user *bean.User) (openChannelInfo *bean.RequestOpenChannel, err error) {
 	if tool.CheckIsString(&msg.Data) == false {
-		return nil, errors.New("empty inputData")
+		return nil, errors.New(enum.Tips_common_wrong + "inputData")
 	}
 
 	reqData := &bean.SendChannelOpen{}
@@ -62,7 +63,7 @@ func (this *channelManager) AliceOpenChannel(msg bean.RequestMessage, user *bean
 // obd init ChannelInfo for Bob
 func (this *channelManager) BeforeBobOpenChannelAtBobSide(msg string, user *bean.User) (err error) {
 	if tool.CheckIsString(&msg) == false {
-		return errors.New("empty inputData")
+		return errors.New(enum.Tips_common_wrong + "inputData")
 	}
 
 	aliceOpenChannelInfo := bean.RequestOpenChannel{}
@@ -84,7 +85,7 @@ func (this *channelManager) BeforeBobOpenChannelAtBobSide(msg string, user *bean
 	return err
 }
 
-func (this *channelManager) BobCheckChannelAddessExist(jsonData string, user *bean.User) (exist bool, err error) {
+func (this *channelManager) BobCheckChannelAddressExist(jsonData string, user *bean.User) (exist bool, err error) {
 	reqData := &bean.SendSignOpenChannel{}
 	err = json.Unmarshal([]byte(jsonData), &reqData)
 
@@ -93,7 +94,7 @@ func (this *channelManager) BobCheckChannelAddessExist(jsonData string, user *be
 	}
 
 	if tool.CheckIsString(&reqData.TemporaryChannelId) == false {
-		return false, errors.New("wrong TemporaryChannelId")
+		return false, errors.New(enum.Tips_common_wrong + " temporary_channel_id")
 	}
 
 	channelInfo := &dao.ChannelInfo{}
@@ -104,7 +105,7 @@ func (this *channelManager) BobCheckChannelAddessExist(jsonData string, user *be
 		First(channelInfo)
 	if err != nil {
 		log.Println(err)
-		return false, errors.New("can not find the channel " + reqData.TemporaryChannelId + " on Create state")
+		return false, errors.New(enum.Tips_channel_notFoundChannelInCreate + reqData.TemporaryChannelId)
 	}
 
 	if channelInfo.PeerIdB != user.PeerId {
@@ -143,13 +144,13 @@ func (this *channelManager) BobAcceptChannel(jsonData string, user *bean.User) (
 	}
 
 	if tool.CheckIsString(&reqData.TemporaryChannelId) == false {
-		return nil, errors.New("wrong TemporaryChannelId")
+		return nil, errors.New(enum.Tips_common_wrong + "temporary_channel_id")
 	}
 
 	bobFundingAddress := ""
 	if reqData.Approval {
 		if tool.CheckIsString(&reqData.FundingPubKey) == false {
-			return nil, errors.New("wrong FundingPubKey")
+			return nil, errors.New(enum.Tips_common_wrong + "funding_pubkey")
 		}
 
 		bobFundingAddress, err = getAddressFromPubKey(reqData.FundingPubKey)
@@ -166,11 +167,11 @@ func (this *channelManager) BobAcceptChannel(jsonData string, user *bean.User) (
 		First(channelInfo)
 	if err != nil {
 		log.Println(err)
-		return nil, errors.New("can not find the channel " + reqData.TemporaryChannelId + " on Create state")
+		return nil, errors.New(enum.Tips_channel_notFoundChannelInCreate + reqData.TemporaryChannelId)
 	}
 
 	if channelInfo.PeerIdB != user.PeerId {
-		return nil, errors.New("you are not the peerIdB")
+		return nil, errors.New(enum.Tips_channel_notThePeerIdB)
 	}
 
 	if reqData.Approval {
@@ -210,7 +211,7 @@ func (this *channelManager) BobAcceptChannel(jsonData string, user *bean.User) (
 			channelInfo.CurrState = dao.ChannelState_WaitFundAsset
 		} else {
 
-			return nil, errors.New("the generated address " + channelAddress + " has been exist, please change your pubKey " + reqData.FundingPubKey)
+			return nil, errors.New(enum.Tips_channel_changePubkeyForChannel + reqData.FundingPubKey)
 		}
 	} else {
 		channelInfo.CurrState = dao.ChannelState_OpenChannelRefuse
@@ -243,7 +244,7 @@ func (this *channelManager) AfterBobAcceptChannelAtAliceSide(jsonData string, us
 		First(channelInfo)
 	if err != nil {
 		log.Println(err)
-		return nil, errors.New("can not find the channel " + bobChannelInfo.TemporaryChannelId + " on Create state")
+		return nil, errors.New(enum.Tips_channel_notFoundChannelInCreate + bobChannelInfo.TemporaryChannelId)
 	}
 
 	if bobChannelInfo.CurrState == dao.ChannelState_WaitFundAsset {
@@ -683,7 +684,7 @@ func (this *channelManager) ForceCloseChannel(msg bean.RequestMessage, user *bea
 	}
 
 	if tool.CheckIsString(&channelId) == false {
-		err = errors.New("empty channel_id")
+		err = errors.New(enum.Tips_common_wrong + "channel_id")
 		log.Println(err)
 		return nil, err
 	}
@@ -717,7 +718,7 @@ func (this *channelManager) ForceCloseChannel(msg bean.RequestMessage, user *bea
 		latestCommitmentTx.CurrState != dao.TxInfoState_Htlc_GetH &&
 		latestCommitmentTx.CurrState != dao.TxInfoState_Htlc_GetR &&
 		latestCommitmentTx.CurrState != dao.TxInfoState_CreateAndSign {
-		return nil, errors.New("latest commitment tx state is wrong")
+		return nil, errors.New(enum.Tips_channel_wrongLatestCommitmentTxState)
 	}
 
 	// 当前是处于htlc的状态，且是获取到H
@@ -730,12 +731,12 @@ func (this *channelManager) ForceCloseChannel(msg bean.RequestMessage, user *bea
 		if latestCommitmentTx.CurrState == dao.TxInfoState_Create {
 			err = tx.One("Id", latestCommitmentTx.LastCommitmentTxId, latestCommitmentTx)
 			if err != nil {
-				return nil, errors.New("not find the latestCommitmentTx")
+				return nil, errors.New(enum.Tips_channel_notFoundLatestCommitmentTx)
 			}
 		}
 
 		if latestCommitmentTx.CurrState != dao.TxInfoState_CreateAndSign {
-			return nil, errors.New("latest commitment tx state is wrong")
+			return nil, errors.New(enum.Tips_channel_LatestCommitmentTxNotInReadySendState)
 		}
 
 		//region 广播承诺交易 最近的rsmc的资产分配交易 因为是omni资产，承诺交易被拆分成了两个独立的交易

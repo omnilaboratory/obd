@@ -126,7 +126,7 @@ func (client *Client) channelModule(msg bean.RequestMessage) (enum.SendTargetTyp
 		}
 		client.sendToMyself(msg.Type, status, data)
 	case enum.MsgType_CheckChannelAddessExist_3156:
-		node, err := service.ChannelService.BobCheckChannelAddessExist(msg.Data, client.User)
+		node, err := service.ChannelService.BobCheckChannelAddressExist(msg.Data, client.User)
 		if err != nil {
 			data = err.Error()
 		} else {
