@@ -258,7 +258,8 @@ func checkBtcTxHex(btcFeeTxHexDecode string, channelInfo *dao.ChannelInfo, peerI
 	}
 
 	if flag == false {
-		err = errors.New("wrong vin " + jsonFundingTxHexDecode.Get("vin").String())
+		log.Println(inputHexDecode)
+		err = errors.New("wrong tx: the input address is not the funderAddress")
 		log.Println(err)
 		return "", 0, 0, err
 	}
@@ -285,7 +286,8 @@ func checkBtcTxHex(btcFeeTxHexDecode string, channelInfo *dao.ChannelInfo, peerI
 		}
 	}
 	if flag == false {
-		err = errors.New(jsonFundingTxHexDecode.Get("vout").String())
+		log.Println(jsonFundingTxHexDecode)
+		err = errors.New("wrong tx: the out address is not the ChannelAddress")
 		log.Println(err)
 		return "", 0, 0, err
 	}

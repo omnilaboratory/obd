@@ -161,6 +161,9 @@ func (client *Client) htlcTxModule(msg bean.RequestMessage) (enum.SendTargetType
 				_ = client.sendDataToP2PUser(msg, status, data)
 			}
 		}
+		if status == false {
+			client.sendToMyself(msg.Type, status, data)
+		}
 	}
 	return sendType, []byte(data), status
 }
