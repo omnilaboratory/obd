@@ -355,11 +355,13 @@ func (this *channelManager) AllItem(jsonData string, user bean.User) (data *page
 			item.CreateAt = info.CreateAt
 			result, err := rpcClient.ListReceivedByAddress(info.ChannelAddress)
 			if err == nil {
-				btcFundingTimes := len(gjson.Parse(result).Array())
-				if btcFundingTimes > 3 {
-					btcFundingTimes = 3
+				if len(gjson.Parse(result).Array()) > 0 {
+					btcFundingTimes := len(gjson.Parse(result).Array()[0].Get("txids").Array())
+					if btcFundingTimes > 3 {
+						btcFundingTimes = 3
+					}
+					item.BtcFundingTimes = btcFundingTimes
 				}
-				item.BtcFundingTimes = btcFundingTimes
 			}
 
 			if info.CurrState >= dao.ChannelState_CanUse {

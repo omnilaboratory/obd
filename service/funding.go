@@ -69,6 +69,17 @@ func (service *fundingTransactionManager) BTCFundingCreated(msg bean.RequestMess
 		return nil, "", errors.New("not found the channel by temporaryChannelId " + reqData.TemporaryChannelId)
 	}
 
+	//check btc funding time
+	result, err := rpcClient.ListReceivedByAddress(channelInfo.ChannelAddress)
+	if err == nil {
+		if len(gjson.Parse(result).Array()) > 0 {
+			btcFundingTimes := len(gjson.Parse(result).Array()[0].Get("txids").Array())
+			if btcFundingTimes >= 3 {
+				return nil, "", errors.New("btc funding times is enough")
+			}
+		}
+	}
+
 	targetUser = channelInfo.PeerIdB
 	pubKey := channelInfo.PubKeyA
 	redeemToAddress := channelInfo.AddressA
@@ -641,7 +652,6 @@ func (service *fundingTransactionManager) AssetFundingCreated(msg bean.RequestMe
 	channelInfo := &dao.ChannelInfo{}
 	err = tx.Select(
 		q.Eq("TemporaryChannelId", reqData.TemporaryChannelId),
-		q.Eq("CurrState", dao.ChannelState_WaitFundAsset),
 		q.Or(
 			q.Eq("PeerIdA", user.PeerId),
 			q.Eq("PeerIdB", user.PeerId))).
@@ -649,6 +659,12 @@ func (service *fundingTransactionManager) AssetFundingCreated(msg bean.RequestMe
 		First(channelInfo)
 	if err != nil {
 		err = errors.New("not found the channelInfo " + reqData.TemporaryChannelId)
+		log.Println(err)
+		return nil, err
+	}
+
+	if channelInfo.CurrState != dao.ChannelState_WaitFundAsset {
+		err = errors.New("the channelInfo not in waitFundAsset state")
 		log.Println(err)
 		return nil, err
 	}
