@@ -3,6 +3,7 @@ package service
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/asdine/storm/q"
 	"github.com/omnilaboratory/obd/bean"
 	"github.com/omnilaboratory/obd/bean/enum"
@@ -29,6 +30,7 @@ var TrackerChan chan []byte
 
 //for store the privateKey
 var tempAddrPrivateKeyMap = make(map[string]string)
+
 var OnlineUserMap = make(map[string]*bean.User)
 
 func findUserIsOnline(peerId string) error {
@@ -68,7 +70,7 @@ func checkBtcFundFinish(address string, isFundOmni bool) error {
 	array := gjson.Parse(result).Array()
 	log.Println("listunspent", array)
 	if len(array) < 3 {
-		return errors.New("btc fund have been not finished")
+		return errors.New(enum.Tips_funding_notEnoughBtcFundingTime)
 	}
 
 	if isFundOmni {
@@ -81,7 +83,7 @@ func checkBtcFundFinish(address string, isFundOmni bool) error {
 			}
 		}
 		if count < 3 {
-			return errors.New("btc amount error, must greater " + tool.FloatToString(out, 8))
+			return errors.New(fmt.Sprintf(enum.Tips_common_amountMustGreater, out))
 		}
 	}
 	return nil
@@ -89,7 +91,7 @@ func checkBtcFundFinish(address string, isFundOmni bool) error {
 
 func getAddressFromPubKey(pubKey string) (address string, err error) {
 	if tool.CheckIsString(&pubKey) == false {
-		return "", errors.New("empty pubKey")
+		return "", errors.New(enum.Tips_common_empty + "pubKey")
 	}
 	address, err = tool.GetAddressFromPubKey(pubKey)
 	if err != nil {
@@ -181,6 +183,7 @@ func createRDTx(owner string, channelInfo *dao.ChannelInfo, commitmentTxInfo *da
 
 	return rda, nil
 }
+
 func createBRTxObj(owner string, channelInfo *dao.ChannelInfo, brType dao.BRType, commitmentTxInfo *dao.CommitmentTransaction, user *bean.User) (*dao.BreachRemedyTransaction, error) {
 	breachRemedyTransaction := &dao.BreachRemedyTransaction{}
 	breachRemedyTransaction.CommitmentTxId = commitmentTxInfo.Id
@@ -216,14 +219,14 @@ func checkBtcTxHex(btcFeeTxHexDecode string, channelInfo *dao.ChannelInfo, peerI
 
 	//vin
 	if jsonFundingTxHexDecode.Get("vin").IsArray() == false {
-		err = errors.New("wrong Tx input vin")
+		err = errors.New(enum.Tips_funding_notFoundVin)
 		log.Println(err)
 		return "", 0, 0, err
 	}
 	inTxid := jsonFundingTxHexDecode.Get("vin").Array()[0].Get("txid").String()
 	inputTx, err := rpcClient.GetTransactionById(inTxid)
 	if err != nil {
-		err = errors.New("wrong input: " + err.Error())
+		err = errors.New(enum.Tips_funding_wrongBtcHexVin + err.Error())
 		log.Println(err)
 		return "", 0, 0, err
 	}
@@ -232,7 +235,7 @@ func checkBtcTxHex(btcFeeTxHexDecode string, channelInfo *dao.ChannelInfo, peerI
 	flag := false
 	inputHexDecode, err := rpcClient.DecodeRawTransaction(jsonInputTxDecode.Get("hex").String())
 	if err != nil {
-		err = errors.New("wrong input: " + err.Error())
+		err = errors.New(enum.Tips_funding_wrongBtcHexVin + err.Error())
 		log.Println(err)
 		return "", 0, 0, err
 	}
@@ -259,7 +262,7 @@ func checkBtcTxHex(btcFeeTxHexDecode string, channelInfo *dao.ChannelInfo, peerI
 
 	if flag == false {
 		log.Println(inputHexDecode)
-		err = errors.New("wrong tx: the input address is not the funderAddress")
+		err = errors.New(enum.Tips_funding_wrongFunderAddressFromBtcHex)
 		log.Println(err)
 		return "", 0, 0, err
 	}
@@ -267,7 +270,7 @@ func checkBtcTxHex(btcFeeTxHexDecode string, channelInfo *dao.ChannelInfo, peerI
 	//vout
 	flag = false
 	if jsonFundingTxHexDecode.Get("vout").IsArray() == false {
-		err = errors.New("wrong Tx vout")
+		err = errors.New(enum.Tips_funding_notFoundVout)
 		log.Println(err)
 		return "", 0, 0, err
 	}
@@ -287,7 +290,7 @@ func checkBtcTxHex(btcFeeTxHexDecode string, channelInfo *dao.ChannelInfo, peerI
 	}
 	if flag == false {
 		log.Println(jsonFundingTxHexDecode)
-		err = errors.New("wrong tx: the out address is not the ChannelAddress")
+		err = errors.New(enum.Tips_funding_wrongChannelAddressFromBtcHex)
 		log.Println(err)
 		return "", 0, 0, err
 	}
@@ -302,13 +305,13 @@ func checkOmniTxHex(fundingTxHexDecode string, channelInfo *dao.ChannelInfo, use
 
 	sendingAddress := jsonOmniTxHexDecode.Get("sendingaddress").String()
 	if sendingAddress != funderAddress {
-		err = errors.New("the input address " + sendingAddress + " not equal with FunderAddress " + funderAddress)
+		err = errors.New(fmt.Sprintf(enum.Tips_funding_wrongFunderAddressFromAssetHex, sendingAddress, funderAddress))
 		log.Println(err)
 		return "", 0, 0, err
 	}
 	referenceAddress := jsonOmniTxHexDecode.Get("referenceaddress").String()
 	if referenceAddress != channelInfo.ChannelAddress {
-		err = errors.New("the output address " + referenceAddress + " not equal with ChannelAddress " + channelInfo.ChannelAddress)
+		err = errors.New(fmt.Sprintf(enum.Tips_funding_wrongChannelAddressFromAssetHex, referenceAddress, channelInfo.ChannelAddress))
 		log.Println(err)
 		return "", 0, 0, err
 	}
@@ -351,7 +354,7 @@ func getInputsForNextTxByParseTxHashVout(hex string, toAddress, scriptPubKey, re
 			return inputs, nil
 		}
 	}
-	return nil, errors.New("no inputs")
+	return nil, errors.New(enum.Tips_common_failToParseInputsFromUnsendTx)
 }
 
 func getLatestCommitmentTxUseDbTx(tx storm.Node, channelId string, owner string) (commitmentTxInfo *dao.CommitmentTransaction, err error) {
@@ -418,7 +421,7 @@ func signRdTx(tx storm.Node, channelInfo *dao.ChannelInfo, signedRsmcHex string,
 
 	aliceRdTxid := checkHexOutputAddressFromOmniDecode(signedRdHex, inputs, outputAddress)
 	if aliceRdTxid == "" {
-		return errors.New("rdtx has wrong output address")
+		return errors.New(enum.Tips_common_wrongAddressOfRD)
 	}
 	rdTransaction, err := createRDTx(user.PeerId, channelInfo, latestCommitmentTxInfo, outputAddress, user)
 	if err != nil {
@@ -509,7 +512,7 @@ func createCommitmentTxHex(dbTx storm.Node, isSender bool, reqData *bean.SendReq
 	// create Cna tx
 	fundingTransaction := getFundingTransactionByChannelId(dbTx, channelInfo.ChannelId, currUser.PeerId)
 	if fundingTransaction == nil {
-		err = errors.New("not found fundingTransaction")
+		err = errors.New(enum.Tips_funding_notFoundFundAssetTx)
 		return nil, err
 	}
 
@@ -712,6 +715,7 @@ func httpGetChannelStateFromTracker(channelId string) (flag int) {
 	}
 	return 0
 }
+
 func HttpGetUserStateFromTracker(userId string) (flag int) {
 	url := "http://" + config.TrackerHost + "/api/v1/getUserState?userId=" + userId
 	log.Println(url)

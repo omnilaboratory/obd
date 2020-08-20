@@ -3,17 +3,21 @@ package service
 import (
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcutil"
 	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/omnilaboratory/obd/bean/enum"
+	"github.com/omnilaboratory/obd/dao"
 	"github.com/omnilaboratory/obd/tool"
 	"log"
 	"testing"
 )
 
 func TestCreateMuiltAddress(t *testing.T) {
-	CreateCustomMuiltAddress()
+	err := errors.New(fmt.Sprintf(enum.Tips_htlc_wrongChannelState, dao.ChannelState_HtlcTx))
+	log.Println(err)
 }
 func TestMyTx22(t *testing.T) {
 	CreateCustomP2SHTx()

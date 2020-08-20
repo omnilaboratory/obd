@@ -423,7 +423,7 @@ func (service *fundingTransactionManager) FundingBtcTxSigned(msg bean.RequestMes
 		q.Eq("IsFinish", false)).
 		First(fundingBtcRequest)
 	if err != nil {
-		err = errors.New(enum.Tips_funding_notFoundFundTx)
+		err = errors.New(enum.Tips_funding_notFoundFundBtcTx)
 		log.Println(err)
 		return nil, "", err
 	}

@@ -3,6 +3,7 @@ package service
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/asdine/storm"
 	"github.com/asdine/storm/q"
 	"github.com/omnilaboratory/obd/bean"
@@ -29,7 +30,7 @@ var HtlcBackwardTxService htlcBackwardTxManager
 // -45 at payee side
 func (service *htlcBackwardTxManager) SendRToPreviousNode_Step1(msg bean.RequestMessage, user bean.User) (retData *bean.BobSendROfP2p, err error) {
 	if tool.CheckIsString(&msg.Data) == false {
-		return nil, errors.New("empty json data")
+		return nil, errors.New(enum.Tips_common_empty + "msg data")
 	}
 
 	reqData := &bean.HtlcSendR{}
@@ -48,13 +49,13 @@ func (service *htlcBackwardTxManager) SendRToPreviousNode_Step1(msg bean.Request
 
 	// region Check data inputed from websocket client of sender.
 	if tool.CheckIsString(&reqData.ChannelId) == false {
-		err = errors.New("channel_id is empty")
+		err = errors.New(enum.Tips_common_empty + "channel_id ")
 		log.Println(err)
 		return nil, err
 	}
 
 	if tool.CheckIsString(&reqData.ChannelAddressPrivateKey) == false {
-		err = errors.New("channel_address_private_key is empty")
+		err = errors.New(enum.Tips_common_empty + "channel_address_private_key")
 		log.Println(err)
 		return nil, err
 	}
@@ -65,7 +66,7 @@ func (service *htlcBackwardTxManager) SendRToPreviousNode_Step1(msg bean.Request
 			q.Eq("PeerIdA", user.PeerId),
 			q.Eq("PeerIdB", user.PeerId))).First(channelInfo)
 	if err != nil {
-		err = errors.New("fail to find channelInfo")
+		err = errors.New(enum.Tips_common_notFound + "channelInfo by " + retData.ChannelId)
 		log.Println(err)
 		return nil, err
 	}
@@ -78,7 +79,7 @@ func (service *htlcBackwardTxManager) SendRToPreviousNode_Step1(msg bean.Request
 	}
 
 	if payerPeerId != msg.RecipientUserPeerId {
-		return nil, errors.New("recipient_user_peer_id is wrong")
+		return nil, errors.New(enum.Tips_rsmc_notTargetUser)
 	}
 	if msg.RecipientNodePeerId == P2PLocalPeerId {
 		err = findUserIsOnline(payerPeerId)
@@ -90,67 +91,67 @@ func (service *htlcBackwardTxManager) SendRToPreviousNode_Step1(msg bean.Request
 
 	_, err = tool.GetPubKeyFromWifAndCheck(reqData.ChannelAddressPrivateKey, payeeChannelPubKey)
 	if err != nil {
-		return nil, errors.New("channel_address_private_key is wrong for" + payeeChannelPubKey)
+		return nil, errors.New(fmt.Sprintf(enum.Tips_rsmc_wrongChannelPrivateKey, reqData.ChannelAddressPrivateKey, payeeChannelPubKey))
 	}
 	tempAddrPrivateKeyMap[payeeChannelPubKey] = reqData.ChannelAddressPrivateKey
 
 	if tool.CheckIsString(&reqData.R) == false {
-		err = errors.New("r is empty")
+		err = errors.New(enum.Tips_common_empty + "r")
 		log.Println(err)
 		return nil, err
 	}
 
 	latestCommitmentTxInfo, err := getLatestCommitmentTxUseDbTx(tx, reqData.ChannelId, user.PeerId)
 	if err != nil {
-		err = errors.New("fail to find latestCommitmentTxInfo")
+		err = errors.New(enum.Tips_common_notFound + "latestCommitmentTxInfo")
 		log.Println(err)
 		return nil, err
 	}
 	if latestCommitmentTxInfo.CurrState != dao.TxInfoState_Htlc_GetH {
-		err = errors.New("wrong latestCommitmentTxInfo state " + strconv.Itoa(int(latestCommitmentTxInfo.CurrState)))
+		err = errors.New(enum.Tips_rsmc_errorCommitmentTxState + strconv.Itoa(int(latestCommitmentTxInfo.CurrState)))
 		log.Println(err)
 		return nil, err
 	}
 
 	if latestCommitmentTxInfo.HtlcSender != msg.RecipientUserPeerId {
-		err = errors.New("wrong HtlcSender")
+		err = errors.New(enum.Tips_htlc_notTheHltcSender)
 		log.Println(err)
 		return nil, err
 	}
 
 	_, err = tool.GetPubKeyFromWifAndCheck(reqData.R, latestCommitmentTxInfo.HtlcH)
 	if err != nil {
-		return nil, errors.New("r is wrong")
+		return nil, errors.New(enum.Tips_htlc_wrongRForH)
 	}
 
 	latestCommitmentTxInfo.HtlcR = reqData.R
 
 	if tool.CheckIsString(&reqData.CurrHtlcTempAddressForHE1bPubKey) == false {
-		err = errors.New("curr_htlc_temp_address_for_he1b_pub_key is empty")
+		err = errors.New(enum.Tips_common_empty + "curr_htlc_temp_address_for_he1b_pub_key")
 		log.Println(err)
 		return nil, err
 	}
 	if tool.CheckIsString(&reqData.CurrHtlcTempAddressForHE1bPrivateKey) == false {
-		err = errors.New("curr_htlc_temp_address_for_he1b_private_key is empty")
+		err = errors.New(enum.Tips_common_empty + "curr_htlc_temp_address_for_he1b_private_key")
 		log.Println(err)
 		return nil, err
 	}
 	_, err = tool.GetPubKeyFromWifAndCheck(reqData.CurrHtlcTempAddressForHE1bPrivateKey, reqData.CurrHtlcTempAddressForHE1bPubKey)
 	if err != nil {
-		return nil, errors.New("curr_htlc_temp_address_for_he1b_private_key is wrong")
+		return nil, errors.New(fmt.Sprintf(enum.Tips_rsmc_notPairPrivAndPubKey, reqData.CurrHtlcTempAddressForHE1bPrivateKey, reqData.CurrHtlcTempAddressForHE1bPubKey))
 	}
 	// endregion
 
 	currBlockHeight, err := rpcClient.GetBlockCount()
 	if err != nil {
-		return nil, errors.New("fail to get blockHeight ,please try again later")
+		return nil, errors.New(enum.Tips_htlc_failToGetBlockHeight)
 	}
 
 	htlcTimeOut := latestCommitmentTxInfo.HtlcCltvExpiry
 	maxHeight := latestCommitmentTxInfo.BeginBlockHeight + htlcTimeOut
 	if strings.Contains(config.ChainNode_Type, "main") {
 		if currBlockHeight > maxHeight {
-			return nil, errors.New("timeout, can't transfer the R")
+			return nil, errors.New(enum.Tips_htlc_timeOut)
 		}
 	}
 
@@ -203,7 +204,7 @@ func (service *htlcBackwardTxManager) BeforeSendRInfoToPayerAtAliceSide_Step2(ms
 			q.Eq("PeerIdB", user.PeerId))).
 		First(channelInfo)
 	if channelInfo == nil {
-		return nil, true, errors.New("not found channel info")
+		return nil, true, errors.New(enum.Tips_funding_notFoundChannelByChannelId + channelId)
 	}
 
 	senderPeerId := channelInfo.PeerIdB

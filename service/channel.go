@@ -393,7 +393,7 @@ func (this *channelManager) TotalCount(user bean.User) (count int, err error) {
 // GetChannelByTemporaryChanId
 func (this *channelManager) GetChannelByTemporaryChanId(jsonData string, user bean.User) (node *dao.ChannelInfo, err error) {
 	if tool.CheckIsString(&jsonData) == false {
-		return nil, errors.New("wrong TemporaryChannelId")
+		return nil, errors.New(enum.Tips_common_empty + "temporary_channel_id")
 	}
 	node = &dao.ChannelInfo{}
 	err = user.Db.Select(
@@ -405,14 +405,14 @@ func (this *channelManager) GetChannelByTemporaryChanId(jsonData string, user be
 // DelChannelByTemporaryChanId
 func (this *channelManager) DelChannelByTemporaryChanId(jsonData string, user bean.User) (node *dao.ChannelInfo, err error) {
 	if tool.CheckIsString(&jsonData) == false {
-		return nil, errors.New("wrong TemporaryChannelId")
+		return nil, errors.New(enum.Tips_common_empty + "temporary_channel_id")
 	}
 	node = &dao.ChannelInfo{}
 	err = user.Db.Select(
 		q.Eq("TemporaryChannelId", jsonData)).
 		First(node)
 	if tool.CheckIsString(&node.ChannelId) {
-		return nil, errors.New("can not delete the channel")
+		return nil, errors.New(enum.Tips_channel_cannotDelChannel)
 	}
 	if err == nil {
 		err = user.Db.DeleteStruct(node)
@@ -422,7 +422,7 @@ func (this *channelManager) DelChannelByTemporaryChanId(jsonData string, user be
 
 func (this *channelManager) GetChannelInfoByChannelId(jsonData string, user bean.User) (info *dao.ChannelInfo, err error) {
 	if tool.CheckIsString(&jsonData) == false {
-		return nil, errors.New("wrong ChannelId")
+		return nil, errors.New(enum.Tips_common_empty + "ChannelId")
 	}
 
 	info = &dao.ChannelInfo{}
@@ -827,7 +827,7 @@ func (this *channelManager) ForceCloseChannel(msg bean.RequestMessage, user *bea
 func (this *channelManager) AfterBobSignCloseChannelAtAliceSide(jsonData string, user bean.User) (interface{}, error) {
 
 	if tool.CheckIsString(&jsonData) == false {
-		return nil, errors.New("empty inputData")
+		return nil, errors.New(enum.Tips_common_empty + "inputData")
 	}
 	reqData := &bean.CloseChannelSign{}
 	err := json.Unmarshal([]byte(jsonData), reqData)
@@ -837,7 +837,7 @@ func (this *channelManager) AfterBobSignCloseChannelAtAliceSide(jsonData string,
 	}
 
 	if tool.CheckIsString(&reqData.ChannelId) == false {
-		err = errors.New("empty channel_id")
+		err = errors.New(enum.Tips_common_empty + "channel_id")
 		log.Println(err)
 		return nil, err
 	}
@@ -1143,14 +1143,14 @@ func (this *channelManager) CloseHtlcChannelSigned(tx storm.Node, channelInfo *d
 
 func addRDTxToWaitDB(lastRevocableDeliveryTx *dao.RevocableDeliveryTransaction) (err error) {
 	if lastRevocableDeliveryTx == nil || tool.CheckIsString(&lastRevocableDeliveryTx.TxHex) == false {
-		return errors.New("empty tx hex")
+		return errors.New(enum.Tips_common_empty + "tx hex")
 	}
 	node := &dao.RDTxWaitingSend{}
 	count, err := obdGlobalDB.Select(
 		q.Eq("TransactionHex", lastRevocableDeliveryTx.TxHex)).
 		Count(node)
 	if count > 0 {
-		return errors.New("already save")
+		return errors.New(enum.Tips_common_savedBefore)
 	}
 	node.TransactionHex = lastRevocableDeliveryTx.TxHex
 	node.Type = 0

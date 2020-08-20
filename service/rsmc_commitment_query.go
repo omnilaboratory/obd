@@ -5,27 +5,28 @@ import (
 	"errors"
 	"github.com/asdine/storm/q"
 	"github.com/omnilaboratory/obd/bean"
+	"github.com/omnilaboratory/obd/bean/enum"
 	"github.com/omnilaboratory/obd/dao"
 	"github.com/omnilaboratory/obd/tool"
 	"github.com/tidwall/gjson"
 )
 
-type RequestGetInfoByChannelId struct {
+type requestGetInfoByChannelId struct {
 	ChannelId string `json:"channel_id"`
 }
 
 func getChannelIdFromJson(jsonData string) (channelId string, err error) {
 	if tool.CheckIsString(&jsonData) == false {
-		return "", errors.New("empty jsonData")
+		return "", errors.New(enum.Tips_common_empty + "input data")
 	}
-	var reqData = &RequestGetInfoByChannelId{}
+	var reqData = &requestGetInfoByChannelId{}
 	err = json.Unmarshal([]byte(jsonData), reqData)
 	if err != nil {
 		return "", err
 	}
 
 	if tool.CheckIsString(&reqData.ChannelId) == false {
-		return "", errors.New("wrong channelId")
+		return "", errors.New(enum.Tips_common_empty + "channelId")
 	}
 	return reqData.ChannelId, nil
 }

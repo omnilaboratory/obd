@@ -3,6 +3,7 @@ package service
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/asdine/storm"
 	"github.com/asdine/storm/q"
 	"github.com/omnilaboratory/obd/bean"
@@ -33,7 +34,7 @@ var HtlcForwardTxService htlcForwardTxManager
 func (service *htlcForwardTxManager) CreateHtlcInvoice(msg bean.RequestMessage, user bean.User) (data interface{}, err error) {
 
 	if tool.CheckIsString(&msg.Data) == false {
-		return nil, errors.New("empty json data")
+		return nil, errors.New(enum.Tips_common_empty + "msd data")
 	}
 
 	requestData := &bean.HtlcRequestInvoice{}
@@ -55,7 +56,7 @@ func (service *htlcForwardTxManager) CreateHtlcInvoice(msg bean.RequestMessage, 
 		addr = "obcrt"
 	}
 	if requestData.Amount < config.GetOmniDustBtc() {
-		return nil, errors.New("wrong amount")
+		return nil, errors.New(enum.Tips_common_wrong + "amount")
 	} else {
 		requestData.Amount *= 100000000
 		temp := int(requestData.Amount)
@@ -65,7 +66,7 @@ func (service *htlcForwardTxManager) CreateHtlcInvoice(msg bean.RequestMessage, 
 	addr += "1"
 
 	if requestData.PropertyId < 0 {
-		return nil, errors.New("wrong property_id")
+		return nil, errors.New(enum.Tips_common_wrong + "property_id")
 	}
 	_, err = rpcClient.OmniGetProperty(requestData.PropertyId)
 	if err != nil {
@@ -93,7 +94,7 @@ func (service *htlcForwardTxManager) CreateHtlcInvoice(msg bean.RequestMessage, 
 	addr += "u" + code + msg.SenderUserPeerId
 
 	if tool.CheckIsString(&requestData.H) == false {
-		return nil, errors.New("wrong h")
+		return nil, errors.New(enum.Tips_common_wrong + "h")
 	} else {
 		//ph payment H
 		code, err = tool.GetMsgLengthFromInt(len(requestData.H))
@@ -104,10 +105,10 @@ func (service *htlcForwardTxManager) CreateHtlcInvoice(msg bean.RequestMessage, 
 	}
 
 	if time.Time(requestData.ExpiryTime).IsZero() {
-		return nil, errors.New("wrong expiry_time")
+		return nil, errors.New(enum.Tips_common_wrong + "expiry_time")
 	} else {
 		if time.Now().After(time.Time(requestData.ExpiryTime)) {
-			return nil, errors.New("wrong expiry_time")
+			return nil, errors.New(fmt.Sprintf(enum.Tips_htlc_expiryTimeAfterNow, "expiry_time"))
 		}
 		expiryTime := ""
 		tool.ConvertNumToString(int(time.Time(requestData.ExpiryTime).Unix()), &expiryTime)
@@ -152,7 +153,7 @@ func (service *htlcForwardTxManager) CreateHtlcInvoice(msg bean.RequestMessage, 
 // 401 find htlc find path
 func (service *htlcForwardTxManager) PayerRequestFindPath(msgData string, user bean.User) (data interface{}, isPrivate bool, err error) {
 	if tool.CheckIsString(&msgData) == false {
-		return nil, false, errors.New("empty json data")
+		return nil, false, errors.New(enum.Tips_common_empty + "msg data")
 	}
 
 	requestData := &bean.HtlcRequestFindPath{}
@@ -167,7 +168,7 @@ func (service *htlcForwardTxManager) PayerRequestFindPath(msgData string, user b
 	if tool.CheckIsString(&requestData.Invoice) {
 		htlcRequestInvoice, err := tool.DecodeInvoiceObjFromCodes(requestData.Invoice)
 		if err != nil {
-			return nil, false, errors.New("invalid invoice")
+			return nil, false, errors.New(enum.Tips_common_wrong + "invoice")
 		}
 		if htlcRequestInvoice.RecipientNodePeerId == P2PLocalPeerId {
 			if err := findUserIsOnline(htlcRequestInvoice.RecipientUserPeerId); err != nil {
@@ -178,10 +179,10 @@ func (service *htlcForwardTxManager) PayerRequestFindPath(msgData string, user b
 	} else {
 		requestFindPathInfo = requestData.HtlcRequestFindPathInfo
 		if tool.CheckIsString(&requestFindPathInfo.RecipientNodePeerId) == false {
-			return nil, requestFindPathInfo.IsPrivate, errors.New("wrong recipient_node_peer_id")
+			return nil, requestFindPathInfo.IsPrivate, errors.New(enum.Tips_common_wrong + "recipient_node_peer_id")
 		}
 		if tool.CheckIsString(&requestFindPathInfo.RecipientUserPeerId) == false {
-			return nil, requestFindPathInfo.IsPrivate, errors.New("wrong recipient_user_peer_id")
+			return nil, requestFindPathInfo.IsPrivate, errors.New(enum.Tips_common_wrong + "recipient_user_peer_id")
 		}
 		if P2PLocalPeerId == requestFindPathInfo.RecipientNodePeerId {
 			if err := findUserIsOnline(requestFindPathInfo.RecipientUserPeerId); err != nil {
@@ -190,13 +191,13 @@ func (service *htlcForwardTxManager) PayerRequestFindPath(msgData string, user b
 		} else {
 			flag := HttpGetUserStateFromTracker(requestFindPathInfo.RecipientUserPeerId)
 			if flag == 0 {
-				return nil, requestFindPathInfo.IsPrivate, errors.New(requestFindPathInfo.RecipientUserPeerId + " not online")
+				return nil, requestFindPathInfo.IsPrivate, errors.New(requestFindPathInfo.RecipientUserPeerId + enum.Tips_common_userNotOnline)
 			}
 		}
 	}
 
 	if requestFindPathInfo.PropertyId < 0 {
-		return nil, requestFindPathInfo.IsPrivate, errors.New("wrong property_id")
+		return nil, requestFindPathInfo.IsPrivate, errors.New(enum.Tips_common_wrong + "property_id")
 	}
 
 	_, err = rpcClient.OmniGetProperty(requestFindPathInfo.PropertyId)
@@ -205,11 +206,11 @@ func (service *htlcForwardTxManager) PayerRequestFindPath(msgData string, user b
 	}
 
 	if requestFindPathInfo.Amount < config.GetOmniDustBtc() {
-		return nil, requestFindPathInfo.IsPrivate, errors.New("wrong amount")
+		return nil, requestFindPathInfo.IsPrivate, errors.New(enum.Tips_common_wrong + "amount")
 	}
 
 	if time.Now().After(time.Time(requestFindPathInfo.ExpiryTime)) {
-		return nil, requestFindPathInfo.IsPrivate, errors.New("wrong expiry_time")
+		return nil, requestFindPathInfo.IsPrivate, errors.New(fmt.Sprintf(enum.Tips_htlc_expiryTimeAfterNow, "expiry_time"))
 	}
 
 	if requestFindPathInfo.IsPrivate == false {
@@ -269,7 +270,7 @@ func getPrivateChannelForHtlc(requestData *bean.HtlcRequestFindPath, user bean.U
 	}
 	_ = tx.Commit()
 	if len(retData) == 0 {
-		return nil, true, errors.New("has no private channel path")
+		return nil, true, errors.New(enum.Tips_htlc_noPrivatePath)
 	}
 	return retData, true, nil
 }
@@ -318,7 +319,7 @@ func (service *htlcForwardTxManager) GetResponseFromTrackerOfPayerRequestFindPat
 // 40协议的alice方的逻辑 alice start htlc as payer
 func (service *htlcForwardTxManager) UpdateAddHtlc_40(msg bean.RequestMessage, user bean.User) (data *bean.AliceRequestAddHtlc, err error) {
 	if tool.CheckIsString(&msg.Data) == false {
-		return nil, errors.New("empty json data")
+		return nil, errors.New(enum.Tips_common_empty + "msg data")
 	}
 
 	requestData := &bean.AddHtlcRequest{}
@@ -337,20 +338,20 @@ func (service *htlcForwardTxManager) UpdateAddHtlc_40(msg bean.RequestMessage, u
 
 	//region check input data 检测输入输入数据
 	if requestData.PropertyId < 0 {
-		return nil, errors.New("wrong property_id")
+		return nil, errors.New(enum.Tips_common_wrong + "property_id")
 	}
 	_, err = rpcClient.OmniGetProperty(requestData.PropertyId)
 	if err != nil {
-		return nil, errors.New("wrong property_id")
+		return nil, errors.New(fmt.Sprintf(enum.Tips_common_notExistProperty, requestData.PropertyId))
 	}
 	if requestData.Amount < config.GetOmniDustBtc() {
-		return nil, errors.New("wrong amount")
+		return nil, errors.New(fmt.Sprintf(enum.Tips_common_amountMustGreater, config.GetOmniDustBtc()))
 	}
 	if tool.CheckIsString(&requestData.H) == false {
-		return nil, errors.New("wrong h")
+		return nil, errors.New(enum.Tips_common_empty + "h")
 	}
 	if tool.CheckIsString(&requestData.RoutingPacket) == false {
-		return nil, errors.New("wrong routing_packet")
+		return nil, errors.New(enum.Tips_common_empty + "routing_packet")
 	}
 
 	channelIds := strings.Split(requestData.RoutingPacket, ",")
@@ -368,14 +369,14 @@ func (service *htlcForwardTxManager) UpdateAddHtlc_40(msg bean.RequestMessage, u
 		}
 	}
 	if channelInfo == nil {
-		return nil, errors.New("not found  channel info from  routing_packet")
+		return nil, errors.New(enum.Tips_htlc_noChanneFromRountingPacket)
 	}
 
 	fundingTransaction := getFundingTransactionByChannelId(tx, channelInfo.ChannelId, user.PeerId)
 	duration := time.Now().Sub(fundingTransaction.CreateAt)
 	if duration > time.Minute*30 {
 		if checkChannelOmniAssetAmount(*channelInfo) == false {
-			err = errors.New("total channel amount not equal with balance")
+			err = errors.New(enum.Tips_rsmc_sendedChannel)
 			log.Println(err)
 			return nil, err
 		}
@@ -392,7 +393,7 @@ func (service *htlcForwardTxManager) UpdateAddHtlc_40(msg bean.RequestMessage, u
 	}
 
 	if tool.CheckIsString(&requestData.ChannelAddressPrivateKey) == false {
-		err = errors.New("channel_address_private_key is empty")
+		err = errors.New(enum.Tips_common_empty + "channel_address_private_key")
 		log.Println(err)
 		return nil, err
 	}
@@ -403,11 +404,11 @@ func (service *htlcForwardTxManager) UpdateAddHtlc_40(msg bean.RequestMessage, u
 	}
 	_, err = tool.GetPubKeyFromWifAndCheck(requestData.ChannelAddressPrivateKey, myChannelPubKey)
 	if err != nil {
-		return nil, errors.New("channel_address_private_key is wrong for " + myChannelPubKey)
+		return nil, errors.New(fmt.Sprintf(enum.Tips_rsmc_wrongChannelPrivateKey, requestData.ChannelAddressPrivateKey, myChannelPubKey))
 	}
 
 	if tool.CheckIsString(&requestData.LastTempAddressPrivateKey) == false {
-		err = errors.New("last_temp_address_private_key is empty")
+		err = errors.New(enum.Tips_common_empty + "last_temp_address_private_key")
 		log.Println(err)
 		return nil, err
 	}
@@ -417,7 +418,7 @@ func (service *htlcForwardTxManager) UpdateAddHtlc_40(msg bean.RequestMessage, u
 		if latestCommitmentTx.CurrState == dao.TxInfoState_CreateAndSign {
 			_, err = tool.GetPubKeyFromWifAndCheck(requestData.LastTempAddressPrivateKey, latestCommitmentTx.RSMCTempAddressPubKey)
 			if err != nil {
-				return nil, errors.New("last_temp_address_private_key is wrong for " + latestCommitmentTx.RSMCTempAddressPubKey)
+				return nil, errors.New(fmt.Sprintf(enum.Tips_rsmc_wrongPrivateKeyForLast, requestData.LastTempAddressPrivateKey, latestCommitmentTx.RSMCTempAddressPubKey))
 			}
 		}
 		if latestCommitmentTx.CurrState == dao.TxInfoState_Create {
@@ -426,11 +427,11 @@ func (service *htlcForwardTxManager) UpdateAddHtlc_40(msg bean.RequestMessage, u
 			}
 
 			if requestData.CurrRsmcTempAddressPubKey != latestCommitmentTx.RSMCTempAddressPubKey {
-				return nil, errors.New("curr_rsmc_temp_address_pub_key is not the same when create currTx")
+				return nil, errors.New(fmt.Sprintf(enum.Tips_rsmc_notSameValueWhenCreate, requestData.CurrRsmcTempAddressPubKey))
 			}
 
 			if requestData.CurrHtlcTempAddressPubKey != latestCommitmentTx.HTLCTempAddressPubKey {
-				return nil, errors.New("curr_htlc_temp_address_pub_key is not the same when create currTx")
+				return nil, errors.New(fmt.Sprintf(enum.Tips_rsmc_notSameValueWhenCreate, requestData.CurrHtlcTempAddressPubKey))
 			}
 
 			if latestCommitmentTx.LastCommitmentTxId > 0 {
@@ -438,55 +439,55 @@ func (service *htlcForwardTxManager) UpdateAddHtlc_40(msg bean.RequestMessage, u
 				_ = tx.One("Id", latestCommitmentTx.LastCommitmentTxId, lastCommitmentTx)
 				_, err = tool.GetPubKeyFromWifAndCheck(requestData.LastTempAddressPrivateKey, lastCommitmentTx.RSMCTempAddressPubKey)
 				if err != nil {
-					return nil, errors.New("last_temp_address_private_key is wrong for " + lastCommitmentTx.RSMCTempAddressPubKey)
+					return nil, errors.New(fmt.Sprintf(enum.Tips_rsmc_wrongPrivateKeyForLast, requestData.LastTempAddressPrivateKey, lastCommitmentTx.RSMCTempAddressPubKey))
 				}
 			}
 		}
 	}
 	if tool.CheckIsString(&requestData.CurrRsmcTempAddressPubKey) == false {
-		err = errors.New("curr_rsmc_temp_address_pub_key is empty")
+		err = errors.New(enum.Tips_common_empty + "curr_rsmc_temp_address_pub_key")
 		log.Println(err)
 		return nil, err
 	}
 	if tool.CheckIsString(&requestData.CurrRsmcTempAddressPrivateKey) == false {
-		err = errors.New("curr_rsmc_temp_address_private_key is empty")
+		err = errors.New(enum.Tips_common_empty + "curr_rsmc_temp_address_private_key")
 		log.Println(err)
 		return nil, err
 	}
 	_, err = tool.GetPubKeyFromWifAndCheck(requestData.CurrRsmcTempAddressPrivateKey, requestData.CurrRsmcTempAddressPubKey)
 	if err != nil {
-		return nil, errors.New("curr_rsmc_temp_address_private_key is wrong")
+		return nil, errors.New(enum.Tips_common_wrong + "curr_rsmc_temp_address_private_key")
 	}
 
 	if tool.CheckIsString(&requestData.CurrHtlcTempAddressPrivateKey) == false {
-		err = errors.New("curr_htlc_temp_address_private_key is empty")
+		err = errors.New(enum.Tips_common_empty + "curr_htlc_temp_address_private_key")
 		log.Println(err)
 		return nil, err
 	}
 
 	if tool.CheckIsString(&requestData.CurrHtlcTempAddressPubKey) == false {
-		err = errors.New("curr_htlc_temp_address_pub_key is empty")
+		err = errors.New(enum.Tips_common_empty + "curr_htlc_temp_address_pub_key")
 		log.Println(err)
 		return nil, err
 	}
 	_, err = tool.GetPubKeyFromWifAndCheck(requestData.CurrHtlcTempAddressPrivateKey, requestData.CurrHtlcTempAddressPubKey)
 	if err != nil {
-		return nil, errors.New("curr_htlc_temp_address_private_key is wrong")
+		return nil, errors.New(enum.Tips_common_wrong + "curr_htlc_temp_address_private_key")
 	}
 
 	if tool.CheckIsString(&requestData.CurrHtlcTempAddressForHt1aPubKey) == false {
-		err = errors.New("curr_htlc_temp_address_for_ht1a_pub_key is empty")
+		err = errors.New(enum.Tips_common_empty + "curr_htlc_temp_address_for_ht1a_pub_key")
 		log.Println(err)
 		return nil, err
 	}
 	if tool.CheckIsString(&requestData.CurrHtlcTempAddressForHt1aPrivateKey) == false {
-		err = errors.New("curr_htlc_temp_address_for_ht1a_private_key is empty")
+		err = errors.New(enum.Tips_common_empty + "curr_htlc_temp_address_for_ht1a_private_key")
 		log.Println(err)
 		return nil, err
 	}
 	_, err = tool.GetPubKeyFromWifAndCheck(requestData.CurrHtlcTempAddressForHt1aPrivateKey, requestData.CurrHtlcTempAddressForHt1aPubKey)
 	if err != nil {
-		return nil, errors.New("curr_htlc_temp_address_for_ht1a_private_key is wrong")
+		return nil, errors.New(enum.Tips_common_wrong + "curr_htlc_temp_address_for_ht1a_private_key")
 	}
 
 	tempAddrPrivateKeyMap[myChannelPubKey] = requestData.ChannelAddressPrivateKey
@@ -538,7 +539,7 @@ func (service *htlcForwardTxManager) UpdateAddHtlc_40(msg bean.RequestMessage, u
 		}
 	} else {
 		if requestData.CurrHtlcTempAddressForHt1aPubKey != htlcRequestInfo.CurrHtlcTempAddressForHt1aPubKey {
-			return nil, errors.New("curr_htlc_temp_address_for_ht1a_pub_key is not the same when create currTx")
+			return nil, errors.New(fmt.Sprintf(enum.Tips_rsmc_notSameValueWhenCreate, requestData.CurrHtlcTempAddressForHt1aPubKey))
 		}
 	}
 	_ = tx.Commit()
@@ -599,7 +600,7 @@ func (service *htlcForwardTxManager) BeforeBobSignPayerAddHtlcRequestAtBobSide_4
 // -100041号协议，bob方签收
 func (service *htlcForwardTxManager) PayeeSignGetAddHtlc_41(jsonData string, user bean.User) (returnData *bean.AfterBobSignAddHtlcToAlice, err error) {
 	if tool.CheckIsString(&jsonData) == false {
-		err := errors.New("empty json reqData")
+		err := errors.New(enum.Tips_common_empty + "msg data")
 		log.Println(err)
 		return nil, err
 	}
@@ -619,12 +620,12 @@ func (service *htlcForwardTxManager) PayeeSignGetAddHtlc_41(jsonData string, use
 	defer tx.Rollback()
 
 	if tool.CheckIsString(&requestData.PayerCommitmentTxHash) == false {
-		return nil, errors.New("payer_commitment_tx_hash is empty")
+		return nil, errors.New(enum.Tips_common_empty + "payer_commitment_tx_hash")
 	}
 
 	aliceMsg := service.addHtlcTempDataAt40P[requestData.PayerCommitmentTxHash]
 	if tool.CheckIsString(&aliceMsg) == false {
-		return nil, errors.New("wrong payer_commitment_tx_hash")
+		return nil, errors.New(enum.Tips_common_empty + "payer_commitment_tx_hash")
 	}
 
 	payerRequestAddHtlc := &bean.AliceRequestAddHtlc{}
@@ -645,7 +646,7 @@ func (service *htlcForwardTxManager) PayeeSignGetAddHtlc_41(jsonData string, use
 			q.Eq("PeerIdB", user.PeerId))).
 		First(channelInfo)
 	if err != nil {
-		return nil, errors.New("not found  channel info from  routing_packet")
+		return nil, errors.New(enum.Tips_htlc_noChanneFromRountingPacket)
 	}
 
 	err = checkBtcFundFinish(channelInfo.ChannelAddress, false)
@@ -655,7 +656,7 @@ func (service *htlcForwardTxManager) PayeeSignGetAddHtlc_41(jsonData string, use
 	}
 
 	if tool.CheckIsString(&requestData.ChannelAddressPrivateKey) == false {
-		err = errors.New("channel_address_private_key is empty")
+		err = errors.New(enum.Tips_common_empty + "channel_address_private_key")
 		log.Println(err)
 		return nil, err
 	}
@@ -667,14 +668,14 @@ func (service *htlcForwardTxManager) PayeeSignGetAddHtlc_41(jsonData string, use
 
 	_, err = tool.GetPubKeyFromWifAndCheck(requestData.ChannelAddressPrivateKey, bobChannelPubKey)
 	if err != nil {
-		return nil, errors.New("channel_address_private_key is wrong for " + bobChannelPubKey)
+		return nil, errors.New(fmt.Sprintf(enum.Tips_rsmc_wrongChannelPrivateKey, requestData.ChannelAddressPrivateKey, bobChannelPubKey))
 	}
 
 	latestCommitmentTxInfo, _ := getLatestCommitmentTxUseDbTx(tx, channelInfo.ChannelId, user.PeerId)
 
 	if latestCommitmentTxInfo.Id > 0 {
 		if tool.CheckIsString(&requestData.LastTempAddressPrivateKey) == false {
-			err = errors.New("last_temp_address_private_key is empty")
+			err = errors.New(enum.Tips_common_empty + "last_temp_address_private_key")
 			log.Println(err)
 			return nil, err
 		}
@@ -682,7 +683,7 @@ func (service *htlcForwardTxManager) PayeeSignGetAddHtlc_41(jsonData string, use
 		if latestCommitmentTxInfo.CurrState == dao.TxInfoState_CreateAndSign {
 			_, err = tool.GetPubKeyFromWifAndCheck(requestData.LastTempAddressPrivateKey, latestCommitmentTxInfo.RSMCTempAddressPubKey)
 			if err != nil {
-				return nil, errors.New("last_temp_address_private_key is wrong for " + latestCommitmentTxInfo.RSMCTempAddressPubKey)
+				return nil, errors.New(fmt.Sprintf(enum.Tips_rsmc_wrongPrivateKeyForLast, requestData.LastTempAddressPrivateKey, latestCommitmentTxInfo.RSMCTempAddressPubKey))
 			}
 		}
 		if latestCommitmentTxInfo.CurrState == dao.TxInfoState_Create {
@@ -691,10 +692,10 @@ func (service *htlcForwardTxManager) PayeeSignGetAddHtlc_41(jsonData string, use
 			}
 
 			if requestData.CurrRsmcTempAddressPubKey != latestCommitmentTxInfo.RSMCTempAddressPubKey {
-				return nil, errors.New("curr_rsmc_temp_address_pub_key is not the same when create currTx")
+				return nil, errors.New(fmt.Sprintf(enum.Tips_rsmc_notSameValueWhenCreate, requestData.CurrRsmcTempAddressPubKey))
 			}
 			if requestData.CurrHtlcTempAddressPubKey != latestCommitmentTxInfo.HTLCTempAddressPubKey {
-				return nil, errors.New("curr_htlc_temp_address_pub_key is not the same when create currTx")
+				return nil, errors.New(fmt.Sprintf(enum.Tips_rsmc_notSameValueWhenCreate, requestData.CurrHtlcTempAddressPubKey))
 			}
 
 			if latestCommitmentTxInfo.LastCommitmentTxId > 0 {
@@ -702,42 +703,42 @@ func (service *htlcForwardTxManager) PayeeSignGetAddHtlc_41(jsonData string, use
 				_ = tx.One("Id", latestCommitmentTxInfo.LastCommitmentTxId, lastCommitmentTx)
 				_, err = tool.GetPubKeyFromWifAndCheck(requestData.LastTempAddressPrivateKey, lastCommitmentTx.RSMCTempAddressPubKey)
 				if err != nil {
-					return nil, errors.New("last_temp_address_private_key is wrong for " + lastCommitmentTx.RSMCTempAddressPubKey)
+					return nil, errors.New(fmt.Sprintf(enum.Tips_rsmc_wrongPrivateKeyForLast, requestData.LastTempAddressPrivateKey, lastCommitmentTx.RSMCTempAddressPubKey))
 				}
 			}
 		}
 		returnData.PayeeLastTempAddressPrivateKey = requestData.LastTempAddressPrivateKey
 	}
 	if tool.CheckIsString(&requestData.CurrRsmcTempAddressPubKey) == false {
-		err = errors.New("curr_rsmc_temp_address_pub_key is empty")
+		err = errors.New(enum.Tips_common_empty + "curr_rsmc_temp_address_pub_key")
 		log.Println(err)
 		return nil, err
 	}
 	if tool.CheckIsString(&requestData.CurrRsmcTempAddressPrivateKey) == false {
-		err = errors.New("curr_rsmc_temp_address_private_key is empty")
+		err = errors.New(enum.Tips_common_empty + "curr_rsmc_temp_address_private_key")
 		log.Println(err)
 		return nil, err
 	}
 	_, err = tool.GetPubKeyFromWifAndCheck(requestData.CurrRsmcTempAddressPrivateKey, requestData.CurrRsmcTempAddressPubKey)
 	if err != nil {
-		return nil, errors.New("curr_rsmc_temp_address_private_key is wrong")
+		return nil, errors.New(enum.Tips_common_wrong + "curr_rsmc_temp_address_private_key")
 	}
 	returnData.PayeeCurrRsmcTempAddressPubKey = requestData.CurrRsmcTempAddressPubKey
 
 	if tool.CheckIsString(&requestData.CurrHtlcTempAddressPrivateKey) == false {
-		err = errors.New("curr_htlc_temp_address_private_key is empty")
+		err = errors.New(enum.Tips_common_empty + "curr_htlc_temp_address_private_key")
 		log.Println(err)
 		return nil, err
 	}
 
 	if tool.CheckIsString(&requestData.CurrHtlcTempAddressPubKey) == false {
-		err = errors.New("curr_htlc_temp_address_pub_key is empty")
+		err = errors.New(enum.Tips_common_empty + "curr_htlc_temp_address_pub_key")
 		log.Println(err)
 		return nil, err
 	}
 	_, err = tool.GetPubKeyFromWifAndCheck(requestData.CurrHtlcTempAddressPrivateKey, requestData.CurrHtlcTempAddressPubKey)
 	if err != nil {
-		return nil, errors.New("curr_htlc_temp_address_private_key is wrong")
+		return nil, errors.New(enum.Tips_common_wrong + "curr_htlc_temp_address_private_key")
 	}
 	returnData.PayeeCurrHtlcTempAddressPubKey = requestData.CurrHtlcTempAddressPubKey
 
@@ -749,7 +750,7 @@ func (service *htlcForwardTxManager) PayeeSignGetAddHtlc_41(jsonData string, use
 	//region 1、签名对方传过来的rsmcHex
 	aliceRsmcTxId, signedAliceRsmcHex, err := rpcClient.BtcSignRawTransaction(payerRequestAddHtlc.RsmcTxHex, requestData.ChannelAddressPrivateKey)
 	if err != nil {
-		return nil, errors.New("fail to sign payer rsmc hex ")
+		return nil, errors.New(fmt.Sprintf(enum.Tips_common_failToSign, "payer rsmc hex"))
 	}
 	testResult, err := rpcClient.TestMemPoolAccept(signedAliceRsmcHex)
 	if err != nil {
@@ -772,7 +773,7 @@ func (service *htlcForwardTxManager) PayeeSignGetAddHtlc_41(jsonData string, use
 		return nil, err
 	}
 	if len(aliceRsmcInputs) == 0 {
-		return nil, errors.New("wrong payer rsmc hex")
+		return nil, errors.New(enum.Tips_common_wrong + "payer rsmc hex")
 	}
 	//endregion
 
@@ -783,7 +784,7 @@ func (service *htlcForwardTxManager) PayeeSignGetAddHtlc_41(jsonData string, use
 	if len(payerRequestAddHtlc.ToCounterpartyTxHex) > 0 {
 		_, signedToOtherHex, err = rpcClient.BtcSignRawTransaction(payerRequestAddHtlc.ToCounterpartyTxHex, requestData.ChannelAddressPrivateKey)
 		if err != nil {
-			return nil, errors.New("fail to sign payer to_counterparty_tx_hex ")
+			return nil, errors.New(fmt.Sprintf(enum.Tips_common_failToSign, "payer to_counterparty_tx_hex "))
 		}
 		testResult, err = rpcClient.TestMemPoolAccept(signedToOtherHex)
 		if err != nil {
@@ -799,7 +800,7 @@ func (service *htlcForwardTxManager) PayeeSignGetAddHtlc_41(jsonData string, use
 	// region 3、签名对方传过来的 htlcHex
 	aliceHtlcTxId, aliceSignedHtlcHex, err := rpcClient.BtcSignRawTransaction(payerRequestAddHtlc.HtlcTxHex, requestData.ChannelAddressPrivateKey)
 	if err != nil {
-		return nil, errors.New("fail to sign payer htlcTxHex hex ")
+		return nil, errors.New(fmt.Sprintf(enum.Tips_common_failToSign, "payer htlcTx hex"))
 	}
 	testResult, err = rpcClient.TestMemPoolAccept(aliceSignedHtlcHex)
 	if err != nil {
@@ -859,7 +860,7 @@ func (service *htlcForwardTxManager) PayeeSignGetAddHtlc_41(jsonData string, use
 
 		fundingTransaction := getFundingTransactionByChannelId(tx, channelInfo.ChannelId, user.PeerId)
 		if fundingTransaction == nil {
-			return nil, errors.New("not found fundingTransaction")
+			return nil, errors.New(enum.Tips_common_notFound + "fundingTransaction")
 		}
 
 		//region 5、创建C3b
@@ -942,7 +943,7 @@ func (service *htlcForwardTxManager) PayeeSignGetAddHtlc_41(jsonData string, use
 		&aliceRsmcRedeemScript)
 	if err != nil {
 		log.Println(err)
-		return nil, errors.New("fail to create rd")
+		return nil, errors.New(fmt.Sprintf(enum.Tips_rsmc_failToCreate, "RD raw transacation"))
 	}
 	returnData.PayerRsmcRdHex = payerRsmcRdHex
 	//endregion create RD tx for alice

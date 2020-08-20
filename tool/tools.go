@@ -11,6 +11,7 @@ import (
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcutil"
 	"github.com/btcsuite/btcutil/base58"
+	"github.com/omnilaboratory/obd/bean/enum"
 	"github.com/omnilaboratory/obd/config"
 	"golang.org/x/crypto/ripemd160"
 	"io"
@@ -98,19 +99,19 @@ func GetAddressFromPubKey(pubKey string) (address string, err error) {
 
 func GetPubKeyFromWifAndCheck(privKeyHex string, pubKey string) (pubKeyFromWif string, err error) {
 	if CheckIsString(&privKeyHex) == false {
-		return "", errors.New("wrong private key")
+		return "", errors.New(enum.Tips_common_empty + "private key")
 	}
 	if CheckIsString(&pubKey) == false {
-		return "", errors.New("wrong pubKey")
+		return "", errors.New(enum.Tips_common_empty + "pubKey")
 	}
 
 	wif, err := btcutil.DecodeWIF(privKeyHex)
 	if err != nil {
-		return "", errors.New("wrong private key")
+		return "", errors.New(enum.Tips_common_wrong + "private key")
 	}
 	pubKeyFromWif = hex.EncodeToString(wif.PrivKey.PubKey().SerializeCompressed())
 	if pubKeyFromWif != pubKey {
-		return "", errors.New("private key and pubkey are not parent relationship")
+		return "", errors.New(fmt.Sprintf(enum.Tips_rsmc_notPairPrivAndPubKey, privKeyHex, pubKey))
 	}
 	return pubKeyFromWif, nil
 }
