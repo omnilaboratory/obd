@@ -263,9 +263,6 @@ func (client *Client) Read() {
 
 		if len(dataOut) == 0 {
 			dataOut = dataReq
-			if sendType == enum.SendTargetType_SendToNone {
-				client.sendToMyself(msg.Type, false, "the msgType can not process")
-			}
 		}
 
 		//broadcast except me

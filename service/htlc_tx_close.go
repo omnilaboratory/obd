@@ -267,6 +267,9 @@ func (service *htlcCloseTxManager) BeforeBobSignCloseHtlcAtBobSide(data string, 
 		return nil, errors.New("not found channelInfo at targetSide")
 	}
 
+	channelInfo.CurrState = dao.ChannelState_NewTx
+	_ = tx.Update(channelInfo)
+
 	senderPeerId := channelInfo.PeerIdA
 	if user.PeerId == channelInfo.PeerIdA {
 		senderPeerId = channelInfo.PeerIdB
