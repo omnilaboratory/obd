@@ -3,6 +3,7 @@ package service
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/gorilla/websocket"
 	"github.com/omnilaboratory/obd/bean/enum"
 	"github.com/omnilaboratory/obd/tool"
@@ -37,7 +38,7 @@ func (this *ObdNode) findSomeNode(nodeId *string) (*ObdNode, error) {
 			return itemClient, nil
 		}
 	}
-	return nil, errors.New("user not exist or online")
+	return nil, errors.New(fmt.Sprintf(enum.Tips_user_notExistOrOnline, nodeId))
 }
 
 func (this *ObdNode) Read() {
@@ -127,18 +128,6 @@ func (this *ObdNode) Write() {
 			}
 		}
 	}
-}
-
-func sendToSomeObdNode(msgType enum.MsgType, status bool, recipientObdId string, data string) error {
-	if tool.CheckIsString(&recipientObdId) {
-		recipientNode := ObdNodeManager.ObdNodeMap[recipientObdId]
-		if recipientNode != nil {
-			jsonMessage := getReplyObj(data, msgType, status, tracker, recipientNode)
-			recipientNode.SendChannel <- jsonMessage
-			return nil
-		}
-	}
-	return errors.New("recipient not exist or online")
 }
 
 func getReplyObj(data string, msgType enum.MsgType, status bool, fromClient, toClient *ObdNode) []byte {

@@ -3,6 +3,7 @@ package lightclient
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/omnilaboratory/obd/bean"
 	"github.com/omnilaboratory/obd/bean/enum"
 	"github.com/omnilaboratory/obd/service"
@@ -98,7 +99,7 @@ func (client *Client) Read() {
 
 		// check the Recipient is online
 		if tool.CheckIsString(&msg.RecipientUserPeerId) {
-			_, err := client.FindUser(&msg.RecipientUserPeerId)
+			_, err := client.findUser(&msg.RecipientUserPeerId)
 			if err != nil {
 				if tool.CheckIsString(&msg.RecipientNodePeerId) == false {
 					client.sendToMyself(msg.Type, false, "can not find target user")
@@ -148,19 +149,19 @@ func (client *Client) Read() {
 					msg.Type == enum.MsgType_Atomic_SendSwap_80 || msg.Type == enum.MsgType_Atomic_SendSwapAccept_81 {
 					//msg.Type == enum.MsgType_SendCloseChannelRequest_38 || msg.Type == enum.MsgType_SendCloseChannelSign_39 {
 					if tool.CheckIsString(&msg.RecipientUserPeerId) == false {
-						client.sendToMyself(msg.Type, false, "error recipient_user_peer_id")
+						client.sendToMyself(msg.Type, false, enum.Tips_common_empty+" recipient_user_peer_id")
 						continue
 					}
 					if tool.CheckIsString(&msg.RecipientNodePeerId) == false {
-						client.sendToMyself(msg.Type, false, "error recipient_node_peer_id")
+						client.sendToMyself(msg.Type, false, enum.Tips_common_empty+"error recipient_node_peer_id")
 						continue
 					}
 					if p2pChannelMap[msg.RecipientNodePeerId] == nil {
-						client.sendToMyself(msg.Type, false, "not connect recipient_node_peer_id")
+						client.sendToMyself(msg.Type, false, fmt.Sprintf(enum.Tips_common_errorObdPeerId, msg.RecipientNodePeerId))
 						continue
 					}
 					if msg.RecipientNodePeerId == P2PLocalPeerId {
-						if _, err = FindUserOnLine(&msg.RecipientUserPeerId); err != nil {
+						if _, err = findUserOnLine(&msg.RecipientUserPeerId); err != nil {
 							client.sendToMyself(msg.Type, false, err.Error())
 							continue
 						}
@@ -334,7 +335,7 @@ func (client *Client) sendToMyself(msgType enum.MsgType, status bool, data strin
 
 func (client *Client) sendToSomeone(msgType enum.MsgType, status bool, recipientPeerId string, data string) error {
 	if tool.CheckIsString(&recipientPeerId) {
-		if _, err := client.FindUser(&recipientPeerId); err == nil {
+		if _, err := client.findUser(&recipientPeerId); err == nil {
 			itemClient := globalWsClientManager.OnlineUserMap[recipientPeerId]
 			if itemClient != nil && itemClient.User != nil {
 				jsonMessage := getReplyObj(data, msgType, status, client, itemClient)
@@ -343,7 +344,7 @@ func (client *Client) sendToSomeone(msgType enum.MsgType, status bool, recipient
 			}
 		}
 	}
-	return errors.New("recipient not exist or online")
+	return errors.New(fmt.Sprintf(enum.Tips_user_notExistOrOnline, recipientPeerId))
 }
 
 //发送消息给对方，分为同节点和不同节点的两种情况
@@ -353,7 +354,7 @@ func (client *Client) sendDataToP2PUser(msg bean.RequestMessage, status bool, da
 	if tool.CheckIsString(&msg.RecipientUserPeerId) && tool.CheckIsString(&msg.RecipientNodePeerId) {
 		//如果是同一个obd节点
 		if msg.RecipientNodePeerId == P2PLocalPeerId {
-			if _, err := FindUserOnLine(&msg.RecipientUserPeerId); err == nil {
+			if _, err := findUserOnLine(&msg.RecipientUserPeerId); err == nil {
 				itemClient := globalWsClientManager.OnlineUserMap[msg.RecipientUserPeerId]
 				if itemClient != nil && itemClient.User != nil {
 					//因为数据库，分库，需要对特定的消息进行处理
@@ -393,14 +394,14 @@ func (client *Client) sendDataToP2PUser(msg bean.RequestMessage, status bool, da
 			}
 		}
 	}
-	return errors.New("recipient not exist or online")
+	return errors.New(fmt.Sprintf(enum.Tips_user_notExistOrOnline, msg.RecipientUserPeerId))
 }
 
 //当p2p收到消息后
 func getDataFromP2PSomeone(msg bean.RequestMessage) error {
 	if tool.CheckIsString(&msg.RecipientUserPeerId) && tool.CheckIsString(&msg.RecipientNodePeerId) {
 		if msg.RecipientNodePeerId == P2PLocalPeerId {
-			if _, err := FindUserOnLine(&msg.RecipientUserPeerId); err == nil {
+			if _, err := findUserOnLine(&msg.RecipientUserPeerId); err == nil {
 				itemClient := globalWsClientManager.OnlineUserMap[msg.RecipientUserPeerId]
 				if itemClient != nil && itemClient.User != nil {
 					//收到数据后，需要对其进行加工
@@ -427,7 +428,7 @@ func getDataFromP2PSomeone(msg bean.RequestMessage) error {
 			}
 		}
 	}
-	return errors.New("recipient not exist or online")
+	return errors.New(fmt.Sprintf(enum.Tips_user_notExistOrOnline, msg.RecipientUserPeerId))
 }
 
 func p2pMiddleNodeTransferData(msg *bean.RequestMessage, itemClient Client, data string, retData string) string {
@@ -601,21 +602,21 @@ func p2pMiddleNodeTransferData(msg *bean.RequestMessage, itemClient Client, data
 	return data
 }
 
-func (client *Client) FindUser(peerId *string) (*Client, error) {
+func (client *Client) findUser(peerId *string) (*Client, error) {
 	if tool.CheckIsString(peerId) {
 		itemClient := globalWsClientManager.OnlineUserMap[*peerId]
 		if itemClient != nil && itemClient.User != nil {
 			return itemClient, nil
 		}
 	}
-	return nil, errors.New("user not exist or online")
+	return nil, errors.New(fmt.Sprintf(enum.Tips_user_notExistOrOnline, *peerId))
 }
-func FindUserOnLine(peerId *string) (*Client, error) {
+func findUserOnLine(peerId *string) (*Client, error) {
 	if tool.CheckIsString(peerId) {
 		itemClient := globalWsClientManager.OnlineUserMap[*peerId]
 		if itemClient != nil && itemClient.User != nil {
 			return itemClient, nil
 		}
 	}
-	return nil, errors.New(*peerId + " not exist or online")
+	return nil, errors.New(fmt.Sprintf(enum.Tips_user_notExistOrOnline, *peerId))
 }

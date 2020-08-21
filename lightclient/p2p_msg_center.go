@@ -58,7 +58,7 @@ func routerOfP2PNode(msgType enum.MsgType, data string, client *Client) (retData
 			defaultErr = err
 		}
 	case enum.MsgType_CommitmentTx_CommitmentTransactionCreated_351:
-		node, err := service.CommitmentTxSignedService.BeforeBobSignCommitmentTranctionAtBobSide(data, client.User)
+		node, err := service.CommitmentTxSignedService.BeforeBobSignCommitmentTransactionAtBobSide(data, client.User)
 		if err == nil {
 			status = true
 			retData, _ := json.Marshal(node)

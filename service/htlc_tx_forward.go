@@ -372,11 +372,15 @@ func (service *htlcForwardTxManager) UpdateAddHtlc_40(msg bean.RequestMessage, u
 		return nil, errors.New(enum.Tips_htlc_noChanneFromRountingPacket)
 	}
 
+	if channelInfo.CurrState == dao.ChannelState_NewTx {
+		return nil, errors.New(enum.Tips_common_newTxMsg)
+	}
+
 	fundingTransaction := getFundingTransactionByChannelId(tx, channelInfo.ChannelId, user.PeerId)
 	duration := time.Now().Sub(fundingTransaction.CreateAt)
 	if duration > time.Minute*30 {
 		if checkChannelOmniAssetAmount(*channelInfo) == false {
-			err = errors.New(enum.Tips_rsmc_sendedChannel)
+			err = errors.New(enum.Tips_rsmc_broadcastedChannel)
 			log.Println(err)
 			return nil, err
 		}
@@ -427,11 +431,11 @@ func (service *htlcForwardTxManager) UpdateAddHtlc_40(msg bean.RequestMessage, u
 			}
 
 			if requestData.CurrRsmcTempAddressPubKey != latestCommitmentTx.RSMCTempAddressPubKey {
-				return nil, errors.New(fmt.Sprintf(enum.Tips_rsmc_notSameValueWhenCreate, requestData.CurrRsmcTempAddressPubKey))
+				return nil, errors.New(fmt.Sprintf(enum.Tips_rsmc_notSameValueWhenCreate, requestData.CurrRsmcTempAddressPubKey, latestCommitmentTx.RSMCTempAddressPubKey))
 			}
 
 			if requestData.CurrHtlcTempAddressPubKey != latestCommitmentTx.HTLCTempAddressPubKey {
-				return nil, errors.New(fmt.Sprintf(enum.Tips_rsmc_notSameValueWhenCreate, requestData.CurrHtlcTempAddressPubKey))
+				return nil, errors.New(fmt.Sprintf(enum.Tips_rsmc_notSameValueWhenCreate, requestData.CurrHtlcTempAddressPubKey, latestCommitmentTx.HTLCTempAddressPubKey))
 			}
 
 			if latestCommitmentTx.LastCommitmentTxId > 0 {
@@ -539,7 +543,7 @@ func (service *htlcForwardTxManager) UpdateAddHtlc_40(msg bean.RequestMessage, u
 		}
 	} else {
 		if requestData.CurrHtlcTempAddressForHt1aPubKey != htlcRequestInfo.CurrHtlcTempAddressForHt1aPubKey {
-			return nil, errors.New(fmt.Sprintf(enum.Tips_rsmc_notSameValueWhenCreate, requestData.CurrHtlcTempAddressForHt1aPubKey))
+			return nil, errors.New(fmt.Sprintf(enum.Tips_rsmc_notSameValueWhenCreate, requestData.CurrHtlcTempAddressForHt1aPubKey, htlcRequestInfo.CurrHtlcTempAddressForHt1aPubKey))
 		}
 	}
 	_ = tx.Commit()
@@ -587,6 +591,10 @@ func (service *htlcForwardTxManager) BeforeBobSignPayerAddHtlcRequestAtBobSide_4
 	if channelInfo == nil {
 		return nil, errors.New("not found channel info")
 	}
+
+	channelInfo.CurrState = dao.ChannelState_NewTx
+	_ = tx.Update(channelInfo)
+
 	_ = tx.Commit()
 
 	if service.addHtlcTempDataAt40P == nil {
@@ -692,10 +700,10 @@ func (service *htlcForwardTxManager) PayeeSignGetAddHtlc_41(jsonData string, use
 			}
 
 			if requestData.CurrRsmcTempAddressPubKey != latestCommitmentTxInfo.RSMCTempAddressPubKey {
-				return nil, errors.New(fmt.Sprintf(enum.Tips_rsmc_notSameValueWhenCreate, requestData.CurrRsmcTempAddressPubKey))
+				return nil, errors.New(fmt.Sprintf(enum.Tips_rsmc_notSameValueWhenCreate, requestData.CurrRsmcTempAddressPubKey, latestCommitmentTxInfo.RSMCTempAddressPubKey))
 			}
 			if requestData.CurrHtlcTempAddressPubKey != latestCommitmentTxInfo.HTLCTempAddressPubKey {
-				return nil, errors.New(fmt.Sprintf(enum.Tips_rsmc_notSameValueWhenCreate, requestData.CurrHtlcTempAddressPubKey))
+				return nil, errors.New(fmt.Sprintf(enum.Tips_rsmc_notSameValueWhenCreate, requestData.CurrHtlcTempAddressPubKey, latestCommitmentTxInfo.HTLCTempAddressPubKey))
 			}
 
 			if latestCommitmentTxInfo.LastCommitmentTxId > 0 {

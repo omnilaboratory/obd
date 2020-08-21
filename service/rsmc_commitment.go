@@ -66,11 +66,15 @@ func (this *commitmentTxManager) CommitmentTransactionCreated(msg bean.RequestMe
 		return nil, err
 	}
 
+	if channelInfo.CurrState == dao.ChannelState_NewTx {
+		return nil, errors.New(enum.Tips_common_newTxMsg)
+	}
+
 	fundingTransaction := getFundingTransactionByChannelId(tx, channelInfo.ChannelId, creator.PeerId)
 	duration := time.Now().Sub(fundingTransaction.CreateAt)
 	if duration > time.Minute*30 {
 		if checkChannelOmniAssetAmount(*channelInfo) == false {
-			err = errors.New(enum.Tips_rsmc_sendedChannel)
+			err = errors.New(enum.Tips_rsmc_broadcastedChannel)
 			log.Println(err)
 			return nil, err
 		}
@@ -120,17 +124,17 @@ func (this *commitmentTxManager) CommitmentTransactionCreated(msg bean.RequestMe
 		}
 	} else {
 		if reqData.CurrTempAddressPubKey != latestCommitmentTxInfo.RSMCTempAddressPubKey {
-			return nil, errors.New(fmt.Sprintf(enum.Tips_rsmc_notSameValueWhenCreate, "curr_temp_address_pub_key"))
+			return nil, errors.New(fmt.Sprintf(enum.Tips_rsmc_notSameValueWhenCreate, reqData.CurrTempAddressPubKey, latestCommitmentTxInfo.RSMCTempAddressPubKey))
 		}
 		lastCommitmentTx := &dao.CommitmentTransaction{}
 		_ = tx.One("Id", latestCommitmentTxInfo.LastCommitmentTxId, lastCommitmentTx)
 		if _, err = tool.GetPubKeyFromWifAndCheck(reqData.LastTempAddressPrivateKey, lastCommitmentTx.RSMCTempAddressPubKey); err != nil {
-			return nil, errors.New(fmt.Sprintf(enum.Tips_rsmc_wrongPrivateKeyForLast, reqData.LastTempAddressPrivateKey, latestCommitmentTxInfo.RSMCTempAddressPubKey))
+			return nil, err
 		}
 	}
 
 	if _, err = tool.GetPubKeyFromWifAndCheck(reqData.ChannelAddressPrivateKey, senderPubKey); err != nil {
-		return nil, errors.New(fmt.Sprintf(enum.Tips_rsmc_wrongChannelPrivateKey, reqData.ChannelAddressPrivateKey, senderPubKey))
+		return nil, err
 	}
 	tempAddrPrivateKeyMap[senderPubKey] = reqData.ChannelAddressPrivateKey
 
@@ -568,7 +572,7 @@ type commitmentTxSignedManager struct {
 
 var CommitmentTxSignedService commitmentTxSignedManager
 
-func (this *commitmentTxSignedManager) BeforeBobSignCommitmentTranctionAtBobSide(data string, user *bean.User) (retData *bean.PayerRequestCommitmentTxToBobClient, err error) {
+func (this *commitmentTxSignedManager) BeforeBobSignCommitmentTransactionAtBobSide(data string, user *bean.User) (retData *bean.PayerRequestCommitmentTxToBobClient, err error) {
 
 	requestCreateCommitmentTx := &bean.PayerRequestCommitmentTxOfP2p{}
 	_ = json.Unmarshal([]byte(data), requestCreateCommitmentTx)
@@ -588,12 +592,16 @@ func (this *commitmentTxSignedManager) BeforeBobSignCommitmentTranctionAtBobSide
 		return nil, errors.New("not found channelInfo at targetSide")
 	}
 
+	channelInfo.CurrState = dao.ChannelState_NewTx
+	_ = tx.Update(channelInfo)
+
 	senderPeerId := channelInfo.PeerIdA
 	if user.PeerId == channelInfo.PeerIdA {
 		senderPeerId = channelInfo.PeerIdB
 	}
 	messageHash := MessageService.saveMsgUseTx(tx, senderPeerId, user.PeerId, data)
 	retData.MsgHash = messageHash
+
 	_ = tx.Commit()
 
 	return retData, nil
@@ -660,7 +668,7 @@ func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction
 	payeeRevokeAndAcknowledgeCommitment := &dao.PayeeRevokeAndAcknowledgeCommitment{}
 	_ = tx.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("CommitmentTxHash", reqData.MsgHash)).First(payeeRevokeAndAcknowledgeCommitment)
 	if payeeRevokeAndAcknowledgeCommitment.Id > 0 {
-		return nil, "", errors.New(enum.Tips_rsmc_notDoItAgagin)
+		return nil, "", errors.New(enum.Tips_rsmc_notDoItAgain)
 	}
 
 	//Make sure who creates the transaction, who will sign the transaction.
@@ -686,6 +694,11 @@ func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction
 	payeeRevokeAndAcknowledgeCommitment.CommitmentTxHash = retData.CommitmentTxHash
 	payeeRevokeAndAcknowledgeCommitment.Approval = retData.Approval
 	_ = tx.Save(payeeRevokeAndAcknowledgeCommitment)
+
+	if channelInfo.CurrState == dao.ChannelState_NewTx {
+		channelInfo.CurrState = dao.ChannelState_CanUse
+		_ = tx.Update(channelInfo)
+	}
 
 	if reqData.Approval == false {
 		_ = MessageService.updateMsgStateUseTx(tx, message)
@@ -890,7 +903,7 @@ func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction
 
 	} else {
 		if reqData.CurrTempAddressPubKey != latestCommitmentTxInfo.RSMCTempAddressPubKey {
-			return nil, "", errors.New(fmt.Sprintf(enum.Tips_rsmc_notSameValueWhenCreate, reqData.CurrTempAddressPubKey))
+			return nil, "", errors.New(fmt.Sprintf(enum.Tips_rsmc_notSameValueWhenCreate, reqData.CurrTempAddressPubKey, latestCommitmentTxInfo.RSMCTempAddressPubKey))
 		}
 
 		retData.RsmcHex = latestCommitmentTxInfo.RSMCTxHex

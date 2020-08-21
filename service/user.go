@@ -20,10 +20,10 @@ var UserService = UserManager{}
 
 func (service *UserManager) UserLogin(user *bean.User) error {
 	if user == nil {
-		return errors.New("user is nil")
+		return errors.New(enum.Tips_user_nilUser)
 	}
 	if tool.CheckIsString(&user.Mnemonic) == false || bip39.IsMnemonicValid(user.Mnemonic) == false {
-		return errors.New("err Mnemonic")
+		return errors.New(enum.Tips_common_wrong + "mnemonic")
 	}
 
 	changeExtKey, err := HDWalletService.CreateChangeExtKey(user.Mnemonic)
@@ -75,7 +75,7 @@ func (service *UserManager) UserLogin(user *bean.User) error {
 
 func (service *UserManager) UserLogout(user *bean.User) error {
 	if user == nil {
-		return errors.New("user is nil")
+		return errors.New(enum.Tips_user_nilUser)
 	}
 	var node dao.User
 	err := user.Db.Select(q.Eq("PeerId", user.PeerId)).First(&node)

@@ -13,6 +13,11 @@ const (
 	Tips_common_amountMustGreater             = "The amount in transaction must be more than %.8f"
 	Tips_common_failToParseInputsFromUnsendTx = "Fail to extract information from the input of the unbroadcast transaction."
 	Tips_common_wrongAddressOfRD              = "Wrong output address of RD(revockable delivery) transaction."
+	Tips_common_errorObdPeerId                = "和%s obd节点还没有建立连接，请核实节点地址是否正确或者调用-102003协议"
+	Tips_common_newTxMsg                      = "通道有一个正在执行的交易，请先处理完成"
+
+	Tips_user_nilUser          = "用户为空，请先登录"
+	Tips_user_notExistOrOnline = "%s不存在或者不在线"
 
 	Tips_channel_notFoundChannelInCreate               = "Channel msg: can not find the channel currently being created via temporary channel id: "
 	Tips_channel_notThePeerIdB                         = "Channel msg: you are not the channel acceptor."
@@ -42,16 +47,16 @@ const (
 	Tips_funding_wrongFunderAddressFromAssetHex  = "Input address %s of current asset funding transaction is not the funder's address(funderAddress) in creading this channel."
 	Tips_funding_wrongChannelAddressFromAssetHex = "arget address %s of current asset funding transaction is not the multi-sig address %s in creating this channel."
 
-	Tips_rsmc_sendedChannel          = "The amount of assets in this channel has been changed. Possiblly someone closed this channel, or broadcasted a commitment transaction." //The name better be Tips_rsmc_broadcastedChannel
+	Tips_rsmc_broadcastedChannel     = "The amount of assets in this channel has been changed. Possiblly someone closed this channel, or broadcasted a commitment transaction."
 	Tips_rsmc_notTargetUser          = "You are not authorized to process the message."
 	Tips_rsmc_errorCommitmentTxType  = "The transaction type does not match the latest commitment transaction. There may be some other pending processes."
 	Tips_rsmc_errorCommitmentTxState = "The latest commitment transaction state does not match the requirement: "
 	Tips_rsmc_notEnoughBalance       = "Balance is not enough"
 	Tips_rsmc_wrongPrivateKeyForLast = "Input private key %s does not match the pubkey %s of previous transaction."
 	Tips_rsmc_wrongChannelPrivateKey = "Input channel private key %s does not match the pubKey %s in creating the channel."
-	Tips_rsmc_notSameValueWhenCreate = "Input %s is not the same to the one used in creating."
+	Tips_rsmc_notSameValueWhenCreate = "Input %s is not the same to the one %s used in creating."
 	Tips_rsmc_notPairPrivAndPubKey   = "%s and %s are not a legitimate pub/prive key pair."
-	Tips_rsmc_notDoItAgagin          = "Current transaction is finished, do not process it again."
+	Tips_rsmc_notDoItAgain           = "Current transaction is finished, do not process it again."
 	Tips_rsmc_failToCreate           = "Failed in creating %s"
 	Tips_rsmc_failToGetInput         = "Failed in get vin data for signing %s."
 

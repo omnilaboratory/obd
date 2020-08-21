@@ -99,11 +99,6 @@ func ConnP2PServer(dest string) (string, error) {
 		return "", errors.New("wrong dest address")
 	}
 
-	//id := httpGetNodeInfoByP2pAddressFromTracker(dest)
-	//if id == 0 {
-	//	return "", errors.New("target dest address not exist or online")
-	//}
-
 	sourceMultiAddr, _ := multiaddr.NewMultiaddr(fmt.Sprintf("/ip4/0.0.0.0/tcp/%d", config.P2P_sourcePort))
 	prvKey, _ := generatePrivateKey()
 

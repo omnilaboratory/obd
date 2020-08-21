@@ -40,7 +40,7 @@ func findUserIsOnline(peerId string) error {
 			return nil
 		}
 	}
-	return errors.New(peerId + " not exist or online")
+	return errors.New(fmt.Sprintf(enum.Tips_user_notExistOrOnline, peerId))
 }
 
 type commitmentOutputBean struct {
@@ -374,7 +374,9 @@ func getChannelInfoByChannelId(tx storm.Node, channelId string, userPeerId strin
 		q.Or(
 			q.Eq("PeerIdA", userPeerId),
 			q.Eq("PeerIdB", userPeerId)),
-		q.Eq("CurrState", dao.ChannelState_CanUse)).
+		q.Or(
+			q.Eq("CurrState", dao.ChannelState_CanUse),
+			q.Eq("CurrState", dao.ChannelState_NewTx))).
 		First(channelInfo)
 	if err != nil {
 		return nil
