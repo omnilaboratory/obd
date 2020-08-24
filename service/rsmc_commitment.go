@@ -240,16 +240,14 @@ func (this *commitmentTxManager) AfterBobSignCommitmentTransactionAtAliceSide(da
 	}
 
 	var signedRsmcHex = signCommitmentTx.SignedRsmcHex
-	if tool.CheckIsString(&signedRsmcHex) == false {
-		err = errors.New("wrong signedRsmcHex")
-		log.Println(err)
-		return nil, false, err
-	}
-	rsmcTxid, err := rpcClient.TestMemPoolAccept(signedRsmcHex)
-	if err != nil {
-		err = errors.New("wrong signedRsmcHex")
-		log.Println(err)
-		return nil, false, err
+	var payerRsmcTestRetData string
+	if tool.CheckIsString(&signedRsmcHex) {
+		payerRsmcTestRetData, err = rpcClient.TestMemPoolAccept(signedRsmcHex)
+		if err != nil {
+			err = errors.New("wrong signedRsmcHex")
+			log.Println(err)
+			return nil, false, err
+		}
 	}
 
 	var signedToOtherHex = signCommitmentTx.SignedToCounterpartyTxHex
@@ -266,27 +264,24 @@ func (this *commitmentTxManager) AfterBobSignCommitmentTransactionAtAliceSide(da
 	}
 
 	var aliceRdHex = signCommitmentTx.PayerRdHex
-	if tool.CheckIsString(&aliceRdHex) == false {
-		err = errors.New("wrong senderRdHex")
-		log.Println(err)
-		return nil, false, err
-	}
-	_, err = rpcClient.TestMemPoolAccept(aliceRdHex)
-	if err != nil {
-		err = errors.New("wrong senderRdHex")
-		log.Println(err)
-		return nil, false, err
+	if tool.CheckIsString(&aliceRdHex) {
+		_, err = rpcClient.TestMemPoolAccept(aliceRdHex)
+		if err != nil {
+			err = errors.New("wrong senderRdHex")
+			log.Println(err)
+			return nil, false, err
+		}
 	}
 
 	var bobRsmcHex = signCommitmentTx.RsmcHex
 	if tool.CheckIsString(&bobRsmcHex) == false {
-		err = errors.New("wrong rsmcHex")
+		err = errors.New(enum.Tips_common_empty + "payee rsmcHex")
 		log.Println(err)
 		return nil, false, err
 	}
 	_, err = rpcClient.TestMemPoolAccept(bobRsmcHex)
 	if err != nil {
-		err = errors.New("wrong rsmcHex")
+		err = errors.New(enum.Tips_common_wrong + "payee rsmcHex")
 		log.Println(err)
 		return nil, false, err
 	}
@@ -298,11 +293,6 @@ func (this *commitmentTxManager) AfterBobSignCommitmentTransactionAtAliceSide(da
 		return nil, false, err
 	}
 	var bobToCounterpartyTxHex = signCommitmentTx.ToCounterpartyTxHex
-	if tool.CheckIsString(&bobToCounterpartyTxHex) == false {
-		err = errors.New("wrong toCounterpartyTxHex")
-		log.Println(err)
-		return nil, false, err
-	}
 	var bobLastTempAddressPrivateKey = signCommitmentTx.LastTempAddressPrivateKey
 	//endregion
 
@@ -331,14 +321,16 @@ func (this *commitmentTxManager) AfterBobSignCommitmentTransactionAtAliceSide(da
 	}
 	//endregion
 
-	latestCommitmentTxInfo.RSMCTxHex = signedRsmcHex
-	latestCommitmentTxInfo.RSMCTxid = gjson.Parse(rsmcTxid).Array()[0].Get("txid").Str
-	// region 对自己的RD 二次签名
-	err = signRdTx(tx, channelInfo, signedRsmcHex, aliceRdHex, latestCommitmentTxInfo, myChannelAddress, user)
-	if err != nil {
-		return nil, true, err
+	if tool.CheckIsString(&signedRsmcHex) {
+		latestCommitmentTxInfo.RSMCTxHex = signedRsmcHex
+		latestCommitmentTxInfo.RSMCTxid = gjson.Parse(payerRsmcTestRetData).Array()[0].Get("txid").Str
+		// region 对自己的RD 二次签名
+		err = signRdTx(tx, channelInfo, signedRsmcHex, aliceRdHex, latestCommitmentTxInfo, myChannelAddress, user)
+		if err != nil {
+			return nil, true, err
+		}
+		// endregion
 	}
-	// endregion
 
 	//更新alice的当前承诺交易
 	latestCommitmentTxInfo.CurrState = dao.TxInfoState_CreateAndSign
@@ -440,18 +432,22 @@ func (this *commitmentTxManager) AfterBobSignCommitmentTransactionAtAliceSide(da
 	//endregion
 
 	//签名对方传过来的toOtherHex
-	_, bobSignedToOtherHex, err := rpcClient.BtcSignRawTransaction(bobToCounterpartyTxHex, myChannelPrivateKey)
-	if err != nil {
-		return nil, false, errors.New("fail to sign toOther hex ")
+	var bobSignedToCounterpartyTxHex string
+	if tool.CheckIsString(&bobToCounterpartyTxHex) {
+		_, bobSignedToCounterpartyTxHex, err = rpcClient.BtcSignRawTransaction(bobToCounterpartyTxHex, myChannelPrivateKey)
+		if err != nil {
+			return nil, false, errors.New("fail to sign to_counterparty_tx_hex")
+		}
+		testResult, err = rpcClient.TestMemPoolAccept(bobSignedToCounterpartyTxHex)
+		if err != nil {
+			return nil, false, err
+		}
+		if gjson.Parse(testResult).Array()[0].Get("allowed").Bool() == false {
+			return nil, false, errors.New(gjson.Parse(testResult).Array()[0].Get("reject-reason").String())
+		}
 	}
-	testResult, err = rpcClient.TestMemPoolAccept(bobSignedToOtherHex)
-	if err != nil {
-		return nil, false, err
-	}
-	if gjson.Parse(testResult).Array()[0].Get("allowed").Bool() == false {
-		return nil, false, errors.New(gjson.Parse(testResult).Array()[0].Get("reject-reason").String())
-	}
-	bobData["signedToOtherHex"] = bobSignedToOtherHex
+	bobData["signedToCounterpartyTxHex"] = bobSignedToCounterpartyTxHex
+	bobData["payerCommitmentTxHash"] = commitmentTxHash
 
 	_ = tx.Commit()
 
@@ -558,7 +554,7 @@ func checkBobRemcData(rsmcHex string, commitmentTransaction *dao.CommitmentTrans
 	}
 	parse := gjson.Parse(result)
 	if parse.Get("propertyid").Int() != commitmentTransaction.PropertyId {
-		return errors.New("error propertyid in rsmcHex ")
+		return errors.New("error propertyId in rsmcHex ")
 	}
 	if parse.Get("amount").Float() != commitmentTransaction.AmountToCounterparty {
 		return errors.New("error amount in rsmcHex ")
@@ -666,10 +662,10 @@ func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction
 	}
 
 	payeeRevokeAndAcknowledgeCommitment := &dao.PayeeRevokeAndAcknowledgeCommitment{}
-	_ = tx.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("CommitmentTxHash", reqData.MsgHash)).First(payeeRevokeAndAcknowledgeCommitment)
-	if payeeRevokeAndAcknowledgeCommitment.Id > 0 {
-		return nil, "", errors.New(enum.Tips_rsmc_notDoItAgain)
-	}
+	//_ = tx.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("CommitmentTxHash", reqData.MsgHash)).First(payeeRevokeAndAcknowledgeCommitment)
+	//if payeeRevokeAndAcknowledgeCommitment.Id > 0 {
+	//	return nil, "", errors.New(enum.Tips_rsmc_notDoItAgain)
+	//}
 
 	//Make sure who creates the transaction, who will sign the transaction.
 	//The default creator is Alice, and Bob is the signer.
@@ -690,17 +686,17 @@ func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction
 	retData.CommitmentTxHash = reqData.MsgHash
 	retData.Approval = reqData.Approval
 
-	payeeRevokeAndAcknowledgeCommitment.ChannelId = reqData.ChannelId
-	payeeRevokeAndAcknowledgeCommitment.CommitmentTxHash = retData.CommitmentTxHash
-	payeeRevokeAndAcknowledgeCommitment.Approval = retData.Approval
-	_ = tx.Save(payeeRevokeAndAcknowledgeCommitment)
-
 	if channelInfo.CurrState == dao.ChannelState_NewTx {
 		channelInfo.CurrState = dao.ChannelState_CanUse
 		_ = tx.Update(channelInfo)
 	}
 
 	if reqData.Approval == false {
+		payeeRevokeAndAcknowledgeCommitment.ChannelId = retData.ChannelId
+		payeeRevokeAndAcknowledgeCommitment.CommitmentTxHash = retData.CommitmentTxHash
+		payeeRevokeAndAcknowledgeCommitment.Approval = false
+		_ = tx.Save(payeeRevokeAndAcknowledgeCommitment)
+
 		_ = MessageService.updateMsgStateUseTx(tx, message)
 		err = tx.Commit()
 		if err != nil {
@@ -765,47 +761,51 @@ func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction
 	retData.CurrTempAddressPubKey = reqData.CurrTempAddressPubKey
 
 	//region 1、签名对方传过来的rsmcHex
-	aliceRsmcTxId, signedRsmcHex, err := rpcClient.BtcSignRawTransaction(aliceDataJson.RsmcHex, reqData.ChannelAddressPrivateKey)
-	if err != nil {
-		return nil, targetUser, errors.New(fmt.Sprintf(enum.Tips_common_failToSign, "rsmc hex"))
-	}
-	testResult, err := rpcClient.TestMemPoolAccept(signedRsmcHex)
-	if err != nil {
-		return nil, targetUser, err
-	}
-	if gjson.Parse(testResult).Array()[0].Get("allowed").Bool() == false {
-		return nil, targetUser, errors.New(gjson.Parse(testResult).Array()[0].Get("reject-reason").String())
+	var signedRsmcHex, aliceRsmcTxId, aliceRsmcMultiAddress, aliceRsmcRedeemScript, aliceRsmcMultiAddressScriptPubKey string
+	var aliceRsmcOutputs []rpc.TransactionInputItem
+	if tool.CheckIsString(&aliceDataJson.RsmcHex) {
+		aliceRsmcTxId, signedRsmcHex, err = rpcClient.BtcSignRawTransaction(aliceDataJson.RsmcHex, reqData.ChannelAddressPrivateKey)
+		if err != nil {
+			return nil, targetUser, errors.New(fmt.Sprintf(enum.Tips_common_failToSign, "rsmc hex"))
+		}
+		testResult, err := rpcClient.TestMemPoolAccept(signedRsmcHex)
+		if err != nil {
+			return nil, targetUser, err
+		}
+		if gjson.Parse(testResult).Array()[0].Get("allowed").Bool() == false {
+			return nil, targetUser, errors.New(gjson.Parse(testResult).Array()[0].Get("reject-reason").String())
+		}
+		// region 根据alice的临时地址+bob的通道address,获取alice2+bob的多签地址，并得到AliceSignedRsmcHex签名后的交易的input，为创建alice的RD和bob的BR做准备
+		aliceMultiAddr, err := rpcClient.CreateMultiSig(2, []string{aliceDataJson.CurrTempAddressPubKey, currNodeChannelPubKey})
+		if err != nil {
+			return nil, "", err
+		}
+		aliceRsmcMultiAddress = gjson.Get(aliceMultiAddr, "address").String()
+		aliceRsmcRedeemScript = gjson.Get(aliceMultiAddr, "redeemScript").String()
+		tempJson, err := rpcClient.GetAddressInfo(aliceRsmcMultiAddress)
+		if err != nil {
+			return nil, "", err
+		}
+		aliceRsmcMultiAddressScriptPubKey = gjson.Get(tempJson, "scriptPubKey").String()
+
+		aliceRsmcOutputs, err = getInputsForNextTxByParseTxHashVout(signedRsmcHex, aliceRsmcMultiAddress, aliceRsmcMultiAddressScriptPubKey, aliceRsmcRedeemScript)
+		if err != nil {
+			log.Println(err)
+			return nil, "", err
+		}
+		retData.SignedRsmcHex = signedRsmcHex
 	}
 
-	// region 根据alice的临时地址+bob的通道address,获取alice2+bob的多签地址，并得到AliceSignedRsmcHex签名后的交易的input，为创建alice的RD和bob的BR做准备
-	aliceMultiAddr, err := rpcClient.CreateMultiSig(2, []string{aliceDataJson.CurrTempAddressPubKey, currNodeChannelPubKey})
-	if err != nil {
-		return nil, "", err
-	}
-	aliceRsmcMultiAddress := gjson.Get(aliceMultiAddr, "address").String()
-	aliceRsmcRedeemScript := gjson.Get(aliceMultiAddr, "redeemScript").String()
-	tempJson, err := rpcClient.GetAddressInfo(aliceRsmcMultiAddress)
-	if err != nil {
-		return nil, "", err
-	}
-	aliceRsmcMultiAddressScriptPubKey := gjson.Get(tempJson, "scriptPubKey").String()
-
-	aliceRsmcOutputs, err := getInputsForNextTxByParseTxHashVout(signedRsmcHex, aliceRsmcMultiAddress, aliceRsmcMultiAddressScriptPubKey, aliceRsmcRedeemScript)
-	if err != nil {
-		log.Println(err)
-		return nil, "", err
-	}
-	retData.SignedRsmcHex = signedRsmcHex
 	//endregion
 
 	//endregion
 
-	// region 2、签名对方传过来的toOtherHex
+	// region 2、签名对方传过来的 ToCounterpartyTxHex
 	_, signedToCounterpartyTxHex, err := rpcClient.BtcSignRawTransaction(aliceDataJson.ToCounterpartyTxHex, reqData.ChannelAddressPrivateKey)
 	if err != nil {
 		return nil, targetUser, errors.New(fmt.Sprintf(enum.Tips_common_failToSign, "to_counterparty_tx_hex"))
 	}
-	testResult, err = rpcClient.TestMemPoolAccept(signedToCounterpartyTxHex)
+	testResult, err := rpcClient.TestMemPoolAccept(signedToCounterpartyTxHex)
 	if err != nil {
 		return nil, targetUser, err
 	}
@@ -850,7 +850,7 @@ func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction
 		isFirstRequest = true
 	}
 
-	var amountToOther = 0.0
+	var amountToCounterparty = 0.0
 	//如果是本轮的第一次请求交易
 	if isFirstRequest {
 		//region 3、根据对方传过来的上一个交易的临时rsmc私钥，签名最近的BR交易，保证对方确实放弃了上一个承诺交易
@@ -873,7 +873,7 @@ func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction
 			log.Println(err)
 			return nil, "", err
 		}
-		amountToOther = newCommitmentTxInfo.AmountToCounterparty
+		amountToCounterparty = newCommitmentTxInfo.AmountToCounterparty
 
 		retData.RsmcHex = newCommitmentTxInfo.RSMCTxHex
 		retData.ToCounterpartyTxHex = newCommitmentTxInfo.ToCounterpartyTxHex
@@ -908,7 +908,7 @@ func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction
 
 		retData.RsmcHex = latestCommitmentTxInfo.RSMCTxHex
 		retData.ToCounterpartyTxHex = latestCommitmentTxInfo.ToCounterpartyTxHex
-		amountToOther = latestCommitmentTxInfo.AmountToCounterparty
+		amountToCounterparty = latestCommitmentTxInfo.AmountToCounterparty
 	}
 
 	//region 6、根据签名后的AliceRsmc创建alice的RD create RD tx for alice
@@ -916,24 +916,26 @@ func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction
 	if signer.PeerId == channelInfo.PeerIdA {
 		outputAddress = channelInfo.AddressB
 	}
-	_, payerRdhex, err := rpcClient.OmniCreateAndSignRawTransactionUseUnsendInput(
-		aliceRsmcMultiAddress,
-		[]string{
-			reqData.ChannelAddressPrivateKey,
-		},
-		aliceRsmcOutputs,
-		outputAddress,
-		channelInfo.FundingAddress,
-		channelInfo.PropertyId,
-		amountToOther,
-		getBtcMinerAmount(channelInfo.BtcAmount),
-		1000,
-		&aliceRsmcRedeemScript)
-	if err != nil {
-		log.Println(err)
-		return nil, targetUser, errors.New(fmt.Sprintf(enum.Tips_rsmc_failToCreate, "RD raw transacation"))
+	if len(aliceRsmcOutputs) > 0 {
+		_, payerRdhex, err := rpcClient.OmniCreateAndSignRawTransactionUseUnsendInput(
+			aliceRsmcMultiAddress,
+			[]string{
+				reqData.ChannelAddressPrivateKey,
+			},
+			aliceRsmcOutputs,
+			outputAddress,
+			channelInfo.FundingAddress,
+			channelInfo.PropertyId,
+			amountToCounterparty,
+			getBtcMinerAmount(channelInfo.BtcAmount),
+			1000,
+			&aliceRsmcRedeemScript)
+		if err != nil {
+			log.Println(err)
+			return nil, targetUser, errors.New(fmt.Sprintf(enum.Tips_rsmc_failToCreate, "RD raw transacation"))
+		}
+		retData.PayerRdHex = payerRdhex
 	}
-	retData.PayerRdHex = payerRdhex
 	//endregion create RD tx for alice
 
 	_ = MessageService.updateMsgStateUseTx(tx, message)
@@ -945,13 +947,14 @@ func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction
 	return retData, "", err
 }
 
-func (this *commitmentTxSignedManager) AfterAliceSignCommitmentTranctionAtBobSide(data string, user *bean.User) (retData interface{}, err error) {
+func (this *commitmentTxSignedManager) AfterAliceSignCommitmentTransactionAtBobSide(data string, user *bean.User) (retData interface{}, err error) {
 	jsonObj := gjson.Parse(data)
 
 	var channelId = jsonObj.Get("channelId").String()
 	var signedRsmcHex = jsonObj.Get("signedRsmcHex").String()
-	var signedToOtherHex = jsonObj.Get("signedToOtherHex").String()
+	var signedToCounterpartyTxHex = jsonObj.Get("signedToCounterpartyTxHex").String()
 	var rdHex = jsonObj.Get("rdHex").String()
+	var payerCommitmentTxHash = jsonObj.Get("payerCommitmentTxHash").String()
 
 	tx, err := user.Db.Begin(true)
 	if err != nil {
@@ -967,7 +970,7 @@ func (this *commitmentTxSignedManager) AfterAliceSignCommitmentTranctionAtBobSid
 
 	latestCommitmentTxInfo, err := getLatestCommitmentTxUseDbTx(tx, channelId, user.PeerId)
 	if err != nil {
-		err = errors.New("fail to find sender's commitmentTxInfo")
+		err = errors.New("fail to find payer's commitmentTxInfo")
 		log.Println(err)
 		return nil, err
 	}
@@ -983,27 +986,30 @@ func (this *commitmentTxSignedManager) AfterAliceSignCommitmentTranctionAtBobSid
 		myChannelAddress = channelInfo.AddressA
 	}
 
-	decodeRsmcHex, err := rpcClient.OmniDecodeTransaction(signedRsmcHex)
-	if err != nil {
-		return nil, err
+	if tool.CheckIsString(&signedRsmcHex) {
+		decodeRsmcHex, err := rpcClient.OmniDecodeTransaction(signedRsmcHex)
+		if err != nil {
+			return nil, err
+		}
+		latestCommitmentTxInfo.RSMCTxHex = signedRsmcHex
+		latestCommitmentTxInfo.RSMCTxid = gjson.Get(decodeRsmcHex, "txid").Str
+		err = signRdTx(tx, channelInfo, signedRsmcHex, rdHex, latestCommitmentTxInfo, myChannelAddress, user)
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	decodeSignedToOtherHex, err := rpcClient.OmniDecodeTransaction(signedToOtherHex)
-	if err != nil {
-		return nil, err
-	}
-
-	latestCommitmentTxInfo.RSMCTxHex = signedRsmcHex
-	latestCommitmentTxInfo.RSMCTxid = gjson.Get(decodeRsmcHex, "txid").Str
-	err = signRdTx(tx, channelInfo, signedRsmcHex, rdHex, latestCommitmentTxInfo, myChannelAddress, user)
-	if err != nil {
-		return nil, err
+	if tool.CheckIsString(&signedToCounterpartyTxHex) {
+		decodeSignedToOtherHex, err := rpcClient.OmniDecodeTransaction(signedToCounterpartyTxHex)
+		if err != nil {
+			return nil, err
+		}
+		latestCommitmentTxInfo.ToCounterpartyTxHex = signedToCounterpartyTxHex
+		latestCommitmentTxInfo.ToCounterpartyTxid = gjson.Get(decodeSignedToOtherHex, "txid").Str
 	}
 
 	//更新alice的当前承诺交易
 	latestCommitmentTxInfo.CurrState = dao.TxInfoState_CreateAndSign
-	latestCommitmentTxInfo.ToCounterpartyTxHex = signedToOtherHex
-	latestCommitmentTxInfo.ToCounterpartyTxid = gjson.Get(decodeSignedToOtherHex, "txid").Str
 	latestCommitmentTxInfo.SignAt = time.Now()
 
 	bytes, err := json.Marshal(latestCommitmentTxInfo)
@@ -1018,16 +1024,22 @@ func (this *commitmentTxSignedManager) AfterAliceSignCommitmentTranctionAtBobSid
 		_ = tx.Update(lastCommitmentTxInfo)
 	}
 
-	_ = tx.Commit()
+	payeeRevokeAndAcknowledgeCommitment := &dao.PayeeRevokeAndAcknowledgeCommitment{}
+	payeeRevokeAndAcknowledgeCommitment.ChannelId = channelId
+	payeeRevokeAndAcknowledgeCommitment.CommitmentTxHash = payerCommitmentTxHash
+	payeeRevokeAndAcknowledgeCommitment.Approval = true
+	_ = tx.Save(payeeRevokeAndAcknowledgeCommitment)
 
-	//retData = make(map[string]interface{})
-	//retData["latest_commitment_tx_info"] = latestCommitmentTxInfo
+	_ = tx.Commit()
 	return latestCommitmentTxInfo, nil
 }
 
 //创建BR
 func createCurrCommitmentTxBR(tx storm.Node, brType dao.BRType, channelInfo *dao.ChannelInfo, commitmentTx *dao.CommitmentTransaction, inputs []rpc.TransactionInputItem,
 	outputAddress, channelPrivateKey string, user bean.User) (err error) {
+	if len(inputs) == 0 {
+		return nil
+	}
 	breachRemedyTransaction := &dao.BreachRemedyTransaction{}
 	_ = tx.Select(
 		q.Eq("ChannelId", channelInfo.ChannelId),

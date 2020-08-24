@@ -760,23 +760,33 @@ func (this *channelManager) ForceCloseChannel(msg bean.RequestMessage, user *bea
 
 		//region 广播RD
 		latestRevocableDeliveryTx := &dao.RevocableDeliveryTransaction{}
-		err = tx.Select(
+		_ = tx.Select(
 			q.Eq("ChannelId", channelInfo.ChannelId),
 			q.Eq("CommitmentTxId", latestCommitmentTx.Id),
 			q.Eq("Owner", targetUser)).
 			OrderBy("CreateAt").Reverse().
 			First(latestRevocableDeliveryTx)
-		if err != nil {
-			log.Println(err)
-			return nil, err
-		}
 
-		_, err = rpcClient.SendRawTransaction(latestRevocableDeliveryTx.TxHex)
-		if err != nil {
-			log.Println(err)
-			msg := err.Error()
-			//如果omnicore返回的信息里面包含了non-BIP68-final (code 64)， 则说明因为需要等待1000个区块高度，广播是对的
-			if strings.Contains(msg, "non-BIP68-final (code 64)") == false {
+		if latestRevocableDeliveryTx.Id > 0 {
+			_, err = rpcClient.SendRawTransaction(latestRevocableDeliveryTx.TxHex)
+			if err != nil {
+				log.Println(err)
+				msg := err.Error()
+				//如果omnicore返回的信息里面包含了non-BIP68-final (code 64)， 则说明因为需要等待1000个区块高度，广播是对的
+				if strings.Contains(msg, "non-BIP68-final (code 64)") == false {
+					return nil, err
+				}
+			}
+
+			latestRevocableDeliveryTx.CurrState = dao.TxInfoState_SendHex
+			latestRevocableDeliveryTx.SendAt = time.Now()
+			err = tx.Update(latestRevocableDeliveryTx)
+			if err != nil {
+				return nil, err
+			}
+
+			err = addRDTxToWaitDB(latestRevocableDeliveryTx)
+			if err != nil {
 				return nil, err
 			}
 		}
@@ -786,18 +796,6 @@ func (this *channelManager) ForceCloseChannel(msg bean.RequestMessage, user *bea
 		latestCommitmentTx.CurrState = dao.TxInfoState_SendHex
 		latestCommitmentTx.SendAt = time.Now()
 		err = tx.Update(latestCommitmentTx)
-		if err != nil {
-			return nil, err
-		}
-
-		latestRevocableDeliveryTx.CurrState = dao.TxInfoState_SendHex
-		latestRevocableDeliveryTx.SendAt = time.Now()
-		err = tx.Update(latestRevocableDeliveryTx)
-		if err != nil {
-			return nil, err
-		}
-
-		err = addRDTxToWaitDB(latestRevocableDeliveryTx)
 		if err != nil {
 			return nil, err
 		}

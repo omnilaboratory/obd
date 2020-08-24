@@ -616,30 +616,30 @@ func (service *fundingTransactionManager) AssetFundingCreated(msg bean.RequestMe
 	}
 
 	if tool.CheckIsString(&reqData.TemporaryChannelId) == false {
-		err = errors.New("wrong TemporaryChannelId ")
+		err = errors.New(enum.Tips_common_empty + "temporary_channel_id ")
 		log.Println(err)
 		return nil, err
 	}
 
 	if tool.CheckIsString(&reqData.FundingTxHex) == false {
-		err = errors.New("wrong TxHex ")
+		err = errors.New(enum.Tips_common_empty + " funding_tx_hex ")
 		log.Println(err)
 		return nil, err
 	}
 
 	if _, err := getAddressFromPubKey(reqData.TempAddressPubKey); err != nil {
-		err = errors.New("wrong TempAddressPubKey ")
+		err = errors.New(enum.Tips_common_wrong + "temp_address_pub_key ")
 		log.Println(err)
 		return nil, err
 	}
 
 	if tool.CheckIsString(&reqData.TempAddressPrivateKey) == false {
-		err = errors.New("wrong TempAddressPrivateKey ")
+		err = errors.New(enum.Tips_common_wrong + "temp_address_private_key ")
 		log.Println(err)
 		return nil, err
 	}
 	if tool.CheckIsString(&reqData.ChannelAddressPrivateKey) == false {
-		err = errors.New("wrong ChannelAddressPrivateKey ")
+		err = errors.New(enum.Tips_common_wrong + "channel_address_private_key ")
 		log.Println(err)
 		return nil, err
 	}
@@ -665,13 +665,13 @@ func (service *fundingTransactionManager) AssetFundingCreated(msg bean.RequestMe
 		OrderBy("CreateAt").Reverse().
 		First(channelInfo)
 	if err != nil {
-		err = errors.New("not found the channelInfo " + reqData.TemporaryChannelId)
+		err = errors.New(enum.Tips_funding_notFoundChannelByTempId + reqData.TemporaryChannelId)
 		log.Println(err)
 		return nil, err
 	}
 
 	if channelInfo.CurrState != dao.ChannelState_WaitFundAsset {
-		err = errors.New("the channelInfo not in waitFundAsset state")
+		err = errors.New(enum.Tips_funding_notFundAssetState)
 		log.Println(err)
 		return nil, err
 	}
@@ -695,7 +695,7 @@ func (service *fundingTransactionManager) AssetFundingCreated(msg bean.RequestMe
 	// if alice launch funding
 	fundingTxHexDecode, err := rpcClient.OmniDecodeTransaction(reqData.FundingTxHex)
 	if err != nil {
-		err = errors.New("TxHex  parse fail " + err.Error())
+		err = errors.New(enum.Tips_funding_failDecodeRawTransaction + " : " + err.Error())
 		log.Println(err)
 		return nil, err
 	}
@@ -735,15 +735,8 @@ func (service *fundingTransactionManager) AssetFundingCreated(msg bean.RequestMe
 		return nil, err
 	}
 
-	txHexDecode, err := rpcClient.DecodeRawTransaction(reqData.FundingTxHex)
-	if err != nil {
-		err = errors.New("TxHex  parse fail " + err.Error())
-		log.Println(err)
-		return nil, err
-	}
-
 	//get btc miner Fee data from transaction
-	fundingTxid, _, fundingOutputIndex, err := checkBtcTxHex(txHexDecode, channelInfo, user.PeerId)
+	fundingTxid, _, fundingOutputIndex, err := checkBtcTxHex(fundingTxHexDecode, channelInfo, user.PeerId)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -771,7 +764,7 @@ func (service *fundingTransactionManager) AssetFundingCreated(msg bean.RequestMe
 	if needCreateC1a {
 		flag := httpGetChannelStateFromTracker(fundingTransaction.ChannelId)
 		if flag != 0 && flag != int(dao.ChannelState_WaitFundAsset) {
-			err = errors.New("fundingTx have been used")
+			err = errors.New(enum.Tips_funding_needChangeFundTx)
 			log.Println(err)
 			return nil, err
 		}
@@ -873,10 +866,10 @@ func (service *fundingTransactionManager) AssetFundingCreated(msg bean.RequestMe
 			OrderBy("CreateAt").Reverse().
 			First(commitmentTxInfo)
 		if err != nil {
-			return nil, errors.New("not found C1a")
+			return nil, errors.New(enum.Tips_common_notFound + ": CommitmentTransaction")
 		}
 		if commitmentTxInfo.LastHash != "" {
-			return nil, errors.New("error C1a")
+			return nil, errors.New(enum.Tips_common_wrong + "CommitmentTransaction")
 		}
 	}
 
@@ -1093,7 +1086,7 @@ func (service *fundingTransactionManager) AssetFundingSigned(jsonData string, si
 	}
 
 	if tool.CheckIsString(&reqData.TemporaryChannelId) == false {
-		return nil, errors.New("wrong temporary_channel_id")
+		return nil, errors.New(enum.Tips_common_empty + "temporary_channel_id")
 	}
 
 	tx, err := signer.Db.Begin(true)
@@ -1117,7 +1110,7 @@ func (service *fundingTransactionManager) AssetFundingSigned(jsonData string, si
 	}
 
 	if channelInfo == nil {
-		err = errors.New("not found channel " + reqData.TemporaryChannelId)
+		err = errors.New(enum.Tips_funding_notFoundChannelByTempId + reqData.TemporaryChannelId)
 		log.Println(err)
 		return nil, err
 	}
@@ -1164,7 +1157,7 @@ func (service *fundingTransactionManager) AssetFundingSigned(jsonData string, si
 	channelInfo.ChannelId = fundingTransaction.ChannelId
 	node["channel_id"] = channelInfo.ChannelId
 	if tool.CheckIsString(&reqData.FundeeChannelAddressPrivateKey) == false {
-		return nil, errors.New("wrong FundeeChannelAddressPrivateKey")
+		return nil, errors.New(enum.Tips_common_empty + " fundee_channel_address_private_key")
 	}
 	_, err = tool.GetPubKeyFromWifAndCheck(reqData.FundeeChannelAddressPrivateKey, myPubKey)
 	if err != nil {

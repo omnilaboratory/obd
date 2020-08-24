@@ -545,7 +545,7 @@ func (client *Client) OmniCreateAndSignRawTransactionUseRestInput(txType int, fr
 	inputs := make([]map[string]interface{}, 0, 0)
 	for _, item := range arrayListUnspent {
 		txid := item.Get("txid").String()
-		if usedTxid != "" && strings.Contains(usedTxid, txid) == false {
+		if (usedTxid != "" && strings.Contains(usedTxid, txid) == false) || len(usedTxid) == 0 {
 			node := make(map[string]interface{})
 			node["txid"] = txid
 			node["vout"] = item.Get("vout").Int()
