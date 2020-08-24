@@ -506,21 +506,21 @@ func (service *htlcBackwardTxManager) CheckHed1aHex_Step5(msgData string, user b
 		log.Println(err)
 		return nil, err
 	}
-	commitmentTxInfo, err := getLatestCommitmentTxUseDbTx(tx, channelId, user.PeerId)
+	latestCommitmentTxInfo, err := getLatestCommitmentTxUseDbTx(tx, channelId, user.PeerId)
 	if err != nil {
 		log.Println(err)
 		return nil, err
 	}
 
 	//保存hed1a
-	err = createAndSaveHed1a_at48(tx, signedHed1aHex, *channelInfo, *commitmentTxInfo, user)
+	err = createAndSaveHed1a_at48(tx, signedHed1aHex, *channelInfo, *latestCommitmentTxInfo, user)
 	if err != nil {
 		log.Println(err)
 		return nil, err
 	}
 
 	_ = tx.Commit()
-	return commitmentTxInfo, nil
+	return latestCommitmentTxInfo, nil
 }
 
 //45 创建He1b

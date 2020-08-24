@@ -8,6 +8,7 @@ import (
 	"github.com/omnilaboratory/obd/bean"
 	"github.com/omnilaboratory/obd/bean/enum"
 	"github.com/omnilaboratory/obd/dao"
+	"github.com/omnilaboratory/obd/rpc"
 	"github.com/omnilaboratory/obd/tool"
 	"github.com/tidwall/gjson"
 	"log"
@@ -149,11 +150,11 @@ func (service *htlcCloseTxManager) RequestCloseHtlc(msg bean.RequestMessage, use
 	if latestCommitmentTxInfo.TxType == dao.CommitmentTransactionType_Htlc {
 		_, err = tool.GetPubKeyFromWifAndCheck(reqData.LastRsmcTempAddressPrivateKey, latestCommitmentTxInfo.RSMCTempAddressPubKey)
 		if err != nil {
-			return nil, errors.New(fmt.Sprintf(enum.Tips_rsmc_wrongPrivateKeyForLast, reqData.LastRsmcTempAddressPrivateKey, latestCommitmentTxInfo.RSMCTempAddressPubKey))
+			return nil, err
 		}
 		_, err = tool.GetPubKeyFromWifAndCheck(reqData.LastHtlcTempAddressPrivateKey, latestCommitmentTxInfo.HTLCTempAddressPubKey)
 		if err != nil {
-			return nil, errors.New(fmt.Sprintf(enum.Tips_rsmc_wrongPrivateKeyForLast, reqData.LastHtlcTempAddressPrivateKey, latestCommitmentTxInfo.HTLCTempAddressPubKey))
+			return nil, err
 		}
 
 		if latestCommitmentTxInfo.CurrState == dao.TxInfoState_Htlc_GetR {
@@ -180,11 +181,11 @@ func (service *htlcCloseTxManager) RequestCloseHtlc(msg bean.RequestMessage, use
 		}
 		_, err = tool.GetPubKeyFromWifAndCheck(reqData.LastRsmcTempAddressPrivateKey, lastCommitmentTxInfo.RSMCTempAddressPubKey)
 		if err != nil {
-			return nil, errors.New(fmt.Sprintf(enum.Tips_rsmc_wrongPrivateKeyForLast, reqData.LastRsmcTempAddressPrivateKey, lastCommitmentTxInfo.RSMCTempAddressPubKey))
+			return nil, err
 		}
 		_, err = tool.GetPubKeyFromWifAndCheck(reqData.LastHtlcTempAddressPrivateKey, lastCommitmentTxInfo.HTLCTempAddressPubKey)
 		if err != nil {
-			return nil, errors.New(fmt.Sprintf(enum.Tips_rsmc_wrongPrivateKeyForLast, reqData.LastHtlcTempAddressPrivateKey, lastCommitmentTxInfo.HTLCTempAddressPubKey))
+			return nil, err
 		}
 		if lastCommitmentTxInfo.CurrState == dao.TxInfoState_Htlc_GetR {
 			err = tx.Select(
@@ -203,7 +204,7 @@ func (service *htlcCloseTxManager) RequestCloseHtlc(msg bean.RequestMessage, use
 	if ht1aOrHe1b.Id > 0 {
 		_, err = tool.GetPubKeyFromWifAndCheck(reqData.LastHtlcTempAddressForHtnxPrivateKey, ht1aOrHe1b.RSMCTempAddressPubKey)
 		if err != nil {
-			return nil, errors.New(fmt.Sprintf(enum.Tips_rsmc_wrongPrivateKeyForLast, reqData.LastHtlcTempAddressForHtnxPrivateKey, ht1aOrHe1b.RSMCTempAddressPubKey))
+			return nil, err
 		}
 		retData.LastHtlcTempAddressForHtnxPrivateKey = reqData.LastHtlcTempAddressForHtnxPrivateKey
 	}
@@ -488,35 +489,34 @@ func (service *htlcCloseTxManager) CloseHTLCSigned(msg bean.RequestMessage, user
 
 	// region 签名requester的承诺交易
 	// 签名对方传过来的rsmcHex
-	aliceRsmcTxId, signedRsmcHex, err := rpcClient.BtcSignRawTransaction(closeHtlcTxOfP2p.RsmcHex, reqData.ChannelAddressPrivateKey)
-	if err != nil {
-		return nil, errors.New(fmt.Sprintf(enum.Tips_common_failToSign, "rsmc hex"))
-	}
-	testResult, err := rpcClient.TestMemPoolAccept(signedRsmcHex)
-	if err != nil {
-		return nil, err
-	}
-	if gjson.Parse(testResult).Array()[0].Get("allowed").Bool() == false {
-		return nil, errors.New(gjson.Parse(testResult).Array()[0].Get("reject-reason").String())
-	}
+	var signedRsmcHex, aliceRsmcTxId string
+	var aliceRsmcMultiAddress, aliceRsmcRedeemScript, aliceRsmcMultiAddressScriptPubKey string
+	var aliceRsmcOutputs []rpc.TransactionInputItem
+	if tool.CheckIsString(&closeHtlcTxOfP2p.RsmcHex) {
 
-	//  根据alice的临时地址+bob的通道address,获取alice2+bob的多签地址，并得到AliceSignedRsmcHex签名后的交易的input，为创建alice的RD和bob的BR做准备
-	aliceMultiAddr, err := rpcClient.CreateMultiSig(2, []string{closeHtlcTxOfP2p.CurrRsmcTempAddressPubKey, signerPubKey})
-	if err != nil {
-		return nil, err
-	}
-	aliceRsmcMultiAddress := gjson.Get(aliceMultiAddr, "address").String()
-	aliceRsmcRedeemScript := gjson.Get(aliceMultiAddr, "redeemScript").String()
-	tempJson, err := rpcClient.GetAddressInfo(aliceRsmcMultiAddress)
-	if err != nil {
-		return nil, err
-	}
-	aliceRsmcMultiAddressScriptPubKey := gjson.Get(tempJson, "scriptPubKey").String()
+		aliceRsmcTxId, signedRsmcHex, err = rpcClient.BtcSignRawTransaction(closeHtlcTxOfP2p.RsmcHex, reqData.ChannelAddressPrivateKey)
+		if err != nil {
+			return nil, errors.New(fmt.Sprintf(enum.Tips_common_failToSign, "rsmc hex"))
+		}
+		testResult, err := rpcClient.TestMemPoolAccept(signedRsmcHex)
+		if err != nil {
+			return nil, err
+		}
+		if gjson.Parse(testResult).Array()[0].Get("allowed").Bool() == false {
+			return nil, errors.New(gjson.Parse(testResult).Array()[0].Get("reject-reason").String())
+		}
 
-	aliceRsmcOutputs, err := getInputsForNextTxByParseTxHashVout(signedRsmcHex, aliceRsmcMultiAddress, aliceRsmcMultiAddressScriptPubKey, aliceRsmcRedeemScript)
-	if err != nil || len(aliceRsmcOutputs) == 0 {
-		log.Println(err)
-		return nil, err
+		//  根据alice的临时地址+bob的通道address,获取alice2+bob的多签地址，并得到AliceSignedRsmcHex签名后的交易的input，为创建alice的RD和bob的BR做准备
+		aliceRsmcMultiAddress, aliceRsmcRedeemScript, aliceRsmcMultiAddressScriptPubKey, err = createMultiSig(closeHtlcTxOfP2p.CurrRsmcTempAddressPubKey, signerPubKey)
+		if err != nil {
+			return nil, err
+		}
+
+		aliceRsmcOutputs, err = getInputsForNextTxByParseTxHashVout(signedRsmcHex, aliceRsmcMultiAddress, aliceRsmcMultiAddressScriptPubKey, aliceRsmcRedeemScript)
+		if err != nil || len(aliceRsmcOutputs) == 0 {
+			log.Println(err)
+			return nil, err
+		}
 	}
 	retData.CloserSignedRsmcHex = signedRsmcHex
 
@@ -525,7 +525,7 @@ func (service *htlcCloseTxManager) CloseHTLCSigned(msg bean.RequestMessage, user
 	if err != nil {
 		return nil, errors.New(fmt.Sprintf(enum.Tips_common_failToSign, "to_counterparty_tx_hex"))
 	}
-	testResult, err = rpcClient.TestMemPoolAccept(signedToOtherHex)
+	testResult, err := rpcClient.TestMemPoolAccept(signedToOtherHex)
 	if err != nil {
 		return nil, err
 	}
@@ -577,24 +577,26 @@ func (service *htlcCloseTxManager) CloseHTLCSigned(msg bean.RequestMessage, user
 		//endregion
 
 		// region 5、根据alice的Rsmc，创建对应的BR,为下一个交易做准备，create BR2b tx  for bob
-		var myAddress = channelInfo.AddressB
-		if user.PeerId == channelInfo.PeerIdA {
-			myAddress = channelInfo.AddressA
-		}
-		senderCommitmentTx := &dao.CommitmentTransaction{}
-		senderCommitmentTx.Id = newCommitmentTxInfo.Id
-		senderCommitmentTx.PropertyId = fundingTransaction.PropertyId
-		senderCommitmentTx.RSMCTempAddressPubKey = closeHtlcTxOfP2p.CurrRsmcTempAddressPubKey
-		senderCommitmentTx.RSMCMultiAddress = aliceRsmcMultiAddress
-		senderCommitmentTx.RSMCRedeemScript = aliceRsmcRedeemScript
-		senderCommitmentTx.RSMCMultiAddressScriptPubKey = aliceRsmcMultiAddressScriptPubKey
-		senderCommitmentTx.RSMCTxHex = signedRsmcHex
-		senderCommitmentTx.RSMCTxid = aliceRsmcTxId
-		senderCommitmentTx.AmountToRSMC = newCommitmentTxInfo.AmountToCounterparty
-		err = createCurrCommitmentTxBR(tx, dao.BRType_Rmsc, channelInfo, senderCommitmentTx, aliceRsmcOutputs, myAddress, reqData.ChannelAddressPrivateKey, user)
-		if err != nil {
-			log.Println(err)
-			return nil, err
+		if len(aliceRsmcOutputs) > 0 {
+			var myAddress = channelInfo.AddressB
+			if user.PeerId == channelInfo.PeerIdA {
+				myAddress = channelInfo.AddressA
+			}
+			senderCommitmentTx := &dao.CommitmentTransaction{}
+			senderCommitmentTx.Id = newCommitmentTxInfo.Id
+			senderCommitmentTx.PropertyId = fundingTransaction.PropertyId
+			senderCommitmentTx.RSMCTempAddressPubKey = closeHtlcTxOfP2p.CurrRsmcTempAddressPubKey
+			senderCommitmentTx.RSMCMultiAddress = aliceRsmcMultiAddress
+			senderCommitmentTx.RSMCRedeemScript = aliceRsmcRedeemScript
+			senderCommitmentTx.RSMCMultiAddressScriptPubKey = aliceRsmcMultiAddressScriptPubKey
+			senderCommitmentTx.RSMCTxHex = signedRsmcHex
+			senderCommitmentTx.RSMCTxid = aliceRsmcTxId
+			senderCommitmentTx.AmountToRSMC = newCommitmentTxInfo.AmountToCounterparty
+			err = createCurrCommitmentTxBR(tx, dao.BRType_Rmsc, channelInfo, senderCommitmentTx, aliceRsmcOutputs, myAddress, reqData.ChannelAddressPrivateKey, user)
+			if err != nil {
+				log.Println(err)
+				return nil, err
+			}
 		}
 		//endregion
 	} else {
@@ -604,28 +606,30 @@ func (service *htlcCloseTxManager) CloseHTLCSigned(msg bean.RequestMessage, user
 	}
 
 	//region 6、根据签名后的AliceRsmc创建alice的RD create RD tx for alice
-	outputAddress := channelInfo.AddressA
-	if user.PeerId == channelInfo.PeerIdA {
-		outputAddress = channelInfo.AddressB
+	if len(aliceRsmcOutputs) > 0 {
+		outputAddress := channelInfo.AddressA
+		if user.PeerId == channelInfo.PeerIdA {
+			outputAddress = channelInfo.AddressB
+		}
+		_, senderRdhex, err := rpcClient.OmniCreateAndSignRawTransactionUseUnsendInput(
+			aliceRsmcMultiAddress,
+			[]string{
+				reqData.ChannelAddressPrivateKey,
+			},
+			aliceRsmcOutputs,
+			outputAddress,
+			channelInfo.FundingAddress,
+			channelInfo.PropertyId,
+			amountToCounterparty,
+			getBtcMinerAmount(channelInfo.BtcAmount),
+			1000,
+			&aliceRsmcRedeemScript)
+		if err != nil {
+			log.Println(err)
+			return nil, errors.New(fmt.Sprintf(enum.Tips_rsmc_failToCreate, "rd raw transaction"))
+		}
+		retData.CloserRsmcRdHex = senderRdhex
 	}
-	_, senderRdhex, err := rpcClient.OmniCreateAndSignRawTransactionUseUnsendInput(
-		aliceRsmcMultiAddress,
-		[]string{
-			reqData.ChannelAddressPrivateKey,
-		},
-		aliceRsmcOutputs,
-		outputAddress,
-		channelInfo.FundingAddress,
-		channelInfo.PropertyId,
-		amountToCounterparty,
-		getBtcMinerAmount(channelInfo.BtcAmount),
-		1000,
-		&aliceRsmcRedeemScript)
-	if err != nil {
-		log.Println(err)
-		return nil, errors.New(fmt.Sprintf(enum.Tips_rsmc_failToCreate, "rd raw transaction"))
-	}
-	retData.CloserRsmcRdHex = senderRdhex
 	retData.CloserCommitmentTxHash = closeHtlcTxOfP2p.CommitmentTxHash
 	//endregion create RD tx for alice
 
@@ -658,16 +662,14 @@ func (service *htlcCloseTxManager) AfterBobCloseHTLCSigned_AtAliceSide(data stri
 	}
 
 	var signedRsmcHex = jsonObj.CloserSignedRsmcHex
-	if tool.CheckIsString(&signedRsmcHex) == false {
-		err = errors.New("wrong signedRsmcHex")
-		log.Println(err)
-		return nil, false, err
-	}
-	rsmcTxid, err := rpcClient.TestMemPoolAccept(signedRsmcHex)
-	if err != nil {
-		err = errors.New("wrong signedRsmcHex")
-		log.Println(err)
-		return nil, false, err
+	var rsmcTxid string
+	if tool.CheckIsString(&signedRsmcHex) {
+		rsmcTxid, err = rpcClient.TestMemPoolAccept(signedRsmcHex)
+		if err != nil {
+			err = errors.New("wrong signedRsmcHex")
+			log.Println(err)
+			return nil, false, err
+		}
 	}
 
 	var signedToCounterpartyHex = jsonObj.CloserSignedToCounterpartyTxHex
@@ -684,16 +686,13 @@ func (service *htlcCloseTxManager) AfterBobCloseHTLCSigned_AtAliceSide(data stri
 	}
 
 	var aliceRdHex = jsonObj.CloserRsmcRdHex
-	if tool.CheckIsString(&aliceRdHex) == false {
-		err = errors.New("wrong senderRdHex")
-		log.Println(err)
-		return nil, false, err
-	}
-	_, err = rpcClient.TestMemPoolAccept(aliceRdHex)
-	if err != nil {
-		err = errors.New("wrong senderRdHex")
-		log.Println(err)
-		return nil, false, err
+	if tool.CheckIsString(&aliceRdHex) {
+		_, err = rpcClient.TestMemPoolAccept(aliceRdHex)
+		if err != nil {
+			err = errors.New("wrong senderRdHex")
+			log.Println(err)
+			return nil, false, err
+		}
 	}
 
 	var bobRsmcHex = jsonObj.CloseeRsmcHex
@@ -716,11 +715,6 @@ func (service *htlcCloseTxManager) AfterBobCloseHTLCSigned_AtAliceSide(data stri
 		return nil, false, err
 	}
 	var bobToOtherHex = jsonObj.CloseeToCounterpartyTxHex
-	if tool.CheckIsString(&bobToOtherHex) == false {
-		err = errors.New("wrong toOtherHex")
-		log.Println(err)
-		return nil, false, err
-	}
 	//endregion
 
 	tx, err := user.Db.Begin(true)
@@ -801,11 +795,13 @@ func (service *htlcCloseTxManager) AfterBobCloseHTLCSigned_AtAliceSide(data stri
 	//endregion
 
 	// region 对自己的RD 二次签名
-	latestCommitmentTxInfo.RSMCTxHex = signedRsmcHex
-	latestCommitmentTxInfo.RSMCTxid = gjson.Parse(rsmcTxid).Array()[0].Get("txid").Str
-	err = signRdTx(tx, channelInfo, signedRsmcHex, aliceRdHex, latestCommitmentTxInfo, myChannelAddress, user)
-	if err != nil {
-		return nil, true, err
+	if tool.CheckIsString(&rsmcTxid) {
+		latestCommitmentTxInfo.RSMCTxHex = signedRsmcHex
+		latestCommitmentTxInfo.RSMCTxid = gjson.Parse(rsmcTxid).Array()[0].Get("txid").Str
+		err = signRdTx(tx, channelInfo, signedRsmcHex, aliceRdHex, latestCommitmentTxInfo, myChannelAddress, user)
+		if err != nil {
+			return nil, true, err
+		}
 	}
 	// endregion
 
@@ -885,7 +881,7 @@ func (service *htlcCloseTxManager) AfterBobCloseHTLCSigned_AtAliceSide(data stri
 	bobData.CloseeRsmcRdHex = bobRdhex
 	//endregion create RD tx for alice
 
-	//region 根据对对方的Rsmc签名，生成惩罚对方，自己获益BR
+	//region 根据对方的Rsmc签名，生成惩罚对方，自己获益BR
 	bobCommitmentTx := &dao.CommitmentTransaction{}
 	bobCommitmentTx.Id = latestCommitmentTxInfo.Id
 	bobCommitmentTx.PropertyId = channelInfo.PropertyId
@@ -904,18 +900,20 @@ func (service *htlcCloseTxManager) AfterBobCloseHTLCSigned_AtAliceSide(data stri
 	//endregion
 
 	//签名对方传过来的toOtherHex
-	_, bobSignedToOtherHex, err := rpcClient.BtcSignRawTransaction(bobToOtherHex, myChannelPrivateKey)
-	if err != nil {
-		return nil, false, errors.New("fail to sign toOther hex ")
+	if tool.CheckIsString(&bobToOtherHex) {
+		_, bobSignedToOtherHex, err := rpcClient.BtcSignRawTransaction(bobToOtherHex, myChannelPrivateKey)
+		if err != nil {
+			return nil, false, errors.New("fail to sign toOther hex ")
+		}
+		testResult, err = rpcClient.TestMemPoolAccept(bobSignedToOtherHex)
+		if err != nil {
+			return nil, false, err
+		}
+		if gjson.Parse(testResult).Array()[0].Get("allowed").Bool() == false {
+			return nil, false, errors.New(gjson.Parse(testResult).Array()[0].Get("reject-reason").String())
+		}
+		bobData.CloseeSignedToCounterpartyTxHex = bobSignedToOtherHex
 	}
-	testResult, err = rpcClient.TestMemPoolAccept(bobSignedToOtherHex)
-	if err != nil {
-		return nil, false, err
-	}
-	if gjson.Parse(testResult).Array()[0].Get("allowed").Bool() == false {
-		return nil, false, errors.New(gjson.Parse(testResult).Array()[0].Get("reject-reason").String())
-	}
-	bobData.CloseeSignedToCounterpartyTxHex = bobSignedToOtherHex
 
 	channelInfo.CurrState = dao.ChannelState_CanUse
 	_ = tx.Update(channelInfo)
@@ -978,27 +976,30 @@ func (service *htlcCloseTxManager) AfterAliceSignCloseHTLCAtBobSide(data string,
 		myChannelAddress = channelInfo.AddressA
 	}
 
-	decodeRsmcHex, err := rpcClient.OmniDecodeTransaction(signedRsmcHex)
-	if err != nil {
-		return nil, err
+	if tool.CheckIsString(&signedRsmcHex) {
+		decodeRsmcHex, err := rpcClient.OmniDecodeTransaction(signedRsmcHex)
+		if err != nil {
+			return nil, err
+		}
+		latestCommitmentTxInfo.RSMCTxHex = signedRsmcHex
+		latestCommitmentTxInfo.RSMCTxid = gjson.Get(decodeRsmcHex, "txid").Str
+		err = signRdTx(tx, channelInfo, signedRsmcHex, rdHex, latestCommitmentTxInfo, myChannelAddress, user)
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	decodeSignedToOtherHex, err := rpcClient.OmniDecodeTransaction(signedToOtherHex)
-	if err != nil {
-		return nil, err
+	if tool.CheckIsString(&signedToOtherHex) {
+		decodeSignedToOtherHex, err := rpcClient.OmniDecodeTransaction(signedToOtherHex)
+		if err != nil {
+			return nil, err
+		}
+		latestCommitmentTxInfo.ToCounterpartyTxHex = signedToOtherHex
+		latestCommitmentTxInfo.RSMCTxid = gjson.Get(decodeSignedToOtherHex, "txid").Str
 	}
 
-	latestCommitmentTxInfo.RSMCTxHex = signedRsmcHex
-	latestCommitmentTxInfo.RSMCTxid = gjson.Get(decodeRsmcHex, "txid").Str
-	err = signRdTx(tx, channelInfo, signedRsmcHex, rdHex, latestCommitmentTxInfo, myChannelAddress, user)
-	if err != nil {
-		return nil, err
-	}
-
-	//更新alice的当前承诺交易
+	// update bob's latestCommitmentTxInfo
 	latestCommitmentTxInfo.CurrState = dao.TxInfoState_CreateAndSign
-	latestCommitmentTxInfo.ToCounterpartyTxHex = signedToOtherHex
-	latestCommitmentTxInfo.RSMCTxid = gjson.Get(decodeSignedToOtherHex, "txid").Str
 	latestCommitmentTxInfo.SignAt = time.Now()
 
 	bytes, err := json.Marshal(latestCommitmentTxInfo)
@@ -1007,8 +1008,8 @@ func (service *htlcCloseTxManager) AfterAliceSignCloseHTLCAtBobSide(data string,
 	_ = tx.Update(latestCommitmentTxInfo)
 
 	lastCommitmentTxInfo := dao.CommitmentTransaction{}
-	err = tx.One("Id", latestCommitmentTxInfo.LastCommitmentTxId, &lastCommitmentTxInfo)
-	if err == nil {
+	_ = tx.One("Id", latestCommitmentTxInfo.LastCommitmentTxId, &lastCommitmentTxInfo)
+	if lastCommitmentTxInfo.Id > 0 {
 		lastCommitmentTxInfo.CurrState = dao.TxInfoState_Abord
 		_ = tx.Update(lastCommitmentTxInfo)
 	}

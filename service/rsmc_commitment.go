@@ -880,27 +880,28 @@ func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction
 		//endregion
 
 		// region 5、根据alice的Rsmc，创建对应的BR,为下一个交易做准备，create BR2b tx  for bob
-		var myAddress = channelInfo.AddressB
-		if signer.PeerId == channelInfo.PeerIdA {
-			myAddress = channelInfo.AddressA
-		}
-		senderCommitmentTx := &dao.CommitmentTransaction{}
-		senderCommitmentTx.Id = newCommitmentTxInfo.Id
-		senderCommitmentTx.PropertyId = fundingTransaction.PropertyId
-		senderCommitmentTx.RSMCTempAddressPubKey = aliceDataJson.CurrTempAddressPubKey
-		senderCommitmentTx.RSMCMultiAddress = aliceRsmcMultiAddress
-		senderCommitmentTx.RSMCRedeemScript = aliceRsmcRedeemScript
-		senderCommitmentTx.RSMCMultiAddressScriptPubKey = aliceRsmcMultiAddressScriptPubKey
-		senderCommitmentTx.RSMCTxHex = signedRsmcHex
-		senderCommitmentTx.RSMCTxid = aliceRsmcTxId
-		senderCommitmentTx.AmountToRSMC = newCommitmentTxInfo.AmountToCounterparty
-		err = createCurrCommitmentTxBR(tx, dao.BRType_Rmsc, channelInfo, senderCommitmentTx, aliceRsmcOutputs, myAddress, reqData.ChannelAddressPrivateKey, *signer)
-		if err != nil {
-			log.Println(err)
-			return nil, "", err
+		if len(aliceRsmcOutputs) > 0 {
+			var myAddress = channelInfo.AddressB
+			if signer.PeerId == channelInfo.PeerIdA {
+				myAddress = channelInfo.AddressA
+			}
+			senderCommitmentTx := &dao.CommitmentTransaction{}
+			senderCommitmentTx.Id = newCommitmentTxInfo.Id
+			senderCommitmentTx.PropertyId = fundingTransaction.PropertyId
+			senderCommitmentTx.RSMCTempAddressPubKey = aliceDataJson.CurrTempAddressPubKey
+			senderCommitmentTx.RSMCMultiAddress = aliceRsmcMultiAddress
+			senderCommitmentTx.RSMCRedeemScript = aliceRsmcRedeemScript
+			senderCommitmentTx.RSMCMultiAddressScriptPubKey = aliceRsmcMultiAddressScriptPubKey
+			senderCommitmentTx.RSMCTxHex = signedRsmcHex
+			senderCommitmentTx.RSMCTxid = aliceRsmcTxId
+			senderCommitmentTx.AmountToRSMC = newCommitmentTxInfo.AmountToCounterparty
+			err = createCurrCommitmentTxBR(tx, dao.BRType_Rmsc, channelInfo, senderCommitmentTx, aliceRsmcOutputs, myAddress, reqData.ChannelAddressPrivateKey, *signer)
+			if err != nil {
+				log.Println(err)
+				return nil, "", err
+			}
 		}
 		//endregion
-
 	} else {
 		if reqData.CurrTempAddressPubKey != latestCommitmentTxInfo.RSMCTempAddressPubKey {
 			return nil, "", errors.New(fmt.Sprintf(enum.Tips_rsmc_notSameValueWhenCreate, reqData.CurrTempAddressPubKey, latestCommitmentTxInfo.RSMCTempAddressPubKey))
