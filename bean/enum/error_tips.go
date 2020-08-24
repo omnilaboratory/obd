@@ -32,7 +32,7 @@ const (
 	Tips_funding_notFundBtcState                 = "This channel is not ready to fund bitcoins."
 	Tips_funding_notFundAssetState               = "This channel is not ready to fund assets."
 	Tips_funding_failDecodeRawTransaction        = "Failed in decoding RawTransaction."
-	Tips_funding_needChangeFundTx                = "此充值交易的已经被使用过了，请重新构建一个"
+	Tips_funding_needChangeFundTx                = "This funding transaction has been used, please construct a new one."
 	Tips_funding_notEnoughBtcFundingTime         = "Please fund bitcoin three times. This requirement will be deprecated after omnicore supports sendMany."
 	Tips_funding_enoughBtcFundingTime            = "You have funded bitcoins three times. Now you are ready to move forward to fund assets."
 	Tips_funding_btcAmountMustGreater            = "Need more bitcoins, which is required to be more than: "
