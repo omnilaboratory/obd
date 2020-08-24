@@ -13,11 +13,11 @@ const (
 	Tips_common_amountMustGreater             = "The amount in transaction must be more than %.8f"
 	Tips_common_failToParseInputsFromUnsendTx = "Fail to extract information from the input of the unbroadcast transaction."
 	Tips_common_wrongAddressOfRD              = "Wrong output address of RD(revockable delivery) transaction."
-	Tips_common_errorObdPeerId                = "和%s obd节点还没有建立连接，请核实节点地址是否正确或者调用-102003协议"
-	Tips_common_newTxMsg                      = "通道有一个正在执行的交易，请先处理完成"
+	Tips_common_errorObdPeerId                = "There is no connection with obd node %s, please verify the node address and try to connect again, or call protocol message -102003"
+	Tips_common_newTxMsg                      = "There is one pending transaction in the channel, please finish it before proceeding another"
 
-	Tips_user_nilUser          = "用户为空，请先登录"
-	Tips_user_notExistOrOnline = "%s不存在或者不在线"
+	Tips_user_nilUser          = "user is null, please login first."
+	Tips_user_notExistOrOnline = "%s does not exist, or is offline."
 
 	Tips_channel_notFoundChannelInCreate               = "Channel msg: can not find the channel currently being created via temporary channel id: "
 	Tips_channel_notThePeerIdB                         = "Channel msg: you are not the channel acceptor."
