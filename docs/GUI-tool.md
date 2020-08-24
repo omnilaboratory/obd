@@ -152,7 +152,7 @@ Share ths invoice string or QR code to anyone (not only Bob) who is going to pay
 
 ### Step 7: channel operations
 
-Then you are able to keep going with other operations to dive deeper into OmniBOLT.  
+You are able to keep going with other operations. Go to the next section to practise how to fund the channel or pay to others. Or if you want to dive deeper, to see what really happens during an invoice payment process, we suggest you manually operate accroding the steps in the next section. 
 
 Online API documents lists all the channel operations step by step, and testing demo data as well. Please visit OBD [online API documentation](https://api.omnilab.online) to learn how to fill in arguments to work with OBD.  
 
