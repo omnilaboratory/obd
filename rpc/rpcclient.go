@@ -106,17 +106,17 @@ func (client *Client) CheckVersion() error {
 	}
 	config.ChainNode_Type = gjson.Get(result, "chain").Str
 
-	bean.MyObdNodeInfo.ChainNetworkType = config.ChainNode_Type
+	bean.CurrObdNodeInfo.ChainNetworkType = config.ChainNode_Type
 
 	result, err = client.OmniGetInfo()
 	if err != nil {
 		return err
 	}
 
-	bean.MyObdNodeInfo.OmniCoreVersion = gjson.Get(result, "omnicoreversion").String()
-	bean.MyObdNodeInfo.BtcCoreVersion = gjson.Get(result, "bitcoincoreversion").String()
-	log.Println("omniCoreVersion: "+bean.MyObdNodeInfo.OmniCoreVersion+",", "bitcoinCoreVersion: "+bean.MyObdNodeInfo.BtcCoreVersion)
-	bitcoinCoreVersion := bean.MyObdNodeInfo.BtcCoreVersion
+	bean.CurrObdNodeInfo.OmniCoreVersion = gjson.Get(result, "omnicoreversion").String()
+	bean.CurrObdNodeInfo.BtcCoreVersion = gjson.Get(result, "bitcoincoreversion").String()
+	log.Println("omniCoreVersion: "+bean.CurrObdNodeInfo.OmniCoreVersion+",", "bitcoinCoreVersion: "+bean.CurrObdNodeInfo.BtcCoreVersion)
+	bitcoinCoreVersion := bean.CurrObdNodeInfo.BtcCoreVersion
 
 	infoes := strings.Split(bitcoinCoreVersion, ".")
 	tempInt, _ := strconv.Atoi(infoes[0])

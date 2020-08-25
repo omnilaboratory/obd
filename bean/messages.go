@@ -1,18 +1,11 @@
 package bean
 
 import (
-	"fmt"
 	"github.com/omnilaboratory/obd/bean/chainhash"
 	"github.com/omnilaboratory/obd/bean/enum"
-	"time"
 )
 
-// 设置时间格式
-const (
-	timeFormat = "2006-01-02"
-)
-
-var MyObdNodeInfo ObdNodeInfo
+var CurrObdNodeInfo ObdNodeInfo
 
 type ObdNodeInfo struct {
 	ChainNetworkType string `json:"chain_network_type"`
@@ -21,30 +14,6 @@ type ObdNodeInfo struct {
 	TrackerNodeId    string `json:"tracker_node_id"`
 	P2pAddress       string `json:"p2p_address"`
 	WebsocketLink    string `json:"websocket_link"`
-}
-
-// 自定义类型
-type JsonDate time.Time
-
-// JsonDate反序列化
-func (t *JsonDate) UnmarshalJSON(data []byte) (err error) {
-	if len(data) != 12 {
-		return
-	}
-	newTime, err := time.ParseInLocation("\""+timeFormat+"\"", string(data), time.Local)
-	*t = JsonDate(newTime)
-	return
-}
-
-// JsonDate序列化
-func (t JsonDate) MarshalJSON() ([]byte, error) {
-	timeStr := fmt.Sprintf("\"%s\"", time.Time(t).Format(timeFormat))
-	return []byte(timeStr), nil
-}
-
-// string方法
-func (t JsonDate) String() string {
-	return time.Time(t).Format(timeFormat)
 }
 
 //obd客户端请求消息体

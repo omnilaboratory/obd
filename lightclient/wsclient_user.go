@@ -97,7 +97,7 @@ func (client *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, 
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_GetObdNodeInfo_2005:
-		bytes, err := json.Marshal(bean.MyObdNodeInfo)
+		bytes, err := json.Marshal(bean.CurrObdNodeInfo)
 		if err != nil {
 			data = err.Error()
 		} else {

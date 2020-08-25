@@ -23,26 +23,6 @@ import (
 	"github.com/tidwall/gjson"
 )
 
-var obdGlobalDB *storm.DB
-var P2PLocalPeerId string
-var rpcClient *rpc.Client
-var TrackerChan chan []byte
-
-//for store the privateKey
-var tempAddrPrivateKeyMap = make(map[string]string)
-
-var OnlineUserMap = make(map[string]*bean.User)
-
-func findUserIsOnline(peerId string) error {
-	if tool.CheckIsString(&peerId) {
-		value, exists := OnlineUserMap[peerId]
-		if exists && value != nil {
-			return nil
-		}
-	}
-	return errors.New(fmt.Sprintf(enum.Tips_user_notExistOrOnline, peerId))
-}
-
 type commitmentOutputBean struct {
 	AmountToRsmc               float64
 	AmountToCounterparty       float64
@@ -53,6 +33,16 @@ type commitmentOutputBean struct {
 	OppositeSideChannelAddress string
 }
 
+var obdGlobalDB *storm.DB
+var P2PLocalPeerId string
+var rpcClient *rpc.Client
+var TrackerChan chan []byte
+
+//for store the privateKey
+var tempAddrPrivateKeyMap = make(map[string]string)
+
+var OnlineUserMap = make(map[string]*bean.User)
+
 func Start() {
 	var err error
 	obdGlobalDB, err = dao.DBService.GetGlobalDB()
@@ -60,6 +50,16 @@ func Start() {
 		log.Println(err)
 	}
 	rpcClient = rpc.NewClient()
+}
+
+func findUserIsOnline(peerId string) error {
+	if tool.CheckIsString(&peerId) {
+		value, exists := OnlineUserMap[peerId]
+		if exists && value != nil {
+			return nil
+		}
+	}
+	return errors.New(fmt.Sprintf(enum.Tips_user_notExistOrOnline, peerId))
 }
 
 func checkBtcFundFinish(address string, isFundOmni bool) error {

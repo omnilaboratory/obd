@@ -50,10 +50,12 @@ func main() {
 		log.Println("because get wrong omniCore version, obd fail to start")
 		return
 	}
+
 	//tracker
 	err = lightclient.ConnectToTracker()
 	if err != nil {
 		log.Println(err)
+		log.Println("because fail to connect to tracker, obd fail to start")
 		return
 	}
 
@@ -83,6 +85,6 @@ func main() {
 	service.ScheduleService.StartSchedule()
 
 	log.Println("obd " + tool.GetObdNodeId() + " start at  " + config.P2P_hostIp + ":" + strconv.Itoa(config.ServerPort) + " in " + config.ChainNode_Type)
-	log.Println("wsAddress: " + bean.MyObdNodeInfo.WebsocketLink)
+	log.Println("wsAddress: " + bean.CurrObdNodeInfo.WebsocketLink)
 	log.Fatal(server.ListenAndServe())
 }
