@@ -18,7 +18,7 @@ func InitRouter(conn *grpc.ClientConn) *gin.Engine {
 	router.Use(gin.Recovery())
 
 	go globalWsClientManager.Start()
-	bean.MyObdNodeInfo.WebsocketLink = "ws://" + config.P2P_hostIp + ":" + strconv.Itoa(config.ServerPort) + "/ws" + config.ChainNode_Type
+	bean.CurrObdNodeInfo.WebsocketLink = "ws://" + config.P2P_hostIp + ":" + strconv.Itoa(config.ServerPort) + "/ws" + config.ChainNode_Type
 	router.GET("/ws"+config.ChainNode_Type, wsClientConnect)
 
 	return router

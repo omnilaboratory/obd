@@ -82,7 +82,7 @@ func StartP2PServer() (err error) {
 	service.P2PLocalPeerId = P2PLocalPeerId
 
 	localServerDest = fmt.Sprintf("/ip4/%s/tcp/%v/p2p/%s", config.P2P_hostIp, config.P2P_sourcePort, host.ID().Pretty())
-	bean.MyObdNodeInfo.P2pAddress = localServerDest
+	bean.CurrObdNodeInfo.P2pAddress = localServerDest
 
 	//把自己也作为终点放进去，阻止自己连接自己
 	p2pChannelMap[P2PLocalPeerId] = &P2PChannel{

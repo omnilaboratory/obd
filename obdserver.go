@@ -85,6 +85,6 @@ func main() {
 	service.ScheduleService.StartSchedule()
 
 	log.Println("obd " + tool.GetObdNodeId() + " start at  " + config.P2P_hostIp + ":" + strconv.Itoa(config.ServerPort) + " in " + config.ChainNode_Type)
-	log.Println("wsAddress: " + bean.MyObdNodeInfo.WebsocketLink)
+	log.Println("wsAddress: " + bean.CurrObdNodeInfo.WebsocketLink)
 	log.Fatal(server.ListenAndServe())
 }
