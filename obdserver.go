@@ -50,10 +50,12 @@ func main() {
 		log.Println("because get wrong omniCore version, obd fail to start")
 		return
 	}
+
 	//tracker
 	err = lightclient.ConnectToTracker()
 	if err != nil {
 		log.Println(err)
+		log.Println("because fail to connect to tracker, obd fail to start")
 		return
 	}
 
