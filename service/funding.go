@@ -735,6 +735,13 @@ func (service *fundingTransactionManager) AssetFundingCreated(msg bean.RequestMe
 		return nil, err
 	}
 
+	fundingTxHexDecode, err = rpcClient.DecodeRawTransaction(reqData.FundingTxHex)
+	if err != nil {
+		err = errors.New(enum.Tips_funding_failDecodeRawTransaction + " funding_tx_hex: " + err.Error())
+		log.Println(err)
+		return nil, err
+	}
+
 	//get btc miner Fee data from transaction
 	fundingTxid, _, fundingOutputIndex, err := checkBtcTxHex(fundingTxHexDecode, channelInfo, user.PeerId)
 	if err != nil {
