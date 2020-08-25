@@ -25,6 +25,7 @@ type OmniSendIssuanceManaged struct {
 	DivisibleType int    `json:"divisible_type"`
 	Data          string `json:"data"`
 }
+
 type OmniSendIssuanceFixed struct {
 	OmniSendIssuanceManaged
 	Amount float64 `json:"amount"`
@@ -36,4 +37,5 @@ type OmniSendGrant struct {
 	Amount      float64 `json:"amount"`
 	Memo        string  `json:"memo"`
 }
+
 type OmniSendRevoke OmniSendGrant

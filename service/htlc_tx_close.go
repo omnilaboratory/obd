@@ -275,7 +275,7 @@ func (service *htlcCloseTxManager) BeforeBobSignCloseHtlcAtBobSide(data string, 
 	if user.PeerId == channelInfo.PeerIdA {
 		senderPeerId = channelInfo.PeerIdB
 	}
-	messageHash := MessageService.saveMsgUseTx(tx, senderPeerId, user.PeerId, data)
+	messageHash := messageService.saveMsgUseTx(tx, senderPeerId, user.PeerId, data)
 	_ = tx.Commit()
 
 	closeHtlcTxOfWs := &bean.RequestCloseHtlcTxOfWs{}
@@ -311,7 +311,7 @@ func (service *htlcCloseTxManager) CloseHTLCSigned(msg bean.RequestMessage, user
 	}
 	defer tx.Rollback()
 
-	message, err := MessageService.getMsgUseTx(tx, reqData.MsgHash)
+	message, err := messageService.getMsgUseTx(tx, reqData.MsgHash)
 	if err != nil {
 		return nil, errors.New(enum.Tips_common_wrong + "msg_hash")
 	}
@@ -633,7 +633,7 @@ func (service *htlcCloseTxManager) CloseHTLCSigned(msg bean.RequestMessage, user
 	retData.CloserCommitmentTxHash = closeHtlcTxOfP2p.CommitmentTxHash
 	//endregion create RD tx for alice
 
-	_ = MessageService.updateMsgStateUseTx(tx, message)
+	_ = messageService.updateMsgStateUseTx(tx, message)
 	err = tx.Commit()
 	if err != nil {
 		log.Println(err)
@@ -1020,94 +1020,4 @@ func (service *htlcCloseTxManager) AfterAliceSignCloseHTLCAtBobSide(data string,
 	_ = tx.Commit()
 
 	return latestCommitmentTxInfo, nil
-}
-
-func addHT1aTxToWaitDB(htnx *dao.HTLCTimeoutTxForAAndExecutionForB, htrd *dao.RevocableDeliveryTransaction) error {
-	node := &dao.RDTxWaitingSend{}
-	count, err := obdGlobalDB.Select(
-		q.Eq("TransactionHex", htnx.RSMCTxHex)).
-		Count(node)
-	if err == nil {
-		return err
-	}
-	if count > 0 {
-		return errors.New("already save")
-	}
-	node.TransactionHex = htnx.RSMCTxHex
-	node.Type = 1
-	node.IsEnable = true
-	node.CreateAt = time.Now()
-	node.HtnxIdAndHtnxRdId = make([]int, 2)
-	node.HtnxIdAndHtnxRdId[0] = htnx.Id
-	node.HtnxIdAndHtnxRdId[1] = htrd.Id
-	err = obdGlobalDB.Save(node)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func addHTRD1aTxToWaitDB(htnxIdAndHtnxRdId []int) error {
-	htnxId := htnxIdAndHtnxRdId[0]
-	htrdId := htnxIdAndHtnxRdId[1]
-	htnx := dao.HTLCTimeoutTxForAAndExecutionForB{}
-	err := obdGlobalDB.One("Id", htnxId, &htnx)
-	if err != nil {
-		return err
-	}
-
-	htrd := dao.RevocableDeliveryTransaction{}
-	err = obdGlobalDB.One("Id", htrdId, &htrd)
-	if err != nil {
-		return err
-	}
-
-	node := &dao.RDTxWaitingSend{}
-	count, err := obdGlobalDB.Select(
-		q.Eq("TransactionHex", htrd.TxHex)).
-		Count(node)
-	if err == nil {
-		return err
-	}
-	if count > 0 {
-		return errors.New("already save")
-	}
-
-	node.TransactionHex = htrd.TxHex
-	node.Type = 0
-	node.IsEnable = true
-	node.CreateAt = time.Now()
-	err = obdGlobalDB.Save(node)
-	if err != nil {
-		return err
-	}
-
-	htnx.CurrState = dao.TxInfoState_SendHex
-	htnx.SendAt = time.Now()
-	_ = obdGlobalDB.Update(htnx)
-
-	return nil
-}
-
-//htlc timeout Delivery 1b
-func addHTDnxTxToWaitDB(txInfo *dao.HTLCTimeoutDeliveryTxB) (err error) {
-	node := &dao.RDTxWaitingSend{}
-	count, err := obdGlobalDB.Select(
-		q.Eq("TransactionHex", txInfo.TxHex)).
-		Count(node)
-	if err == nil {
-		return err
-	}
-	if count > 0 {
-		return errors.New("already save")
-	}
-	node.TransactionHex = txInfo.TxHex
-	node.Type = 2
-	node.IsEnable = true
-	node.CreateAt = time.Now()
-	err = obdGlobalDB.Save(node)
-	if err != nil {
-		return err
-	}
-	return nil
 }

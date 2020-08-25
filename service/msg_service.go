@@ -23,7 +23,7 @@ type Message struct {
 type messageManage struct {
 }
 
-var MessageService messageManage
+var messageService messageManage
 
 func (this *messageManage) saveMsgUseTx(tx storm.Node, sender, receiver, data string) string {
 	tool.CheckIsString(&data)

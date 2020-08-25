@@ -595,7 +595,7 @@ func (this *commitmentTxSignedManager) BeforeBobSignCommitmentTransactionAtBobSi
 	if user.PeerId == channelInfo.PeerIdA {
 		senderPeerId = channelInfo.PeerIdB
 	}
-	messageHash := MessageService.saveMsgUseTx(tx, senderPeerId, user.PeerId, data)
+	messageHash := messageService.saveMsgUseTx(tx, senderPeerId, user.PeerId, data)
 	retData.MsgHash = messageHash
 
 	_ = tx.Commit()
@@ -630,7 +630,7 @@ func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction
 	}
 	defer tx.Rollback()
 	//region 确认是给自己的信息
-	message, err := MessageService.getMsgUseTx(tx, reqData.MsgHash)
+	message, err := messageService.getMsgUseTx(tx, reqData.MsgHash)
 	if err != nil {
 		return nil, "", errors.New(enum.Tips_common_invilidMsgHash)
 	}
@@ -697,7 +697,7 @@ func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction
 		payeeRevokeAndAcknowledgeCommitment.Approval = false
 		_ = tx.Save(payeeRevokeAndAcknowledgeCommitment)
 
-		_ = MessageService.updateMsgStateUseTx(tx, message)
+		_ = messageService.updateMsgStateUseTx(tx, message)
 		err = tx.Commit()
 		if err != nil {
 			log.Println(err)
@@ -939,7 +939,7 @@ func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction
 	}
 	//endregion create RD tx for alice
 
-	_ = MessageService.updateMsgStateUseTx(tx, message)
+	_ = messageService.updateMsgStateUseTx(tx, message)
 	err = tx.Commit()
 	if err != nil {
 		log.Println(err)

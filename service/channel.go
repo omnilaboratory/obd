@@ -1138,25 +1138,3 @@ func (this *channelManager) CloseHtlcChannelSigned(tx storm.Node, channelInfo *d
 	//endregion
 	return channelInfo, nil
 }
-
-func addRDTxToWaitDB(lastRevocableDeliveryTx *dao.RevocableDeliveryTransaction) (err error) {
-	if lastRevocableDeliveryTx == nil || tool.CheckIsString(&lastRevocableDeliveryTx.TxHex) == false {
-		return errors.New(enum.Tips_common_empty + "tx hex")
-	}
-	node := &dao.RDTxWaitingSend{}
-	count, err := obdGlobalDB.Select(
-		q.Eq("TransactionHex", lastRevocableDeliveryTx.TxHex)).
-		Count(node)
-	if count > 0 {
-		return errors.New(enum.Tips_common_savedBefore)
-	}
-	node.TransactionHex = lastRevocableDeliveryTx.TxHex
-	node.Type = 0
-	node.IsEnable = true
-	node.CreateAt = time.Now()
-	err = obdGlobalDB.Save(node)
-	if err != nil {
-		return err
-	}
-	return nil
-}

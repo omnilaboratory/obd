@@ -33,7 +33,6 @@ type commitmentOutputBean struct {
 	OppositeSideChannelAddress string
 }
 
-var obdGlobalDB *storm.DB
 var P2PLocalPeerId string
 var rpcClient *rpc.Client
 var TrackerChan chan []byte
@@ -42,15 +41,6 @@ var TrackerChan chan []byte
 var tempAddrPrivateKeyMap = make(map[string]string)
 
 var OnlineUserMap = make(map[string]*bean.User)
-
-func Start() {
-	var err error
-	obdGlobalDB, err = dao.DBService.GetGlobalDB()
-	if err != nil {
-		log.Println(err)
-	}
-	rpcClient = rpc.NewClient()
-}
 
 func findUserIsOnline(peerId string) error {
 	if tool.CheckIsString(&peerId) {

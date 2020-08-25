@@ -211,7 +211,7 @@ func (service *htlcBackwardTxManager) BeforeSendRInfoToPayerAtAliceSide_Step2(ms
 	if user.PeerId == channelInfo.PeerIdB {
 		senderPeerId = channelInfo.PeerIdA
 	}
-	messageHash := MessageService.saveMsgUseTx(tx, senderPeerId, user.PeerId, msgData)
+	messageHash := messageService.saveMsgUseTx(tx, senderPeerId, user.PeerId, msgData)
 	returnData := &bean.BobSendROfWs{}
 	_ = tx.Commit()
 
@@ -245,7 +245,7 @@ func (service *htlcBackwardTxManager) VerifyRAndCreateTxs_Step3(msg bean.Request
 	}
 	defer tx.Rollback()
 
-	message, err := MessageService.getMsgUseTx(tx, reqData.MsgHash)
+	message, err := messageService.getMsgUseTx(tx, reqData.MsgHash)
 	if err != nil {
 		return nil, errors.New("wrong msg_hash")
 	}
@@ -377,7 +377,7 @@ func (service *htlcBackwardTxManager) VerifyRAndCreateTxs_Step3(msg bean.Request
 	latestCommitmentTxInfo.CurrState = dao.TxInfoState_Htlc_GetR
 	_ = tx.Update(latestCommitmentTxInfo)
 
-	_ = MessageService.updateMsgStateUseTx(tx, message)
+	_ = messageService.updateMsgStateUseTx(tx, message)
 
 	_ = tx.Commit()
 
