@@ -662,10 +662,10 @@ func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction
 	}
 
 	payeeRevokeAndAcknowledgeCommitment := &dao.PayeeRevokeAndAcknowledgeCommitment{}
-	//_ = tx.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("CommitmentTxHash", reqData.MsgHash)).First(payeeRevokeAndAcknowledgeCommitment)
-	//if payeeRevokeAndAcknowledgeCommitment.Id > 0 {
-	//	return nil, "", errors.New(enum.Tips_rsmc_notDoItAgain)
-	//}
+	_ = tx.Select(q.Eq("ChannelId", channelInfo.ChannelId), q.Eq("CommitmentTxHash", reqData.MsgHash)).First(payeeRevokeAndAcknowledgeCommitment)
+	if payeeRevokeAndAcknowledgeCommitment.Id > 0 {
+		return nil, "", errors.New(enum.Tips_rsmc_notDoItAgain)
+	}
 
 	//Make sure who creates the transaction, who will sign the transaction.
 	//The default creator is Alice, and Bob is the signer.
