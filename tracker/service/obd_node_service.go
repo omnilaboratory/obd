@@ -325,7 +325,7 @@ func (this *obdNodeAccountManager) GetAllUsers(context *gin.Context) {
 
 	var infos []dao.UserInfo
 	pageNum -= 1
-	_ = db.Select(q.True()).OrderBy("Id").Reverse().Skip(pageNum * pageSize).Limit(pageSize).Find(&infos)
+	_ = db.Select(q.True()).OrderBy("IsOnline").OrderBy("Id").Reverse().Skip(pageNum * pageSize).Limit(pageSize).Find(&infos)
 	context.JSON(http.StatusOK, gin.H{
 		"data":       infos,
 		"totalCount": totalCount,
