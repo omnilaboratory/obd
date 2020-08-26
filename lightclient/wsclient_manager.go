@@ -9,19 +9,19 @@ import (
 )
 
 type clientManager struct {
-	Broadcast     chan []byte
-	Connected     chan *Client
-	Disconnected  chan *Client
-	ClientsMap    map[*Client]bool
-	OnlineUserMap map[string]*Client
+	Broadcast       chan []byte
+	Connected       chan *Client
+	Disconnected    chan *Client
+	ClientsMap      map[*Client]bool
+	OnlineClientMap map[string]*Client
 }
 
 var globalWsClientManager = clientManager{
-	Broadcast:     make(chan []byte),
-	Connected:     make(chan *Client),
-	Disconnected:  make(chan *Client),
-	ClientsMap:    make(map[*Client]bool),
-	OnlineUserMap: make(map[string]*Client),
+	Broadcast:       make(chan []byte),
+	Connected:       make(chan *Client),
+	Disconnected:    make(chan *Client),
+	ClientsMap:      make(map[*Client]bool),
+	OnlineClientMap: make(map[string]*Client),
 }
 
 func (clientManager *clientManager) Start() {
@@ -59,7 +59,7 @@ func (clientManager *clientManager) Start() {
 func (clientManager *clientManager) cleanConn(client *Client) {
 	delete(clientManager.ClientsMap, client)
 	if client.User != nil {
-		delete(clientManager.OnlineUserMap, client.User.PeerId)
+		delete(clientManager.OnlineClientMap, client.User.PeerId)
 		delete(service.OnlineUserMap, client.User.PeerId)
 		client.User = nil
 	}

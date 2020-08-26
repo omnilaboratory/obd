@@ -331,7 +331,7 @@ func (client *Client) sendToMyself(msgType enum.MsgType, status bool, data strin
 func (client *Client) sendToSomeone(msgType enum.MsgType, status bool, recipientPeerId string, data string) error {
 	if tool.CheckIsString(&recipientPeerId) {
 		if _, err := client.findUser(&recipientPeerId); err == nil {
-			itemClient := globalWsClientManager.OnlineUserMap[recipientPeerId]
+			itemClient := globalWsClientManager.OnlineClientMap[recipientPeerId]
 			if itemClient != nil && itemClient.User != nil {
 				jsonMessage := getReplyObj(data, msgType, status, client, itemClient)
 				itemClient.SendChannel <- jsonMessage
@@ -350,7 +350,7 @@ func (client *Client) sendDataToP2PUser(msg bean.RequestMessage, status bool, da
 		//如果是同一个obd节点
 		if msg.RecipientNodePeerId == P2PLocalPeerId {
 			if _, err := findUserOnLine(&msg.RecipientUserPeerId); err == nil {
-				itemClient := globalWsClientManager.OnlineUserMap[msg.RecipientUserPeerId]
+				itemClient := globalWsClientManager.OnlineClientMap[msg.RecipientUserPeerId]
 				if itemClient != nil && itemClient.User != nil {
 					//因为数据库，分库，需要对特定的消息进行处理
 					if status {
@@ -397,7 +397,7 @@ func getDataFromP2PSomeone(msg bean.RequestMessage) error {
 	if tool.CheckIsString(&msg.RecipientUserPeerId) && tool.CheckIsString(&msg.RecipientNodePeerId) {
 		if msg.RecipientNodePeerId == P2PLocalPeerId {
 			if _, err := findUserOnLine(&msg.RecipientUserPeerId); err == nil {
-				itemClient := globalWsClientManager.OnlineUserMap[msg.RecipientUserPeerId]
+				itemClient := globalWsClientManager.OnlineClientMap[msg.RecipientUserPeerId]
 				if itemClient != nil && itemClient.User != nil {
 					//收到数据后，需要对其进行加工
 					retData, err := routerOfP2PNode(msg.Type, msg.Data, itemClient)
@@ -599,7 +599,7 @@ func p2pMiddleNodeTransferData(msg *bean.RequestMessage, itemClient Client, data
 
 func (client *Client) findUser(peerId *string) (*Client, error) {
 	if tool.CheckIsString(peerId) {
-		itemClient := globalWsClientManager.OnlineUserMap[*peerId]
+		itemClient := globalWsClientManager.OnlineClientMap[*peerId]
 		if itemClient != nil && itemClient.User != nil {
 			return itemClient, nil
 		}
@@ -608,7 +608,7 @@ func (client *Client) findUser(peerId *string) (*Client, error) {
 }
 func findUserOnLine(peerId *string) (*Client, error) {
 	if tool.CheckIsString(peerId) {
-		itemClient := globalWsClientManager.OnlineUserMap[*peerId]
+		itemClient := globalWsClientManager.OnlineClientMap[*peerId]
 		if itemClient != nil && itemClient.User != nil {
 			return itemClient, nil
 		}
