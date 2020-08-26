@@ -15,6 +15,13 @@ import (
 	"github.com/tidwall/gjson"
 )
 
+type Client struct {
+	Id          string
+	User        *bean.User
+	Socket      *websocket.Conn
+	SendChannel chan []byte
+}
+
 func (client *Client) Write() {
 	defer func() {
 		_ = client.Socket.Close()
@@ -36,13 +43,7 @@ func (client *Client) Write() {
 func (client *Client) Read() {
 	defer func() {
 		_ = service.UserService.UserLogout(client.User)
-		if client.User != nil {
-			delete(globalWsClientManager.OnlineUserMap, client.User.PeerId)
-			delete(service.OnlineUserMap, client.User.PeerId)
-			client.User = nil
-		}
 		globalWsClientManager.Disconnected <- client
-		//_ = client.Socket.Close()
 	}()
 
 	for {
