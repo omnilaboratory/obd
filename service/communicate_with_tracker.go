@@ -13,6 +13,8 @@ import (
 	"strings"
 )
 
+var TrackerChan chan []byte
+
 // sendChannelStateToTracker
 func sendChannelStateToTracker(channelInfo dao.ChannelInfo, commitmentTx dao.CommitmentTransaction) {
 	if channelInfo.IsPrivate {
@@ -114,7 +116,7 @@ func sendMsgToTracker(msgType enum.MsgType, data interface{}) {
 	}
 
 	message.Data = result
-
+	log.Println(message.Data)
 	bytes, _ := json.Marshal(message)
 	if TrackerChan != nil {
 		TrackerChan <- bytes

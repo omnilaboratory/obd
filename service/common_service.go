@@ -71,7 +71,7 @@ func getAddressFromPubKey(pubKey string) (address string, err error) {
 	return address, nil
 }
 
-func createCommitmentTx(owner string, channelInfo *dao.ChannelInfo, fundingTransaction *dao.FundingTransaction, outputBean commitmentOutputBean, user *bean.User) (*dao.CommitmentTransaction, error) {
+func createCommitmentTx(owner string, channelInfo *dao.ChannelInfo, fundingTransaction *dao.FundingTransaction, outputBean commitmentTxOutputBean, user *bean.User) (*dao.CommitmentTransaction, error) {
 	commitmentTxInfo := &dao.CommitmentTransaction{}
 	commitmentTxInfo.PeerIdA = channelInfo.PeerIdA
 	commitmentTxInfo.PeerIdB = channelInfo.PeerIdB
@@ -485,7 +485,7 @@ func createCommitmentTxHex(dbTx storm.Node, isSender bool, reqData *bean.SendReq
 		return nil, err
 	}
 
-	var outputBean = commitmentOutputBean{}
+	var outputBean = commitmentTxOutputBean{}
 	outputBean.RsmcTempPubKey = reqData.CurrTempAddressPubKey
 	if currUser.PeerId == channelInfo.PeerIdA {
 		//default alice transfer to bob ,then alice minus money

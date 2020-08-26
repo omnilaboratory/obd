@@ -5,7 +5,7 @@ import (
 	"github.com/omnilaboratory/obd/rpc"
 )
 
-type commitmentOutputBean struct {
+type commitmentTxOutputBean struct {
 	AmountToRsmc               float64
 	AmountToCounterparty       float64
 	AmountToHtlc               float64
@@ -17,7 +17,6 @@ type commitmentOutputBean struct {
 
 var P2PLocalPeerId string
 var rpcClient *rpc.Client
-var TrackerChan chan []byte
 
 //for store the privateKey
 var tempAddrPrivateKeyMap = make(map[string]string)

@@ -1440,7 +1440,7 @@ func htlcPayerCreateCommitmentTx_C3a(tx storm.Node, channelInfo *dao.ChannelInfo
 		return nil, errors.New("not found fundingTransaction")
 	}
 	// htlc的资产分配方案
-	var outputBean = commitmentOutputBean{}
+	var outputBean = commitmentTxOutputBean{}
 	amountAndFee, _ := decimal.NewFromFloat(requestData.Amount).Mul(decimal.NewFromFloat(1 + config.GetHtlcFee()*float64(totalStep-(currStep+1)))).Round(8).Float64()
 	outputBean.RsmcTempPubKey = requestData.CurrRsmcTempAddressPubKey
 	outputBean.HtlcTempPubKey = requestData.CurrHtlcTempAddressPubKey
@@ -1600,7 +1600,7 @@ func htlcPayeeCreateCommitmentTx_C3b(tx storm.Node, channelInfo *dao.ChannelInfo
 	}
 
 	// htlc的资产分配方案
-	var outputBean = commitmentOutputBean{}
+	var outputBean = commitmentTxOutputBean{}
 	decimal.DivisionPrecision = 8
 	amountAndFee, _ := decimal.NewFromFloat(payerRequestAddHtlcData.Amount).Mul(decimal.NewFromFloat((1 + config.GetHtlcFee()*float64(totalStep-(currStep+1))))).Round(8).Float64()
 	outputBean.RsmcTempPubKey = reqData.CurrRsmcTempAddressPubKey

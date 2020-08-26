@@ -51,7 +51,7 @@ func createHtlcHLockTxObj(tx storm.Node, owner string, channelInfo dao.ChannelIn
 	return henxTx, nil
 }
 
-func createHtlcTimeoutTxObj(tx storm.Node, owner string, channelInfo dao.ChannelInfo, commitmentTxInfo *dao.CommitmentTransaction, outputBean commitmentOutputBean, timeout int, user bean.User) (*dao.HTLCTimeoutTxForAAndExecutionForB, error) {
+func createHtlcTimeoutTxObj(tx storm.Node, owner string, channelInfo dao.ChannelInfo, commitmentTxInfo *dao.CommitmentTransaction, outputBean commitmentTxOutputBean, timeout int, user bean.User) (*dao.HTLCTimeoutTxForAAndExecutionForB, error) {
 	htlcTimeoutTx := &dao.HTLCTimeoutTxForAAndExecutionForB{}
 	htlcTimeoutTx.ChannelId = channelInfo.ChannelId
 	htlcTimeoutTx.CommitmentTxId = commitmentTxInfo.Id
@@ -169,7 +169,7 @@ func createHT1aForAlice(channelInfo dao.ChannelInfo, aliceDataJson bean.AliceReq
 func signHT1aForAlice(tx storm.Node, channelInfo dao.ChannelInfo, commitmentTransaction *dao.CommitmentTransaction,
 	unsignedHt1aHex string, htlcTempPubKey string, payeePubKey string, htlaTempPubKey string, htlcTimeOut int, user bean.User) (htlcTimeoutTx *dao.HTLCTimeoutTxForAAndExecutionForB, err error) {
 
-	outputBean := commitmentOutputBean{}
+	outputBean := commitmentTxOutputBean{}
 	outputBean.AmountToRsmc = commitmentTransaction.AmountToHtlc
 	outputBean.RsmcTempPubKey = htlaTempPubKey
 	outputBean.OppositeSideChannelPubKey = payeePubKey

@@ -814,7 +814,7 @@ func (service *fundingTransactionManager) AssetFundingCreated(msg bean.RequestMe
 	if needCreateC1a {
 		//region  create C1 tx
 		funder := user.PeerId
-		var outputBean = commitmentOutputBean{}
+		var outputBean = commitmentTxOutputBean{}
 		outputBean.RsmcTempPubKey = fundingTransaction.FunderPubKey2ForCommitment
 		// if alice funding
 		if funder == channelInfo.PeerIdA {
