@@ -19,7 +19,7 @@ var ScheduleService = scheduleManager{}
 
 func (service *scheduleManager) StartSchedule() {
 	go func() {
-		ticker10m := time.NewTicker(1 * time.Minute)
+		ticker10m := time.NewTicker(10 * time.Minute)
 		defer ticker10m.Stop()
 
 		for {

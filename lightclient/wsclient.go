@@ -17,12 +17,7 @@ import (
 
 func (client *Client) Write() {
 	defer func() {
-		e := client.Socket.Close()
-		if e != nil {
-			log.Println(e)
-		} else {
-			log.Println("socket closed after writing...")
-		}
+		_ = client.Socket.Close()
 	}()
 
 	for {
@@ -47,15 +42,17 @@ func (client *Client) Read() {
 			client.User = nil
 		}
 		globalWsClientManager.Disconnected <- client
-		_ = client.Socket.Close()
-		log.Println("socket closed after reading...")
+		//_ = client.Socket.Close()
 	}()
 
 	for {
 		_, dataReq, err := client.Socket.ReadMessage()
 		if err != nil {
 			log.Println(err)
-			break
+			if strings.Contains(err.Error(), "1005") {
+				break
+			}
+			continue
 		}
 
 		var msg bean.RequestMessage

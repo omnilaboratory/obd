@@ -2,6 +2,7 @@ package lightclient
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/gorilla/websocket"
 	"github.com/omnilaboratory/obd/bean"
 	"log"
@@ -37,17 +38,20 @@ func (clientManager *clientManager) Start() {
 		select {
 		case conn := <-clientManager.Connected:
 			clientManager.ClientsMap[conn] = true
-			jsonMessage, _ := json.Marshal(&bean.RequestMessage{Data: "A new socket has connected."})
-			log.Println("new socket has connected.")
-			clientManager.Send(jsonMessage, conn)
+			jsonMessage, _ := json.Marshal(&bean.RequestMessage{
+				SenderUserPeerId:    conn.Id,
+				SenderNodePeerId:    P2PLocalPeerId,
+				RecipientNodePeerId: P2PLocalPeerId,
+				RecipientUserPeerId: conn.Id,
+				Data:                "welcome to you."})
+			log.Println(fmt.Sprintf("a new socket %s has connected.", conn.Id))
+			clientManager.SendToMyself(jsonMessage, conn)
 
 		case conn := <-clientManager.Disconnected:
 			if _, ok := clientManager.ClientsMap[conn]; ok {
-				close(conn.SendChannel)
+				log.Println(fmt.Sprintf("socket %s has disconnected.", conn.Id))
 				delete(clientManager.ClientsMap, conn)
-				jsonMessage, _ := json.Marshal(&bean.RequestMessage{Data: "A socket has disconnected."})
-				log.Println("socket has disconnected.")
-				clientManager.Send(jsonMessage, conn)
+				close(conn.SendChannel)
 			}
 		case P2PData := <-clientManager.P2PData:
 			log.Println(string(P2PData))
@@ -64,7 +68,7 @@ func (clientManager *clientManager) Start() {
 	}
 }
 
-func (clientManager *clientManager) Send(message []byte, myself *Client) {
+func (clientManager *clientManager) SendToMyself(message []byte, myself *Client) {
 	for conn := range clientManager.ClientsMap {
 		if conn == myself {
 			conn.SendChannel <- message
