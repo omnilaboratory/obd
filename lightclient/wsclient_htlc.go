@@ -75,6 +75,7 @@ func (client *Client) htlcHModule(msg bean.RequestMessage) (enum.SendTargetType,
 				}
 				client.sendToMyself(msg.Type, status, data)
 			} else {
+				status = true
 				tempClientMap[client.User.PeerId] = client
 			}
 		}
