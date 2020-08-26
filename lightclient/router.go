@@ -22,7 +22,6 @@ func InitRouter(conn *grpc.ClientConn) *gin.Engine {
 	router.GET("/ws"+config.ChainNode_Type, wsClientConnect)
 
 	return router
-
 }
 
 func wsClientConnect(c *gin.Context) {
@@ -32,9 +31,8 @@ func wsClientConnect(c *gin.Context) {
 		return
 	}
 
-	uuidStr := uuid.NewV4()
 	client := &Client{
-		Id:          uuidStr.String(),
+		Id:          uuid.NewV4().String(),
 		Socket:      conn,
 		SendChannel: make(chan []byte)}
 
