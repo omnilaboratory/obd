@@ -27,7 +27,7 @@ func InitRouter(conn *grpc.ClientConn) *gin.Engine {
 }
 
 func wsClientConnect(c *gin.Context) {
-	conn, err := (&websocket.Upgrader{CheckOrigin: func(r *http.Request) bool { return true }}).Upgrade(c.Writer, c.Request, nil)
+	wsConn, err := (&websocket.Upgrader{CheckOrigin: func(r *http.Request) bool { return true }}).Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
 		log.Println(err)
 		http.NotFound(c.Writer, c.Request)
@@ -36,10 +36,10 @@ func wsClientConnect(c *gin.Context) {
 
 	client := &Client{
 		Id:          uuid.NewV4().String(),
-		Socket:      conn,
+		Socket:      wsConn,
 		SendChannel: make(chan []byte)}
 
 	go client.Write()
-	globalWsClientManager.Connected <- client
 	client.Read()
+	globalWsClientManager.Connected <- client
 }

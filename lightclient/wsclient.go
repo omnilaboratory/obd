@@ -145,7 +145,6 @@ func (client *Client) Read() {
 					msg.Type == enum.MsgType_HTLC_SendVerifyR_45 || msg.Type == enum.MsgType_HTLC_SendSignVerifyR_46 ||
 					msg.Type == enum.MsgType_HTLC_SendRequestCloseCurrTx_49 || msg.Type == enum.MsgType_HTLC_SendCloseSigned_50 ||
 					msg.Type == enum.MsgType_Atomic_SendSwap_80 || msg.Type == enum.MsgType_Atomic_SendSwapAccept_81 {
-					//msg.Type == enum.MsgType_SendCloseChannelRequest_38 || msg.Type == enum.MsgType_SendCloseChannelSign_39 {
 					if tool.CheckIsString(&msg.RecipientUserPeerId) == false {
 						client.sendToMyself(msg.Type, false, enum.Tips_common_empty+" recipient_user_peer_id")
 						continue
@@ -172,6 +171,7 @@ func (client *Client) Read() {
 				}
 
 				msg.SenderUserPeerId = client.User.PeerId
+
 				for {
 					//-3000 -3001
 					if msg.Type <= enum.MsgType_Mnemonic_CreateAddress_3000 &&
@@ -257,6 +257,13 @@ func (client *Client) Read() {
 					break
 				}
 			}
+		}
+
+		if status == false && len(dataOut) == 0 && sendType == enum.SendTargetType_SendToNone {
+			data := "the msg type has no module"
+			log.Println(data)
+			client.sendToMyself(msg.Type, false, data)
+			continue
 		}
 
 		if len(dataOut) == 0 {

@@ -10,7 +10,7 @@ type JsonDate time.Time
 
 // 设置时间格式
 const (
-	timeFormat = "2019-07-18"
+	timeFormat = "2006-01-02"
 )
 
 // JsonDate反序列化

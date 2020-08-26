@@ -20,8 +20,8 @@ func initTrackerLog() {
 	path := "log/tracker"
 	writer, err := rotatelogs.New(
 		path+".%Y%m%d%H%M.log",
-		rotatelogs.WithMaxAge(time.Duration(12)*time.Hour),
-		rotatelogs.WithRotationTime(time.Duration(12)*time.Hour),
+		rotatelogs.WithMaxAge(time.Duration(4)*time.Hour),
+		rotatelogs.WithRotationTime(time.Duration(4)*time.Hour),
 	)
 	if err != nil {
 		panic(err)
@@ -37,7 +37,7 @@ func initTrackerLog() {
 
 // gox -os "windows linux darwin" -arch amd64
 // gox -os "windows" -arch amd64
-func main1() {
+func main() {
 	initTrackerLog()
 
 	routersInit := tracker.InitRouter()
