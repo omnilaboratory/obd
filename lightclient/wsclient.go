@@ -97,7 +97,7 @@ func (client *Client) Read() {
 
 		// check the Recipient is online
 		if tool.CheckIsString(&msg.RecipientUserPeerId) {
-			_, err := client.findUser(&msg.RecipientUserPeerId)
+			_, err := findUserOnLine(&msg.RecipientUserPeerId)
 			if err != nil {
 				if tool.CheckIsString(&msg.RecipientNodePeerId) == false {
 					client.sendToMyself(msg.Type, false, "can not find target user")
@@ -337,7 +337,7 @@ func (client *Client) sendToMyself(msgType enum.MsgType, status bool, data strin
 
 func (client *Client) sendToSomeone(msgType enum.MsgType, status bool, recipientPeerId string, data string) error {
 	if tool.CheckIsString(&recipientPeerId) {
-		if _, err := client.findUser(&recipientPeerId); err == nil {
+		if _, err := findUserOnLine(&recipientPeerId); err == nil {
 			itemClient := globalWsClientManager.OnlineClientMap[recipientPeerId]
 			if itemClient != nil && itemClient.User != nil {
 				jsonMessage := getReplyObj(data, msgType, status, client, itemClient)
@@ -372,7 +372,7 @@ func (client *Client) sendDataToP2PUser(msg bean.RequestMessage, status bool, da
 						}
 						data = p2pMiddleNodeTransferData(&msg, *itemClient, data, retData)
 						if len(data) == 0 {
-							return nil
+							return errors.New("err p2pMiddleNodeTransferData")
 						}
 					}
 					fromId := msg.SenderUserPeerId + "@" + p2pChannelMap[msg.SenderNodePeerId].Address
@@ -418,7 +418,7 @@ func getDataFromP2PSomeone(msg bean.RequestMessage) error {
 
 					msg.Data = p2pMiddleNodeTransferData(&msg, *itemClient, msg.Data, retData)
 					if len(msg.Data) == 0 {
-						return nil
+						return errors.New("err p2pMiddleNodeTransferData")
 					}
 
 					fromId := msg.SenderUserPeerId + "@" + p2pChannelMap[msg.SenderNodePeerId].Address
@@ -602,23 +602,4 @@ func p2pMiddleNodeTransferData(msg *bean.RequestMessage, itemClient Client, data
 	}
 
 	return data
-}
-
-func (client *Client) findUser(peerId *string) (*Client, error) {
-	if tool.CheckIsString(peerId) {
-		itemClient := globalWsClientManager.OnlineClientMap[*peerId]
-		if itemClient != nil && itemClient.User != nil {
-			return itemClient, nil
-		}
-	}
-	return nil, errors.New(fmt.Sprintf(enum.Tips_user_notExistOrOnline, *peerId))
-}
-func findUserOnLine(peerId *string) (*Client, error) {
-	if tool.CheckIsString(peerId) {
-		itemClient := globalWsClientManager.OnlineClientMap[*peerId]
-		if itemClient != nil && itemClient.User != nil {
-			return itemClient, nil
-		}
-	}
-	return nil, errors.New(fmt.Sprintf(enum.Tips_user_notExistOrOnline, *peerId))
 }

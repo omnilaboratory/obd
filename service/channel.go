@@ -24,11 +24,11 @@ var ChannelService = channelManager{}
 // AliceOpenChannel init ChannelInfo
 func (this *channelManager) AliceOpenChannel(msg bean.RequestMessage, user *bean.User) (openChannelInfo *bean.RequestOpenChannel, err error) {
 	if tool.CheckIsString(&msg.Data) == false {
-		return nil, errors.New(enum.Tips_common_wrong + "inputData")
+		return nil, errors.New(enum.Tips_common_wrong + "msg.data")
 	}
 
 	reqData := &bean.SendChannelOpen{}
-	err = json.Unmarshal([]byte(msg.Data), &reqData)
+	err = json.Unmarshal([]byte(msg.Data), reqData)
 	if err != nil {
 		return nil, err
 	}
@@ -63,7 +63,7 @@ func (this *channelManager) AliceOpenChannel(msg bean.RequestMessage, user *bean
 // obd init ChannelInfo for Bob
 func (this *channelManager) BeforeBobOpenChannelAtBobSide(msg string, user *bean.User) (err error) {
 	if tool.CheckIsString(&msg) == false {
-		return errors.New(enum.Tips_common_wrong + "inputData")
+		return errors.New(enum.Tips_common_wrong + "msg")
 	}
 
 	aliceOpenChannelInfo := bean.RequestOpenChannel{}

@@ -142,7 +142,11 @@ func (client *Client) htlcTxModule(msg bean.RequestMessage) (enum.SendTargetType
 				data = string(bytes)
 				status = true
 				msg.Type = enum.MsgType_HTLC_VerifyR_45
-				_ = client.sendDataToP2PUser(msg, status, data)
+				err = client.sendDataToP2PUser(msg, status, data)
+				if err != nil {
+					data = err.Error()
+					status = false
+				}
 			}
 		}
 		msg.Type = enum.MsgType_HTLC_SendVerifyR_45
@@ -159,7 +163,11 @@ func (client *Client) htlcTxModule(msg bean.RequestMessage) (enum.SendTargetType
 				data = string(bytes)
 				status = true
 				msg.Type = enum.MsgType_HTLC_SendHerdHex_47
-				_ = client.sendDataToP2PUser(msg, status, data)
+				err = client.sendDataToP2PUser(msg, status, data)
+				if err != nil {
+					data = err.Error()
+					status = false
+				}
 			}
 		}
 		if status == false {
@@ -187,7 +195,11 @@ func (client *Client) htlcCloseModule(msg bean.RequestMessage) (enum.SendTargetT
 				data = string(bytes)
 				status = true
 				msg.Type = enum.MsgType_HTLC_RequestCloseCurrTx_49
-				_ = client.sendDataToP2PUser(msg, status, data)
+				err = client.sendDataToP2PUser(msg, status, data)
+				if err != nil {
+					data = err.Error()
+					status = false
+				}
 			}
 		}
 		msg.Type = enum.MsgType_HTLC_SendRequestCloseCurrTx_49
@@ -205,7 +217,11 @@ func (client *Client) htlcCloseModule(msg bean.RequestMessage) (enum.SendTargetT
 				data = string(bytes)
 				status = true
 				msg.Type = enum.MsgType_HTLC_CloseHtlcRequestSignBR_51
-				_ = client.sendDataToP2PUser(msg, status, data)
+				err = client.sendDataToP2PUser(msg, status, data)
+				if err != nil {
+					data = err.Error()
+					status = false
+				}
 			}
 		}
 		if err != nil {
@@ -231,7 +247,11 @@ func (client *Client) atomicSwapModule(msg bean.RequestMessage) (enum.SendTarget
 				data = string(bytes)
 				status = true
 				msg.Type = enum.MsgType_Atomic_Swap_80
-				_ = client.sendDataToP2PUser(msg, status, data)
+				err = client.sendDataToP2PUser(msg, status, data)
+				if err != nil {
+					data = err.Error()
+					status = false
+				}
 			}
 		}
 		msg.Type = enum.MsgType_Atomic_SendSwap_80
@@ -249,7 +269,11 @@ func (client *Client) atomicSwapModule(msg bean.RequestMessage) (enum.SendTarget
 				data = string(bytes)
 				status = true
 				msg.Type = enum.MsgType_Atomic_SwapAccept_81
-				_ = client.sendDataToP2PUser(msg, status, data)
+				err = client.sendDataToP2PUser(msg, status, data)
+				if err != nil {
+					data = err.Error()
+					status = false
+				}
 			}
 		}
 		msg.Type = enum.MsgType_Atomic_SendSwapAccept_81

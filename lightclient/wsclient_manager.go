@@ -2,9 +2,12 @@ package lightclient
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/omnilaboratory/obd/bean"
+	"github.com/omnilaboratory/obd/bean/enum"
 	"github.com/omnilaboratory/obd/service"
+	"github.com/omnilaboratory/obd/tool"
 	"log"
 )
 
@@ -72,4 +75,14 @@ func (clientManager *clientManager) sendToSomeConn(message []byte, myself *Clien
 			conn.SendChannel <- message
 		}
 	}
+}
+
+func findUserOnLine(peerId *string) (*Client, error) {
+	if tool.CheckIsString(peerId) {
+		itemClient := globalWsClientManager.OnlineClientMap[*peerId]
+		if itemClient != nil && itemClient.User != nil {
+			return itemClient, nil
+		}
+	}
+	return nil, errors.New(fmt.Sprintf(enum.Tips_user_notExistOrOnline, *peerId))
 }

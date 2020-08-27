@@ -25,7 +25,6 @@ func (client *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, 
 	var data string
 	switch msg.Type {
 	case enum.MsgType_UserLogin_2001:
-
 		mnemonic := gjson.Get(msg.Data, "mnemonic").String()
 		if client.User != nil {
 			if client.User.Mnemonic != mnemonic {

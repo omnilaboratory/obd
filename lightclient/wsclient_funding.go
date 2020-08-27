@@ -30,7 +30,7 @@ func (client *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.Se
 		}
 		if status {
 			msg.Type = enum.MsgType_FundingCreate_BtcFundingCreated_340
-			err := client.sendDataToP2PUser(msg, status, data)
+			err = client.sendDataToP2PUser(msg, status, data)
 			if err != nil {
 				data = err.Error()
 				status = false
@@ -38,6 +38,7 @@ func (client *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.Se
 		}
 		msg.Type = enum.MsgType_FundingCreate_SendBtcFundingCreated_340
 		client.sendToMyself(msg.Type, status, data)
+		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_FundingCreate_Btc_AllItem_3104:
 		node, err := service.FundingTransactionService.BtcFundingAllItem(*client.User)
 		if err != nil {
@@ -52,6 +53,7 @@ func (client *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.Se
 			}
 		}
 		client.sendToMyself(msg.Type, status, data)
+		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_FundingCreate_Btc_ItemById_3105:
 		id, err := strconv.Atoi(msg.Data)
 		if err != nil {
@@ -192,6 +194,8 @@ func (client *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.Se
 		}
 		msg.Type = enum.MsgType_FundingCreate_SendAssetFundingCreated_34
 		client.sendToMyself(msg.Type, status, data)
+		sendType = enum.SendTargetType_SendToSomeone
+
 	case enum.MsgType_FundingCreate_Asset_AllItem_3100:
 		node, err := service.FundingTransactionService.OmniFundingAllItem(*client.User)
 		if err != nil {
@@ -286,6 +290,7 @@ func (client *Client) fundingSignModule(msg bean.RequestMessage) (enum.SendTarge
 		msg.Type = enum.MsgType_FundingSign_SendBtcSign_350
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
+
 	case enum.MsgType_FundingSign_SendAssetFundingSigned_35: //get openChannelReq from funder then send to fundee  create a funding tx
 		node, err := service.FundingTransactionService.AssetFundingSigned(msg.Data, client.User)
 		if err != nil {
@@ -303,7 +308,7 @@ func (client *Client) fundingSignModule(msg bean.RequestMessage) (enum.SendTarge
 
 		if node != nil && status {
 			msg.Type = enum.MsgType_FundingSign_AssetFundingSigned_35
-			err := client.sendDataToP2PUser(msg, status, data)
+			err = client.sendDataToP2PUser(msg, status, data)
 			if err != nil {
 				data = err.Error()
 				status = false
