@@ -162,8 +162,6 @@ func (client *Client) Read() {
 					}
 				}
 
-				msg.SenderUserPeerId = client.User.PeerId
-
 				for {
 					//-3000 -3001
 					if msg.Type <= enum.MsgType_Mnemonic_CreateAddress_3000 &&
@@ -172,16 +170,17 @@ func (client *Client) Read() {
 						break
 					}
 
-					//-32 -33  及查询
+					//-32 -33  -38 and query for channel
 					if msg.Type == enum.MsgType_SendChannelOpen_32 ||
 						msg.Type == enum.MsgType_SendChannelAccept_33 ||
+						msg.Type == enum.MsgType_SendCloseChannelRequest_38 ||
 						(msg.Type <= enum.MsgType_ChannelOpen_AllItem_3150 &&
 							msg.Type >= enum.MsgType_CheckChannelAddessExist_3156) {
 						sendType, dataOut, status = client.channelModule(msg)
 						break
 					}
 
-					//-34 -340 及查询
+					//-34 -340 and query
 					if msg.Type == enum.MsgType_FundingCreate_SendAssetFundingCreated_34 ||
 						msg.Type == enum.MsgType_FundingCreate_SendBtcFundingCreated_340 ||
 						(msg.Type <= enum.MsgType_FundingCreate_Asset_AllItem_3100 &&
@@ -208,13 +207,6 @@ func (client *Client) Read() {
 					//-352
 					if msg.Type == enum.MsgType_CommitmentTxSigned_SendRevokeAndAcknowledgeCommitmentTransaction_352 {
 						sendType, dataOut, status = client.commitmentTxSignModule(msg)
-						break
-					}
-
-					//-38 -39
-					if msg.Type == enum.MsgType_SendCloseChannelRequest_38 ||
-						msg.Type == enum.MsgType_SendCloseChannelSign_39 {
-						sendType, dataOut, status = client.channelModule(msg)
 						break
 					}
 
