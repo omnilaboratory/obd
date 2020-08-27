@@ -109,7 +109,7 @@ func (this *channelManager) BobCheckChannelAddressExist(jsonData string, user *b
 	}
 
 	if channelInfo.PeerIdB != user.PeerId {
-		return false, errors.New("you are not the peerIdB")
+		return false, errors.New(enum.Tips_rsmc_notTargetUser)
 	}
 
 	channelInfo.PubKeyB = reqData.FundingPubKey

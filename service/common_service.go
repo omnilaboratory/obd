@@ -25,6 +25,9 @@ func findUserIsOnline(peerId string) error {
 		if exists && value != nil {
 			return nil
 		}
+		if HttpGetUserStateFromTracker(peerId) > 0 {
+			return nil
+		}
 	}
 	return errors.New(fmt.Sprintf(enum.Tips_user_notExistOrOnline, peerId))
 }

@@ -170,10 +170,8 @@ func (service *htlcForwardTxManager) PayerRequestFindPath(msgData string, user b
 		if err != nil {
 			return nil, false, errors.New(enum.Tips_common_wrong + "invoice")
 		}
-		if htlcRequestInvoice.RecipientNodePeerId == P2PLocalPeerId {
-			if err := findUserIsOnline(htlcRequestInvoice.RecipientUserPeerId); err != nil {
-				return nil, requestFindPathInfo.IsPrivate, err
-			}
+		if err = findUserIsOnline(htlcRequestInvoice.RecipientUserPeerId); err != nil {
+			return nil, requestFindPathInfo.IsPrivate, err
 		}
 		requestFindPathInfo = htlcRequestInvoice.HtlcRequestFindPathInfo
 	} else {
@@ -184,15 +182,9 @@ func (service *htlcForwardTxManager) PayerRequestFindPath(msgData string, user b
 		if tool.CheckIsString(&requestFindPathInfo.RecipientUserPeerId) == false {
 			return nil, requestFindPathInfo.IsPrivate, errors.New(enum.Tips_common_wrong + "recipient_user_peer_id")
 		}
-		if P2PLocalPeerId == requestFindPathInfo.RecipientNodePeerId {
-			if err := findUserIsOnline(requestFindPathInfo.RecipientUserPeerId); err != nil {
-				return nil, requestFindPathInfo.IsPrivate, err
-			}
-		} else {
-			flag := HttpGetUserStateFromTracker(requestFindPathInfo.RecipientUserPeerId)
-			if flag == 0 {
-				return nil, requestFindPathInfo.IsPrivate, errors.New(requestFindPathInfo.RecipientUserPeerId + enum.Tips_common_userNotOnline)
-			}
+
+		if err = findUserIsOnline(requestFindPathInfo.RecipientUserPeerId); err != nil {
+			return nil, requestFindPathInfo.IsPrivate, err
 		}
 	}
 

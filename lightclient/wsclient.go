@@ -57,7 +57,7 @@ func (client *Client) Read() {
 		}
 
 		var msg bean.RequestMessage
-		log.Println("request data: ", string(dataReq))
+		log.Println("input data: ", string(dataReq))
 
 		temp := make(map[string]interface{})
 		err = json.Unmarshal(dataReq, &temp)
@@ -68,14 +68,14 @@ func (client *Client) Read() {
 		}
 		temp = nil
 
-		parse := gjson.Parse(string(dataReq))
-		if parse.Value() == nil || parse.Exists() == false || parse.IsObject() == false {
+		jsonParse := gjson.Parse(string(dataReq))
+		if jsonParse.Value() == nil || jsonParse.Exists() == false || jsonParse.IsObject() == false {
 			log.Println("wrong json input")
 			client.sendToMyself(enum.MsgType_Error_0, false, "wrong json input")
 			continue
 		}
 
-		msg.Type = enum.MsgType(parse.Get("type").Int())
+		msg.Type = enum.MsgType(jsonParse.Get("type").Int())
 		if enum.CheckExist(msg.Type) == false {
 			data := "not exist the msg type"
 			log.Println(data)
@@ -83,21 +83,18 @@ func (client *Client) Read() {
 			continue
 		}
 
-		msg.Data = parse.Get("data").String()
-		msg.SenderUserPeerId = parse.Get("sender_user_peer_id").String()
-		if len(msg.SenderUserPeerId) == 0 && client.User != nil {
+		msg.SenderNodePeerId = P2PLocalPeerId
+		msg.SenderUserPeerId = client.Id
+		if client.User != nil {
 			msg.SenderUserPeerId = client.User.PeerId
 		}
-		if len(msg.SenderNodePeerId) == 0 {
-			msg.SenderNodePeerId = P2PLocalPeerId
-		}
 
-		msg.RecipientUserPeerId = parse.Get("recipient_user_peer_id").String()
-		msg.RecipientNodePeerId = parse.Get("recipient_node_peer_id").String()
+		msg.RecipientNodePeerId = jsonParse.Get("recipient_node_peer_id").String()
+		msg.RecipientUserPeerId = jsonParse.Get("recipient_user_peer_id").String()
 
 		// check the Recipient is online
 		if tool.CheckIsString(&msg.RecipientUserPeerId) {
-			_, err := findUserOnLine(&msg.RecipientUserPeerId)
+			_, err = findUserOnLine(msg.RecipientUserPeerId)
 			if err != nil {
 				if tool.CheckIsString(&msg.RecipientNodePeerId) == false {
 					client.sendToMyself(msg.Type, false, "can not find target user")
@@ -105,6 +102,7 @@ func (client *Client) Read() {
 				}
 			}
 		}
+		msg.Data = jsonParse.Get("data").String()
 
 		var sendType = enum.SendTargetType_SendToNone
 		status := false
@@ -157,16 +155,10 @@ func (client *Client) Read() {
 						client.sendToMyself(msg.Type, false, fmt.Sprintf(enum.Tips_common_errorObdPeerId, msg.RecipientNodePeerId))
 						continue
 					}
-					if msg.RecipientNodePeerId == P2PLocalPeerId {
-						if _, err = findUserOnLine(&msg.RecipientUserPeerId); err != nil {
-							client.sendToMyself(msg.Type, false, err.Error())
-							continue
-						}
-					} else {
-						if flag := service.HttpGetUserStateFromTracker(msg.RecipientUserPeerId); flag == 0 {
-							client.sendToMyself(msg.Type, false, errors.New("recipient_user_peer_id not online").Error())
-							continue
-						}
+
+					if _, err = findUserOnLine(msg.RecipientUserPeerId); err != nil {
+						client.sendToMyself(msg.Type, false, err.Error())
+						continue
 					}
 				}
 
@@ -337,7 +329,7 @@ func (client *Client) sendToMyself(msgType enum.MsgType, status bool, data strin
 
 func (client *Client) sendToSomeone(msgType enum.MsgType, status bool, recipientPeerId string, data string) error {
 	if tool.CheckIsString(&recipientPeerId) {
-		if _, err := findUserOnLine(&recipientPeerId); err == nil {
+		if _, err := findUserOnLine(recipientPeerId); err == nil {
 			itemClient := globalWsClientManager.OnlineClientMap[recipientPeerId]
 			if itemClient != nil && itemClient.User != nil {
 				jsonMessage := getReplyObj(data, msgType, status, client, itemClient)
@@ -356,7 +348,7 @@ func (client *Client) sendDataToP2PUser(msg bean.RequestMessage, status bool, da
 	if tool.CheckIsString(&msg.RecipientUserPeerId) && tool.CheckIsString(&msg.RecipientNodePeerId) {
 		//如果是同一个obd节点
 		if msg.RecipientNodePeerId == P2PLocalPeerId {
-			if _, err := findUserOnLine(&msg.RecipientUserPeerId); err == nil {
+			if _, err := findUserOnLine(msg.RecipientUserPeerId); err == nil {
 				itemClient := globalWsClientManager.OnlineClientMap[msg.RecipientUserPeerId]
 				if itemClient != nil && itemClient.User != nil {
 					//因为数据库，分库，需要对特定的消息进行处理
@@ -403,7 +395,7 @@ func (client *Client) sendDataToP2PUser(msg bean.RequestMessage, status bool, da
 func getDataFromP2PSomeone(msg bean.RequestMessage) error {
 	if tool.CheckIsString(&msg.RecipientUserPeerId) && tool.CheckIsString(&msg.RecipientNodePeerId) {
 		if msg.RecipientNodePeerId == P2PLocalPeerId {
-			if _, err := findUserOnLine(&msg.RecipientUserPeerId); err == nil {
+			if _, err := findUserOnLine(msg.RecipientUserPeerId); err == nil {
 				itemClient := globalWsClientManager.OnlineClientMap[msg.RecipientUserPeerId]
 				if itemClient != nil && itemClient.User != nil {
 					//收到数据后，需要对其进行加工

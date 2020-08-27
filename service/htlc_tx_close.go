@@ -381,11 +381,9 @@ func (service *htlcCloseTxManager) CloseHTLCSigned(msg bean.RequestMessage, user
 		return nil, errors.New(enum.Tips_common_userNotInTx)
 	}
 
-	if P2PLocalPeerId == msg.RecipientNodePeerId {
-		err = findUserIsOnline(senderPeerId)
-		if err != nil {
-			return nil, err
-		}
+	err = findUserIsOnline(senderPeerId)
+	if err != nil {
+		return nil, err
 	}
 
 	_, err = tool.GetPubKeyFromWifAndCheck(reqData.ChannelAddressPrivateKey, signerPubKey)

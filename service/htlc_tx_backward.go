@@ -81,12 +81,11 @@ func (service *htlcBackwardTxManager) SendRToPreviousNode_Step1(msg bean.Request
 	if payerPeerId != msg.RecipientUserPeerId {
 		return nil, errors.New(enum.Tips_rsmc_notTargetUser)
 	}
-	if msg.RecipientNodePeerId == P2PLocalPeerId {
-		err = findUserIsOnline(payerPeerId)
-		if err != nil {
-			log.Println(err)
-			return nil, err
-		}
+
+	err = findUserIsOnline(payerPeerId)
+	if err != nil {
+		log.Println(err)
+		return nil, err
 	}
 
 	_, err = tool.GetPubKeyFromWifAndCheck(reqData.ChannelAddressPrivateKey, payeeChannelPubKey)

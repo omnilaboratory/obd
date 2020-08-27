@@ -70,19 +70,22 @@ func (clientManager *clientManager) cleanConn(client *Client) {
 }
 
 func (clientManager *clientManager) sendToSomeConn(message []byte, myself *Client) {
-	for conn := range clientManager.ClientsMap {
-		if conn == myself {
-			conn.SendChannel <- message
+	for client := range clientManager.ClientsMap {
+		if client == myself {
+			client.SendChannel <- message
 		}
 	}
 }
 
-func findUserOnLine(peerId *string) (*Client, error) {
-	if tool.CheckIsString(peerId) {
-		itemClient := globalWsClientManager.OnlineClientMap[*peerId]
+func findUserOnLine(peerId string) (*Client, error) {
+	if tool.CheckIsString(&peerId) {
+		itemClient := globalWsClientManager.OnlineClientMap[peerId]
 		if itemClient != nil && itemClient.User != nil {
 			return itemClient, nil
 		}
+		if service.HttpGetUserStateFromTracker(peerId) > 0 {
+			return nil, nil
+		}
 	}
-	return nil, errors.New(fmt.Sprintf(enum.Tips_user_notExistOrOnline, *peerId))
+	return nil, errors.New(fmt.Sprintf(enum.Tips_user_notExistOrOnline, peerId))
 }
