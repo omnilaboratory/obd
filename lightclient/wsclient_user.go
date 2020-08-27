@@ -43,7 +43,7 @@ func (client *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, 
 			user := bean.User{
 				Mnemonic:        mnemonic,
 				P2PLocalAddress: localServerDest,
-				P2PLocalPeerId:  P2PLocalPeerId,
+				P2PLocalPeerId:  p2PLocalPeerId,
 			}
 			var err error = nil
 			peerId := tool.SignMsgWithSha256([]byte(user.Mnemonic))
@@ -85,7 +85,7 @@ func (client *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, 
 		if remoteNodeAddress.Exists() == false {
 			data = errors.New("remote_node_address not exist").Error()
 		} else {
-			localP2PAddress, err := ConnP2PServer(remoteNodeAddress.Str)
+			localP2PAddress, err := connP2PServer(remoteNodeAddress.Str)
 			if err != nil {
 				data = err.Error()
 			} else {

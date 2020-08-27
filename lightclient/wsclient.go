@@ -83,7 +83,7 @@ func (client *Client) Read() {
 			continue
 		}
 
-		msg.SenderNodePeerId = P2PLocalPeerId
+		msg.SenderNodePeerId = p2PLocalPeerId
 		msg.SenderUserPeerId = client.Id
 		if client.User != nil {
 			msg.SenderUserPeerId = client.User.PeerId
@@ -333,19 +333,17 @@ func (client *Client) sendToSomeone(msgType enum.MsgType, status bool, recipient
 	return errors.New(fmt.Sprintf(enum.Tips_user_notExistOrOnline, recipientPeerId))
 }
 
-//发送消息给对方，分为同节点和不同节点的两种情况
+// send p2p msg, check whether they are at the same obd node
 func (client *Client) sendDataToP2PUser(msg bean.RequestMessage, status bool, data string) error {
 	msg.SenderUserPeerId = client.User.PeerId
 	msg.SenderNodePeerId = client.User.P2PLocalPeerId
 	if tool.CheckIsString(&msg.RecipientUserPeerId) && tool.CheckIsString(&msg.RecipientNodePeerId) {
-		//如果是同一个obd节点
-		if msg.RecipientNodePeerId == P2PLocalPeerId {
+		//if they at the same obd node
+		if msg.RecipientNodePeerId == p2PLocalPeerId {
 			if _, err := findUserOnLine(msg.RecipientUserPeerId); err == nil {
 				itemClient := globalWsClientManager.OnlineClientMap[msg.RecipientUserPeerId]
 				if itemClient != nil && itemClient.User != nil {
-					//因为数据库，分库，需要对特定的消息进行处理
 					if status {
-						//收到请求后，首先对消息进行处理
 						retData, err := routerOfP2PNode(msg.Type, data, itemClient)
 						if err != nil {
 							return err
@@ -366,17 +364,17 @@ func (client *Client) sendDataToP2PUser(msg bean.RequestMessage, status bool, da
 					return nil
 				}
 			}
-		} else { //不通的p2p的节点 需要转发到对方的节点
+		} else { //at the different obd node,p2p transfer msg to other node
 			msgToOther := bean.RequestMessage{}
 			msgToOther.Type = msg.Type
-			msgToOther.SenderNodePeerId = P2PLocalPeerId
+			msgToOther.SenderNodePeerId = p2PLocalPeerId
 			msgToOther.SenderUserPeerId = msg.SenderUserPeerId
 			msgToOther.RecipientUserPeerId = msg.RecipientUserPeerId
 			msgToOther.RecipientNodePeerId = msg.RecipientNodePeerId
 			msgToOther.Data = data
 			bytes, err := json.Marshal(msgToOther)
 			if err == nil {
-				return SendP2PMsg(msg.RecipientNodePeerId, string(bytes))
+				return sendP2PMsg(msg.RecipientNodePeerId, string(bytes))
 			}
 		}
 	}
@@ -386,7 +384,7 @@ func (client *Client) sendDataToP2PUser(msg bean.RequestMessage, status bool, da
 //当p2p收到消息后
 func getDataFromP2PSomeone(msg bean.RequestMessage) error {
 	if tool.CheckIsString(&msg.RecipientUserPeerId) && tool.CheckIsString(&msg.RecipientNodePeerId) {
-		if msg.RecipientNodePeerId == P2PLocalPeerId {
+		if msg.RecipientNodePeerId == p2PLocalPeerId {
 			if _, err := findUserOnLine(msg.RecipientUserPeerId); err == nil {
 				itemClient := globalWsClientManager.OnlineClientMap[msg.RecipientUserPeerId]
 				if itemClient != nil && itemClient.User != nil {
@@ -467,7 +465,7 @@ func p2pMiddleNodeTransferData(msg *bean.RequestMessage, itemClient Client, data
 			newMsg := bean.RequestMessage{}
 			newMsg.Type = enum.MsgType_CommitmentTxSigned_SecondToBobSign_354
 			newMsg.SenderUserPeerId = itemClient.User.PeerId
-			newMsg.SenderNodePeerId = P2PLocalPeerId
+			newMsg.SenderNodePeerId = p2PLocalPeerId
 			newMsg.RecipientUserPeerId = msg.SenderUserPeerId
 			newMsg.RecipientNodePeerId = msg.SenderNodePeerId
 			payeeData := gjson.Parse(retData).Get("bobData").String()
@@ -492,7 +490,7 @@ func p2pMiddleNodeTransferData(msg *bean.RequestMessage, itemClient Client, data
 		newMsg := bean.RequestMessage{}
 		newMsg.Type = enum.MsgType_HTLC_PayeeCreateHTRD1a_43
 		newMsg.SenderUserPeerId = itemClient.User.PeerId
-		newMsg.SenderNodePeerId = P2PLocalPeerId
+		newMsg.SenderNodePeerId = p2PLocalPeerId
 		newMsg.RecipientUserPeerId = msg.SenderUserPeerId
 		newMsg.RecipientNodePeerId = msg.SenderNodePeerId
 		newMsg.Data = data
@@ -506,7 +504,7 @@ func p2pMiddleNodeTransferData(msg *bean.RequestMessage, itemClient Client, data
 		newMsg := bean.RequestMessage{}
 		newMsg.Type = enum.MsgType_HTLC_PayerSignHTRD1a_44
 		newMsg.SenderUserPeerId = itemClient.User.PeerId
-		newMsg.SenderNodePeerId = P2PLocalPeerId
+		newMsg.SenderNodePeerId = p2PLocalPeerId
 		newMsg.RecipientUserPeerId = msg.SenderUserPeerId
 		newMsg.RecipientNodePeerId = msg.SenderNodePeerId
 		newMsg.Data = data
@@ -530,7 +528,7 @@ func p2pMiddleNodeTransferData(msg *bean.RequestMessage, itemClient Client, data
 		newMsg := bean.RequestMessage{}
 		newMsg.Type = enum.MsgType_HTLC_SignHedHex_48
 		newMsg.SenderUserPeerId = itemClient.User.PeerId
-		newMsg.SenderNodePeerId = P2PLocalPeerId
+		newMsg.SenderNodePeerId = p2PLocalPeerId
 		newMsg.RecipientUserPeerId = msg.SenderUserPeerId
 		newMsg.RecipientNodePeerId = msg.SenderNodePeerId
 		payerData := gjson.Parse(retData).Get("payerData").String()
@@ -559,7 +557,7 @@ func p2pMiddleNodeTransferData(msg *bean.RequestMessage, itemClient Client, data
 		newMsg := bean.RequestMessage{}
 		newMsg.Type = enum.MsgType_HTLC_CloseHtlcUpdateCnb_52
 		newMsg.SenderUserPeerId = itemClient.User.PeerId
-		newMsg.SenderNodePeerId = P2PLocalPeerId
+		newMsg.SenderNodePeerId = p2PLocalPeerId
 		newMsg.RecipientUserPeerId = msg.SenderUserPeerId
 		newMsg.RecipientNodePeerId = msg.SenderNodePeerId
 		payeeData := gjson.Parse(retData).Get("bobData").String()

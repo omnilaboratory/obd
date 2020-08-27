@@ -77,7 +77,6 @@ func goroutine() {
 		for {
 			if conn == nil {
 				isReset = true
-				conn = nil
 				return
 			}
 
@@ -122,7 +121,7 @@ func goroutine() {
 				bytes, err := json.Marshal(info)
 				err = conn.WriteMessage(websocket.TextMessage, bytes)
 				if err != nil {
-					log.Println("write:", err)
+					log.Println("HeartBeat:", err)
 					return
 				}
 			} else {

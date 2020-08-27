@@ -34,8 +34,8 @@ func (clientManager *clientManager) Start() {
 			clientManager.ClientsMap[client] = true
 			jsonMessage, _ := json.Marshal(&bean.RequestMessage{
 				SenderUserPeerId:    client.Id,
-				SenderNodePeerId:    P2PLocalPeerId,
-				RecipientNodePeerId: P2PLocalPeerId,
+				SenderNodePeerId:    p2PLocalPeerId,
+				RecipientNodePeerId: p2PLocalPeerId,
 				RecipientUserPeerId: client.Id,
 				Data:                "welcome to you."})
 			log.Println(fmt.Sprintf("a new socket %s has connected.", client.Id))
