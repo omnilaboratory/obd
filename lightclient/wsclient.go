@@ -34,7 +34,7 @@ func (client *Client) Write() {
 				_ = client.Socket.WriteMessage(websocket.CloseMessage, []byte{})
 				return
 			}
-			log.Println("send data", string(data))
+			log.Println("send data to client ", string(data))
 			_ = client.Socket.WriteMessage(websocket.TextMessage, data)
 		}
 	}
