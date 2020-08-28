@@ -42,14 +42,14 @@ func routerOfP2PNode(msgType enum.MsgType, data string, client *Client) (retData
 			defaultErr = err
 		}
 	case enum.MsgType_FundingCreate_AssetFundingCreated_34:
-		_, err := service.FundingTransactionService.BeforeBobSignOmniFundingAtBobSide(data, client.User)
+		_, err := service.FundingTransactionService.BeforeSignAssetFundingCreateAtBobSide(data, client.User)
 		if err == nil {
 			status = true
 		} else {
 			defaultErr = err
 		}
 	case enum.MsgType_FundingSign_AssetFundingSigned_35:
-		node, err := service.FundingTransactionService.AfterBobSignOmniFundingAtAliceSide(data, client.User)
+		node, err := service.FundingTransactionService.AfterBobSignAssetFundingAtAliceSide(data, client.User)
 		if err == nil {
 			status = true
 			retData, _ := json.Marshal(node)

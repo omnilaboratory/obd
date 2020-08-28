@@ -193,7 +193,7 @@ func (client *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.Se
 		client.sendToMyself(msg.Type, status, data)
 
 	case enum.MsgType_FundingCreate_Asset_AllItem_3100:
-		node, err := service.FundingTransactionService.OmniFundingAllItem(*client.User)
+		node, err := service.FundingTransactionService.AssetFundingAllItem(*client.User)
 		if err != nil {
 			data = err.Error()
 		} else {
@@ -213,7 +213,7 @@ func (client *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.Se
 			log.Println(err)
 			data = err.Error()
 		} else {
-			node, err := service.FundingTransactionService.OmniFundingItemById(id, *client.User)
+			node, err := service.FundingTransactionService.AssetFundingItemById(id, *client.User)
 			if err != nil {
 				data = err.Error()
 			} else {
@@ -229,7 +229,7 @@ func (client *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.Se
 		client.sendToMyself(msg.Type, status, data)
 
 	case enum.MsgType_FundingCreate_Asset_ItemByChannelId_3102:
-		node, err := service.FundingTransactionService.OmniFundingItemByChannelId(msg.Data, *client.User)
+		node, err := service.FundingTransactionService.AssetFundingItemByChannelId(msg.Data, *client.User)
 		if err != nil {
 			data = err.Error()
 		} else {
@@ -244,7 +244,7 @@ func (client *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.Se
 		client.sendToMyself(msg.Type, status, data)
 
 	case enum.MsgType_FundingCreate_Asset_Count_3103:
-		count, err := service.FundingTransactionService.OmniFundingTotalCount(*client.User)
+		count, err := service.FundingTransactionService.AssetFundingTotalCount(*client.User)
 		if err != nil {
 			data = err.Error()
 		} else {

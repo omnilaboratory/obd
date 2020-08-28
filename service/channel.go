@@ -293,7 +293,7 @@ type pageVO struct {
 	TotalPage  int         `json:"totalPage"`
 }
 
-// OmniFundingAllItem
+// AssetFundingAllItem
 func (this *channelManager) AllItem(jsonData string, user bean.User) (data *pageVO, err error) {
 	data = &pageVO{}
 	tx, err := user.Db.Begin(true)
@@ -381,7 +381,7 @@ func (this *channelManager) AllItem(jsonData string, user bean.User) (data *page
 	return data, err
 }
 
-// OmniFundingTotalCount
+// AssetFundingTotalCount
 func (this *channelManager) TotalCount(user bean.User) (count int, err error) {
 	return user.Db.Select(
 		q.Or(
