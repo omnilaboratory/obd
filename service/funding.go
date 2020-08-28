@@ -222,7 +222,7 @@ func (service *fundingTransactionManager) BtcFundingCreated(msg bean.RequestMess
 			_ = tx.Update(fundingBtcRequest)
 		}
 
-		err := tx.Select(
+		err = tx.Select(
 			q.Eq("TemporaryChannelId", reqData.TemporaryChannelId),
 			q.Eq("FundingTxId", fundingTxid),
 		).First(minerFeeRedeemTransaction)
@@ -237,7 +237,7 @@ func (service *fundingTransactionManager) BtcFundingCreated(msg bean.RequestMess
 		return nil, "", err
 	}
 
-	node := bean.FundingBtcOfP2p{
+	fundingBtcOfP2p := bean.FundingBtcOfP2p{
 		TemporaryChannelId: reqData.TemporaryChannelId,
 		FundingTxid:        fundingTxid,
 		FundingBtcHex:      reqData.FundingTxHex,
@@ -245,7 +245,7 @@ func (service *fundingTransactionManager) BtcFundingCreated(msg bean.RequestMess
 		FunderNodeAddress:  msg.SenderNodePeerId,
 		FunderPeerId:       msg.SenderUserPeerId,
 	}
-	return node, targetUser, nil
+	return fundingBtcOfP2p, targetUser, nil
 }
 
 //bob签收btc充值之前的obd的操作
