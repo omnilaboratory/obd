@@ -16,7 +16,7 @@ func (client *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.Se
 	var data string
 	switch msg.Type {
 	case enum.MsgType_FundingCreate_SendBtcFundingCreated_340:
-		node, _, err := service.FundingTransactionService.BTCFundingCreated(msg, client.User)
+		node, _, err := service.FundingTransactionService.BtcFundingCreated(msg, client.User)
 		if err != nil {
 			data = err.Error()
 		} else {
