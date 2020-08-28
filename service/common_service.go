@@ -19,17 +19,19 @@ import (
 	"github.com/tidwall/gjson"
 )
 
-func findUserIsOnline(peerId string) error {
-	if tool.CheckIsString(&peerId) {
-		value, exists := OnlineUserMap[peerId]
+func findUserIsOnline(nodePeerId, userPeerId string) error {
+	if tool.CheckIsString(&userPeerId) {
+		value, exists := OnlineUserMap[userPeerId]
 		if exists && value != nil {
 			return nil
 		}
-		if HttpGetUserStateFromTracker(peerId) > 0 {
-			return nil
+		if nodePeerId != P2PLocalPeerId {
+			if HttpGetUserStateFromTracker(userPeerId) > 0 {
+				return nil
+			}
 		}
 	}
-	return errors.New(fmt.Sprintf(enum.Tips_user_notExistOrOnline, peerId))
+	return errors.New(fmt.Sprintf(enum.Tips_user_notExistOrOnline, userPeerId))
 }
 
 func checkBtcFundFinish(address string, isFundOmni bool) error {

@@ -191,13 +191,18 @@ func (client *Client) commitmentTxSignModule(msg bean.RequestMessage) (enum.Send
 		}
 		if status {
 			msg.Type = enum.MsgType_CommitmentTxSigned_ToAliceSign_353
-			_ = client.sendDataToP2PUser(msg, status, data)
-
-			if retData.Approval == false {
-				msg.Type = enum.MsgType_CommitmentTxSigned_SendRevokeAndAcknowledgeCommitmentTransaction_352
-				client.sendToMyself(msg.Type, status, data)
+			err = client.sendDataToP2PUser(msg, status, data)
+			if err != nil {
+				status = false
+				data = err.Error()
+			} else {
+				if retData.Approval == false {
+					msg.Type = enum.MsgType_CommitmentTxSigned_SendRevokeAndAcknowledgeCommitmentTransaction_352
+					client.sendToMyself(msg.Type, status, data)
+				}
 			}
-		} else {
+		}
+		if status == false {
 			client.sendToMyself(msg.Type, status, data)
 		}
 	}

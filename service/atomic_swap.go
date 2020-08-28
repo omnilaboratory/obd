@@ -46,7 +46,7 @@ func (this *atomicSwapManager) AtomicSwap(msg bean.RequestMessage, user bean.Use
 		return nil, errors.New("you should not send msg to yourself")
 	}
 
-	err = findUserIsOnline(reqData.RecipientUserPeerId)
+	err = findUserIsOnline(msg.RecipientNodePeerId, reqData.RecipientUserPeerId)
 	if err != nil {
 		return nil, err
 	}
@@ -192,7 +192,7 @@ func (this *atomicSwapManager) AtomicSwapAccepted(msg bean.RequestMessage, user 
 		return nil, errors.New("wrong recipient_user_peer_id")
 	}
 
-	err = findUserIsOnline(reqData.RecipientUserPeerId)
+	err = findUserIsOnline(msg.RecipientNodePeerId, reqData.RecipientUserPeerId)
 	if err != nil {
 		return nil, err
 	}

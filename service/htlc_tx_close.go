@@ -115,11 +115,11 @@ func (service *htlcCloseTxManager) RequestCloseHtlc(msg bean.RequestMessage, use
 	if msg.RecipientUserPeerId != targetUser {
 		return nil, errors.New(enum.Tips_rsmc_notTargetUser)
 	}
-	if P2PLocalPeerId == msg.RecipientNodePeerId {
-		if err := findUserIsOnline(targetUser); err != nil {
-			return nil, err
-		}
+
+	if err := findUserIsOnline(msg.RecipientNodePeerId, targetUser); err != nil {
+		return nil, err
 	}
+
 	_, err = tool.GetPubKeyFromWifAndCheck(reqData.ChannelAddressPrivateKey, requesterPubKey)
 	if err != nil {
 		return nil, errors.New(fmt.Sprintf(enum.Tips_rsmc_wrongChannelPrivateKey, reqData.ChannelAddressPrivateKey, requesterPubKey))
@@ -381,7 +381,7 @@ func (service *htlcCloseTxManager) CloseHTLCSigned(msg bean.RequestMessage, user
 		return nil, errors.New(enum.Tips_common_userNotInTx)
 	}
 
-	err = findUserIsOnline(senderPeerId)
+	err = findUserIsOnline(msg.RecipientNodePeerId, senderPeerId)
 	if err != nil {
 		return nil, err
 	}

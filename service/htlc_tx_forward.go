@@ -170,7 +170,7 @@ func (service *htlcForwardTxManager) PayerRequestFindPath(msgData string, user b
 		if err != nil {
 			return nil, false, errors.New(enum.Tips_common_wrong + "invoice")
 		}
-		if err = findUserIsOnline(htlcRequestInvoice.RecipientUserPeerId); err != nil {
+		if err = findUserIsOnline(htlcRequestInvoice.RecipientNodePeerId, htlcRequestInvoice.RecipientUserPeerId); err != nil {
 			return nil, requestFindPathInfo.IsPrivate, err
 		}
 		requestFindPathInfo = htlcRequestInvoice.HtlcRequestFindPathInfo
@@ -183,7 +183,7 @@ func (service *htlcForwardTxManager) PayerRequestFindPath(msgData string, user b
 			return nil, requestFindPathInfo.IsPrivate, errors.New(enum.Tips_common_wrong + "recipient_user_peer_id")
 		}
 
-		if err = findUserIsOnline(requestFindPathInfo.RecipientUserPeerId); err != nil {
+		if err = findUserIsOnline(requestFindPathInfo.RecipientNodePeerId, requestFindPathInfo.RecipientUserPeerId); err != nil {
 			return nil, requestFindPathInfo.IsPrivate, err
 		}
 	}

@@ -77,15 +77,19 @@ func (clientManager *clientManager) sendToSomeConn(message []byte, myself *Clien
 	}
 }
 
-func findUserOnLine(peerId string) (*Client, error) {
-	if tool.CheckIsString(&peerId) {
-		itemClient := globalWsClientManager.OnlineClientMap[peerId]
+func findUserOnLine(msg bean.RequestMessage) (*Client, error) {
+	if tool.CheckIsString(&msg.RecipientUserPeerId) {
+		itemClient := globalWsClientManager.OnlineClientMap[msg.RecipientUserPeerId]
 		if itemClient != nil && itemClient.User != nil {
 			return itemClient, nil
 		}
-		if service.HttpGetUserStateFromTracker(peerId) > 0 {
-			return nil, nil
+
+		if msg.RecipientNodePeerId != p2PLocalPeerId {
+			if service.HttpGetUserStateFromTracker(msg.RecipientUserPeerId) > 0 {
+				return nil, nil
+			}
 		}
+
 	}
-	return nil, errors.New(fmt.Sprintf(enum.Tips_user_notExistOrOnline, peerId))
+	return nil, errors.New(fmt.Sprintf(enum.Tips_user_notExistOrOnline, msg.RecipientUserPeerId))
 }

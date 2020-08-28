@@ -94,7 +94,11 @@ func (client *Client) htlcHModule(msg bean.RequestMessage) (enum.SendTargetType,
 		}
 		if status {
 			msg.Type = enum.MsgType_HTLC_AddHTLC_40
-			_ = client.sendDataToP2PUser(msg, true, data)
+			err = client.sendDataToP2PUser(msg, true, data)
+			if err != nil {
+				status = false
+				data = err.Error()
+			}
 		}
 		msg.Type = enum.MsgType_HTLC_SendAddHTLC_40
 		client.sendToMyself(msg.Type, status, data)
@@ -112,10 +116,14 @@ func (client *Client) htlcHModule(msg bean.RequestMessage) (enum.SendTargetType,
 			}
 			if status {
 				msg.Type = enum.MsgType_HTLC_PayerSignC3b_42
-				_ = client.sendDataToP2PUser(msg, status, data)
+				err = client.sendDataToP2PUser(msg, status, data)
+				if err != nil {
+					status = false
+					data = err.Error()
+				}
 			}
 		}
-		if err != nil {
+		if status == false {
 			msg.Type = enum.MsgType_HTLC_SendAddHTLCSigned_41
 			client.sendToMyself(msg.Type, status, data)
 		}

@@ -82,7 +82,7 @@ func (service *htlcBackwardTxManager) SendRToPreviousNode_Step1(msg bean.Request
 		return nil, errors.New(enum.Tips_rsmc_notTargetUser)
 	}
 
-	err = findUserIsOnline(payerPeerId)
+	err = findUserIsOnline(msg.RecipientNodePeerId, payerPeerId)
 	if err != nil {
 		log.Println(err)
 		return nil, err
