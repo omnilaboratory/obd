@@ -50,10 +50,7 @@ func (client *Client) Read() {
 		_, dataReq, err := client.Socket.ReadMessage()
 		if err != nil {
 			log.Println(err)
-			if strings.Contains(err.Error(), "1005") {
-				break
-			}
-			continue
+			break
 		}
 
 		var msg bean.RequestMessage
