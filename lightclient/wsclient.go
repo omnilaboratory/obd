@@ -94,7 +94,7 @@ func (client *Client) Read() {
 			_, err = findUserOnLine(msg)
 			if err != nil {
 				if tool.CheckIsString(&msg.RecipientNodePeerId) == false {
-					client.sendToMyself(msg.Type, false, "can not find target user")
+					client.sendToMyself(msg.Type, false, fmt.Sprintf(enum.Tips_user_notExistOrOnline, msg.RecipientUserPeerId))
 					continue
 				}
 			}

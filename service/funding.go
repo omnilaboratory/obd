@@ -328,6 +328,7 @@ func (service *fundingTransactionManager) BeforeSignBtcFundingCreatedAtBobSide(d
 		fundingBtcRequest = &dao.FundingBtcRequest{
 			Owner:              funder,
 			TemporaryChannelId: temporaryChannelId,
+			RedeemHex:          fundingRedeemHex,
 			TxHash:             fundingBtcHex,
 			TxId:               fundingTxid,
 			Amount:             amount,
