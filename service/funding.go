@@ -7,6 +7,7 @@ import (
 	"github.com/omnilaboratory/obd/bean"
 	"github.com/omnilaboratory/obd/bean/chainhash"
 	"github.com/omnilaboratory/obd/bean/enum"
+	"github.com/omnilaboratory/obd/config"
 	"github.com/omnilaboratory/obd/dao"
 	"github.com/omnilaboratory/obd/rpc"
 	"github.com/omnilaboratory/obd/tool"
@@ -78,7 +79,7 @@ func (service *fundingTransactionManager) BtcFundingCreated(msg bean.RequestMess
 	if err == nil {
 		if len(gjson.Parse(result).Array()) > 0 {
 			btcFundingTimes := len(gjson.Parse(result).Array()[0].Get("txids").Array())
-			if btcFundingTimes >= 3 {
+			if btcFundingTimes >= config.BtcNeedFundTimes {
 				return nil, "", errors.New(enum.Tips_funding_enoughBtcFundingTime)
 			}
 		}

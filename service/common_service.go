@@ -41,7 +41,7 @@ func checkBtcFundFinish(address string, isFundOmni bool) error {
 	}
 	array := gjson.Parse(result).Array()
 	log.Println("listunspent", array)
-	if len(array) < 3 {
+	if len(array) < config.BtcNeedFundTimes {
 		return errors.New(enum.Tips_funding_notEnoughBtcFundingTime)
 	}
 
@@ -54,7 +54,7 @@ func checkBtcFundFinish(address string, isFundOmni bool) error {
 				count++
 			}
 		}
-		if count < 3 {
+		if count < config.BtcNeedFundTimes {
 			return errors.New(fmt.Sprintf(enum.Tips_common_amountMustGreater, out))
 		}
 	}
