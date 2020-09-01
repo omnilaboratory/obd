@@ -511,6 +511,7 @@ func (service *htlcForwardTxManager) UpdateAddHtlc_40(msg bean.RequestMessage, u
 		htlcRequestInfo.RoutingPacket = requestData.RoutingPacket
 		htlcRequestInfo.CurrRsmcTempAddressPubKey = requestData.CurrRsmcTempAddressPubKey
 		htlcRequestInfo.CurrHtlcTempAddressPubKey = requestData.CurrHtlcTempAddressPubKey
+		htlcRequestInfo.CurrHtlcTempAddressForHt1aIndex = requestData.CurrHtlcTempAddressForHt1aIndex
 		htlcRequestInfo.CurrHtlcTempAddressForHt1aPubKey = requestData.CurrHtlcTempAddressForHt1aPubKey
 		htlcRequestInfo.CurrState = dao.NS_Create
 		htlcRequestInfo.CreateAt = time.Now()
@@ -703,7 +704,7 @@ func (service *htlcForwardTxManager) PayeeSignGetAddHtlc_41(jsonData string, use
 				_ = tx.One("Id", latestCommitmentTxInfo.LastCommitmentTxId, lastCommitmentTx)
 				_, err = tool.GetPubKeyFromWifAndCheck(requestData.LastTempAddressPrivateKey, lastCommitmentTx.RSMCTempAddressPubKey)
 				if err != nil {
-					return nil, errors.New(fmt.Sprintf(enum.Tips_rsmc_wrongPrivateKeyForLast, requestData.LastTempAddressPrivateKey, lastCommitmentTx.RSMCTempAddressPubKey))
+					return nil, err
 				}
 			}
 		}
@@ -721,7 +722,7 @@ func (service *htlcForwardTxManager) PayeeSignGetAddHtlc_41(jsonData string, use
 	}
 	_, err = tool.GetPubKeyFromWifAndCheck(requestData.CurrRsmcTempAddressPrivateKey, requestData.CurrRsmcTempAddressPubKey)
 	if err != nil {
-		return nil, errors.New(enum.Tips_common_wrong + "curr_rsmc_temp_address_private_key")
+		return nil, err
 	}
 	returnData.PayeeCurrRsmcTempAddressPubKey = requestData.CurrRsmcTempAddressPubKey
 
@@ -738,7 +739,7 @@ func (service *htlcForwardTxManager) PayeeSignGetAddHtlc_41(jsonData string, use
 	}
 	_, err = tool.GetPubKeyFromWifAndCheck(requestData.CurrHtlcTempAddressPrivateKey, requestData.CurrHtlcTempAddressPubKey)
 	if err != nil {
-		return nil, errors.New(enum.Tips_common_wrong + "curr_htlc_temp_address_private_key")
+		return nil, err
 	}
 	returnData.PayeeCurrHtlcTempAddressPubKey = requestData.CurrHtlcTempAddressPubKey
 
@@ -1464,6 +1465,8 @@ func htlcPayerCreateCommitmentTx_C3a(tx storm.Node, channelInfo *dao.ChannelInfo
 		return nil, err
 	}
 	newCommitmentTxInfo.TxType = dao.CommitmentTransactionType_Htlc
+	newCommitmentTxInfo.RSMCTempAddressIndex = requestData.CurrRsmcTempAddressIndex
+	newCommitmentTxInfo.HTLCTempAddressIndex = requestData.CurrHtlcTempAddressIndex
 
 	allUsedTxidTemp := ""
 	// rsmc
@@ -1626,6 +1629,8 @@ func htlcPayeeCreateCommitmentTx_C3b(tx storm.Node, channelInfo *dao.ChannelInfo
 	}
 	newCommitmentTxInfo.FromCounterpartySideForMeTxHex = signedToOtherHex
 	newCommitmentTxInfo.TxType = dao.CommitmentTransactionType_Htlc
+	newCommitmentTxInfo.RSMCTempAddressIndex = reqData.CurrRsmcTempAddressIndex
+	newCommitmentTxInfo.HTLCTempAddressIndex = reqData.CurrHtlcTempAddressIndex
 
 	allUsedTxidTemp := ""
 	// rsmc
@@ -1968,10 +1973,8 @@ func checkHexAndUpdateC3aOn42Protocal(tx storm.Node, jsonObj bean.AfterBobSignAd
 		log.Println(err)
 		return nil, true, err
 	}
-
 	htlcTimeOut := commitmentTransaction.HtlcCltvExpiry
-	ht1a, err := signHT1aForAlice(tx, channelInfo, commitmentTransaction, payerHt1aHex, htlcRequestInfo.CurrHtlcTempAddressPubKey,
-		payeePubKey, htlcRequestInfo.CurrHtlcTempAddressForHt1aPubKey, htlcTimeOut, user)
+	ht1a, err := signHT1aForAlice(tx, channelInfo, commitmentTransaction, payerHt1aHex, htlcRequestInfo, payeePubKey, htlcTimeOut, user)
 	if err != nil {
 		err = errors.New("fail to sign  payerHt1aHex  at 41 protocol")
 		log.Println(err)

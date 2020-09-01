@@ -834,6 +834,7 @@ func (service *fundingTransactionManager) AssetFundingCreated(msg bean.RequestMe
 			log.Println(err)
 			return nil, err
 		}
+		commitmentTxInfo.RSMCTempAddressIndex = reqData.TempAddressIndex
 
 		if commitmentTxInfo.AmountToRSMC > 0 {
 			txid, hex, usedTxid, err := rpcClient.OmniCreateAndSignRawTransactionUseSingleInput(

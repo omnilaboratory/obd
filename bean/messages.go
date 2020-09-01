@@ -53,8 +53,9 @@ type TypeLengthValue struct {
 // -100032
 type SendChannelOpen struct {
 	//充值的pubKey
-	FundingPubKey string `json:"funding_pubkey"`
-	IsPrivate     bool   `json:"is_private"` // channel is a private channel, can not use htlc hop
+	FundingPubKey      string `json:"funding_pubkey"`
+	FunderAddressIndex int    `json:"funder_address_index"`
+	IsPrivate          bool   `json:"is_private"` // channel is a private channel, can not use htlc hop
 	TypeLengthValue
 }
 
@@ -86,6 +87,7 @@ type RequestOpenChannel struct {
 // -100033 接收方给自己的obd发送回复开通通道的请求
 type SendSignOpenChannel struct {
 	FundingPubKey      string `json:"funding_pubkey"`
+	FundeeAddressIndex int    `json:"fundee_address_index"`
 	TemporaryChannelId string `json:"temporary_channel_id"`
 	Approval           bool   `json:"approval"`
 	TypeLengthValue
@@ -140,6 +142,7 @@ type SendRequestAssetFunding struct {
 	MaxAssets                float64 `json:"max_assets"`
 	AmountA                  float64 `json:"amount_a"`
 	FundingTxHex             string  `json:"funding_tx_hex"`
+	TempAddressIndex         int     `json:"temp_address_index"`
 	TempAddressPubKey        string  `json:"temp_address_pub_key"`
 	TempAddressPrivateKey    string  `json:"temp_address_private_key"`
 	ChannelAddressPrivateKey string  `json:"channel_address_private_key"`
@@ -188,6 +191,7 @@ type SendRequestCommitmentTx struct {
 	Amount                    float64 `json:"amount"`     //amount of the payment
 	ChannelAddressPrivateKey  string  `json:"channel_address_private_key"`
 	LastTempAddressPrivateKey string  `json:"last_temp_address_private_key"`
+	CurrTempAddressIndex      int     `json:"curr_temp_address_index"`
 	CurrTempAddressPubKey     string  `json:"curr_temp_address_pub_key"`
 	CurrTempAddressPrivateKey string  `json:"curr_temp_address_private_key"`
 	TypeLengthValue
@@ -218,7 +222,8 @@ type PayeeSendSignCommitmentTx struct {
 	MsgHash                   string `json:"msg_hash"`
 	ChannelAddressPrivateKey  string `json:"channel_address_private_key"`   // bob private key
 	LastTempAddressPrivateKey string `json:"last_temp_address_private_key"` // bob2's private key
-	CurrTempAddressPubKey     string `json:"curr_temp_address_pub_key"`     // bob3 or alice3
+	CurrTempAddressIndex      int    `json:"curr_temp_address_index"`
+	CurrTempAddressPubKey     string `json:"curr_temp_address_pub_key"` // bob3 or alice3
 	CurrTempAddressPrivateKey string `json:"curr_temp_address_private_key"`
 	Approval                  bool   `json:"approval"` // true agree false disagree
 	TypeLengthValue
@@ -272,12 +277,15 @@ type AddHtlcRequest struct {
 	H                                    string  `json:"h"`
 	CltvExpiry                           int     `json:"cltv_expiry"` //发起者设定的总的等待的区块个数
 	RoutingPacket                        string  `json:"routing_packet"`
-	ChannelAddressPrivateKey             string  `json:"channel_address_private_key"`                 //	开通通道用到的地址的私钥
-	LastTempAddressPrivateKey            string  `json:"last_temp_address_private_key"`               //	上个RSMC委托交易用到的临时地址的私钥
-	CurrRsmcTempAddressPubKey            string  `json:"curr_rsmc_temp_address_pub_key"`              //	创建Cnx中的toRsmc的部分使用的临时地址的公钥
-	CurrRsmcTempAddressPrivateKey        string  `json:"curr_rsmc_temp_address_private_key"`          //	创建Cnx中的toRsmc的部分使用的临时地址的私钥
-	CurrHtlcTempAddressPubKey            string  `json:"curr_htlc_temp_address_pub_key"`              //	创建Cnx中的toHtlc的部分使用的临时地址的公钥
-	CurrHtlcTempAddressPrivateKey        string  `json:"curr_htlc_temp_address_private_key"`          //	创建Cnx中的toHtlc的部分使用的临时地址的私钥
+	ChannelAddressPrivateKey             string  `json:"channel_address_private_key"`   //	开通通道用到的地址的私钥
+	LastTempAddressPrivateKey            string  `json:"last_temp_address_private_key"` //	上个RSMC委托交易用到的临时地址的私钥
+	CurrRsmcTempAddressIndex             int     `json:"curr_rsmc_temp_address_index"`
+	CurrRsmcTempAddressPubKey            string  `json:"curr_rsmc_temp_address_pub_key"`     //	创建Cnx中的toRsmc的部分使用的临时地址的公钥
+	CurrRsmcTempAddressPrivateKey        string  `json:"curr_rsmc_temp_address_private_key"` //	创建Cnx中的toRsmc的部分使用的临时地址的私钥
+	CurrHtlcTempAddressIndex             int     `json:"curr_htlc_temp_address_index"`
+	CurrHtlcTempAddressPubKey            string  `json:"curr_htlc_temp_address_pub_key"`     //	创建Cnx中的toHtlc的部分使用的临时地址的公钥
+	CurrHtlcTempAddressPrivateKey        string  `json:"curr_htlc_temp_address_private_key"` //	创建Cnx中的toHtlc的部分使用的临时地址的私钥
+	CurrHtlcTempAddressForHt1aIndex      int     `json:"curr_htlc_temp_address_for_ht1a_index"`
 	CurrHtlcTempAddressForHt1aPubKey     string  `json:"curr_htlc_temp_address_for_ht1a_pub_key"`     //	创建Ht1a中生成ht1a的输出的Rmsc的临时地址的公钥
 	CurrHtlcTempAddressForHt1aPrivateKey string  `json:"curr_htlc_temp_address_for_ht1a_private_key"` //	创建Ht1a中生成ht1a的输出的Rmsc的临时地址的私钥
 	TypeLengthValue
@@ -286,10 +294,12 @@ type AddHtlcRequest struct {
 //type -100041: bob sign the request for the interNode
 type HtlcSignGetH struct {
 	PayerCommitmentTxHash         string `json:"payer_commitment_tx_hash"`
-	ChannelAddressPrivateKey      string `json:"channel_address_private_key"`        //	开通通道用到的私钥
-	LastTempAddressPrivateKey     string `json:"last_temp_address_private_key"`      //	上个RSMC委托交易用到的临时私钥
+	ChannelAddressPrivateKey      string `json:"channel_address_private_key"`   //	开通通道用到的私钥
+	LastTempAddressPrivateKey     string `json:"last_temp_address_private_key"` //	上个RSMC委托交易用到的临时私钥
+	CurrRsmcTempAddressIndex      int    `json:"curr_rsmc_temp_address_index"`
 	CurrRsmcTempAddressPubKey     string `json:"curr_rsmc_temp_address_pub_key"`     //	创建Cnx中的toRsmc的部分使用的临时地址的公钥
 	CurrRsmcTempAddressPrivateKey string `json:"curr_rsmc_temp_address_private_key"` //	创建Cnx中的toRsmc的部分使用的临时地址的私钥
+	CurrHtlcTempAddressIndex      int    `json:"curr_htlc_temp_address_index"`
 	CurrHtlcTempAddressPubKey     string `json:"curr_htlc_temp_address_pub_key"`     //	创建Cnx中的toHtlc的部分使用的临时地址的公钥
 	CurrHtlcTempAddressPrivateKey string `json:"curr_htlc_temp_address_private_key"` //	创建Cnx中的toHtlc的部分使用的临时地址的私钥
 	TypeLengthValue
@@ -338,7 +348,8 @@ type PayeeCreateHt1aRDForPayer struct {
 type HtlcSendR struct {
 	ChannelId                            string `json:"channel_id"`
 	R                                    string `json:"r"`
-	ChannelAddressPrivateKey             string `json:"channel_address_private_key"`             // The key of Sender. Example Bob send R to Alice, the Sender is Bob.
+	ChannelAddressPrivateKey             string `json:"channel_address_private_key"` // The key of Sender. Example Bob send R to Alice, the Sender is Bob.
+	CurrHtlcTempAddressForHE1bIndex      int    `json:"curr_htlc_temp_address_for_he1b_index"`
 	CurrHtlcTempAddressForHE1bPubKey     string `json:"curr_htlc_temp_address_for_he1b_pub_key"` // These keys of HE1b output. Example Bob send R to Alice, these is Bob3's.
 	CurrHtlcTempAddressForHE1bPrivateKey string `json:"curr_htlc_temp_address_for_he1b_private_key"`
 	TypeLengthValue
@@ -374,6 +385,7 @@ type HtlcRequestCloseCurrTx struct {
 	LastRsmcTempAddressPrivateKey        string `json:"last_rsmc_temp_address_private_key"`
 	LastHtlcTempAddressPrivateKey        string `json:"last_htlc_temp_address_private_key"`
 	LastHtlcTempAddressForHtnxPrivateKey string `json:"last_htlc_temp_address_for_htnx_private_key"`
+	CurrRsmcTempAddressIndex             int    `json:"curr_rsmc_temp_address_index"`
 	CurrRsmcTempAddressPubKey            string `json:"curr_rsmc_temp_address_pub_key"`
 	CurrRsmcTempAddressPrivateKey        string `json:"curr_rsmc_temp_address_private_key"`
 	TypeLengthValue
@@ -386,6 +398,7 @@ type HtlcSignCloseCurrTx struct {
 	LastRsmcTempAddressPrivateKey        string `json:"last_rsmc_temp_address_private_key"`
 	LastHtlcTempAddressPrivateKey        string `json:"last_htlc_temp_address_private_key"`
 	LastHtlcTempAddressForHtnxPrivateKey string `json:"last_htlc_temp_address_for_htnx_private_key"`
+	CurrRsmcTempAddressIndex             int    `json:"curr_rsmc_temp_address_index"`
 	CurrRsmcTempAddressPubKey            string `json:"curr_rsmc_temp_address_pub_key"`
 	CurrRsmcTempAddressPrivateKey        string `json:"curr_rsmc_temp_address_private_key"`
 	TypeLengthValue

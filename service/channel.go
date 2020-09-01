@@ -44,6 +44,7 @@ func (this *channelManager) AliceOpenChannel(msg bean.RequestMessage, user *bean
 	openChannelInfo.FunderNodeAddress = P2PLocalPeerId
 	openChannelInfo.FunderPeerId = user.PeerId
 	openChannelInfo.FundingPubKey = reqData.FundingPubKey
+	openChannelInfo.FunderAddressIndex = reqData.FunderAddressIndex
 	openChannelInfo.IsPrivate = reqData.IsPrivate
 
 	channelInfo := &dao.ChannelInfo{}
@@ -176,6 +177,7 @@ func (this *channelManager) BobAcceptChannel(jsonData string, user *bean.User) (
 
 	if reqData.Approval {
 		channelInfo.PubKeyB = reqData.FundingPubKey
+		channelInfo.FundeeAddressIndex = reqData.FundeeAddressIndex
 		channelInfo.AddressB = bobFundingAddress
 		multiSig, err := rpcClient.CreateMultiSig(2, []string{channelInfo.PubKeyA, channelInfo.PubKeyB})
 		if err != nil {

@@ -137,7 +137,7 @@ func (service *htlcBackwardTxManager) SendRToPreviousNode_Step1(msg bean.Request
 	}
 	_, err = tool.GetPubKeyFromWifAndCheck(reqData.CurrHtlcTempAddressForHE1bPrivateKey, reqData.CurrHtlcTempAddressForHE1bPubKey)
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf(enum.Tips_rsmc_notPairPrivAndPubKey, reqData.CurrHtlcTempAddressForHE1bPrivateKey, reqData.CurrHtlcTempAddressForHE1bPubKey))
+		return nil, err
 	}
 	// endregion
 
@@ -586,6 +586,7 @@ func createHe1bAtPayeeSide_at45(tx storm.Node, channelInfo dao.ChannelInfo, late
 	he1b.InputTxid = hlockOutputs[0].Txid
 	he1b.InputAmount = hlockTx.OutAmount
 
+	he1b.RSMCTempAddressIndex = reqData.CurrHtlcTempAddressForHE1bIndex
 	he1b.RSMCTempAddressPubKey = reqData.CurrHtlcTempAddressForHE1bPubKey
 	he1b.RSMCMultiAddress = he1bMultiAddress
 	he1b.RSMCRedeemScript = he1bRedeemScript

@@ -866,6 +866,7 @@ func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction
 		commitmentTxRequest.ChannelId = channelInfo.ChannelId
 		commitmentTxRequest.Amount = aliceDataJson.Amount
 		commitmentTxRequest.ChannelAddressPrivateKey = reqData.ChannelAddressPrivateKey
+		commitmentTxRequest.CurrTempAddressIndex = reqData.CurrTempAddressIndex
 		commitmentTxRequest.CurrTempAddressPubKey = reqData.CurrTempAddressPubKey
 		commitmentTxRequest.CurrTempAddressPrivateKey = reqData.CurrTempAddressPrivateKey
 		newCommitmentTxInfo, err := createCommitmentTxHex(tx, false, commitmentTxRequest, channelInfo, latestCommitmentTxInfo, *signer)

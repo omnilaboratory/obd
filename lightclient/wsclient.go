@@ -337,7 +337,7 @@ func (client *Client) sendDataToP2PUser(msg bean.RequestMessage, status bool, da
 						}
 						data = p2pMiddleNodeTransferData(&msg, *itemClient, data, retData)
 						if len(data) == 0 {
-							return errors.New("err p2pMiddleNodeTransferData")
+							return nil
 						}
 					}
 					fromId := msg.SenderUserPeerId + "@" + p2pChannelMap[msg.SenderNodePeerId].Address
@@ -383,7 +383,7 @@ func getDataFromP2PSomeone(msg bean.RequestMessage) error {
 
 					msg.Data = p2pMiddleNodeTransferData(&msg, *itemClient, msg.Data, retData)
 					if len(msg.Data) == 0 {
-						return errors.New("err p2pMiddleNodeTransferData")
+						return nil
 					}
 
 					fromId := msg.SenderUserPeerId + "@" + p2pChannelMap[msg.SenderNodePeerId].Address

@@ -538,6 +538,7 @@ func createCommitmentTxHex(dbTx storm.Node, isSender bool, reqData *bean.SendReq
 		return nil, err
 	}
 	commitmentTxInfo.TxType = dao.CommitmentTransactionType_Rsmc
+	commitmentTxInfo.RSMCTempAddressIndex = reqData.CurrTempAddressIndex
 
 	usedTxidTemp := ""
 	if commitmentTxInfo.AmountToRSMC > 0 {
