@@ -132,6 +132,46 @@ func (client *Client) htlcHModule(msg bean.RequestMessage) (enum.SendTargetType,
 }
 
 //htlc tx
+func (client *Client) htlcQueryModule(msg bean.RequestMessage) (enum.SendTargetType, []byte, bool) {
+	status := false
+	var sendType = enum.SendTargetType_SendToSomeone
+	data := ""
+	switch msg.Type {
+	case enum.MsgType_Htlc_GetLatestHT1aOrHE1b_3250:
+		respond, err := service.HtlcQueryTxManager.GetLatestHT1aOrHE1b(msg.Data, *client.User)
+		if err != nil {
+			data = err.Error()
+		} else {
+			bytes, err := json.Marshal(respond)
+			if err != nil {
+				data = err.Error()
+			} else {
+				data = string(bytes)
+				status = true
+			}
+		}
+		client.sendToMyself(msg.Type, status, data)
+	case enum.MsgType_Htlc_GetHT1aOrHE1bBySomeCommitmentId_3251:
+		respond, err := service.HtlcQueryTxManager.GetHT1aOrHE1bBySomeCommitmentId(msg.Data, *client.User)
+		if err != nil {
+			data = err.Error()
+		} else {
+			bytes, err := json.Marshal(respond)
+			if err != nil {
+				data = err.Error()
+			} else {
+				data = string(bytes)
+				status = true
+			}
+		}
+		client.sendToMyself(msg.Type, status, data)
+	default:
+		sendType = enum.SendTargetType_SendToNone
+	}
+	return sendType, []byte(data), status
+}
+
+//htlc tx
 func (client *Client) htlcTxModule(msg bean.RequestMessage) (enum.SendTargetType, []byte, bool) {
 	status := false
 	var sendType = enum.SendTargetType_SendToSomeone

@@ -201,6 +201,13 @@ func (client *Client) Read() {
 						break
 					}
 
+					//-htlc query
+					if msg.Type <= enum.MsgType_Htlc_GetLatestHT1aOrHE1b_3250 &&
+						msg.Type >= enum.MsgType_Htlc_GetHT1aOrHE1bBySomeCommitmentId_3251 {
+						sendType, dataOut, status = client.htlcQueryModule(msg)
+						break
+					}
+
 					//-352
 					if msg.Type == enum.MsgType_CommitmentTxSigned_SendRevokeAndAcknowledgeCommitmentTransaction_352 {
 						sendType, dataOut, status = client.commitmentTxSignModule(msg)

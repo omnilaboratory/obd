@@ -106,6 +106,9 @@ const (
 	MsgType_CommitmentTx_SendSomeCommitmentById_3206     MsgType = -103206
 	MsgType_CommitmentTx_AllRDByChanId_3207              MsgType = -103207
 	MsgType_CommitmentTx_AllBRByChanId_3208              MsgType = -103208
+
+	MsgType_Htlc_GetLatestHT1aOrHE1b_3250             MsgType = -103250
+	MsgType_Htlc_GetHT1aOrHE1bBySomeCommitmentId_3251 MsgType = -103251
 	//endregion
 
 	// region 交易相关接口，需要登录 transaction [-100000,-102000]
@@ -324,6 +327,10 @@ func CheckExist(msgType MsgType) bool {
 	case MsgType_CommitmentTx_AllRDByChanId_3207:
 		return true
 	case MsgType_CommitmentTx_AllBRByChanId_3208:
+		return true
+	case MsgType_Htlc_GetLatestHT1aOrHE1b_3250:
+		return true
+	case MsgType_Htlc_GetHT1aOrHE1bBySomeCommitmentId_3251:
 		return true
 	case MsgType_SendCloseChannelRequest_38:
 		return true
