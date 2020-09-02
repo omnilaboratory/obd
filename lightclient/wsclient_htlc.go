@@ -79,6 +79,8 @@ func (client *Client) htlcHModule(msg bean.RequestMessage) (enum.SendTargetType,
 				tempClientMap[client.User.PeerId] = client
 			}
 		}
+		sendType = enum.SendTargetType_SendToSomeone
+
 	case enum.MsgType_HTLC_SendAddHTLC_40:
 		respond, err := service.HtlcForwardTxService.UpdateAddHtlc_40(msg, *client.User)
 		if err != nil {

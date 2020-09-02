@@ -26,6 +26,7 @@ type htlcForwardTxManager struct {
 	operationFlag sync.Mutex
 	//缓存来自alice的请求开通htlc的交易的数据
 	addHtlcTempDataAt40P map[string]string
+	htlcInvoiceTempData  map[string]bean.HtlcRequestFindPathInfo
 }
 
 // htlc pay money  付款
@@ -214,6 +215,7 @@ func (service *htlcForwardTxManager) PayerRequestFindPath(msgData string, user b
 		pathRequest.RealPayerPeerId = user.PeerId
 		pathRequest.PayeePeerId = requestFindPathInfo.RecipientUserPeerId
 		sendMsgToTracker(enum.MsgType_Tracker_GetHtlcPath_351, pathRequest)
+		service.htlcInvoiceTempData[user.PeerId+"_"+pathRequest.H] = requestFindPathInfo
 		return make(map[string]interface{}), requestFindPathInfo.IsPrivate, nil
 	} else {
 		requestData.HtlcRequestFindPathInfo = requestFindPathInfo
@@ -251,10 +253,12 @@ func getPrivateChannelForHtlc(requestData *bean.HtlcRequestFindPath, user bean.U
 				if commitmentTxInfo.AmountToRSMC >= requestData.Amount {
 					retData["h"] = requestData.H
 					retData["isPrivate"] = requestData.IsPrivate
+					retData["property_id"] = requestData.PropertyId
 					retData["amount"] = requestData.Amount
 					retData["routing_packet"] = channel.ChannelId
 					retData["min_cltv_expiry"] = 1
 					retData["next_node_peerId"] = requestData.RecipientUserPeerId
+					retData["memo"] = requestData.Description
 					break
 				}
 			}
@@ -279,6 +283,11 @@ func (service *htlcForwardTxManager) GetResponseFromTrackerOfPayerRequestFindPat
 	}
 
 	h := dataArr[0]
+	requestFindPathInfo := service.htlcInvoiceTempData[user.PeerId+"_"+h]
+	if &requestFindPathInfo == nil {
+		return nil, errors.New("has no channel path")
+	}
+
 	splitArr := strings.Split(dataArr[1], ",")
 	currChannelInfo := dao.ChannelInfo{}
 	err = user.Db.Select(
@@ -301,10 +310,14 @@ func (service *htlcForwardTxManager) GetResponseFromTrackerOfPayerRequestFindPat
 	retData := make(map[string]interface{})
 	retData["h"] = h
 	retData["isPrivate"] = false
-	retData["amount"] = dataArr[2]
+	retData["property_id"] = requestFindPathInfo.PropertyId
+	retData["amount"] = requestFindPathInfo.Amount
 	retData["routing_packet"] = dataArr[1]
 	retData["min_cltv_expiry"] = arrLength
 	retData["next_node_peerId"] = nextNodePeerId
+	retData["memo"] = requestFindPathInfo.Description
+
+	delete(service.htlcInvoiceTempData, user.PeerId+"_"+h)
 	return retData, nil
 }
 
@@ -329,13 +342,6 @@ func (service *htlcForwardTxManager) UpdateAddHtlc_40(msg bean.RequestMessage, u
 	defer tx.Rollback()
 
 	//region check input data 检测输入输入数据
-	if requestData.PropertyId < 0 {
-		return nil, errors.New(enum.Tips_common_wrong + "property_id")
-	}
-	_, err = rpcClient.OmniGetProperty(requestData.PropertyId)
-	if err != nil {
-		return nil, errors.New(fmt.Sprintf(enum.Tips_common_notExistProperty, requestData.PropertyId))
-	}
 	if requestData.Amount < config.GetOmniDustBtc() {
 		return nil, errors.New(fmt.Sprintf(enum.Tips_common_amountMustGreater, config.GetOmniDustBtc()))
 	}
@@ -496,7 +502,7 @@ func (service *htlcForwardTxManager) UpdateAddHtlc_40(msg bean.RequestMessage, u
 	htlcRequestInfo := &dao.AddHtlcRequestInfo{}
 	_ = tx.Select(
 		q.Eq("ChannelId", channelInfo.ChannelId),
-		q.Eq("PropertyId", requestData.PropertyId),
+		q.Eq("PropertyId", channelInfo.PropertyId),
 		q.Eq("H", requestData.H),
 		q.Eq("Amount", requestData.Amount),
 		q.Eq("RoutingPacket", requestData.RoutingPacket),
@@ -505,7 +511,7 @@ func (service *htlcForwardTxManager) UpdateAddHtlc_40(msg bean.RequestMessage, u
 		htlcRequestInfo.RecipientUserPeerId = msg.RecipientUserPeerId
 		htlcRequestInfo.H = requestData.H
 		htlcRequestInfo.Memo = requestData.Memo
-		htlcRequestInfo.PropertyId = requestData.PropertyId
+		htlcRequestInfo.PropertyId = channelInfo.PropertyId
 		htlcRequestInfo.Amount = requestData.Amount
 		htlcRequestInfo.ChannelId = channelInfo.ChannelId
 		htlcRequestInfo.RoutingPacket = requestData.RoutingPacket
