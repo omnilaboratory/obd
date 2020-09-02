@@ -252,7 +252,7 @@ func getPrivateChannelForHtlc(requestData *bean.HtlcRequestFindPath, user bean.U
 			if err == nil && commitmentTxInfo.Id > 0 {
 				if commitmentTxInfo.AmountToRSMC >= requestData.Amount {
 					retData["h"] = requestData.H
-					retData["isPrivate"] = requestData.IsPrivate
+					retData["is_private"] = requestData.IsPrivate
 					retData["property_id"] = requestData.PropertyId
 					retData["amount"] = requestData.Amount
 					retData["routing_packet"] = channel.ChannelId
@@ -309,7 +309,7 @@ func (service *htlcForwardTxManager) GetResponseFromTrackerOfPayerRequestFindPat
 	arrLength := len(strings.Split(dataArr[1], ","))
 	retData := make(map[string]interface{})
 	retData["h"] = h
-	retData["isPrivate"] = false
+	retData["is_private"] = false
 	retData["property_id"] = requestFindPathInfo.PropertyId
 	retData["amount"] = requestFindPathInfo.Amount
 	retData["routing_packet"] = dataArr[1]
