@@ -1164,17 +1164,17 @@ func (service *fundingTransactionManager) AssetFundingSigned(jsonData string, si
 	//}
 	channelInfo.ChannelId = fundingTransaction.ChannelId
 	node["channel_id"] = channelInfo.ChannelId
-	if tool.CheckIsString(&reqData.FundeeChannelAddressPrivateKey) == false {
+	if tool.CheckIsString(&reqData.ChannelAddressPrivateKey) == false {
 		return nil, errors.New(enum.Tips_common_empty + " fundee_channel_address_private_key")
 	}
-	_, err = tool.GetPubKeyFromWifAndCheck(reqData.FundeeChannelAddressPrivateKey, myPubKey)
+	_, err = tool.GetPubKeyFromWifAndCheck(reqData.ChannelAddressPrivateKey, myPubKey)
 	if err != nil {
 		return nil, err
 	}
 
 	//region  sign C1 tx
 	// 二次签名
-	rsmcTxId, signedRsmcHex, err := rpcClient.BtcSignRawTransaction(fundingTransaction.FunderRsmcHex, reqData.FundeeChannelAddressPrivateKey)
+	rsmcTxId, signedRsmcHex, err := rpcClient.BtcSignRawTransaction(fundingTransaction.FunderRsmcHex, reqData.ChannelAddressPrivateKey)
 	if err != nil {
 		return nil, err
 	}
@@ -1213,7 +1213,7 @@ func (service *fundingTransactionManager) AssetFundingSigned(jsonData string, si
 	_, hex, err := rpcClient.OmniCreateAndSignRawTransactionUseUnsendInput(
 		rsmcMultiAddress,
 		[]string{
-			reqData.FundeeChannelAddressPrivateKey,
+			reqData.ChannelAddressPrivateKey,
 		},
 		inputs,
 		outputAddress,
@@ -1243,7 +1243,7 @@ func (service *fundingTransactionManager) AssetFundingSigned(jsonData string, si
 	lastCommitmentTx.RSMCTxHex = signedRsmcHex
 	lastCommitmentTx.RSMCTxid = rsmcTxId
 	lastCommitmentTx.AmountToRSMC = funderAmount
-	err = createCurrCommitmentTxBR(tx, dao.BRType_Rmsc, channelInfo, lastCommitmentTx, inputs, myAddress, reqData.FundeeChannelAddressPrivateKey, *signer)
+	err = createCurrCommitmentTxBR(tx, dao.BRType_Rmsc, channelInfo, lastCommitmentTx, inputs, myAddress, reqData.ChannelAddressPrivateKey, *signer)
 	if err != nil {
 		log.Println(err)
 		return nil, err

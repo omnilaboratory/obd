@@ -176,7 +176,7 @@ type SignAssetFunding struct {
 	//amount of the asset on Bob side
 	AmountB float64 `json:"amount_b"`
 	//signature of fundee Bob
-	FundeeChannelAddressPrivateKey string `json:"fundee_channel_address_private_key"`
+	ChannelAddressPrivateKey string `json:"channel_address_private_key"`
 	//redeem script used to generate P2SH address
 	RedeemScript string `json:"redeem_script"`
 	//hash of redeemScript
