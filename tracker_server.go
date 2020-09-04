@@ -20,8 +20,8 @@ func initTrackerLog() {
 	path := "log/tracker"
 	writer, err := rotatelogs.New(
 		path+".%Y%m%d%H%M.log",
-		rotatelogs.WithMaxAge(time.Duration(30*24)*time.Hour),
-		rotatelogs.WithRotationTime(time.Hour),
+		rotatelogs.WithMaxAge(30*24*time.Hour),
+		rotatelogs.WithRotationTime(4*time.Hour),
 	)
 	if err != nil {
 		panic(err)
