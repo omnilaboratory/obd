@@ -136,9 +136,9 @@ func (this *channelManager) BobCheckChannelAddressExist(jsonData string, user *b
 	return existAddress, nil
 }
 
-func (this *channelManager) BobAcceptChannel(jsonData string, user *bean.User) (channelInfo *dao.ChannelInfo, err error) {
+func (this *channelManager) BobAcceptChannel(msg bean.RequestMessage, user *bean.User) (channelInfo *dao.ChannelInfo, err error) {
 	reqData := &bean.SendSignOpenChannel{}
-	err = json.Unmarshal([]byte(jsonData), &reqData)
+	err = json.Unmarshal([]byte(msg.Data), &reqData)
 
 	if err != nil {
 		return nil, err
@@ -173,6 +173,10 @@ func (this *channelManager) BobAcceptChannel(jsonData string, user *bean.User) (
 
 	if channelInfo.PeerIdB != user.PeerId {
 		return nil, errors.New(enum.Tips_channel_notThePeerIdB)
+	}
+
+	if channelInfo.PeerIdA != msg.RecipientUserPeerId {
+		return nil, errors.New(enum.Tips_common_wrong + msg.RecipientUserPeerId)
 	}
 
 	if reqData.Approval {

@@ -22,7 +22,7 @@ func initObdLog() {
 	path := "log/obdServer"
 	writer, err := rotatelogs.New(
 		path+".%Y%m%d%H%M.log",
-		rotatelogs.WithMaxAge(time.Duration(4)*time.Hour),
+		rotatelogs.WithMaxAge(time.Duration(30*24)*time.Hour),
 		rotatelogs.WithRotationTime(time.Duration(4)*time.Hour),
 	)
 

@@ -146,7 +146,7 @@ func (client *Client) channelModule(msg bean.RequestMessage) (enum.SendTargetTyp
 
 	//get acceptChannelReq from fundee then send to funder
 	case enum.MsgType_SendChannelAccept_33:
-		node, err := service.ChannelService.BobAcceptChannel(msg.Data, client.User)
+		node, err := service.ChannelService.BobAcceptChannel(msg, client.User)
 		if err != nil {
 			data = err.Error()
 		} else {
