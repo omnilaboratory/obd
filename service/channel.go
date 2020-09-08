@@ -533,14 +533,14 @@ func (this *channelManager) RequestCloseChannel(msg bean.RequestMessage, user *b
 	_ = tx.Commit()
 
 	toData := make(map[string]interface{})
-	toData["channel_Id"] = channelId
+	toData["channel_id"] = channelId
 	toData["close_channel_hash"] = closeChannel.RequestHex
 	return toData, nil
 }
 
 //关闭通道的请求到达对方节点obd
 func (this *channelManager) BeforeBobSignCloseChannelAtBobSide(data string, user bean.User) (retData map[string]interface{}, err error) {
-	var channelId = gjson.Get(data, "channel_Id").String()
+	var channelId = gjson.Get(data, "channel_id").String()
 	var closeChannelHash = gjson.Get(data, "close_channel_hash").String()
 
 	tx, err := user.Db.Begin(true)

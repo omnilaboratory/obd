@@ -229,7 +229,7 @@ func (this *commitmentTxManager) AfterBobSignCommitmentTransactionAtAliceSide(da
 
 	aliceData := make(map[string]interface{})
 	aliceData["approval"] = signCommitmentTx.Approval
-	aliceData["channel_Id"] = signCommitmentTx.ChannelId
+	aliceData["channel_id"] = signCommitmentTx.ChannelId
 
 	retData = make(map[string]interface{})
 	retData["aliceData"] = aliceData
