@@ -226,7 +226,7 @@ func (manager *htlcManager) createChannelNetwork(payerObdNodeId, realPayerPeerId
 				q.Eq("PeerIdA", currPayeePeerId)),
 			q.Or(
 				q.Eq("ObdNodeIdA", payerObdNodeId),
-				q.Eq("ObdNodeIdB", payerObdNodeId))).
+				q.Eq("ObdNodeIdB", payerObdNodeId))).OrderBy("CreateAt").Reverse().
 			Find(&nodes)
 	} else {
 		err = db.Select(
@@ -234,7 +234,7 @@ func (manager *htlcManager) createChannelNetwork(payerObdNodeId, realPayerPeerId
 			q.Eq("CurrState", 20),
 			q.Or(
 				q.Eq("PeerIdB", currPayeePeerId),
-				q.Eq("PeerIdA", currPayeePeerId))).
+				q.Eq("PeerIdA", currPayeePeerId))).OrderBy("CreateAt").Reverse().
 			Find(&nodes)
 	}
 
