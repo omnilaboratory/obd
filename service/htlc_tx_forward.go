@@ -215,6 +215,10 @@ func (service *htlcForwardTxManager) PayerRequestFindPath(msgData string, user b
 		pathRequest.RealPayerPeerId = user.PeerId
 		pathRequest.PayeePeerId = requestFindPathInfo.RecipientUserPeerId
 		sendMsgToTracker(enum.MsgType_Tracker_GetHtlcPath_351, pathRequest)
+		if service.htlcInvoiceTempData == nil {
+			service.htlcInvoiceTempData = make(map[string]bean.HtlcRequestFindPathInfo)
+		}
+
 		service.htlcInvoiceTempData[user.PeerId+"_"+pathRequest.H] = requestFindPathInfo
 		return make(map[string]interface{}), requestFindPathInfo.IsPrivate, nil
 	} else {
