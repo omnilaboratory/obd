@@ -36,7 +36,7 @@ func initTrackerLog() {
 }
 
 // gox -os "windows linux darwin" -arch amd64
-// gox -os "windows" -arch amd64
+// gox -os "linux" -arch amd64
 func main1() {
 	initTrackerLog()
 
