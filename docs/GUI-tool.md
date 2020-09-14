@@ -142,7 +142,7 @@ switch back to Alice's window;
 2. input the `recipient_node_peer_id` which is the node id that Bob is using, like: `/ip4/62.234.188.160/tcp/4001/p2p/QmTxpMkwXyFNbwwRv3XGFgxZkdCM5UfxNHVAFZDukqsM5S`  
    input the `recipient_user_peer_id` which is bob's user id, like: `f12cd5677ac77e5ec03280eeb175464960f0d075413da74c0cfd88bb65fc1b3c`
 
-3. click "funding_pubkey": select a address that can be used to fund the channel that you are now creating with Bob:  
+3. click "select" to select a "funding_pubkey": select an address's pubkey that can be used to fund the channel that you are now creating with Bob:  
 
 <p align="center">
   <img width="750" alt="createChannelSelectFundingPubKey" src="assets/createChannelSelectFundingPubKey.png">
