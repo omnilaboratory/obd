@@ -124,14 +124,38 @@ Switch back to Alice's window, we shall input Bob's `nodeAddress` and `userPeerI
   <img width="750" alt="connectNode" src="assets/connectNode.png">
 </p>
 
-1. switch back to Alice's window;  
-2. click "connectP2PPeer";  
-3. input the `nodeAddress` into the "NodeAddress" input box;  
-4. click "invoke API";  
+switch back to Alice's window;  
+1. click "connectP2PPeer";  
+2. input the `nodeAddress` into the "NodeAddress" input box;  
+3. click "invoke API";  
 
 ### Step 5: open channel
 
 Click openChannel, input the arguments required by this function and click "invoke API", wait Bob's response. 
+
+<p align="center">
+  <img width="750" alt="createChannel" src="assets/createChannel.png">
+</p>
+
+switch back to Alice's window;  
+1. click "openChannel";  
+2. input the `recipient_node_peer_id` which is the node id that Bob is using, like: `/ip4/62.234.188.160/tcp/4001/p2p/QmTxpMkwXyFNbwwRv3XGFgxZkdCM5UfxNHVAFZDukqsM5S`  
+   input the `recipient_user_peer_id` which is the bob's user id, like: `f12cd5677ac77e5ec03280eeb175464960f0d075413da74c0cfd88bb65fc1b3c`
+
+3. click "funding_pubkey": select a address that can be used to fund the channel that you are now creating with Bob:  
+
+<p align="center">
+  <img width="750" alt="createChannelSelectFundingPubKey" src="assets/createChannelSelectFundingPubKey.png">
+</p>
+
+in the pop-up window, click "get balance" to see the balance of each address. Copy one of these pubkey and close the window. Past the pubkey you just copied to the input box `funding_pubkey`. 
+
+Another option is `create`, which creates a new omni address. You shall use thirdparty bitcoin/omnilayer faucet to fund this address. In this GUI playground, omnifaucet is under the left side bar `User Data --> OmniFaucet`.  
+
+4. enable "is_private": if you want your channel and all your transactions to be hidden, you must enbale "is_private".
+
+5. click "invoke API";  
+
 
 In the other window you just opened in step 4 for Bob, you will see an incoming message asking for opening a channel with Bob. Click "acceptChannel", leave the default values that the js SDK filled for you, response Alice to accept the "openChannel" request.  
 
