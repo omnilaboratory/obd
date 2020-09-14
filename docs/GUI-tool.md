@@ -147,12 +147,12 @@ In the other window you just opened in step 4 for Bob, you will see an incoming 
 3. input the `property_id`, `amount`, `h` `expiry_time` and short memo, where `h` is the locker (`hash(r)`) that payer uses it to lock a payment, only you can unlock it by your secrete `r`;  
 4. click "invoke API", you will see the beth32 encoded invoice string and QR code are created;  
 
-Share ths invoice string or QR code to anyone (not only Bob) who is going to pay you. 
+Share ths invoice string or QR code to anyone (not only Bob) who is going to pay you. But before you can actually receive money, you at least have a funded channel, which you dont have yet. So please go to the next section to study how to fund a channel. 
 
 
 ### Step 7: channel operations
 
-You are able to keep going with other operations. Go to the next section to practise how to fund the channel or pay to others. Or if you want to dive deeper, to see what really happens during an invoice payment process, we suggest you manually operate accroding the steps in the next section. 
+You are able to keep going with other operations. Go to the [next section](https://omnilaboratory.github.io/obd/#/gui-fund-channel) to practise how to fund the channel and pay to others. Or if you want to dive deeper, to see what really happens during an invoice payment process, we suggest you manually operate according the steps in the [inside the payment process](https://omnilaboratory.github.io/obd/#/gui-pay-invoice?id=inside-the-process-of-invoice-payment). 
 
 Online API documents lists all the channel operations step by step, and testing demo data as well. Please visit OBD [online API documentation](https://api.omnilab.online) to learn how to fill in arguments to work with OBD.  
 
