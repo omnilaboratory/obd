@@ -40,7 +40,7 @@ The invoice system simplifies the complex process of multi hop HTLC payment. Use
     |       |<--------    forwardR      ---(4)---|       |
     |       |                                    |       |
     |       |---(5)---      signR       -------->|       |
-    |       | 				         |       |
+    |       |                                    |       |
     |       |   either Alice or Bob can close    |       |
     |       |                                    |       |
     |       |<--------    closeHTLC     ---(6)---|       |
