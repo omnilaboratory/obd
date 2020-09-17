@@ -1,6 +1,7 @@
 # Advanced topic
 
-This is an introduction on omnilayer, in order to quickly let users to know how to manage their own smart assets, which is quite useful in applying lightning technology to various scenarios.
+
+If you are manually managing a payment, and you have already get the secrete R to unlock the current HTLC, you shall call closeHTLC to finally update your balance.  
 
 
 ## Close HTLC
@@ -68,6 +69,9 @@ Full example in GUI-tool you could be see [sdkCloseHTLCSigned](https://github.co
 
 
 ## Managed and smart asset
+
+This is an introduction about omnilayer, in order to quickly let users to know how to manage their own smart assets.
+
 
 ### Issue new tokens with fixed supply
 

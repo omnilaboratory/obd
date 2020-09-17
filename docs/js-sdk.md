@@ -11,6 +11,6 @@ The JS SDK is located under [/SDK](https://github.com/omnilaboratory/DebuggingTo
 
 The [GUI lightning play ground](https://github.com/omnilaboratory/DebuggingTool/) is the best reference to the use of js sdk.  
 
-The [visualized tutorial](#/js-sdk-5mins) that guides you to get started is in the next section.  
+The [visualized tutorial](https://omnilaboratory.github.io/obd/#/js-sdk-5mins) that guides you to get started is in the next section.  
 
 For extensive explanation of APIs, you will seek help via [online documentation](https://api.omnilab.online). 

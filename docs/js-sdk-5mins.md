@@ -273,11 +273,11 @@ Full example in GUI-tool you could be see [sdkPayInvoice](https://github.com/omn
 
 ## Remark
 
-before you create or pay an invoice, you must have your channel correctly funded by the token you want to collect or pay. To fund your channel, we suggest you firstly experience via the GUI playground.  
+before you create or pay an invoice, you must have your channel correctly funded by the token you want to collect or pay. To fund your channel, we suggest you firstly experience via the GUI playground:  
 
-[Fund channel by bitcoins and tokens](#/gui-fund-channel).  
+[Fund channel by bitcoins and tokens](https://omnilaboratory.github.io/obd/#/gui-fund-channel).  
 
-If you want to dive deeper into the internal protocol that how invoice payment works, we suggest you read the [doc here](/#/gui-pay-invoice) 
+If you want to dive deeper into the internal protocol that how invoice payment works, we suggest you read the [doc here](https://omnilaboratory.github.io/obd/#/gui-pay-invoice) 
 
 
 
