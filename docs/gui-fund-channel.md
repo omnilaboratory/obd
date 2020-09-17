@@ -15,7 +15,7 @@ New omnicore will be released soon, which supports sendmany and features of SegW
 ## Step 1: funds Bitcoin
 
 <p align="center">
-  <img width="750" alt="Connect Screenshot" src="assets/fundingBTC.png">
+  <img width="750" alt="fundingBTC" src="assets/fundingBTC.png">
 </p>
 
 On Alice's screen.
@@ -24,7 +24,7 @@ On Alice's screen.
 ## Step 2: tells Bob funding Bitcoin transaction created
 
 <p align="center">
-  <img width="750" alt="Connect Screenshot" src="assets/btcFoundingCreated.png">
+  <img width="750" alt="btcFoundingCreated" src="assets/btcFoundingCreated.png">
 </p>
 
 On Alice's screen.
@@ -32,7 +32,7 @@ On Alice's screen.
 ## Step 3: Bob signs the Bitcoin funding message
 
 <p align="center">
-  <img width="750" alt="Connect Screenshot" src="assets/btcFoundingSigned.png">
+  <img width="750" alt="btcFoundingSigned" src="assets/btcFoundingSigned.png">
 </p>
 
 On Bob's screen.
@@ -40,7 +40,7 @@ On Bob's screen.
 ## Step 4: funds asset
 
 <p align="center">
-  <img width="750" alt="Connect Screenshot" src="assets/fundingAsset.png">
+  <img width="750" alt="fundingAsset" src="assets/fundingAsset.png">
 </p>
 
 On Alice's screen.
@@ -48,7 +48,7 @@ On Alice's screen.
 ## Step 5: tells Bob funding assets transaction created
 
 <p align="center">
-  <img width="750" alt="Connect Screenshot" src="assets/assetFoundingCreated.png">
+  <img width="750" alt="assetFoundingCreated" src="assets/assetFoundingCreated.png">
 </p>
 
 On Alice's screen.
@@ -56,7 +56,7 @@ On Alice's screen.
 ## Step 6: Bob signs the assets funding message
 
 <p align="center">
-  <img width="750" alt="Connect Screenshot" src="assets/assetFoundingSigned.png">
+  <img width="750" alt="assetFoundingSigned" src="assets/assetFoundingSigned.png">
 </p>
 
 On Bob's screen.

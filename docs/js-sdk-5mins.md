@@ -3,7 +3,7 @@
 
 
 First, you should put all of [JS SDK](https://github.com/omnilaboratory/DebuggingTool/tree/master/sdk) files 
-to your path of project.
+under your project's path.
 
 And, following steps below will help you to build your first lightning wallet, and the code can be embeded in any mobile or desktop applications that support JS:
 
@@ -270,4 +270,18 @@ payInvoice(info);
 ```
 
 Full example in GUI-tool you could be see [sdkPayInvoice](https://github.com/omnilaboratory/DebuggingTool/blob/master/js/common.js) function.
+
+## Remark
+
+before you create or pay an invoice, you must have your channel correctly funded by the token you want to collect or pay. To fund your channel, we suggest you firstly experience via the GUI playground.  
+
+[Fund channel by bitcoins and tokens](#/gui-fund-channel).  
+
+If you want to dive deeper into the internal protocol that how invoice payment works, we suggest you read the [doc here](/#/gui-pay-invoice) 
+
+
+
+
+
+
 
