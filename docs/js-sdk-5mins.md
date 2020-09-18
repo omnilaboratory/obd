@@ -181,10 +181,14 @@ function openChannel(myUserID, nodeID, remoteUserID, info) {
 
         // To simplify development, we save some data to local storage at client.
         // All of this is SDK APIs.
-        saveCounterparties(myUserID, nodeID, remoteUserID);
-        saveChannelID(e.temporary_channel_id);
-        let privkey = getFundingPrivKeyFromPubKey(myUserID, info.funding_pubkey);
-        saveFundingPrivKey(myUserID, e.temporary_channel_id, privkey, kTbFundingPrivKey);
+        let channel_id = e.temporary_channel_id;
+        saveCounterparty(myUserID,  channel_id, nodeID, userID);
+
+        // Save channel's status, you can use it to display custom tips.
+        saveChannelStatus(myUserID, channel_id, true, kStatusOpenChannel);
+
+        let privkey = getPrivKeyFromPubKey(myUserID, info.funding_pubkey);
+        saveFundingPrivKey(myUserID, channel_id, privkey);
     });
 }
 ```
@@ -236,40 +240,54 @@ Full example in GUI-tool you could be see [sdkAddInvoice](https://github.com/omn
   <img width="750" alt="login" src="prototype/payInvoice.png">
 </p>
 
-Invoke **payInvoice** function from [htlc.js](https://github.com/omnilaboratory/DebuggingTool/blob/master/sdk/htlc.js) of SDK.
+Pay invoice is the automated execution of a series of JS SDK APIs in order to achieve the purpose of transferring assets to the countparty in one step.
 
-First parameter is `PayInvoiceInfo object`. 
+The detailed steps are:
 
-Payment infomation is encoded in an invoice represented by a QR-code or a string. Payer either:
-1）call **payInvoice** to pay the invoice created by payee,  
-OR  
-2）call **payInvoice** by filling all the payment items manuely. The example lists all the payment items.  
+1) Alice enters the invoice provided by Bob and launchs it.
 
-Second parameter is `callback`. It's a callback function could be used to process the return data.
+2) Alice invokes `HTLCFindPath` API to find a way.
+
+3) Successfully find a way, Alice automatically invokes `addHTLC` API.
+
+4) Bob received `addHTLC` notification and reply `HTLCSigned` API. When the auto pilot is turned on, `HTLCSigned` invoked automatically, otherwise do it manually.
+
+5) While `HTLCSigned` invoked done. Then Bob automatically invokes `forwardR` API.
+
+6) Alice received `forwardR` notification and automatically invokes `signR` API.
+
+7) Next, Alice automatically invokes `closeHTLC` API.
+
+8) Bob received `closeHTLC` notification and automatically invokes `closeHTLCSigned` API.
 
 #### Example Code:
 
 ```js
-let info     = new PayInvoiceInfo();
-let isInvPay = true or false;
+let myUserID   = 'user id of currently logged in';
+let channel_id = 'channel_id';
 
-if (isInvPay === true) { // pay an invoice
-    info.invoice = 'invoice';
-} else { // pay to a user id without an invoice
-    info.recipient_user_peer_id = 'recipient user id';
-    info.property_id = 'property id of an asset';
-    info.amount      = 'amount';
-    info.h           = 'hash of r';
-    info.expiry_time = 'expiry time';
-    info.description = 'a memo';
-    info.is_private  = true or false;  // the channel is public or private
+// Step 1: HTLCFindPath
+let info     = new HTLCFindPathInfo();
+info.invoice = 'invoice';
+
+let e        = await HTLCFindPath(info);
+let path     = e.routing_packet;
+
+if (channel_id != path) {
+    // Using new channel to process this htlc.
+    channel_id = path;
 }
 
-// SDK API
-payInvoice(info);
+saveHTLCPathData(e);
+
+// Step 2: addHTLC
+payInvoiceStep2(e, myUserID, channel_id);
+
+// Step 3: HTLCSigned from Bob
+... ...
 ```
 
-Full example in GUI-tool you could be see [sdkPayInvoice](https://github.com/omnilaboratory/DebuggingTool/blob/master/js/common.js) function.
+Full example in GUI-tool you could be see [payInvoice](https://github.com/omnilaboratory/DebuggingTool/blob/master/js/common.js) function.
 
 ## Remark
 
