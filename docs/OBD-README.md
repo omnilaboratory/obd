@@ -353,10 +353,10 @@ Join us in [OmniBOLT slack channel](https://join.slack.com/t/omnibolt/shared_inv
 
 # Current Features
 
-(Jun 10, 2020)
+(Sep 23, 2020)
 * Generate OBD(OmniBOLT Daemon) addresss for users.  
 * Open Poon-Dryja Channel.  
-* BTC and Omni assets in funding and transaction.  
+* Omni assets in funding and transaction.  
 * fund and close channel.  
 * Commitment Transaction within a channel.  
 * List latest commitment transaction in a channel.   
@@ -372,14 +372,15 @@ Join us in [OmniBOLT slack channel](https://join.slack.com/t/omnibolt/shared_inv
 * Peer to peer communication module.  
 * GUI tool.  
 * Atomic swap among channels.  
-
-# Comming Features
-
 * Tracker for network statistics.  
-* Balance and transaction history.  
-* Plugin for current lnd and c-lightning implementation.  
+* Balance and transaction history. 
+
+# Comming Features  
+
+* Plugin for current lnd implementation.  
 * Interoperability of obd and lnd.  
-* to be updated, pursuant to the development of OmniBOLT specification.
+* Add obd grpc interfaces to lnd interface package. lnd clients will be able to operate obd channel by the newly added interfaces.  
+* to be updated, pursuant to the development of OmniBOLT specification.  
 
 # Experimental Features
 
