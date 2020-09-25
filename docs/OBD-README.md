@@ -350,43 +350,7 @@ Guidelines:
 
 
 Join us in [OmniBOLT slack channel](https://join.slack.com/t/omnibolt/shared_invite/enQtNzY2MDIzNzY0MzU5LTFlZTNlZjJhMzQxZTU2M2NhYmFjYjc1ZGZmODYwMWE3YmM0YjNhZWQyMDU2Y2VlMWIxYWFjN2YwMjlmYjUxNzA)
-
-# Current Features
-
-(Sep 23, 2020)
-* Generate OBD(OmniBOLT Daemon) addresss for users.  
-* Open Poon-Dryja Channel.  
-* Omni assets in funding and transaction.  
-* fund and close channel.  
-* Commitment Transaction within a channel.  
-* List latest commitment transaction in a channel.   
-* List all commmitment trsactions in a channel.  
-* List all the breach remedy transactions in a channel.  
-* Surveil the broadcasting commitment transactions and revockable delivery transactions.  
-* Execute penalty.   
-* HTL contracts, supported by RSMC, HED, BR, RD, HT, HTRD transactions.  
-* Multiple channel management for a single OBD instance, scaling out in performance.  
-* Multi hop payment using HTLC.  
-* Light client implementation.  
-* Invoice system.  
-* Peer to peer communication module.  
-* GUI tool.  
-* Atomic swap among channels.  
-* Tracker for network statistics.  
-* Balance and transaction history. 
-
-# Comming Features  
-
-* Plugin for current lnd implementation.  
-* Interoperability of obd and lnd.  
-* Add obd grpc interfaces to lnd interface package. lnd clients will be able to operate obd channel by the newly added interfaces.  
-* to be updated, pursuant to the development of OmniBOLT specification.  
-
-# Experimental Features
-
-* Smart Contract System on top of OBD channel. 
-* "Payment is Settlement" theory.
-
+ 
 
 # Related projects: 
 

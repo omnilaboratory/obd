@@ -1,6 +1,7 @@
 - OmniBOLT 
     - [Introduction](README.md) 
     - [Developers](OBD-README.md) 
+    - [Features and Roadmap](features.md)
     - [Communities](communities.md)
 
 - GUI Playground
