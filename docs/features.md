@@ -5,7 +5,7 @@
 **Core 0.1:**  
 
 * Channel:  
-	* Generate OBD(OmniBOLT Daemon) addresss for users.  
+	* Generate OBD(OmniBOLT Daemon) address.  
 	* Open Poon-Dryja Channel.  
 	* Omni assets and Bitcoin funding.  
 	* fund and close channel.  
@@ -27,7 +27,7 @@
 	* Channels.
   
 * Network:  
-	* Peer to peer communication module, using libP2P.  
+	* Peer to peer communication module, using libP2P.   
  
 * Application contracts:
 	* Atomic swap among channels.  

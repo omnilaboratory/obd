@@ -84,9 +84,9 @@ host=62.234.216.108:18332
 user=omniwallet
 pass=cB3]iL2@eZ1?cB2?
 ```
-This is a tesing full node for our community to run/call/test omni commands remotely. The OmniBOLT daemon invokes Omni RPC commands from this node, if you use this configuration. It is the most conveniente way to get started.
+This is a tesing full node for our community to run/call/test omni commands remotely. The OmniBOLT daemon invokes Omni RPC commands from this node, if you use this configuration. It is a conveniente way to get started.
 
-**Notice:** Using remote omnicore causes a lower efficiency during creating RSMC and HTLC transactions, since there are rounds of remote calls to construct a raw omni transaction. Our test reports around 3 seconds in constructing totally 20+ omni raw transactions for an HTLC. So that in production enviroment, we suggest to use local omnicore full node:  
+**Notice:** Using remote omnicore causes lower efficiency during creating RSMC and HTLC transactions, since there are rounds of remote calls to construct a raw omni transaction. Our test reports around 3 seconds in constructing totally 20+ omni raw transactions for an HTLC. So that in production enviroment, we suggest to use local omnicore full node:  
 
 #### option 2: Local Omnicore node 
 [Install OmniCore](https://github.com/OmniLayer/omnicore#installation) on your local machine. Omnicore requires a full BTC core node, which may take days to synchronize the whole BTC database to your local device. After finishing synchronization, you can run omni/BTC commands for experiments, such as constructing raw transactions or generating new addresses.
@@ -132,7 +132,7 @@ The terminal displays:
 
 [GIN-debug] GET    /ws                       --> LightningOnOmni/routers.wsClientConnect (3 handlers)
 ```
-Which tells us the daemon is running. We are going to use WebSocket online testing tools to test our lightning commands.
+Which tells us the daemon is running. We are going to use WebSocket testing tools to test our obd commands.
 
 
 ## Step 4: Test channel operations using GUI testing tool.
@@ -145,7 +145,7 @@ OmniBOLT deamon(OBD) exposes WebSocket services for client interaction. For ease
   <img width="500" alt="Debugging Tool Screenshot" src="assets/image_screen.png">
 </p>
 
-If you dont want to deploy obd to start with, there is a list of testnet nodes in that repo that you can connect to.  
+If you don't want to deploy obd to start with, there is a list of testnet nodes in that GUI tool repo that you can connect to.  
 
 Another option is to use web socket test client for Chrome to do experiments. Install it from:
 ```
@@ -157,7 +157,7 @@ Make sure your browser supports WebSocket, as displayed in this screenshot.
   <img width="500" alt="Screenshot of Websocket online testing site" src="assets/WebSocketTestSite.png">
 </p>
 
-Input `ws://127.0.0.1:60020/wstest`, press `Open`. If on the right text pannel, displays `OPENED`, then we are ready to send messeages to OBD.
+Input `ws://127.0.0.1:60020/wstest`, press `Open`. If in the right text box, displays `OPENED`, then we are ready to send messeages to obd.
 
 The first message is to sign up as `Alice`. input the following request into the Request box, and press `SEND`:
 
@@ -326,7 +326,7 @@ Bob's   id is: f38e72f6bf69c69ad1cdc0040550bafb86d5c4d35bd04542fcf5fc5ecb2135be
 
 
 ### Normal operations
-Following operations can be found in the instruction of GUI tool or the [online API document.](https://api.omnilab.online):
+Instruction can be found in [GUI tool](https://omnilaboratory.github.io/obd/#/GUI-tool) or the [online API document.](https://api.omnilab.online):
 
 
 # API Document
