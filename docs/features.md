@@ -3,9 +3,7 @@
 (latest updated Sep 23, 2020)
 
 **Core 0.1:**  
-* Wallet:  
-	* Generate seeds and pub/priv key pairs.  
-	* backup and restore keys.  
+
 * Channel:  
 	* Generate OBD(OmniBOLT Daemon) addresss for users.  
 	* Open Poon-Dryja Channel.  
@@ -41,7 +39,11 @@
 
 **Tools:**  
 * GUI tool version 0.1 for developers.  
-* JS SDK(for light client) version 0.1  
+* JS SDK(wallet toolkit for light client) version 0.1  
+	* Generate seeds and pub/priv key pairs.  
+	* backup and restore keys.  
+	* Websocket API to operate remote/local obd node.  
+
 
 
 # Comming Features   
