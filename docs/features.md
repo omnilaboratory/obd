@@ -47,11 +47,11 @@
 # Comming Features   
 (latest updated Sep 23, 2020)
  
-* OBD as a plugin for current lnd implementation. (~5 weeks, middle of Oct, 2021)  
-* Interoperability of obd and lnd. (~5 weeks, middle of october, 2021)  
-* Add obd grpc interfaces to lnd interface package. lnd clients will be able to operate obd channel by the newly added interfaces. (6~8 weeks, earlier Nov, 2021)  
+* OBD as a plugin for current lnd implementation. (~5 weeks, middle of Oct, 2020)  
+* Interoperability of obd and lnd. (~5 weeks, middle of october, 2020)  
+* Add obd grpc interfaces to lnd interface package. lnd clients will be able to operate obd channel by the newly added interfaces. (6~8 weeks, earlier Nov, 2020)  
 * Outsource channel monitoring and penalizing malicious activity.(to be estimated)  
-* Update core version 0.1 to new omnicore with SegWit and sendmany supported.  (~5 weeks, earlier Nov, 2021)  
+* Update core version 0.1 to new omnicore with SegWit and sendmany supported.  (~5 weeks, earlier Nov, 2020)  
 * Service quality statistics by tracker. (to be estimated)
 * to be updated, pursuant to the development of OmniBOLT specification.  
  
