@@ -212,10 +212,10 @@ It works.
 
 ## Step 5: Channel Operations on test site
 
-For the convenience of brand new users, who are willing to learn the specification and source code, we built a test site for testing OBD commands and it is for testing only. The URL is:
+For the convenience of brand new users, we suggest to connect our testnet nodes(for testing only). The URL is:
 
 ```
-ws://62.234.216.108:60020/ws
+ws://62.234.216.108:60020/wstest
 ```
 Open two chrom browsers, left is Alice and the right is Bob. Input URL and click `OPEN`, then both status will show `OPENED`.
 
