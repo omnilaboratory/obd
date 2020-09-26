@@ -1,4 +1,6 @@
-# Current Features
+# Features
+
+## Current Features
 
 (latest updated Sep 23, 2020)
 
@@ -46,7 +48,7 @@
 
 
 
-# Comming Features   
+## Coming Features   
 (latest updated Sep 23, 2020)
  
 * OBD as a plugin for current lnd implementation. (~5 weeks, middle of Oct, 2020)  
@@ -59,7 +61,7 @@
  
 
 
-# Experimental Features
+## Experimental Features
 
 * Smart Contract System on top of OBD channel. 
 * "Payment is Settlement" theory.
