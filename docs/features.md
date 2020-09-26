@@ -25,7 +25,7 @@
 	* List latest commitment transaction in a channel.   
 	* List all commmitment trsactions in a channel.  
 	* List all the breach remedy transactions in a channel.  
-	* Balance. 
+	* Balances. 
 	* Channels.
   
 * Network:  
