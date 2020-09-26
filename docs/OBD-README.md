@@ -325,7 +325,7 @@ Alice's id is: 7da8d2441e0ad67040a274902f1965ee1a5c3fdd86f1ddc3280eda5230e006f2
 Bob's   id is: f38e72f6bf69c69ad1cdc0040550bafb86d5c4d35bd04542fcf5fc5ecb2135be
 
 
-### Normal operations
+### More channel operations
 Instruction can be found in [GUI tool](https://omnilaboratory.github.io/obd/#/GUI-tool) or the [online API document.](https://api.omnilab.online):
 
 
