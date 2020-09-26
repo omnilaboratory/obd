@@ -18,7 +18,7 @@
 	* Multiple channel management for a single OBD instance, scaling out in performance.  
 	* Multi hop payment using HTLC.  
 	* Invoice system. 
-	* Surveil the broadcasting commitment transactions and revockable delivery transactions.  
+	* Surveil broadcasting commitment transactions and revockable delivery transactions.  
 	* Execute penalty.   
 
 * Query:  
