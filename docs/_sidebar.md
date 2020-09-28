@@ -15,7 +15,7 @@
     - [Write your first lightning app](js-sdk-5mins.md) 
     - [Advanced topics](advanced.md) 
 
-- Operational Security Guide
+- Operational Guide
     - [Operational Safety Guidelines](safety-guidelines.md) 
     - [Static Channel Backup](static-channel-backup.md) 
 
