@@ -14,3 +14,8 @@
     - [Basic JS API](js-sdk.md) 
     - [Write your first lightning app](js-sdk-5mins.md) 
     - [Advanced topics](advanced.md) 
+
+- Operational Security Guide
+    - [Operational Safety Guidelines](safety-guidelines.md) 
+    - [Static Channel Backup](static-channel-backup.md) 
+
