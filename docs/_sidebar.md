@@ -3,6 +3,7 @@
     - [Developers](OBD-README.md) 
     - [Features and Roadmap](features.md)
     - [Communities](communities.md)
+    - [Bug Bounty](bug-bounty-program.md)
 
 - GUI Playground
     - [5 minutes to get started](GUI-tool.md) 
