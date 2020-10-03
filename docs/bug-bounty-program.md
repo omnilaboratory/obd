@@ -17,7 +17,7 @@ This bug bounty program encourages participants to identify and submit bugs/flaw
 
 ## Scope
 
-With the launch of the bug bounty program we put the following components in scope:  
+Do code review for logical and security mistake in our testnet: obd is a new lightning network that was written from scratch by the community. With the launch of the bug bounty program we put the following components in scope:  
 
  * `OBD Core`: [the obd code base](https://github.com/omnilaboratory/obd).
 	* channle operation
@@ -27,17 +27,19 @@ With the launch of the bug bounty program we put the following components in sco
 	* application contracts
 
  * `JS SDK`: [JS SDK](https://omnilaboratory.github.io/obd/#/js-sdk) is for light client that interacts with local/remote obd node.
- * `LND plugin`: [LND plugin](https://github.com/omnilaboratory/lnd) runs obd as a plugin for lnd, and adds interfaces to lnd grpc package to operate obd channel.
+ * `LND plugin`: [LND plugin](https://github.com/omnilaboratory/lnd) runs obd as a plugin for lnd, and adds interfaces to lnd grpc package to operate obd channel. 
 
- 
-Do code review for logical and security mistake in our testnet: obd is a new lightning network that was written from scratch by the community. The OmniBOLT team has been adding a lot enterprise friendly features at the core level so that it could be easily used by any third party who runs obd as its business: serving millions of light wallet clients, providing liquidity to the network, or other value added services to its clients. 
+
+<!-- 
+The OmniBOLT team has been adding a lot enterprise friendly features at the core level so that it could be easily used by any third party who runs obd as its business: serving millions of light wallet clients, providing liquidity to the network, or other value added services to its clients. 
+-->
 
 Participants can use GUI tool to access all services without the need to spend any time on installation, setup and configuration of obd node. To get started please visit [this tutorial](https://omnilaboratory.github.io/obd/#/GUI-tool).   
 
  
 ## What to look for
 
-The following list should give you some ideas for issues that we regard as high value submissions. The list is not meant to limit or discourage other types of submissions, but it increases the chances of a successful submission (and bounty award).
+The following list is collected by community, and it should give you some ideas for issues that we regard as high value submissions. The list is not meant to limit or discourage other types of submissions, but it increases the chances of a successful submission (and bounty award).
 
  * Compromise funds from users who have deposited or received funds on the obd network.
  * Prevent users from depositing, withdrawing or transacting funds on the obd network.
@@ -72,8 +74,8 @@ To be added: templete of a bug report issue.
 
  * The bounty amount will be determined in USDT and will only be paid out via online OmniWallet. We will need your omni address.   
  * Successful submissions are rewarded based on the severity of the issue.  
- * We generally use CVSSv3 scoring system to understand the risk of an issue. This might not always make sense to determine the bounty reward though especially for the smart contracts.  
- * This software is under heavy development, the issue you open is possiblly what we already know and are working to fix. Therefor it is a mutual understanding that you may not be the first one who identify the vulnerability. But you are still eligible for a bounty rewards.  
+ * We generally take real impact in account and use CVSSv3 scoring system as a reference to understand the risk of an issue.  
+ * This software is under heavy development, the issue you open is possibally what we already know and are working to fix. Therefor it is a mutual understanding that you may not be the first one who identify the vulnerability. But you are still eligible for a bounty rewards if you provide novel solution to this.  
 
 
 The following table gives an overview of the reward structure:   
