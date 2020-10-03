@@ -50,6 +50,7 @@ Participants can use GUI tool to access all services without the need to spend a
 The following table gives an overview of the reward structure:   
 				
 |  Component Category  |        Low       |      Medium       |        High       |      Critical      | 
+|  ------------------  |  --------------  |  ---------------  |  ---------------  |   ---------------  |
 |     OBD Core         |  up to 250 USD	  |  up to 1,500 USD  | up to 75,000 USD  |  up to 15,000 USD  | 
 |      JS SDK  	       |  up to 250 USD	  |  up to 1,500 USD  | up to 75,000 USD  |  up to 15,000 USD  | 
 |    LND plugin        |  up to 250 USD	  |  up to 1,500 USD  | up to 75,000 USD  |  up to 15,000 USD  |
