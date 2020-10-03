@@ -37,15 +37,42 @@ Participants can use GUI tool to access all services without the need to spend a
  
 ## What to look for
 
+The following list should give you some ideas for issues that we regard as high value submissions. The list is not meant to limit or discourage other types of submissions, but it increases the chances of a successful submission (and bounty award).
+
+ * Compromise funds from users who have deposited or received funds on the obd network.
+ * Prevent users from depositing, withdrawing or transacting funds on the obd network.
+ * Double spend a UTXO of a commitment transaction on a channel and exit it to the main chain (Omnilayer/BTC).
+ * Cheat/Attack activities that a user can not discover and punish.
+ * Security weaknesses/attacks on the P2P communication protocol.
+ * Current known attacks to lightning network.
+ * Transaction/messages malleability.
+ * (Remote)Message calls, (buffer, private info)leaks.
+ * Data type overflow/wrap around, e.g. integer overflow.
+ * Concurrency, e.g. synchronization, state, races attacks.
+ * Issues related to third party libraries used (outdated software).
+ * Try to include invalid transactions in a block. 
+ * Brick the exit priority queue of channeles so that no funds can be exited anymore. 
+ * Gain access to a system and run OS commands aka getting shell.
+ * Server configuration issues (open ports) 
+ * Cryptographic primitives security. Incorrect implementation/usage/configuration of:
+	 * Elliptic curve (secp256k1, ECDSA,ECDH,ECIES).
+	 * Hash algorithms (Keccak-256,Blake2b).
+	 * Seeds, pub/priv key generation, storage and usage.
+	 * To be added.
+ 
+
+ 
 
 ## How to submit bug reports
 
+To be added: templete of a bug report issue.
+
 ## Bounty Rewards
 
-* The bounty amount will be determined in USDT and will only be paid out in online OmniWallet. We will need your omni address.   
+* The bounty amount will be determined in USDT and will only be paid out via online OmniWallet. We will need your omni address.   
 * Successful submissions are rewarded based on the severity of the issue.  
 * We generally use CVSSv3 scoring system to understand the risk of an issue. This might not always make sense to determine the bounty reward though especially for the smart contracts.  
-* This software is under heavy development, the issue you open may already in our todo list, therefor it is a mutual understanding that you may not be the first one who identify the bug/flaw/vulnerability. But we will pay you reward accordingly for your double confirmation.  
+* This software is under heavy development, the issue you open is possiblly what we already know and are working to fix. Therefor it is a mutual understanding that you may not be the first one who identify the vulnerability. But you are still eligible for a bounty rewards.  
 
 
 The following table gives an overview of the reward structure:   
@@ -57,5 +84,6 @@ The following table gives an overview of the reward structure:
 |    LND plugin        |  up to 250 USD	  |  up to 1,500 USD  | up to 75,000 USD  |  up to 15,000 USD  |
   
 
-
 ## Rules 
+
+To be added.
