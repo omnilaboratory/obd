@@ -53,7 +53,8 @@ The following list should give you some ideas for issues that we regard as high 
  * Try to include invalid transactions in a block. 
  * Brick the exit priority queue of channeles so that no funds can be exited anymore. 
  * Gain access to a system and run OS commands aka getting shell.
- * Server configuration issues (open ports) 
+ * Server configuration issues (open ports).
+ * Incorrect usage of thirdparty BIP(33,19,44,..) implementation.
  * Cryptographic primitives security. Incorrect implementation/usage/configuration of:
 	 * Elliptic curve (secp256k1, ECDSA,ECDH,ECIES).
 	 * Hash algorithms (Keccak-256,Blake2b).
@@ -69,10 +70,10 @@ To be added: templete of a bug report issue.
 
 ## Bounty Rewards
 
-* The bounty amount will be determined in USDT and will only be paid out via online OmniWallet. We will need your omni address.   
-* Successful submissions are rewarded based on the severity of the issue.  
-* We generally use CVSSv3 scoring system to understand the risk of an issue. This might not always make sense to determine the bounty reward though especially for the smart contracts.  
-* This software is under heavy development, the issue you open is possiblly what we already know and are working to fix. Therefor it is a mutual understanding that you may not be the first one who identify the vulnerability. But you are still eligible for a bounty rewards.  
+ * The bounty amount will be determined in USDT and will only be paid out via online OmniWallet. We will need your omni address.   
+ * Successful submissions are rewarded based on the severity of the issue.  
+ * We generally use CVSSv3 scoring system to understand the risk of an issue. This might not always make sense to determine the bounty reward though especially for the smart contracts.  
+ * This software is under heavy development, the issue you open is possiblly what we already know and are working to fix. Therefor it is a mutual understanding that you may not be the first one who identify the vulnerability. But you are still eligible for a bounty rewards.  
 
 
 The following table gives an overview of the reward structure:   
