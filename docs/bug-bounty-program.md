@@ -19,15 +19,16 @@ This bug bounty program encourages participants to identify and submit bugs/flaw
 
 With the launch of the bug bounty program we put the following components in scope:  
 
-`OBD Core`: [the obd code base](https://github.com/omnilaboratory/obd).  
-	* channle operation  
-	* payment  
-	* query  
-	* network  
-	* application contracts  
+ * `OBD Core`: [the obd code base](https://github.com/omnilaboratory/obd).
+	* channle operation
+	* payment
+	* query
+	* network
+	* application contracts
 
-`JS SDK`: [JS SDK](https://omnilaboratory.github.io/obd/#/js-sdk) is for light client that interacts with local/remote obd node.  
-`LND plugin`: [LND plugin](https://github.com/omnilaboratory/lnd) runs obd as a plugin for lnd, and adds interfaces to lnd grpc package to operate obd channel.  
+ * `JS SDK`: [JS SDK](https://omnilaboratory.github.io/obd/#/js-sdk) is for light client that interacts with local/remote obd node.
+ * `LND plugin`: [LND plugin](https://github.com/omnilaboratory/lnd) runs obd as a plugin for lnd, and adds interfaces to lnd grpc package to operate obd channel.
+
  
 Do code review for logical and security mistake in our testnet: obd is a new lightning network that was written from scratch by the community. The OmniBOLT team has been adding a lot enterprise friendly features at the core level so that it could be easily used by any third party who runs obd as its business: serving millions of light wallet clients, providing liquidity to the network, or other value added services to its clients. 
 
