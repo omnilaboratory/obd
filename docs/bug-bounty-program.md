@@ -27,7 +27,7 @@ Do code review for logical and security mistake in our testnet: obd is a new lig
 	* application contracts
 
  * `JS SDK`: [JS SDK](https://omnilaboratory.github.io/obd/#/js-sdk) is for light client that interacts with local/remote obd node.
- * `LND plugin`: [LND plugin](https://github.com/omnilaboratory/lnd) runs obd as a plugin for lnd, and adds interfaces to lnd grpc package to operate obd channel. 
+ * `LND Bridge`: [LND bridge](https://github.com/omnilaboratory/lnd) runs obd as a plugin for lnd, and adds interfaces to lnd grpc package that enpowers lnd apps to operate obd channel. 
 
 
 <!-- 
@@ -90,7 +90,7 @@ An issue report shall includes following information:
  * The bounty amount will be determined in USDT and will only be paid out via online OmniWallet. We will need your omni address.   
  * Successful submissions are rewarded based on the severity of the issue.  
  * We generally take real impact in account and use CVSSv3 scoring system as a reference to understand the risk of an issue.  
- * This software is under heavy development, the issue you open is possibally what we already know and are working to fix. Therefor it is a mutual understanding that you may not be the first one who identify the vulnerability. But you are still eligible for a bounty rewards if you provide novel solution to it.  
+ * This software is under heavy development, the issue you open is possibally what we already know and are working to fix. Therefor it is a mutual understanding that you may not be the first one who identify the vulnerability. But you are still eligible for a bounty rewards if you propose novel solution to it.  
 
 
 The following table gives an overview of the reward structure:   
@@ -99,7 +99,7 @@ The following table gives an overview of the reward structure:
 |  ------------------  |  --------------  |  ---------------  |  ---------------  |   ---------------  |
 |     OBD Core         |  up to 250 USD	  |  up to 1,500 USD  |  up to 7,500 USD  |  up to 15,000 USD  | 
 |      JS SDK  	       |  up to 250 USD	  |  up to 1,500 USD  |  up to 7,500 USD  |  up to 15,000 USD  | 
-|    LND plugin        |  up to 250 USD	  |  up to 1,500 USD  |  up to 7,500 USD  |  up to 15,000 USD  |
+|    LND Bridge        |  up to 250 USD	  |  up to 1,500 USD  |  up to 7,500 USD  |  up to 15,000 USD  |
   
 
 ## Rules 
