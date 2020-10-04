@@ -10,31 +10,31 @@
 
 (latest updated Oct 3, 2020)
 
-The OmniBOLT network leverages lightning technology to provide quick and safety guarantees for anyone who wish to build scalable, decentralized payment apps. Working with skilled security researchers and hackers across the globe plays a crucial role in improving security of our network. Therefore we launched a bug bounty program to find vulnerabilities and pay rewards. 
+The OmniBOLT network leverages lightning technology to provide quick and safety guarantees for anyone who wish to build scalable, decentralized payment apps. It can run independently or as a plugin of LND, in which case LND applications are empowered to operate smart asset lightning channels. Working with skilled security researchers and hackers across the globe plays a crucial role in improving security of our network. Therefore we launched a bug bounty program to find vulnerabilities and pay rewards. 
 
 This bug bounty program encourages participants to identify and submit bugs/flaws/vulnerabilities that could negatively impact OmniBOLT network users. Successful submissions have a chance of being eligible for a bounty reward. The scope of our program and the bounty levels are provided in more detail below.
 
 
 ## Scope
 
-Do code review for logical and security mistake in our testnet: obd is a new lightning network that was written from scratch by the community. With the launch of the bug bounty program we put the following components in scope:  
+Do code review for logical and security mistake in our testnet: OBD is a new lightning network that was written from scratch by the community. With the launch of the bug bounty program we put the following components in scope:  
 
- * `OBD Core`: [the obd code base](https://github.com/omnilaboratory/obd).
+ * `OBD Core`: [the OBD code base](https://github.com/omnilaboratory/obd).
 	* channle operations
 	* payment
 	* query, balance, state
 	* network
 	* application contracts
 
- * `JS SDK`: [JS SDK](https://omnilaboratory.github.io/obd/#/js-sdk) is for light client that interacts with local/remote obd node.
- * `LND Bridge`: [LND bridge](https://github.com/omnilaboratory/lnd) runs obd as a plugin for lnd, and adds interfaces to lnd grpc package that enpowers lnd apps to operate obd channel. 
+ * `JS SDK`: [JS SDK](https://omnilaboratory.github.io/obd/#/js-sdk) is for light client that interacts with local/remote OBD node.
+ * `LND Bridge`: [LND bridge](https://github.com/omnilaboratory/lnd) runs OBD as a plugin for LND, and adds interfaces to LND grpc package that empowers LND apps to operate OBD channel. 
 
 
 <!-- 
-The OmniBOLT team has been adding a lot enterprise friendly features at the core level so that it could be easily used by any third party who runs obd as its business: serving millions of light wallet clients, providing liquidity to the network, or other value added services to its clients. 
+The OmniBOLT team has been adding a lot enterprise friendly features at the core level so that it could be easily used by any third party who runs OBD as its business: serving millions of light wallet clients, providing liquidity to the network, or other value added services to its clients. 
 -->
 
-Participants can use GUI tool to access all services without the need to spend any time on installation, setup and configuration of obd node. To get started please visit [this tutorial](https://omnilaboratory.github.io/obd/#/GUI-tool).   
+Participants can use GUI tool to access all services without the need to spend any time on installation, setup and configuration of OBD node. To get started please visit [this tutorial](https://omnilaboratory.github.io/obd/#/GUI-tool).   
 
  
 ## What to look for
@@ -42,8 +42,8 @@ Participants can use GUI tool to access all services without the need to spend a
 The following list is collected by community, and it should give you some ideas for issues that we regard as high value submissions. The list is not meant to limit or discourage other types of submissions, but it increases the chances of a successful submission (and bounty award).
 
  * Current known attacks to lightning network. 
- * Compromise funds from users who have deposited or received funds on the obd network.
- * Prevent users from depositing, withdrawing or transacting funds on the obd network.
+ * Compromise funds from users who have deposited or received funds on the OBD network.
+ * Prevent users from depositing, withdrawing or transacting funds on the OBD network.
  * Double spend a UTXO of a commitment transaction on a channel and exit it to the main chain (Omnilayer/BTC).
  * Transaction/messages malleability, which causes broadcasting elder commitment transactions.
  * Cheat/Attack activities that a user can not discover and punish.
