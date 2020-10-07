@@ -3,7 +3,7 @@
 After a channel has been funded, Alice or Bob are able to pay to each other or any one else in the network. Here we let Bob to create an invoice:
 
 <p align="center">
-  <img width="500" alt="connectNode" src="assets/createInvoice.png">
+  <img width="500" alt="createInvoice" src="assets/createInvoice.png">
 </p>
 
 1. switch to Bob's window;  
@@ -16,7 +16,7 @@ Share ths invoice string or QR code to Alice:
  
 
 <p align="center">
-  <img width="750" alt="Connect Screenshot" src="assets/payInvoice.png">
+  <img width="750" alt="payInvoice Screenshot" src="assets/payInvoice.png">
 </p>
 
 On Alice's screen:  
@@ -60,29 +60,67 @@ The invoice system simplifies the complex process of multi hop HTLC payment. Use
 
 ### find a payment path
 
-to be done
+<p align="center">
+  <img width="750" alt="HTLCFindPath Screenshot" src="assets/HTLCFindPath.png">
+</p>
+
+On Alice's screen:  
+1. click "HTLCFindPath";  
+2. past the invoice string in the box;  
+3. click "invoke API", then Alice's obd will find out a payment path. The reponse message on the right panel shows the routing packge and other information which will be used in the next step "addHTLC".  
+  
 
 ### add HTLC
 
-to be done
+<p align="center">
+  <img width="750" alt="addHTLC Screenshot" src="assets/addHTLC.png">
+</p>
 
+On Alice's screen:  
+1. click "addHTLC";  
+2. these parameters shall be automatically filled. If not, parameters are in the response of previous "HTLCFindPath";  
+3. these parameters shall be automatically filled. If it is the first time payment in this channel, Alice can press "create" to create these "curr_xxxx" params. 
+4. click "invoke API", then Alice's obd will create this HTLC and send it to Bob.  
+  
+ 
 ### sign HTLC
 
-to be done
+On Bob's side, automatically sign this HTLC.  
 
 ### forword R to unlock HTLC
 
-to be done
+Bob uses "forwardR" to send Alice the secrete R.  
 
 ### sign R to accept unlocking HTLC
 
-to be done  
+<p align="center">
+  <img width="750" alt="SignR Screenshot" src="assets/SignR.png">
+</p>
+
+On Alice's screen:  
+1. click "SignR";  
+2. these parameters shall be automatically filled. If not, parameters are in the message of "forwardR" that Bob sent to Alice in the previous step;  
+3. click "invoke API". If there are multiple hops, every middle node (including Alice) uses R to create remaining transactions required by this HTLC. (need to be clarified).
+  
+
 
 ### close HTLC 
 
-to be done 
+Either Alice or Bob can close HTLC to finish this payment. 
+
+<p align="center">
+  <img width="750" alt="closeHTLC Screenshot" src="assets/closeHTLC.png">
+</p>
+
+On Alice's (payer) screen:  
+1. click "closeHTLC";  
+2. manually select from the pop up window;  
+3. these parameters shall be automatically filled. If not, clich "Display" to select. (To be explained which message before includs these params);  
+4. these parameters shall be automatically filled. If not, click "Create" to fill in;  
+5. click "invoke API".   
 
 
 ### sign to close HTLC
+On the payee's screen:  
 
 Click "closeHTLCSigned", sign to agree closing the HTLC, then this HTLC will be closed and the balance of both sides will be updated accordingly. The resource occupied by this HTLC will be released, and the channel will be available for other operations. 
