@@ -30,7 +30,7 @@ func (service *UserManager) UserLogin(user *bean.User) error {
 		return err
 	}
 	var node dao.User
-	user.PeerId = tool.SignMsgWithSha256([]byte(user.Mnemonic))
+	user.PeerId = tool.GetUserPeerId(user.Mnemonic)
 	userDB, err := dao.DBService.GetUserDB(user.PeerId)
 	if err != nil {
 		return err

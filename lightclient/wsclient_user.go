@@ -110,7 +110,9 @@ func (client *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, 
 		data = tool.FloatToString(fee, 8)
 		client.sendToMyself(msg.Type, true, data)
 		sendType = enum.SendTargetType_SendToSomeone
-	// Added by Kevin 2019-11-25
+	case enum.MsgType_HeartBeat_2007:
+		client.sendToMyself(msg.Type, true, data)
+		sendType = enum.SendTargetType_SendToSomeone
 	// Process GetMnemonic
 	case enum.MsgType_GetMnemonic_2004:
 		if client.User != nil { // The user already login.

@@ -36,6 +36,7 @@ const (
 	MsgType_GetMnemonic_2004          MsgType = -102004
 	MsgType_GetObdNodeInfo_2005       MsgType = -102005
 	MsgType_GetMiniBtcFundAmount_2006 MsgType = -102006
+	MsgType_HeartBeat_2007            MsgType = -102007
 	MsgType_User_End_2099             MsgType = -102099
 
 	MsgType_Core_GetNewAddress_2101                    MsgType = -102101
@@ -207,6 +208,8 @@ func CheckExist(msgType MsgType) bool {
 	case MsgType_GetObdNodeInfo_2005:
 		return true
 	case MsgType_GetMiniBtcFundAmount_2006:
+		return true
+	case MsgType_HeartBeat_2007:
 		return true
 	case MsgType_Core_GetNewAddress_2101:
 		return true
