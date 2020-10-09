@@ -598,6 +598,14 @@ func (this *commitmentTxSignedManager) BeforeBobSignCommitmentTransactionAtBobSi
 	messageHash := messageService.saveMsgUseTx(tx, senderPeerId, user.PeerId, data)
 	retData.MsgHash = messageHash
 
+	commitmentTxInfo, _ := getLatestCommitmentTxUseDbTx(tx, channelInfo.ChannelId, user.PeerId)
+	if commitmentTxInfo.Id == 0 {
+		commitmentTxInfo.Owner = user.PeerId
+		commitmentTxInfo.AmountToRSMC = 0
+		commitmentTxInfo.AmountToCounterparty = channelInfo.Amount
+	}
+	sendChannelStateToTracker(*channelInfo, *commitmentTxInfo)
+
 	_ = tx.Commit()
 
 	return retData, nil
