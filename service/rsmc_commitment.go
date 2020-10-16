@@ -229,7 +229,7 @@ func (this *commitmentTxManager) AfterBobSignCommitmentTransactionAtAliceSide(da
 
 	aliceData := make(map[string]interface{})
 	aliceData["approval"] = signCommitmentTx.Approval
-	aliceData["channel_Id"] = signCommitmentTx.ChannelId
+	aliceData["channel_id"] = signCommitmentTx.ChannelId
 
 	retData = make(map[string]interface{})
 	retData["aliceData"] = aliceData
@@ -595,8 +595,16 @@ func (this *commitmentTxSignedManager) BeforeBobSignCommitmentTransactionAtBobSi
 	if user.PeerId == channelInfo.PeerIdA {
 		senderPeerId = channelInfo.PeerIdB
 	}
-	messageHash := MessageService.saveMsgUseTx(tx, senderPeerId, user.PeerId, data)
+	messageHash := messageService.saveMsgUseTx(tx, senderPeerId, user.PeerId, data)
 	retData.MsgHash = messageHash
+
+	commitmentTxInfo, _ := getLatestCommitmentTxUseDbTx(tx, channelInfo.ChannelId, user.PeerId)
+	if commitmentTxInfo.Id == 0 {
+		commitmentTxInfo.Owner = user.PeerId
+		commitmentTxInfo.AmountToRSMC = 0
+		commitmentTxInfo.AmountToCounterparty = channelInfo.Amount
+	}
+	sendChannelStateToTracker(*channelInfo, *commitmentTxInfo)
 
 	_ = tx.Commit()
 
@@ -630,7 +638,7 @@ func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction
 	}
 	defer tx.Rollback()
 	//region 确认是给自己的信息
-	message, err := MessageService.getMsgUseTx(tx, reqData.MsgHash)
+	message, err := messageService.getMsgUseTx(tx, reqData.MsgHash)
 	if err != nil {
 		return nil, "", errors.New(enum.Tips_common_invilidMsgHash)
 	}
@@ -697,7 +705,7 @@ func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction
 		payeeRevokeAndAcknowledgeCommitment.Approval = false
 		_ = tx.Save(payeeRevokeAndAcknowledgeCommitment)
 
-		_ = MessageService.updateMsgStateUseTx(tx, message)
+		_ = messageService.updateMsgStateUseTx(tx, message)
 		err = tx.Commit()
 		if err != nil {
 			log.Println(err)
@@ -866,6 +874,7 @@ func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction
 		commitmentTxRequest.ChannelId = channelInfo.ChannelId
 		commitmentTxRequest.Amount = aliceDataJson.Amount
 		commitmentTxRequest.ChannelAddressPrivateKey = reqData.ChannelAddressPrivateKey
+		commitmentTxRequest.CurrTempAddressIndex = reqData.CurrTempAddressIndex
 		commitmentTxRequest.CurrTempAddressPubKey = reqData.CurrTempAddressPubKey
 		commitmentTxRequest.CurrTempAddressPrivateKey = reqData.CurrTempAddressPrivateKey
 		newCommitmentTxInfo, err := createCommitmentTxHex(tx, false, commitmentTxRequest, channelInfo, latestCommitmentTxInfo, *signer)
@@ -939,7 +948,7 @@ func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction
 	}
 	//endregion create RD tx for alice
 
-	_ = MessageService.updateMsgStateUseTx(tx, message)
+	_ = messageService.updateMsgStateUseTx(tx, message)
 	err = tx.Commit()
 	if err != nil {
 		log.Println(err)

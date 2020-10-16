@@ -37,6 +37,7 @@ const (
 	MsgType_GetMnemonic_2004          MsgType = -102004
 	MsgType_GetObdNodeInfo_2005       MsgType = -102005
 	MsgType_GetMiniBtcFundAmount_2006 MsgType = -102006
+	MsgType_HeartBeat_2007            MsgType = -102007
 	MsgType_User_End_2099             MsgType = -102099
 
 	MsgType_Core_GetNewAddress_2101                    MsgType = -102101
@@ -108,6 +109,9 @@ const (
 	MsgType_CommitmentTx_SendSomeCommitmentById_3206     MsgType = -103206
 	MsgType_CommitmentTx_AllRDByChanId_3207              MsgType = -103207
 	MsgType_CommitmentTx_AllBRByChanId_3208              MsgType = -103208
+
+	MsgType_Htlc_GetLatestHT1aOrHE1b_3250             MsgType = -103250
+	MsgType_Htlc_GetHT1aOrHE1bBySomeCommitmentId_3251 MsgType = -103251
 	//endregion
 
 	// region
@@ -207,6 +211,8 @@ func CheckExist(msgType MsgType) bool {
 	case MsgType_GetObdNodeInfo_2005:
 		return true
 	case MsgType_GetMiniBtcFundAmount_2006:
+		return true
+	case MsgType_HeartBeat_2007:
 		return true
 	case MsgType_Core_GetNewAddress_2101:
 		return true
@@ -327,6 +333,10 @@ func CheckExist(msgType MsgType) bool {
 	case MsgType_CommitmentTx_AllRDByChanId_3207:
 		return true
 	case MsgType_CommitmentTx_AllBRByChanId_3208:
+		return true
+	case MsgType_Htlc_GetLatestHT1aOrHE1b_3250:
+		return true
+	case MsgType_Htlc_GetHT1aOrHE1bBySomeCommitmentId_3251:
 		return true
 	case MsgType_SendCloseChannelRequest_38:
 		return true

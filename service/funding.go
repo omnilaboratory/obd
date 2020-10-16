@@ -7,6 +7,7 @@ import (
 	"github.com/omnilaboratory/obd/bean"
 	"github.com/omnilaboratory/obd/bean/chainhash"
 	"github.com/omnilaboratory/obd/bean/enum"
+	"github.com/omnilaboratory/obd/config"
 	"github.com/omnilaboratory/obd/dao"
 	"github.com/omnilaboratory/obd/rpc"
 	"github.com/omnilaboratory/obd/tool"
@@ -23,7 +24,7 @@ type fundingTransactionManager struct {
 
 var FundingTransactionService fundingTransactionManager
 
-func (service *fundingTransactionManager) BTCFundingCreated(msg bean.RequestMessage, user *bean.User) (fundingTransaction interface{}, targetUser string, err error) {
+func (service *fundingTransactionManager) BtcFundingCreated(msg bean.RequestMessage, user *bean.User) (fundingTransaction interface{}, targetUser string, err error) {
 	reqData := &bean.SendRequestFundingBtc{}
 	err = json.Unmarshal([]byte(msg.Data), reqData)
 	if err != nil {
@@ -78,7 +79,7 @@ func (service *fundingTransactionManager) BTCFundingCreated(msg bean.RequestMess
 	if err == nil {
 		if len(gjson.Parse(result).Array()) > 0 {
 			btcFundingTimes := len(gjson.Parse(result).Array()[0].Get("txids").Array())
-			if btcFundingTimes >= 3 {
+			if btcFundingTimes >= config.BtcNeedFundTimes {
 				return nil, "", errors.New(enum.Tips_funding_enoughBtcFundingTime)
 			}
 		}
@@ -169,14 +170,15 @@ func (service *fundingTransactionManager) BTCFundingCreated(msg bean.RequestMess
 	minerFeeRedeemTransaction := &dao.MinerFeeRedeemTransaction{}
 	//如果这个交易是第一次请求，那就创建，并且创建一个赎回交易
 	if fundingBtcRequest.Id == 0 {
-		fundingBtcRequest = &dao.FundingBtcRequest{}
-		fundingBtcRequest.Owner = user.PeerId
-		fundingBtcRequest.TemporaryChannelId = reqData.TemporaryChannelId
-		fundingBtcRequest.TxHash = reqData.FundingTxHex
-		fundingBtcRequest.TxId = fundingTxid
-		fundingBtcRequest.CreateAt = time.Now()
-		fundingBtcRequest.Amount = amount
-		fundingBtcRequest.IsFinish = false
+		fundingBtcRequest = &dao.FundingBtcRequest{
+			Owner:              user.PeerId,
+			TemporaryChannelId: reqData.TemporaryChannelId,
+			TxHash:             reqData.FundingTxHex,
+			TxId:               fundingTxid,
+			Amount:             amount,
+			CreateAt:           time.Now(),
+			IsFinish:           false,
+		}
 		err = tx.Save(fundingBtcRequest)
 		if err != nil {
 			log.Println(err)
@@ -207,13 +209,13 @@ func (service *fundingTransactionManager) BTCFundingCreated(msg bean.RequestMess
 			return nil, "", err
 		}
 
-		minerFeeRedeemTransaction.Txid = txid
-		minerFeeRedeemTransaction.Hex = hex
+		minerFeeRedeemTransaction.TemporaryChannelId = reqData.TemporaryChannelId
 		minerFeeRedeemTransaction.FundingTxId = fundingTxid
+		minerFeeRedeemTransaction.Hex = hex
+		minerFeeRedeemTransaction.Txid = txid
+		minerFeeRedeemTransaction.IsFinish = false
 		minerFeeRedeemTransaction.CreateAt = time.Now()
 		minerFeeRedeemTransaction.Owner = user.PeerId
-		minerFeeRedeemTransaction.TemporaryChannelId = reqData.TemporaryChannelId
-		minerFeeRedeemTransaction.IsFinish = false
 		_ = tx.Save(minerFeeRedeemTransaction)
 	} else {
 		if fundingBtcRequest.IsFinish {
@@ -221,7 +223,7 @@ func (service *fundingTransactionManager) BTCFundingCreated(msg bean.RequestMess
 			_ = tx.Update(fundingBtcRequest)
 		}
 
-		err := tx.Select(
+		err = tx.Select(
 			q.Eq("TemporaryChannelId", reqData.TemporaryChannelId),
 			q.Eq("FundingTxId", fundingTxid),
 		).First(minerFeeRedeemTransaction)
@@ -236,35 +238,36 @@ func (service *fundingTransactionManager) BTCFundingCreated(msg bean.RequestMess
 		return nil, "", err
 	}
 
-	node := bean.FundingBtcOfP2p{}
-	node.TemporaryChannelId = reqData.TemporaryChannelId
-	node.FundingTxid = fundingTxid
-	node.FundingBtcHex = reqData.FundingTxHex
-	node.FundingRedeemHex = minerFeeRedeemTransaction.Hex
-	node.FunderNodeAddress = msg.SenderNodePeerId
-	node.FunderPeerId = msg.SenderUserPeerId
-	return node, targetUser, nil
+	fundingBtcOfP2p := bean.FundingBtcOfP2p{
+		TemporaryChannelId: reqData.TemporaryChannelId,
+		FundingTxid:        fundingTxid,
+		FundingBtcHex:      reqData.FundingTxHex,
+		FundingRedeemHex:   minerFeeRedeemTransaction.Hex,
+		FunderNodeAddress:  msg.SenderNodePeerId,
+		FunderPeerId:       msg.SenderUserPeerId,
+	}
+	return fundingBtcOfP2p, targetUser, nil
 }
 
 //bob签收btc充值之前的obd的操作
-func (service *fundingTransactionManager) BeforeBobSignBtcFundingAtBobSide(data string, user *bean.User) (outData interface{}, err error) {
-	jsonObj := bean.FundingBtcOfP2p{}
-	_ = json.Unmarshal([]byte(data), &jsonObj)
-	temporaryChannelId := jsonObj.TemporaryChannelId
-	fundingBtcHex := jsonObj.FundingBtcHex
-	fundingRedeemHex := jsonObj.FundingRedeemHex
+func (service *fundingTransactionManager) BeforeSignBtcFundingCreatedAtBobSide(data string, user *bean.User) (outData interface{}, err error) {
+	fundingBtcOfP2p := bean.FundingBtcOfP2p{}
+	_ = json.Unmarshal([]byte(data), &fundingBtcOfP2p)
+	temporaryChannelId := fundingBtcOfP2p.TemporaryChannelId
+	fundingBtcHex := fundingBtcOfP2p.FundingBtcHex
+	fundingRedeemHex := fundingBtcOfP2p.FundingRedeemHex
 	if tool.CheckIsString(&temporaryChannelId) == false {
-		err = errors.New(enum.Tips_common_wrong + "temporary_channel_id ")
+		err = errors.New(enum.Tips_common_wrong + "temporary_channel_id")
 		log.Println(err)
 		return nil, err
 	}
 	if tool.CheckIsString(&fundingBtcHex) == false {
-		err = errors.New(enum.Tips_common_wrong + "funding_btc_hex ")
+		err = errors.New(enum.Tips_common_wrong + "funding_btc_hex")
 		log.Println(err)
 		return nil, err
 	}
 	if tool.CheckIsString(&fundingRedeemHex) == false {
-		err = errors.New(enum.Tips_common_wrong + "funding_redeem_hex ")
+		err = errors.New(enum.Tips_common_wrong + "funding_redeem_hex")
 		log.Println(err)
 		return nil, err
 	}
@@ -301,6 +304,7 @@ func (service *fundingTransactionManager) BeforeBobSignBtcFundingAtBobSide(data 
 		log.Println(err)
 		return nil, err
 	}
+
 	//get btc miner Fee data from transaction
 	fundingTxid, amount, _, err := checkBtcTxHex(btcFeeTxHexDecode, channelInfo, funder)
 	if err != nil {
@@ -320,26 +324,22 @@ func (service *fundingTransactionManager) BeforeBobSignBtcFundingAtBobSide(data 
 				q.Eq("SignApproval", false)))).
 		First(fundingBtcRequest)
 
-	//如果这个交易是第一次请求，那就创建，并且创建一个赎回交易
+	//if get the request at first time
 	if fundingBtcRequest.Id == 0 {
-		fundingBtcRequest = &dao.FundingBtcRequest{}
-		fundingBtcRequest.Owner = funder
-		fundingBtcRequest.TemporaryChannelId = temporaryChannelId
-		fundingBtcRequest.TxHash = fundingBtcHex
-		fundingBtcRequest.RedeemHex = fundingRedeemHex
-		fundingBtcRequest.TxId = fundingTxid
-		fundingBtcRequest.CreateAt = time.Now()
-		fundingBtcRequest.Amount = amount
-		fundingBtcRequest.IsFinish = false
-		err = tx.Save(fundingBtcRequest)
-		if err != nil {
-			log.Println(err)
-			return nil, err
+		fundingBtcRequest = &dao.FundingBtcRequest{
+			Owner:              funder,
+			TemporaryChannelId: temporaryChannelId,
+			RedeemHex:          fundingRedeemHex,
+			TxHash:             fundingBtcHex,
+			TxId:               fundingTxid,
+			Amount:             amount,
+			CreateAt:           time.Now(),
+			IsFinish:           false,
 		}
+		_ = tx.Save(fundingBtcRequest)
 	} else {
 		if fundingBtcRequest.IsFinish {
-			fundingBtcRequest.IsFinish = false
-			_ = tx.Update(fundingBtcRequest)
+			_ = tx.UpdateField(fundingBtcRequest, "IsFinish", false)
 		}
 	}
 
@@ -461,7 +461,7 @@ func (service *fundingTransactionManager) FundingBtcTxSigned(msg bean.RequestMes
 		return nil, funder, err
 	}
 
-	// 二次签名
+	// second sign
 	inputItems := make([]rpc.TransactionInputItem, 0)
 	inputItems = append(inputItems, rpc.TransactionInputItem{
 		Txid:         fundingTxid,
@@ -735,15 +735,15 @@ func (service *fundingTransactionManager) AssetFundingCreated(msg bean.RequestMe
 		return nil, err
 	}
 
-	fundingTxHexDecode, err = rpcClient.DecodeRawTransaction(reqData.FundingTxHex)
+	fundingAssetTxHexDecode, err := rpcClient.DecodeRawTransaction(reqData.FundingTxHex)
 	if err != nil {
-		err = errors.New(enum.Tips_funding_failDecodeRawTransaction + " funding_tx_hex: " + err.Error())
+		err = errors.New(enum.Tips_funding_failDecodeRawTransaction + " funding_tx_hex " + err.Error())
 		log.Println(err)
 		return nil, err
 	}
 
 	//get btc miner Fee data from transaction
-	fundingTxid, _, fundingOutputIndex, err := checkBtcTxHex(fundingTxHexDecode, channelInfo, user.PeerId)
+	fundingTxid, _, fundingOutputIndex, err := checkBtcTxHex(fundingAssetTxHexDecode, channelInfo, user.PeerId)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -814,7 +814,7 @@ func (service *fundingTransactionManager) AssetFundingCreated(msg bean.RequestMe
 	if needCreateC1a {
 		//region  create C1 tx
 		funder := user.PeerId
-		var outputBean = commitmentOutputBean{}
+		var outputBean = commitmentTxOutputBean{}
 		outputBean.RsmcTempPubKey = fundingTransaction.FunderPubKey2ForCommitment
 		// if alice funding
 		if funder == channelInfo.PeerIdA {
@@ -834,6 +834,7 @@ func (service *fundingTransactionManager) AssetFundingCreated(msg bean.RequestMe
 			log.Println(err)
 			return nil, err
 		}
+		commitmentTxInfo.RSMCTempAddressIndex = reqData.TempAddressIndex
 
 		if commitmentTxInfo.AmountToRSMC > 0 {
 			txid, hex, usedTxid, err := rpcClient.OmniCreateAndSignRawTransactionUseSingleInput(
@@ -902,7 +903,7 @@ func (service *fundingTransactionManager) AssetFundingCreated(msg bean.RequestMe
 	return node, err
 }
 
-func (service *fundingTransactionManager) BeforeBobSignOmniFundingAtBobSide(data string, user *bean.User) (outData interface{}, err error) {
+func (service *fundingTransactionManager) BeforeSignAssetFundingCreateAtBobSide(data string, user *bean.User) (outData interface{}, err error) {
 	jsonObj := bean.FundingAssetOfP2p{}
 	_ = json.Unmarshal([]byte(data), &jsonObj)
 	temporaryChannelId := jsonObj.TemporaryChannelId
@@ -1163,17 +1164,17 @@ func (service *fundingTransactionManager) AssetFundingSigned(jsonData string, si
 	//}
 	channelInfo.ChannelId = fundingTransaction.ChannelId
 	node["channel_id"] = channelInfo.ChannelId
-	if tool.CheckIsString(&reqData.FundeeChannelAddressPrivateKey) == false {
+	if tool.CheckIsString(&reqData.ChannelAddressPrivateKey) == false {
 		return nil, errors.New(enum.Tips_common_empty + " fundee_channel_address_private_key")
 	}
-	_, err = tool.GetPubKeyFromWifAndCheck(reqData.FundeeChannelAddressPrivateKey, myPubKey)
+	_, err = tool.GetPubKeyFromWifAndCheck(reqData.ChannelAddressPrivateKey, myPubKey)
 	if err != nil {
 		return nil, err
 	}
 
 	//region  sign C1 tx
 	// 二次签名
-	rsmcTxId, signedRsmcHex, err := rpcClient.BtcSignRawTransaction(fundingTransaction.FunderRsmcHex, reqData.FundeeChannelAddressPrivateKey)
+	rsmcTxId, signedRsmcHex, err := rpcClient.BtcSignRawTransaction(fundingTransaction.FunderRsmcHex, reqData.ChannelAddressPrivateKey)
 	if err != nil {
 		return nil, err
 	}
@@ -1212,7 +1213,7 @@ func (service *fundingTransactionManager) AssetFundingSigned(jsonData string, si
 	_, hex, err := rpcClient.OmniCreateAndSignRawTransactionUseUnsendInput(
 		rsmcMultiAddress,
 		[]string{
-			reqData.FundeeChannelAddressPrivateKey,
+			reqData.ChannelAddressPrivateKey,
 		},
 		inputs,
 		outputAddress,
@@ -1242,7 +1243,7 @@ func (service *fundingTransactionManager) AssetFundingSigned(jsonData string, si
 	lastCommitmentTx.RSMCTxHex = signedRsmcHex
 	lastCommitmentTx.RSMCTxid = rsmcTxId
 	lastCommitmentTx.AmountToRSMC = funderAmount
-	err = createCurrCommitmentTxBR(tx, dao.BRType_Rmsc, channelInfo, lastCommitmentTx, inputs, myAddress, reqData.FundeeChannelAddressPrivateKey, *signer)
+	err = createCurrCommitmentTxBR(tx, dao.BRType_Rmsc, channelInfo, lastCommitmentTx, inputs, myAddress, reqData.ChannelAddressPrivateKey, *signer)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -1275,7 +1276,7 @@ func (service *fundingTransactionManager) AssetFundingSigned(jsonData string, si
 	return node, err
 }
 
-func (service *fundingTransactionManager) AfterBobSignOmniFundingAtAliceSide(data string, user *bean.User) (outData interface{}, err error) {
+func (service *fundingTransactionManager) AfterBobSignAssetFundingAtAliceSide(data string, user *bean.User) (outData interface{}, err error) {
 	jsonObj := gjson.Parse(data)
 	temporaryChannelId := jsonObj.Get("temporary_channel_id").String()
 	rsmcSignedHex := jsonObj.Get("rsmc_signed_hex").String()
@@ -1467,15 +1468,15 @@ func checkHexOutputAddressFromOmniDecode(hexDecode string, inputs []rpc.Transact
 }
 
 func (service *fundingTransactionManager) BtcFundingAllItem(user bean.User) (node []dao.FundingBtcRequest, err error) {
-	var itemes []dao.FundingBtcRequest
+	var items []dao.FundingBtcRequest
 	err = user.Db.Select(
 		q.Eq("Owner", user.PeerId)).
 		OrderBy("CreateAt").Reverse().
-		Find(&itemes)
+		Find(&items)
 	if err != nil {
 		return nil, err
 	}
-	return itemes, nil
+	return items, nil
 }
 
 func (service *fundingTransactionManager) BtcFundingItemById(id int, user bean.User) (node *dao.FundingBtcRequest, err error) {
@@ -1488,24 +1489,24 @@ func (service *fundingTransactionManager) BtcFundingItemById(id int, user bean.U
 }
 
 func (service *fundingTransactionManager) BtcFundingItemByTempChannelId(tempChanId string, user bean.User) (node []dao.FundingBtcRequest, err error) {
-	var itemes []dao.FundingBtcRequest
-	err = user.Db.Select(q.Eq("TemporaryChannelId", tempChanId)).OrderBy("CreateAt").Reverse().Find(&itemes)
+	var items []dao.FundingBtcRequest
+	err = user.Db.Select(q.Eq("TemporaryChannelId", tempChanId)).OrderBy("CreateAt").Reverse().Find(&items)
 	if err != nil {
 		return nil, err
 	}
-	return itemes, nil
+	return items, nil
 }
 
 func (service *fundingTransactionManager) BtcFundingRDAllItem(user bean.User) (node []dao.MinerFeeRedeemTransaction, err error) {
-	var itemes []dao.MinerFeeRedeemTransaction
+	var items []dao.MinerFeeRedeemTransaction
 	err = user.Db.Select(
 		q.Eq("Owner", user.PeerId)).
 		OrderBy("CreateAt").Reverse().
-		Find(&itemes)
+		Find(&items)
 	if err != nil {
 		return nil, err
 	}
-	return itemes, nil
+	return items, nil
 }
 
 func (service *fundingTransactionManager) BtcFundingRDItemById(id int, user bean.User) (node *dao.MinerFeeRedeemTransaction, err error) {
@@ -1518,8 +1519,25 @@ func (service *fundingTransactionManager) BtcFundingRDItemById(id int, user bean
 }
 
 func (service *fundingTransactionManager) BtcFundingItemRDByTempChannelId(tempChanId string, user bean.User) (node []dao.MinerFeeRedeemTransaction, err error) {
-	var itemes []dao.MinerFeeRedeemTransaction
-	err = user.Db.Select(q.Eq("TemporaryChannelId", tempChanId)).OrderBy("CreateAt").Reverse().Find(&itemes)
+	var items []dao.MinerFeeRedeemTransaction
+	err = user.Db.Select(q.Eq("TemporaryChannelId", tempChanId)).OrderBy("CreateAt").Reverse().Find(&items)
+	if err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+func (service *fundingTransactionManager) BtcFundingItemByChannelId(channelId string, user bean.User) (node []dao.FundingBtcRequest, err error) {
+	if tool.CheckIsString(&channelId) == false {
+		return nil, errors.New(enum.Tips_common_wrong + "channelId")
+	}
+	channelInfo := dao.ChannelInfo{}
+	_ = user.Db.Select(q.Eq("ChannelId", channelId)).First(&channelInfo)
+	if channelInfo.Id == 0 {
+		return nil, errors.New(enum.Tips_funding_notFoundChannelByChannelId + channelId)
+	}
+	var itemes []dao.FundingBtcRequest
+	err = user.Db.Select(q.Eq("TemporaryChannelId", channelInfo.TemporaryChannelId)).OrderBy("CreateAt").Reverse().Find(&itemes)
 	if err != nil {
 		return nil, err
 	}
@@ -1547,7 +1565,7 @@ func (service *fundingTransactionManager) BtcFundingItemRDByTempChannelIdAndFund
 	return item, nil
 }
 
-func (service *fundingTransactionManager) OmniFundingAllItem(user bean.User) (node []dao.FundingTransaction, err error) {
+func (service *fundingTransactionManager) AssetFundingAllItem(user bean.User) (node []dao.FundingTransaction, err error) {
 	var data []dao.FundingTransaction
 	err = user.Db.Select(
 		q.Or(q.Eq("PeerIdB", user.PeerId),
@@ -1560,7 +1578,7 @@ func (service *fundingTransactionManager) OmniFundingAllItem(user bean.User) (no
 	return data, nil
 }
 
-func (service *fundingTransactionManager) OmniFundingItemById(id int, user bean.User) (node *dao.FundingTransaction, err error) {
+func (service *fundingTransactionManager) AssetFundingItemById(id int, user bean.User) (node *dao.FundingTransaction, err error) {
 	var data = &dao.FundingTransaction{}
 	err = user.Db.One("Id", id, data)
 	if err != nil {
@@ -1569,7 +1587,7 @@ func (service *fundingTransactionManager) OmniFundingItemById(id int, user bean.
 	return data, nil
 }
 
-func (service *fundingTransactionManager) OmniFundingItemByChannelId(chanId string, user bean.User) (node *dao.FundingTransaction, err error) {
+func (service *fundingTransactionManager) AssetFundingItemByChannelId(chanId string, user bean.User) (node *dao.FundingTransaction, err error) {
 	var item = &dao.FundingTransaction{}
 	err = user.Db.Select(q.Eq("ChannelId", chanId)).First(item)
 	if err != nil {
@@ -1578,27 +1596,10 @@ func (service *fundingTransactionManager) OmniFundingItemByChannelId(chanId stri
 	return item, nil
 }
 
-func (service *fundingTransactionManager) OmniFundingTotalCount(user bean.User) (count int, err error) {
+func (service *fundingTransactionManager) AssetFundingTotalCount(user bean.User) (count int, err error) {
 	return user.Db.Select(
 		q.Or(
 			q.Eq("PeerIdA", user.PeerId),
 			q.Eq("PeerIdB", user.PeerId))).
 		Count(&dao.FundingTransaction{})
-}
-
-func (service *fundingTransactionManager) BtcFundingItemByChannelId(channelId string, user bean.User) (node []dao.FundingBtcRequest, err error) {
-	if tool.CheckIsString(&channelId) == false {
-		return nil, errors.New(enum.Tips_common_wrong + "channelId")
-	}
-	channelInfo := dao.ChannelInfo{}
-	_ = user.Db.Select(q.Eq("ChannelId", channelId)).First(&channelInfo)
-	if channelInfo.Id == 0 {
-		return nil, errors.New(enum.Tips_funding_notFoundChannelByChannelId + channelId)
-	}
-	var itemes []dao.FundingBtcRequest
-	err = user.Db.Select(q.Eq("TemporaryChannelId", channelInfo.TemporaryChannelId)).OrderBy("CreateAt").Reverse().Find(&itemes)
-	if err != nil {
-		return nil, err
-	}
-	return itemes, nil
 }

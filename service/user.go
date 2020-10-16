@@ -7,7 +7,6 @@ import (
 	"github.com/omnilaboratory/obd/bean/enum"
 	"github.com/omnilaboratory/obd/dao"
 	"github.com/omnilaboratory/obd/tool"
-	trackerBean "github.com/omnilaboratory/obd/tracker/bean"
 	"github.com/tyler-smith/go-bip39"
 	"log"
 	"time"
@@ -31,7 +30,7 @@ func (service *UserManager) UserLogin(user *bean.User) error {
 		return err
 	}
 	var node dao.User
-	user.PeerId = tool.SignMsgWithSha256([]byte(user.Mnemonic))
+	user.PeerId = tool.GetUserPeerId(user.Mnemonic)
 	userDB, err := dao.DBService.GetUserDB(user.PeerId)
 	if err != nil {
 		return err
@@ -97,16 +96,4 @@ func (service *UserManager) UserLogout(user *bean.User) error {
 	}
 	noticeTrackerUserLogout(node)
 	return user.Db.Close()
-}
-
-func noticeTrackerUserLogin(user dao.User) {
-	loginRequest := trackerBean.ObdNodeUserLoginRequest{}
-	loginRequest.UserId = user.PeerId
-	sendMsgToTracker(enum.MsgType_Tracker_UserLogin_304, loginRequest)
-}
-
-func noticeTrackerUserLogout(user dao.User) {
-	loginRequest := trackerBean.ObdNodeUserLoginRequest{}
-	loginRequest.UserId = user.PeerId
-	sendMsgToTracker(enum.MsgType_Tracker_UserLogout_305, loginRequest)
 }

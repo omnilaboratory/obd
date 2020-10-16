@@ -44,6 +44,7 @@ type ChannelInfoRequest struct {
 
 //请求获取htlc的path
 type HtlcPathRequest struct {
+	PayerObdNodeId  string  `json:"payer_obd_node_id"`
 	RealPayerPeerId string  `json:"real_payer_peer_id"`
 	PayeePeerId     string  `json:"payee_peer_id"`
 	PropertyId      int64   `json:"property_id"`

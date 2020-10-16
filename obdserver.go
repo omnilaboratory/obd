@@ -22,8 +22,8 @@ func initObdLog() {
 	path := "log/obdServer"
 	writer, err := rotatelogs.New(
 		path+".%Y%m%d%H%M.log",
-		rotatelogs.WithMaxAge(time.Duration(12)*time.Hour),
-		rotatelogs.WithRotationTime(time.Duration(12)*time.Hour),
+		rotatelogs.WithMaxAge(30*34*time.Hour),
+		rotatelogs.WithRotationTime(4*time.Hour),
 	)
 
 	if err != nil {
@@ -35,12 +35,12 @@ func initObdLog() {
 	}
 	fileAndStdoutWriter := io.MultiWriter(writers...)
 	log.SetOutput(fileAndStdoutWriter)
-	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
+	log.SetFlags(log.Ldate | log.Lmicroseconds | log.Lshortfile)
 }
 
 // gox compile  https://blog.csdn.net/han0373/article/details/81391455
 // gox -os "windows linux darwin" -arch amd64
-// gox -os "windows" -arch amd64
+// gox -os "linux" -arch amd64
 func main() {
 	initObdLog()
 
@@ -81,6 +81,7 @@ func main() {
 
 	//synData to tracker
 	go lightclient.SynData()
+
 	// Timer
 	service.ScheduleService.StartSchedule()
 

@@ -43,6 +43,7 @@ type ChannelInfo struct {
 	AddressA                   string       `json:"address_a"`
 	PeerIdB                    string       `storm:"index" json:"peer_id_b"`
 	PubKeyB                    string       `json:"pub_key_b"`
+	FundeeAddressIndex         int          `json:"fundee_address_index"`
 	AddressB                   string       `json:"address_b"`
 	ChannelAddress             string       `json:"channel_address"`
 	ChannelAddressRedeemScript string       `json:"channel_address_redeem_script"`
@@ -163,6 +164,7 @@ type CommitmentTransaction struct {
 	TxType CommitmentTransactionType `json:"tx_type"` // 0 rsmc 1 htlc
 
 	//RSMC
+	RSMCTempAddressIndex         int     `json:"rsmc_temp_address_index"`   //aliceTempRemc or bobTempRsmc
 	RSMCTempAddressPubKey        string  `json:"rsmc_temp_address_pub_key"` //aliceTempRemc or bobTempRsmc
 	RSMCMultiAddress             string  `json:"rsmc_multi_address"`        //output aliceTempRsmc&bob  or alice&bobTempRsmc  multiAddr
 	RSMCRedeemScript             string  `json:"rsmc_redeem_script"`
@@ -177,9 +179,10 @@ type CommitmentTransaction struct {
 	AmountToCounterparty           float64 `json:"amount_to_counterparty"`               //amount to bob(if Cna) or alice(if Cnb)
 	FromCounterpartySideForMeTxHex string  `json:"from_counterparty_side_for_me_tx_hex"` //对方给自己的转账部分，防止对方不广播此交易
 	//htlc
-	HtlcRoutingPacket            string  `json:"htlc_routing_packet"`       //借道Path
-	HtlcCltvExpiry               int     `json:"htlc_cltv_expiry"`          //借道的最大超时 分钟为单位
-	BeginBlockHeight             int     `json:"begin_block_height"`        //借道时的区块高度
+	HtlcRoutingPacket            string  `json:"htlc_routing_packet"` //借道Path
+	HtlcCltvExpiry               int     `json:"htlc_cltv_expiry"`    //借道的最大超时 分钟为单位
+	BeginBlockHeight             int     `json:"begin_block_height"`  //借道时的区块高度
+	HTLCTempAddressIndex         int     `json:"htlc_temp_address_index"`
 	HTLCTempAddressPubKey        string  `json:"htlc_temp_address_pub_key"` //alice for htlc or bob for htlc
 	HTLCMultiAddress             string  `json:"htlc_multi_address"`        //output aliceTempHtlc&bob  or alice&bobTempHtlc  multiAddr
 	HTLCRedeemScript             string  `json:"htlc_redeem_script"`

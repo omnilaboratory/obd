@@ -77,7 +77,6 @@ func goroutine() {
 		for {
 			if conn == nil {
 				isReset = true
-				conn = nil
 				return
 			}
 
@@ -122,7 +121,7 @@ func goroutine() {
 				bytes, err := json.Marshal(info)
 				err = conn.WriteMessage(websocket.TextMessage, bytes)
 				if err != nil {
-					log.Println("write:", err)
+					log.Println("HeartBeat:", err)
 					return
 				}
 			} else {
@@ -171,7 +170,7 @@ func updateP2pAddressLogin() {
 func sycUserInfos() {
 
 	nodes := make([]trackerBean.ObdNodeUserLoginRequest, 0)
-	for userId, _ := range globalWsClientManager.OnlineUserMap {
+	for userId, _ := range globalWsClientManager.OnlineClientMap {
 		user := trackerBean.ObdNodeUserLoginRequest{}
 		user.UserId = userId
 		nodes = append(nodes, user)
@@ -199,7 +198,7 @@ func sycChannelInfos() {
 		if strings.HasPrefix(f.Name(), "user_") && strings.HasSuffix(f.Name(), ".db") {
 			peerId := strings.TrimPrefix(f.Name(), "user_")
 			peerId = strings.TrimSuffix(peerId, ".db")
-			value, exists := globalWsClientManager.OnlineUserMap[peerId]
+			value, exists := globalWsClientManager.OnlineClientMap[peerId]
 			if exists && value != nil {
 				userPeerIds = append(userPeerIds, peerId)
 			} else {
@@ -211,7 +210,7 @@ func sycChannelInfos() {
 	nodes := make([]trackerBean.ChannelInfoRequest, 0)
 
 	for _, peerId := range userPeerIds {
-		client, _ := globalWsClientManager.OnlineUserMap[peerId]
+		client, _ := globalWsClientManager.OnlineClientMap[peerId]
 		if client != nil {
 			checkChannel(client.User.Db, nodes)
 		}

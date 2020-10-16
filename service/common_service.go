@@ -11,55 +11,27 @@ import (
 	"github.com/omnilaboratory/obd/dao"
 	"github.com/omnilaboratory/obd/rpc"
 	"github.com/omnilaboratory/obd/tool"
-	trackerBean "github.com/omnilaboratory/obd/tracker/bean"
 	"github.com/shopspring/decimal"
-	"io/ioutil"
 	"log"
-	"net/http"
-	"strings"
 	"time"
 
 	"github.com/asdine/storm"
 	"github.com/tidwall/gjson"
 )
 
-type commitmentOutputBean struct {
-	AmountToRsmc               float64
-	AmountToCounterparty       float64
-	AmountToHtlc               float64
-	RsmcTempPubKey             string
-	HtlcTempPubKey             string
-	OppositeSideChannelPubKey  string
-	OppositeSideChannelAddress string
-}
-
-var obdGlobalDB *storm.DB
-var P2PLocalPeerId string
-var rpcClient *rpc.Client
-var TrackerChan chan []byte
-
-//for store the privateKey
-var tempAddrPrivateKeyMap = make(map[string]string)
-
-var OnlineUserMap = make(map[string]*bean.User)
-
-func Start() {
-	var err error
-	obdGlobalDB, err = dao.DBService.GetGlobalDB()
-	if err != nil {
-		log.Println(err)
-	}
-	rpcClient = rpc.NewClient()
-}
-
-func findUserIsOnline(peerId string) error {
-	if tool.CheckIsString(&peerId) {
-		value, exists := OnlineUserMap[peerId]
+func findUserIsOnline(nodePeerId, userPeerId string) error {
+	if tool.CheckIsString(&userPeerId) {
+		value, exists := OnlineUserMap[userPeerId]
 		if exists && value != nil {
 			return nil
 		}
+		if nodePeerId != P2PLocalPeerId {
+			if HttpGetUserStateFromTracker(userPeerId) > 0 {
+				return nil
+			}
+		}
 	}
-	return errors.New(fmt.Sprintf(enum.Tips_user_notExistOrOnline, peerId))
+	return errors.New(fmt.Sprintf(enum.Tips_user_notExistOrOnline, userPeerId))
 }
 
 func checkBtcFundFinish(address string, isFundOmni bool) error {
@@ -69,7 +41,7 @@ func checkBtcFundFinish(address string, isFundOmni bool) error {
 	}
 	array := gjson.Parse(result).Array()
 	log.Println("listunspent", array)
-	if len(array) < 3 {
+	if len(array) < config.BtcNeedFundTimes {
 		return errors.New(enum.Tips_funding_notEnoughBtcFundingTime)
 	}
 
@@ -82,7 +54,7 @@ func checkBtcFundFinish(address string, isFundOmni bool) error {
 				count++
 			}
 		}
-		if count < 3 {
+		if count < config.BtcNeedFundTimes {
 			return errors.New(fmt.Sprintf(enum.Tips_common_amountMustGreater, out))
 		}
 	}
@@ -104,7 +76,7 @@ func getAddressFromPubKey(pubKey string) (address string, err error) {
 	return address, nil
 }
 
-func createCommitmentTx(owner string, channelInfo *dao.ChannelInfo, fundingTransaction *dao.FundingTransaction, outputBean commitmentOutputBean, user *bean.User) (*dao.CommitmentTransaction, error) {
+func createCommitmentTx(owner string, channelInfo *dao.ChannelInfo, fundingTransaction *dao.FundingTransaction, outputBean commitmentTxOutputBean, user *bean.User) (*dao.CommitmentTransaction, error) {
 	commitmentTxInfo := &dao.CommitmentTransaction{}
 	commitmentTxInfo.PeerIdA = channelInfo.PeerIdA
 	commitmentTxInfo.PeerIdB = channelInfo.PeerIdB
@@ -518,7 +490,7 @@ func createCommitmentTxHex(dbTx storm.Node, isSender bool, reqData *bean.SendReq
 		return nil, err
 	}
 
-	var outputBean = commitmentOutputBean{}
+	var outputBean = commitmentTxOutputBean{}
 	outputBean.RsmcTempPubKey = reqData.CurrTempAddressPubKey
 	if currUser.PeerId == channelInfo.PeerIdA {
 		//default alice transfer to bob ,then alice minus money
@@ -566,6 +538,7 @@ func createCommitmentTxHex(dbTx storm.Node, isSender bool, reqData *bean.SendReq
 		return nil, err
 	}
 	commitmentTxInfo.TxType = dao.CommitmentTransactionType_Rsmc
+	commitmentTxInfo.RSMCTempAddressIndex = reqData.CurrTempAddressIndex
 
 	usedTxidTemp := ""
 	if commitmentTxInfo.AmountToRSMC > 0 {
@@ -636,102 +609,6 @@ func createCommitmentTxHex(dbTx storm.Node, isSender bool, reqData *bean.SendReq
 		return nil, err
 	}
 	return commitmentTxInfo, nil
-}
-
-//同步通道信息到tracker
-func sendChannelStateToTracker(channelInfo dao.ChannelInfo, commitmentTx dao.CommitmentTransaction) {
-	if channelInfo.IsPrivate {
-		return
-	}
-	infoRequest := trackerBean.ChannelInfoRequest{}
-	infoRequest.ChannelId = channelInfo.ChannelId
-	infoRequest.PropertyId = channelInfo.PropertyId
-	infoRequest.CurrState = channelInfo.CurrState
-	infoRequest.PeerIdA = channelInfo.PeerIdA
-	infoRequest.PeerIdB = channelInfo.PeerIdB
-
-	infoRequest.IsAlice = false
-	if commitmentTx.Owner == channelInfo.PeerIdA {
-		infoRequest.IsAlice = true
-		infoRequest.AmountA = commitmentTx.AmountToRSMC
-		infoRequest.AmountB = commitmentTx.AmountToCounterparty
-	} else {
-		infoRequest.AmountB = commitmentTx.AmountToRSMC
-		infoRequest.AmountA = commitmentTx.AmountToCounterparty
-	}
-	nodes := make([]trackerBean.ChannelInfoRequest, 0)
-	nodes = append(nodes, infoRequest)
-	sendMsgToTracker(enum.MsgType_Tracker_UpdateChannelInfo_350, nodes)
-}
-
-func sendMsgToTracker(msgType enum.MsgType, data interface{}) {
-
-	message := trackerBean.RequestMessage{}
-	message.Type = msgType
-
-	dataBytes, _ := json.Marshal(data)
-	dataStr := string(dataBytes)
-
-	parse := gjson.Parse(dataStr)
-	result := parse.Value()
-	if strings.HasPrefix(dataStr, "{") == false && strings.HasPrefix(dataStr, "[") == false {
-		result = dataStr
-	}
-
-	message.Data = result
-
-	bytes, _ := json.Marshal(message)
-	if TrackerChan != nil {
-		TrackerChan <- bytes
-	}
-}
-
-func httpGetHtlcStateFromTracker(path string, h string) (flag int) {
-	url := "http://" + config.TrackerHost + "/api/v1/getHtlcTxState?path=" + path + "&h=" + h
-	log.Println(url)
-	resp, err := http.Get(url)
-	if err != nil {
-		return 0
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode == 200 {
-		body, _ := ioutil.ReadAll(resp.Body)
-		log.Println(string(body))
-		return int(gjson.Get(string(body), "data").Get("flag").Int())
-	}
-	return 0
-}
-
-func httpGetChannelStateFromTracker(channelId string) (flag int) {
-	url := "http://" + config.TrackerHost + "/api/v1/getChannelState?channelId=" + channelId
-	log.Println(url)
-	resp, err := http.Get(url)
-	if err != nil {
-		return 0
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode == 200 {
-		body, _ := ioutil.ReadAll(resp.Body)
-		log.Println(string(body))
-		return int(gjson.Get(string(body), "data").Get("state").Int())
-	}
-	return 0
-}
-
-func HttpGetUserStateFromTracker(userId string) (flag int) {
-	url := "http://" + config.TrackerHost + "/api/v1/getUserState?userId=" + userId
-	log.Println(url)
-	resp, err := http.Get(url)
-	if err != nil {
-		return 0
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode == 200 {
-		body, _ := ioutil.ReadAll(resp.Body)
-		log.Println(string(body))
-		return int(gjson.Get(string(body), "data").Get("state").Int())
-	}
-	return 0
 }
 
 func GetBtcMinerFundMiniAmount() float64 {

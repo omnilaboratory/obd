@@ -24,11 +24,11 @@ var ChannelService = channelManager{}
 // AliceOpenChannel init ChannelInfo
 func (this *channelManager) AliceOpenChannel(msg bean.RequestMessage, user *bean.User) (openChannelInfo *bean.RequestOpenChannel, err error) {
 	if tool.CheckIsString(&msg.Data) == false {
-		return nil, errors.New(enum.Tips_common_wrong + "inputData")
+		return nil, errors.New(enum.Tips_common_wrong + "msg.data")
 	}
 
 	reqData := &bean.SendChannelOpen{}
-	err = json.Unmarshal([]byte(msg.Data), &reqData)
+	err = json.Unmarshal([]byte(msg.Data), reqData)
 	if err != nil {
 		return nil, err
 	}
@@ -44,6 +44,7 @@ func (this *channelManager) AliceOpenChannel(msg bean.RequestMessage, user *bean
 	openChannelInfo.FunderNodeAddress = P2PLocalPeerId
 	openChannelInfo.FunderPeerId = user.PeerId
 	openChannelInfo.FundingPubKey = reqData.FundingPubKey
+	openChannelInfo.FunderAddressIndex = reqData.FunderAddressIndex
 	openChannelInfo.IsPrivate = reqData.IsPrivate
 
 	channelInfo := &dao.ChannelInfo{}
@@ -63,7 +64,7 @@ func (this *channelManager) AliceOpenChannel(msg bean.RequestMessage, user *bean
 // obd init ChannelInfo for Bob
 func (this *channelManager) BeforeBobOpenChannelAtBobSide(msg string, user *bean.User) (err error) {
 	if tool.CheckIsString(&msg) == false {
-		return errors.New(enum.Tips_common_wrong + "inputData")
+		return errors.New(enum.Tips_common_wrong + "msg")
 	}
 
 	aliceOpenChannelInfo := bean.RequestOpenChannel{}
@@ -109,7 +110,7 @@ func (this *channelManager) BobCheckChannelAddressExist(jsonData string, user *b
 	}
 
 	if channelInfo.PeerIdB != user.PeerId {
-		return false, errors.New("you are not the peerIdB")
+		return false, errors.New(enum.Tips_rsmc_notTargetUser)
 	}
 
 	channelInfo.PubKeyB = reqData.FundingPubKey
@@ -135,9 +136,9 @@ func (this *channelManager) BobCheckChannelAddressExist(jsonData string, user *b
 	return existAddress, nil
 }
 
-func (this *channelManager) BobAcceptChannel(jsonData string, user *bean.User) (channelInfo *dao.ChannelInfo, err error) {
+func (this *channelManager) BobAcceptChannel(msg bean.RequestMessage, user *bean.User) (channelInfo *dao.ChannelInfo, err error) {
 	reqData := &bean.SendSignOpenChannel{}
-	err = json.Unmarshal([]byte(jsonData), &reqData)
+	err = json.Unmarshal([]byte(msg.Data), &reqData)
 
 	if err != nil {
 		return nil, err
@@ -174,8 +175,13 @@ func (this *channelManager) BobAcceptChannel(jsonData string, user *bean.User) (
 		return nil, errors.New(enum.Tips_channel_notThePeerIdB)
 	}
 
+	if channelInfo.PeerIdA != msg.RecipientUserPeerId {
+		return nil, errors.New(enum.Tips_common_wrong + msg.RecipientUserPeerId)
+	}
+
 	if reqData.Approval {
 		channelInfo.PubKeyB = reqData.FundingPubKey
+		channelInfo.FundeeAddressIndex = reqData.FundeeAddressIndex
 		channelInfo.AddressB = bobFundingAddress
 		multiSig, err := rpcClient.CreateMultiSig(2, []string{channelInfo.PubKeyA, channelInfo.PubKeyB})
 		if err != nil {
@@ -293,7 +299,7 @@ type pageVO struct {
 	TotalPage  int         `json:"totalPage"`
 }
 
-// OmniFundingAllItem
+// AssetFundingAllItem
 func (this *channelManager) AllItem(jsonData string, user bean.User) (data *pageVO, err error) {
 	data = &pageVO{}
 	tx, err := user.Db.Begin(true)
@@ -381,7 +387,7 @@ func (this *channelManager) AllItem(jsonData string, user bean.User) (data *page
 	return data, err
 }
 
-// OmniFundingTotalCount
+// AssetFundingTotalCount
 func (this *channelManager) TotalCount(user bean.User) (count int, err error) {
 	return user.Db.Select(
 		q.Or(
@@ -527,14 +533,14 @@ func (this *channelManager) RequestCloseChannel(msg bean.RequestMessage, user *b
 	_ = tx.Commit()
 
 	toData := make(map[string]interface{})
-	toData["channel_Id"] = channelId
+	toData["channel_id"] = channelId
 	toData["close_channel_hash"] = closeChannel.RequestHex
 	return toData, nil
 }
 
 //关闭通道的请求到达对方节点obd
 func (this *channelManager) BeforeBobSignCloseChannelAtBobSide(data string, user bean.User) (retData map[string]interface{}, err error) {
-	var channelId = gjson.Get(data, "channel_Id").String()
+	var channelId = gjson.Get(data, "channel_id").String()
 	var closeChannelHash = gjson.Get(data, "close_channel_hash").String()
 
 	tx, err := user.Db.Begin(true)
@@ -1137,26 +1143,4 @@ func (this *channelManager) CloseHtlcChannelSigned(tx storm.Node, channelInfo *d
 	}
 	//endregion
 	return channelInfo, nil
-}
-
-func addRDTxToWaitDB(lastRevocableDeliveryTx *dao.RevocableDeliveryTransaction) (err error) {
-	if lastRevocableDeliveryTx == nil || tool.CheckIsString(&lastRevocableDeliveryTx.TxHex) == false {
-		return errors.New(enum.Tips_common_empty + "tx hex")
-	}
-	node := &dao.RDTxWaitingSend{}
-	count, err := obdGlobalDB.Select(
-		q.Eq("TransactionHex", lastRevocableDeliveryTx.TxHex)).
-		Count(node)
-	if count > 0 {
-		return errors.New(enum.Tips_common_savedBefore)
-	}
-	node.TransactionHex = lastRevocableDeliveryTx.TxHex
-	node.Type = 0
-	node.IsEnable = true
-	node.CreateAt = time.Now()
-	err = obdGlobalDB.Save(node)
-	if err != nil {
-		return err
-	}
-	return nil
 }

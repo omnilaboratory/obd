@@ -25,12 +25,11 @@ func (client *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, 
 	var data string
 	switch msg.Type {
 	case enum.MsgType_UserLogin_2001:
-
 		mnemonic := gjson.Get(msg.Data, "mnemonic").String()
 		if client.User != nil {
 			if client.User.Mnemonic != mnemonic {
 				_ = service.UserService.UserLogout(client.User)
-				delete(globalWsClientManager.OnlineUserMap, client.User.PeerId)
+				delete(globalWsClientManager.OnlineClientMap, client.User.PeerId)
 				delete(service.OnlineUserMap, client.User.PeerId)
 				client.User = nil
 			}
@@ -44,18 +43,18 @@ func (client *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, 
 			user := bean.User{
 				Mnemonic:        mnemonic,
 				P2PLocalAddress: localServerDest,
-				P2PLocalPeerId:  P2PLocalPeerId,
+				P2PLocalPeerId:  p2PLocalPeerId,
 			}
 			var err error = nil
 			peerId := tool.SignMsgWithSha256([]byte(user.Mnemonic))
-			if globalWsClientManager.OnlineUserMap[peerId] != nil {
+			if globalWsClientManager.OnlineClientMap[peerId] != nil {
 				err = errors.New("user has logined at other node")
 			} else {
 				err = service.UserService.UserLogin(&user)
 			}
 			if err == nil {
 				client.User = &user
-				globalWsClientManager.OnlineUserMap[user.PeerId] = client
+				globalWsClientManager.OnlineClientMap[user.PeerId] = client
 				service.OnlineUserMap[user.PeerId] = &user
 				data = loginRetData(*client)
 				status = true
@@ -72,7 +71,7 @@ func (client *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, 
 			status = true
 			client.sendToMyself(msg.Type, status, "logout success")
 			if client.User != nil {
-				delete(globalWsClientManager.OnlineUserMap, client.User.PeerId)
+				delete(globalWsClientManager.OnlineClientMap, client.User.PeerId)
 				delete(service.OnlineUserMap, client.User.PeerId)
 			}
 			sendType = enum.SendTargetType_SendToExceptMe
@@ -86,7 +85,7 @@ func (client *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, 
 		if remoteNodeAddress.Exists() == false {
 			data = errors.New("remote_node_address not exist").Error()
 		} else {
-			localP2PAddress, err := ConnP2PServer(remoteNodeAddress.Str)
+			localP2PAddress, err := connP2PServer(remoteNodeAddress.Str)
 			if err != nil {
 				data = err.Error()
 			} else {
@@ -111,7 +110,9 @@ func (client *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, 
 		data = tool.FloatToString(fee, 8)
 		client.sendToMyself(msg.Type, true, data)
 		sendType = enum.SendTargetType_SendToSomeone
-	// Added by Kevin 2019-11-25
+	case enum.MsgType_HeartBeat_2007:
+		client.sendToMyself(msg.Type, true, data)
+		sendType = enum.SendTargetType_SendToSomeone
 	// Process GetMnemonic
 	case enum.MsgType_GetMnemonic_2004:
 		if client.User != nil { // The user already login.

@@ -13,9 +13,10 @@ type AddHtlcRequestInfo struct {
 	Memo                             string      `json:"memo"`
 	H                                string      `json:"h"`
 	RoutingPacket                    string      `json:"routing_packet"`
-	LastTempAddressPrivateKey        string      `json:"last_temp_address_private_key"`           //	支付方的上一个RSMC委托交易用到的临时地址的私钥 存储在bob这边的请求
-	CurrRsmcTempAddressPubKey        string      `json:"curr_rsmc_temp_address_pub_key"`          //	创建Cnx中的toRsmc的部分使用的临时地址的公钥
-	CurrHtlcTempAddressPubKey        string      `json:"curr_htlc_temp_address_pub_key"`          //	创建Cnx中的toHtlc的部分使用的临时地址的公钥
+	LastTempAddressPrivateKey        string      `json:"last_temp_address_private_key"`  //	支付方的上一个RSMC委托交易用到的临时地址的私钥 存储在bob这边的请求
+	CurrRsmcTempAddressPubKey        string      `json:"curr_rsmc_temp_address_pub_key"` //	创建Cnx中的toRsmc的部分使用的临时地址的公钥
+	CurrHtlcTempAddressPubKey        string      `json:"curr_htlc_temp_address_pub_key"` //	创建Cnx中的toHtlc的部分使用的临时地址的公钥
+	CurrHtlcTempAddressForHt1aIndex  int         `json:"curr_htlc_temp_address_for_ht1a_index"`
 	CurrHtlcTempAddressForHt1aPubKey string      `json:"curr_htlc_temp_address_for_ht1a_pub_key"` //	创建Ht1a中生成ht1a的输出的Rmsc的临时地址的公钥
 	CurrState                        NormalState `json:"curr_state"`
 	CreateBy                         string      `json:"create_by"`
@@ -34,6 +35,7 @@ type HTLCTimeoutTxForAAndExecutionForB struct {
 	InputAmount                  float64     `json:"input_amount"` // input amount
 	InputHex                     string      `json:"input_hex"`
 	Timeout                      int         `json:"timeout"` // if 3days 432=3*24*6
+	RSMCTempAddressIndex         int         `json:"rsmc_temp_address_index"`
 	RSMCTempAddressPubKey        string      `json:"rsmc_temp_address_pub_key"`
 	RSMCMultiAddress             string      `json:"rsmc_multi_address"`
 	RSMCRedeemScript             string      `json:"rsmc_redeem_script"`

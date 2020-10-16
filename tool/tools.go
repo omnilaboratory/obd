@@ -72,15 +72,17 @@ func GetAddressFromPubKey(pubKey string) (address string, err error) {
 		log.Println(err)
 		return "", errors.New("invalid pubKey")
 	}
-	// test TestNet3Params
+
 	// main MainNetParams
 	var net *chaincfg.Params
 	if strings.Contains(config.ChainNode_Type, "main") {
 		net = &chaincfg.MainNetParams
 	}
+	// test TestNet3Params
 	if strings.Contains(config.ChainNode_Type, "test") {
 		net = &chaincfg.TestNet3Params
 	}
+	// reg RegressionNetParams
 	if strings.Contains(config.ChainNode_Type, "reg") {
 		net = &chaincfg.RegressionNetParams
 	}
@@ -164,6 +166,12 @@ func GetMacAddrs() (macAddrs string) {
 		return macAddrs
 	}
 	return macAddrs
+}
+
+// get obd node id
+func GetUserPeerId(mnemonic string) string {
+	source := mnemonic + "@" + GetMacAddrs() + ":" + strconv.Itoa(config.ServerPort) + "in" + config.ChainNode_Type
+	return SignMsgWithSha256([]byte(source))
 }
 
 // get obd node id

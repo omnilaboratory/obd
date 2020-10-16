@@ -81,12 +81,11 @@ func (service *htlcBackwardTxManager) SendRToPreviousNode_Step1(msg bean.Request
 	if payerPeerId != msg.RecipientUserPeerId {
 		return nil, errors.New(enum.Tips_rsmc_notTargetUser)
 	}
-	if msg.RecipientNodePeerId == P2PLocalPeerId {
-		err = findUserIsOnline(payerPeerId)
-		if err != nil {
-			log.Println(err)
-			return nil, err
-		}
+
+	err = findUserIsOnline(msg.RecipientNodePeerId, payerPeerId)
+	if err != nil {
+		log.Println(err)
+		return nil, err
 	}
 
 	_, err = tool.GetPubKeyFromWifAndCheck(reqData.ChannelAddressPrivateKey, payeeChannelPubKey)
@@ -138,7 +137,7 @@ func (service *htlcBackwardTxManager) SendRToPreviousNode_Step1(msg bean.Request
 	}
 	_, err = tool.GetPubKeyFromWifAndCheck(reqData.CurrHtlcTempAddressForHE1bPrivateKey, reqData.CurrHtlcTempAddressForHE1bPubKey)
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf(enum.Tips_rsmc_notPairPrivAndPubKey, reqData.CurrHtlcTempAddressForHE1bPrivateKey, reqData.CurrHtlcTempAddressForHE1bPubKey))
+		return nil, err
 	}
 	// endregion
 
@@ -211,7 +210,7 @@ func (service *htlcBackwardTxManager) BeforeSendRInfoToPayerAtAliceSide_Step2(ms
 	if user.PeerId == channelInfo.PeerIdB {
 		senderPeerId = channelInfo.PeerIdA
 	}
-	messageHash := MessageService.saveMsgUseTx(tx, senderPeerId, user.PeerId, msgData)
+	messageHash := messageService.saveMsgUseTx(tx, senderPeerId, user.PeerId, msgData)
 	returnData := &bean.BobSendROfWs{}
 	_ = tx.Commit()
 
@@ -245,7 +244,7 @@ func (service *htlcBackwardTxManager) VerifyRAndCreateTxs_Step3(msg bean.Request
 	}
 	defer tx.Rollback()
 
-	message, err := MessageService.getMsgUseTx(tx, reqData.MsgHash)
+	message, err := messageService.getMsgUseTx(tx, reqData.MsgHash)
 	if err != nil {
 		return nil, errors.New("wrong msg_hash")
 	}
@@ -377,7 +376,7 @@ func (service *htlcBackwardTxManager) VerifyRAndCreateTxs_Step3(msg bean.Request
 	latestCommitmentTxInfo.CurrState = dao.TxInfoState_Htlc_GetR
 	_ = tx.Update(latestCommitmentTxInfo)
 
-	_ = MessageService.updateMsgStateUseTx(tx, message)
+	_ = messageService.updateMsgStateUseTx(tx, message)
 
 	_ = tx.Commit()
 
@@ -587,6 +586,7 @@ func createHe1bAtPayeeSide_at45(tx storm.Node, channelInfo dao.ChannelInfo, late
 	he1b.InputTxid = hlockOutputs[0].Txid
 	he1b.InputAmount = hlockTx.OutAmount
 
+	he1b.RSMCTempAddressIndex = reqData.CurrHtlcTempAddressForHE1bIndex
 	he1b.RSMCTempAddressPubKey = reqData.CurrHtlcTempAddressForHE1bPubKey
 	he1b.RSMCMultiAddress = he1bMultiAddress
 	he1b.RSMCRedeemScript = he1bRedeemScript

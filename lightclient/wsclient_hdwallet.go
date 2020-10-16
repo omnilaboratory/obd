@@ -10,22 +10,24 @@ import (
 
 func (client *Client) hdWalletModule(msg bean.RequestMessage) (enum.SendTargetType, []byte, bool) {
 	status := false
-	var sendType = enum.SendTargetType_SendToNone
+	var sendType = enum.SendTargetType_SendToSomeone
 	var data string
 	switch msg.Type {
 	case enum.MsgType_GetMnemonic_2004:
 		mnemonic, err := service.HDWalletService.Bip39GenMnemonic(256)
-		if err == nil { //get  successful.
+		if err != nil { //get  successful.
+			data = err.Error()
+		} else {
 			data = mnemonic
 			status = true
-		} else {
-			data = err.Error()
 		}
 		client.sendToMyself(msg.Type, status, data)
-		sendType = enum.SendTargetType_SendToSomeone
+
 	case enum.MsgType_Mnemonic_CreateAddress_3000:
 		wallet, err := service.HDWalletService.CreateNewAddress(client.User)
-		if err == nil { //get  successful.
+		if err != nil { //get  successful.
+			data = err.Error()
+		} else {
 			bytes, err := json.Marshal(wallet)
 			if err != nil {
 				data = err.Error()
@@ -34,18 +36,18 @@ func (client *Client) hdWalletModule(msg bean.RequestMessage) (enum.SendTargetTy
 				status = true
 			}
 			status = true
-		} else {
-			data = err.Error()
 		}
 		client.sendToMyself(msg.Type, status, data)
-		sendType = enum.SendTargetType_SendToSomeone
+
 	case enum.MsgType_Mnemonic_GetAddressByIndex_3001:
 		index, err := strconv.Atoi(msg.Data)
 		if err != nil || index < 0 {
 			data = "error index"
 		} else {
 			wallet, err := service.HDWalletService.GetAddressByIndex(client.User, uint32(index))
-			if err == nil { //get  successful.
+			if err != nil { //get  successful.
+				data = err.Error()
+			} else {
 				bytes, err := json.Marshal(wallet)
 				if err != nil {
 					data = err.Error()
@@ -53,13 +55,12 @@ func (client *Client) hdWalletModule(msg bean.RequestMessage) (enum.SendTargetTy
 					data = string(bytes)
 					status = true
 				}
-				status = true
-			} else {
-				data = err.Error()
 			}
 		}
 		client.sendToMyself(msg.Type, status, data)
-		sendType = enum.SendTargetType_SendToSomeone
+
+	default:
+		sendType = enum.SendTargetType_SendToNone
 	}
 	return sendType, []byte(data), status
 }

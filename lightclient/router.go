@@ -7,6 +7,7 @@ import (
 	"github.com/omnilaboratory/obd/config"
 	"github.com/satori/go.uuid"
 	"google.golang.org/grpc"
+	"log"
 	"net/http"
 	"strconv"
 )
@@ -22,21 +23,23 @@ func InitRouter(conn *grpc.ClientConn) *gin.Engine {
 	router.GET("/ws"+config.ChainNode_Type, wsClientConnect)
 
 	return router
+
 }
 
 func wsClientConnect(c *gin.Context) {
-	conn, error := (&websocket.Upgrader{CheckOrigin: func(r *http.Request) bool { return true }}).Upgrade(c.Writer, c.Request, nil)
-	if error != nil {
+	wsConn, err := (&websocket.Upgrader{CheckOrigin: func(r *http.Request) bool { return true }}).Upgrade(c.Writer, c.Request, nil)
+	if err != nil {
+		log.Println(err)
 		http.NotFound(c.Writer, c.Request)
 		return
 	}
 
 	client := &Client{
 		Id:          uuid.NewV4().String(),
-		Socket:      conn,
+		Socket:      wsConn,
 		SendChannel: make(chan []byte)}
 
-	globalWsClientManager.Connected <- client
 	go client.Write()
+	globalWsClientManager.Connected <- client
 	client.Read()
 }

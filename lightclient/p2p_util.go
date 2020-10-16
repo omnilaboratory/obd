@@ -34,20 +34,17 @@ type P2PChannel struct {
 const pid = "/chat/1.0.0"
 
 var localServerDest string
-var P2PLocalPeerId string
+var p2PLocalPeerId string
 var privateKey crypto.PrivKey
 var p2pChannelMap map[string]*P2PChannel
 
 func generatePrivateKey() (crypto.PrivKey, error) {
 	if privateKey == nil {
-		//r := rand.New(rand.NewSource(time.Now().UnixNano()))
-
 		nodeId := httpGetNodeIdFromTracker()
 		if nodeId == 0 {
 			return nil, errors.New("fail to get nodeId from tracker")
 		}
 		r := rand.New(rand.NewSource(int64(8080 + nodeId)))
-		//prvKey, _, err := crypto.GenerateKeyPairWithReader(crypto.RSA, 2048, r)
 		prvKey, _, err := crypto.GenerateECDSAKeyPair(r)
 		if err != nil {
 			log.Println(err)
@@ -78,14 +75,14 @@ func StartP2PServer() (err error) {
 		return err
 	}
 	p2pChannelMap = make(map[string]*P2PChannel)
-	P2PLocalPeerId = host.ID().Pretty()
-	service.P2PLocalPeerId = P2PLocalPeerId
+	p2PLocalPeerId = host.ID().Pretty()
+	service.P2PLocalPeerId = p2PLocalPeerId
 
 	localServerDest = fmt.Sprintf("/ip4/%s/tcp/%v/p2p/%s", config.P2P_hostIp, config.P2P_sourcePort, host.ID().Pretty())
 	bean.CurrObdNodeInfo.P2pAddress = localServerDest
 
 	//把自己也作为终点放进去，阻止自己连接自己
-	p2pChannelMap[P2PLocalPeerId] = &P2PChannel{
+	p2pChannelMap[p2PLocalPeerId] = &P2PChannel{
 		IsLocalChannel: true,
 		Address:        localServerDest,
 	}
@@ -93,7 +90,7 @@ func StartP2PServer() (err error) {
 	return nil
 }
 
-func ConnP2PServer(dest string) (string, error) {
+func connP2PServer(dest string) (string, error) {
 	if tool.CheckIsString(&dest) == false {
 		log.Println("wrong dest address")
 		return "", errors.New("wrong dest address")
@@ -185,12 +182,12 @@ func addP2PChannel(stream network.Stream) *bufio.ReadWriter {
 	return rw
 }
 
-func SendP2PMsg(remoteP2PPeerId string, msg string) error {
+func sendP2PMsg(remoteP2PPeerId string, msg string) error {
 	if tool.CheckIsString(&remoteP2PPeerId) == false {
 		return errors.New("empty remoteP2PPeerId")
 	}
-	if remoteP2PPeerId == P2PLocalPeerId {
-		return errors.New("remoteP2PPeerId is self,can not send msg to yourself")
+	if remoteP2PPeerId == p2PLocalPeerId {
+		return errors.New("remoteP2PPeerId is yourself,can not send msg to yourself")
 	}
 
 	channel := p2pChannelMap[remoteP2PPeerId]

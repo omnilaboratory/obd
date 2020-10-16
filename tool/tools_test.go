@@ -8,6 +8,10 @@ import (
 	"testing"
 )
 
+func TestDemo7(t *testing.T) {
+	peerId := GetUserPeerId("abddada")
+	log.Println(peerId)
+}
 func TestDemo6(t *testing.T) {
 	pubKeyFromWif, err := GetPubKeyFromWifAndCheck("cRnyhRgABgJ7EeYGvvpxRvzbXCL5AFurwxRZgpc5C2FBd8mYY6Qi", "02cf5a20cf48e65b6da0c68af100219e394e5aef533439cb3ec199e170910d828b")
 	log.Println(err)

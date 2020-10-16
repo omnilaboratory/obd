@@ -46,17 +46,11 @@ func (this *atomicSwapManager) AtomicSwap(msg bean.RequestMessage, user bean.Use
 		return nil, errors.New("you should not send msg to yourself")
 	}
 
-	if P2PLocalPeerId == msg.RecipientNodePeerId {
-		err = findUserIsOnline(reqData.RecipientUserPeerId)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		flag := HttpGetUserStateFromTracker(msg.RecipientUserPeerId)
-		if flag == 0 {
-			return nil, errors.New("user is not online")
-		}
+	err = findUserIsOnline(msg.RecipientNodePeerId, reqData.RecipientUserPeerId)
+	if err != nil {
+		return nil, err
 	}
+
 	if tool.CheckIsString(&reqData.ChannelIdFrom) == false {
 		return nil, errors.New("error channel_id_from")
 	}
@@ -197,15 +191,10 @@ func (this *atomicSwapManager) AtomicSwapAccepted(msg bean.RequestMessage, user 
 	if msg.RecipientUserPeerId != reqData.RecipientUserPeerId {
 		return nil, errors.New("wrong recipient_user_peer_id")
 	}
-	if msg.RecipientNodePeerId == P2PLocalPeerId {
-		err = findUserIsOnline(reqData.RecipientUserPeerId)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		if flag := HttpGetUserStateFromTracker(reqData.RecipientUserPeerId); flag == 0 {
-			return nil, errors.New("recipient_user_peer_id not online")
-		}
+
+	err = findUserIsOnline(msg.RecipientNodePeerId, reqData.RecipientUserPeerId)
+	if err != nil {
+		return nil, err
 	}
 
 	if reqData.TimeLocker < 10 {
