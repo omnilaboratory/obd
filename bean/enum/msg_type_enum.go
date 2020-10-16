@@ -23,13 +23,14 @@ const (
 	MsgType_Tracker_UpdateUserInfo_353    MsgType = 353
 )
 
-// 交易相关接口，需要登录 transaction [-100000,-102000]
-// 通用接口，不需要登录 common [-102000,-103000]
-// 用户中心，需要登录 user center [-103000,-104000]
+// Transaction related messages, login is required: [-100000,-102000]
+// Common messages, login is not required: [-102000,-103000]
+// User center messages, login is required: [-103000,-104000]
 const (
 	MsgType_Error_0 MsgType = 0
 
-	// region 通用接口，不需要登录 common [-102000,-103000]
+	// region
+	// Common messages, login is not required [-102000,-103000]
 	MsgType_UserLogin_2001            MsgType = -102001
 	MsgType_UserLogout_2002           MsgType = -102002
 	MsgType_p2p_ConnectPeer_2003      MsgType = -102003
@@ -64,22 +65,23 @@ const (
 	MsgType_Common_End_2999                            MsgType = -102999
 	// endregion
 
-	//region  用户中心，需要登录 user center [-103000,-104000]
+	//region
+	//User center messages, login is required: [-103000,-104000]
 
-	//通过助记词创建新地址
+	//Create new address via mnemonic words
 	MsgType_Mnemonic_CreateAddress_3000 MsgType = -103000
-	//通过助记词和索引获取地址信息
+	//get address info via mnemonic words and index
 	MsgType_Mnemonic_GetAddressByIndex_3001 MsgType = -103001
 
-	//Omni充值列表
+	//Omni asset funding list
 	MsgType_FundingCreate_Asset_AllItem_3100 MsgType = -103100
-	//Omni充值根据id获取充值详情
+	//Get omni asset funding info via ID
 	MsgType_FundingCreate_Asset_ItemById_3101 MsgType = -103101
-	//Omni充值根据通道id获取充值详情
+	//Get omni asset funding info via channel ID
 	MsgType_FundingCreate_Asset_ItemByChannelId_3102 MsgType = -103102
-	//Omni充值充值总次数
+	//Rounds of funding
 	MsgType_FundingCreate_Asset_Count_3103 MsgType = -103103
-	//Btc充值充值列表
+	//BTC funding list
 	MsgType_FundingCreate_Btc_AllItem_3104                      MsgType = -103104
 	MsgType_FundingCreate_Btc_ItemById_3105                     MsgType = -103105
 	MsgType_FundingCreate_Btc_ItemByTempChannelId_3106          MsgType = -103106
@@ -108,7 +110,8 @@ const (
 	MsgType_CommitmentTx_AllBRByChanId_3208              MsgType = -103208
 	//endregion
 
-	// region 交易相关接口，需要登录 transaction [-100000,-102000]
+	// region
+	// Transaction related messages, login is required: [-100000,-102000]
 
 	MsgType_SendChannelOpen_32 MsgType = -100032
 	MsgType_ChannelOpen_32     MsgType = -32
@@ -150,7 +153,7 @@ const (
 	MsgType_CloseChannelSign_39     MsgType = -39
 	MsgType_RecvCloseChannelSign_39 MsgType = -110039
 
-	// 寻路
+	// path finding
 	MsgType_HTLC_FindPath_401 MsgType = -100401
 	MsgType_HTLC_Invoice_402  MsgType = -100402
 
