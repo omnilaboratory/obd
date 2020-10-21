@@ -1,19 +1,19 @@
 package main
 
 import (
-	"github.com/lestrrat-go/file-rotatelogs"
-	"github.com/omnilaboratory/obd/bean"
-	"github.com/omnilaboratory/obd/config"
-	"github.com/omnilaboratory/obd/lightclient"
-	"github.com/omnilaboratory/obd/rpc"
-	"github.com/omnilaboratory/obd/service"
-	"github.com/omnilaboratory/obd/tool"
 	"io"
 	"log"
 	"net/http"
 	"os"
 	"strconv"
 	"time"
+
+	"github.com/omnilaboratory/obd/bean"
+	"github.com/omnilaboratory/obd/config"
+	"github.com/omnilaboratory/obd/lightclient"
+	"github.com/omnilaboratory/obd/rpc"
+	"github.com/omnilaboratory/obd/service"
+	"github.com/omnilaboratory/obd/tool"
 )
 
 func initObdLog() {

@@ -52,12 +52,7 @@ There are currently three solutions:
 
 ## Nodes in testnet
 
-Here is the list of nodes in the testnet. will be updating accordingly:   
-
-``` 
-ws://62.234.216.108:60020/wstest
-ws://62.234.188.160:60020/wstest
-```
+* [Nodes in testnet](https://omnilaboratory.github.io/obd/#/nodes-in-testnet)
 
 
 

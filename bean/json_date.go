@@ -5,15 +5,15 @@ import (
 	"time"
 )
 
-// 自定义类型
+//
 type JsonDate time.Time
 
-// 设置时间格式
+// set time formate
 const (
 	timeFormat = "2006-01-02"
 )
 
-// JsonDate反序列化
+// JsonDate deserialize
 func (t *JsonDate) UnmarshalJSON(data []byte) (err error) {
 	if len(data) != 12 {
 		return
