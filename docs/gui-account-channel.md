@@ -40,7 +40,7 @@ nodeAddress : /ip4/62.234.216.108/tcp/3001/p2p/QmP1mQMzDRV2bKWdhwvPWFubSAz1gqJY4
 ```
 nodePeerId : QmP1mQMzDRV2bKWdhwvPWFubSAz1gqJY44RjdYm3G5DFeF
 ``` 
-`nodePeerId` is part of the complete `nodeAddress`. Because on one server, there can be thousans of OBD running on it, every OBD has a unique `nodePeerId` to be identified.  
+`nodePeerId` is part of the complete `nodeAddress`. Because on one server, there can be thousans of OBD running on it, every OBD has a unique `nodePeerId` to identify itself.  
 
 ```
 userPeerId : 30dfbc0e1b42c4cb50410b7a08186ce405a92fff235480608425bf4b0207e5ad
@@ -53,7 +53,7 @@ We assume this first window belongs to user Alice.
 
 Open another browser window, open index.html, and signup another user to get his `nodeAddress` and `userPeerId`. In this tutorial, this second window belongs to user Bob.
 
-Switch back to Alice's window, we shall input Bob's `nodeAddress` and `userPeerId` to build connection with Bob.  
+Switch back to Alice's window, we shall input Bob's `nodeAddress` to build connection with Bob's obd node.  
 
 <p align="center">
   <img width="750" alt="connectNode" src="assets/connectNode.png">
@@ -61,12 +61,12 @@ Switch back to Alice's window, we shall input Bob's `nodeAddress` and `userPeerI
 
 switch back to Alice's window;  
 1. click "connectP2PPeer";  
-2. input the `nodeAddress` into the "NodeAddress" input box;  
+2. input the `nodeAddress` into the "remote_node_address" box;  
 3. click "invoke API";  
 
 ## Step 5: open channel
 
-Click openChannel, input the arguments required by this function and click "invoke API", wait Bob's response. 
+Make sure bob enabled the "Auto Pilot" mode. Click openChannel, input the arguments required by this function and click "invoke API", wait Bob's response. 
 
 <p align="center">
   <img width="750" alt="createChannel" src="assets/createChannel.png">
@@ -74,8 +74,8 @@ Click openChannel, input the arguments required by this function and click "invo
 
 switch back to Alice's window;  
 1. click "openChannel";  
-2. input the `recipient_node_peer_id` which is the node id that Bob is using, like: `/ip4/62.234.188.160/tcp/4001/p2p/QmTxpMkwXyFNbwwRv3XGFgxZkdCM5UfxNHVAFZDukqsM5S`  
-   input the `recipient_user_peer_id` which is bob's user id, like: `f12cd5677ac77e5ec03280eeb175464960f0d075413da74c0cfd88bb65fc1b3c`
+2. input the `recipient_node_peer_id` which is the node id that Bob is using, like: `QmTxpMkwXyFNbwwRv3XGFgxZkdCM5UfxNHVAFZDukqsM5S`  
+   input the `recipient_user_peer_id` which is bob's user id, like: `f12cd5677ac77e5ec03280eeb175464960f0d075413da74c0cfd88bb65fc1b3c`  
 
 3. click "select" to select a "funding_pubkey": select an address's pubkey that can be used to fund the channel that you are now creating with Bob:  
 
@@ -92,8 +92,9 @@ Another option is `create`, which creates a new omni address. You shall use thir
 5. click "invoke API";  
 
 
-In the other window you just opened in step 4 for Bob, you will see an incoming message asking for opening a channel with Bob. Click "acceptChannel", leave the default values that the js SDK filled for you, response Alice to accept the "openChannel" request.  
+In the other window you just opened in step 4 for Bob, you will see an incoming message asking for opening a channel with Bob. If Bob is in auto pilot mode, you dont need to manually "acceptChannel". If not, click "acceptChannel", leave the default values that the js SDK filled for you, response Alice to accept the "openChannel" request.  
 
+<!-- 
 ## Step 6: create an invoice
 
 <p align="center">
@@ -101,15 +102,16 @@ In the other window you just opened in step 4 for Bob, you will see an incoming 
 </p>
 
 
-switch back to Alice's window;  
+switch back to Bob's window;  
 1. click "createInvoice";  
 2. input the `property_id`, `amount`, `h` `expiry_time` and short memo, where `h` is the locker (`hash(r)`) that payer uses it to lock a payment, only you can unlock it by your secrete `r`;  
 3. click "invoke API", you will see the beth32 encoded invoice string and QR code are created;  
 
 Share ths invoice string or QR code to anyone (not only Bob) who is going to pay you. But before you can actually receive money, you at least have a funded channel, which you dont have yet. So please go to the next section to study how to fund a channel. 
 
+-->
 
-## Step 7: channel operations
+## Step 6: channel operations
 
 You are able to keep going with other operations. Go to the [next section](https://omnilaboratory.github.io/obd/#/gui-fund-channel) to practise how to fund the channel and pay to others. Or if you want to dive deeper, to see what really happens during an invoice payment process, we suggest you manually operate according the steps in the [inside the payment process](https://omnilaboratory.github.io/obd/#/gui-pay-invoice?id=inside-the-process-of-invoice-payment). 
 

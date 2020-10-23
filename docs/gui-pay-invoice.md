@@ -11,6 +11,7 @@ After a channel has been funded, Alice or Bob are able to pay to each other or a
 3. input the `property_id`, `amount`, `h` `expiry_time` and short memo, where `h` is the locker (`hash(r)`) that Bob uses it to lock a payment, only Bob can unlock it by the secrete `r`;  
 4. click "invoke API", Bob will see the beth32 encoded invoice string and QR code are created;  
 
+You can use `genAddressFromMnemonic` to create an address, use the public key as `h` and the private key as `r`.  
 
 Share ths invoice string or QR code to Alice:   
  
