@@ -53,7 +53,7 @@ There are currently three solutions:
 If you ran an older version before, we strongly suggest you to clear your browser storage before open index.html. Before first stable version is released, we can not gurantee that every update is backward compatible: we have to tune the storage structure according to obd updates.
 
 <p align="center">
-  <img width="250" alt="clear broswer cache" src="assets/clearBroswerCache.png">
+  <img width="250" alt="clear broswer cache" src="assets/clearBroswerStorage.png">
 </p>
 
 
