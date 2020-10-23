@@ -50,7 +50,7 @@ There are currently three solutions:
 2) Run a web server, put the debugging tool in the corresponding directory, so that Chrome can visit the url normally.  
 3) Use Safari or other browsers to run the debugging tool.  
 
-If you ran an older version before, we strongly suggest you to clear your browser storage before open index.html. 
+If you ran an older version before, we strongly suggest you to clear your browser storage before open index.html. Before first stable version is released, we can not gurantee that every update is backward compatible: we have to tune the storage structure according to obd updates.
 
 <p align="center">
   <img width="250" alt="clear broswer cache" src="assets/clearBroswerCache.png">
