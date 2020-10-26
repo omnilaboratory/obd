@@ -62,6 +62,7 @@ const (
 	MsgType_Core_Omni_FundingAsset_2120                MsgType = -102120
 	MsgType_Core_Omni_Send_2121                        MsgType = -102121
 	MsgType_Core_GetTransactionByTxid_2122             MsgType = -102122
+	MsgType_Core_SignRawTransaction_2123               MsgType = -102123
 	MsgType_Core_Omni_End_2199                         MsgType = -102199
 	MsgType_Common_End_2999                            MsgType = -102999
 	// endregion
@@ -257,6 +258,8 @@ func CheckExist(msgType MsgType) bool {
 	case MsgType_Core_Omni_Send_2121:
 		return true
 	case MsgType_Core_GetTransactionByTxid_2122:
+		return true
+	case MsgType_Core_SignRawTransaction_2123:
 		return true
 	case MsgType_Mnemonic_CreateAddress_3000:
 		return true

@@ -1,6 +1,7 @@
 package rpc
 
 import (
+	"encoding/json"
 	"errors"
 	"github.com/omnilaboratory/obd/config"
 	"github.com/omnilaboratory/obd/tool"
@@ -300,6 +301,27 @@ func (client *Client) BtcCreateRawTransaction(fromBitCoinAddress string, outputI
 	retMap["hex"] = hex
 	retMap["inputs"] = inputs
 	return retMap, nil
+}
+
+type NeedSignData struct {
+	Hex    string                   `json:"hex"`
+	Prvkey string                   `json:"prvkey"`
+	Inputs []map[string]interface{} `json:"inputs"`
+}
+
+func (client *Client) BtcSignRawTransactionFromJson(dataJson string) (signHex string, err error) {
+	inputData := &NeedSignData{}
+	err = json.Unmarshal([]byte(dataJson), inputData)
+	if err != nil {
+		return "", err
+	}
+
+	signHexObj, err := client.SignRawTransactionWithKey(inputData.Hex, []string{inputData.Prvkey}, inputData.Inputs, "ALL")
+	if err != nil {
+		return "", err
+	}
+	signHex = gjson.Get(signHexObj, "hex").String()
+	return signHex, nil
 }
 
 // create a transaction and just signnature , not send to the network,get the hash of signature
