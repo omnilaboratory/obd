@@ -191,6 +191,117 @@ type TransactionInputItem struct {
 	Amount       float64 `json:"value"`
 }
 
+// create a raw transaction and no sign , not send to the network,get the hash of signature
+func (client *Client) BtcCreateRawTransaction(fromBitCoinAddress string, outputItems []TransactionOutputItem, minerFee float64, sequence int, redeemScript *string) (retMap map[string]interface{}, err error) {
+	if len(fromBitCoinAddress) < 1 {
+		return nil, errors.New("fromBitCoinAddress is empty")
+	}
+	if len(outputItems) < 1 {
+		return nil, errors.New("toBitCoinAddress is empty")
+	}
+
+	_, err = client.ValidateAddress(fromBitCoinAddress)
+	if err != nil {
+		return nil, err
+	}
+
+	if minerFee <= 0 {
+		minerFee = client.GetMinerFee()
+	}
+
+	outTotalAmount := decimal.NewFromFloat(0)
+	for _, item := range outputItems {
+		outTotalAmount = outTotalAmount.Add(decimal.NewFromFloat(item.Amount))
+	}
+
+	if outTotalAmount.LessThan(decimal.NewFromFloat(config.GetOmniDustBtc())) {
+		return nil, errors.New("wrong outTotalAmount")
+	}
+
+	if minerFee < config.GetOmniDustBtc() {
+		return nil, errors.New("minerFee too small")
+	}
+
+	result, err := client.ListUnspent(fromBitCoinAddress)
+	if err != nil {
+		return nil, err
+	}
+
+	array := gjson.Parse(result).Array()
+	if len(array) == 0 {
+		return nil, errors.New("empty balance")
+	}
+	log.Println("listunspent", array)
+
+	out, _ := outTotalAmount.Round(8).Float64()
+
+	balance := 0.0
+	inputs := make([]map[string]interface{}, 0)
+	for _, item := range array {
+		node := make(map[string]interface{})
+		node["txid"] = item.Get("txid").String()
+		node["vout"] = item.Get("vout").Int()
+		if redeemScript != nil {
+			node["redeemScript"] = *redeemScript
+		} else {
+			if item.Get("redeemScript").Exists() {
+				node["redeemScript"] = item.Get("redeemScript")
+			}
+		}
+		if sequence > 0 {
+			node["sequence"] = sequence
+		}
+		node["scriptPubKey"] = item.Get("scriptPubKey").String()
+		inputs = append(inputs, node)
+		balance, _ = decimal.NewFromFloat(balance).Add(decimal.NewFromFloat(item.Get("amount").Float())).Round(8).Float64()
+		if balance > out {
+			break
+		}
+	}
+
+	if len(inputs) == 0 || balance < out {
+		return nil, errors.New("not enough balance")
+	}
+
+	minerFeeAndOut, _ := decimal.NewFromFloat(minerFee).Add(outTotalAmount).Round(8).Float64()
+
+	subMinerFee := 0.0
+	if balance <= minerFeeAndOut {
+		needLessFee, _ := decimal.NewFromFloat(minerFeeAndOut).Sub(decimal.NewFromFloat(balance)).Round(8).Float64()
+		if needLessFee > 0 {
+			var outTotalCount = 0
+			for _, item := range outputItems {
+				if item.Amount > 0 {
+					outTotalCount++
+				}
+			}
+			if outTotalCount > 0 {
+				count, _ := decimal.NewFromString(strconv.Itoa(outTotalCount))
+				subMinerFee, _ = decimal.NewFromFloat(minerFee).DivRound(count, 8).Float64()
+			}
+		}
+	}
+
+	drawback, _ := decimal.NewFromFloat(balance).Sub(decimal.NewFromFloat(minerFeeAndOut)).Round(8).Float64()
+	output := make(map[string]interface{})
+	for _, item := range outputItems {
+		if item.Amount > 0 {
+			output[item.ToBitCoinAddress], _ = decimal.NewFromFloat(item.Amount).Sub(decimal.NewFromFloat(subMinerFee)).Round(8).Float64()
+		}
+	}
+	if drawback > 0 {
+		output[fromBitCoinAddress] = drawback
+	}
+	hex, err := client.CreateRawTransaction(inputs, output)
+	if err != nil {
+		return nil, err
+	}
+	retMap = make(map[string]interface{})
+	retMap["hex"] = hex
+	retMap["inputs"] = inputs
+	return retMap, nil
+}
+
 // create a transaction and just signnature , not send to the network,get the hash of signature
 func (client *Client) BtcCreateAndSignRawTransaction(fromBitCoinAddress string, privkeys []string, outputItems []TransactionOutputItem, minerFee float64, sequence int, redeemScript *string) (txid string, hex string, err error) {
 	if len(fromBitCoinAddress) < 1 {
