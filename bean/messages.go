@@ -109,29 +109,29 @@ type CloseChannelSign struct {
 
 // type: -100340
 type SendRequestFundingBtc struct {
-	TemporaryChannelId       string `json:"temporary_channel_id"`
-	FundingTxHex             string `json:"funding_tx_hex"`
-	ChannelAddressPrivateKey string `json:"channel_address_private_key"`
+	TemporaryChannelId string `json:"temporary_channel_id"`
+	FundingTxHex       string `json:"funding_tx_hex"`
 	typeLengthValue
 }
 
 // type: -340
 // type: -110340
 type FundingBtcOfP2p struct {
-	TemporaryChannelId string `json:"temporary_channel_id"`
-	FundingTxid        string `json:"funding_txid"`
-	FundingBtcHex      string `json:"funding_btc_hex"`
-	FundingRedeemHex   string `json:"funding_redeem_hex"`
-	FunderNodeAddress  string `json:"funder_node_address"`
-	FunderPeerId       string `json:"funder_peer_id"`
+	TemporaryChannelId string                `json:"temporary_channel_id"`
+	FundingTxid        string                `json:"funding_txid"`
+	FundingBtcHex      string                `json:"funding_btc_hex"`
+	FundingRedeemHex   string                `json:"funding_redeem_hex"`
+	FunderNodeAddress  string                `json:"funder_node_address"`
+	FunderPeerId       string                `json:"funder_peer_id"`
+	ClientSignHexData  NeedClientSignHexData `json:"client_sign_hex_data"`
 }
 
 //type: -100350 (SendSignFundingBtc)
 type SendSignFundingBtc struct {
-	TemporaryChannelId       string `json:"temporary_channel_id"`
-	FundingTxid              string `json:"funding_txid"`
-	ChannelAddressPrivateKey string `json:"channel_address_private_key"`
-	Approval                 bool   `json:"approval"`
+	TemporaryChannelId              string `json:"temporary_channel_id"`
+	FundingTxid                     string `json:"funding_txid"`
+	SignedMinerRedeemTransactionHex string `json:"signed_miner_redeem_transaction_hex"`
+	Approval                        bool   `json:"approval"`
 	typeLengthValue
 }
 
@@ -504,4 +504,11 @@ type AtomicSwapRequest struct {
 type AtomicSwapAccepted struct {
 	AtomicSwapRequest
 	TargetTransactionId string `json:"target_transaction_id"` // 针对的目标交易id
+}
+
+type NeedClientSignHexData struct {
+	Hex        string      `json:"hex"`
+	Inputs     interface{} `json:"inputs"`
+	IsMultisig bool        `json:"is_multisig"`
+	PubKey     string      `json:"pub_key"`
 }

@@ -134,6 +134,7 @@ type MinerFeeRedeemTransaction struct {
 	Owner              string    `json:"owner"`
 	TemporaryChannelId string    `json:"temporary_channel_id"`
 	FundingTxId        string    `json:"funding_tx_id"`
+	Amount             float64   `json:"amount"`
 	Hex                string    `json:"hex"`
 	Txid               string    `json:"txid"`
 	IsFinish           bool      `json:"is_finish"`

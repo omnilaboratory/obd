@@ -455,6 +455,111 @@ func (client *Client) BtcCreateAndSignRawTransaction(fromBitCoinAddress string, 
 }
 
 //创建btc的raw交易：输入为未广播的预交易,输出为交易hex，支持单签和多签，如果是单签，就需要后续步骤再签名
+func (client *Client) BtcCreateRawTransactionForUnsendInputTx(fromBitCoinAddress string, inputItems []TransactionInputItem, outputItems []TransactionOutputItem, minerFee float64, sequence int, redeemScript *string) (retMap map[string]interface{}, err error) {
+	if len(fromBitCoinAddress) < 1 {
+		return nil, errors.New("fromBitCoinAddress is empty")
+	}
+	if len(outputItems) < 1 {
+		return nil, errors.New("toBitCoinAddress is empty")
+	}
+
+	_, err = client.ValidateAddress(fromBitCoinAddress)
+	if err != nil {
+		return nil, err
+	}
+
+	if minerFee <= config.GetOmniDustBtc() {
+		minerFee = client.GetMinerFee()
+	}
+
+	outAmount := decimal.NewFromFloat(0)
+	for _, item := range outputItems {
+		outAmount = outAmount.Add(decimal.NewFromFloat(item.Amount))
+	}
+
+	if outAmount.LessThan(decimal.NewFromFloat(config.GetOmniDustBtc())) {
+		return nil, errors.New("wrong outAmount")
+	}
+
+	if minerFee < config.GetOmniDustBtc() {
+		return nil, errors.New("minerFee too small")
+	}
+
+	var outTotalCount = 0
+	for _, item := range outputItems {
+		if item.Amount > 0 {
+			outTotalCount++
+		}
+	}
+
+	subMinerFee := 0.0
+	if outTotalCount > 0 {
+		count, _ := decimal.NewFromString(strconv.Itoa(outTotalCount))
+		subMinerFee, _ = decimal.NewFromFloat(minerFee).DivRound(count, 8).Float64()
+	}
+	minerFee = 0
+	for i := 0; i < outTotalCount; i++ {
+		minerFee, _ = decimal.NewFromFloat(minerFee).Add(decimal.NewFromFloat(subMinerFee)).Round(8).Float64()
+	}
+
+	balance := 0.0
+	var inputs []map[string]interface{}
+	for _, item := range inputItems {
+		node := make(map[string]interface{})
+		node["txid"] = item.Txid
+		node["vout"] = item.Vout
+		if sequence > 0 {
+			node["sequence"] = sequence
+		}
+		if tool.CheckIsString(redeemScript) {
+			node["redeemScript"] = *redeemScript
+		}
+		node["scriptPubKey"] = item.ScriptPubKey
+		balance, _ = decimal.NewFromFloat(balance).Add(decimal.NewFromFloat(item.Amount)).Round(8).Float64()
+		inputs = append(inputs, node)
+	}
+	//not enough money
+	if outAmount.GreaterThan(decimal.NewFromFloat(balance)) {
+		return nil, errors.New("not enough balance")
+	}
+
+	//not enough money for minerFee
+	if outAmount.Equal(decimal.NewFromFloat(balance)) {
+		outAmount = outAmount.Sub(decimal.NewFromFloat(minerFee))
+	}
+
+	out, _ := decimal.NewFromFloat(minerFee).Add(outAmount).Round(8).Float64()
+	log.Println("input list ", inputs)
+
+	if len(inputs) == 0 || balance < out {
+		return nil, errors.New("not enough balance")
+	}
+	drawback, _ := decimal.NewFromFloat(balance).Sub(decimal.NewFromFloat(out)).Round(8).Float64()
+
+	output := make(map[string]interface{})
+	totalAmount := 0.0
+	for _, item := range outputItems {
+		if item.Amount > 0 {
+			tempAmount, _ := decimal.NewFromFloat(item.Amount).Sub(decimal.NewFromFloat(subMinerFee)).Round(8).Float64()
+			output[item.ToBitCoinAddress] = tempAmount
+			totalAmount += tempAmount
+		}
+	}
+	if drawback > 0 {
+		output[fromBitCoinAddress] = drawback
+	}
+	hex, err := client.CreateRawTransaction(inputs, output)
+	if err != nil {
+		return nil, err
+	}
+	retMap = make(map[string]interface{})
+	retMap["hex"] = hex
+	retMap["inputs"] = inputs
+	retMap["totalAmount"] = totalAmount
+	return retMap, nil
+}
+
+//创建btc的raw交易：输入为未广播的预交易,输出为交易hex，支持单签和多签，如果是单签，就需要后续步骤再签名
 func (client *Client) BtcCreateAndSignRawTransactionForUnsendInputTx(fromBitCoinAddress string, privkeys []string, inputItems []TransactionInputItem, outputItems []TransactionOutputItem, minerFee float64, sequence int, redeemScript *string) (txid string, hex string, err error) {
 	beginTime := time.Now()
 	if len(fromBitCoinAddress) < 1 {
