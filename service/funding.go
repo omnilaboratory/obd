@@ -85,13 +85,9 @@ func (service *fundingTransactionManager) BtcFundingCreated(msg bean.RequestMess
 	}
 
 	targetUser = channelInfo.PeerIdB
-	myPubKey := channelInfo.PubKeyA
-	bobPubKey := channelInfo.PubKeyB
 	redeemToAddress := channelInfo.AddressA
 	if user.PeerId == channelInfo.PeerIdB {
 		redeemToAddress = channelInfo.AddressB
-		myPubKey = channelInfo.PubKeyB
-		bobPubKey = channelInfo.PubKeyA
 		targetUser = channelInfo.PeerIdA
 	}
 
@@ -257,6 +253,7 @@ func (service *fundingTransactionManager) BtcFundingCreated(msg bean.RequestMess
 			node := make(map[string]interface{})
 			node["txid"] = fundingBtcRequest.TxId
 			node["vout"] = vout
+			node["amount"] = amount
 			node["redeemScript"] = channelInfo.ChannelAddressRedeemScript
 			node["scriptPubKey"] = channelInfo.ChannelAddressScriptPubKey
 			inputs = append(inputs, node)
@@ -275,14 +272,15 @@ func (service *fundingTransactionManager) BtcFundingCreated(msg bean.RequestMess
 	}
 	clientSignHexData.Hex = minerFeeRedeemTransaction.Hex
 	clientSignHexData.IsMultisig = true
-	clientSignHexData.PubKey = bobPubKey
+	clientSignHexData.PubKeyA = channelInfo.PubKeyA
+	clientSignHexData.PubKeyB = channelInfo.PubKeyB
 
 	fundingBtcOfP2p := bean.FundingBtcOfP2p{
 		TemporaryChannelId: reqData.TemporaryChannelId,
 		FundingTxid:        fundingTxid,
 		FundingBtcHex:      reqData.FundingTxHex,
 		FundingRedeemHex:   minerFeeRedeemTransaction.Hex,
-		ClientSignHexData:  clientSignHexData,
+		SignData:           clientSignHexData,
 		FunderNodeAddress:  msg.SenderNodePeerId,
 		FunderPeerId:       msg.SenderUserPeerId,
 	}
@@ -292,7 +290,6 @@ func (service *fundingTransactionManager) BtcFundingCreated(msg bean.RequestMess
 		if tempBtcFundingCreatedData == nil {
 			tempBtcFundingCreatedData = make(map[string]bean.FundingBtcOfP2p)
 		}
-		clientSignHexData.PubKey = myPubKey
 		tempBtcFundingCreatedData[user.PeerId+"_"+fundingTxid] = fundingBtcOfP2p
 		return clientSignHexData, targetUser, nil
 	}

@@ -508,6 +508,7 @@ func (client *Client) BtcCreateRawTransactionForUnsendInputTx(fromBitCoinAddress
 		node := make(map[string]interface{})
 		node["txid"] = item.Txid
 		node["vout"] = item.Vout
+		node["amount"] = item.Amount
 		if sequence > 0 {
 			node["sequence"] = sequence
 		}

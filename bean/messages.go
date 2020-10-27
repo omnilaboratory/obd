@@ -123,7 +123,7 @@ type FundingBtcOfP2p struct {
 	FundingRedeemHex   string                `json:"funding_redeem_hex"`
 	FunderNodeAddress  string                `json:"funder_node_address"`
 	FunderPeerId       string                `json:"funder_peer_id"`
-	ClientSignHexData  NeedClientSignHexData `json:"client_sign_hex_data"`
+	SignData           NeedClientSignHexData `json:"sign_data"`
 }
 
 //type: -100350 (SendSignFundingBtc)
@@ -510,5 +510,6 @@ type NeedClientSignHexData struct {
 	Hex        string      `json:"hex"`
 	Inputs     interface{} `json:"inputs"`
 	IsMultisig bool        `json:"is_multisig"`
-	PubKey     string      `json:"pub_key"`
+	PubKeyA    string      `json:"pub_key_a"`
+	PubKeyB    string      `json:"pub_key_b"`
 }
