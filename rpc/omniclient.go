@@ -334,7 +334,7 @@ func (client *Client) OmniCreateAndSignRawTransaction(fromBitCoinAddress string,
 		node["txid"] = item.Get("txid").String()
 		node["vout"] = item.Get("vout").Int()
 		node["scriptPubKey"] = item.Get("scriptPubKey").String()
-		node["amount"] = item.Get("amount").Float()
+		node["value"] = item.Get("amount").Float()
 		prevtxs = append(prevtxs, node)
 	}
 	change, err := client.omniCreateRawtxChange(reference, prevtxs, fromBitCoinAddress, minerFee)
