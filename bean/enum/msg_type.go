@@ -136,6 +136,9 @@ const (
 	MsgType_FundingSign_RecvBtcSign_350 MsgType = -110350
 
 	MsgType_FundingCreate_SendAssetFundingCreated_34 MsgType = -100034
+	//MsgType_FundingCreate_SendAssetFundingCreated_34 MsgType = -101034
+	//MsgType_FundingCreate_SendAssetFundingCreated_34 MsgType = -101134
+	//MsgType_FundingCreate_SendAssetFundingCreated_34 MsgType = -101234
 	MsgType_FundingCreate_AssetFundingCreated_34     MsgType = -34
 	MsgType_FundingCreate_RecvAssetFundingCreated_34 MsgType = -110034
 
