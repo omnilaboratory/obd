@@ -41,7 +41,7 @@ func (client *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.Se
 		msg.Type = enum.MsgType_FundingCreate_SendBtcFundingCreated_340
 		client.sendToMyself(msg.Type, status, data)
 	case enum.MsgType_FundingCreate_BtcFundingMinerRDTxToClient_341:
-		node, _, err := service.FundingTransactionService.AliceSignBtcFundingMinerFeeRedeemTx(msg.Data, client.User)
+		node, _, err := service.FundingTransactionService.OnAliceSignBtcFundingMinerFeeRedeemTx(msg.Data, client.User)
 		if err != nil {
 			data = err.Error()
 		} else {

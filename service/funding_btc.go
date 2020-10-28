@@ -304,7 +304,7 @@ func (service *fundingTransactionManager) BtcFundingCreated(msg bean.RequestMess
 }
 
 // 响应alice对btc矿工费充值的赎回交易的签名 -100341
-func (service *fundingTransactionManager) AliceSignBtcFundingMinerFeeRedeemTx(jsonObj string, user *bean.User) (retData interface{}, targetUser string, err error) {
+func (service *fundingTransactionManager) OnAliceSignBtcFundingMinerFeeRedeemTx(jsonObj string, user *bean.User) (retData interface{}, targetUser string, err error) {
 
 	if tool.CheckIsString(&jsonObj) == false {
 		return nil, "", errors.New("empty hex")
