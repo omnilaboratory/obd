@@ -500,12 +500,6 @@ func (client *Client) OmniCreateAndSignRawTransactionUseSingleInput(txType int, 
 	//log.Println("7 DecodeSignRawTransactionWithKey", decodeHex)
 	txid = gjson.Get(decodeHex, "txid").String()
 
-	//result, err := client.OmniDecodeTransaction(hex)
-	//if err == nil {
-	//	log.Println(result)
-	//} else {
-	//	log.Println(err)
-	//}
 	return txid, hex, currUseTxid, nil
 }
 

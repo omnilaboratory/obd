@@ -137,15 +137,14 @@ type SendSignFundingBtc struct {
 
 // -100034
 type SendRequestAssetFunding struct {
-	TemporaryChannelId       string  `json:"temporary_channel_id"`
-	PropertyId               int64   `json:"property_id"`
-	MaxAssets                float64 `json:"max_assets"`
-	AmountA                  float64 `json:"amount_a"`
-	FundingTxHex             string  `json:"funding_tx_hex"`
-	TempAddressIndex         int     `json:"temp_address_index"`
-	TempAddressPubKey        string  `json:"temp_address_pub_key"`
-	TempAddressPrivateKey    string  `json:"temp_address_private_key"`
-	ChannelAddressPrivateKey string  `json:"channel_address_private_key"`
+	TemporaryChannelId    string  `json:"temporary_channel_id"`
+	PropertyId            int64   `json:"property_id"`
+	MaxAssets             float64 `json:"max_assets"`
+	AmountA               float64 `json:"amount_a"`
+	FundingTxHex          string  `json:"funding_tx_hex"`
+	TempAddressIndex      int     `json:"temp_address_index"`
+	TempAddressPubKey     string  `json:"temp_address_pub_key"`
+	TempAddressPrivateKey string  `json:"temp_address_private_key"`
 	typeLengthValue
 }
 
@@ -155,11 +154,12 @@ type FundingAssetOfP2p struct {
 	//临时通道id
 	TemporaryChannelId string `json:"temporary_channel_id"`
 	//充值hex
-	FundingOmniHex        string `json:"funding_omni_hex"`
-	C1aRsmcHex            string `json:"c1a_rsmc_hex"`
-	RsmcTempAddressPubKey string `json:"rsmc_temp_address_pub_key"`
-	FunderNodeAddress     string `json:"funder_node_address"`
-	FunderPeerId          string `json:"funder_peer_id"`
+	FundingOmniHex        string                `json:"funding_omni_hex"`
+	C1aRsmcHex            string                `json:"c1a_rsmc_hex"`
+	RsmcTempAddressPubKey string                `json:"rsmc_temp_address_pub_key"`
+	SignData              NeedClientSignHexData `json:"sign_data"`
+	FunderNodeAddress     string                `json:"funder_node_address"`
+	FunderPeerId          string                `json:"funder_peer_id"`
 }
 
 //type: -35 (funding_signed)

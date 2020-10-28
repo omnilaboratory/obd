@@ -194,8 +194,31 @@ func (client *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.Se
 		client.sendToMyself(msg.Type, status, data)
 
 	case enum.MsgType_FundingCreate_SendAssetFundingCreated_34:
-		//check target whether is online
-		node, err := service.FundingTransactionService.AssetFundingCreated(msg, client.User)
+		node, needSign, err := service.FundingTransactionService.AssetFundingCreated(msg, client.User)
+		if err != nil {
+			data = err.Error()
+		} else {
+			bytes, err := json.Marshal(node)
+			if err != nil {
+				data = err.Error()
+			} else {
+				data = string(bytes)
+				status = true
+				if needSign == false {
+					msg.Type = enum.MsgType_FundingCreate_AssetFundingCreated_34
+					err = client.sendDataToP2PUser(msg, status, data)
+					if err != nil {
+						data = err.Error()
+						status = false
+					}
+				}
+			}
+		}
+		msg.Type = enum.MsgType_FundingCreate_SendAssetFundingCreated_34
+		client.sendToMyself(msg.Type, status, data)
+
+	case enum.MsgType_ClientSign_Duplex_AssetFunding_ChannelAddressSignC1a_1034:
+		node, err := service.FundingTransactionService.OnAliceSignedC1a(msg, client.User)
 		if err != nil {
 			data = err.Error()
 		} else {
@@ -213,7 +236,7 @@ func (client *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.Se
 				}
 			}
 		}
-		msg.Type = enum.MsgType_FundingCreate_SendAssetFundingCreated_34
+		msg.Type = enum.MsgType_ClientSign_Duplex_AssetFunding_ChannelAddressSignC1a_1034
 		client.sendToMyself(msg.Type, status, data)
 
 	case enum.MsgType_FundingCreate_Asset_AllItem_3100:

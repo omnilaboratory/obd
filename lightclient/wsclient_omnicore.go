@@ -365,10 +365,6 @@ func (client *Client) omniCoreModule(msg bean.RequestMessage) (enum.SendTargetTy
 		if err != nil {
 			data = "error data"
 		} else {
-			privKeys := make([]string, 0)
-			if tool.CheckIsString(&sendInfo.FromAddressPrivateKey) {
-				privKeys = append(privKeys, sendInfo.FromAddressPrivateKey)
-			}
 			_, err := rpcClient.OmniGetProperty(sendInfo.PropertyId)
 			if err != nil {
 				data = err.Error()
@@ -376,14 +372,13 @@ func (client *Client) omniCoreModule(msg bean.RequestMessage) (enum.SendTargetTy
 				if tool.CheckIsString(&sendInfo.FromAddress) &&
 					tool.CheckIsString(&sendInfo.ToAddress) &&
 					sendInfo.Amount > 0 {
-					_, hex, err := rpcClient.OmniCreateAndSignRawTransaction(sendInfo.FromAddress, privKeys, sendInfo.ToAddress, sendInfo.PropertyId, sendInfo.Amount, sendInfo.MinerFee, 0)
-					node := make(map[string]interface{})
-					node["hex"] = hex
+					respNode, err := rpcClient.OmniCreateRawTransaction(sendInfo.FromAddress, sendInfo.ToAddress, sendInfo.PropertyId, sendInfo.Amount, sendInfo.MinerFee, 0)
+					respNode["is_multisig"] = false
 
 					if err != nil {
 						data = err.Error()
 					} else {
-						bytes, _ := json.Marshal(node)
+						bytes, _ := json.Marshal(respNode)
 						data = string(bytes)
 						status = true
 					}
