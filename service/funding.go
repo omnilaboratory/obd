@@ -269,11 +269,15 @@ func (service *fundingTransactionManager) BtcFundingCreated(msg bean.RequestMess
 	}
 
 	if needAliceSignData != nil {
+		clientSignHexData.Hex = needAliceSignData["hex"].(string)
 		clientSignHexData.Inputs = needAliceSignData["inputs"]
 		clientSignHexData.TotalInAmount = needAliceSignData["total_in_amount"].(float64)
 		clientSignHexData.TotalOutAmount = needAliceSignData["total_out_amount"].(float64)
+	} else {
+		clientSignHexData.Hex = minerFeeRedeemTransaction.Hex
 	}
-	clientSignHexData.Hex = minerFeeRedeemTransaction.Hex
+
+	clientSignHexData.TemporaryChannelId = reqData.TemporaryChannelId
 	clientSignHexData.IsMultisig = true
 	clientSignHexData.PubKeyA = channelInfo.PubKeyA
 	clientSignHexData.PubKeyB = channelInfo.PubKeyB
