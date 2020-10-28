@@ -311,6 +311,10 @@ func (service *fundingTransactionManager) OnAliceSignBtcFundingMinerFeeRedeemTx(
 	}
 	hex := gjson.Get(jsonObj, "hex").Str
 	resultDecode, err := rpcClient.DecodeRawTransaction(hex)
+	if err != nil {
+		return nil, "", err
+	}
+
 	inputTxId := gjson.Get(resultDecode, "vin").Array()[0].Get("txid").Str
 
 	key := user.PeerId + "_" + inputTxId
