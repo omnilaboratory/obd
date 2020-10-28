@@ -242,6 +242,7 @@ func (client *Client) BtcCreateRawTransaction(fromBitCoinAddress string, outputI
 		node := make(map[string]interface{})
 		node["txid"] = item.Get("txid").String()
 		node["vout"] = item.Get("vout").Int()
+		node["amount"] = item.Get("amount").Float()
 		if redeemScript != nil {
 			node["redeemScript"] = *redeemScript
 		} else {
@@ -300,6 +301,7 @@ func (client *Client) BtcCreateRawTransaction(fromBitCoinAddress string, outputI
 	retMap = make(map[string]interface{})
 	retMap["hex"] = hex
 	retMap["inputs"] = inputs
+	retMap["total_in_amount"] = balance
 	return retMap, nil
 }
 
@@ -538,12 +540,12 @@ func (client *Client) BtcCreateRawTransactionForUnsendInputTx(fromBitCoinAddress
 	drawback, _ := decimal.NewFromFloat(balance).Sub(decimal.NewFromFloat(out)).Round(8).Float64()
 
 	output := make(map[string]interface{})
-	totalAmount := 0.0
+	totalOutAmount := 0.0
 	for _, item := range outputItems {
 		if item.Amount > 0 {
 			tempAmount, _ := decimal.NewFromFloat(item.Amount).Sub(decimal.NewFromFloat(subMinerFee)).Round(8).Float64()
 			output[item.ToBitCoinAddress] = tempAmount
-			totalAmount += tempAmount
+			totalOutAmount += tempAmount
 		}
 	}
 	if drawback > 0 {
@@ -556,7 +558,8 @@ func (client *Client) BtcCreateRawTransactionForUnsendInputTx(fromBitCoinAddress
 	retMap = make(map[string]interface{})
 	retMap["hex"] = hex
 	retMap["inputs"] = inputs
-	retMap["totalAmount"] = totalAmount
+	retMap["total_in_amount"] = balance
+	retMap["total_out_amount"] = totalOutAmount
 	return retMap, nil
 }
 

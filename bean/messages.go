@@ -507,9 +507,11 @@ type AtomicSwapAccepted struct {
 }
 
 type NeedClientSignHexData struct {
-	Hex        string      `json:"hex"`
-	Inputs     interface{} `json:"inputs"`
-	IsMultisig bool        `json:"is_multisig"`
-	PubKeyA    string      `json:"pub_key_a"`
-	PubKeyB    string      `json:"pub_key_b"`
+	Hex            string      `json:"hex"`
+	Inputs         interface{} `json:"inputs"`
+	IsMultisig     bool        `json:"is_multisig"`
+	PubKeyA        string      `json:"pub_key_a"`
+	PubKeyB        string      `json:"pub_key_b"`
+	TotalInAmount  float64     `json:"total_in_amount"`
+	TotalOutAmount float64     `json:"total_out_amount"`
 }

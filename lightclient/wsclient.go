@@ -134,6 +134,7 @@ func (client *Client) Read() {
 				if msg.Type == enum.MsgType_SendChannelOpen_32 || msg.Type == enum.MsgType_SendChannelAccept_33 ||
 					msg.Type == enum.MsgType_FundingCreate_SendBtcFundingCreated_340 || msg.Type == enum.MsgType_FundingSign_SendBtcSign_350 ||
 					msg.Type == enum.MsgType_FundingCreate_SendAssetFundingCreated_34 || msg.Type == enum.MsgType_FundingSign_SendAssetFundingSigned_35 ||
+					msg.Type == enum.MsgType_FundingCreate_BtcFundingMinerRDTxToClient_341 ||
 					msg.Type == enum.MsgType_CommitmentTx_SendCommitmentTransactionCreated_351 ||
 					msg.Type == enum.MsgType_CommitmentTxSigned_SendRevokeAndAcknowledgeCommitmentTransaction_352 ||
 					msg.Type == enum.MsgType_HTLC_SendAddHTLC_40 || msg.Type == enum.MsgType_HTLC_SendAddHTLCSigned_41 ||

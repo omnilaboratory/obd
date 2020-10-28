@@ -207,7 +207,7 @@ func (service *fundingTransactionManager) BtcFundingCreated(msg bean.RequestMess
 		minerFeeRedeemTransaction.FundingTxId = fundingTxid
 		minerFeeRedeemTransaction.Hex = needAliceSignData["hex"].(string)
 		minerFeeRedeemTransaction.IsFinish = false
-		minerFeeRedeemTransaction.Amount = needAliceSignData["totalAmount"].(float64)
+		minerFeeRedeemTransaction.Amount = needAliceSignData["total_out_amount"].(float64)
 		minerFeeRedeemTransaction.CreateAt = time.Now()
 		minerFeeRedeemTransaction.Owner = user.PeerId
 		_ = tx.Save(minerFeeRedeemTransaction)
@@ -258,6 +258,7 @@ func (service *fundingTransactionManager) BtcFundingCreated(msg bean.RequestMess
 			node["scriptPubKey"] = channelInfo.ChannelAddressScriptPubKey
 			inputs = append(inputs, node)
 			clientSignHexData.Inputs = inputs
+			clientSignHexData.TotalInAmount = amount
 		}
 	}
 
@@ -269,6 +270,8 @@ func (service *fundingTransactionManager) BtcFundingCreated(msg bean.RequestMess
 
 	if needAliceSignData != nil {
 		clientSignHexData.Inputs = needAliceSignData["inputs"]
+		clientSignHexData.TotalInAmount = needAliceSignData["total_in_amount"].(float64)
+		clientSignHexData.TotalOutAmount = needAliceSignData["total_out_amount"].(float64)
 	}
 	clientSignHexData.Hex = minerFeeRedeemTransaction.Hex
 	clientSignHexData.IsMultisig = true
