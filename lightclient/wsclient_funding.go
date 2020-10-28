@@ -40,7 +40,7 @@ func (client *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.Se
 		}
 		msg.Type = enum.MsgType_FundingCreate_SendBtcFundingCreated_340
 		client.sendToMyself(msg.Type, status, data)
-	case enum.MsgType_FundingCreate_BtcFundingMinerRDTxToClient_341:
+	case enum.MsgType_ClientSign_Duplex_BtcFundingMinerRDTx_341:
 		node, _, err := service.FundingTransactionService.OnAliceSignBtcFundingMinerFeeRedeemTx(msg.Data, client.User)
 		if err != nil {
 			data = err.Error()
@@ -61,7 +61,7 @@ func (client *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.Se
 				status = false
 			}
 		}
-		msg.Type = enum.MsgType_FundingCreate_BtcFundingMinerRDTxToClient_341
+		msg.Type = enum.MsgType_ClientSign_Duplex_BtcFundingMinerRDTx_341
 		client.sendToMyself(msg.Type, status, data)
 	case enum.MsgType_FundingCreate_Btc_AllItem_3104:
 		node, err := service.FundingTransactionService.BtcFundingAllItem(*client.User)

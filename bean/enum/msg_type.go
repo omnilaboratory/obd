@@ -126,10 +126,10 @@ const (
 	MsgType_ChannelAccept_33     MsgType = -33
 	MsgType_RecvChannelAccept_33 MsgType = -110033
 
-	MsgType_FundingCreate_SendBtcFundingCreated_340       MsgType = -100340
-	MsgType_FundingCreate_BtcFundingMinerRDTxToClient_341 MsgType = -100341
-	MsgType_FundingCreate_BtcFundingCreated_340           MsgType = -340
-	MsgType_FundingCreate_RecvBtcFundingCreated_340       MsgType = -110340
+	MsgType_FundingCreate_SendBtcFundingCreated_340   MsgType = -100340
+	MsgType_ClientSign_Duplex_BtcFundingMinerRDTx_341 MsgType = -100341
+	MsgType_FundingCreate_BtcFundingCreated_340       MsgType = -340
+	MsgType_FundingCreate_RecvBtcFundingCreated_340   MsgType = -110340
 
 	MsgType_FundingSign_SendBtcSign_350 MsgType = -100350
 	MsgType_FundingSign_BtcSign_350     MsgType = -350
@@ -304,7 +304,7 @@ func CheckExist(msgType MsgType) bool {
 		return true
 	case MsgType_FundingCreate_SendBtcFundingCreated_340:
 		return true
-	case MsgType_FundingCreate_BtcFundingMinerRDTxToClient_341:
+	case MsgType_ClientSign_Duplex_BtcFundingMinerRDTx_341:
 		return true
 	case MsgType_FundingCreate_Btc_AllItem_3104:
 		return true
