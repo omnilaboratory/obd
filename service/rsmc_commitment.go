@@ -1098,7 +1098,7 @@ func createCurrCommitmentTxRawBR(tx storm.Node, brType dao.BRType, channelInfo *
 	commitmentTx *dao.CommitmentTransaction, inputs []rpc.TransactionInputItem,
 	outputAddress string, user bean.User) (retMap map[string]interface{}, err error) {
 	if len(inputs) == 0 {
-		return nil,nil
+		return nil, nil
 	}
 	breachRemedyTransaction := &dao.BreachRemedyTransaction{}
 	_ = tx.Select(
@@ -1113,7 +1113,7 @@ func createCurrCommitmentTxRawBR(tx storm.Node, brType dao.BRType, channelInfo *
 		breachRemedyTransaction, err = createBRTxObj(user.PeerId, channelInfo, brType, commitmentTx, &user)
 		if err != nil {
 			log.Println(err)
-			return nil,err
+			return nil, err
 		}
 		if breachRemedyTransaction.Amount > 0 {
 			retMap, err = rpcClient.OmniCreateRawTransactionUseUnsendInput(
@@ -1128,15 +1128,15 @@ func createCurrCommitmentTxRawBR(tx storm.Node, brType dao.BRType, channelInfo *
 				&commitmentTx.RSMCRedeemScript)
 			if err != nil {
 				log.Println(err)
-				return nil,err
+				return nil, err
 			}
 			breachRemedyTransaction.OutAddress = outputAddress
 			breachRemedyTransaction.BrTxHex = retMap["hex"].(string)
 			breachRemedyTransaction.CurrState = dao.TxInfoState_Create
 			_ = tx.Save(breachRemedyTransaction)
-			retMap["br_id"]=breachRemedyTransaction.Id
+			retMap["br_id"] = breachRemedyTransaction.Id
 		}
-	}else{
+	} else {
 		retMap, err = rpcClient.OmniCreateRawTransactionUseUnsendInput(
 			commitmentTx.RSMCMultiAddress,
 			inputs,
@@ -1149,15 +1149,16 @@ func createCurrCommitmentTxRawBR(tx storm.Node, brType dao.BRType, channelInfo *
 			&commitmentTx.RSMCRedeemScript)
 		if err != nil {
 			log.Println(err)
-			return nil,err
+			return nil, err
 		}
-		retMap["br_id"]=breachRemedyTransaction.Id
+		retMap["br_id"] = breachRemedyTransaction.Id
 	}
 
-	return retMap,nil
+	return retMap, nil
 }
+
 // 第一次签名完成，更新RawBR
-func updateCurrCommitmentTxRawBR(tx storm.Node,  id int64, firstSignedBrHex string, user bean.User) (err error) {
+func updateCurrCommitmentTxRawBR(tx storm.Node, id int64, firstSignedBrHex string, user bean.User) (err error) {
 	breachRemedyTransaction := &dao.BreachRemedyTransaction{}
 	_ = tx.Select(
 		q.Eq("Id", id),
@@ -1166,12 +1167,12 @@ func updateCurrCommitmentTxRawBR(tx storm.Node,  id int64, firstSignedBrHex stri
 			q.Eq("PeerIdB", user.PeerId))).
 		First(breachRemedyTransaction)
 	if breachRemedyTransaction.Id > 0 {
-		if len(breachRemedyTransaction.Txid)==0 {
+		if len(breachRemedyTransaction.Txid) == 0 {
 			omniDecode, err := rpcClient.OmniDecodeTransaction(firstSignedBrHex)
 			if err != nil {
 				return nil
 			}
-			brTxId := gjson.Get(omniDecode,"txid").Str
+			brTxId := gjson.Get(omniDecode, "txid").Str
 
 			breachRemedyTransaction.Txid = brTxId
 			breachRemedyTransaction.BrTxHex = firstSignedBrHex

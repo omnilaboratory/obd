@@ -15,6 +15,8 @@ import (
 )
 
 var tempAssetFundingCreatedData map[string]bean.FundingAssetOfP2p
+var tempAssetFundingSignData map[string]map[string]interface{}
+var tempAssetFundingAfterBobSignData map[string]string
 
 // ********************* omni资产充值 *********************
 // funder request to fund to the multiAddr (channel)
@@ -38,6 +40,11 @@ func (service *fundingTransactionManager) AssetFundingCreated(msg bean.RequestMe
 		err = errors.New(enum.Tips_common_empty + " funding_tx_hex ")
 		log.Println(err)
 		return nil, false, err
+	}
+
+	testResult, _ := rpcClient.TestMemPoolAccept(reqData.FundingTxHex)
+	if gjson.Parse(testResult).Array()[0].Get("allowed").Bool() == false {
+		return nil, false, errors.New(gjson.Parse(testResult).Array()[0].Get("reject-reason").String())
 	}
 
 	if _, err := getAddressFromPubKey(reqData.TempAddressPubKey); err != nil {
@@ -113,10 +120,9 @@ func (service *fundingTransactionManager) AssetFundingCreated(msg bean.RequestMe
 	service.operateFlag.Lock()
 	defer service.operateFlag.Unlock()
 
-	reqData.PropertyId = propertyId
 	// getProperty from omnicore
 	// 验证PropertyId是否在omni存在
-	_, err = rpcClient.OmniGetProperty(reqData.PropertyId)
+	_, err = rpcClient.OmniGetProperty(propertyId)
 	if err != nil {
 		log.Println(err)
 		return nil, false, err
@@ -333,12 +339,17 @@ func (service *fundingTransactionManager) AssetFundingCreated(msg bean.RequestMe
 }
 
 // 协议号：101034 Alice对C1a签名（仅有ToRSMC）完成的响应
-func (service *fundingTransactionManager) OnAliceSignedC1a(msg bean.RequestMessage, user *bean.User) (outputData interface{}, err error) {
+func (service *fundingTransactionManager) OnAliceSignC1a(msg bean.RequestMessage, user *bean.User) (outputData interface{}, err error) {
 
 	if tool.CheckIsString(&msg.Data) == false {
 		return nil, errors.New("empty hex")
 	}
-	hex := gjson.Get(msg.Data, "hex").Str
+	signedC1a := bean.AliceSignC1aOfAssetFunding{}
+	_ = json.Unmarshal([]byte(msg.Data), &signedC1a)
+	hex := signedC1a.SignedC1aHex
+	if tool.CheckIsString(&hex) == false {
+		return nil, errors.New(enum.Tips_common_wrong + "hex")
+	}
 
 	resultDecode, err := rpcClient.DecodeRawTransaction(hex)
 	txid := gjson.Get(resultDecode, "txid").Str
@@ -350,7 +361,7 @@ func (service *fundingTransactionManager) OnAliceSignedC1a(msg bean.RequestMessa
 		return nil, errors.New("not found the temp data, please send -100034 again")
 	}
 
-	// 检测签名数据
+	// TODO 检测签名数据
 
 	tx, err := user.Db.Begin(true)
 	if err != nil {
@@ -399,6 +410,8 @@ func (service *fundingTransactionManager) OnAliceSignedC1a(msg bean.RequestMessa
 	_ = tx.Update(commitmentTxInfo)
 
 	_ = tx.Commit()
+
+	fundingAssetOfP2p.SignData.Hex = commitmentTxInfo.RSMCTxHex
 
 	return fundingAssetOfP2p, nil
 }
@@ -588,7 +601,7 @@ func (service *fundingTransactionManager) BeforeSignAssetFundingCreateAtBobSide(
 }
 
 // 协议号：100035 bob签收这次资产充值交易
-func (service *fundingTransactionManager) AssetFundingSigned(jsonData string, signer *bean.User) (outputData interface{}, err error) {
+func (service *fundingTransactionManager) AssetFundingSigned(jsonData string, signer *bean.User) (outputData map[string]interface{}, err error) {
 	reqData := &bean.SignAssetFunding{}
 	err = json.Unmarshal([]byte(jsonData), reqData)
 	if err != nil {
@@ -633,7 +646,8 @@ func (service *fundingTransactionManager) AssetFundingSigned(jsonData string, si
 	err = tx.Select(
 		q.Eq("TemporaryChannelId", reqData.TemporaryChannelId),
 		q.Eq("ChannelId", channelInfo.ChannelId),
-		q.Eq("CurrState", dao.FundingTransactionState_Create)).
+		q.Eq("CurrState", dao.FundingTransactionState_Create),
+	).
 		OrderBy("CreateAt").Reverse().
 		First(fundingTransaction)
 	if err != nil {
@@ -656,27 +670,19 @@ func (service *fundingTransactionManager) AssetFundingSigned(jsonData string, si
 
 	node := make(map[string]interface{})
 	node["temporary_channel_id"] = channelInfo.TemporaryChannelId
-	//node["approval"] = reqData.Approval
 	fundingTransaction.FundeeSignAt = time.Now()
-	//如果不同意这次充值
-	//if reqData.Approval == false {
-	//	fundingTransaction.CurrState = dao.FundingTransactionState_Defuse
-	//	err = tx.Update(fundingTransaction)
-	//	if err != nil {
-	//		return nil, err
-	//	}
-	//	_ = tx.Commit()
-	//	return node, nil
-	//}
 	channelInfo.ChannelId = fundingTransaction.ChannelId
 	node["channel_id"] = channelInfo.ChannelId
 
 	//region  sign C1 tx
 	// 二次签名的验证
 	signedRsmcHex := reqData.SignedAliceRsmcHex
-	_, err = rpcClient.TestMemPoolAccept(signedRsmcHex)
+	testResult, err := rpcClient.TestMemPoolAccept(signedRsmcHex)
 	if err != nil {
 		return nil, err
+	}
+	if gjson.Parse(testResult).Array()[0].Get("allowed").Bool() == false {
+		return nil, errors.New(gjson.Parse(testResult).Array()[0].Get("reject-reason").String())
 	}
 
 	beforeSignAliceRsmcDecode, err := rpcClient.OmniDecodeTransaction(fundingTransaction.FunderRsmcHex)
@@ -692,18 +698,15 @@ func (service *fundingTransactionManager) AssetFundingSigned(jsonData string, si
 	if err != nil {
 		return nil, err
 	}
-	if gjson.Parse(omniDecode).Array()[0].Get("allowed").Bool() == false {
-		return nil, errors.New(gjson.Parse(omniDecode).Array()[0].Get("reject-reason").String())
-	}
 
-	rsmcTxId := gjson.Get(omniDecode,"txid").Str
-	sendingaddress := gjson.Get(omniDecode, "sendingaddress").Str
-	referenceaddress := gjson.Get(omniDecode, "referenceaddress").Str
+	bodSignedRsmcTxId := gjson.Get(omniDecode, "txid").Str
+	bodSignedSendingaddress := gjson.Get(omniDecode, "sendingaddress").Str
+	bodSignedReferenceaddress := gjson.Get(omniDecode, "referenceaddress").Str
 	amount := gjson.Get(omniDecode, "amount").Float()
-	if beforeSignAliceRsmcSendingaddress != sendingaddress ||
-		sendingaddress != channelInfo.ChannelAddress ||
+	if beforeSignAliceRsmcSendingaddress != bodSignedSendingaddress ||
+		bodSignedSendingaddress != channelInfo.ChannelAddress ||
 		amount != beforeSignAliceRsmcAmount ||
-		referenceaddress != beforeSignAliceRsmcReferenceaddress {
+		bodSignedReferenceaddress != beforeSignAliceRsmcReferenceaddress {
 		return nil, errors.New("err rsmc sign")
 	}
 	//endregion
@@ -746,12 +749,16 @@ func (service *fundingTransactionManager) AssetFundingSigned(jsonData string, si
 		log.Println(err)
 		return nil, err
 	}
+	aliceRdHexDataMap["is_multisig"] = true
+	aliceRdHexDataMap["pub_key_a"] = fundingTransaction.RsmcTempAddressPubKey
+	aliceRdHexDataMap["pub_key_b"] = myPubKey
 	//endregion create RD tx for alice
 
 	channelInfo.PropertyId = fundingTransaction.PropertyId
 	channelInfo.Amount = funderAmount
 	channelInfo.FundingAddress = fundingTransaction.FunderAddress
-	// region create BR1b tx  for bob
+
+	// region create rawBR1b tx  for bob
 	lastCommitmentTx := &dao.CommitmentTransaction{}
 	lastCommitmentTx.Id = 0
 	lastCommitmentTx.PropertyId = channelInfo.PropertyId
@@ -760,24 +767,17 @@ func (service *fundingTransactionManager) AssetFundingSigned(jsonData string, si
 	lastCommitmentTx.RSMCRedeemScript = aliceRsmcRedeemScript
 	lastCommitmentTx.RSMCMultiAddressScriptPubKey = rsmcMultiAddressScriptPubKey
 	lastCommitmentTx.RSMCTxHex = signedRsmcHex
-	lastCommitmentTx.RSMCTxid = rsmcTxId
+	lastCommitmentTx.RSMCTxid = bodSignedRsmcTxId
 	lastCommitmentTx.AmountToRSMC = funderAmount
 	aliceBrHexDataMap, err := createCurrCommitmentTxRawBR(tx, dao.BRType_Rmsc, channelInfo, lastCommitmentTx, inputs, myAddress, *signer)
 	if err != nil {
 		log.Println(err)
 		return nil, err
 	}
+	aliceBrHexDataMap["is_multisig"] = true
+	aliceBrHexDataMap["pub_key_a"] = fundingTransaction.RsmcTempAddressPubKey
+	aliceBrHexDataMap["pub_key_b"] = myPubKey
 	//endregion
-	if channelInfo.CurrState == dao.ChannelState_WaitFundAsset {
-		node["temporary_channel_id"]=reqData.TemporaryChannelId
-		node["alice_rd_sign_data"]=aliceRdHexDataMap
-		node["alice_br_sign_data"]=aliceBrHexDataMap
-		return node,nil
-	}
-
-
-
-	channelInfo.CurrState = dao.ChannelState_CanUse
 
 	err = tx.Update(channelInfo)
 	if err != nil {
@@ -785,7 +785,6 @@ func (service *fundingTransactionManager) AssetFundingSigned(jsonData string, si
 		return nil, err
 	}
 
-	fundingTransaction.CurrState = dao.FundingTransactionState_Accept
 	err = tx.Update(fundingTransaction)
 	if err != nil {
 		log.Println(err)
@@ -797,29 +796,68 @@ func (service *fundingTransactionManager) AssetFundingSigned(jsonData string, si
 		log.Println(err)
 		return nil, err
 	}
+	node["signedRsmcHex"] = signedRsmcHex
+	node["aliceRdHexDataMap"] = aliceRdHexDataMap
+	//bob缓存待返回给alice的数据
+	if tempAssetFundingSignData == nil {
+		tempAssetFundingSignData = make(map[string]map[string]interface{})
+	}
+	tempAssetFundingSignData[signer.PeerId+"_"+reqData.TemporaryChannelId] = node
 
-	node["rsmc_signed_hex"] = signedRsmcHex
-	node["rd_hex"] = aliceRdHexDataMap["hex"]
-	return node, err
+	outputData = make(map[string]interface{})
+	outputData["temporary_channel_id"] = reqData.TemporaryChannelId
+	outputData["alice_rd_sign_data"] = aliceRdHexDataMap
+	outputData["alice_br_sign_data"] = aliceBrHexDataMap
+
+	return outputData, nil
 }
 
-// 当bob完成了RD和BR的第一次签名
-func (service *fundingTransactionManager) OnBobSignedRDAndBR(data string, user *bean.User)  (outData map[string]interface{}, err error){
-	if tool.CheckIsString(&data)==false {
-		return nil, errors.New(enum.Tips_common_empty + " input data")
+// 协议号：101035 当bob完成了RD和BR的第一次签名
+func (service *fundingTransactionManager) OnBobSignedRDAndBR(data string, user *bean.User) (aliceData, bobData map[string]interface{}, err error) {
+	if tool.CheckIsString(&data) == false {
+		return nil, nil, errors.New(enum.Tips_common_empty + " input data")
 	}
-	temporaryChannelId := gjson.Get(data,"temporary_channel_id").Str
-	brId := gjson.Get(data,"br_id").Int()
-	rdSignedHex := gjson.Get(data,"rd_signed_hex").Str
-	brSignedHex := gjson.Get(data,"br_signed_hex").Str
+
+	signRdAndBr := bean.SignRdAndBrOfAssetFunding{}
+	_ = json.Unmarshal([]byte(data), &signRdAndBr)
+
+	temporaryChannelId := signRdAndBr.TemporaryChannelId
+	if tool.CheckIsString(&temporaryChannelId) == false {
+		return nil, nil, errors.New(enum.Tips_common_wrong + " temporary_channel_id")
+	}
+
+	brId := signRdAndBr.BrId
+	if brId == 0 {
+		return nil, nil, errors.New(enum.Tips_common_wrong + " br_id")
+	}
+
+	rdSignedHex := signRdAndBr.RdSignedHex
+	if tool.CheckIsString(&rdSignedHex) == false {
+		return nil, nil, errors.New(enum.Tips_common_wrong + " rd_signed_hex")
+	}
+
+	brSignedHex := signRdAndBr.BrSignedHex
+	if tool.CheckIsString(&brSignedHex) == false {
+		return nil, nil, errors.New(enum.Tips_common_wrong + " br_signed_hex")
+	}
+
+	// TODO 检测签名后的数据
+
+	// 发送之前 bob的obd获取缓存待返回给alice的数据
+	tempData := tempAssetFundingSignData[user.PeerId+"_"+temporaryChannelId]
+	signedRsmcHex := tempData["signedRsmcHex"].(string)
+	aliceRdHexDataMap := tempData["aliceRdHexDataMap"].(map[string]interface{})
+
+	if len(signedRsmcHex) == 0 {
+		return nil, nil, errors.New("wrong temporary_channel_id")
+	}
 
 	tx, err := user.Db.Begin(true)
 	if err != nil {
 		log.Println(err)
-		return nil, err
+		return nil, nil, err
 	}
 	defer tx.Rollback()
-
 
 	channelInfo := &dao.ChannelInfo{}
 	err = tx.Select(
@@ -831,7 +869,7 @@ func (service *fundingTransactionManager) OnBobSignedRDAndBR(data string, user *
 	).
 		First(channelInfo)
 	if err != nil {
-		channelInfo = nil
+		return nil, nil, err
 	}
 
 	channelInfo.CurrState = dao.ChannelState_CanUse
@@ -839,52 +877,86 @@ func (service *fundingTransactionManager) OnBobSignedRDAndBR(data string, user *
 	err = tx.Update(channelInfo)
 	if err != nil {
 		log.Println(err)
-		return nil, err
+		return nil, nil, err
 	}
 
 	fundingTransaction := &dao.FundingTransaction{}
 	err = tx.Select(
 		q.Eq("TemporaryChannelId", temporaryChannelId),
 		q.Eq("ChannelId", channelInfo.ChannelId),
-		q.Eq("CurrState", dao.FundingTransactionState_Create)).
+		q.Eq("CurrState", dao.FundingTransactionState_Create),
+	).
 		OrderBy("CreateAt").Reverse().
 		First(fundingTransaction)
 	if err != nil {
 		log.Println(err)
-		return nil, err
+		return nil, nil, err
 	}
 
 	fundingTransaction.CurrState = dao.FundingTransactionState_Accept
 	err = tx.Update(fundingTransaction)
 	if err != nil {
 		log.Println(err)
-		return nil, err
+		return nil, nil, err
 	}
 
-	updateCurrCommitmentTxRawBR(tx,brId,brSignedHex,*user)
+	err = updateCurrCommitmentTxRawBR(tx, brId, brSignedHex, *user)
+	if err != nil {
+		return nil, nil, err
+	}
 
 	err = tx.Commit()
 	if err != nil {
 		log.Println(err)
-		return nil, err
+		return nil, nil, err
 	}
 
-	//outData["rsmc_signed_hex"] = signedRsmcHex
-	outData["rd_hex"] = rdSignedHex
+	// 把签名后的rd hex放入回传给alice的数据包里面
+	aliceData = make(map[string]interface{})
+	aliceRdHexDataMap["hex"] = rdSignedHex
+	aliceData["temporary_channel_id"] = temporaryChannelId
+	aliceData["rsmc_signed_hex"] = signedRsmcHex
+	aliceData["alice_rd_hex_data"] = aliceRdHexDataMap
 
-	return outData, nil
+	bobData = make(map[string]interface{})
+	bobData["channel_id"] = channelInfo.ChannelId
+
+	return aliceData, bobData, nil
 }
 
+// 协议号：-35 p2p bob的obd发给alice的obd，当获取到bob的签名数据后，首先把收到的RD的部分签名的hex发给alice签名
+func (service *fundingTransactionManager) OnGetBobSignedMsgAndSendDataToAlice(jsonData string, user *bean.User) (outputData map[string]interface{}, err error) {
+	jsonObj := gjson.Parse(jsonData)
 
-
-
-// 协议号：35 充值者alice在获得bob的签名数据后的业务逻辑，验证，更新和保存C1a的ToBob，ToRsmc，以及ToRsmc的RD和BR交易（这里需要增加一步临时私钥签名的过程）
-func (service *fundingTransactionManager) AfterBobSignAssetFundingAtAliceSide(data string, user *bean.User) (outData interface{}, err error) {
-	jsonObj := gjson.Parse(data)
 	temporaryChannelId := jsonObj.Get("temporary_channel_id").String()
-	rsmcSignedHex := jsonObj.Get("rsmc_signed_hex").String()
-	rdHex := jsonObj.Get("rd_hex").String()
-	//approval := jsonObj.Get("approval").Bool()
+
+	aliceRdHexDataMap := make(map[string]interface{})
+	aliceRdHex := jsonObj.Get("alice_rd_hex_data").String()
+	err = json.Unmarshal([]byte(aliceRdHex), &aliceRdHexDataMap)
+	if err != nil {
+		log.Println(err)
+	}
+	aliceRdHexDataMap["temporary_channel_id"] = temporaryChannelId
+
+	if tempAssetFundingAfterBobSignData == nil {
+		tempAssetFundingAfterBobSignData = make(map[string]string)
+	}
+	tempAssetFundingAfterBobSignData[user.PeerId+"_"+temporaryChannelId] = jsonData
+
+	return aliceRdHexDataMap, nil
+}
+
+// 协议号：-101134 充值者alice在获得bob的签名数据后的业务逻辑，验证，更新和保存C1a的ToBob，ToRsmc，以及ToRsmc的RD和BR交易（这里需要增加一步临时私钥签名的过程）
+func (service *fundingTransactionManager) OnAliceSignedRdAtAliceSide(data string, user *bean.User) (outData interface{}, err error) {
+
+	signedRD := bean.AliceSignRDOfAssetFunding{}
+	_ = json.Unmarshal([]byte(data), &signedRD)
+
+	temporaryChannelId := signedRD.TemporaryChannelId
+	signedRdHex := signedRD.RdSignedHex
+
+	cacheData := tempAssetFundingAfterBobSignData[user.PeerId+"_"+temporaryChannelId]
+	rsmcSignedHex := gjson.Get(cacheData, "rsmc_signed_hex").Str
 
 	tx, err := user.Db.Begin(true)
 	if err != nil {
@@ -920,21 +992,6 @@ func (service *fundingTransactionManager) AfterBobSignAssetFundingAtAliceSide(da
 
 	node := make(map[string]interface{})
 	fundingTransaction.FundeeSignAt = time.Now()
-	node["temporary_channel_id"] = channelInfo.TemporaryChannelId
-	//node["approval"] = approval
-	//if approval == false {
-	//	fundingTransaction.CurrState = dao.FundingTransactionState_Defuse
-	//	_ = tx.Update(fundingTransaction)
-	//	_ = tx.Commit()
-	//	return node, nil
-	//}
-
-	tempPrivKey := tempAddrPrivateKeyMap[fundingTransaction.FunderPubKey2ForCommitment]
-	if tool.CheckIsString(&tempPrivKey) == false {
-		err = errors.New("not found the FunderPrivKey2ForCommitment")
-		log.Println(err)
-		return nil, err
-	}
 
 	commitmentTxInfo := &dao.CommitmentTransaction{}
 	err = tx.Select(
@@ -997,10 +1054,7 @@ func (service *fundingTransactionManager) AfterBobSignAssetFundingAtAliceSide(da
 		log.Println(err)
 		return nil, err
 	}
-	_, signedRdHex, err := rpcClient.OmniSignRawTransactionForUnsend(rdHex, inputs, tempAddrPrivateKeyMap[fundingTransaction.FunderPubKey2ForCommitment])
-	if err != nil {
-		return nil, err
-	}
+
 	result, err := rpcClient.TestMemPoolAccept(signedRdHex)
 	if err != nil {
 		return nil, err
@@ -1036,12 +1090,12 @@ func (service *fundingTransactionManager) AfterBobSignAssetFundingAtAliceSide(da
 		log.Println(err)
 		return nil, err
 	}
-
-	_, err = rpcClient.SendRawTransaction(fundingTransaction.FundingTxHex)
-	if err != nil {
-		log.Println(err)
-		return nil, err
-	}
+	//TODO 需要解开注释
+	//_, err = rpcClient.SendRawTransaction(fundingTransaction.FundingTxHex)
+	//if err != nil {
+	//	log.Println(err)
+	//	return nil, err
+	//}
 
 	fundingTransaction.CurrState = dao.FundingTransactionState_Accept
 	_ = tx.Update(fundingTransaction)
@@ -1052,9 +1106,11 @@ func (service *fundingTransactionManager) AfterBobSignAssetFundingAtAliceSide(da
 		return nil, err
 	}
 
+	//TODO 需要解开注释
 	//同步通道信息到tracker
-	sendChannelStateToTracker(*channelInfo, *commitmentTxInfo)
+	//sendChannelStateToTracker(*channelInfo, *commitmentTxInfo)
 
+	node["temporary_channel_id"] = channelInfo.TemporaryChannelId
 	node["channel_id"] = channelInfo.ChannelId
 	return node, nil
 }

@@ -181,7 +181,8 @@ func (client *Client) Read() {
 					//-34 -340 and query
 					if msg.Type == enum.MsgType_FundingCreate_SendAssetFundingCreated_34 ||
 						msg.Type == enum.MsgType_FundingCreate_SendBtcFundingCreated_340 ||
-						msg.Type == enum.MsgType_ClientSign_Duplex_AssetFunding_ChannelAddressSignC1a_1034 ||
+						msg.Type == enum.MsgType_ClientSign_AssetFunding_AliceSignC1a_1034 ||
+						msg.Type == enum.MsgType_ClientSign_AssetFunding_AliceSignRD_1134 ||
 						msg.Type == enum.MsgType_ClientSign_Duplex_BtcFundingMinerRDTx_341 ||
 						(msg.Type <= enum.MsgType_FundingCreate_Asset_AllItem_3100 &&
 							msg.Type >= enum.MsgType_FundingCreate_Btc_ItemByChannelId_3111) {
@@ -191,6 +192,7 @@ func (client *Client) Read() {
 
 					//-35 -350
 					if msg.Type == enum.MsgType_FundingSign_SendAssetFundingSigned_35 ||
+						msg.Type == enum.MsgType_ClientSign_Duplex_AssetFunding_RdAndBr_1035 ||
 						msg.Type == enum.MsgType_FundingSign_SendBtcSign_350 {
 						sendType, dataOut, status = client.fundingSignModule(msg)
 						break

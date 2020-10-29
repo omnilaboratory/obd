@@ -217,8 +217,8 @@ func (client *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.Se
 		msg.Type = enum.MsgType_FundingCreate_SendAssetFundingCreated_34
 		client.sendToMyself(msg.Type, status, data)
 
-	case enum.MsgType_ClientSign_Duplex_AssetFunding_ChannelAddressSignC1a_1034:
-		node, err := service.FundingTransactionService.OnAliceSignedC1a(msg, client.User)
+	case enum.MsgType_ClientSign_AssetFunding_AliceSignC1a_1034:
+		node, err := service.FundingTransactionService.OnAliceSignC1a(msg, client.User)
 		if err != nil {
 			data = err.Error()
 		} else {
@@ -236,7 +236,21 @@ func (client *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.Se
 				}
 			}
 		}
-		msg.Type = enum.MsgType_ClientSign_Duplex_AssetFunding_ChannelAddressSignC1a_1034
+		msg.Type = enum.MsgType_ClientSign_AssetFunding_AliceSignC1a_1034
+		client.sendToMyself(msg.Type, status, data)
+	case enum.MsgType_ClientSign_AssetFunding_AliceSignRD_1134:
+		node, err := service.FundingTransactionService.OnAliceSignedRdAtAliceSide(msg.Data, client.User)
+		if err != nil {
+			data = err.Error()
+		} else {
+			bytes, err := json.Marshal(node)
+			if err != nil {
+				data = err.Error()
+			} else {
+				data = string(bytes)
+				status = true
+			}
+		}
 		client.sendToMyself(msg.Type, status, data)
 
 	case enum.MsgType_FundingCreate_Asset_AllItem_3100:
@@ -354,16 +368,40 @@ func (client *Client) fundingSignModule(msg bean.RequestMessage) (enum.SendTarge
 			data = string(bytes)
 			status = true
 		}
-
-		if node != nil && status {
-			msg.Type = enum.MsgType_FundingSign_AssetFundingSigned_35
-			err = client.sendDataToP2PUser(msg, status, data)
+		msg.Type = enum.MsgType_FundingSign_SendAssetFundingSigned_35
+		client.sendToMyself(msg.Type, status, data)
+	case enum.MsgType_ClientSign_Duplex_AssetFunding_RdAndBr_1035:
+		aliceData, bobData, err := service.FundingTransactionService.OnBobSignedRDAndBR(msg.Data, client.User)
+		if err != nil {
+			data = err.Error()
+		} else {
+			bytes, err := json.Marshal(aliceData)
 			if err != nil {
 				data = err.Error()
-				status = false
+			} else {
+				data = string(bytes)
+				status = true
+			}
+			if status {
+				msg.Type = enum.MsgType_FundingSign_AssetFundingSigned_35
+				err = client.sendDataToP2PUser(msg, status, data)
+				if err != nil {
+					data = err.Error()
+					status = false
+				}
+			}
+
+			if status {
+				bytes, err = json.Marshal(bobData)
+				if err != nil {
+					data = err.Error()
+				} else {
+					data = string(bytes)
+					status = true
+				}
 			}
 		}
-		msg.Type = enum.MsgType_FundingSign_SendAssetFundingSigned_35
+		msg.Type = enum.MsgType_ClientSign_Duplex_AssetFunding_RdAndBr_1035
 		client.sendToMyself(msg.Type, status, data)
 	default:
 		sendType = enum.SendTargetType_SendToNone

@@ -165,6 +165,7 @@ type CommitmentTransaction struct {
 	TxType CommitmentTransactionType `json:"tx_type"` // 0 rsmc 1 htlc
 
 	//RSMC
+	// 用于记录助记词导出地址的index
 	RSMCTempAddressIndex         int     `json:"rsmc_temp_address_index"`   //aliceTempRemc or bobTempRsmc
 	RSMCTempAddressPubKey        string  `json:"rsmc_temp_address_pub_key"` //aliceTempRemc or bobTempRsmc
 	RSMCMultiAddress             string  `json:"rsmc_multi_address"`        //output aliceTempRsmc&bob  or alice&bobTempRsmc  multiAddr

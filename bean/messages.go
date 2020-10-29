@@ -135,21 +135,7 @@ type SendSignFundingBtc struct {
 	typeLengthValue
 }
 
-// -100034
-type SendRequestAssetFunding struct {
-	TemporaryChannelId    string  `json:"temporary_channel_id"`
-	PropertyId            int64   `json:"property_id"`
-	MaxAssets             float64 `json:"max_assets"`
-	AmountA               float64 `json:"amount_a"`
-	FundingTxHex          string  `json:"funding_tx_hex"`
-	TempAddressIndex      int     `json:"temp_address_index"`
-	TempAddressPubKey     string  `json:"temp_address_pub_key"`
-	TempAddressPrivateKey string  `json:"temp_address_private_key"`
-	typeLengthValue
-}
-
-// type: -340
-// type: -110034
+// type: -100034
 type FundingAssetOfP2p struct {
 	//临时通道id
 	TemporaryChannelId string `json:"temporary_channel_id"`
@@ -162,12 +148,48 @@ type FundingAssetOfP2p struct {
 	FunderPeerId          string                `json:"funder_peer_id"`
 }
 
-//type: -35 (funding_signed)
+
+// -100034
+type SendRequestAssetFunding struct {
+	TemporaryChannelId string `json:"temporary_channel_id"`
+	FundingTxHex       string `json:"funding_tx_hex"`
+	TempAddressIndex   int    `json:"temp_address_index"`
+	TempAddressPubKey  string `json:"temp_address_pub_key"`
+	typeLengthValue
+}
+
+// -101034
+type AliceSignC1aOfAssetFunding struct {
+	SignedC1aHex string `json:"signed_c1a_hex"`
+	typeLengthValue
+}
+
+
+//type: -100035 (funding_signed)
 type SignAssetFunding struct {
 	TemporaryChannelId string `json:"temporary_channel_id"`
 	SignedAliceRsmcHex string `json:"signed_alice_rsmc_hex"`
 	typeLengthValue
 }
+
+//type: -101035 (funding_signed)
+type SignRdAndBrOfAssetFunding struct {
+	TemporaryChannelId string `json:"temporary_channel_id"`
+	BrId               int64  `json:"br_id"`
+	RdSignedHex        string `json:"rd_signed_hex"`
+	BrSignedHex        string `json:"br_signed_hex"`
+	typeLengthValue
+}
+
+// -101134
+type AliceSignRDOfAssetFunding struct {
+	TemporaryChannelId string `json:"temporary_channel_id"`
+	RdSignedHex        string `json:"rd_signed_hex"`
+	typeLengthValue
+}
+
+
+
 
 //type: -100351 (commitment_tx)
 type SendRequestCommitmentTx struct {
