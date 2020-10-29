@@ -599,6 +599,10 @@ func (service *fundingTransactionManager) AssetFundingSigned(jsonData string, si
 		return nil, errors.New(enum.Tips_common_empty + "temporary_channel_id")
 	}
 
+	if tool.CheckIsString(&reqData.SignedAliceRsmcHex) == false {
+		return nil, errors.New(enum.Tips_common_empty + "signed_alice_rsmc_hex")
+	}
+
 	tx, err := signer.Db.Begin(true)
 	if err != nil {
 		log.Println(err)
@@ -666,26 +670,41 @@ func (service *fundingTransactionManager) AssetFundingSigned(jsonData string, si
 	//}
 	channelInfo.ChannelId = fundingTransaction.ChannelId
 	node["channel_id"] = channelInfo.ChannelId
-	if tool.CheckIsString(&reqData.ChannelAddressPrivateKey) == false {
-		return nil, errors.New(enum.Tips_common_empty + " fundee_channel_address_private_key")
-	}
-	_, err = tool.GetPubKeyFromWifAndCheck(reqData.ChannelAddressPrivateKey, myPubKey)
+
+	//region  sign C1 tx
+	// 二次签名的验证
+	signedRsmcHex := reqData.SignedAliceRsmcHex
+	_, err = rpcClient.TestMemPoolAccept(signedRsmcHex)
 	if err != nil {
 		return nil, err
 	}
 
-	//region  sign C1 tx
-	// 二次签名
-	rsmcTxId, signedRsmcHex, err := rpcClient.BtcSignRawTransaction(fundingTransaction.FunderRsmcHex, reqData.ChannelAddressPrivateKey)
+	beforeSignAliceRsmcDecode, err := rpcClient.OmniDecodeTransaction(fundingTransaction.FunderRsmcHex)
 	if err != nil {
 		return nil, err
 	}
-	result, err := rpcClient.TestMemPoolAccept(signedRsmcHex)
+
+	beforeSignAliceRsmcSendingaddress := gjson.Get(beforeSignAliceRsmcDecode, "sendingaddress").String()
+	beforeSignAliceRsmcReferenceaddress := gjson.Get(beforeSignAliceRsmcDecode, "referenceaddress").Str
+	beforeSignAliceRsmcAmount := gjson.Get(beforeSignAliceRsmcDecode, "amount").Float()
+
+	omniDecode, err := rpcClient.OmniDecodeTransaction(signedRsmcHex)
 	if err != nil {
 		return nil, err
 	}
-	if gjson.Parse(result).Array()[0].Get("allowed").Bool() == false {
-		return nil, errors.New(gjson.Parse(result).Array()[0].Get("reject-reason").String())
+	if gjson.Parse(omniDecode).Array()[0].Get("allowed").Bool() == false {
+		return nil, errors.New(gjson.Parse(omniDecode).Array()[0].Get("reject-reason").String())
+	}
+
+	rsmcTxId := gjson.Get(omniDecode,"txid").Str
+	sendingaddress := gjson.Get(omniDecode, "sendingaddress").Str
+	referenceaddress := gjson.Get(omniDecode, "referenceaddress").Str
+	amount := gjson.Get(omniDecode, "amount").Float()
+	if beforeSignAliceRsmcSendingaddress != sendingaddress ||
+		sendingaddress != channelInfo.ChannelAddress ||
+		amount != beforeSignAliceRsmcAmount ||
+		referenceaddress != beforeSignAliceRsmcReferenceaddress {
+		return nil, errors.New("err rsmc sign")
 	}
 	//endregion
 
@@ -694,15 +713,15 @@ func (service *fundingTransactionManager) AssetFundingSigned(jsonData string, si
 	if err != nil {
 		return nil, err
 	}
-	rsmcMultiAddress := gjson.Get(multiAddr, "address").String()
-	rsmcRedeemScript := gjson.Get(multiAddr, "redeemScript").String()
-	tempJson, err := rpcClient.GetAddressInfo(rsmcMultiAddress)
+	aliceRsmcMultiAddress := gjson.Get(multiAddr, "address").String()
+	aliceRsmcRedeemScript := gjson.Get(multiAddr, "redeemScript").String()
+	tempJson, err := rpcClient.GetAddressInfo(aliceRsmcMultiAddress)
 	if err != nil {
 		return nil, err
 	}
 	rsmcMultiAddressScriptPubKey := gjson.Get(tempJson, "scriptPubKey").String()
 
-	inputs, err := getInputsForNextTxByParseTxHashVout(signedRsmcHex, rsmcMultiAddress, rsmcMultiAddressScriptPubKey, rsmcRedeemScript)
+	inputs, err := getInputsForNextTxByParseTxHashVout(signedRsmcHex, aliceRsmcMultiAddress, rsmcMultiAddressScriptPubKey, aliceRsmcRedeemScript)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -712,11 +731,9 @@ func (service *fundingTransactionManager) AssetFundingSigned(jsonData string, si
 	if funder == channelInfo.PeerIdB {
 		outputAddress = channelInfo.AddressB
 	}
-	_, hex, err := rpcClient.OmniCreateAndSignRawTransactionUseUnsendInput(
-		rsmcMultiAddress,
-		[]string{
-			reqData.ChannelAddressPrivateKey,
-		},
+
+	aliceRdHexDataMap, err := rpcClient.OmniCreateRawTransactionUseUnsendInput(
+		aliceRsmcMultiAddress,
 		inputs,
 		outputAddress,
 		changeToAddress,
@@ -724,7 +741,7 @@ func (service *fundingTransactionManager) AssetFundingSigned(jsonData string, si
 		fundingTransaction.AmountA,
 		getBtcMinerAmount(channelInfo.BtcAmount),
 		1000,
-		&rsmcRedeemScript)
+		&aliceRsmcRedeemScript)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -739,18 +756,26 @@ func (service *fundingTransactionManager) AssetFundingSigned(jsonData string, si
 	lastCommitmentTx.Id = 0
 	lastCommitmentTx.PropertyId = channelInfo.PropertyId
 	lastCommitmentTx.RSMCTempAddressPubKey = fundingTransaction.RsmcTempAddressPubKey
-	lastCommitmentTx.RSMCMultiAddress = rsmcMultiAddress
-	lastCommitmentTx.RSMCRedeemScript = rsmcRedeemScript
+	lastCommitmentTx.RSMCMultiAddress = aliceRsmcMultiAddress
+	lastCommitmentTx.RSMCRedeemScript = aliceRsmcRedeemScript
 	lastCommitmentTx.RSMCMultiAddressScriptPubKey = rsmcMultiAddressScriptPubKey
 	lastCommitmentTx.RSMCTxHex = signedRsmcHex
 	lastCommitmentTx.RSMCTxid = rsmcTxId
 	lastCommitmentTx.AmountToRSMC = funderAmount
-	err = createCurrCommitmentTxBR(tx, dao.BRType_Rmsc, channelInfo, lastCommitmentTx, inputs, myAddress, reqData.ChannelAddressPrivateKey, *signer)
+	aliceBrHexDataMap, err := createCurrCommitmentTxRawBR(tx, dao.BRType_Rmsc, channelInfo, lastCommitmentTx, inputs, myAddress, *signer)
 	if err != nil {
 		log.Println(err)
 		return nil, err
 	}
 	//endregion
+	if channelInfo.CurrState == dao.ChannelState_WaitFundAsset {
+		node["temporary_channel_id"]=reqData.TemporaryChannelId
+		node["alice_rd_sign_data"]=aliceRdHexDataMap
+		node["alice_br_sign_data"]=aliceBrHexDataMap
+		return node,nil
+	}
+
+
 
 	channelInfo.CurrState = dao.ChannelState_CanUse
 
@@ -774,9 +799,84 @@ func (service *fundingTransactionManager) AssetFundingSigned(jsonData string, si
 	}
 
 	node["rsmc_signed_hex"] = signedRsmcHex
-	node["rd_hex"] = hex
+	node["rd_hex"] = aliceRdHexDataMap["hex"]
 	return node, err
 }
+
+// 当bob完成了RD和BR的第一次签名
+func (service *fundingTransactionManager) OnBobSignedRDAndBR(data string, user *bean.User)  (outData map[string]interface{}, err error){
+	if tool.CheckIsString(&data)==false {
+		return nil, errors.New(enum.Tips_common_empty + " input data")
+	}
+	temporaryChannelId := gjson.Get(data,"temporary_channel_id").Str
+	brId := gjson.Get(data,"br_id").Int()
+	rdSignedHex := gjson.Get(data,"rd_signed_hex").Str
+	brSignedHex := gjson.Get(data,"br_signed_hex").Str
+
+	tx, err := user.Db.Begin(true)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	defer tx.Rollback()
+
+
+	channelInfo := &dao.ChannelInfo{}
+	err = tx.Select(
+		q.Eq("TemporaryChannelId", temporaryChannelId),
+		q.Eq("CurrState", dao.ChannelState_WaitFundAsset),
+		q.Or(
+			q.Eq("PeerIdA", user.PeerId),
+			q.Eq("PeerIdB", user.PeerId)),
+	).
+		First(channelInfo)
+	if err != nil {
+		channelInfo = nil
+	}
+
+	channelInfo.CurrState = dao.ChannelState_CanUse
+
+	err = tx.Update(channelInfo)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	fundingTransaction := &dao.FundingTransaction{}
+	err = tx.Select(
+		q.Eq("TemporaryChannelId", temporaryChannelId),
+		q.Eq("ChannelId", channelInfo.ChannelId),
+		q.Eq("CurrState", dao.FundingTransactionState_Create)).
+		OrderBy("CreateAt").Reverse().
+		First(fundingTransaction)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	fundingTransaction.CurrState = dao.FundingTransactionState_Accept
+	err = tx.Update(fundingTransaction)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	updateCurrCommitmentTxRawBR(tx,brId,brSignedHex,*user)
+
+	err = tx.Commit()
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	//outData["rsmc_signed_hex"] = signedRsmcHex
+	outData["rd_hex"] = rdSignedHex
+
+	return outData, nil
+}
+
+
+
 
 // 协议号：35 充值者alice在获得bob的签名数据后的业务逻辑，验证，更新和保存C1a的ToBob，ToRsmc，以及ToRsmc的RD和BR交易（这里需要增加一步临时私钥签名的过程）
 func (service *fundingTransactionManager) AfterBobSignAssetFundingAtAliceSide(data string, user *bean.User) (outData interface{}, err error) {

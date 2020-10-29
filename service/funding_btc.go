@@ -382,6 +382,7 @@ func (service *fundingTransactionManager) OnAliceSignBtcFundingMinerFeeRedeemTx(
 	delete(tempBtcFundingCreatedData, key)
 
 	fundingBtcOfP2p.FundingRedeemHex = minerFeeRedeemTransaction.Hex
+	fundingBtcOfP2p.SignData.Hex=minerFeeRedeemTransaction.Hex
 
 	return fundingBtcOfP2p, targetUser, nil
 }

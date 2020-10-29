@@ -1093,6 +1093,95 @@ func createCurrCommitmentTxBR(tx storm.Node, brType dao.BRType, channelInfo *dao
 	return nil
 }
 
+//创建RawBR
+func createCurrCommitmentTxRawBR(tx storm.Node, brType dao.BRType, channelInfo *dao.ChannelInfo,
+	commitmentTx *dao.CommitmentTransaction, inputs []rpc.TransactionInputItem,
+	outputAddress string, user bean.User) (retMap map[string]interface{}, err error) {
+	if len(inputs) == 0 {
+		return nil,nil
+	}
+	breachRemedyTransaction := &dao.BreachRemedyTransaction{}
+	_ = tx.Select(
+		q.Eq("ChannelId", channelInfo.ChannelId),
+		q.Eq("InputTxid", commitmentTx.RSMCTxid),
+		q.Eq("Type", brType),
+		q.Or(
+			q.Eq("PeerIdA", user.PeerId),
+			q.Eq("PeerIdB", user.PeerId))).
+		First(breachRemedyTransaction)
+	if breachRemedyTransaction.Id == 0 {
+		breachRemedyTransaction, err = createBRTxObj(user.PeerId, channelInfo, brType, commitmentTx, &user)
+		if err != nil {
+			log.Println(err)
+			return nil,err
+		}
+		if breachRemedyTransaction.Amount > 0 {
+			retMap, err = rpcClient.OmniCreateRawTransactionUseUnsendInput(
+				commitmentTx.RSMCMultiAddress,
+				inputs,
+				outputAddress,
+				channelInfo.FundingAddress,
+				channelInfo.PropertyId,
+				breachRemedyTransaction.Amount,
+				getBtcMinerAmount(channelInfo.BtcAmount),
+				0,
+				&commitmentTx.RSMCRedeemScript)
+			if err != nil {
+				log.Println(err)
+				return nil,err
+			}
+			breachRemedyTransaction.OutAddress = outputAddress
+			breachRemedyTransaction.BrTxHex = retMap["hex"].(string)
+			breachRemedyTransaction.CurrState = dao.TxInfoState_Create
+			_ = tx.Save(breachRemedyTransaction)
+			retMap["br_id"]=breachRemedyTransaction.Id
+		}
+	}else{
+		retMap, err = rpcClient.OmniCreateRawTransactionUseUnsendInput(
+			commitmentTx.RSMCMultiAddress,
+			inputs,
+			outputAddress,
+			channelInfo.FundingAddress,
+			channelInfo.PropertyId,
+			breachRemedyTransaction.Amount,
+			getBtcMinerAmount(channelInfo.BtcAmount),
+			0,
+			&commitmentTx.RSMCRedeemScript)
+		if err != nil {
+			log.Println(err)
+			return nil,err
+		}
+		retMap["br_id"]=breachRemedyTransaction.Id
+	}
+
+	return retMap,nil
+}
+// 第一次签名完成，更新RawBR
+func updateCurrCommitmentTxRawBR(tx storm.Node,  id int64, firstSignedBrHex string, user bean.User) (err error) {
+	breachRemedyTransaction := &dao.BreachRemedyTransaction{}
+	_ = tx.Select(
+		q.Eq("Id", id),
+		q.Or(
+			q.Eq("PeerIdA", user.PeerId),
+			q.Eq("PeerIdB", user.PeerId))).
+		First(breachRemedyTransaction)
+	if breachRemedyTransaction.Id > 0 {
+		if len(breachRemedyTransaction.Txid)==0 {
+			omniDecode, err := rpcClient.OmniDecodeTransaction(firstSignedBrHex)
+			if err != nil {
+				return nil
+			}
+			brTxId := gjson.Get(omniDecode,"txid").Str
+
+			breachRemedyTransaction.Txid = brTxId
+			breachRemedyTransaction.BrTxHex = firstSignedBrHex
+			_ = tx.Update(breachRemedyTransaction)
+
+		}
+	}
+	return errors.New("not found br by id")
+}
+
 //对上一个承诺交易的br进行签名
 func signLastBR(tx storm.Node, brType dao.BRType, channelInfo dao.ChannelInfo, userPeerId string, lastTempAddressPrivateKey string, lastCommitmentTxid int) (err error) {
 	lastBreachRemedyTransaction := &dao.BreachRemedyTransaction{}

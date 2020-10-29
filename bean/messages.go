@@ -165,23 +165,7 @@ type FundingAssetOfP2p struct {
 //type: -35 (funding_signed)
 type SignAssetFunding struct {
 	TemporaryChannelId string `json:"temporary_channel_id"`
-	//the omni address of funder Alice
-	FunderPubKey string `json:"funder_pub_key"`
-	// the id of the Omni asset
-	PropertyId int `json:"property_id"`
-	//amount of the asset on Alice side
-	AmountA float64 `json:"amount_a"`
-	//the omni address of fundee Bob
-	FundeePubKey string `json:"fundee_pub_key"`
-	//amount of the asset on Bob side
-	AmountB float64 `json:"amount_b"`
-	//signature of fundee Bob
-	ChannelAddressPrivateKey string `json:"channel_address_private_key"`
-	//redeem script used to generate P2SH address
-	RedeemScript string `json:"redeem_script"`
-	//hash of redeemScript
-	P2shAddress string `json:"p2sh_address"`
-	//Approval    bool   `json:"approval"`
+	SignedAliceRsmcHex string `json:"signed_alice_rsmc_hex"`
 	typeLengthValue
 }
 

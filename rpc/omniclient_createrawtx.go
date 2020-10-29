@@ -202,6 +202,12 @@ func (client *Client) OmniCreateRawTransactionUseSingleInput(txType int, fromBit
 		Add(decimal.NewFromFloat(minerFee)).
 		Round(8).
 		Float64()
+
+	retMap, err = createOmniRawTransaction(balance, out, amount, minerFee, propertyId, inputs, toBitCoinAddress, toBitCoinAddress, redeemScript)
+	if err!=nil {
+		return nil, "",err
+	}
+	return retMap, currUseTxid, nil
 	//log.Println("1 balance", balance)
 	if balance < out {
 		return nil, "", errors.New("not enough balance")
@@ -260,6 +266,112 @@ func (client *Client) OmniCreateRawTransactionUseSingleInput(txType int, fromBit
 	return retMap, currUseTxid, nil
 }
 
+func (client *Client) OmniCreateRawTransactionUseUnsendInput(fromBitCoinAddress string, inputItems []TransactionInputItem, toBitCoinAddress, changeToAddress string, propertyId int64, amount float64, minerFee float64, sequence int, redeemScript *string) (retMap map[string]interface{}, err error) {
+	if tool.CheckIsString(&fromBitCoinAddress) == false {
+		return nil, errors.New("fromBitCoinAddress is empty")
+	}
+	if tool.CheckIsString(&toBitCoinAddress) == false {
+		return nil, errors.New("toBitCoinAddress is empty")
+	}
+
+	if len(inputItems) == 0 {
+		return nil, errors.New("inputItems is empty")
+	}
+
+	if amount < config.GetOmniDustBtc() {
+		return nil, errors.New("wrong amount")
+	}
+
+	pMoney := config.GetOmniDustBtc()
+
+	_, _ = client.ValidateAddress(fromBitCoinAddress)
+	_, _ = client.ValidateAddress(toBitCoinAddress)
+	_, _ = client.ValidateAddress(changeToAddress)
+
+	inputs := make([]map[string]interface{}, 0, 0)
+	for _, item := range inputItems {
+		node := make(map[string]interface{})
+		node["txid"] = item.Txid
+		node["vout"] = item.Vout
+		node["amount"] = item.Amount
+		node["scriptPubKey"] = item.ScriptPubKey
+		if sequence > 0 {
+			node["sequence"] = sequence
+		}
+		if redeemScript != nil {
+			node["redeemScript"] = *redeemScript
+		}
+
+		inputs = append(inputs, node)
+	}
+	out, _ := decimal.NewFromFloat(minerFee).Add(decimal.NewFromFloat(pMoney)).Round(8).Float64()
+	balance := 0.0
+	for _, item := range inputs {
+		balance, _ = decimal.NewFromFloat(balance).Add(decimal.NewFromFloat(item["amount"].(float64))).Round(8).Float64()
+		if balance >= out {
+			break
+		}
+	}
+
+	return createOmniRawTransaction(balance,out,amount,minerFee,propertyId,inputs,toBitCoinAddress,changeToAddress,redeemScript)
+	//log.Println("1 balance", balance)
+	if balance < out {
+		return nil, errors.New("not enough balance")
+	}
+
+	//2.Omni_createpayload_simplesend
+	payload, err := client.omniCreatePayloadSimpleSend(propertyId, amount)
+	if err != nil {
+		return nil, err
+	}
+	//log.Println("2 payload " + payload)
+
+	//3.CreateRawTransaction
+	outputs := make(map[string]interface{})
+
+	createrawtransactionStr, err := client.CreateRawTransaction(inputs, outputs)
+	if err != nil {
+		return nil, err
+	}
+
+	//4.Omni_createrawtx_opreturn
+	opreturn, err := client.omniCreateRawtxOpreturn(createrawtransactionStr, payload)
+	if err != nil {
+		return nil, err
+	}
+	//log.Println("4 opreturn", opreturn)
+
+	//5. Omni_createrawtx_reference
+	reference, err := client.omniCreateRawtxReference(opreturn, toBitCoinAddress)
+	if err != nil {
+		return nil, err
+	}
+
+	//6.Omni_createrawtx_change
+	prevtxs := make([]map[string]interface{}, 0, 0)
+	for _, item := range inputItems {
+		node := make(map[string]interface{})
+		node["txid"] = item.Txid
+		node["vout"] = item.Vout
+		node["scriptPubKey"] = item.ScriptPubKey
+		node["value"] = item.Amount
+		if redeemScript != nil {
+			node["redeemScript"] = *redeemScript
+		}
+		prevtxs = append(prevtxs, node)
+	}
+	change, err := client.omniCreateRawtxChange(reference, prevtxs, changeToAddress, minerFee)
+	if err != nil {
+		return nil, err
+	}
+
+	retMap = make(map[string]interface{})
+	retMap["hex"] = change
+	retMap["inputs"] = inputs
+	return retMap, nil
+}
+
+
 // From channelAddress to temp multi address, to Create CommitmentTx
 func (client *Client) GetInputInfo(fromBitCoinAddress string, txid, redeemScript string) (info map[string]interface{}, err error) {
 	if tool.CheckIsString(&fromBitCoinAddress) == false {
@@ -290,3 +402,63 @@ func (client *Client) GetInputInfo(fromBitCoinAddress string, txid, redeemScript
 
 	return nil, errors.New("not found input info")
 }
+
+func createOmniRawTransaction(balance,out, amount,minerFee float64,propertyId int64,inputs []map[string]interface{},toBitCoinAddress,changeToAddress string,redeemScript *string)  (retMap map[string]interface{}, err error){
+	//log.Println("1 balance", balance)
+	if balance < out {
+		return nil, errors.New("not enough balance")
+	}
+
+	//2.Omni_createpayload_simplesend
+	payload, err := client.omniCreatePayloadSimpleSend(propertyId, amount)
+	if err != nil {
+		return nil, err
+	}
+	//log.Println("2 payload " + payload)
+
+	//3.CreateRawTransaction
+	outputs := make(map[string]interface{})
+
+	createrawtransactionStr, err := client.CreateRawTransaction(inputs, outputs)
+	if err != nil {
+		return nil, err
+	}
+
+	//4.Omni_createrawtx_opreturn
+	opreturn, err := client.omniCreateRawtxOpreturn(createrawtransactionStr, payload)
+	if err != nil {
+		return nil, err
+	}
+	//log.Println("4 opreturn", opreturn)
+
+	//5. Omni_createrawtx_reference
+	reference, err := client.omniCreateRawtxReference(opreturn, toBitCoinAddress)
+	if err != nil {
+		return nil, err
+	}
+
+	//6.Omni_createrawtx_change
+	prevtxs := make([]map[string]interface{}, 0, 0)
+	for _, item := range inputs {
+		node := make(map[string]interface{})
+		node["txid"] = item["txid"]
+		node["vout"] = item["vout"]
+		node["scriptPubKey"] = item["scriptPubKey"]
+		node["value"] = item["amount"]
+		if redeemScript != nil {
+			node["redeemScript"] = *redeemScript
+		}
+		prevtxs = append(prevtxs, node)
+	}
+
+	change, err := client.omniCreateRawtxChange(reference, prevtxs, changeToAddress, minerFee)
+	if err != nil {
+		return nil, err
+	}
+
+	retMap = make(map[string]interface{})
+	retMap["hex"] = change
+	retMap["inputs"] = inputs
+	return retMap, nil
+}
+
