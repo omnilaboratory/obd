@@ -351,6 +351,11 @@ func (service *fundingTransactionManager) OnAliceSignC1a(msg bean.RequestMessage
 		return nil, errors.New(enum.Tips_common_wrong + "hex")
 	}
 
+	_, err = rpcClient.CheckMultiSign(true, hex, 1)
+	if err != nil {
+		return nil, err
+	}
+
 	resultDecode, err := rpcClient.DecodeRawTransaction(hex)
 	txid := gjson.Get(resultDecode, "txid").Str
 	inputTxId := gjson.Get(resultDecode, "vin").Array()[0].Get("txid").Str
@@ -360,8 +365,6 @@ func (service *fundingTransactionManager) OnAliceSignC1a(msg bean.RequestMessage
 	if len(fundingAssetOfP2p.TemporaryChannelId) == 0 {
 		return nil, errors.New("not found the temp data, please send -100034 again")
 	}
-
-	// TODO 检测签名数据
 
 	tx, err := user.Db.Begin(true)
 	if err != nil {
@@ -616,6 +619,11 @@ func (service *fundingTransactionManager) AssetFundingSigned(jsonData string, si
 		return nil, errors.New(enum.Tips_common_empty + "signed_alice_rsmc_hex")
 	}
 
+	_, err = rpcClient.CheckMultiSign(true, reqData.SignedAliceRsmcHex, 2)
+	if err != nil {
+		return nil, err
+	}
+
 	tx, err := signer.Db.Begin(true)
 	if err != nil {
 		log.Println(err)
@@ -677,13 +685,6 @@ func (service *fundingTransactionManager) AssetFundingSigned(jsonData string, si
 	//region  sign C1 tx
 	// 二次签名的验证
 	signedRsmcHex := reqData.SignedAliceRsmcHex
-	testResult, err := rpcClient.TestMemPoolAccept(signedRsmcHex)
-	if err != nil {
-		return nil, err
-	}
-	if gjson.Parse(testResult).Array()[0].Get("allowed").Bool() == false {
-		return nil, errors.New(gjson.Parse(testResult).Array()[0].Get("reject-reason").String())
-	}
 
 	beforeSignAliceRsmcDecode, err := rpcClient.OmniDecodeTransaction(fundingTransaction.FunderRsmcHex)
 	if err != nil {
@@ -835,22 +836,29 @@ func (service *fundingTransactionManager) OnBobSignedRDAndBR(data string, user *
 	if tool.CheckIsString(&rdSignedHex) == false {
 		return nil, nil, errors.New(enum.Tips_common_wrong + " rd_signed_hex")
 	}
+	_, err = rpcClient.CheckMultiSign(false, rdSignedHex, 1)
+	if err != nil {
+		return nil, nil, errors.New(enum.Tips_common_wrong + "rd_signed_hex")
+	}
 
 	brSignedHex := signRdAndBr.BrSignedHex
 	if tool.CheckIsString(&brSignedHex) == false {
 		return nil, nil, errors.New(enum.Tips_common_wrong + " br_signed_hex")
 	}
 
-	// TODO 检测签名后的数据
+	_, err = rpcClient.CheckMultiSign(false, brSignedHex, 1)
+	if err != nil {
+		return nil, nil, errors.New(enum.Tips_common_wrong + "br_signed_hex")
+	}
 
 	// 发送之前 bob的obd获取缓存待返回给alice的数据
 	tempData := tempAssetFundingSignData[user.PeerId+"_"+temporaryChannelId]
 	signedRsmcHex := tempData["signedRsmcHex"].(string)
-	aliceRdHexDataMap := tempData["aliceRdHexDataMap"].(map[string]interface{})
-
 	if len(signedRsmcHex) == 0 {
 		return nil, nil, errors.New("wrong temporary_channel_id")
 	}
+
+	aliceRdHexDataMap := tempData["aliceRdHexDataMap"].(map[string]interface{})
 
 	tx, err := user.Db.Begin(true)
 	if err != nil {
@@ -954,6 +962,10 @@ func (service *fundingTransactionManager) OnAliceSignedRdAtAliceSide(data string
 
 	temporaryChannelId := signedRD.TemporaryChannelId
 	signedRdHex := signedRD.RdSignedHex
+	_, err = rpcClient.CheckMultiSign(false, signedRdHex, 2)
+	if err != nil {
+		return nil, errors.New(enum.Tips_common_wrong + "rd_signed_hex")
+	}
 
 	cacheData := tempAssetFundingAfterBobSignData[user.PeerId+"_"+temporaryChannelId]
 	rsmcSignedHex := gjson.Get(cacheData, "rsmc_signed_hex").Str
@@ -1090,12 +1102,11 @@ func (service *fundingTransactionManager) OnAliceSignedRdAtAliceSide(data string
 		log.Println(err)
 		return nil, err
 	}
-	//TODO 需要解开注释
-	//_, err = rpcClient.SendRawTransaction(fundingTransaction.FundingTxHex)
-	//if err != nil {
-	//	log.Println(err)
-	//	return nil, err
-	//}
+	_, err = rpcClient.SendRawTransaction(fundingTransaction.FundingTxHex)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
 
 	fundingTransaction.CurrState = dao.FundingTransactionState_Accept
 	_ = tx.Update(fundingTransaction)
@@ -1106,9 +1117,8 @@ func (service *fundingTransactionManager) OnAliceSignedRdAtAliceSide(data string
 		return nil, err
 	}
 
-	//TODO 需要解开注释
 	//同步通道信息到tracker
-	//sendChannelStateToTracker(*channelInfo, *commitmentTxInfo)
+	sendChannelStateToTracker(*channelInfo, *commitmentTxInfo)
 
 	node["temporary_channel_id"] = channelInfo.TemporaryChannelId
 	node["channel_id"] = channelInfo.ChannelId

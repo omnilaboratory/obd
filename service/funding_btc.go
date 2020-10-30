@@ -323,6 +323,11 @@ func (service *fundingTransactionManager) OnAliceSignBtcFundingMinerFeeRedeemTx(
 		return nil, "", errors.New("not found the temp data, please send -100340 again")
 	}
 
+	_, err = rpcClient.CheckMultiSign(false, hex, 1)
+	if err != nil {
+		return nil, "", err
+	}
+
 	result, err := rpcClient.TestMemPoolAccept(hex)
 	if err != nil {
 		return nil, "", err
@@ -382,7 +387,7 @@ func (service *fundingTransactionManager) OnAliceSignBtcFundingMinerFeeRedeemTx(
 	delete(tempBtcFundingCreatedData, key)
 
 	fundingBtcOfP2p.FundingRedeemHex = minerFeeRedeemTransaction.Hex
-	fundingBtcOfP2p.SignData.Hex=minerFeeRedeemTransaction.Hex
+	fundingBtcOfP2p.SignData.Hex = minerFeeRedeemTransaction.Hex
 
 	return fundingBtcOfP2p, targetUser, nil
 }
@@ -543,6 +548,11 @@ func (service *fundingTransactionManager) FundingBtcTxSigned(msg bean.RequestMes
 		if tool.CheckIsString(&reqData.SignedMinerRedeemTransactionHex) == false {
 			err = errors.New(enum.Tips_common_wrong + "signed_miner_redeem_transaction_hex ")
 			log.Println(err)
+			return nil, "", err
+		}
+
+		_, err = rpcClient.CheckMultiSign(false, reqData.SignedMinerRedeemTransactionHex, 2)
+		if err != nil {
 			return nil, "", err
 		}
 	}

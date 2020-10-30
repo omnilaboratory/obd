@@ -13,6 +13,7 @@ import (
 	"github.com/omnilaboratory/obd/tool"
 	"github.com/shopspring/decimal"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/asdine/storm"
@@ -195,7 +196,18 @@ func checkBtcTxHex(btcFeeTxHexDecode string, channelInfo *dao.ChannelInfo, peerI
 		log.Println(err)
 		return "", 0, 0, err
 	}
-	inTxid := jsonFundingTxHexDecode.Get("vin").Array()[0].Get("txid").String()
+
+	vin1 := jsonFundingTxHexDecode.Get("vin").Array()[0]
+	asm := vin1.Get("scriptSig").Get("asm").Str
+	if len(asm) == 0 {
+		return "", 0, 0, errors.New(enum.Tips_funding_notFoundVin)
+	}
+	split := strings.Split(asm, " ")
+	if split[0] == "0" {
+		return "", 0, 0, errors.New(enum.Tips_funding_notFoundVin)
+	}
+
+	inTxid := vin1.Get("txid").String()
 	inputTx, err := rpcClient.GetTransactionById(inTxid)
 	if err != nil {
 		err = errors.New(enum.Tips_funding_wrongBtcHexVin + err.Error())
