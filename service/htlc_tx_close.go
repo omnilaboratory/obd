@@ -221,10 +221,9 @@ func (service *htlcCloseTxManager) RequestCloseHtlc(msg bean.RequestMessage, use
 	//如果是第一次请求
 	if latestCommitmentTxInfo.TxType == dao.CommitmentTransactionType_Htlc {
 		//创建c2a omni的交易不能一个输入，多个输出，所以就是两个交易
-		reqTempData := &bean.SendRequestCommitmentTx{}
+		reqTempData := &bean.RequestToCreateCommitmentTx{}
 		reqTempData.CurrTempAddressIndex = reqData.CurrRsmcTempAddressIndex
 		reqTempData.CurrTempAddressPubKey = reqData.CurrRsmcTempAddressPubKey
-		reqTempData.ChannelAddressPrivateKey = reqData.ChannelAddressPrivateKey
 		reqTempData.Amount = 0
 		newCommitmentTxInfo, err := createCommitmentTxHex(tx, true, reqTempData, channelInfo, latestCommitmentTxInfo, user)
 		if err != nil {
@@ -558,13 +557,11 @@ func (service *htlcCloseTxManager) CloseHTLCSigned(msg bean.RequestMessage, user
 		//endregion
 
 		//region 4、创建C3b
-		commitmentTxRequest := &bean.SendRequestCommitmentTx{}
+		commitmentTxRequest := &bean.RequestToCreateCommitmentTx{}
 		commitmentTxRequest.ChannelId = channelInfo.ChannelId
 		commitmentTxRequest.Amount = 0
-		commitmentTxRequest.ChannelAddressPrivateKey = reqData.ChannelAddressPrivateKey
 		commitmentTxRequest.CurrTempAddressIndex = reqData.CurrRsmcTempAddressIndex
 		commitmentTxRequest.CurrTempAddressPubKey = reqData.CurrRsmcTempAddressPubKey
-		commitmentTxRequest.CurrTempAddressPrivateKey = reqData.CurrRsmcTempAddressPrivateKey
 		newCommitmentTxInfo, err := createCommitmentTxHex(tx, false, commitmentTxRequest, channelInfo, latestCommitmentTxInfo, user)
 		if err != nil {
 			log.Println(err)

@@ -922,7 +922,8 @@ func (service *fundingTransactionManager) OnBobSignedRDAndBR(data string, user *
 	// 把签名后的rd hex放入回传给alice的数据包里面
 	aliceData = make(map[string]interface{})
 	aliceRdHexDataMap["hex"] = rdSignedHex
-	aliceData["temporary_channel_id"] = temporaryChannelId
+	aliceData["temporary_channel_id"] = channelInfo.TemporaryChannelId
+	aliceData["channel_id"] = channelInfo.ChannelId
 	aliceData["rsmc_signed_hex"] = signedRsmcHex
 	aliceData["alice_rd_hex_data"] = aliceRdHexDataMap
 
@@ -937,6 +938,7 @@ func (service *fundingTransactionManager) OnGetBobSignedMsgAndSendDataToAlice(js
 	jsonObj := gjson.Parse(jsonData)
 
 	temporaryChannelId := jsonObj.Get("temporary_channel_id").String()
+	channelId := jsonObj.Get("channel_id").String()
 
 	aliceRdHexDataMap := make(map[string]interface{})
 	aliceRdHex := jsonObj.Get("alice_rd_hex_data").String()
@@ -945,11 +947,12 @@ func (service *fundingTransactionManager) OnGetBobSignedMsgAndSendDataToAlice(js
 		log.Println(err)
 	}
 	aliceRdHexDataMap["temporary_channel_id"] = temporaryChannelId
+	aliceRdHexDataMap["channel_id"] = channelId
 
 	if tempAssetFundingAfterBobSignData == nil {
 		tempAssetFundingAfterBobSignData = make(map[string]string)
 	}
-	tempAssetFundingAfterBobSignData[user.PeerId+"_"+temporaryChannelId] = jsonData
+	tempAssetFundingAfterBobSignData[user.PeerId+"_"+channelId] = jsonData
 
 	return aliceRdHexDataMap, nil
 }
@@ -960,14 +963,15 @@ func (service *fundingTransactionManager) OnAliceSignedRdAtAliceSide(data string
 	signedRD := bean.AliceSignRDOfAssetFunding{}
 	_ = json.Unmarshal([]byte(data), &signedRD)
 
-	temporaryChannelId := signedRD.TemporaryChannelId
+	channelId := signedRD.ChannelId
+
 	signedRdHex := signedRD.RdSignedHex
 	_, err = rpcClient.CheckMultiSign(false, signedRdHex, 2)
 	if err != nil {
 		return nil, errors.New(enum.Tips_common_wrong + "rd_signed_hex")
 	}
 
-	cacheData := tempAssetFundingAfterBobSignData[user.PeerId+"_"+temporaryChannelId]
+	cacheData := tempAssetFundingAfterBobSignData[user.PeerId+"_"+channelId]
 	rsmcSignedHex := gjson.Get(cacheData, "rsmc_signed_hex").Str
 
 	tx, err := user.Db.Begin(true)
@@ -979,7 +983,7 @@ func (service *fundingTransactionManager) OnAliceSignedRdAtAliceSide(data string
 
 	channelInfo := &dao.ChannelInfo{}
 	err = tx.Select(
-		q.Eq("TemporaryChannelId", temporaryChannelId),
+		q.Eq("ChannelId", channelId),
 		q.Eq("CurrState", dao.ChannelState_WaitFundAsset),
 		q.Or(
 			q.Eq("PeerIdA", user.PeerId),
@@ -993,7 +997,7 @@ func (service *fundingTransactionManager) OnAliceSignedRdAtAliceSide(data string
 	}
 	fundingTransaction := &dao.FundingTransaction{}
 	err = tx.Select(
-		q.Eq("TemporaryChannelId", temporaryChannelId),
+		q.Eq("TemporaryChannelId", channelInfo.TemporaryChannelId),
 		q.Eq("ChannelId", channelInfo.ChannelId),
 		q.Eq("CurrState", dao.FundingTransactionState_Create)).First(fundingTransaction)
 	if err != nil {

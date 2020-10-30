@@ -24,38 +24,36 @@ type commitmentTxManager struct {
 	operationFlag sync.Mutex
 }
 
+var tempRsmcCreateP2pData map[string]bean.AliceRequestToCreateCommitmentTxOfP2p
+
 var CommitmentTxService commitmentTxManager
 
-func (this *commitmentTxManager) CommitmentTransactionCreated(msg bean.RequestMessage, creator *bean.User) (retData *bean.PayerRequestCommitmentTxOfP2p, err error) {
+func (this *commitmentTxManager) CommitmentTransactionCreated(msg bean.RequestMessage, creator *bean.User) (retData interface{}, needSign bool, err error) {
 	if tool.CheckIsString(&msg.Data) == false {
-		return nil, errors.New(enum.Tips_common_empty + "msg.Data")
+		return nil, false, errors.New(enum.Tips_common_empty + "msg.Data")
 	}
 
-	reqData := &bean.SendRequestCommitmentTx{}
+	reqData := &bean.RequestToCreateCommitmentTx{}
 	err = json.Unmarshal([]byte(msg.Data), reqData)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	if tool.CheckIsString(&reqData.ChannelId) == false {
-		return nil, errors.New(enum.Tips_common_empty + " channel_id")
+		return nil, false, errors.New(enum.Tips_common_empty + " channel_id")
 	}
 
 	if tool.CheckIsString(&reqData.LastTempAddressPrivateKey) == false {
-		return nil, errors.New(enum.Tips_common_empty + "last_temp_address_private_key")
-	}
-
-	if tool.CheckIsString(&reqData.ChannelAddressPrivateKey) == false {
-		return nil, errors.New(enum.Tips_common_empty + "channel_address_private_key")
+		return nil, false, errors.New(enum.Tips_common_empty + "last_temp_address_private_key")
 	}
 
 	if reqData.Amount <= 0 {
-		return nil, errors.New(enum.Tips_common_wrong + "payment amount")
+		return nil, false, errors.New(enum.Tips_common_wrong + "payment amount")
 	}
 
 	tx, err := creator.Db.Begin(true)
 	if err != nil {
 		log.Println(err)
-		return nil, err
+		return nil, false, err
 	}
 	defer tx.Rollback()
 
@@ -63,11 +61,11 @@ func (this *commitmentTxManager) CommitmentTransactionCreated(msg bean.RequestMe
 	if channelInfo == nil {
 		err = errors.New(enum.Tips_funding_notFoundChannelByChannelId + reqData.ChannelId)
 		log.Println(err)
-		return nil, err
+		return nil, false, err
 	}
 
 	if channelInfo.CurrState == dao.ChannelState_NewTx {
-		return nil, errors.New(enum.Tips_common_newTxMsg)
+		return nil, false, errors.New(enum.Tips_common_newTxMsg)
 	}
 
 	fundingTransaction := getFundingTransactionByChannelId(tx, channelInfo.ChannelId, creator.PeerId)
@@ -76,39 +74,37 @@ func (this *commitmentTxManager) CommitmentTransactionCreated(msg bean.RequestMe
 		if checkChannelOmniAssetAmount(*channelInfo) == false {
 			err = errors.New(enum.Tips_rsmc_broadcastedChannel)
 			log.Println(err)
-			return nil, err
+			return nil, false, err
 		}
 	}
 
 	err = checkBtcFundFinish(channelInfo.ChannelAddress, false)
 	if err != nil {
 		log.Println(err)
-		return nil, err
+		return nil, false, err
 	}
 
-	senderPubKey := channelInfo.PubKeyA
 	targetUser := channelInfo.PeerIdB
 	if creator.PeerId == channelInfo.PeerIdB {
-		senderPubKey = channelInfo.PubKeyB
 		targetUser = channelInfo.PeerIdA
 	}
 
 	if targetUser != msg.RecipientUserPeerId {
-		return nil, errors.New(enum.Tips_rsmc_notTargetUser + msg.RecipientUserPeerId)
+		return nil, false, errors.New(enum.Tips_rsmc_notTargetUser + msg.RecipientUserPeerId)
 	}
 
 	latestCommitmentTxInfo, err := getLatestCommitmentTxUseDbTx(tx, reqData.ChannelId, creator.PeerId)
 	if err != nil {
-		return nil, errors.New(enum.Tips_channel_notFoundLatestCommitmentTx)
+		return nil, false, errors.New(enum.Tips_channel_notFoundLatestCommitmentTx)
 	}
 
 	if latestCommitmentTxInfo.TxType != dao.CommitmentTransactionType_Rsmc {
-		return nil, errors.New(enum.Tips_rsmc_errorCommitmentTxType + strconv.Itoa(int(latestCommitmentTxInfo.TxType)))
+		return nil, false, errors.New(enum.Tips_rsmc_errorCommitmentTxType + strconv.Itoa(int(latestCommitmentTxInfo.TxType)))
 	}
 
 	if latestCommitmentTxInfo.CurrState != dao.TxInfoState_CreateAndSign &&
 		latestCommitmentTxInfo.CurrState != dao.TxInfoState_Create {
-		return nil, errors.New(enum.Tips_rsmc_errorCommitmentTxState + strconv.Itoa(int(latestCommitmentTxInfo.CurrState)))
+		return nil, false, errors.New(enum.Tips_rsmc_errorCommitmentTxState + strconv.Itoa(int(latestCommitmentTxInfo.CurrState)))
 	}
 
 	//region check input data 检测输入数据
@@ -116,65 +112,81 @@ func (this *commitmentTxManager) CommitmentTransactionCreated(msg bean.RequestMe
 	if latestCommitmentTxInfo.CurrState == dao.TxInfoState_CreateAndSign {
 		balance := latestCommitmentTxInfo.AmountToRSMC
 		if balance < reqData.Amount {
-			return nil, errors.New(enum.Tips_rsmc_notEnoughBalance)
+			return nil, false, errors.New(enum.Tips_rsmc_notEnoughBalance)
 		}
 
 		if _, err = tool.GetPubKeyFromWifAndCheck(reqData.LastTempAddressPrivateKey, latestCommitmentTxInfo.RSMCTempAddressPubKey); err != nil {
-			return nil, errors.New(fmt.Sprintf(enum.Tips_rsmc_wrongPrivateKeyForLast, reqData.LastTempAddressPrivateKey, latestCommitmentTxInfo.RSMCTempAddressPubKey))
+			return nil, false, errors.New(fmt.Sprintf(enum.Tips_rsmc_wrongPrivateKeyForLast, reqData.LastTempAddressPrivateKey, latestCommitmentTxInfo.RSMCTempAddressPubKey))
 		}
 	} else {
 		if reqData.CurrTempAddressPubKey != latestCommitmentTxInfo.RSMCTempAddressPubKey {
-			return nil, errors.New(fmt.Sprintf(enum.Tips_rsmc_notSameValueWhenCreate, reqData.CurrTempAddressPubKey, latestCommitmentTxInfo.RSMCTempAddressPubKey))
+			return nil, false, errors.New(fmt.Sprintf(enum.Tips_rsmc_notSameValueWhenCreate, reqData.CurrTempAddressPubKey, latestCommitmentTxInfo.RSMCTempAddressPubKey))
 		}
 		lastCommitmentTx := &dao.CommitmentTransaction{}
 		_ = tx.One("Id", latestCommitmentTxInfo.LastCommitmentTxId, lastCommitmentTx)
 		if _, err = tool.GetPubKeyFromWifAndCheck(reqData.LastTempAddressPrivateKey, lastCommitmentTx.RSMCTempAddressPubKey); err != nil {
-			return nil, err
+			return nil, false, err
 		}
 	}
 
-	if _, err = tool.GetPubKeyFromWifAndCheck(reqData.ChannelAddressPrivateKey, senderPubKey); err != nil {
-		return nil, err
-	}
-	tempAddrPrivateKeyMap[senderPubKey] = reqData.ChannelAddressPrivateKey
-
 	if _, err = getAddressFromPubKey(reqData.CurrTempAddressPubKey); err != nil {
-		return nil, errors.New(enum.Tips_common_wrong + "curr_temp_address_pub_key")
+		return nil, false, errors.New(enum.Tips_common_wrong + "curr_temp_address_pub_key")
 	}
-	if tool.CheckIsString(&reqData.CurrTempAddressPrivateKey) == false {
-		return nil, errors.New(enum.Tips_common_empty + "curr_temp_address_private_key")
-	}
-	if _, err = tool.GetPubKeyFromWifAndCheck(reqData.CurrTempAddressPrivateKey, reqData.CurrTempAddressPubKey); err != nil {
-		return nil, errors.New(fmt.Sprintf(enum.Tips_rsmc_notPairPrivAndPubKey, reqData.CurrTempAddressPrivateKey, reqData.CurrTempAddressPubKey))
-	}
-	tempAddrPrivateKeyMap[reqData.CurrTempAddressPubKey] = reqData.CurrTempAddressPrivateKey
 	//endregion
 
-	retData = &bean.PayerRequestCommitmentTxOfP2p{}
-	retData.ChannelId = channelInfo.ChannelId
-	retData.Amount = reqData.Amount
-	retData.LastTempAddressPrivateKey = reqData.LastTempAddressPrivateKey
-	retData.CurrTempAddressPubKey = reqData.CurrTempAddressPubKey
+	retSignData := bean.NeedSignDataForC2a{}
+
+	p2pData := &bean.AliceRequestToCreateCommitmentTxOfP2p{}
+	p2pData.ChannelId = channelInfo.ChannelId
+	p2pData.Amount = reqData.Amount
+	p2pData.LastTempAddressPrivateKey = reqData.LastTempAddressPrivateKey
+	p2pData.CurrTempAddressPubKey = reqData.CurrTempAddressPubKey
 	if latestCommitmentTxInfo.CurrState == dao.TxInfoState_CreateAndSign {
 		//创建c2a omni的交易不能一个输入，多个输出，所以就是两个交易
 		newCommitmentTxInfo, err := createCommitmentTxHex(tx, true, reqData, channelInfo, latestCommitmentTxInfo, *creator)
 		if err != nil {
-			return nil, err
+			return nil, false, err
 		}
-		retData.RsmcHex = newCommitmentTxInfo.RSMCTxHex
-		retData.ToCounterpartyTxHex = newCommitmentTxInfo.ToCounterpartyTxHex
-		retData.CommitmentTxHash = newCommitmentTxInfo.CurrHash
+		p2pData.RsmcHex = newCommitmentTxInfo.RSMCTxHex
+		p2pData.ToCounterpartyTxHex = newCommitmentTxInfo.ToCounterpartyTxHex
+		p2pData.CommitmentTxHash = newCommitmentTxInfo.CurrHash
+
+		retSignData.ChannelId = channelInfo.ChannelId
+		retSignData.RsmcRawData = newCommitmentTxInfo.RsmcRawTxData
+		retSignData.CounterpartyRawData = newCommitmentTxInfo.ToCounterpartyRawTxData
+
 	} else {
-		retData.RsmcHex = latestCommitmentTxInfo.RSMCTxHex
-		retData.ToCounterpartyTxHex = latestCommitmentTxInfo.ToCounterpartyTxHex
-		retData.CommitmentTxHash = latestCommitmentTxInfo.CurrHash
+		p2pData.RsmcHex = latestCommitmentTxInfo.RSMCTxHex
+		p2pData.ToCounterpartyTxHex = latestCommitmentTxInfo.ToCounterpartyTxHex
+		p2pData.CommitmentTxHash = latestCommitmentTxInfo.CurrHash
+		if len(latestCommitmentTxInfo.RSMCTxid) == 0 {
+			retSignData.ChannelId = channelInfo.ChannelId
+			retSignData.RsmcRawData = latestCommitmentTxInfo.RsmcRawTxData
+			retSignData.CounterpartyRawData = latestCommitmentTxInfo.ToCounterpartyRawTxData
+		}
 	}
 
-	retData.PayerNodeAddress = msg.SenderNodePeerId
-	retData.PayerPeerId = msg.SenderUserPeerId
+	p2pData.PayerNodeAddress = msg.SenderNodePeerId
+	p2pData.PayerPeerId = msg.SenderUserPeerId
+
 	_ = tx.Commit()
 
-	return retData, err
+	if len(latestCommitmentTxInfo.RSMCTxid) == 0 {
+
+		if tempRsmcCreateP2pData == nil {
+			tempRsmcCreateP2pData = make(map[string]bean.AliceRequestToCreateCommitmentTxOfP2p)
+		}
+		tempRsmcCreateP2pData[creator.PeerId+"_"+p2pData.ChannelId] = *p2pData
+		return retSignData, true, nil
+	}
+
+	return p2pData, false, err
+}
+
+//协议号：101351
+func (this *commitmentTxManager) OnAliceSignC2aRawTxAtAliceSide(data string, user *bean.User) (retData interface{}, err error) {
+
+	return nil, nil
 }
 
 //353 352的请求阶段完成，需要Alice这边签名C2b等相关的交易
@@ -570,11 +582,11 @@ var CommitmentTxSignedService commitmentTxSignedManager
 
 func (this *commitmentTxSignedManager) BeforeBobSignCommitmentTransactionAtBobSide(data string, user *bean.User) (retData *bean.PayerRequestCommitmentTxToBobClient, err error) {
 
-	requestCreateCommitmentTx := &bean.PayerRequestCommitmentTxOfP2p{}
+	requestCreateCommitmentTx := &bean.AliceRequestToCreateCommitmentTxOfP2p{}
 	_ = json.Unmarshal([]byte(data), requestCreateCommitmentTx)
 
 	retData = &bean.PayerRequestCommitmentTxToBobClient{}
-	retData.PayerRequestCommitmentTxOfP2p = *requestCreateCommitmentTx
+	retData.AliceRequestToCreateCommitmentTxOfP2p = *requestCreateCommitmentTx
 
 	tx, err := user.Db.Begin(true)
 	if err != nil {
@@ -646,7 +658,7 @@ func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction
 		return nil, "", errors.New(enum.Tips_rsmc_notTargetUser)
 	}
 
-	aliceDataJson := &bean.PayerRequestCommitmentTxOfP2p{}
+	aliceDataJson := &bean.AliceRequestToCreateCommitmentTxOfP2p{}
 	_ = json.Unmarshal([]byte(message.Data), aliceDataJson)
 	reqData.MsgHash = aliceDataJson.CommitmentTxHash
 	//endregion
@@ -870,13 +882,11 @@ func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction
 		//endregion
 
 		//region 4、创建C2b
-		commitmentTxRequest := &bean.SendRequestCommitmentTx{}
+		commitmentTxRequest := &bean.RequestToCreateCommitmentTx{}
 		commitmentTxRequest.ChannelId = channelInfo.ChannelId
 		commitmentTxRequest.Amount = aliceDataJson.Amount
-		commitmentTxRequest.ChannelAddressPrivateKey = reqData.ChannelAddressPrivateKey
 		commitmentTxRequest.CurrTempAddressIndex = reqData.CurrTempAddressIndex
 		commitmentTxRequest.CurrTempAddressPubKey = reqData.CurrTempAddressPubKey
-		commitmentTxRequest.CurrTempAddressPrivateKey = reqData.CurrTempAddressPrivateKey
 		newCommitmentTxInfo, err := createCommitmentTxHex(tx, false, commitmentTxRequest, channelInfo, latestCommitmentTxInfo, *signer)
 		if err != nil {
 			log.Println(err)

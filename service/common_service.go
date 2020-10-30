@@ -492,7 +492,7 @@ func createMultiSig(pubkey1 string, pubkey2 string) (multiAddress, redeemScript,
 	return multiAddress, redeemScript, scriptPubKey, nil
 }
 
-func createCommitmentTxHex(dbTx storm.Node, isSender bool, reqData *bean.SendRequestCommitmentTx, channelInfo *dao.ChannelInfo, lastCommitmentTx *dao.CommitmentTransaction, currUser bean.User) (commitmentTxInfo *dao.CommitmentTransaction, err error) {
+func createCommitmentTxHex(dbTx storm.Node, isSender bool, reqData *bean.RequestToCreateCommitmentTx, channelInfo *dao.ChannelInfo, lastCommitmentTx *dao.CommitmentTransaction, currUser bean.User) (commitmentTxInfo *dao.CommitmentTransaction, err error) {
 	//1、转账给bob的交易：输入：通道其中一个input，输出：给bob
 	//2、转账后的余额的交易：输入：通道总的一个input,输出：一个多签地址，这个钱又需要后续的RD才能赎回
 	// create Cna tx
@@ -554,12 +554,9 @@ func createCommitmentTxHex(dbTx storm.Node, isSender bool, reqData *bean.SendReq
 
 	usedTxidTemp := ""
 	if commitmentTxInfo.AmountToRSMC > 0 {
-		txid, hex, usedTxid, err := rpcClient.OmniCreateAndSignRawTransactionUseSingleInput(
+		rsmcTxData, usedTxid, err := rpcClient.OmniCreateRawTransactionUseSingleInput(
 			int(commitmentTxInfo.TxType),
 			channelInfo.ChannelAddress,
-			[]string{
-				reqData.ChannelAddressPrivateKey,
-			},
 			commitmentTxInfo.RSMCMultiAddress,
 			fundingTransaction.PropertyId,
 			commitmentTxInfo.AmountToRSMC,
@@ -572,31 +569,41 @@ func createCommitmentTxHex(dbTx storm.Node, isSender bool, reqData *bean.SendReq
 
 		usedTxidTemp = usedTxid
 		commitmentTxInfo.RsmcInputTxid = usedTxid
-		commitmentTxInfo.RSMCTxid = txid
-		commitmentTxInfo.RSMCTxHex = hex
+		commitmentTxInfo.RSMCTxHex = rsmcTxData["hex"].(string)
+		signHexData := bean.NeedClientSignRawTxData{}
+		signHexData.Hex = commitmentTxInfo.RSMCTxHex
+		signHexData.Inputs = rsmcTxData["inputs"]
+		signHexData.IsMultisig = true
+		signHexData.PubKeyA = channelInfo.PubKeyA
+		signHexData.PubKeyB = channelInfo.PubKeyB
+		commitmentTxInfo.RsmcRawTxData = signHexData
 	}
 
-	//create to other tx
+	//create to Counterparty tx
 	if commitmentTxInfo.AmountToCounterparty > 0 {
-		txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionUseRestInput(
+		toBobTxData, err := rpcClient.OmniCreateRawTransactionUseRestInput(
 			int(commitmentTxInfo.TxType),
 			channelInfo.ChannelAddress,
 			usedTxidTemp,
-			[]string{
-				reqData.ChannelAddressPrivateKey,
-			},
 			outputBean.OppositeSideChannelAddress,
 			fundingTransaction.FunderAddress,
 			fundingTransaction.PropertyId,
 			commitmentTxInfo.AmountToCounterparty,
 			getBtcMinerAmount(channelInfo.BtcAmount),
-			0, &channelInfo.ChannelAddressRedeemScript)
+			&channelInfo.ChannelAddressRedeemScript)
 		if err != nil {
 			log.Println(err)
 			return nil, err
 		}
-		commitmentTxInfo.ToCounterpartyTxid = txid
-		commitmentTxInfo.ToCounterpartyTxHex = hex
+		commitmentTxInfo.ToCounterpartyTxHex = toBobTxData["hex"].(string)
+
+		signHexData := bean.NeedClientSignRawTxData{}
+		signHexData.Hex = commitmentTxInfo.ToCounterpartyTxHex
+		signHexData.Inputs = toBobTxData["inputs"]
+		signHexData.IsMultisig = true
+		signHexData.PubKeyA = channelInfo.PubKeyA
+		signHexData.PubKeyB = channelInfo.PubKeyB
+		commitmentTxInfo.ToCounterpartyRawTxData = signHexData
 	}
 
 	commitmentTxInfo.LastHash = ""

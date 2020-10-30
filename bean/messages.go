@@ -148,7 +148,6 @@ type FundingAssetOfP2p struct {
 	FunderPeerId          string                `json:"funder_peer_id"`
 }
 
-
 // -100034
 type SendRequestAssetFunding struct {
 	TemporaryChannelId string `json:"temporary_channel_id"`
@@ -163,7 +162,6 @@ type AliceSignC1aOfAssetFunding struct {
 	SignedC1aHex string `json:"signed_c1a_hex"`
 	typeLengthValue
 }
-
 
 //type: -100035 (funding_signed)
 type SignAssetFunding struct {
@@ -183,16 +181,13 @@ type SignRdAndBrOfAssetFunding struct {
 
 // -101134
 type AliceSignRDOfAssetFunding struct {
-	TemporaryChannelId string `json:"temporary_channel_id"`
-	RdSignedHex        string `json:"rd_signed_hex"`
+	ChannelId   string `json:"channel_id"`
+	RdSignedHex string `json:"rd_signed_hex"`
 	typeLengthValue
 }
 
-
-
-
 //type: -100351 (commitment_tx)
-type SendRequestCommitmentTx struct {
+type SendRequestToCreateCommitmentTx struct {
 	ChannelId                 string  `json:"channel_id"` //the global channel id.
 	Amount                    float64 `json:"amount"`     //amount of the payment
 	ChannelAddressPrivateKey  string  `json:"channel_address_private_key"`
@@ -203,8 +198,26 @@ type SendRequestCommitmentTx struct {
 	typeLengthValue
 }
 
+//type: -100351 (commitment_tx)
+type RequestToCreateCommitmentTx struct {
+	ChannelId                 string  `json:"channel_id"` //the global channel id.
+	Amount                    float64 `json:"amount"`     //amount of the payment
+	LastTempAddressPrivateKey string  `json:"last_temp_address_private_key"`
+	CurrTempAddressIndex      int     `json:"curr_temp_address_index"`
+	CurrTempAddressPubKey     string  `json:"curr_temp_address_pub_key"`
+	typeLengthValue
+}
+
+//type: -100351 (commitment_tx)
+type NeedSignDataForC2a struct {
+	ChannelId           string                  `json:"channel_id"` //the global channel id.
+	RsmcRawData         NeedClientSignRawTxData `json:"rsmc_raw_data"`
+	CounterpartyRawData NeedClientSignRawTxData `json:"counterparty_raw_data"`
+	typeLengthValue
+}
+
 //p2p 351
-type PayerRequestCommitmentTxOfP2p struct {
+type AliceRequestToCreateCommitmentTxOfP2p struct {
 	ChannelId                 string  `json:"channel_id"` //the global channel id.
 	CommitmentTxHash          string  `json:"commitment_tx_hash"`
 	Amount                    float64 `json:"amount"` //amount of the payment
@@ -218,7 +231,7 @@ type PayerRequestCommitmentTxOfP2p struct {
 
 // -110351
 type PayerRequestCommitmentTxToBobClient struct {
-	PayerRequestCommitmentTxOfP2p
+	AliceRequestToCreateCommitmentTxOfP2p
 	MsgHash string `json:"msg_hash"`
 }
 
@@ -521,4 +534,13 @@ type NeedClientSignHexData struct {
 	PubKeyB            string      `json:"pub_key_b"`
 	TotalInAmount      float64     `json:"total_in_amount"`
 	TotalOutAmount     float64     `json:"total_out_amount"`
+}
+
+// 正式通道的需要客户端签名的信息体
+type NeedClientSignRawTxData struct {
+	Hex        string      `json:"hex"`
+	Inputs     interface{} `json:"inputs"`
+	IsMultisig bool        `json:"is_multisig"`
+	PubKeyA    string      `json:"pub_key_a"`
+	PubKeyB    string      `json:"pub_key_b"`
 }

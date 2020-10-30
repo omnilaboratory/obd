@@ -166,20 +166,22 @@ type CommitmentTransaction struct {
 
 	//RSMC
 	// 用于记录助记词导出地址的index
-	RSMCTempAddressIndex         int     `json:"rsmc_temp_address_index"`   //aliceTempRemc or bobTempRsmc
-	RSMCTempAddressPubKey        string  `json:"rsmc_temp_address_pub_key"` //aliceTempRemc or bobTempRsmc
-	RSMCMultiAddress             string  `json:"rsmc_multi_address"`        //output aliceTempRsmc&bob  or alice&bobTempRsmc  multiAddr
-	RSMCRedeemScript             string  `json:"rsmc_redeem_script"`
-	RSMCMultiAddressScriptPubKey string  `json:"rsmc_multi_address_script_pub_key"`
-	AmountToRSMC                 float64 `json:"amount_to_rsmc"` // amount to multiAddr
-	RsmcInputTxid                string  `json:"rsmc_input_txid"`
-	RSMCTxHex                    string  `json:"rsmc_tx_hex"`
-	RSMCTxid                     string  `json:"rsmc_txid"`
+	RSMCTempAddressIndex         int                          `json:"rsmc_temp_address_index"`   //aliceTempRemc or bobTempRsmc
+	RSMCTempAddressPubKey        string                       `json:"rsmc_temp_address_pub_key"` //aliceTempRemc or bobTempRsmc
+	RSMCMultiAddress             string                       `json:"rsmc_multi_address"`        //output aliceTempRsmc&bob  or alice&bobTempRsmc  multiAddr
+	RSMCRedeemScript             string                       `json:"rsmc_redeem_script"`
+	RSMCMultiAddressScriptPubKey string                       `json:"rsmc_multi_address_script_pub_key"`
+	AmountToRSMC                 float64                      `json:"amount_to_rsmc"` // amount to multiAddr
+	RsmcInputTxid                string                       `json:"rsmc_input_txid"`
+	RSMCTxHex                    string                       `json:"rsmc_tx_hex"`
+	RSMCTxid                     string                       `json:"rsmc_txid"`
+	RsmcRawTxData                bean.NeedClientSignRawTxData `json:"rsmc_raw_tx_data"`
 	//To CounterParty
-	ToCounterpartyTxHex            string  `json:"to_counterparty_tx_hex"`
-	ToCounterpartyTxid             string  `json:"to_counterparty_txid"`
-	AmountToCounterparty           float64 `json:"amount_to_counterparty"`               //amount to bob(if Cna) or alice(if Cnb)
-	FromCounterpartySideForMeTxHex string  `json:"from_counterparty_side_for_me_tx_hex"` //对方给自己的转账部分，防止对方不广播此交易
+	ToCounterpartyTxHex            string                       `json:"to_counterparty_tx_hex"`
+	ToCounterpartyTxid             string                       `json:"to_counterparty_txid"`
+	ToCounterpartyRawTxData        bean.NeedClientSignRawTxData `json:"to_counterparty_raw_tx_data"`
+	AmountToCounterparty           float64                      `json:"amount_to_counterparty"`               //amount to bob(if Cna) or alice(if Cnb)
+	FromCounterpartySideForMeTxHex string                       `json:"from_counterparty_side_for_me_tx_hex"` //对方给自己的转账部分，防止对方不广播此交易
 	//htlc
 	HtlcRoutingPacket            string  `json:"htlc_routing_packet"` //借道Path
 	HtlcCltvExpiry               int     `json:"htlc_cltv_expiry"`    //借道的最大超时 分钟为单位

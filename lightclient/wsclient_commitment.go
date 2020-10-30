@@ -15,7 +15,7 @@ func (client *Client) commitmentTxModule(msg bean.RequestMessage) (enum.SendTarg
 	data := ""
 	switch msg.Type {
 	case enum.MsgType_CommitmentTx_SendCommitmentTransactionCreated_351:
-		retData, err := service.CommitmentTxService.CommitmentTransactionCreated(msg, client.User)
+		retData, needSign, err := service.CommitmentTxService.CommitmentTransactionCreated(msg, client.User)
 		if err != nil {
 			data = err.Error()
 		} else {
@@ -27,12 +27,14 @@ func (client *Client) commitmentTxModule(msg bean.RequestMessage) (enum.SendTarg
 				status = true
 			}
 		}
-		if status {
-			msg.Type = enum.MsgType_CommitmentTx_CommitmentTransactionCreated_351
-			err = client.sendDataToP2PUser(msg, status, data)
-			if err != nil {
-				data = err.Error()
-				status = false
+		if needSign == false {
+			if status {
+				msg.Type = enum.MsgType_CommitmentTx_CommitmentTransactionCreated_351
+				err = client.sendDataToP2PUser(msg, status, data)
+				if err != nil {
+					data = err.Error()
+					status = false
+				}
 			}
 		}
 		msg.Type = enum.MsgType_CommitmentTx_SendCommitmentTransactionCreated_351
