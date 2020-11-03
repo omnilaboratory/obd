@@ -6,3 +6,5 @@
 /tracker_linux_amd64
 /obd_darwin_amd64
 /obd_windows_amd64.exe
+/dbdatatest/user_b4b840dc594602809b45625f4c883386aacf40661f6330298ade16913c33dec1.db.lock
+/dbdatatest/user_cb87bb062fbca60644c17941b4e06502a71218548e19c46f0b4576b2b53b4056.db.lock

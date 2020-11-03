@@ -157,12 +157,13 @@ func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction
 	toAliceP2pData.CommitmentTxHash = reqData.MsgHash
 	toAliceP2pData.Approval = reqData.Approval
 
-	if channelInfo.CurrState == dao.ChannelState_NewTx {
-		channelInfo.CurrState = dao.ChannelState_CanUse
-		_ = tx.Update(channelInfo)
-	}
-
 	if reqData.Approval == false {
+
+		if channelInfo.CurrState == dao.ChannelState_NewTx {
+			channelInfo.CurrState = dao.ChannelState_CanUse
+			_ = tx.Update(channelInfo)
+		}
+
 		payeeRevokeAndAcknowledgeCommitment.ChannelId = toAliceP2pData.ChannelId
 		payeeRevokeAndAcknowledgeCommitment.CommitmentTxHash = toAliceP2pData.CommitmentTxHash
 		payeeRevokeAndAcknowledgeCommitment.Approval = false
@@ -647,6 +648,9 @@ func (this *commitmentTxSignedManager) BobSignC2b_RdAtBobSide(data string, user 
 	payeeRevokeAndAcknowledgeCommitment.CommitmentTxHash = c2aInitTxHash
 	payeeRevokeAndAcknowledgeCommitment.Approval = true
 	_ = tx.Save(payeeRevokeAndAcknowledgeCommitment)
+
+	channelInfo.CurrState = dao.ChannelState_CanUse
+	_ = tx.Update(channelInfo)
 
 	_ = tx.Commit()
 
