@@ -277,7 +277,22 @@ func (this *commitmentTxManager) OnGetBobC2bPartialSignTxAtAliceSide(data string
 
 	//如果bob不同意这次交易
 	if dataFromP2p352.Approval == false {
+		tx, err := user.Db.Begin(true)
+		if err != nil {
+			log.Println(err)
+			return nil, false, err
+		}
+		defer tx.Rollback()
 
+		latestCommitmentTxInfo, err := getLatestCommitmentTxUseDbTx(tx, dataFromP2p352.ChannelId, user.PeerId)
+		if err != nil {
+			err = errors.New("fail to find sender's commitmentTxInfo")
+			log.Println(err)
+			return nil, false, err
+		}
+		_ = tx.DeleteStruct(latestCommitmentTxInfo)
+		_ = tx.Commit()
+		return retData, false, nil
 	}
 
 	if tempP2pData_352 == nil {
