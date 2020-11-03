@@ -141,6 +141,9 @@ func (this *commitmentTxManager) CommitmentTransactionCreated(msg bean.RequestMe
 	p2pData.Amount = reqData.Amount
 	p2pData.LastTempAddressPrivateKey = reqData.LastTempAddressPrivateKey
 	p2pData.CurrTempAddressPubKey = reqData.CurrTempAddressPubKey
+
+	needSign = false
+
 	if latestCommitmentTxInfo.CurrState == dao.TxInfoState_CreateAndSign {
 		//创建c2a omni的交易不能一个输入，多个输出，所以就是两个交易
 		newCommitmentTxInfo, err := createCommitmentTxHex(tx, true, reqData, channelInfo, latestCommitmentTxInfo, *creator)
@@ -154,6 +157,7 @@ func (this *commitmentTxManager) CommitmentTransactionCreated(msg bean.RequestMe
 		retSignData.ChannelId = channelInfo.ChannelId
 		retSignData.RsmcRawData = newCommitmentTxInfo.RsmcRawTxData
 		retSignData.CounterpartyRawData = newCommitmentTxInfo.ToCounterpartyRawTxData
+		needSign = true
 
 	} else {
 		p2pData.CommitmentTxHash = latestCommitmentTxInfo.CurrHash
@@ -164,6 +168,7 @@ func (this *commitmentTxManager) CommitmentTransactionCreated(msg bean.RequestMe
 			retSignData.ChannelId = channelInfo.ChannelId
 			retSignData.RsmcRawData = latestCommitmentTxInfo.RsmcRawTxData
 			retSignData.CounterpartyRawData = latestCommitmentTxInfo.ToCounterpartyRawTxData
+			needSign = true
 		}
 	}
 
@@ -172,8 +177,7 @@ func (this *commitmentTxManager) CommitmentTransactionCreated(msg bean.RequestMe
 
 	_ = tx.Commit()
 
-	if len(latestCommitmentTxInfo.RSMCTxid) == 0 {
-
+	if needSign {
 		if tempRsmcCreateP2pData == nil {
 			tempRsmcCreateP2pData = make(map[string]bean.AliceRequestToCreateCommitmentTxOfP2p)
 		}
@@ -398,8 +402,6 @@ func (this *commitmentTxManager) OnAliceSignedC2bTxAtAliceSide(data string, user
 		partnerChannelAddress = channelInfo.AddressA
 	}
 
-	_ = tx.Commit()
-
 	//处理对方的数据
 	//签名对方传过来的rsmcHex
 	bobSignedRsmcHex := aliceSignedRmscTxForC2b.C2bRsmcSignedHex
@@ -473,13 +475,15 @@ func (this *commitmentTxManager) OnAliceSignedC2bTxAtAliceSide(data string, user
 		c2bBrRawData := bean.NeedClientSignRawBRTxData{}
 		c2bBrRawData.Hex = c2bBrHexData["hex"].(string)
 		c2bBrRawData.Inputs = c2bBrHexData["inputs"]
-		c2bBrRawData.BrId = c2bBrHexData["br_id"].(int64)
+		c2bBrRawData.BrId = c2bBrHexData["br_id"].(int)
 		c2bBrRawData.IsMultisig = true
 		c2bBrRawData.PubKeyA = dataFromP2p352.CurrTempAddressPubKey
 		c2bBrRawData.PubKeyB = myChannelPubKey
 		needAliceSignRdTxForC2b.C2bBrRawData = c2bBrRawData
 	}
 	//endregion
+
+	_ = tx.Commit()
 
 	return needAliceSignRdTxForC2b, nil
 }
@@ -637,6 +641,8 @@ func (this *commitmentTxManager) OnAliceSignedC2b_RDTxAtAliceSide(data string, u
 	}
 
 	//更新alice的当前承诺交易
+	latestCommitmentTxInfo.RsmcRawTxData = bean.NeedClientSignRawTxData{}
+	latestCommitmentTxInfo.ToCounterpartyRawTxData = bean.NeedClientSignRawTxData{}
 	latestCommitmentTxInfo.CurrState = dao.TxInfoState_CreateAndSign
 	latestCommitmentTxInfo.SignAt = time.Now()
 
@@ -741,7 +747,7 @@ func (this *commitmentTxManager) OnAliceSignedC2b_RDTxAtAliceSide(data string, u
 
 	bobData.C2bCounterpartySignedHex = c2bToCounterpartyTxHex
 	bobData.ChannelId = channelId
-	return aliceData, bobRetData, true, nil
+	return aliceData, bobData, true, nil
 }
 
 // 广播某一次承诺交易

@@ -469,5 +469,5 @@ type NeedClientSignRawTxData struct {
 }
 type NeedClientSignRawBRTxData struct {
 	NeedClientSignRawTxData
-	BrId int64 `json:"br_id"`
+	BrId int `json:"br_id"`
 }

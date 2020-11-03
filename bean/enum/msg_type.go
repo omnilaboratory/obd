@@ -159,7 +159,7 @@ const (
 	MsgType_ClientSign_AliceSignC2b_Rd_1353                                      MsgType = -101353
 	MsgType_CommitmentTxSigned_SecondToBobSign_353                               MsgType = -353
 	MsgType_ClientSign_BobC2b_Rd_353                                             MsgType = -110353
-	MsgType_ClientSign_BobSinedC2b_Rd_2353                                       MsgType = -102353
+	MsgType_ClientSign_BobSinedC2b_Rd_354                                        MsgType = -100354
 
 	MsgType_SendCloseChannelRequest_38 MsgType = -100038
 	MsgType_CloseChannelRequest_38     MsgType = -38
@@ -346,7 +346,7 @@ func CheckExist(msgType MsgType) bool {
 		return true
 	case MsgType_ClientSign_AliceSignC2b_Rd_1353:
 		return true
-	case MsgType_ClientSign_BobSinedC2b_Rd_2353:
+	case MsgType_ClientSign_BobSinedC2b_Rd_354:
 		return true
 	case MsgType_CommitmentTx_ItemsByChanId_3200:
 		return true

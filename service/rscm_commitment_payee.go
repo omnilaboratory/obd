@@ -395,7 +395,7 @@ func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction
 		C2aBrRawData := bean.NeedClientSignRawBRTxData{}
 		C2aBrRawData.Hex = c2aBrHexData["hex"].(string)
 		C2aBrRawData.Inputs = c2aBrHexData["inputs"]
-		C2aBrRawData.BrId = c2aBrHexData["br_id"].(int64)
+		C2aBrRawData.BrId = c2aBrHexData["br_id"].(int)
 		C2aBrRawData.PubKeyA = c2aDataJson.CurrTempAddressPubKey
 		C2aBrRawData.PubKeyB = currNodeChannelPubKey
 		C2aBrRawData.IsMultisig = true
@@ -628,6 +628,8 @@ func (this *commitmentTxSignedManager) BobSignC2b_RdAtBobSide(data string, user 
 	}
 
 	//更新alice的当前承诺交易
+	latestCommitmentTxInfo.RsmcRawTxData = bean.NeedClientSignRawTxData{}
+	latestCommitmentTxInfo.ToCounterpartyRawTxData = bean.NeedClientSignRawTxData{}
 	latestCommitmentTxInfo.CurrState = dao.TxInfoState_CreateAndSign
 	latestCommitmentTxInfo.SignAt = time.Now()
 

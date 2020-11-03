@@ -222,7 +222,7 @@ func (client *Client) Read() {
 					//-352
 					if msg.Type == enum.MsgType_CommitmentTxSigned_SendRevokeAndAcknowledgeCommitmentTransaction_352 ||
 						msg.Type == enum.MsgType_ClientSign_SignC2bRawTx_1352 ||
-						msg.Type == enum.MsgType_ClientSign_BobSinedC2b_Rd_2353 {
+						msg.Type == enum.MsgType_ClientSign_BobSinedC2b_Rd_354 {
 						sendType, dataOut, status = client.commitmentTxSignModule(msg)
 						break
 					}

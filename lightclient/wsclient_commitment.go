@@ -295,7 +295,7 @@ func (client *Client) commitmentTxSignModule(msg bean.RequestMessage) (enum.Send
 		}
 		msg.Type = enum.MsgType_ClientSign_SignC2bRawTx_1352
 		client.sendToMyself(msg.Type, status, data)
-	case enum.MsgType_ClientSign_BobSinedC2b_Rd_2353:
+	case enum.MsgType_ClientSign_BobSinedC2b_Rd_354:
 		retData, err := service.CommitmentTxSignedService.BobSignC2b_RdAtBobSide(msg.Data, client.User)
 		if err != nil {
 			data = err.Error()
