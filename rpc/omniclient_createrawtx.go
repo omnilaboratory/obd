@@ -80,15 +80,15 @@ func (client *Client) OmniCreateRawTransaction(fromBitCoinAddress string, toBitC
 	inputs := make([]map[string]interface{}, 0, len(arrayListUnspent))
 	for _, item := range arrayListUnspent {
 		node := make(map[string]interface{})
+		//node["confirmations"] = item.Get("confirmations").Int()
+		//node["spendable"] = item.Get("spendable").Bool()
+		//node["solvable"] = item.Get("solvable").Bool()
+		//node["address"] = item.Get("address").String()
+		//node["account"] = item.Get("account").String()
 		node["txid"] = item.Get("txid").String()
 		node["vout"] = item.Get("vout").Int()
-		node["confirmations"] = item.Get("confirmations").Int()
-		node["spendable"] = item.Get("spendable").Bool()
-		node["solvable"] = item.Get("solvable").Bool()
-		node["amount"] = item.Get("amount").Float()
-		node["address"] = item.Get("address").String()
-		node["account"] = item.Get("account").String()
 		node["scriptPubKey"] = item.Get("scriptPubKey").String()
+		node["amount"] = item.Get("amount").Float()
 		inputs = append(inputs, node)
 	}
 

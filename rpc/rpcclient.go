@@ -229,7 +229,7 @@ func (client *Client) CheckMultiSign(sendedInput bool, hex string, step int) (pa
 			asm := vins[i].Get("scriptSig").Get("asm").Str
 			asmArr := strings.Split(asm, " ")
 			if step == 1 {
-				if len(asmArr) != 4 || asmArr[1] == "0" {
+				if len(asmArr) != 4 || (asmArr[1] == "0" && asmArr[2] == "0") {
 					return false, errors.New(rejectReason)
 				}
 			}
