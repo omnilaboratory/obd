@@ -186,83 +186,6 @@ type AliceSignRDOfAssetFunding struct {
 	typeLengthValue
 }
 
-//type: -100351 (commitment_tx)
-type SendRequestToCreateCommitmentTx struct {
-	ChannelId                 string  `json:"channel_id"` //the global channel id.
-	Amount                    float64 `json:"amount"`     //amount of the payment
-	ChannelAddressPrivateKey  string  `json:"channel_address_private_key"`
-	LastTempAddressPrivateKey string  `json:"last_temp_address_private_key"`
-	CurrTempAddressIndex      int     `json:"curr_temp_address_index"`
-	CurrTempAddressPubKey     string  `json:"curr_temp_address_pub_key"`
-	CurrTempAddressPrivateKey string  `json:"curr_temp_address_private_key"`
-	typeLengthValue
-}
-
-//type: -100351 (commitment_tx)
-type RequestToCreateCommitmentTx struct {
-	ChannelId                 string  `json:"channel_id"` //the global channel id.
-	Amount                    float64 `json:"amount"`     //amount of the payment
-	LastTempAddressPrivateKey string  `json:"last_temp_address_private_key"`
-	CurrTempAddressIndex      int     `json:"curr_temp_address_index"`
-	CurrTempAddressPubKey     string  `json:"curr_temp_address_pub_key"`
-	typeLengthValue
-}
-
-//type: -100351 (commitment_tx)
-type NeedSignDataForC2a struct {
-	ChannelId           string                  `json:"channel_id"` //the global channel id.
-	RsmcRawData         NeedClientSignRawTxData `json:"rsmc_raw_data"`
-	CounterpartyRawData NeedClientSignRawTxData `json:"counterparty_raw_data"`
-	typeLengthValue
-}
-
-//p2p 351
-type AliceRequestToCreateCommitmentTxOfP2p struct {
-	ChannelId                 string  `json:"channel_id"` //the global channel id.
-	CommitmentTxHash          string  `json:"commitment_tx_hash"`
-	Amount                    float64 `json:"amount"` //amount of the payment
-	ToCounterpartyTxHex       string  `json:"to_counterparty_tx_hex"`
-	RsmcHex                   string  `json:"rsmc_hex"`
-	LastTempAddressPrivateKey string  `json:"last_temp_address_private_key"`
-	CurrTempAddressPubKey     string  `json:"curr_temp_address_pub_key"`
-	PayerNodeAddress          string  `json:"payer_node_address"`
-	PayerPeerId               string  `json:"payer_peer_id"`
-}
-
-// -110351
-type PayerRequestCommitmentTxToBobClient struct {
-	AliceRequestToCreateCommitmentTxOfP2p
-	MsgHash string `json:"msg_hash"`
-}
-
-//type: -100352 (commitment_tx_signed)
-type PayeeSendSignCommitmentTx struct {
-	ChannelId                 string `json:"channel_id"`
-	MsgHash                   string `json:"msg_hash"`
-	ChannelAddressPrivateKey  string `json:"channel_address_private_key"`   // bob private key
-	LastTempAddressPrivateKey string `json:"last_temp_address_private_key"` // bob2's private key
-	CurrTempAddressIndex      int    `json:"curr_temp_address_index"`
-	CurrTempAddressPubKey     string `json:"curr_temp_address_pub_key"` // bob3 or alice3
-	CurrTempAddressPrivateKey string `json:"curr_temp_address_private_key"`
-	Approval                  bool   `json:"approval"` // true agree false disagree
-	typeLengthValue
-}
-
-//p2p -100352 -> 353
-type PayeeSignCommitmentTxOfP2p struct {
-	ChannelId                 string `json:"channel_id"` //the global channel id.
-	CommitmentTxHash          string `json:"commitment_tx_hash"`
-	Approval                  bool   `json:"approval"`
-	ToCounterpartyTxHex       string `json:"to_counterparty_tx_hex"`
-	RsmcHex                   string `json:"rsmc_hex"`
-	LastTempAddressPrivateKey string `json:"last_temp_address_private_key"`
-	CurrTempAddressPubKey     string `json:"curr_temp_address_pub_key"`
-	SignedRsmcHex             string `json:"signed_rsmc_hex"`
-	SignedToCounterpartyTxHex string `json:"signed_to_counterparty_tx_hex"`
-	PayerRdHex                string `json:"payer_rd_hex"`
-	typeLengthValue
-}
-
 //type -100402: invoice
 type HtlcRequestInvoice struct {
 	NetType string `json:"net_type"` //解析用
@@ -543,4 +466,8 @@ type NeedClientSignRawTxData struct {
 	IsMultisig bool        `json:"is_multisig"`
 	PubKeyA    string      `json:"pub_key_a"`
 	PubKeyB    string      `json:"pub_key_b"`
+}
+type NeedClientSignRawBRTxData struct {
+	NeedClientSignRawTxData
+	BrId int64 `json:"br_id"`
 }

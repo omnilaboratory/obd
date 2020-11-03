@@ -65,8 +65,8 @@ func routerOfP2PNode(msgType enum.MsgType, data string, client *Client) (retData
 			return string(retData), nil
 		}
 		defaultErr = err
-	case enum.MsgType_CommitmentTxSigned_ToAliceSign_353:
-		node, needNoticeAlice, err := service.CommitmentTxService.AfterBobSignCommitmentTransactionAtAliceSide(data, client.User)
+	case enum.MsgType_CommitmentTxSigned_ToAliceSign_352:
+		node, needNoticeAlice, err := service.CommitmentTxService.OnGetBobC2bPartialSignTxAtAliceSide(data, client.User)
 		if err == nil {
 			status = true
 			retData, _ := json.Marshal(node)
@@ -77,8 +77,8 @@ func routerOfP2PNode(msgType enum.MsgType, data string, client *Client) (retData
 			}
 		}
 		defaultErr = err
-	case enum.MsgType_CommitmentTxSigned_SecondToBobSign_354:
-		node, err := service.CommitmentTxSignedService.AfterAliceSignCommitmentTransactionAtBobSide(data, client.User)
+	case enum.MsgType_CommitmentTxSigned_SecondToBobSign_353:
+		node, err := service.CommitmentTxSignedService.OnGetAliceSignC2bTransactionAtBobSide(data, client.User)
 		if err == nil {
 			status = true
 			retData, _ := json.Marshal(node)

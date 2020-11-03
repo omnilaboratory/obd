@@ -200,6 +200,10 @@ func (client *Client) send(method string, params []interface{}) (result string, 
 
 func (client *Client) CheckMultiSign(sendedInput bool, hex string, step int) (pass bool, err error) {
 
+	if len(hex) == 0 {
+		return false, errors.New("Empty hex")
+	}
+
 	result, err := client.TestMemPoolAccept(hex)
 	if err != nil {
 		return false, err

@@ -136,7 +136,10 @@ func (client *Client) Read() {
 					msg.Type == enum.MsgType_FundingCreate_SendAssetFundingCreated_34 || msg.Type == enum.MsgType_FundingSign_SendAssetFundingSigned_35 ||
 					msg.Type == enum.MsgType_ClientSign_Duplex_BtcFundingMinerRDTx_341 ||
 					msg.Type == enum.MsgType_CommitmentTx_SendCommitmentTransactionCreated_351 ||
+					msg.Type == enum.MsgType_CommitmentTx_ClientSign_AliceC2aRawTx_1351 ||
 					msg.Type == enum.MsgType_CommitmentTxSigned_SendRevokeAndAcknowledgeCommitmentTransaction_352 ||
+					msg.Type == enum.MsgType_ClientSign_SignC2bRawTx_1352 ||
+					msg.Type == enum.MsgType_ClientSign_AliceSignC2b_Rd_1353 ||
 					msg.Type == enum.MsgType_HTLC_SendAddHTLC_40 || msg.Type == enum.MsgType_HTLC_SendAddHTLCSigned_41 ||
 					msg.Type == enum.MsgType_HTLC_SendVerifyR_45 || msg.Type == enum.MsgType_HTLC_SendSignVerifyR_46 ||
 					msg.Type == enum.MsgType_HTLC_SendRequestCloseCurrTx_49 || msg.Type == enum.MsgType_HTLC_SendCloseSigned_50 ||
@@ -192,7 +195,7 @@ func (client *Client) Read() {
 
 					//-35 -350
 					if msg.Type == enum.MsgType_FundingSign_SendAssetFundingSigned_35 ||
-						msg.Type == enum.MsgType_ClientSign_Duplex_AssetFunding_RdAndBr_1035 ||
+						msg.Type == enum.MsgType_ClientSign_AssetFunding_RdAndBr_1035 ||
 						msg.Type == enum.MsgType_FundingSign_SendBtcSign_350 {
 						sendType, dataOut, status = client.fundingSignModule(msg)
 						break
@@ -200,6 +203,9 @@ func (client *Client) Read() {
 
 					//-351 及查询
 					if msg.Type == enum.MsgType_CommitmentTx_SendCommitmentTransactionCreated_351 ||
+						msg.Type == enum.MsgType_CommitmentTx_ClientSign_AliceC2aRawTx_1351 ||
+						msg.Type == enum.MsgType_ClientSign_AliceSignC2b_353 ||
+						msg.Type == enum.MsgType_ClientSign_AliceSignC2b_Rd_1353 ||
 						(msg.Type <= enum.MsgType_CommitmentTx_ItemsByChanId_3200 &&
 							msg.Type >= enum.MsgType_CommitmentTx_AllBRByChanId_3208) {
 						sendType, dataOut, status = client.commitmentTxModule(msg)
@@ -214,7 +220,9 @@ func (client *Client) Read() {
 					}
 
 					//-352
-					if msg.Type == enum.MsgType_CommitmentTxSigned_SendRevokeAndAcknowledgeCommitmentTransaction_352 {
+					if msg.Type == enum.MsgType_CommitmentTxSigned_SendRevokeAndAcknowledgeCommitmentTransaction_352 ||
+						msg.Type == enum.MsgType_ClientSign_SignC2bRawTx_1352 ||
+						msg.Type == enum.MsgType_ClientSign_BobSinedC2b_Rd_2353 {
 						sendType, dataOut, status = client.commitmentTxSignModule(msg)
 						break
 					}
@@ -411,9 +419,6 @@ func getDataFromP2PSomeone(msg bean.RequestMessage) error {
 }
 
 func p2pMiddleNodeTransferData(msg *bean.RequestMessage, itemClient Client, data string, retData string) string {
-	//需要节点之间本身的通信 bob的节点响应352后，发送353到alice节点，353处理完成后，需要对353的结果消息进行分发
-	//当前的353消息本身是从bob发给Alice的
-
 	if msg.Type == enum.MsgType_ChannelOpen_32 {
 		msg.Type = enum.MsgType_RecvChannelOpen_32
 	}
@@ -454,29 +459,29 @@ func p2pMiddleNodeTransferData(msg *bean.RequestMessage, itemClient Client, data
 		msg.Type = enum.MsgType_HTLC_RecvAddHTLC_40
 	}
 
-	if msg.Type == enum.MsgType_CommitmentTxSigned_ToAliceSign_353 {
+	if msg.Type == enum.MsgType_CommitmentTxSigned_ToAliceSign_352 {
 		//	发给bob的信息
-		if gjson.Parse(retData).Get("bobData").Exists() {
-			newMsg := bean.RequestMessage{}
-			newMsg.Type = enum.MsgType_CommitmentTxSigned_SecondToBobSign_354
-			newMsg.SenderUserPeerId = itemClient.User.PeerId
-			newMsg.SenderNodePeerId = p2PLocalPeerId
-			newMsg.RecipientUserPeerId = msg.SenderUserPeerId
-			newMsg.RecipientNodePeerId = msg.SenderNodePeerId
-			payeeData := gjson.Parse(retData).Get("bobData").String()
-			//转发给bob，
-			_ = itemClient.sendDataToP2PUser(newMsg, true, payeeData)
-		}
+		//if gjson.Parse(retData).Get("bobData").Exists() {
+		//	newMsg := bean.RequestMessage{}
+		//	newMsg.Type = enum.MsgType_CommitmentTxSigned_SecondToBobSign_353
+		//	newMsg.SenderUserPeerId = itemClient.User.PeerId
+		//	newMsg.SenderNodePeerId = p2PLocalPeerId
+		//	newMsg.RecipientUserPeerId = msg.SenderUserPeerId
+		//	newMsg.RecipientNodePeerId = msg.SenderNodePeerId
+		//	payeeData := gjson.Parse(retData).Get("bobData").String()
+		//	//转发给bob，
+		//	_ = itemClient.sendDataToP2PUser(newMsg, true, payeeData)
+		//}
 
 		//发给alice
 		msg.Type = enum.MsgType_CommitmentTxSigned_RecvRevokeAndAcknowledgeCommitmentTransaction_352
-		payerData := gjson.Parse(retData).Get("aliceData").String()
+		payerData := gjson.Parse(retData).String()
 		data = payerData
 	}
 
-	//当354处理完成，就改成352的返回 353和354对用户是透明的
-	if msg.Type == enum.MsgType_CommitmentTxSigned_SecondToBobSign_354 {
-		msg.Type = enum.MsgType_CommitmentTxSigned_SendRevokeAndAcknowledgeCommitmentTransaction_352
+	//当353处理完成，就改成110353 推送给bob的客户端
+	if msg.Type == enum.MsgType_CommitmentTxSigned_SecondToBobSign_353 {
+		msg.Type = enum.MsgType_ClientSign_BobC2b_Rd_353
 		msg.SenderUserPeerId = msg.RecipientUserPeerId
 		msg.SenderNodePeerId = msg.RecipientNodePeerId
 	}

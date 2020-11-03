@@ -427,6 +427,44 @@ func signRdTx(tx storm.Node, channelInfo *dao.ChannelInfo, signedRsmcHex string,
 	return nil
 }
 
+func saveRdTx(tx storm.Node, channelInfo *dao.ChannelInfo, signedRsmcHex string, signedRdHex string, latestCommitmentTxInfo *dao.CommitmentTransaction, outputAddress string, user *bean.User) (err error) {
+	inputs, err := getInputsForNextTxByParseTxHashVout(signedRsmcHex, latestCommitmentTxInfo.RSMCMultiAddress, latestCommitmentTxInfo.RSMCMultiAddressScriptPubKey, latestCommitmentTxInfo.RSMCRedeemScript)
+	if err != nil || len(inputs) == 0 {
+		log.Println(err)
+		return err
+	}
+	result, err := rpcClient.TestMemPoolAccept(signedRdHex)
+	if err != nil {
+		return err
+	}
+	if gjson.Parse(result).Array()[0].Get("allowed").Bool() == false {
+		if gjson.Parse(result).Array()[0].Get("reject-reason").String() != "missing-inputs" {
+			return errors.New(gjson.Parse(result).Array()[0].Get("reject-reason").String())
+		}
+	}
+
+	aliceRdTxid := checkHexOutputAddressFromOmniDecode(signedRdHex, inputs, outputAddress)
+	if aliceRdTxid == "" {
+		return errors.New(enum.Tips_common_wrongAddressOfRD)
+	}
+	rdTransaction, err := createRDTx(user.PeerId, channelInfo, latestCommitmentTxInfo, outputAddress, user)
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+	rdTransaction.RDType = 0
+	rdTransaction.TxHex = signedRdHex
+	rdTransaction.Txid = aliceRdTxid
+	rdTransaction.CurrState = dao.TxInfoState_CreateAndSign
+	rdTransaction.SignAt = time.Now()
+	err = tx.Save(rdTransaction)
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+	return nil
+}
+
 func signHTD1bTx(tx storm.Node, signedHtlcHex string, htd1bHex string, latestCcommitmentTxInfo dao.CommitmentTransaction, outputAddress string, user *bean.User) (err error) {
 	inputs, err := getInputsForNextTxByParseTxHashVout(signedHtlcHex, latestCcommitmentTxInfo.HTLCMultiAddress, latestCcommitmentTxInfo.HTLCMultiAddressScriptPubKey, latestCcommitmentTxInfo.HTLCRedeemScript)
 	if err != nil || len(inputs) == 0 {

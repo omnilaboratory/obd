@@ -39,6 +39,29 @@ func (client *Client) commitmentTxModule(msg bean.RequestMessage) (enum.SendTarg
 		}
 		msg.Type = enum.MsgType_CommitmentTx_SendCommitmentTransactionCreated_351
 		client.sendToMyself(msg.Type, status, data)
+	case enum.MsgType_CommitmentTx_ClientSign_AliceC2aRawTx_1351:
+		retData, err := service.CommitmentTxService.OnAliceSignC2aRawTxAtAliceSide(msg, client.User)
+		if err != nil {
+			data = err.Error()
+		} else {
+			bytes, err := json.Marshal(retData)
+			if err != nil {
+				data = err.Error()
+			} else {
+				data = string(bytes)
+				status = true
+			}
+		}
+		if status {
+			msg.Type = enum.MsgType_CommitmentTx_CommitmentTransactionCreated_351
+			err = client.sendDataToP2PUser(msg, status, data)
+			if err != nil {
+				data = err.Error()
+				status = false
+			}
+		}
+		msg.Type = enum.MsgType_CommitmentTx_ClientSign_AliceC2aRawTx_1351
+		client.sendToMyself(msg.Type, status, data)
 	case enum.MsgType_CommitmentTx_ItemsByChanId_3200:
 		nodes, count, err := service.CommitmentTxService.GetItemsByChannelId(msg.Data, client.User)
 		if err != nil {
@@ -170,6 +193,51 @@ func (client *Client) commitmentTxModule(msg bean.RequestMessage) (enum.SendTarg
 			}
 		}
 		client.sendToMyself(msg.Type, status, data)
+	case enum.MsgType_ClientSign_AliceSignC2b_353:
+		node, err := service.CommitmentTxService.OnAliceSignedC2bTxAtAliceSide(msg.Data, client.User)
+		if err != nil {
+			data = err.Error()
+		} else {
+			bytes, err := json.Marshal(node)
+			if err != nil {
+				data = err.Error()
+			} else {
+				data = string(bytes)
+				status = true
+			}
+		}
+		client.sendToMyself(msg.Type, status, data)
+	case enum.MsgType_ClientSign_AliceSignC2b_Rd_1353:
+		aliceData, bobData, _, err := service.CommitmentTxService.OnAliceSignedC2b_RDTxAtAliceSide(msg.Data, client.User)
+		if err != nil {
+			data = err.Error()
+		} else {
+			bobBytes, err := json.Marshal(bobData)
+			if err != nil {
+				data = err.Error()
+			} else {
+				data = string(bobBytes)
+				status = true
+			}
+			if status {
+				msg.Type = enum.MsgType_CommitmentTxSigned_SecondToBobSign_353
+				err = client.sendDataToP2PUser(msg, status, data)
+				if err != nil {
+					data = err.Error()
+					status = false
+				}
+			}
+
+			aliceBytes, err := json.Marshal(aliceData)
+			if err != nil {
+				data = err.Error()
+			} else {
+				data = string(aliceBytes)
+				status = true
+			}
+		}
+		msg.Type = enum.MsgType_ClientSign_AliceSignC2b_Rd_1353
+		client.sendToMyself(msg.Type, status, data)
 	}
 	return sendType, []byte(data), status
 }
@@ -179,7 +247,7 @@ func (client *Client) commitmentTxSignModule(msg bean.RequestMessage) (enum.Send
 	data := ""
 	switch msg.Type {
 	case enum.MsgType_CommitmentTxSigned_SendRevokeAndAcknowledgeCommitmentTransaction_352:
-		retData, _, err := service.CommitmentTxSignedService.RevokeAndAcknowledgeCommitmentTransaction(msg, client.User)
+		retData, needSignC2b, err := service.CommitmentTxSignedService.RevokeAndAcknowledgeCommitmentTransaction(msg, client.User)
 		if err != nil {
 			data = err.Error()
 		} else {
@@ -192,21 +260,55 @@ func (client *Client) commitmentTxSignModule(msg bean.RequestMessage) (enum.Send
 			}
 		}
 		if status {
-			msg.Type = enum.MsgType_CommitmentTxSigned_ToAliceSign_353
+			if needSignC2b == false {
+				msg.Type = enum.MsgType_CommitmentTxSigned_ToAliceSign_352
+				err = client.sendDataToP2PUser(msg, status, data)
+				if err != nil {
+					status = false
+					data = err.Error()
+				}
+			}
+		}
+		msg.Type = enum.MsgType_CommitmentTxSigned_SendRevokeAndAcknowledgeCommitmentTransaction_352
+		client.sendToMyself(msg.Type, status, data)
+
+	case enum.MsgType_ClientSign_SignC2bRawTx_1352:
+		retData, err := service.CommitmentTxSignedService.OnBobSignC2bTransactionAtBobSide(msg.Data, client.User)
+		if err != nil {
+			data = err.Error()
+		} else {
+			bytes, err := json.Marshal(retData)
+			if err != nil {
+				data = err.Error()
+			} else {
+				data = string(bytes)
+				status = true
+			}
+		}
+		if status {
+			msg.Type = enum.MsgType_CommitmentTxSigned_ToAliceSign_352
 			err = client.sendDataToP2PUser(msg, status, data)
 			if err != nil {
 				status = false
 				data = err.Error()
-			} else {
-				if retData.Approval == false {
-					msg.Type = enum.MsgType_CommitmentTxSigned_SendRevokeAndAcknowledgeCommitmentTransaction_352
-					client.sendToMyself(msg.Type, status, data)
-				}
 			}
 		}
-		if status == false {
-			client.sendToMyself(msg.Type, status, data)
+		msg.Type = enum.MsgType_ClientSign_SignC2bRawTx_1352
+		client.sendToMyself(msg.Type, status, data)
+	case enum.MsgType_ClientSign_BobSinedC2b_Rd_2353:
+		retData, err := service.CommitmentTxSignedService.BobSignC2b_RdAtBobSide(msg.Data, client.User)
+		if err != nil {
+			data = err.Error()
+		} else {
+			bytes, err := json.Marshal(retData)
+			if err != nil {
+				data = err.Error()
+			} else {
+				data = string(bytes)
+				status = true
+			}
 		}
+		client.sendToMyself(msg.Type, status, data)
 	}
 	return sendType, []byte(data), status
 }

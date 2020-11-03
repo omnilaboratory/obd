@@ -370,7 +370,7 @@ func (client *Client) fundingSignModule(msg bean.RequestMessage) (enum.SendTarge
 		}
 		msg.Type = enum.MsgType_FundingSign_SendAssetFundingSigned_35
 		client.sendToMyself(msg.Type, status, data)
-	case enum.MsgType_ClientSign_Duplex_AssetFunding_RdAndBr_1035:
+	case enum.MsgType_ClientSign_AssetFunding_RdAndBr_1035:
 		aliceData, bobData, err := service.FundingTransactionService.OnBobSignedRDAndBR(msg.Data, client.User)
 		if err != nil {
 			data = err.Error()
@@ -401,7 +401,7 @@ func (client *Client) fundingSignModule(msg bean.RequestMessage) (enum.SendTarge
 				}
 			}
 		}
-		msg.Type = enum.MsgType_ClientSign_Duplex_AssetFunding_RdAndBr_1035
+		msg.Type = enum.MsgType_ClientSign_AssetFunding_RdAndBr_1035
 		client.sendToMyself(msg.Type, status, data)
 	default:
 		sendType = enum.SendTargetType_SendToNone

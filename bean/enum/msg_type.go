@@ -142,18 +142,24 @@ const (
 	MsgType_FundingCreate_AssetFundingCreated_34      MsgType = -34
 	MsgType_FundingCreate_RecvAssetFundingCreated_34  MsgType = -110034
 
-	MsgType_FundingSign_SendAssetFundingSigned_35       MsgType = -100035
-	MsgType_ClientSign_Duplex_AssetFunding_RdAndBr_1035 MsgType = -101035
-	MsgType_FundingSign_AssetFundingSigned_35           MsgType = -35
-	MsgType_FundingSign_RecvAssetFundingSigned_35       MsgType = -110035
+	MsgType_FundingSign_SendAssetFundingSigned_35 MsgType = -100035
+	MsgType_ClientSign_AssetFunding_RdAndBr_1035  MsgType = -101035
+	MsgType_FundingSign_AssetFundingSigned_35     MsgType = -35
+	MsgType_FundingSign_RecvAssetFundingSigned_35 MsgType = -110035
 
 	MsgType_CommitmentTx_SendCommitmentTransactionCreated_351                    MsgType = -100351
+	MsgType_CommitmentTx_ClientSign_AliceC2aRawTx_1351                           MsgType = -101351
 	MsgType_CommitmentTx_CommitmentTransactionCreated_351                        MsgType = -351
 	MsgType_CommitmentTx_RecvCommitmentTransactionCreated_351                    MsgType = -110351
 	MsgType_CommitmentTxSigned_SendRevokeAndAcknowledgeCommitmentTransaction_352 MsgType = -100352
-	MsgType_CommitmentTxSigned_ToAliceSign_353                                   MsgType = -353
-	MsgType_CommitmentTxSigned_SecondToBobSign_354                               MsgType = -354
+	MsgType_ClientSign_SignC2bRawTx_1352                                         MsgType = -101352
+	MsgType_CommitmentTxSigned_ToAliceSign_352                                   MsgType = -352
 	MsgType_CommitmentTxSigned_RecvRevokeAndAcknowledgeCommitmentTransaction_352 MsgType = -110352
+	MsgType_ClientSign_AliceSignC2b_353                                          MsgType = -100353
+	MsgType_ClientSign_AliceSignC2b_Rd_1353                                      MsgType = -101353
+	MsgType_CommitmentTxSigned_SecondToBobSign_353                               MsgType = -353
+	MsgType_ClientSign_BobC2b_Rd_353                                             MsgType = -110353
+	MsgType_ClientSign_BobSinedC2b_Rd_2353                                       MsgType = -102353
 
 	MsgType_SendCloseChannelRequest_38 MsgType = -100038
 	MsgType_CloseChannelRequest_38     MsgType = -38
@@ -324,13 +330,23 @@ func CheckExist(msgType MsgType) bool {
 		return true
 	case MsgType_FundingSign_SendAssetFundingSigned_35:
 		return true
-	case MsgType_ClientSign_Duplex_AssetFunding_RdAndBr_1035:
+	case MsgType_ClientSign_AssetFunding_RdAndBr_1035:
 		return true
 	case MsgType_FundingSign_SendBtcSign_350:
 		return true
 	case MsgType_CommitmentTx_SendCommitmentTransactionCreated_351:
 		return true
+	case MsgType_CommitmentTx_ClientSign_AliceC2aRawTx_1351:
+		return true
 	case MsgType_CommitmentTxSigned_SendRevokeAndAcknowledgeCommitmentTransaction_352:
+		return true
+	case MsgType_ClientSign_SignC2bRawTx_1352:
+		return true
+	case MsgType_ClientSign_AliceSignC2b_353:
+		return true
+	case MsgType_ClientSign_AliceSignC2b_Rd_1353:
+		return true
+	case MsgType_ClientSign_BobSinedC2b_Rd_2353:
 		return true
 	case MsgType_CommitmentTx_ItemsByChanId_3200:
 		return true
