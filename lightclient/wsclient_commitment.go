@@ -40,7 +40,7 @@ func (client *Client) commitmentTxModule(msg bean.RequestMessage) (enum.SendTarg
 		msg.Type = enum.MsgType_CommitmentTx_SendCommitmentTransactionCreated_351
 		client.sendToMyself(msg.Type, status, data)
 	case enum.MsgType_ClientSign_CommitmentTx_AliceSignC2a_360:
-		retData, err := service.CommitmentTxService.OnAliceSignC2aRawTxAtAliceSide(msg, client.User)
+		toAlice, retData, err := service.CommitmentTxService.OnAliceSignC2aRawTxAtAliceSide(msg, client.User)
 		if err != nil {
 			data = err.Error()
 		} else {
@@ -51,15 +51,27 @@ func (client *Client) commitmentTxModule(msg bean.RequestMessage) (enum.SendTarg
 				data = string(bytes)
 				status = true
 			}
-		}
-		if status {
-			msg.Type = enum.MsgType_CommitmentTx_CommitmentTransactionCreated_351
-			err = client.sendDataToP2PUser(msg, status, data)
-			if err != nil {
-				data = err.Error()
-				status = false
+
+			if status {
+				msg.Type = enum.MsgType_CommitmentTx_CommitmentTransactionCreated_351
+				err = client.sendDataToP2PUser(msg, status, data)
+				if err != nil {
+					data = err.Error()
+					status = false
+				}
+			}
+
+			if status {
+				bytes, err := json.Marshal(toAlice)
+				if err != nil {
+					data = err.Error()
+				} else {
+					data = string(bytes)
+					status = true
+				}
 			}
 		}
+
 		msg.Type = enum.MsgType_ClientSign_CommitmentTx_AliceSignC2a_360
 		client.sendToMyself(msg.Type, status, data)
 	case enum.MsgType_CommitmentTx_ItemsByChanId_3200:
@@ -273,7 +285,7 @@ func (client *Client) commitmentTxSignModule(msg bean.RequestMessage) (enum.Send
 		client.sendToMyself(msg.Type, status, data)
 
 	case enum.MsgType_ClientSign_CommitmentTx_BobSignC2b_361:
-		retData, err := service.CommitmentTxSignedService.OnBobSignC2bTransactionAtBobSide(msg.Data, client.User)
+		toBobData, retData, err := service.CommitmentTxSignedService.OnBobSignC2bTransactionAtBobSide(msg.Data, client.User)
 		if err != nil {
 			data = err.Error()
 		} else {
@@ -284,13 +296,24 @@ func (client *Client) commitmentTxSignModule(msg bean.RequestMessage) (enum.Send
 				data = string(bytes)
 				status = true
 			}
-		}
-		if status {
-			msg.Type = enum.MsgType_CommitmentTxSigned_ToAliceSign_352
-			err = client.sendDataToP2PUser(msg, status, data)
-			if err != nil {
-				status = false
-				data = err.Error()
+
+			if status {
+				msg.Type = enum.MsgType_CommitmentTxSigned_ToAliceSign_352
+				err = client.sendDataToP2PUser(msg, status, data)
+				if err != nil {
+					status = false
+					data = err.Error()
+				}
+			}
+
+			if status {
+				bytes, err := json.Marshal(toBobData)
+				if err != nil {
+					data = err.Error()
+				} else {
+					data = string(bytes)
+					status = true
+				}
 			}
 		}
 		msg.Type = enum.MsgType_ClientSign_CommitmentTx_BobSignC2b_361

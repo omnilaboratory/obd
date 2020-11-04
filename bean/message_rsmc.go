@@ -15,10 +15,9 @@ type NeedAliceSignRsmcDataForC2a struct {
 	ChannelId           string                  `json:"channel_id"` //the global channel id.
 	RsmcRawData         NeedClientSignRawTxData `json:"rsmc_raw_data"`
 	CounterpartyRawData NeedClientSignRawTxData `json:"counterparty_raw_data"`
-	typeLengthValue
 }
 
-//消息 -101351(alice to obd) alice发给obd (Alice签名C2a的结果)
+//消息 -100360(alice to obd) alice发给obd (Alice签名C2a的结果)
 type AliceSignedRsmcDataForC2a struct {
 	ChannelId             string `json:"channel_id"`
 	RsmcSignedHex         string `json:"rsmc_signed_hex"`
@@ -26,17 +25,23 @@ type AliceSignedRsmcDataForC2a struct {
 	typeLengthValue
 }
 
+//返回值 -100360(alice to obd) alice发给obd (Alice签名C2a的结果)
+type AliceSignedRsmcDataForC2aResult struct {
+	ChannelId             string  `json:"channel_id"` //the global channel id.
+	CommitmentTxHash      string  `json:"commitment_tx_hash"`
+	Amount                float64 `json:"amount"` //amount of the payment
+	CurrTempAddressPubKey string  `json:"curr_temp_address_pub_key"`
+}
+
 // 消息 p2p 351 p2p (obd of alice to obd of bob) 发送给bob的obd的数据 alice请求rsmc转账
 type AliceRequestToCreateCommitmentTxOfP2p struct {
-	ChannelId                 string                  `json:"channel_id"` //the global channel id.
-	CommitmentTxHash          string                  `json:"commitment_tx_hash"`
-	Amount                    float64                 `json:"amount"` //amount of the payment
+	AliceSignedRsmcDataForC2aResult
 	LastTempAddressPrivateKey string                  `json:"last_temp_address_private_key"`
 	RsmcRawData               NeedClientSignRawTxData `json:"rsmc_raw_data"`
 	CounterpartyRawData       NeedClientSignRawTxData `json:"counterparty_raw_data"`
-	CurrTempAddressPubKey     string                  `json:"curr_temp_address_pub_key"`
 	PayerNodeAddress          string                  `json:"payer_node_address"`
 	PayerPeerId               string                  `json:"payer_peer_id"`
+	typeLengthValue
 }
 
 // 返回值 -110351  (obd to bob) obd推给bob  bob所在的obd发送给bob的需要bob签名的数据：C2a的rsmc和toB
@@ -65,10 +70,9 @@ type NeedBobSignRawDataForC2b struct {
 	C2bCounterpartyRawData NeedClientSignRawTxData   `json:"c2b_counterparty_raw_data"`
 	C2aRdRawData           NeedClientSignRawTxData   `json:"c2a_rd_raw_data"`
 	C2aBrRawData           NeedClientSignRawBRTxData `json:"c2a_br_raw_data"`
-	typeLengthValue
 }
 
-// 消息 101352 （bob to obd） bob对C2b的签名结果
+// 消息 100361 （bob to obd） bob对C2b的签名结果
 type BobSignedRsmcDataForC2b struct {
 	ChannelId                string `json:"channel_id"` //the global channel id.
 	C2bRsmcSignedHex         string `json:"c2b_rsmc_signed_hex"`
@@ -79,11 +83,16 @@ type BobSignedRsmcDataForC2b struct {
 	typeLengthValue
 }
 
-//p2p消息 -101352 -> 352 (obd of bob to obd of alice) bob的obd把c2b的相关信息通过p2p推送过alice的obd
+// 消息 100361 （bob to obd） bob对C2b的签名结果
+type BobSignedRsmcDataForC2bResult struct {
+	ChannelId        string `json:"channel_id"` //the global channel id.
+	CommitmentTxHash string `json:"commitment_tx_hash"`
+	Approval         bool   `json:"approval"`
+}
+
+//p2p消息 -100361 -> 352 (obd of bob to obd of alice) bob的obd把c2b的相关信息通过p2p推送过alice的obd
 type PayeeSignCommitmentTxOfP2p struct {
-	ChannelId                    string                  `json:"channel_id"` //the global channel id.
-	CommitmentTxHash             string                  `json:"commitment_tx_hash"`
-	Approval                     bool                    `json:"approval"`
+	BobSignedRsmcDataForC2bResult
 	C2bRsmcTxData                NeedClientSignRawTxData `json:"c2b_rsmc_tx_data"`
 	C2bCounterpartyTxData        NeedClientSignRawTxData `json:"c2b_counterparty_tx_data"`
 	LastTempAddressPrivateKey    string                  `json:"last_temp_address_private_key"`
@@ -100,10 +109,9 @@ type NeedAliceSignRmscTxForC2b struct {
 	C2bRsmcPartialData         NeedClientSignRawTxData `json:"c2b_rsmc_partial_data"`
 	C2bCounterpartyPartialData NeedClientSignRawTxData `json:"c2b_counterparty_partial_data"`
 	C2aRdPartialData           NeedClientSignRawTxData `json:"c2a_rd_partial_data"`
-	typeLengthValue
 }
 
-// 消息 100353（alice to obd） Alice完成对C2b的相关信息签名
+// 消息 100362（alice to obd） Alice完成对C2b的相关信息签名
 type AliceSignedRmscTxForC2b struct {
 	ChannelId                string `json:"channel_id"` //the global channel id.
 	C2bRsmcSignedHex         string `json:"c2b_rsmc_signed_hex"`
@@ -112,15 +120,14 @@ type AliceSignedRmscTxForC2b struct {
 	typeLengthValue
 }
 
-// 返回值 100353的返回值（obd to Alice） obd推送给alice，为c2b的Rd和BR签名
+// 返回值 100362的返回值（obd to Alice） obd推送给alice，为c2b的Rd和BR签名
 type NeedAliceSignRdTxForC2b struct {
 	ChannelId    string                    `json:"channel_id"` //the global channel id.
 	C2bRdRawData NeedClientSignRawTxData   `json:"c2b_rd_raw_data"`
 	C2bBrRawData NeedClientSignRawBRTxData `json:"c2b_br_raw_data"`
-	typeLengthValue
 }
 
-// 消息 101353（alice to obd） Alice完成对C2b的Rd和BR的相关信息签名
+// 消息 100363（alice to obd） Alice完成对C2b的Rd和BR的相关信息签名
 type AliceSignedRdTxForC2b struct {
 	ChannelId      string `json:"channel_id"`
 	C2bRdSignedHex string `json:"c2b_rd_signed_hex"`
@@ -136,17 +143,15 @@ type AliceSignedC2bTxDataP2p struct {
 	C2bRsmcSignedHex         string                  `json:"c2b_rsmc_signed_hex"`
 	C2bCounterpartySignedHex string                  `json:"c2b_counterparty_signed_hex"`
 	C2bRdPartialData         NeedClientSignRawTxData `json:"c2b_rd_partial_data"`
-	typeLengthValue
 }
 
 // 返回值 110353（obd to bob） 353给bob的返回值 把需要签名的rd交易推给bob
 type NeedBobSignRdTxForC2b struct {
 	ChannelId        string                  `json:"channel_id"`
 	C2bRdPartialData NeedClientSignRawTxData `json:"c2b_rd_partial_data"`
-	typeLengthValue
 }
 
-// 消息 102353（to obd） bob签名rd完成后的结果
+// 消息 100364（to obd） bob签名rd完成后的结果
 type BobSignedRdTxForC2b struct {
 	ChannelId      string `json:"channel_id"`
 	C2bRdSignedHex string `json:"c2b_rd_signed_hex"`

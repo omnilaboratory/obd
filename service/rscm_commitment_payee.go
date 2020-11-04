@@ -417,13 +417,13 @@ func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction
 	return needSignData, true, err
 }
 
-// step 5 协议号：101352 完成后推送352协议 bob对C2b的Rsmc，toBob和c2a的Rd和C2a的Br进行签名
-func (this *commitmentTxSignedManager) OnBobSignC2bTransactionAtBobSide(data string, user *bean.User) (retData *bean.PayeeSignCommitmentTxOfP2p, err error) {
+// step 5 协议号：100361 完成后推送352协议 bob对C2b的Rsmc，toBob和c2a的Rd和C2a的Br进行签名
+func (this *commitmentTxSignedManager) OnBobSignC2bTransactionAtBobSide(data string, user *bean.User) (toBob, retData interface{}, err error) {
 
 	if tool.CheckIsString(&data) == false {
 		err = errors.New(enum.Tips_common_empty + "msg.data")
 		log.Println(err)
-		return nil, err
+		return nil, nil, err
 	}
 	signedDataForC2b := bean.BobSignedRsmcDataForC2b{}
 	_ = json.Unmarshal([]byte(data), &signedDataForC2b)
@@ -431,20 +431,20 @@ func (this *commitmentTxSignedManager) OnBobSignC2bTransactionAtBobSide(data str
 	if tool.CheckIsString(&signedDataForC2b.ChannelId) == false {
 		err = errors.New(enum.Tips_common_empty + "channel_id")
 		log.Println(err)
-		return nil, err
+		return nil, nil, err
 	}
 
 	//得到step4缓存的数据
 	p2pData := tempRsmcSignP2pData[user.PeerId+"_"+signedDataForC2b.ChannelId]
 	if len(p2pData.ChannelId) == 0 {
-		return nil, errors.New(enum.Tips_common_wrong + "channel_id")
+		return nil, nil, errors.New(enum.Tips_common_wrong + "channel_id")
 	}
 
 	if tool.CheckIsString(&p2pData.C2bRsmcTxData.Hex) {
 		if pass, _ := rpcClient.CheckMultiSign(true, signedDataForC2b.C2bRsmcSignedHex, 1); pass == false {
 			err = errors.New(enum.Tips_common_wrong + "signed c2b_rsmc_signed_hex")
 			log.Println(err)
-			return nil, err
+			return nil, nil, err
 		}
 	}
 
@@ -452,7 +452,7 @@ func (this *commitmentTxSignedManager) OnBobSignC2bTransactionAtBobSide(data str
 		if pass, _ := rpcClient.CheckMultiSign(true, signedDataForC2b.C2bCounterpartySignedHex, 1); pass == false {
 			err = errors.New(enum.Tips_common_wrong + "signed c2b_counterparty_signed_hex")
 			log.Println(err)
-			return nil, err
+			return nil, nil, err
 		}
 	}
 
@@ -460,7 +460,7 @@ func (this *commitmentTxSignedManager) OnBobSignC2bTransactionAtBobSide(data str
 		if pass, _ := rpcClient.CheckMultiSign(false, signedDataForC2b.C2aRdSignedHex, 1); pass == false {
 			err = errors.New(enum.Tips_common_wrong + "signed c2a_rd_signed_hex")
 			log.Println(err)
-			return nil, err
+			return nil, nil, err
 		}
 	}
 
@@ -468,32 +468,32 @@ func (this *commitmentTxSignedManager) OnBobSignC2bTransactionAtBobSide(data str
 		if pass, _ := rpcClient.CheckMultiSign(false, signedDataForC2b.C2aBrSignedHex, 1); pass == false {
 			err = errors.New(enum.Tips_common_wrong + "c2a_br_signed_hex")
 			log.Println(err)
-			return nil, err
+			return nil, nil, err
 		}
 
 		if signedDataForC2b.C2aBrId == 0 {
 			err = errors.New(enum.Tips_common_wrong + "c2a_br_id")
 			log.Println(err)
-			return nil, err
+			return nil, nil, err
 		}
 	}
 
 	tx, err := user.Db.Begin(true)
 	if err != nil {
 		log.Println(err)
-		return nil, err
+		return nil, nil, err
 	}
 	defer tx.Rollback()
 
 	latestCommitmentTxInfo, err := getLatestCommitmentTxUseDbTx(tx, signedDataForC2b.ChannelId, user.PeerId)
 	if err != nil {
-		return nil, errors.New(enum.Tips_channel_notFoundLatestCommitmentTx)
+		return nil, nil, errors.New(enum.Tips_channel_notFoundLatestCommitmentTx)
 	}
 
 	if len(signedDataForC2b.C2bRsmcSignedHex) > 0 {
 		result, err := rpcClient.TestMemPoolAccept(signedDataForC2b.C2bRsmcSignedHex)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		txid := gjson.Parse(result).Array()[0].Get("txid").Str
 		latestCommitmentTxInfo.RsmcRawTxData.Hex = signedDataForC2b.C2bRsmcSignedHex
@@ -504,7 +504,7 @@ func (this *commitmentTxSignedManager) OnBobSignC2bTransactionAtBobSide(data str
 	if len(signedDataForC2b.C2bCounterpartySignedHex) > 0 {
 		result, err := rpcClient.TestMemPoolAccept(signedDataForC2b.C2bCounterpartySignedHex)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		txid := gjson.Parse(result).Array()[0].Get("txid").Str
 		latestCommitmentTxInfo.ToCounterpartyRawTxData.Hex = signedDataForC2b.C2bCounterpartySignedHex
@@ -515,11 +515,11 @@ func (this *commitmentTxSignedManager) OnBobSignC2bTransactionAtBobSide(data str
 	if len(signedDataForC2b.C2aBrSignedHex) > 0 {
 		_, err = rpcClient.TestMemPoolAccept(signedDataForC2b.C2aBrSignedHex)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		err = updateCurrCommitmentTxRawBR(tx, signedDataForC2b.C2aBrId, signedDataForC2b.C2aBrSignedHex, *user)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 	}
 	_ = tx.Update(latestCommitmentTxInfo)
@@ -530,7 +530,11 @@ func (this *commitmentTxSignedManager) OnBobSignC2bTransactionAtBobSide(data str
 	p2pData.C2bCounterpartyTxData.Hex = signedDataForC2b.C2bCounterpartySignedHex
 	p2pData.C2aRdTxData.Hex = signedDataForC2b.C2aRdSignedHex
 
-	return &p2pData, nil
+	toBobData := bean.BobSignedRsmcDataForC2bResult{}
+	toBobData.ChannelId = p2pData.ChannelId
+	toBobData.CommitmentTxHash = p2pData.CommitmentTxHash
+	toBobData.Approval = p2pData.Approval
+	return toBobData, p2pData, nil
 }
 
 // step 9 协议号：响应353 obd节点接收到alice的二次签名信息 推送110353信息给bob
@@ -553,7 +557,7 @@ func (this *commitmentTxSignedManager) OnGetAliceSignC2bTransactionAtBobSide(dat
 	return needBobSignRdTxForC2b, nil
 }
 
-// step 10 协议号：102353 响应bob的才c2b的Rd的签名
+// step 10 协议号：100364 响应bob的才c2b的Rd的签名
 func (this *commitmentTxSignedManager) BobSignC2b_RdAtBobSide(data string, user *bean.User) (retData interface{}, err error) {
 
 	bobSignedRdTxForC2b := bean.BobSignedRdTxForC2b{}
