@@ -473,7 +473,7 @@ func (client *Client) OmniCreateAndSignRawTransactionUseSingleInput(txType int, 
 		node["txid"] = item["txid"]
 		node["vout"] = item["vout"]
 		node["scriptPubKey"] = item["scriptPubKey"]
-		node["amount"] = item["amount"]
+		node["value"] = item["amount"]
 		if redeemScript != nil {
 			node["redeemScript"] = *redeemScript
 		}
@@ -607,7 +607,7 @@ func (client *Client) OmniCreateAndSignRawTransactionUseRestInput(txType int, fr
 		node["txid"] = item["txid"]
 		node["vout"] = item["vout"]
 		node["scriptPubKey"] = item["scriptPubKey"]
-		node["amount"] = item["amount"]
+		node["value"] = item["amount"]
 		if redeemScript != nil {
 			node["redeemScript"] = *redeemScript
 		}
@@ -733,7 +733,7 @@ func (client *Client) OmniCreateAndSignRawTransactionUseUnsendInput(fromBitCoinA
 		node["txid"] = item.Txid
 		node["vout"] = item.Vout
 		node["scriptPubKey"] = item.ScriptPubKey
-		node["amount"] = item.Amount
+		node["value"] = item.Amount
 		if redeemScript != nil {
 			node["redeemScript"] = *redeemScript
 		}
