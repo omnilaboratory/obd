@@ -315,7 +315,7 @@ func (this *commitmentTxManager) OnGetBobC2bPartialSignTxAtAliceSide(data string
 	}
 	tempP2pData_352[user.PeerId+"_"+dataFromP2p352.ChannelId] = dataFromP2p352
 
-	needAliceSignRmscTxForC2b := bean.NeedAliceSignRmscTxForC2b{}
+	needAliceSignRmscTxForC2b := bean.NeedAliceSignRsmcTxForC2b{}
 	needAliceSignRmscTxForC2b.ChannelId = dataFromP2p352.ChannelId
 	needAliceSignRmscTxForC2b.C2bRsmcPartialData = dataFromP2p352.C2bRsmcTxData
 	needAliceSignRmscTxForC2b.C2bCounterpartyPartialData = dataFromP2p352.C2bCounterpartyTxData
@@ -327,7 +327,7 @@ func (this *commitmentTxManager) OnGetBobC2bPartialSignTxAtAliceSide(data string
 // step 7 协议号：100362(to Obd) 响应Alice对C2b的Rsmc的签名，然后创建C2b的Br和Rd，再推送Rd和Br的Raw交易给alice签名
 func (this *commitmentTxManager) OnAliceSignedC2bTxAtAliceSide(data string, user *bean.User) (retData interface{}, err error) {
 
-	aliceSignedRmscTxForC2b := bean.AliceSignedRmscTxForC2b{}
+	aliceSignedRmscTxForC2b := bean.AliceSignedRsmcTxForC2b{}
 	_ = json.Unmarshal([]byte(data), &aliceSignedRmscTxForC2b)
 
 	dataFromP2p352 := tempP2pData_352[user.PeerId+"_"+aliceSignedRmscTxForC2b.ChannelId]

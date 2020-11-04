@@ -104,7 +104,7 @@ type PayeeSignCommitmentTxOfP2p struct {
 }
 
 // 返回值 110352（obd to Alice）352给Alice的返回值 obd推送给alice，为c2b的Rsmc和toBob，以及c2a的Rd签名
-type NeedAliceSignRmscTxForC2b struct {
+type NeedAliceSignRsmcTxForC2b struct {
 	ChannelId                  string                  `json:"channel_id"` //the global channel id.
 	C2bRsmcPartialData         NeedClientSignRawTxData `json:"c2b_rsmc_partial_data"`
 	C2bCounterpartyPartialData NeedClientSignRawTxData `json:"c2b_counterparty_partial_data"`
@@ -112,7 +112,7 @@ type NeedAliceSignRmscTxForC2b struct {
 }
 
 // 消息 100362（alice to obd） Alice完成对C2b的相关信息签名
-type AliceSignedRmscTxForC2b struct {
+type AliceSignedRsmcTxForC2b struct {
 	ChannelId                string `json:"channel_id"` //the global channel id.
 	C2bRsmcSignedHex         string `json:"c2b_rsmc_signed_hex"`
 	C2bCounterpartySignedHex string `json:"c2b_counterparty_signed_hex"`
