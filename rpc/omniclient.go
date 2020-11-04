@@ -537,7 +537,7 @@ func (client *Client) OmniCreateAndSignRawTransactionUseRestInput(txType int, fr
 			node := make(map[string]interface{})
 			node["txid"] = txid
 			node["vout"] = item.Get("vout").Int()
-			node["amount"] = item.Get("amount").Float()
+			node["value"] = item.Get("amount").Float()
 			node["scriptPubKey"] = item.Get("scriptPubKey").String()
 			if redeemScript != nil {
 				node["redeemScript"] = *redeemScript

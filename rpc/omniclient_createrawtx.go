@@ -86,7 +86,7 @@ func (client *Client) OmniCreateRawTransaction(fromBitCoinAddress string, toBitC
 		//node["address"] = item.Get("address").String()
 		//node["account"] = item.Get("account").String()
 		node["txid"] = item.Get("txid").String()
-		node["vout"] = item.Get("vout").Int()
+		node["amount"] = item.Get("vout").Int()
 		node["scriptPubKey"] = item.Get("scriptPubKey").String()
 		node["amount"] = item.Get("amount").Float()
 		inputs = append(inputs, node)

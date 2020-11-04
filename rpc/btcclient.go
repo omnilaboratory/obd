@@ -94,6 +94,7 @@ func (client *Client) CreateRawTransaction(inputs []map[string]interface{}, outp
 	return client.send("createrawtransaction", []interface{}{inputs, outputs})
 }
 
+//https://developer.bitcoin.org/reference/rpc/signrawtransactionwithkey.html
 func (client *Client) SignRawTransactionWithKey(hex string, privkeys []string, prevtxs []map[string]interface{}, sighashtype string) (result string, err error) {
 	return client.send("signrawtransactionwithkey", []interface{}{hex, privkeys, prevtxs, sighashtype})
 }
