@@ -517,7 +517,10 @@ func (this *commitmentTxSignedManager) OnBobSignC2bTransactionAtBobSide(data str
 		if err != nil {
 			return nil, err
 		}
-		_ = updateCurrCommitmentTxRawBR(tx, signedDataForC2b.C2aBrId, signedDataForC2b.C2aBrSignedHex, *user)
+		err = updateCurrCommitmentTxRawBR(tx, signedDataForC2b.C2aBrId, signedDataForC2b.C2aBrSignedHex, *user)
+		if err != nil {
+			return nil, err
+		}
 	}
 	_ = tx.Update(latestCommitmentTxInfo)
 

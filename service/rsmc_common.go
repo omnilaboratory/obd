@@ -138,19 +138,40 @@ func updateCurrCommitmentTxRawBR(tx storm.Node, id int64, firstSignedBrHex strin
 		First(breachRemedyTransaction)
 	if breachRemedyTransaction.Id > 0 {
 		if len(breachRemedyTransaction.Txid) == 0 {
-			omniDecode, err := rpcClient.OmniDecodeTransaction(firstSignedBrHex)
-			if err != nil {
+			if pass, txid := compareBR(breachRemedyTransaction.BrTxHex, firstSignedBrHex); pass == true {
+				breachRemedyTransaction.Txid = txid
+				breachRemedyTransaction.BrTxHex = firstSignedBrHex
+				_ = tx.Update(breachRemedyTransaction)
 				return nil
 			}
-			brTxId := gjson.Get(omniDecode, "txid").Str
-
-			breachRemedyTransaction.Txid = brTxId
-			breachRemedyTransaction.BrTxHex = firstSignedBrHex
-			_ = tx.Update(breachRemedyTransaction)
-
 		}
 	}
 	return errors.New("not found br by id")
+}
+
+func compareBR(hex1 string, hex2 string) (bool, string) {
+
+	hex1Decode, err := rpcClient.DecodeRawTransaction(hex1)
+	if err != nil {
+		return false, ""
+	}
+	hex2Decode, err := rpcClient.DecodeRawTransaction(hex2)
+	if err != nil {
+		return false, ""
+	}
+	hex1Vin := gjson.Get(hex1Decode, "vin").Array()
+	hex2Vin := gjson.Get(hex2Decode, "vin").Array()
+	if len(hex1Vin) != len(hex2Vin) {
+		return false, ""
+	}
+	for i := 0; i < len(hex1Vin); i++ {
+		vin1txId := hex1Vin[i].Get("txid").Str
+		vin2txId := hex2Vin[i].Get("txid").Str
+		if vin1txId != vin2txId {
+			return false, ""
+		}
+	}
+	return true, gjson.Get(hex2Decode, "txid").Str
 }
 
 //对上一个承诺交易的br进行签名

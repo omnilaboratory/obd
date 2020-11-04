@@ -136,10 +136,10 @@ func (client *Client) Read() {
 					msg.Type == enum.MsgType_FundingCreate_SendAssetFundingCreated_34 || msg.Type == enum.MsgType_FundingSign_SendAssetFundingSigned_35 ||
 					msg.Type == enum.MsgType_ClientSign_Duplex_BtcFundingMinerRDTx_341 ||
 					msg.Type == enum.MsgType_CommitmentTx_SendCommitmentTransactionCreated_351 ||
-					msg.Type == enum.MsgType_CommitmentTx_ClientSign_AliceC2aRawTx_1351 ||
+					msg.Type == enum.MsgType_ClientSign_CommitmentTx_AliceSignC2a_360 ||
 					msg.Type == enum.MsgType_CommitmentTxSigned_SendRevokeAndAcknowledgeCommitmentTransaction_352 ||
-					msg.Type == enum.MsgType_ClientSign_SignC2bRawTx_1352 ||
-					msg.Type == enum.MsgType_ClientSign_AliceSignC2b_Rd_1353 ||
+					msg.Type == enum.MsgType_ClientSign_CommitmentTx_BobSignC2b_361 ||
+					msg.Type == enum.MsgType_ClientSign_CommitmentTx_AliceSignC2b_Rd_363 ||
 					msg.Type == enum.MsgType_HTLC_SendAddHTLC_40 || msg.Type == enum.MsgType_HTLC_SendAddHTLCSigned_41 ||
 					msg.Type == enum.MsgType_HTLC_SendVerifyR_45 || msg.Type == enum.MsgType_HTLC_SendSignVerifyR_46 ||
 					msg.Type == enum.MsgType_HTLC_SendRequestCloseCurrTx_49 || msg.Type == enum.MsgType_HTLC_SendCloseSigned_50 ||
@@ -203,9 +203,9 @@ func (client *Client) Read() {
 
 					//-351 及查询
 					if msg.Type == enum.MsgType_CommitmentTx_SendCommitmentTransactionCreated_351 ||
-						msg.Type == enum.MsgType_CommitmentTx_ClientSign_AliceC2aRawTx_1351 ||
-						msg.Type == enum.MsgType_ClientSign_AliceSignC2b_353 ||
-						msg.Type == enum.MsgType_ClientSign_AliceSignC2b_Rd_1353 ||
+						msg.Type == enum.MsgType_ClientSign_CommitmentTx_AliceSignC2a_360 ||
+						msg.Type == enum.MsgType_ClientSign_CommitmentTx_AliceSignC2b_362 ||
+						msg.Type == enum.MsgType_ClientSign_CommitmentTx_AliceSignC2b_Rd_363 ||
 						(msg.Type <= enum.MsgType_CommitmentTx_ItemsByChanId_3200 &&
 							msg.Type >= enum.MsgType_CommitmentTx_AllBRByChanId_3208) {
 						sendType, dataOut, status = client.commitmentTxModule(msg)
@@ -221,8 +221,8 @@ func (client *Client) Read() {
 
 					//-352
 					if msg.Type == enum.MsgType_CommitmentTxSigned_SendRevokeAndAcknowledgeCommitmentTransaction_352 ||
-						msg.Type == enum.MsgType_ClientSign_SignC2bRawTx_1352 ||
-						msg.Type == enum.MsgType_ClientSign_BobSinedC2b_Rd_354 {
+						msg.Type == enum.MsgType_ClientSign_CommitmentTx_BobSignC2b_361 ||
+						msg.Type == enum.MsgType_ClientSign_CommitmentTx_BobSignC2b_Rd_364 {
 						sendType, dataOut, status = client.commitmentTxSignModule(msg)
 						break
 					}

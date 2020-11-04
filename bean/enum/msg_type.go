@@ -148,18 +148,18 @@ const (
 	MsgType_FundingSign_RecvAssetFundingSigned_35 MsgType = -110035
 
 	MsgType_CommitmentTx_SendCommitmentTransactionCreated_351                    MsgType = -100351
-	MsgType_CommitmentTx_ClientSign_AliceC2aRawTx_1351                           MsgType = -101351
 	MsgType_CommitmentTx_CommitmentTransactionCreated_351                        MsgType = -351
 	MsgType_CommitmentTx_RecvCommitmentTransactionCreated_351                    MsgType = -110351
 	MsgType_CommitmentTxSigned_SendRevokeAndAcknowledgeCommitmentTransaction_352 MsgType = -100352
-	MsgType_ClientSign_SignC2bRawTx_1352                                         MsgType = -101352
 	MsgType_CommitmentTxSigned_ToAliceSign_352                                   MsgType = -352
 	MsgType_CommitmentTxSigned_RecvRevokeAndAcknowledgeCommitmentTransaction_352 MsgType = -110352
-	MsgType_ClientSign_AliceSignC2b_353                                          MsgType = -100353
-	MsgType_ClientSign_AliceSignC2b_Rd_1353                                      MsgType = -101353
 	MsgType_CommitmentTxSigned_SecondToBobSign_353                               MsgType = -353
 	MsgType_ClientSign_BobC2b_Rd_353                                             MsgType = -110353
-	MsgType_ClientSign_BobSinedC2b_Rd_354                                        MsgType = -100354
+	MsgType_ClientSign_CommitmentTx_AliceSignC2a_360                             MsgType = -100360
+	MsgType_ClientSign_CommitmentTx_BobSignC2b_361                               MsgType = -100361
+	MsgType_ClientSign_CommitmentTx_AliceSignC2b_362                             MsgType = -100362
+	MsgType_ClientSign_CommitmentTx_AliceSignC2b_Rd_363                          MsgType = -100363
+	MsgType_ClientSign_CommitmentTx_BobSignC2b_Rd_364                            MsgType = -100364
 
 	MsgType_SendCloseChannelRequest_38 MsgType = -100038
 	MsgType_CloseChannelRequest_38     MsgType = -38
@@ -336,17 +336,17 @@ func CheckExist(msgType MsgType) bool {
 		return true
 	case MsgType_CommitmentTx_SendCommitmentTransactionCreated_351:
 		return true
-	case MsgType_CommitmentTx_ClientSign_AliceC2aRawTx_1351:
+	case MsgType_ClientSign_CommitmentTx_AliceSignC2a_360:
 		return true
 	case MsgType_CommitmentTxSigned_SendRevokeAndAcknowledgeCommitmentTransaction_352:
 		return true
-	case MsgType_ClientSign_SignC2bRawTx_1352:
+	case MsgType_ClientSign_CommitmentTx_BobSignC2b_361:
 		return true
-	case MsgType_ClientSign_AliceSignC2b_353:
+	case MsgType_ClientSign_CommitmentTx_AliceSignC2b_362:
 		return true
-	case MsgType_ClientSign_AliceSignC2b_Rd_1353:
+	case MsgType_ClientSign_CommitmentTx_AliceSignC2b_Rd_363:
 		return true
-	case MsgType_ClientSign_BobSinedC2b_Rd_354:
+	case MsgType_ClientSign_CommitmentTx_BobSignC2b_Rd_364:
 		return true
 	case MsgType_CommitmentTx_ItemsByChanId_3200:
 		return true
