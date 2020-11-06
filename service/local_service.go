@@ -14,9 +14,9 @@ import (
 
 var obdGlobalDB *storm.DB
 
-func Start() {
+func Start(nodeId string) {
 	var err error
-	obdGlobalDB, err = dao.DBService.GetGlobalDB()
+	obdGlobalDB, err = dao.DBService.GetGlobalDB(nodeId)
 	if err != nil {
 		log.Println(err)
 	}

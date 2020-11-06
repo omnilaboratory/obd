@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/lestrrat-go/file-rotatelogs"
+	rotatelogs "github.com/lestrrat-go/file-rotatelogs"
 	"io"
 	"log"
 	"net/http"
@@ -78,7 +78,9 @@ func main() {
 		MaxHeaderBytes: 1 << 20,
 	}
 
-	service.Start()
+	nodeId := tool.GetObdNodeId()
+
+	service.Start(nodeId)
 
 	//synData to tracker
 	go lightclient.SynData()
@@ -86,7 +88,7 @@ func main() {
 	// Timer
 	service.ScheduleService.StartSchedule()
 
-	log.Println("obd " + tool.GetObdNodeId() + " start at  " + config.P2P_hostIp + ":" + strconv.Itoa(config.ServerPort) + " in " + config.ChainNode_Type)
+	log.Println("obd " + nodeId + " start at  " + config.P2P_hostIp + ":" + strconv.Itoa(config.ServerPort) + " in " + config.ChainNode_Type)
 	log.Println("wsAddress: " + bean.CurrObdNodeInfo.WebsocketLink)
 	log.Fatal(server.ListenAndServe())
 }

@@ -15,9 +15,9 @@ type dbManager struct {
 
 var DBService dbManager
 
-func (manager dbManager) GetGlobalDB() (*storm.DB, error) {
+func (manager dbManager) GetGlobalDB(nodeId string) (*storm.DB, error) {
 	if DBService.Db == nil {
-		_dir := "dbdata" + config.ChainNode_Type
+		_dir := "dbdata" + nodeId
 		_ = tool.PathExistsAndCreate(_dir)
 		db, e := storm.Open(_dir + "/" + config.DBname)
 		if e != nil {
