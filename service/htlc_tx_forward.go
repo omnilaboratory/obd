@@ -1181,7 +1181,7 @@ func (service *htlcForwardTxManager) AfterBobSignAddHtlcAtAliceSide_42(msgData s
 		log.Println(err)
 		return nil, true, errors.New("fail to create HTD1b for C3b")
 	}
-	returnData.PayeeHtd1bHex = payeeHTD1bHex
+	returnData.PayeeHtdHex = payeeHTD1bHex
 
 	//为payee 创建hlockHex
 	payeeHlockHex, err := createHtlcLockByHForBobAtPayerSide(*channelInfo, *jsonObjFromPayee, bobSignedHtlcHex, commitmentTransaction.HtlcH, payeeChannelPubKey, payerChannelPubKey, tempAddrPrivateKeyMap[payerChannelPubKey], channelInfo.PropertyId, commitmentTransaction.AmountToHtlc)
@@ -2220,7 +2220,7 @@ func checkHexAndUpdateC3bOn43Protocal(tx storm.Node, jsonObj bean.AfterAliceSign
 	//endregion
 
 	// region  6、签名HTD1b 超时退给alice的钱
-	payeeHTD1bHex := jsonObj.PayeeHtd1bHex
+	payeeHTD1bHex := jsonObj.PayeeHtdHex
 	if tool.CheckIsString(&payeeHTD1bHex) == false {
 		err = errors.New("payeeHTD1bHex is empty at 41 protocol")
 		log.Println(err)
