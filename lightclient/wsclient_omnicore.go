@@ -373,11 +373,10 @@ func (client *Client) omniCoreModule(msg bean.RequestMessage) (enum.SendTargetTy
 					tool.CheckIsString(&sendInfo.ToAddress) &&
 					sendInfo.Amount > 0 {
 					respNode, err := rpcClient.OmniCreateRawTransaction(sendInfo.FromAddress, sendInfo.ToAddress, sendInfo.PropertyId, sendInfo.Amount, sendInfo.MinerFee, 0)
-					respNode["is_multisig"] = false
-
 					if err != nil {
 						data = err.Error()
 					} else {
+						respNode["is_multisig"] = false
 						bytes, _ := json.Marshal(respNode)
 						data = string(bytes)
 						status = true
