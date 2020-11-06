@@ -104,6 +104,7 @@ type FundingTransaction struct {
 type TxInfoState int
 
 const (
+	TxInfoState_Init                TxInfoState = 1
 	TxInfoState_Create              TxInfoState = 5
 	TxInfoState_Htlc_WaitHTRD1aSign TxInfoState = 6 //等待bob创建htrd1a
 	TxInfoState_CreateAndSign       TxInfoState = 10

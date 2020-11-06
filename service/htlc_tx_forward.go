@@ -328,7 +328,7 @@ func (service *htlcForwardTxManager) GetResponseFromTrackerOfPayerRequestFindPat
 	return retData, nil
 }
 
-// 40协议的alice方的逻辑 alice start htlc as payer
+// 100040协议的alice方的逻辑 alice start a htlc as payer
 func (service *htlcForwardTxManager) UpdateAddHtlc_40(msg bean.RequestMessage, user bean.User) (data *bean.AliceRequestAddHtlc, err error) {
 	if tool.CheckIsString(&msg.Data) == false {
 		return nil, errors.New(enum.Tips_common_empty + "msg data")

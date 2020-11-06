@@ -173,14 +173,22 @@ const (
 	MsgType_HTLC_FindPath_401 MsgType = -100401
 	MsgType_HTLC_Invoice_402  MsgType = -100402
 
-	MsgType_HTLC_SendAddHTLC_40       MsgType = -100040
-	MsgType_HTLC_AddHTLC_40           MsgType = -40
-	MsgType_HTLC_RecvAddHTLC_40       MsgType = -110040
-	MsgType_HTLC_SendAddHTLCSigned_41 MsgType = -100041
-	MsgType_HTLC_PayerSignC3b_42      MsgType = -42
-	MsgType_HTLC_PayeeCreateHTRD1a_43 MsgType = -43
-	MsgType_HTLC_PayerSignHTRD1a_44   MsgType = -44
-	MsgType_HTLC_RecvAddHTLCSigned_41 MsgType = -110041
+	MsgType_HTLC_ClientSign_Alice_C3a_100    MsgType = -100100
+	MsgType_HTLC_ClientSign_Bob_C3b_101      MsgType = -100101
+	MsgType_HTLC_ClientSign_Alice_C3b_102    MsgType = -100102
+	MsgType_HTLC_ClientSign_Alice_C3bSub_103 MsgType = -100103
+	MsgType_HTLC_ClientSign_Bob_C3bSub_104   MsgType = -100104
+	MsgType_HTLC_ClientSign_Alice_He_105     MsgType = -100105
+	MsgType_HTLC_ClientSign_Bob_HeSub_106    MsgType = -100106
+	MsgType_HTLC_ClientSign_Alice_HeSub_107  MsgType = -100107
+	MsgType_HTLC_SendAddHTLC_40              MsgType = -100040
+	MsgType_HTLC_AddHTLC_40                  MsgType = -40
+	MsgType_HTLC_RecvAddHTLC_40              MsgType = -110040
+	MsgType_HTLC_SendAddHTLCSigned_41        MsgType = -100041
+	MsgType_HTLC_PayerSignC3b_42             MsgType = -42
+	MsgType_HTLC_PayeeCreateHTRD1a_43        MsgType = -43
+	MsgType_HTLC_PayerSignHTRD1a_44          MsgType = -44
+	MsgType_HTLC_RecvAddHTLCSigned_41        MsgType = -110041
 
 	MsgType_HTLC_SendVerifyR_45     MsgType = -100045
 	MsgType_HTLC_VerifyR_45         MsgType = -45

@@ -98,6 +98,14 @@ func (this *commitmentTxManager) CommitmentTransactionCreated(msg bean.RequestMe
 		return nil, false, errors.New(enum.Tips_channel_notFoundLatestCommitmentTx)
 	}
 
+	if latestCommitmentTxInfo.CurrState == dao.TxInfoState_Init {
+		tx.DeleteStruct(latestCommitmentTxInfo)
+		latestCommitmentTxInfo, err = getLatestCommitmentTxUseDbTx(tx, reqData.ChannelId, creator.PeerId)
+		if err != nil {
+			return nil, false, errors.New(enum.Tips_channel_notFoundLatestCommitmentTx)
+		}
+	}
+
 	if latestCommitmentTxInfo.TxType != dao.CommitmentTransactionType_Rsmc {
 		return nil, false, errors.New(enum.Tips_rsmc_errorCommitmentTxType + strconv.Itoa(int(latestCommitmentTxInfo.TxType)))
 	}
@@ -150,6 +158,9 @@ func (this *commitmentTxManager) CommitmentTransactionCreated(msg bean.RequestMe
 		if err != nil {
 			return nil, false, err
 		}
+		newCommitmentTxInfo.CurrState = dao.TxInfoState_Init
+		_ = tx.UpdateField(newCommitmentTxInfo, "CurrState", dao.TxInfoState_Init)
+
 		p2pData.CommitmentTxHash = newCommitmentTxInfo.CurrHash
 		p2pData.RsmcRawData = newCommitmentTxInfo.RsmcRawTxData
 		p2pData.CounterpartyRawData = newCommitmentTxInfo.ToCounterpartyRawTxData
@@ -250,6 +261,7 @@ func (this *commitmentTxManager) OnAliceSignC2aRawTxAtAliceSide(msg bean.Request
 	latestCommitmentTxInfo.RsmcRawTxData.Hex = signedDataForC2a.RsmcSignedHex
 	latestCommitmentTxInfo.RSMCTxHex = signedDataForC2a.RsmcSignedHex
 	latestCommitmentTxInfo.RSMCTxid = txid
+	latestCommitmentTxInfo.CurrState = dao.TxInfoState_Create
 
 	result, err = rpcClient.TestMemPoolAccept(signedDataForC2a.CounterpartySignedHex)
 	if err != nil {

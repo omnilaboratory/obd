@@ -45,8 +45,8 @@ type CreateHtlcTxForC3a struct {
 //type 响应 --100040: 需要alice签名C3a的交易数据
 type CreateHtlcTxForC3aResult struct {
 	ChannelId              string                  `json:"channel_id"` //the global channel id.
-	C3aRsmcRawData         NeedClientSignRawTxData `json:"c3a_rsmc_raw_data"`
 	C3aCounterpartyRawData NeedClientSignRawTxData `json:"c3a_counterparty_raw_data"`
+	C3aRsmcRawData         NeedClientSignRawTxData `json:"c3a_rsmc_raw_data"`
 	C3aHtlcRawData         NeedClientSignRawTxData `json:"c3a_htlc_raw_data"`
 }
 
