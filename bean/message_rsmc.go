@@ -109,6 +109,8 @@ type NeedAliceSignRsmcTxForC2b struct {
 	C2bRsmcPartialData         NeedClientSignRawTxData `json:"c2b_rsmc_partial_data"`
 	C2bCounterpartyPartialData NeedClientSignRawTxData `json:"c2b_counterparty_partial_data"`
 	C2aRdPartialData           NeedClientSignRawTxData `json:"c2a_rd_partial_data"`
+	PayerNodeAddress           string                  `json:"payer_node_address"`
+	PayerPeerId                string                  `json:"payer_peer_id"`
 }
 
 // 消息 100362（alice to obd） Alice完成对C2b的相关信息签名

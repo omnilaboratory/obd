@@ -332,6 +332,8 @@ func (this *commitmentTxManager) OnGetBobC2bPartialSignTxAtAliceSide(data string
 	needAliceSignRmscTxForC2b.C2bRsmcPartialData = dataFromP2p352.C2bRsmcTxData
 	needAliceSignRmscTxForC2b.C2bCounterpartyPartialData = dataFromP2p352.C2bCounterpartyTxData
 	needAliceSignRmscTxForC2b.C2aRdPartialData = dataFromP2p352.C2aRdTxData
+	needAliceSignRmscTxForC2b.PayerNodeAddress = user.P2PLocalPeerId
+	needAliceSignRmscTxForC2b.PayerPeerId = user.PeerId
 
 	return needAliceSignRmscTxForC2b, false, nil
 }
