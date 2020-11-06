@@ -1,5 +1,6 @@
 - OmniBOLT 
     - [Introduction](README.md) 
+    - [Architecture](Architecture.md) 
     - [Developers](OBD-README.md) 
     - [Features and Roadmap](features.md)
     - [Nodes in Testnet](nodes-in-testnet.md)
