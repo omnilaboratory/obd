@@ -19,8 +19,8 @@ Clone, compile the source code and run the binary executable file, you will have
 
 The latest document/tutorial has been moved to [OmniBOLT - Developers](https://omnilaboratory.github.io/obd/#/OBD-README).  
 
-To know how OBD works, jump to the [OmniBOLT - Architecture] (https://omnilaboratory.github.io/obd/#/OBD-README).  
+To know how OBD works, jump to the [OmniBOLT - Architecture](https://omnilaboratory.github.io/obd/#/OBD-README).  
 
-The latest features and ETA is here: [OmniBOLT - Features and Roadmap] (https://omnilaboratory.github.io/obd/#/features).  
+The latest features and ETA is here: [OmniBOLT - Features and Roadmap](https://omnilaboratory.github.io/obd/#/features).  
  
  
