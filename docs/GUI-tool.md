@@ -14,6 +14,7 @@ In this tutorial, you can connect either your own OBD node, or the [nodes in the
   <img width="500" alt="Debugging Tool Screenshot" src="assets/image_screen.png">
 </p>
 
+* [Videos](#video-tutorials)
 * [Installation](#installation-clone-this-project-and-run-it-by-chrome)
 * [Nodes in the testnet](#Nodes-in-testnet)
 * [Operations](#operations) 
@@ -28,6 +29,14 @@ In this tutorial, you can connect either your own OBD node, or the [nodes in the
 * [JS-SDK](#js-sdk)
 * [how to use APIs](#how-to-use-apis)
  	
+## Video Tutorials
+
+Video tutorials can be found here:   
+
+* [Step 1 -- create and fund channel](https://youtu.be/PbbNk2JCopA)  
+* [Step 2 -- create invoice](https://youtu.be/Z9UmHFclGdc)  
+* [Step 3 -- pay invoice](https://youtu.be/NEexFe7R9kc)  
+
 
 ## Installation: clone this project and run it by Chrome
 
