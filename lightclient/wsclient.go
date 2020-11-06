@@ -207,7 +207,7 @@ func (client *Client) Read() {
 						msg.Type == enum.MsgType_ClientSign_CommitmentTx_AliceSignC2b_362 ||
 						msg.Type == enum.MsgType_ClientSign_CommitmentTx_AliceSignC2b_Rd_363 ||
 						(msg.Type <= enum.MsgType_CommitmentTx_ItemsByChanId_3200 &&
-							msg.Type >= enum.MsgType_CommitmentTx_AllBRByChanId_3208) {
+							msg.Type >= enum.MsgType_CommitmentTx_DelItemByChanId_3209) {
 						sendType, dataOut, status = client.commitmentTxModule(msg)
 						break
 					}

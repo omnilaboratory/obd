@@ -26,9 +26,39 @@ func getChannelIdFromJson(jsonData string) (channelId string, err error) {
 	}
 
 	if tool.CheckIsString(&reqData.ChannelId) == false {
-		return "", errors.New(enum.Tips_common_empty + "channelId")
+		return "", errors.New(enum.Tips_common_empty + "channel_id")
 	}
 	return reqData.ChannelId, nil
+}
+
+func (this *commitmentTxManager) DelItemByChannelId(jsonData string, user *bean.User) (err error) {
+	if tool.CheckIsString(&jsonData) == false {
+		return errors.New(enum.Tips_common_empty + "input data")
+	}
+	var reqData = &requestGetInfoByChannelId{}
+	err = json.Unmarshal([]byte(jsonData), reqData)
+	if err != nil {
+		return err
+	}
+	if tool.CheckIsString(&reqData.ChannelId) == false {
+		return errors.New(enum.Tips_common_empty + "channel_id")
+	}
+	tx, err := user.Db.Begin(true)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	latestCommitmentTxUseDbTx, err := getLatestCommitmentTxUseDbTx(tx, reqData.ChannelId, user.PeerId)
+	if err != nil {
+		return err
+	}
+	if latestCommitmentTxUseDbTx.CurrState != dao.TxInfoState_Init && latestCommitmentTxUseDbTx.CurrState != dao.TxInfoState_Create {
+		return errors.New("can not delete")
+	}
+	tx.DeleteStruct(latestCommitmentTxUseDbTx)
+	tx.Commit()
+	return nil
 }
 
 func (this *commitmentTxManager) GetItemsByChannelId(jsonData string, user *bean.User) (nodes []dao.CommitmentTransaction, count *int, err error) {

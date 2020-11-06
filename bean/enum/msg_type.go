@@ -110,6 +110,7 @@ const (
 	MsgType_CommitmentTx_SendSomeCommitmentById_3206     MsgType = -103206
 	MsgType_CommitmentTx_AllRDByChanId_3207              MsgType = -103207
 	MsgType_CommitmentTx_AllBRByChanId_3208              MsgType = -103208
+	MsgType_CommitmentTx_DelItemByChanId_3209            MsgType = -103209
 
 	MsgType_Htlc_GetLatestHT1aOrHE1b_3250             MsgType = -103250
 	MsgType_Htlc_GetHT1aOrHE1bBySomeCommitmentId_3251 MsgType = -103251
@@ -357,6 +358,8 @@ func CheckExist(msgType MsgType) bool {
 	case MsgType_ClientSign_CommitmentTx_BobSignC2b_Rd_364:
 		return true
 	case MsgType_CommitmentTx_ItemsByChanId_3200:
+		return true
+	case MsgType_CommitmentTx_DelItemByChanId_3209:
 		return true
 	case MsgType_CommitmentTx_ItemById_3201:
 		return true

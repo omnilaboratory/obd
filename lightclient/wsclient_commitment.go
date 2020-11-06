@@ -163,6 +163,15 @@ func (client *Client) commitmentTxModule(msg bean.RequestMessage) (enum.SendTarg
 			}
 		}
 		client.sendToMyself(msg.Type, status, data)
+	case enum.MsgType_CommitmentTx_DelItemByChanId_3209:
+		err := service.CommitmentTxService.DelItemByChannelId(msg.Data, client.User)
+		if err != nil {
+			data = err.Error()
+		} else {
+			data = "success"
+			status = true
+		}
+		client.sendToMyself(msg.Type, status, data)
 	case enum.MsgType_CommitmentTx_SendSomeCommitmentById_3206:
 		node, err := service.CommitmentTxService.SendSomeCommitmentById(msg.Data, client.User)
 		if err != nil {
