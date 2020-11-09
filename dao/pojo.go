@@ -195,7 +195,7 @@ type CommitmentTransaction struct {
 	AmountToHtlc                 float64                      `json:"amount_to_htlc"`
 	HtlcTxHex                    string                       `json:"htlc_tx_hex"`
 	HTLCTxid                     string                       `json:"htlc_txid"`
-	HtlcRawTxData                bean.NeedClientSignRawTxData `json:"rsmc_raw_tx_data"`
+	HtlcRawTxData                bean.NeedClientSignRawTxData `json:"htlc_raw_tx_data"`
 	HtlcH                        string                       `json:"htlc_h"`
 	HtlcR                        string                       `json:"htlc_r"`
 	HtlcSender                   string                       `json:"htlc_sender"`
