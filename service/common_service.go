@@ -608,6 +608,7 @@ func createCommitmentTxHex(dbTx storm.Node, isSender bool, reqData *bean.Request
 		usedTxidTemp = usedTxid
 		commitmentTxInfo.RsmcInputTxid = usedTxid
 		commitmentTxInfo.RSMCTxHex = rsmcTxData["hex"].(string)
+
 		signHexData := bean.NeedClientSignRawTxData{}
 		signHexData.Hex = commitmentTxInfo.RSMCTxHex
 		signHexData.Inputs = rsmcTxData["inputs"]

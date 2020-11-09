@@ -43,14 +43,16 @@ type CreateHtlcTxForC3a struct {
 }
 
 //type 响应 --100040: 需要alice签名C3a的交易数据
-type CreateHtlcTxForC3aResult struct {
+type NeedAliceSignCreateHtlcTxForC3a struct {
 	ChannelId              string                  `json:"channel_id"` //the global channel id.
 	C3aCounterpartyRawData NeedClientSignRawTxData `json:"c3a_counterparty_raw_data"`
 	C3aRsmcRawData         NeedClientSignRawTxData `json:"c3a_rsmc_raw_data"`
 	C3aHtlcRawData         NeedClientSignRawTxData `json:"c3a_htlc_raw_data"`
+	PayerNodeAddress       string                  `json:"payer_node_address"`
+	PayerPeerId            string                  `json:"payer_peer_id"`
 }
 
-//type 消息 --100100: 需要alice签名C3a的交易数据
+//type 消息 --100100: alice完成部分签名的C3a的交易数据
 type AliceSignedHtlcDataForC3a struct {
 	ChannelId                       string `json:"channel_id"` //the global channel id.
 	C3aRsmcPartialSignedHex         string `json:"c3a_rsmc_partial_signed_hex"`
@@ -59,13 +61,30 @@ type AliceSignedHtlcDataForC3a struct {
 	typeLengthValue
 }
 
+//type 响应 --100100: alice完成部分签名的C3a的交易数据
+type AliceSignedHtlcDataForC3aResult struct {
+	ChannelId        string `json:"channel_id"` //the global channel id.
+	CommitmentTxHash string `json:"c3a_rsmc_partial_signed_hex"`
+}
+
 //type p2p消息 --40 Alice新增htlc交易C3a的请求，p2p推给bob
 type CreateHtlcTxForC3aOfP2p struct {
 	ChannelId                        string                  `json:"channel_id"` //the global channel id.
+	Amount                           float64                 `json:"amount"`
+	Memo                             string                  `json:"memo"`
+	H                                string                  `json:"h"`
+	CltvExpiry                       int                     `json:"cltv_expiry"` //发起者设定的总的等待的区块个数
+	RoutingPacket                    string                  `json:"routing_packet"`
+	LastTempAddressPrivateKey        string                  `json:"last_temp_address_private_key"`           //	上个RSMC委托交易用到的临时地址的私钥
+	CurrRsmcTempAddressPubKey        string                  `json:"curr_rsmc_temp_address_pub_key"`          //	创建Cnx中的toRsmc的部分使用的临时地址的公钥
+	CurrHtlcTempAddressPubKey        string                  `json:"curr_htlc_temp_address_pub_key"`          //	创建Cnx中的toHtlc的部分使用的临时地址的公钥
+	CurrHtlcTempAddressForHt1aPubKey string                  `json:"curr_htlc_temp_address_for_ht1a_pub_key"` //	创建Ht1a中生成ht1a的输出的Rmsc的临时地址的公钥
 	C3aCounterpartyPartialSignedData NeedClientSignRawTxData `json:"c3a_counterparty_partial_signed_data"`
 	C3aRsmcPartialSignedData         NeedClientSignRawTxData `json:"c3a_rsmc_partial_signed_data"`
 	C3aHtlcPartialSignedData         NeedClientSignRawTxData `json:"c3a_htlc_partial_signed_data"`
-	CreateHtlcTxForC3a
+	PayerCommitmentTxHash            string                  `json:"payer_commitment_tx_hash"`
+	PayerNodeAddress                 string                  `json:"payer_node_address"`
+	PayerPeerId                      string                  `json:"payer_peer_id"`
 }
 
 //type obd推送 --110040 obd主动推送alice的C3a的信息给bob的客户端
@@ -81,6 +100,7 @@ type CreateHtlcTxForC3aToBob struct {
 //type 消息 --100041 bob签名C3a的结果
 type BobSignedC3a struct {
 	ChannelId                        string `json:"channel_id"` //the global channel id.
+	PayerCommitmentTxHash            string `json:"payer_commitment_tx_hash"`
 	C3aCompleteSignedRsmcHex         string `json:"c3a_complete_signed_rsmc_hex"`
 	C3aCompleteSignedCounterpartyHex string `json:"c3a_complete_signed_counterparty_hex"`
 	C3aCompleteSignedHtlcHex         string `json:"c3a_complete_signed_htlc_hex"`
@@ -122,6 +142,8 @@ type NeedBobSignHtlcTxOfC3bResult struct {
 //type p2p消息 --41 推送bob完成C3a的完整签名，C3a的子交易的部分签名，C3b的部分签名给alice进行二签和更新保存
 type NeedAliceSignHtlcTxOfC3bP2p struct {
 	ChannelId                        string                  `json:"channel_id"` //the global channel id.
+	PayerCommitmentTxHash            string                  `json:"payer_commitment_tx_hash"`
+	LastTempAddressPrivateKey        string                  `json:"last_temp_address_private_key"` //	上个RSMC委托交易用到的临时私钥
 	C3aCompleteSignedRsmcHex         string                  `json:"c3a_complete_signed_rsmc_hex"`
 	C3aCompleteSignedCounterpartyHex string                  `json:"c3a_complete_signed_counterparty_hex"`
 	C3aCompleteSignedHtlcHex         string                  `json:"c3a_complete_signed_htlc_hex"`

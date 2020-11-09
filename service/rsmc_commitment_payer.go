@@ -292,9 +292,9 @@ func (this *commitmentTxManager) OnAliceSignC2aRawTxAtAliceSide(msg bean.Request
 }
 
 // step 6 协议号：352 响应来自p2p的352号消息 推送110352消息
-func (this *commitmentTxManager) OnGetBobC2bPartialSignTxAtAliceSide(msg bean.RequestMessage, user *bean.User) (retData interface{}, needNoticeAlice bool, err error) {
+func (this *commitmentTxManager) OnGetBobC2bPartialSignTxAtAliceSide(msg bean.RequestMessage, data string, user *bean.User) (retData interface{}, needNoticeAlice bool, err error) {
 	dataFromP2p352 := bean.PayeeSignCommitmentTxOfP2p{}
-	_ = json.Unmarshal([]byte(msg.Data), &dataFromP2p352)
+	_ = json.Unmarshal([]byte(data), &dataFromP2p352)
 
 	tx, err := user.Db.Begin(true)
 	if err != nil {

@@ -68,7 +68,7 @@ func routerOfP2PNode(msg bean.RequestMessage, data string, client *Client) (retD
 		}
 		defaultErr = err
 	case enum.MsgType_CommitmentTxSigned_ToAliceSign_352:
-		node, needNoticeAlice, err := service.CommitmentTxService.OnGetBobC2bPartialSignTxAtAliceSide(msg, client.User)
+		node, needNoticeAlice, err := service.CommitmentTxService.OnGetBobC2bPartialSignTxAtAliceSide(msg, data, client.User)
 		if err == nil {
 			status = true
 			retData, _ := json.Marshal(node)

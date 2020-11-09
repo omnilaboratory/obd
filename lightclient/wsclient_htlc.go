@@ -82,7 +82,7 @@ func (client *Client) htlcHModule(msg bean.RequestMessage) (enum.SendTargetType,
 		sendType = enum.SendTargetType_SendToSomeone
 
 	case enum.MsgType_HTLC_SendAddHTLC_40:
-		respond, err := service.HtlcForwardTxService.UpdateAddHtlc_40(msg, *client.User)
+		respond, needSign, err := service.HtlcForwardTxService.UpdateAddHtlc_40(msg, *client.User)
 		if err != nil {
 			data = err.Error()
 		} else {
@@ -93,17 +93,55 @@ func (client *Client) htlcHModule(msg bean.RequestMessage) (enum.SendTargetType,
 				data = string(bytes)
 				status = true
 			}
-		}
-		if status {
-			msg.Type = enum.MsgType_HTLC_AddHTLC_40
-			err = client.sendDataToP2PUser(msg, true, data)
-			if err != nil {
-				status = false
-				data = err.Error()
+			if status {
+				if needSign {
+					msg.Type = enum.MsgType_HTLC_AddHTLC_40
+					err = client.sendDataToP2PUser(msg, true, data)
+					if err != nil {
+						status = false
+						data = err.Error()
+					}
+				}
 			}
 		}
 		msg.Type = enum.MsgType_HTLC_SendAddHTLC_40
 		client.sendToMyself(msg.Type, status, data)
+
+	case enum.MsgType_HTLC_ClientSign_Alice_C3a_100:
+		toAlice, toBob, err := service.HtlcForwardTxService.OnAliceSignedC3a(msg, *client.User)
+		if err != nil {
+			data = err.Error()
+		} else {
+			bytes, err := json.Marshal(toBob)
+			if err != nil {
+				data = err.Error()
+			} else {
+				data = string(bytes)
+				status = true
+			}
+
+			if status {
+				msg.Type = enum.MsgType_HTLC_AddHTLC_40
+				err = client.sendDataToP2PUser(msg, true, data)
+				if err != nil {
+					status = false
+					data = err.Error()
+				}
+			}
+
+			if status {
+				bytes, err := json.Marshal(toAlice)
+				if err != nil {
+					data = err.Error()
+				} else {
+					data = string(bytes)
+					status = true
+				}
+			}
+		}
+		msg.Type = enum.MsgType_HTLC_ClientSign_Alice_C3a_100
+		client.sendToMyself(msg.Type, status, data)
+
 	case enum.MsgType_HTLC_SendAddHTLCSigned_41:
 		returnData, err := service.HtlcForwardTxService.PayeeSignGetAddHtlc_41(msg.Data, *client.User)
 		if err != nil {
