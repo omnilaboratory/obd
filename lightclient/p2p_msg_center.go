@@ -3,13 +3,15 @@ package lightclient
 import (
 	"encoding/json"
 	"errors"
+	"github.com/omnilaboratory/obd/bean"
 	"github.com/omnilaboratory/obd/bean/enum"
 	"github.com/omnilaboratory/obd/service"
 )
 
-func routerOfP2PNode(msgType enum.MsgType, data string, client *Client) (retData string, retErr error) {
+func routerOfP2PNode(msg bean.RequestMessage, data string, client *Client) (retData string, retErr error) {
 	defaultErr := errors.New("fail to deal msg in the inter node")
 	status := false
+	msgType := msg.Type
 	switch msgType {
 	case enum.MsgType_ChannelOpen_32:
 		err := service.ChannelService.BeforeBobOpenChannelAtBobSide(data, client.User)
@@ -66,7 +68,7 @@ func routerOfP2PNode(msgType enum.MsgType, data string, client *Client) (retData
 		}
 		defaultErr = err
 	case enum.MsgType_CommitmentTxSigned_ToAliceSign_352:
-		node, needNoticeAlice, err := service.CommitmentTxService.OnGetBobC2bPartialSignTxAtAliceSide(data, client.User)
+		node, needNoticeAlice, err := service.CommitmentTxService.OnGetBobC2bPartialSignTxAtAliceSide(msg, client.User)
 		if err == nil {
 			status = true
 			retData, _ := json.Marshal(node)

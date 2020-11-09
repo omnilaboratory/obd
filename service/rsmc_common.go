@@ -196,6 +196,11 @@ func signLastBR(tx storm.Node, brType dao.BRType, channelInfo dao.ChannelInfo, u
 			log.Println(err)
 			return errors.New(fmt.Sprintf(enum.Tips_rsmc_failToGetInput, "breachRemedyTransaction"))
 		}
+
+		if lastBreachRemedyTransaction.CurrState == dao.TxInfoState_CreateAndSign {
+			return nil
+		}
+
 		signedBRTxid, signedBRHex, err := rpcClient.OmniSignRawTransactionForUnsend(lastBreachRemedyTransaction.BrTxHex, inputs, lastTempAddressPrivateKey)
 		if err != nil {
 			return errors.New(fmt.Sprintf(enum.Tips_common_failToSign, "breachRemedyTransaction"))

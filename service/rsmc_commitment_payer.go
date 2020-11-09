@@ -252,26 +252,30 @@ func (this *commitmentTxManager) OnAliceSignC2aRawTxAtAliceSide(msg bean.Request
 		return nil, nil, errors.New(enum.Tips_channel_notFoundLatestCommitmentTx)
 	}
 
-	result, err := rpcClient.TestMemPoolAccept(signedDataForC2a.RsmcSignedHex)
-	if err != nil {
-		return nil, nil, err
+	if len(latestCommitmentTxInfo.RSMCTxHex) > 0 {
+		result, err := rpcClient.TestMemPoolAccept(signedDataForC2a.RsmcSignedHex)
+		if err != nil {
+			return nil, nil, err
+		}
+		txid := gjson.Parse(result).Array()[0].Get("txid").Str
+		//封装好的签名数据，给bob的客户端签名使用
+		latestCommitmentTxInfo.RsmcRawTxData.Hex = signedDataForC2a.RsmcSignedHex
+		latestCommitmentTxInfo.RSMCTxHex = signedDataForC2a.RsmcSignedHex
+		latestCommitmentTxInfo.RSMCTxid = txid
+		latestCommitmentTxInfo.CurrState = dao.TxInfoState_Create
 	}
-	txid := gjson.Parse(result).Array()[0].Get("txid").Str
-	//封装好的签名数据，给bob的客户端签名使用
-	latestCommitmentTxInfo.RsmcRawTxData.Hex = signedDataForC2a.RsmcSignedHex
-	latestCommitmentTxInfo.RSMCTxHex = signedDataForC2a.RsmcSignedHex
-	latestCommitmentTxInfo.RSMCTxid = txid
-	latestCommitmentTxInfo.CurrState = dao.TxInfoState_Create
 
-	result, err = rpcClient.TestMemPoolAccept(signedDataForC2a.CounterpartySignedHex)
-	if err != nil {
-		return nil, nil, err
+	if len(latestCommitmentTxInfo.ToCounterpartyTxHex) > 0 {
+		result, err := rpcClient.TestMemPoolAccept(signedDataForC2a.CounterpartySignedHex)
+		if err != nil {
+			return nil, nil, err
+		}
+		txid := gjson.Parse(result).Array()[0].Get("txid").Str
+		//封装好的签名数据，给bob的客户端签名使用
+		latestCommitmentTxInfo.ToCounterpartyRawTxData.Hex = signedDataForC2a.CounterpartySignedHex
+		latestCommitmentTxInfo.ToCounterpartyTxHex = signedDataForC2a.CounterpartySignedHex
+		latestCommitmentTxInfo.ToCounterpartyTxid = txid
 	}
-	txid = gjson.Parse(result).Array()[0].Get("txid").Str
-	//封装好的签名数据，给bob的客户端签名使用
-	latestCommitmentTxInfo.ToCounterpartyRawTxData.Hex = signedDataForC2a.CounterpartySignedHex
-	latestCommitmentTxInfo.ToCounterpartyTxHex = signedDataForC2a.CounterpartySignedHex
-	latestCommitmentTxInfo.ToCounterpartyTxid = txid
 	_ = tx.Update(latestCommitmentTxInfo)
 
 	tx.Commit()
@@ -288,9 +292,9 @@ func (this *commitmentTxManager) OnAliceSignC2aRawTxAtAliceSide(msg bean.Request
 }
 
 // step 6 协议号：352 响应来自p2p的352号消息 推送110352消息
-func (this *commitmentTxManager) OnGetBobC2bPartialSignTxAtAliceSide(data string, user *bean.User) (retData interface{}, needNoticeAlice bool, err error) {
+func (this *commitmentTxManager) OnGetBobC2bPartialSignTxAtAliceSide(msg bean.RequestMessage, user *bean.User) (retData interface{}, needNoticeAlice bool, err error) {
 	dataFromP2p352 := bean.PayeeSignCommitmentTxOfP2p{}
-	_ = json.Unmarshal([]byte(data), &dataFromP2p352)
+	_ = json.Unmarshal([]byte(msg.Data), &dataFromP2p352)
 
 	tx, err := user.Db.Begin(true)
 	if err != nil {
@@ -332,8 +336,8 @@ func (this *commitmentTxManager) OnGetBobC2bPartialSignTxAtAliceSide(data string
 	needAliceSignRmscTxForC2b.C2bRsmcPartialData = dataFromP2p352.C2bRsmcTxData
 	needAliceSignRmscTxForC2b.C2bCounterpartyPartialData = dataFromP2p352.C2bCounterpartyTxData
 	needAliceSignRmscTxForC2b.C2aRdPartialData = dataFromP2p352.C2aRdTxData
-	needAliceSignRmscTxForC2b.PayerNodeAddress = user.P2PLocalPeerId
-	needAliceSignRmscTxForC2b.PayerPeerId = user.PeerId
+	needAliceSignRmscTxForC2b.PayeeNodeAddress = msg.SenderNodePeerId
+	needAliceSignRmscTxForC2b.PayeePeerId = msg.SenderUserPeerId
 
 	return needAliceSignRmscTxForC2b, false, nil
 }

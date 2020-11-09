@@ -350,7 +350,7 @@ func (client *Client) sendDataToP2PUser(msg bean.RequestMessage, status bool, da
 				itemClient := globalWsClientManager.OnlineClientMap[msg.RecipientUserPeerId]
 				if itemClient != nil && itemClient.User != nil {
 					if status {
-						retData, err := routerOfP2PNode(msg.Type, data, itemClient)
+						retData, err := routerOfP2PNode(msg, data, itemClient)
 						if err != nil {
 							return err
 						} else {
@@ -395,7 +395,7 @@ func getDataFromP2PSomeone(msg bean.RequestMessage) error {
 				itemClient := globalWsClientManager.OnlineClientMap[msg.RecipientUserPeerId]
 				if itemClient != nil && itemClient.User != nil {
 					//收到数据后，需要对其进行加工
-					retData, err := routerOfP2PNode(msg.Type, msg.Data, itemClient)
+					retData, err := routerOfP2PNode(msg, msg.Data, itemClient)
 					if err != nil {
 						return err
 					} else {
@@ -463,19 +463,6 @@ func p2pMiddleNodeTransferData(msg *bean.RequestMessage, itemClient Client, data
 	}
 
 	if msg.Type == enum.MsgType_CommitmentTxSigned_ToAliceSign_352 {
-		//	发给bob的信息
-		//if gjson.Parse(retData).Get("bobData").Exists() {
-		//	newMsg := bean.RequestMessage{}
-		//	newMsg.Type = enum.MsgType_CommitmentTxSigned_SecondToBobSign_353
-		//	newMsg.SenderUserPeerId = itemClient.User.PeerId
-		//	newMsg.SenderNodePeerId = p2PLocalPeerId
-		//	newMsg.RecipientUserPeerId = msg.SenderUserPeerId
-		//	newMsg.RecipientNodePeerId = msg.SenderNodePeerId
-		//	payeeData := gjson.Parse(retData).Get("bobData").String()
-		//	//转发给bob，
-		//	_ = itemClient.sendDataToP2PUser(newMsg, true, payeeData)
-		//}
-
 		//发给alice
 		msg.Type = enum.MsgType_CommitmentTxSigned_RecvRevokeAndAcknowledgeCommitmentTransaction_352
 		payerData := gjson.Parse(retData).String()
