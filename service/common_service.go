@@ -514,6 +514,42 @@ func signHTD1bTx(tx storm.Node, signedHtlcHex string, htd1bHex string, latestCco
 	}
 	return nil
 }
+func saveHTD1bTx(tx storm.Node, signedHtlcHex string, signedHtd1bHex string, latestCcommitmentTxInfo dao.CommitmentTransaction, outputAddress string, user *bean.User) (err error) {
+	inputs, err := getInputsForNextTxByParseTxHashVout(signedHtlcHex, latestCcommitmentTxInfo.HTLCMultiAddress, latestCcommitmentTxInfo.HTLCMultiAddressScriptPubKey, latestCcommitmentTxInfo.HTLCRedeemScript)
+	if err != nil || len(inputs) == 0 {
+		log.Println(err)
+		return err
+	}
+
+	owner := latestCcommitmentTxInfo.PeerIdA
+	if user.PeerId == latestCcommitmentTxInfo.PeerIdA {
+		owner = latestCcommitmentTxInfo.PeerIdB
+	}
+
+	htlcTimeOut := latestCcommitmentTxInfo.HtlcCltvExpiry
+	htlcTimeoutDeliveryTx := &dao.HTLCTimeoutDeliveryTxB{}
+	htlcTimeoutDeliveryTx.ChannelId = latestCcommitmentTxInfo.ChannelId
+	htlcTimeoutDeliveryTx.CommitmentTxId = latestCcommitmentTxInfo.Id
+	htlcTimeoutDeliveryTx.PropertyId = latestCcommitmentTxInfo.PropertyId
+	htlcTimeoutDeliveryTx.OutputAddress = outputAddress
+	htlcTimeoutDeliveryTx.InputTxid = latestCcommitmentTxInfo.HTLCTxid
+	htlcTimeoutDeliveryTx.InputHex = latestCcommitmentTxInfo.HtlcTxHex
+	htlcTimeoutDeliveryTx.OutAmount = latestCcommitmentTxInfo.AmountToHtlc
+	htlcTimeoutDeliveryTx.Owner = owner
+	htlcTimeoutDeliveryTx.CurrState = dao.TxInfoState_CreateAndSign
+	htlcTimeoutDeliveryTx.CreateBy = user.PeerId
+	htlcTimeoutDeliveryTx.Timeout = htlcTimeOut
+	htlcTimeoutDeliveryTx.CreateAt = time.Now()
+
+	htlcTimeoutDeliveryTx.Txid = rpcClient.GetTxId(signedHtd1bHex)
+	htlcTimeoutDeliveryTx.TxHex = signedHtd1bHex
+	err = tx.Save(htlcTimeoutDeliveryTx)
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+	return nil
+}
 
 func createMultiSig(pubkey1 string, pubkey2 string) (multiAddress, redeemScript, scriptPubKey string, err error) {
 	aliceRsmcMultiAddr, err := rpcClient.CreateMultiSig(2, []string{pubkey1, pubkey2})
@@ -609,7 +645,7 @@ func createCommitmentTxHex(dbTx storm.Node, isSender bool, reqData *bean.Request
 		commitmentTxInfo.RsmcInputTxid = usedTxid
 		commitmentTxInfo.RSMCTxHex = rsmcTxData["hex"].(string)
 
-		signHexData := bean.NeedClientSignRawTxData{}
+		signHexData := bean.NeedClientSignTxData{}
 		signHexData.Hex = commitmentTxInfo.RSMCTxHex
 		signHexData.Inputs = rsmcTxData["inputs"]
 		signHexData.IsMultisig = true
@@ -636,7 +672,7 @@ func createCommitmentTxHex(dbTx storm.Node, isSender bool, reqData *bean.Request
 		}
 		commitmentTxInfo.ToCounterpartyTxHex = toBobTxData["hex"].(string)
 
-		signHexData := bean.NeedClientSignRawTxData{}
+		signHexData := bean.NeedClientSignTxData{}
 		signHexData.Hex = commitmentTxInfo.ToCounterpartyTxHex
 		signHexData.Inputs = toBobTxData["inputs"]
 		signHexData.IsMultisig = true

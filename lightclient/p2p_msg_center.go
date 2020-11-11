@@ -111,26 +111,23 @@ func routerOfP2PNode(msg bean.RequestMessage, data string, client *Client) (retD
 			return string(retData), nil
 		}
 		defaultErr = err
-	case enum.MsgType_HTLC_PayerSignC3b_42:
-		node, _, err := service.HtlcForwardTxService.AfterBobSignAddHtlcAtAliceSide_42(data, *client.User)
+	case enum.MsgType_HTLC_NeedPayerSignC3b_41:
+		node, _, err := service.HtlcForwardTxService.AfterBobSignAddHtlcAtAliceSide_41(data, *client.User)
 		if err == nil {
 			status = true
 			retData, _ := json.Marshal(node)
 			return string(retData), nil
 		}
 		defaultErr = err
-	case enum.MsgType_HTLC_PayeeCreateHTRD1a_43:
-		node, _, err := service.HtlcForwardTxService.AfterAliceSignAddHtlcAtBobSide_43(data, *client.User)
+	case enum.MsgType_HTLC_PayeeCreateHTRD1a_42:
+		node, err := service.HtlcForwardTxService.OnGetNeedBobSignC3bSubTxAtBobSide(data, *client.User)
 		if err == nil {
-			//给收款方的信息用sendToMyself发送
-			tempData, _ := json.Marshal(node["bobData"])
-			client.sendToMyself(enum.MsgType_HTLC_SendAddHTLCSigned_41, true, string(tempData))
-			retData, _ := json.Marshal(node["aliceData"])
+			retData, _ := json.Marshal(node)
 			return string(retData), nil
 		}
 		defaultErr = err
-	case enum.MsgType_HTLC_PayerSignHTRD1a_44:
-		node, _, err := service.HtlcForwardTxService.AfterBobCreateHTRDAtAliceSide_44(data, *client.User)
+	case enum.MsgType_HTLC_PayerSignHTRD1a_43:
+		node, err := service.HtlcForwardTxService.OnGetHtrdTxDataFromBobAtAliceSide_43(data, *client.User)
 		if err == nil {
 			retData, _ := json.Marshal(node)
 			return string(retData), nil

@@ -142,7 +142,9 @@ func (client *Client) Read() {
 					msg.Type == enum.MsgType_ClientSign_CommitmentTx_AliceSignC2b_Rd_363 ||
 					msg.Type == enum.MsgType_HTLC_SendAddHTLC_40 ||
 					msg.Type == enum.MsgType_HTLC_ClientSign_Alice_C3a_100 ||
-					msg.Type == enum.MsgType_HTLC_SendAddHTLCSigned_41 ||
+					msg.Type == enum.MsgType_HTLC_ClientSign_Bob_C3b_101 ||
+					msg.Type == enum.MsgType_HTLC_ClientSign_Alice_C3bSub_103 ||
+					msg.Type == enum.MsgType_HTLC_ClientSign_Alice_He_105 ||
 					msg.Type == enum.MsgType_HTLC_SendVerifyR_45 || msg.Type == enum.MsgType_HTLC_SendSignVerifyR_46 ||
 					msg.Type == enum.MsgType_HTLC_SendRequestCloseCurrTx_49 || msg.Type == enum.MsgType_HTLC_SendCloseSigned_50 ||
 					msg.Type == enum.MsgType_Atomic_SendSwap_80 || msg.Type == enum.MsgType_Atomic_SendSwapAccept_81 {
@@ -234,6 +236,11 @@ func (client *Client) Read() {
 						msg.Type == enum.MsgType_HTLC_Invoice_402 ||
 						msg.Type == enum.MsgType_HTLC_SendAddHTLC_40 ||
 						msg.Type == enum.MsgType_HTLC_ClientSign_Alice_C3a_100 ||
+						msg.Type == enum.MsgType_HTLC_ClientSign_Bob_C3b_101 ||
+						msg.Type == enum.MsgType_HTLC_ClientSign_Alice_C3b_102 ||
+						msg.Type == enum.MsgType_HTLC_ClientSign_Alice_C3bSub_103 ||
+						msg.Type == enum.MsgType_HTLC_ClientSign_Bob_C3bSub_104 ||
+						msg.Type == enum.MsgType_HTLC_ClientSign_Alice_He_105 ||
 						msg.Type == enum.MsgType_HTLC_SendAddHTLCSigned_41 {
 						sendType, dataOut, status = client.htlcHModule(msg)
 						break
@@ -474,36 +481,17 @@ func p2pMiddleNodeTransferData(msg *bean.RequestMessage, itemClient Client, data
 		msg.Type = enum.MsgType_ClientSign_BobC2b_Rd_353
 	}
 
-	if msg.Type == enum.MsgType_HTLC_PayerSignC3b_42 {
-		newMsg := bean.RequestMessage{}
-		newMsg.Type = enum.MsgType_HTLC_PayeeCreateHTRD1a_43
-		newMsg.SenderUserPeerId = itemClient.User.PeerId
-		newMsg.SenderNodePeerId = p2PLocalPeerId
-		newMsg.RecipientUserPeerId = msg.SenderUserPeerId
-		newMsg.RecipientNodePeerId = msg.SenderNodePeerId
-		newMsg.Data = data
-		//转发给bob
-		_ = itemClient.sendDataToP2PUser(newMsg, true, newMsg.Data)
-		return ""
-	}
-
-	//当43处理完成，就改成41的返回 42和43对用户是透明的
-	if msg.Type == enum.MsgType_HTLC_PayeeCreateHTRD1a_43 {
-		newMsg := bean.RequestMessage{}
-		newMsg.Type = enum.MsgType_HTLC_PayerSignHTRD1a_44
-		newMsg.SenderUserPeerId = itemClient.User.PeerId
-		newMsg.SenderNodePeerId = p2PLocalPeerId
-		newMsg.RecipientUserPeerId = msg.SenderUserPeerId
-		newMsg.RecipientNodePeerId = msg.SenderNodePeerId
-		newMsg.Data = data
-		//转发给payer alice，
-		_ = itemClient.sendDataToP2PUser(newMsg, true, newMsg.Data)
-		return ""
-	}
-
-	//当44处理完成，就改成41的返回 42和43对用户是透明的
-	if msg.Type == enum.MsgType_HTLC_PayerSignHTRD1a_44 {
+	if msg.Type == enum.MsgType_HTLC_NeedPayerSignC3b_41 {
 		msg.Type = enum.MsgType_HTLC_RecvAddHTLCSigned_41
+	}
+
+	//当42处理完成
+	if msg.Type == enum.MsgType_HTLC_PayeeCreateHTRD1a_42 {
+		msg.Type = enum.MsgType_HTLC_BobSignC3bSubTx_42
+	}
+
+	if msg.Type == enum.MsgType_HTLC_PayerSignHTRD1a_43 {
+		msg.Type = enum.MsgType_HTLC_FinishTransferH_43
 	}
 
 	if msg.Type == enum.MsgType_HTLC_VerifyR_45 {

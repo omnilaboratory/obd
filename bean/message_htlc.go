@@ -44,12 +44,12 @@ type CreateHtlcTxForC3a struct {
 
 //type 响应 --100040: 需要alice签名C3a的交易数据
 type NeedAliceSignCreateHtlcTxForC3a struct {
-	ChannelId              string                  `json:"channel_id"` //the global channel id.
-	C3aCounterpartyRawData NeedClientSignRawTxData `json:"c3a_counterparty_raw_data"`
-	C3aRsmcRawData         NeedClientSignRawTxData `json:"c3a_rsmc_raw_data"`
-	C3aHtlcRawData         NeedClientSignRawTxData `json:"c3a_htlc_raw_data"`
-	PayerNodeAddress       string                  `json:"payer_node_address"`
-	PayerPeerId            string                  `json:"payer_peer_id"`
+	ChannelId              string               `json:"channel_id"` //the global channel id.
+	C3aCounterpartyRawData NeedClientSignTxData `json:"c3a_counterparty_raw_data"`
+	C3aRsmcRawData         NeedClientSignTxData `json:"c3a_rsmc_raw_data"`
+	C3aHtlcRawData         NeedClientSignTxData `json:"c3a_htlc_raw_data"`
+	PayerNodeAddress       string               `json:"payer_node_address"`
+	PayerPeerId            string               `json:"payer_peer_id"`
 }
 
 //type 消息 --100100: alice完成部分签名的C3a的交易数据
@@ -69,32 +69,32 @@ type AliceSignedHtlcDataForC3aResult struct {
 
 //type p2p消息 --40 Alice新增htlc交易C3a的请求，p2p推给bob
 type CreateHtlcTxForC3aOfP2p struct {
-	ChannelId                        string                  `json:"channel_id"` //the global channel id.
-	Amount                           float64                 `json:"amount"`
-	Memo                             string                  `json:"memo"`
-	H                                string                  `json:"h"`
-	CltvExpiry                       int                     `json:"cltv_expiry"` //发起者设定的总的等待的区块个数
-	RoutingPacket                    string                  `json:"routing_packet"`
-	LastTempAddressPrivateKey        string                  `json:"last_temp_address_private_key"`           //	上个RSMC委托交易用到的临时地址的私钥
-	CurrRsmcTempAddressPubKey        string                  `json:"curr_rsmc_temp_address_pub_key"`          //	创建Cnx中的toRsmc的部分使用的临时地址的公钥
-	CurrHtlcTempAddressPubKey        string                  `json:"curr_htlc_temp_address_pub_key"`          //	创建Cnx中的toHtlc的部分使用的临时地址的公钥
-	CurrHtlcTempAddressForHt1aPubKey string                  `json:"curr_htlc_temp_address_for_ht1a_pub_key"` //	创建Ht1a中生成ht1a的输出的Rmsc的临时地址的公钥
-	C3aCounterpartyPartialSignedData NeedClientSignRawTxData `json:"c3a_counterparty_partial_signed_data"`
-	C3aRsmcPartialSignedData         NeedClientSignRawTxData `json:"c3a_rsmc_partial_signed_data"`
-	C3aHtlcPartialSignedData         NeedClientSignRawTxData `json:"c3a_htlc_partial_signed_data"`
-	PayerCommitmentTxHash            string                  `json:"payer_commitment_tx_hash"`
-	PayerNodeAddress                 string                  `json:"payer_node_address"`
-	PayerPeerId                      string                  `json:"payer_peer_id"`
+	ChannelId                        string               `json:"channel_id"` //the global channel id.
+	Amount                           float64              `json:"amount"`
+	Memo                             string               `json:"memo"`
+	H                                string               `json:"h"`
+	CltvExpiry                       int                  `json:"cltv_expiry"` //发起者设定的总的等待的区块个数
+	RoutingPacket                    string               `json:"routing_packet"`
+	LastTempAddressPrivateKey        string               `json:"last_temp_address_private_key"`           //	上个RSMC委托交易用到的临时地址的私钥
+	CurrRsmcTempAddressPubKey        string               `json:"curr_rsmc_temp_address_pub_key"`          //	创建Cnx中的toRsmc的部分使用的临时地址的公钥
+	CurrHtlcTempAddressPubKey        string               `json:"curr_htlc_temp_address_pub_key"`          //	创建Cnx中的toHtlc的部分使用的临时地址的公钥
+	CurrHtlcTempAddressForHt1aPubKey string               `json:"curr_htlc_temp_address_for_ht1a_pub_key"` //	创建Ht1a中生成ht1a的输出的Rmsc的临时地址的公钥
+	C3aCounterpartyPartialSignedData NeedClientSignTxData `json:"c3a_counterparty_partial_signed_data"`
+	C3aRsmcPartialSignedData         NeedClientSignTxData `json:"c3a_rsmc_partial_signed_data"`
+	C3aHtlcPartialSignedData         NeedClientSignTxData `json:"c3a_htlc_partial_signed_data"`
+	PayerCommitmentTxHash            string               `json:"payer_commitment_tx_hash"`
+	PayerNodeAddress                 string               `json:"payer_node_address"`
+	PayerPeerId                      string               `json:"payer_peer_id"`
 }
 
 //type obd推送 --110040 obd主动推送alice的C3a的信息给bob的客户端
 type CreateHtlcTxForC3aToBob struct {
-	ChannelId                        string                  `json:"channel_id"` //the global channel id.
-	C3aCounterpartyPartialSignedData NeedClientSignRawTxData `json:"c3a_counterparty_partial_signed_data"`
-	C3aRsmcPartialSignedData         NeedClientSignRawTxData `json:"c3a_rsmc_partial_signed_data"`
-	C3aHtlcPartialSignedData         NeedClientSignRawTxData `json:"c3a_htlc_partial_signed_data"`
-	Amount                           float64                 `json:"amount"`
-	Memo                             string                  `json:"memo"`
+	ChannelId                        string               `json:"channel_id"` //the global channel id.
+	C3aCounterpartyPartialSignedData NeedClientSignTxData `json:"c3a_counterparty_partial_signed_data"`
+	C3aRsmcPartialSignedData         NeedClientSignTxData `json:"c3a_rsmc_partial_signed_data"`
+	C3aHtlcPartialSignedData         NeedClientSignTxData `json:"c3a_htlc_partial_signed_data"`
+	Amount                           float64              `json:"amount"`
+	Memo                             string               `json:"memo"`
 }
 
 //type 消息 --100041 bob签名C3a的结果
@@ -109,25 +109,23 @@ type BobSignedC3a struct {
 	CurrRsmcTempAddressPubKey        string `json:"curr_rsmc_temp_address_pub_key"` //	创建Cnx中的toRsmc的部分使用的临时地址的公钥
 	CurrHtlcTempAddressIndex         int    `json:"curr_htlc_temp_address_index"`
 	CurrHtlcTempAddressPubKey        string `json:"curr_htlc_temp_address_pub_key"` //	创建Cnx中的toHtlc的部分使用的临时地址的公钥
-	CurrHtlcTempAddressForHeIndex    int    `json:"curr_htlc_temp_address_for_he_index"`
-	CurrHtlcTempAddressForHePubKey   string `json:"curr_htlc_temp_address_for_he_pub_key"` // These keys of HE1b output. Example Bob send R to Alice, these is Bob3's.
 }
 
-//type 消息 --100101 需要bob签名C3b，及C3a的toRsmc的Rd和Br，toHtlc的Br，Ht1a，Hlock
+//type 响应 --100041 需要bob签名C3b，及C3a的toRsmc的Rd和Br，toHtlc的Br，Ht1a，Hlock
 type NeedBobSignHtlcTxOfC3b struct {
-	ChannelId              string                    `json:"channel_id"` //the global channel id.
-	C3aRsmcRdRawData       NeedClientSignRawTxData   `json:"c3a_rsmc_rd_raw_data"`
-	C3aRsmcBrRawData       NeedClientSignRawBRTxData `json:"c3a_rsmc_br_raw_data"`
-	C3aHtlcHtRawData       NeedClientSignRawTxData   `json:"c3a_htlc_ht_raw_data"`
-	C3aHtlcHlockRawData    NeedClientSignRawTxData   `json:"c3a_htlc_hlock_raw_data"`
-	C3aHtlcBrRawData       NeedClientSignRawBRTxData `json:"c3a_htlc_br_raw_data"`
-	C3bRsmcRawData         NeedClientSignRawTxData   `json:"c3b_rsmc_raw_data"`
-	C3bCounterpartyRawData NeedClientSignRawTxData   `json:"c3b_counterparty_raw_data"`
-	C3bHtlcRawData         NeedClientSignRawTxData   `json:"c3b_htlc_raw_data"`
+	ChannelId              string               `json:"channel_id"` //the global channel id.
+	C3aRsmcRdRawData       NeedClientSignTxData `json:"c3a_rsmc_rd_raw_data"`
+	C3aRsmcBrRawData       NeedClientSignTxData `json:"c3a_rsmc_br_raw_data"`
+	C3aHtlcHtRawData       NeedClientSignTxData `json:"c3a_htlc_ht_raw_data"`
+	C3aHtlcHlockRawData    NeedClientSignTxData `json:"c3a_htlc_hlock_raw_data"`
+	C3aHtlcBrRawData       NeedClientSignTxData `json:"c3a_htlc_br_raw_data"`
+	C3bRsmcRawData         NeedClientSignTxData `json:"c3b_rsmc_raw_data"`
+	C3bCounterpartyRawData NeedClientSignTxData `json:"c3b_counterparty_raw_data"`
+	C3bHtlcRawData         NeedClientSignTxData `json:"c3b_htlc_raw_data"`
 }
 
-//type 返回值 --100101
-type NeedBobSignHtlcTxOfC3bResult struct {
+//type 消息 --100101
+type BobSignedHtlcTxOfC3b struct {
 	ChannelId                       string `json:"channel_id"` //the global channel id.
 	C3aRsmcRdPartialSignedHex       string `json:"c3a_rsmc_rd_partial_signed_hex"`
 	C3aRsmcBrPartialSignedHex       string `json:"c3a_rsmc_br_partial_signed_hex"`
@@ -139,31 +137,42 @@ type NeedBobSignHtlcTxOfC3bResult struct {
 	C3bHtlcPartialSignedHex         string `json:"c3b_htlc_partial_signed_hex"`
 }
 
+//type 返回值 --100101
+type BobSignedHtlcTxOfC3bResult struct {
+	ChannelId        string `json:"channel_id"`
+	CommitmentTxHash string `json:"commitment_tx_hash"`
+}
+
 //type p2p消息 --41 推送bob完成C3a的完整签名，C3a的子交易的部分签名，C3b的部分签名给alice进行二签和更新保存
 type NeedAliceSignHtlcTxOfC3bP2p struct {
-	ChannelId                        string                  `json:"channel_id"` //the global channel id.
-	PayerCommitmentTxHash            string                  `json:"payer_commitment_tx_hash"`
-	LastTempAddressPrivateKey        string                  `json:"last_temp_address_private_key"` //	上个RSMC委托交易用到的临时私钥
-	C3aCompleteSignedRsmcHex         string                  `json:"c3a_complete_signed_rsmc_hex"`
-	C3aCompleteSignedCounterpartyHex string                  `json:"c3a_complete_signed_counterparty_hex"`
-	C3aCompleteSignedHtlcHex         string                  `json:"c3a_complete_signed_htlc_hex"`
-	C3aRsmcRdPartialSignedData       NeedClientSignRawTxData `json:"c3a_rsmc_rd_partial_signed_data"`
-	C3aHtlcHtPartialSignedData       NeedClientSignRawTxData `json:"c3a_htlc_ht_partial_signed_data"`
-	C3aHtlcHlockPartialSignedData    NeedClientSignRawTxData `json:"c3a_htlc_hlock_partial_signed_data"`
-	C3bRsmcPartialSignedData         NeedClientSignRawTxData `json:"c3b_rsmc_partial_signed_data"`
-	C3bCounterpartyPartialSignedData NeedClientSignRawTxData `json:"c3b_counterparty_partial_signed_data"`
-	C3bHtlcPartialSignedData         NeedClientSignRawTxData `json:"c3b_htlc_partial_signed_data"`
+	ChannelId                           string               `json:"channel_id"` //the global channel id.
+	PayerCommitmentTxHash               string               `json:"payer_commitment_tx_hash"`
+	C3aHtlcTempAddressForHtPubKey       string               `json:"c3a_htlc_temp_address_for_ht_pub_key"`
+	PayeeCommitmentTxHash               string               `json:"payee_commitment_tx_hash"`
+	PayeeCurrRsmcTempAddressPubKey      string               `json:"payee_curr_rsmc_temp_address_pub_key"`
+	PayeeCurrHtlcTempAddressPubKey      string               `json:"payee_curr_htlc_temp_address_pub_key"`
+	PayeeCurrHtlcTempAddressForHePubKey string               `json:"payee_curr_htlc_temp_address_for_he_pub_key"`
+	PayeeLastTempAddressPrivateKey      string               `json:"payee_last_temp_address_private_key"`
+	C3aCompleteSignedRsmcHex            string               `json:"c3a_complete_signed_rsmc_hex"`
+	C3aCompleteSignedCounterpartyHex    string               `json:"c3a_complete_signed_counterparty_hex"`
+	C3aCompleteSignedHtlcHex            string               `json:"c3a_complete_signed_htlc_hex"`
+	C3aRsmcRdPartialSignedData          NeedClientSignTxData `json:"c3a_rsmc_rd_partial_signed_data"`
+	C3aHtlcHtPartialSignedData          NeedClientSignTxData `json:"c3a_htlc_ht_partial_signed_data"`
+	C3aHtlcHlockPartialSignedData       NeedClientSignTxData `json:"c3a_htlc_hlock_partial_signed_data"`
+	C3bRsmcPartialSignedData            NeedClientSignTxData `json:"c3b_rsmc_partial_signed_data"`
+	C3bCounterpartyPartialSignedData    NeedClientSignTxData `json:"c3b_counterparty_partial_signed_data"`
+	C3bHtlcPartialSignedData            NeedClientSignTxData `json:"c3b_htlc_partial_signed_data"`
 }
 
 //type 消息 --110041 把41的消息推送给Alice
 type NeedAliceSignHtlcTxOfC3b struct {
-	ChannelId                        string                  `json:"channel_id"` //the global channel id.
-	C3aRsmcRdPartialSignedData       NeedClientSignRawTxData `json:"c3a_rsmc_rd_partial_signed_data"`
-	C3aHtlcHtPartialSignedData       NeedClientSignRawTxData `json:"c3a_htlc_ht_partial_signed_data"`
-	C3aHtlcHlockPartialSignedData    NeedClientSignRawTxData `json:"c3a_htlc_hlock_partial_signed_data"`
-	C3bRsmcPartialSignedData         NeedClientSignRawTxData `json:"c3b_rsmc_partial_signed_data"`
-	C3bCounterpartyPartialSignedData NeedClientSignRawTxData `json:"c3b_counterparty_partial_signed_data"`
-	C3bHtlcPartialSignedData         NeedClientSignRawTxData `json:"c3b_htlc_partial_signed_data"`
+	ChannelId                        string               `json:"channel_id"` //the global channel id.
+	C3aRsmcRdPartialSignedData       NeedClientSignTxData `json:"c3a_rsmc_rd_partial_signed_data"`
+	C3aHtlcHtPartialSignedData       NeedClientSignTxData `json:"c3a_htlc_ht_partial_signed_data"`
+	C3aHtlcHlockPartialSignedData    NeedClientSignTxData `json:"c3a_htlc_hlock_partial_signed_data"`
+	C3bRsmcPartialSignedData         NeedClientSignTxData `json:"c3b_rsmc_partial_signed_data"`
+	C3bCounterpartyPartialSignedData NeedClientSignTxData `json:"c3b_counterparty_partial_signed_data"`
+	C3bHtlcPartialSignedData         NeedClientSignTxData `json:"c3b_htlc_partial_signed_data"`
 }
 
 //type 消息 --100102 alice对c3b的签名结果
@@ -179,21 +188,19 @@ type AliceSignedHtlcTxOfC3bResult struct {
 
 //type 响应 --100102 继续子交易的签名
 type NeedAliceSignHtlcSubTxOfC3b struct {
-	ChannelId           string                    `json:"channel_id"` //the global channel id.
-	C3aHtlcHtrdRawData  NeedClientSignRawTxData   `json:"c3a_htlc_htrd_raw_data"`
-	C3aHtlcHtbrRawData  NeedClientSignRawBRTxData `json:"c3a_htlc_htbr_raw_data"`
-	C3bRsmcRdRawData    NeedClientSignRawTxData   `json:"c3b_rsmc_rd_raw_data"`
-	C3bRsmcBrRawData    NeedClientSignRawBRTxData `json:"c3b_rsmc_br_raw_data"`
-	C3bHtlcHtdRawData   NeedClientSignRawTxData   `json:"c3b_htlc_htd_raw_data"`
-	C3bHtlcHlockRawData NeedClientSignRawTxData   `json:"c3b_htlc_hlock_raw_data"`
-	C3bHtlcBrRawData    NeedClientSignRawBRTxData `json:"c3b_htlc_br_raw_data"`
+	ChannelId           string               `json:"channel_id"` //the global channel id.
+	C3aHtlcHtrdRawData  NeedClientSignTxData `json:"c3a_htlc_htrd_raw_data"`
+	C3bRsmcRdRawData    NeedClientSignTxData `json:"c3b_rsmc_rd_raw_data"`
+	C3bRsmcBrRawData    NeedClientSignTxData `json:"c3b_rsmc_br_raw_data"`
+	C3bHtlcHtdRawData   NeedClientSignTxData `json:"c3b_htlc_htd_raw_data"`
+	C3bHtlcHlockRawData NeedClientSignTxData `json:"c3b_htlc_hlock_raw_data"`
+	C3bHtlcBrRawData    NeedClientSignTxData `json:"c3b_htlc_br_raw_data"`
 }
 
 //type 消息 --100103
 type AliceSignHtlcSubTxOfC3bResult struct {
 	ChannelId                    string `json:"channel_id"` //the global channel id.
 	C3aHtlcHtrdPartialSignedHex  string `json:"c3a_htlc_htrd_partial_signed_hex"`
-	C3aHtlcHtbrPartialSignedHex  string `json:"c3a_htlc_htbr_partial_signed_hex"`
 	C3bRsmcRdPartialSignedHex    string `json:"c3b_rsmc_rd_partial_signed_hex"`
 	C3bRsmcBrPartialSignedHex    string `json:"c3b_rsmc_br_partial_signed_hex"`
 	C3bHtlcHtdPartialSignedHex   string `json:"c3b_htlc_htd_partial_signed_hex"`
@@ -203,71 +210,73 @@ type AliceSignHtlcSubTxOfC3bResult struct {
 
 // type p2p消息 42 Alice对c3b完成签名，把结果通过p2p推送给bob所在的obd
 type NeedBobSignHtlcSubTxOfC3bP2p struct {
-	ChannelId                        string                    `json:"channel_id"` //the global channel id.
-	C3bCompleteSignedRsmcHex         string                    `json:"c3b_complete_signed_rsmc_hex"`
-	C3bCompleteSignedCounterpartyHex string                    `json:"c3b_complete_signed_counterparty_hex"`
-	C3bCompleteSignedHtlcHex         string                    `json:"c3b_complete_signed_htlc_hex"`
-	C3bRsmcRdPartialData             NeedClientSignRawTxData   `json:"c3b_rsmc_rd_partial_data"`
-	C3bHtlcHtdPartialData            NeedClientSignRawTxData   `json:"c3b_htlc_htd_partial_data"`
-	C3bHtlcHlockPartialData          NeedClientSignRawTxData   `json:"c3b_htlc_hlock_partial_data"`
-	C3aHtlcHtrdPartialData           NeedClientSignRawTxData   `json:"c3a_htlc_htrd_partial_data"`
-	C3aHtlcHtbrPartialData           NeedClientSignRawBRTxData `json:"c3a_htlc_htbr_partial_data"`
-	C3aHtlcHedRawData                NeedClientSignRawTxData   `json:"c3a_htlc_hed_raw_data"`
+	ChannelId                        string               `json:"channel_id"`
+	PayerCommitmentTxHash            string               `json:"payer_commitment_tx_hash"`
+	PayeeCommitmentTxHash            string               `json:"payee_commitment_tx_hash"`
+	C3aHtlcTempAddressForHtPubKey    string               `json:"c3a_htlc_temp_address_for_ht_pub_key"`
+	C3bCompleteSignedRsmcHex         string               `json:"c3b_complete_signed_rsmc_hex"`
+	C3bCompleteSignedCounterpartyHex string               `json:"c3b_complete_signed_counterparty_hex"`
+	C3bCompleteSignedHtlcHex         string               `json:"c3b_complete_signed_htlc_hex"`
+	C3bRsmcRdPartialData             NeedClientSignTxData `json:"c3b_rsmc_rd_partial_data"`
+	C3bHtlcHtdPartialData            NeedClientSignTxData `json:"c3b_htlc_htd_partial_data"`
+	C3bHtlcHlockPartialData          NeedClientSignTxData `json:"c3b_htlc_hlock_partial_data"`
+	C3aHtlcHtHex                     string               `json:"c3a_htlc_ht_hex"`
+	C3aHtlcHtrdPartialData           NeedClientSignTxData `json:"c3a_htlc_htrd_partial_data"`
+	C3aHtlcHtbrRawData               NeedClientSignTxData `json:"c3a_htlc_htbr_partial_data"`
+	C3aHtlcHedRawData                NeedClientSignTxData `json:"c3a_htlc_hed_raw_data"`
 }
 
 // type 110042 需要bob签名C3b的子交易及C3a的ht的子交易
 type NeedBobSignHtlcSubTxOfC3b struct {
-	ChannelId               string                  `json:"channel_id"` //the global channel id.
-	C3aHtlcHtrdPartialData  NeedClientSignRawTxData `json:"c3a_htlc_htrd_partial_data"`
-	C3aHtlcHedRawData       NeedClientSignRawTxData `json:"c3a_htlc_hed_raw_data"`
-	C3bRsmcRdPartialData    NeedClientSignRawTxData `json:"c3b_rsmc_rd_partial_data"`
-	C3bHtlcHtdPartialData   NeedClientSignRawTxData `json:"c3b_htlc_htd_partial_data"`
-	C3bHtlcHlockPartialData NeedClientSignRawTxData `json:"c3b_htlc_hlock_partial_data"`
+	ChannelId               string               `json:"channel_id"` //the global channel id.
+	C3aHtlcHtrdPartialData  NeedClientSignTxData `json:"c3a_htlc_htrd_partial_data"`
+	C3aHtlcHtbrRawData      NeedClientSignTxData `json:"c3a_htlc_htbr_raw_data"`
+	C3aHtlcHedRawData       NeedClientSignTxData `json:"c3a_htlc_hed_raw_data"`
+	C3bRsmcRdPartialData    NeedClientSignTxData `json:"c3b_rsmc_rd_partial_data"`
+	C3bHtlcHtdPartialData   NeedClientSignTxData `json:"c3b_htlc_htd_partial_data"`
+	C3bHtlcHlockPartialData NeedClientSignTxData `json:"c3b_htlc_hlock_partial_data"`
 }
 
 // type 消息 100104 bob完成签名C3b的子交易及C3a的ht的子交易
 type BobSignedHtlcSubTxOfC3b struct {
-	ChannelId                     string `json:"channel_id"` //the global channel id.
-	C3aHtlcHtrdCompleteSignedHex  string `json:"c3a_htlc_htrd_complete_signed_hex"`
-	C3aHtlcHedPartialSignedHex    string `json:"c3a_htlc_hed_partial_signed_hex"`
-	C3bRsmcRdCompleteSignedHex    string `json:"c3b_rsmc_rd_complete_signed_hex"`
-	C3bHtlcHtdCompleteSignedHex   string `json:"c3b_htlc_htd_complete_signed_hex"`
-	C3bHtlcHlockCompleteSignedHex string `json:"c3b_htlc_hlock_complete_signed_hex"`
+	ChannelId                      string `json:"channel_id"` //the global channel id.
+	CurrHtlcTempAddressForHeIndex  int    `json:"curr_htlc_temp_address_for_he_index"`
+	CurrHtlcTempAddressForHePubKey string `json:"curr_htlc_temp_address_for_he_pub_key"`
+	C3aHtlcHtrdCompleteSignedHex   string `json:"c3a_htlc_htrd_complete_signed_hex"`
+	C3aHtlcHtbrPartialSignedHex    string `json:"c3a_htlc_htbr_partial_signed_hex"`
+	C3aHtlcHedPartialSignedHex     string `json:"c3a_htlc_hed_partial_signed_hex"`
+	C3bRsmcRdCompleteSignedHex     string `json:"c3b_rsmc_rd_complete_signed_hex"`
+	C3bHtlcHtdCompleteSignedHex    string `json:"c3b_htlc_htd_complete_signed_hex"`
+	C3bHtlcHlockCompleteSignedHex  string `json:"c3b_htlc_hlock_complete_signed_hex"`
+}
+
+// type 响应 100104 需要bob对he交易进行签名
+type NeedBobSignHtlcHeTxOfC3b struct {
+	ChannelId             string               `json:"channel_id"`
+	C3bHtlcHlockHeRawData NeedClientSignTxData `json:"c3b_htlc_hlock_he_raw_data"`
+}
+
+// type 消息 100105 bob完成对he的签名
+type BobSignedHtlcHeTxOfC3b struct {
+	ChannelId                      string `json:"channel_id"`
+	C3bHtlcHlockHePartialSignedHex string `json:"c3b_htlc_hlock_he_partial_signed_hex"`
 }
 
 // type p2p消息 43 bob完成对C3b的签名，把C3a的htrd和hed签名结果，以及C3b的Hlock的子交易He裸交易传递给alice签名
-type NeedAliceSignHeSubTxOfC3bP2p struct {
-	ChannelId                    string                  `json:"channel_id"` //the global channel id.
-	C3aHtlcHtrdCompleteSignedHex string                  `json:"c3a_htlc_htrd_complete_signed_hex"`
-	C3aHtlcHedPartialData        NeedClientSignRawTxData `json:"c3a_htlc_hed_partial_data"` //等待R的签名
-	C3bHtlcHeRawData             NeedClientSignRawTxData `json:"c3b_htlc_he_raw_data"`      // Hlock的子交易
+type C3aSignedHerdTxOfC3bP2p struct {
+	ChannelId                    string `json:"channel_id"` //the global channel id.
+	C3aHtlcHtrdCompleteSignedHex string `json:"c3a_htlc_htrd_complete_signed_hex"`
+	C3aHtlcHedPartialSignedHex   string `json:"c3a_htlc_hed_partial_data"` //等待R的签名
 }
 
-// type obd推送消息 110043 需要alice签名C3b的he
-type NeedAliceSignHeSubTxOfC3b struct {
-	ChannelId        string                  `json:"channel_id"`             //the global channel id.
-	C3bHtlcHeRawData NeedClientSignRawTxData `json:"c_3_b_htlc_he_raw_data"` // Hlock的之交易
-}
-
-// type 消息 100105 Alice完成对c3b的He的签名
-type AliceSignHeSubTxOfC3b struct {
-	ChannelId                 string `json:"channel_id"` //the global channel id.
-	C3bHtlcHePartialSignedHex string `json:"c3b_htlc_he_partial_signed_hex"`
-}
-
-// type 响应 100105
+// type obd推送消息 110043
 type CreateHtlcC3aResult struct {
 	ChannelId string `json:"channel_id"` //the global channel id.
 }
 
-// type p2p消息 44
-type AliceSignedHeSubTxOfC3bP2p struct {
-	ChannelId                  string                  `json:"channel_id"`                      //the global channel id.
-	C3bHtlcHePartialSignedData NeedClientSignRawTxData `json:"c3b_htlc_he_partial_signed_data"` //等待R的签名
-}
-
-// type obd推送消息 100044
+// type 响应 100105 Alice完成对c3b的He的签名
 type CreateHtlcC3bResult struct {
+	ChannelId string `json:"channel_id"` //the global channel id.
 }
 
 // 正向H传递完成
@@ -284,7 +293,7 @@ type HtlcBobSendR struct {
 // type 响应 100045
 type HtlcBobSendRResult struct {
 	ChannelId          string                    `json:"channel_id"`
-	C3bHtlcHerdRawData NeedClientSignRawTxData   `json:"c3b_htlc_herd_raw_data"`
+	C3bHtlcHerdRawData NeedClientSignTxData      `json:"c3b_htlc_herd_raw_data"`
 	C3bHtlcHebrRawData NeedClientSignRawBRTxData `json:"c3b_htlc_hebr_raw_data"`
 }
 
@@ -298,14 +307,14 @@ type BobSignHerdAndHebrForC3b struct {
 // type p2p消息 45
 type NeedAliceSignHerdTxOfC3bP2p struct {
 	ChannelId                    string                    `json:"channel_id"` //the global channel id.
-	C3bHtlcHerdPartialSignedData NeedClientSignRawTxData   `json:"c3b_htlc_herd_partial_signed_data"`
+	C3bHtlcHerdPartialSignedData NeedClientSignTxData      `json:"c3b_htlc_herd_partial_signed_data"`
 	C3bHtlcHebrPartialSignedData NeedClientSignRawBRTxData `json:"c3b_htlc_hebr_partial_signed_data"`
 }
 
 // type obd推送消息 110045
 type NeedAliceSignHerdTxOfC3b struct {
-	ChannelId                    string                  `json:"channel_id"` //the global channel id.
-	C3bHtlcHerdPartialSignedData NeedClientSignRawTxData `json:"c3b_htlc_herd_partial_signed_data"`
+	ChannelId                    string               `json:"channel_id"` //the global channel id.
+	C3bHtlcHerdPartialSignedData NeedClientSignTxData `json:"c3b_htlc_herd_partial_signed_data"`
 }
 
 // type 消息 100107

@@ -242,3 +242,11 @@ func (client *Client) CheckMultiSign(sendedInput bool, hex string, step int) (pa
 		return true, nil
 	}
 }
+
+func (client *Client) GetTxId(hex string) string {
+	testResult, err := client.TestMemPoolAccept(hex)
+	if err == nil {
+		return gjson.Parse(testResult).Array()[0].Get("txid").Str
+	}
+	return ""
+}

@@ -326,7 +326,7 @@ type NeedClientSignHexData struct {
 }
 
 // 正式通道的需要客户端签名的信息体
-type NeedClientSignRawTxData struct {
+type NeedClientSignTxData struct {
 	Hex        string      `json:"hex"`
 	Inputs     interface{} `json:"inputs"`
 	IsMultisig bool        `json:"is_multisig"`
@@ -334,6 +334,6 @@ type NeedClientSignRawTxData struct {
 	PubKeyB    string      `json:"pub_key_b"`
 }
 type NeedClientSignRawBRTxData struct {
-	NeedClientSignRawTxData
+	NeedClientSignTxData
 	BrId int `json:"br_id"`
 }

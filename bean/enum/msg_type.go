@@ -186,10 +186,12 @@ const (
 	MsgType_HTLC_AddHTLC_40                  MsgType = -40
 	MsgType_HTLC_RecvAddHTLC_40              MsgType = -110040
 	MsgType_HTLC_SendAddHTLCSigned_41        MsgType = -100041
-	MsgType_HTLC_PayerSignC3b_42             MsgType = -42
-	MsgType_HTLC_PayeeCreateHTRD1a_43        MsgType = -43
-	MsgType_HTLC_PayerSignHTRD1a_44          MsgType = -44
+	MsgType_HTLC_NeedPayerSignC3b_41         MsgType = -41
 	MsgType_HTLC_RecvAddHTLCSigned_41        MsgType = -110041
+	MsgType_HTLC_PayeeCreateHTRD1a_42        MsgType = -42
+	MsgType_HTLC_BobSignC3bSubTx_42          MsgType = -110042
+	MsgType_HTLC_PayerSignHTRD1a_43          MsgType = -43
+	MsgType_HTLC_FinishTransferH_43          MsgType = -110043
 
 	MsgType_HTLC_SendVerifyR_45     MsgType = -100045
 	MsgType_HTLC_VerifyR_45         MsgType = -45
@@ -392,6 +394,14 @@ func CheckExist(msgType MsgType) bool {
 	case MsgType_HTLC_SendAddHTLC_40:
 		return true
 	case MsgType_HTLC_ClientSign_Alice_C3a_100:
+		return true
+	case MsgType_HTLC_ClientSign_Bob_C3b_101:
+		return true
+	case MsgType_HTLC_ClientSign_Alice_C3b_102:
+		return true
+	case MsgType_HTLC_ClientSign_Alice_C3bSub_103:
+		return true
+	case MsgType_HTLC_ClientSign_Bob_C3bSub_104:
 		return true
 	case MsgType_HTLC_SendAddHTLCSigned_41:
 		return true

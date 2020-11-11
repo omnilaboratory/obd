@@ -879,3 +879,53 @@ func createAndSaveHed1a_at48(tx storm.Node, signedHed1aHex string, channelInfo d
 	}
 	return nil
 }
+func createHed1a(tx storm.Node, signedHed1aHex string, channelInfo dao.ChannelInfo, commitmentTxInfo dao.CommitmentTransaction, user bean.User) (err error) {
+	hlockTx := &dao.HtlcLockTxByH{}
+	err = tx.Select(
+		q.Eq("ChannelId", channelInfo.ChannelId),
+		q.Eq("CommitmentTxId", commitmentTxInfo.Id)).First(hlockTx)
+	if err != nil {
+		err = errors.New("not found the hLockTx")
+		log.Println(err)
+		return err
+	}
+
+	hed1a := &dao.HTLCExecutionDeliveryOfR{}
+	_ = tx.Select(
+		q.Eq("ChannelId", channelInfo.ChannelId),
+		q.Eq("CommitmentTxId", commitmentTxInfo.Id),
+		q.Eq("HLockTxId", hlockTx.Id)).First(hed1a)
+	if hed1a.Id == 0 {
+		payeeChannelAddress := channelInfo.AddressB
+		payeePeerId := channelInfo.PeerIdB
+		if user.PeerId == channelInfo.PeerIdB {
+			payeeChannelAddress = channelInfo.AddressA
+			payeePeerId = channelInfo.PeerIdA
+		}
+		decodeHed1aHex, err := rpcClient.DecodeRawTransaction(signedHed1aHex)
+		if err != nil {
+			return err
+		}
+
+		hed1a.ChannelId = channelInfo.ChannelId
+		hed1a.CommitmentTxId = commitmentTxInfo.Id
+		hed1a.HLockTxId = hlockTx.Id
+
+		hed1a.InputAmount = hlockTx.OutAmount
+		hed1a.InputTxid = hlockTx.Txid
+		hed1a.InputHex = hlockTx.TxHex
+		hed1a.HtlcR = commitmentTxInfo.HtlcR
+
+		hed1a.OutputAddress = payeeChannelAddress
+		hed1a.TxHex = signedHed1aHex
+		hed1a.Txid = gjson.Get(decodeHed1aHex, "txid").Str
+		hed1a.OutAmount = hlockTx.OutAmount
+
+		hed1a.CurrState = dao.TxInfoState_Create
+		hed1a.Owner = payeePeerId
+		hed1a.CreateAt = time.Now()
+		hed1a.CreateBy = user.PeerId
+		_ = tx.Save(hed1a)
+	}
+	return nil
+}

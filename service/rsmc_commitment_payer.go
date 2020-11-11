@@ -262,7 +262,6 @@ func (this *commitmentTxManager) OnAliceSignC2aRawTxAtAliceSide(msg bean.Request
 		latestCommitmentTxInfo.RsmcRawTxData.Hex = signedDataForC2a.RsmcSignedHex
 		latestCommitmentTxInfo.RSMCTxHex = signedDataForC2a.RsmcSignedHex
 		latestCommitmentTxInfo.RSMCTxid = txid
-		latestCommitmentTxInfo.CurrState = dao.TxInfoState_Create
 	}
 
 	if len(latestCommitmentTxInfo.ToCounterpartyTxHex) > 0 {
@@ -276,6 +275,7 @@ func (this *commitmentTxManager) OnAliceSignC2aRawTxAtAliceSide(msg bean.Request
 		latestCommitmentTxInfo.ToCounterpartyTxHex = signedDataForC2a.CounterpartySignedHex
 		latestCommitmentTxInfo.ToCounterpartyTxid = txid
 	}
+	latestCommitmentTxInfo.CurrState = dao.TxInfoState_Create
 	_ = tx.Update(latestCommitmentTxInfo)
 
 	tx.Commit()
@@ -467,7 +467,7 @@ func (this *commitmentTxManager) OnAliceSignedC2bTxAtAliceSide(data string, user
 			log.Println(err)
 			return nil, errors.New("fail to create rd")
 		}
-		c2bRdRawData := bean.NeedClientSignRawTxData{}
+		c2bRdRawData := bean.NeedClientSignTxData{}
 		c2bRdRawData.Hex = c2bRdHexData["hex"].(string)
 		c2bRdRawData.Inputs = c2bRdHexData["inputs"]
 		c2bRdRawData.IsMultisig = true
@@ -664,8 +664,8 @@ func (this *commitmentTxManager) OnAliceSignedC2b_RDTxAtAliceSide(data string, u
 	}
 
 	//更新alice的当前承诺交易
-	latestCommitmentTxInfo.RsmcRawTxData = bean.NeedClientSignRawTxData{}
-	latestCommitmentTxInfo.ToCounterpartyRawTxData = bean.NeedClientSignRawTxData{}
+	latestCommitmentTxInfo.RsmcRawTxData = bean.NeedClientSignTxData{}
+	latestCommitmentTxInfo.ToCounterpartyRawTxData = bean.NeedClientSignTxData{}
 	latestCommitmentTxInfo.CurrState = dao.TxInfoState_CreateAndSign
 	latestCommitmentTxInfo.SignAt = time.Now()
 
@@ -748,7 +748,7 @@ func (this *commitmentTxManager) OnAliceSignedC2b_RDTxAtAliceSide(data string, u
 			log.Println(err)
 			return nil, nil, false, errors.New("fail to create rd")
 		}
-		c2bRdRawData := bean.NeedClientSignRawTxData{}
+		c2bRdRawData := bean.NeedClientSignTxData{}
 		c2bRdRawData.Hex = aliceSignedRdTxForC2b.C2bRdSignedHex
 		c2bRdRawData.Inputs = c2bRdHexData["inputs"]
 		c2bRdRawData.IsMultisig = true

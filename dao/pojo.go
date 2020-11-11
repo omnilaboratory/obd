@@ -167,38 +167,38 @@ type CommitmentTransaction struct {
 
 	//RSMC
 	// 用于记录助记词导出地址的index
-	RSMCTempAddressIndex         int                          `json:"rsmc_temp_address_index"`   //aliceTempRemc or bobTempRsmc
-	RSMCTempAddressPubKey        string                       `json:"rsmc_temp_address_pub_key"` //aliceTempRemc or bobTempRsmc
-	RSMCMultiAddress             string                       `json:"rsmc_multi_address"`        //output aliceTempRsmc&bob  or alice&bobTempRsmc  multiAddr
-	RSMCRedeemScript             string                       `json:"rsmc_redeem_script"`
-	RSMCMultiAddressScriptPubKey string                       `json:"rsmc_multi_address_script_pub_key"`
-	AmountToRSMC                 float64                      `json:"amount_to_rsmc"` // amount to multiAddr
-	RsmcInputTxid                string                       `json:"rsmc_input_txid"`
-	RSMCTxHex                    string                       `json:"rsmc_tx_hex"`
-	RSMCTxid                     string                       `json:"rsmc_txid"`
-	RsmcRawTxData                bean.NeedClientSignRawTxData `json:"rsmc_raw_tx_data"`
+	RSMCTempAddressIndex         int                       `json:"rsmc_temp_address_index"`   //aliceTempRemc or bobTempRsmc
+	RSMCTempAddressPubKey        string                    `json:"rsmc_temp_address_pub_key"` //aliceTempRemc or bobTempRsmc
+	RSMCMultiAddress             string                    `json:"rsmc_multi_address"`        //output aliceTempRsmc&bob  or alice&bobTempRsmc  multiAddr
+	RSMCRedeemScript             string                    `json:"rsmc_redeem_script"`
+	RSMCMultiAddressScriptPubKey string                    `json:"rsmc_multi_address_script_pub_key"`
+	AmountToRSMC                 float64                   `json:"amount_to_rsmc"` // amount to multiAddr
+	RsmcInputTxid                string                    `json:"rsmc_input_txid"`
+	RSMCTxHex                    string                    `json:"rsmc_tx_hex"`
+	RSMCTxid                     string                    `json:"rsmc_txid"`
+	RsmcRawTxData                bean.NeedClientSignTxData `json:"rsmc_raw_tx_data"`
 	//To CounterParty
-	ToCounterpartyTxHex            string                       `json:"to_counterparty_tx_hex"`
-	ToCounterpartyTxid             string                       `json:"to_counterparty_txid"`
-	ToCounterpartyRawTxData        bean.NeedClientSignRawTxData `json:"to_counterparty_raw_tx_data"`
-	AmountToCounterparty           float64                      `json:"amount_to_counterparty"`               //amount to bob(if Cna) or alice(if Cnb)
-	FromCounterpartySideForMeTxHex string                       `json:"from_counterparty_side_for_me_tx_hex"` //对方给自己的转账部分，防止对方不广播此交易
+	ToCounterpartyTxHex            string                    `json:"to_counterparty_tx_hex"`
+	ToCounterpartyTxid             string                    `json:"to_counterparty_txid"`
+	ToCounterpartyRawTxData        bean.NeedClientSignTxData `json:"to_counterparty_raw_tx_data"`
+	AmountToCounterparty           float64                   `json:"amount_to_counterparty"`               //amount to bob(if Cna) or alice(if Cnb)
+	FromCounterpartySideForMeTxHex string                    `json:"from_counterparty_side_for_me_tx_hex"` //对方给自己的转账部分，防止对方不广播此交易
 	//htlc
-	HtlcRoutingPacket            string                       `json:"htlc_routing_packet"` //借道Path
-	HtlcCltvExpiry               int                          `json:"htlc_cltv_expiry"`    //借道的最大超时 分钟为单位
-	BeginBlockHeight             int                          `json:"begin_block_height"`  //借道时的区块高度
-	HTLCTempAddressIndex         int                          `json:"htlc_temp_address_index"`
-	HTLCTempAddressPubKey        string                       `json:"htlc_temp_address_pub_key"` //alice for htlc or bob for htlc
-	HTLCMultiAddress             string                       `json:"htlc_multi_address"`        //output aliceTempHtlc&bob  or alice&bobTempHtlc  multiAddr
-	HTLCRedeemScript             string                       `json:"htlc_redeem_script"`
-	HTLCMultiAddressScriptPubKey string                       `json:"htlc_multi_address_script_pub_key"`
-	AmountToHtlc                 float64                      `json:"amount_to_htlc"`
-	HtlcTxHex                    string                       `json:"htlc_tx_hex"`
-	HTLCTxid                     string                       `json:"htlc_txid"`
-	HtlcRawTxData                bean.NeedClientSignRawTxData `json:"htlc_raw_tx_data"`
-	HtlcH                        string                       `json:"htlc_h"`
-	HtlcR                        string                       `json:"htlc_r"`
-	HtlcSender                   string                       `json:"htlc_sender"`
+	HtlcRoutingPacket            string                    `json:"htlc_routing_packet"` //借道Path
+	HtlcCltvExpiry               int                       `json:"htlc_cltv_expiry"`    //借道的最大超时 分钟为单位
+	BeginBlockHeight             int                       `json:"begin_block_height"`  //借道时的区块高度
+	HTLCTempAddressIndex         int                       `json:"htlc_temp_address_index"`
+	HTLCTempAddressPubKey        string                    `json:"htlc_temp_address_pub_key"` //alice for htlc or bob for htlc
+	HTLCMultiAddress             string                    `json:"htlc_multi_address"`        //output aliceTempHtlc&bob  or alice&bobTempHtlc  multiAddr
+	HTLCRedeemScript             string                    `json:"htlc_redeem_script"`
+	HTLCMultiAddressScriptPubKey string                    `json:"htlc_multi_address_script_pub_key"`
+	AmountToHtlc                 float64                   `json:"amount_to_htlc"`
+	HtlcTxHex                    string                    `json:"htlc_tx_hex"`
+	HTLCTxid                     string                    `json:"htlc_txid"`
+	HtlcRawTxData                bean.NeedClientSignTxData `json:"htlc_raw_tx_data"`
+	HtlcH                        string                    `json:"htlc_h"`
+	HtlcR                        string                    `json:"htlc_r"`
+	HtlcSender                   string                    `json:"htlc_sender"`
 
 	CurrState    TxInfoState `json:"curr_state"`
 	CreateBy     string      `json:"create_by"`

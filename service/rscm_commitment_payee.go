@@ -359,7 +359,7 @@ func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction
 			return nil, false, errors.New(fmt.Sprintf(enum.Tips_rsmc_failToCreate, "RD raw transacation"))
 		}
 
-		c2aRdRawData := bean.NeedClientSignRawTxData{}
+		c2aRdRawData := bean.NeedClientSignTxData{}
 		c2aRdRawData.Hex = c2aRdTx["hex"].(string)
 		c2aRdRawData.Inputs = c2aRdTx["inputs"]
 		c2aRdRawData.PubKeyA = c2aDataJson.CurrTempAddressPubKey
@@ -635,8 +635,8 @@ func (this *commitmentTxSignedManager) BobSignC2b_RdAtBobSide(data string, user 
 	}
 
 	//更新alice的当前承诺交易
-	latestCommitmentTxInfo.RsmcRawTxData = bean.NeedClientSignRawTxData{}
-	latestCommitmentTxInfo.ToCounterpartyRawTxData = bean.NeedClientSignRawTxData{}
+	latestCommitmentTxInfo.RsmcRawTxData = bean.NeedClientSignTxData{}
+	latestCommitmentTxInfo.ToCounterpartyRawTxData = bean.NeedClientSignTxData{}
 	latestCommitmentTxInfo.CurrState = dao.TxInfoState_CreateAndSign
 	latestCommitmentTxInfo.SignAt = time.Now()
 

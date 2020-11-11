@@ -127,6 +127,75 @@ func createCurrCommitmentTxRawBR(tx storm.Node, brType dao.BRType, channelInfo *
 	return retMap, nil
 }
 
+func createCurrCommitmentTxPartialSignedBR(tx storm.Node, brType dao.BRType, channelInfo *dao.ChannelInfo,
+	commitmentTx *dao.CommitmentTransaction, inputs []rpc.TransactionInputItem,
+	outputAddress string, brHex string, user bean.User) (err error) {
+	if len(inputs) == 0 {
+		return nil
+	}
+	breachRemedyTransaction := &dao.BreachRemedyTransaction{}
+	_ = tx.Select(
+		q.Eq("ChannelId", channelInfo.ChannelId),
+		q.Eq("InputTxid", commitmentTx.RSMCTxid),
+		q.Eq("Type", brType),
+		q.Or(
+			q.Eq("PeerIdA", user.PeerId),
+			q.Eq("PeerIdB", user.PeerId))).
+		First(breachRemedyTransaction)
+	if breachRemedyTransaction.Id == 0 {
+		breachRemedyTransaction, err = createBRTxObj(user.PeerId, channelInfo, brType, commitmentTx, &user)
+		if err != nil {
+			log.Println(err)
+			return err
+		}
+		if breachRemedyTransaction.Amount > 0 {
+			breachRemedyTransaction.OutAddress = outputAddress
+			breachRemedyTransaction.BrTxHex = brHex
+			breachRemedyTransaction.Txid = rpcClient.GetTxId(brHex)
+			breachRemedyTransaction.CurrState = dao.TxInfoState_Create
+			_ = tx.Save(breachRemedyTransaction)
+		}
+	}
+	return nil
+}
+
+//创建RawBR obj
+func createRawBR(brType dao.BRType, channelInfo *dao.ChannelInfo, commitmentTx *dao.CommitmentTransaction, inputs []rpc.TransactionInputItem,
+	outputAddress string, user bean.User) (retMap bean.NeedClientSignTxData, err error) {
+	if len(inputs) == 0 {
+		return retMap, errors.New("empty inputs")
+	}
+
+	breachRemedyTransaction, err := createBRTxObj(user.PeerId, channelInfo, brType, commitmentTx, &user)
+	if err != nil {
+		log.Println(err)
+		return retMap, err
+	}
+	if breachRemedyTransaction.Amount > 0 {
+		brTxData, err := rpcClient.OmniCreateRawTransactionUseUnsendInput(
+			commitmentTx.RSMCMultiAddress,
+			inputs,
+			outputAddress,
+			channelInfo.FundingAddress,
+			channelInfo.PropertyId,
+			breachRemedyTransaction.Amount,
+			getBtcMinerAmount(channelInfo.BtcAmount),
+			0,
+			&commitmentTx.RSMCRedeemScript)
+		if err != nil {
+			log.Println(err)
+			return retMap, err
+		}
+		c2bBrRawData := bean.NeedClientSignTxData{}
+		c2bBrRawData.Hex = brTxData["hex"].(string)
+		c2bBrRawData.Inputs = brTxData["inputs"]
+		c2bBrRawData.IsMultisig = true
+		return c2bBrRawData, nil
+	}
+
+	return retMap, errors.New("fail to create")
+}
+
 // 第一次签名完成，更新RawBR
 func updateCurrCommitmentTxRawBR(tx storm.Node, id int64, firstSignedBrHex string, user bean.User) (err error) {
 	breachRemedyTransaction := &dao.BreachRemedyTransaction{}
