@@ -24,14 +24,21 @@ import (
 
 type htlcForwardTxManager struct {
 	operationFlag sync.Mutex
-	//缓存来自alice的请求开通htlc的交易的数据
-	addHtlcTempDataAt40P          map[string]string
-	htlcInvoiceTempData           map[string]bean.HtlcRequestFindPathInfo
-	cacheDataFor_40               map[string]bean.CreateHtlcTxForC3aOfP2p
-	cacheDataForC3bAtBobSide_41   map[string]bean.NeedAliceSignHtlcTxOfC3bP2p
-	cacheDataForC3bAtAliceSide_41 map[string]bean.NeedAliceSignHtlcTxOfC3bP2p
-	cacheDataForC3bAtAliceSide_42 map[string]bean.NeedBobSignHtlcSubTxOfC3bP2p
-	cacheDataForC3bAtBobSide_42   map[string]bean.NeedBobSignHtlcSubTxOfC3bP2p
+
+	//缓存数据
+	addHtlcTempDataAtBobSide map[string]string
+	htlcInvoiceTempData      map[string]bean.HtlcRequestFindPathInfo
+
+	//在步骤1，缓存需要发往40号协议的信息
+	tempDataSendTo40PAtAliceSide map[string]bean.CreateHtlcTxForC3aOfP2p
+	//在步骤4，缓存需要发往41号协议的信息
+	tempDataSendTo41PAtBobSide map[string]bean.NeedAliceSignHtlcTxOfC3bP2p
+	//在步骤6，缓存来自41号协议的信息
+	tempDataFrom41PAtAliceSide map[string]bean.NeedAliceSignHtlcTxOfC3bP2p
+	//在步骤7，缓存需要发往42号协议的信息
+	tempDataSendTo42PAtAliceSide map[string]bean.NeedBobSignHtlcSubTxOfC3bP2p
+	//在步骤9，缓存来自42号协议的信息
+	tempDataFrom42PAtBobSide map[string]bean.NeedBobSignHtlcSubTxOfC3bP2p
 }
 
 // htlc pay money  付款
@@ -333,8 +340,8 @@ func (service *htlcForwardTxManager) GetResponseFromTrackerOfPayerRequestFindPat
 	return retData, nil
 }
 
-// step 1 -100040协议的alice方的逻辑 alice start a htlc as payer
-func (service *htlcForwardTxManager) UpdateAddHtlc_40(msg bean.RequestMessage, user bean.User) (data interface{}, needSign bool, err error) {
+// step 1 alice -100040协议的alice方的逻辑 alice start a htlc as payer
+func (service *htlcForwardTxManager) AliceUpdateHtlcAtAliceSide_40(msg bean.RequestMessage, user bean.User) (data interface{}, needSign bool, err error) {
 	if tool.CheckIsString(&msg.Data) == false {
 		return nil, false, errors.New(enum.Tips_common_empty + "msg data")
 	}
@@ -517,23 +524,23 @@ func (service *htlcForwardTxManager) UpdateAddHtlc_40(msg bean.RequestMessage, u
 	}
 	_ = tx.Commit()
 
-	retData := &bean.CreateHtlcTxForC3aOfP2p{}
-	retData.RoutingPacket = requestData.RoutingPacket
-	retData.ChannelId = channelInfo.ChannelId
-	retData.H = requestData.H
-	retData.Amount = requestData.Amount
-	retData.Memo = requestData.Memo
-	retData.CltvExpiry = requestData.CltvExpiry
-	retData.LastTempAddressPrivateKey = requestData.LastTempAddressPrivateKey
-	retData.CurrRsmcTempAddressPubKey = requestData.CurrRsmcTempAddressPubKey
-	retData.CurrHtlcTempAddressPubKey = requestData.CurrHtlcTempAddressPubKey
-	retData.C3aRsmcPartialSignedData = latestCommitmentTx.RsmcRawTxData
-	retData.C3aHtlcPartialSignedData = latestCommitmentTx.HtlcRawTxData
-	retData.C3aCounterpartyPartialSignedData = latestCommitmentTx.ToCounterpartyRawTxData
-	retData.CurrHtlcTempAddressForHt1aPubKey = requestData.CurrHtlcTempAddressForHt1aPubKey
-	retData.PayerCommitmentTxHash = latestCommitmentTx.CurrHash
-	retData.PayerNodeAddress = msg.SenderNodePeerId
-	retData.PayerPeerId = msg.SenderUserPeerId
+	c3aP2pData := &bean.CreateHtlcTxForC3aOfP2p{}
+	c3aP2pData.RoutingPacket = requestData.RoutingPacket
+	c3aP2pData.ChannelId = channelInfo.ChannelId
+	c3aP2pData.H = requestData.H
+	c3aP2pData.Amount = requestData.Amount
+	c3aP2pData.Memo = requestData.Memo
+	c3aP2pData.CltvExpiry = requestData.CltvExpiry
+	c3aP2pData.LastTempAddressPrivateKey = requestData.LastTempAddressPrivateKey
+	c3aP2pData.CurrRsmcTempAddressPubKey = requestData.CurrRsmcTempAddressPubKey
+	c3aP2pData.CurrHtlcTempAddressPubKey = requestData.CurrHtlcTempAddressPubKey
+	c3aP2pData.C3aRsmcPartialSignedData = latestCommitmentTx.RsmcRawTxData
+	c3aP2pData.C3aHtlcPartialSignedData = latestCommitmentTx.HtlcRawTxData
+	c3aP2pData.C3aCounterpartyPartialSignedData = latestCommitmentTx.ToCounterpartyRawTxData
+	c3aP2pData.CurrHtlcTempAddressForHt1aPubKey = requestData.CurrHtlcTempAddressForHt1aPubKey
+	c3aP2pData.PayerCommitmentTxHash = latestCommitmentTx.CurrHash
+	c3aP2pData.PayerNodeAddress = msg.SenderNodePeerId
+	c3aP2pData.PayerPeerId = msg.SenderUserPeerId
 
 	if latestCommitmentTx.CurrState == dao.TxInfoState_Init {
 		txForC3a := bean.NeedAliceSignCreateHtlcTxForC3a{}
@@ -544,23 +551,24 @@ func (service *htlcForwardTxManager) UpdateAddHtlc_40(msg bean.RequestMessage, u
 		txForC3a.PayerNodeAddress = msg.SenderNodePeerId
 		txForC3a.PayerPeerId = msg.SenderUserPeerId
 
-		if service.cacheDataFor_40 == nil {
-			service.cacheDataFor_40 = make(map[string]bean.CreateHtlcTxForC3aOfP2p)
+		if service.tempDataSendTo40PAtAliceSide == nil {
+			service.tempDataSendTo40PAtAliceSide = make(map[string]bean.CreateHtlcTxForC3aOfP2p)
 		}
-		service.cacheDataFor_40[user.PeerId+"_"+channelInfo.ChannelId] = *retData
+		service.tempDataSendTo40PAtAliceSide[user.PeerId+"_"+channelInfo.ChannelId] = *c3aP2pData
 		return txForC3a, true, nil
 	}
-	return retData, false, nil
+	return c3aP2pData, false, nil
 }
 
-// step 2 -100100 Alice对C3a的第一次签名结果
-func (service *htlcForwardTxManager) OnAliceSignedC3a(msg bean.RequestMessage, user bean.User) (toAlice, toBob interface{}, err error) {
+// step 2 alice -100100 Alice对C3a的部分签名结果
+func (service *htlcForwardTxManager) OnAliceSignedC3aAtAliceSide(msg bean.RequestMessage, user bean.User) (toAlice, toBob interface{}, err error) {
 
 	if tool.CheckIsString(&msg.Data) == false {
 		err = errors.New(enum.Tips_common_empty + "msg.data")
 		log.Println(err)
 		return nil, nil, err
 	}
+
 	signedDataForC3a := bean.AliceSignedHtlcDataForC3a{}
 	_ = json.Unmarshal([]byte(msg.Data), &signedDataForC3a)
 
@@ -569,9 +577,9 @@ func (service *htlcForwardTxManager) OnAliceSignedC3a(msg bean.RequestMessage, u
 		log.Println(err)
 		return nil, nil, err
 	}
-	p2pData := service.cacheDataFor_40[user.PeerId+"_"+signedDataForC3a.ChannelId]
 
-	if &p2pData == nil {
+	dataFrom40P := service.tempDataSendTo40PAtAliceSide[user.PeerId+"_"+signedDataForC3a.ChannelId]
+	if len(dataFrom40P.ChannelId) == 0 {
 		return nil, nil, errors.New(enum.Tips_common_wrong + "channel_id")
 	}
 
@@ -654,18 +662,18 @@ func (service *htlcForwardTxManager) OnAliceSignedC3a(msg bean.RequestMessage, u
 
 	_ = tx.Commit()
 
-	p2pData.C3aRsmcPartialSignedData = latestCommitmentTxInfo.RsmcRawTxData
-	p2pData.C3aHtlcPartialSignedData = latestCommitmentTxInfo.HtlcRawTxData
-	p2pData.C3aCounterpartyPartialSignedData = latestCommitmentTxInfo.ToCounterpartyRawTxData
+	dataFrom40P.C3aRsmcPartialSignedData = latestCommitmentTxInfo.RsmcRawTxData
+	dataFrom40P.C3aHtlcPartialSignedData = latestCommitmentTxInfo.HtlcRawTxData
+	dataFrom40P.C3aCounterpartyPartialSignedData = latestCommitmentTxInfo.ToCounterpartyRawTxData
 
 	toAliceResult := bean.AliceSignedHtlcDataForC3aResult{}
-	toAliceResult.ChannelId = p2pData.ChannelId
-	toAliceResult.CommitmentTxHash = p2pData.PayerCommitmentTxHash
-	return toAliceResult, p2pData, nil
+	toAliceResult.ChannelId = dataFrom40P.ChannelId
+	toAliceResult.CommitmentTxHash = dataFrom40P.PayerCommitmentTxHash
+	return toAliceResult, dataFrom40P, nil
 }
 
-// step 3 -40号协议 收款方的obd节点对来自付款方obd节点的消息的处理并通过ws转发给收款方 响应p2p的推送
-func (service *htlcForwardTxManager) BeforeBobSignPayerAddHtlcRequestAtBobSide_40(msgData string, user bean.User) (data interface{}, err error) {
+// step 3 bob -40号协议 缓存来自40号协议的信息 推送110040消息，需要bob对C3a的交易进行签名
+func (service *htlcForwardTxManager) BeforeBobSignAddHtlcRequestAtBobSide_40(msgData string, user bean.User) (data interface{}, err error) {
 	requestAddHtlc := &bean.CreateHtlcTxForC3aOfP2p{}
 	_ = json.Unmarshal([]byte(msgData), requestAddHtlc)
 	channelId := requestAddHtlc.ChannelId
@@ -693,16 +701,16 @@ func (service *htlcForwardTxManager) BeforeBobSignPayerAddHtlcRequestAtBobSide_4
 
 	_ = tx.Commit()
 
-	if service.addHtlcTempDataAt40P == nil {
-		service.addHtlcTempDataAt40P = make(map[string]string)
+	if service.addHtlcTempDataAtBobSide == nil {
+		service.addHtlcTempDataAtBobSide = make(map[string]string)
 	}
-	service.addHtlcTempDataAt40P[requestAddHtlc.PayerCommitmentTxHash] = msgData
+	service.addHtlcTempDataAtBobSide[requestAddHtlc.PayerCommitmentTxHash] = msgData
 
 	return requestAddHtlc, nil
 }
 
-// step 4 响应-100041号协议，创建C3a的toRsmc的Rd和Br，toHtlc的Br，Ht1a，Hlock和C3b的toB，toRsmc，toHtlc
-func (service *htlcForwardTxManager) PayeeSignGetAddHtlc_41(jsonData string, user bean.User) (returnData interface{}, err error) {
+// step 4 bob 响应-100041号协议，创建C3a的Rsmc的Rd和Br，toHtlc的Br，Ht1a，Hlock，以及C3b的toB，toRsmc，toHtlc
+func (service *htlcForwardTxManager) BobSignedAddHtlcAtBobSide_41(jsonData string, user bean.User) (returnData interface{}, err error) {
 	if tool.CheckIsString(&jsonData) == false {
 		err := errors.New(enum.Tips_common_empty + "msg data")
 		log.Println(err)
@@ -727,7 +735,7 @@ func (service *htlcForwardTxManager) PayeeSignGetAddHtlc_41(jsonData string, use
 		return nil, errors.New(enum.Tips_common_empty + "payer_commitment_tx_hash")
 	}
 
-	aliceMsg := service.addHtlcTempDataAt40P[requestData.PayerCommitmentTxHash]
+	aliceMsg := service.addHtlcTempDataAtBobSide[requestData.PayerCommitmentTxHash]
 	if tool.CheckIsString(&aliceMsg) == false {
 		return nil, errors.New(enum.Tips_common_empty + "payer_commitment_tx_hash")
 	}
@@ -765,27 +773,28 @@ func (service *htlcForwardTxManager) PayeeSignGetAddHtlc_41(jsonData string, use
 	needBobSignData := bean.NeedBobSignHtlcTxOfC3b{}
 	needBobSignData.ChannelId = channelId
 
-	toAliceDataOfP2p := bean.NeedAliceSignHtlcTxOfC3bP2p{}
-	toAliceDataOfP2p.PayerCommitmentTxHash = requestData.PayerCommitmentTxHash
+	toAliceDataOf41P := bean.NeedAliceSignHtlcTxOfC3bP2p{}
+
+	toAliceDataOf41P.PayerCommitmentTxHash = requestData.PayerCommitmentTxHash
 
 	if len(payerRequestAddHtlc.C3aRsmcPartialSignedData.Hex) > 0 {
 		if pass, _ := rpcClient.CheckMultiSign(true, requestData.C3aCompleteSignedRsmcHex, 2); pass == false {
 			return nil, errors.New(enum.Tips_common_wrong + "c3a_complete_signed_rsmc_hex")
 		}
 	}
-	toAliceDataOfP2p.C3aCompleteSignedRsmcHex = requestData.C3aCompleteSignedRsmcHex
+	toAliceDataOf41P.C3aCompleteSignedRsmcHex = requestData.C3aCompleteSignedRsmcHex
 
 	if pass, _ := rpcClient.CheckMultiSign(true, requestData.C3aCompleteSignedHtlcHex, 2); pass == false {
 		return nil, errors.New(enum.Tips_common_wrong + "c3a_complete_signed_htlc_hex")
 	}
-	toAliceDataOfP2p.C3aCompleteSignedHtlcHex = requestData.C3aCompleteSignedHtlcHex
+	toAliceDataOf41P.C3aCompleteSignedHtlcHex = requestData.C3aCompleteSignedHtlcHex
 
 	if len(payerRequestAddHtlc.C3aCounterpartyPartialSignedData.Hex) > 0 {
 		if pass, _ := rpcClient.CheckMultiSign(true, requestData.C3aCompleteSignedCounterpartyHex, 2); pass == false {
 			return nil, errors.New(enum.Tips_common_wrong + "c3a_complete_signed_counterparty_hex")
 		}
 	}
-	toAliceDataOfP2p.C3aCompleteSignedCounterpartyHex = requestData.C3aCompleteSignedCounterpartyHex
+	toAliceDataOf41P.C3aCompleteSignedCounterpartyHex = requestData.C3aCompleteSignedCounterpartyHex
 
 	// region check input data
 
@@ -851,21 +860,21 @@ func (service *htlcForwardTxManager) PayeeSignGetAddHtlc_41(jsonData string, use
 				}
 			}
 		}
-		toAliceDataOfP2p.PayeeLastTempAddressPrivateKey = requestData.LastTempAddressPrivateKey
+		toAliceDataOf41P.PayeeLastTempAddressPrivateKey = requestData.LastTempAddressPrivateKey
 	}
 	if tool.CheckIsString(&requestData.CurrRsmcTempAddressPubKey) == false {
 		err = errors.New(enum.Tips_common_empty + "curr_rsmc_temp_address_pub_key")
 		log.Println(err)
 		return nil, err
 	}
-	toAliceDataOfP2p.PayeeCurrRsmcTempAddressPubKey = requestData.CurrRsmcTempAddressPubKey
+	toAliceDataOf41P.PayeeCurrRsmcTempAddressPubKey = requestData.CurrRsmcTempAddressPubKey
 
 	if tool.CheckIsString(&requestData.CurrHtlcTempAddressPubKey) == false {
 		err = errors.New(enum.Tips_common_empty + "curr_htlc_temp_address_pub_key")
 		log.Println(err)
 		return nil, err
 	}
-	toAliceDataOfP2p.PayeeCurrHtlcTempAddressPubKey = requestData.CurrHtlcTempAddressPubKey
+	toAliceDataOf41P.PayeeCurrHtlcTempAddressPubKey = requestData.CurrHtlcTempAddressPubKey
 	//endregion
 
 	//region 1、验证C3a的Rsmc的签名
@@ -985,10 +994,10 @@ func (service *htlcForwardTxManager) PayeeSignGetAddHtlc_41(jsonData string, use
 	needBobSignData.C3bRsmcRawData = latestCommitmentTxInfo.RsmcRawTxData
 	needBobSignData.C3bHtlcRawData = latestCommitmentTxInfo.HtlcRawTxData
 
-	toAliceDataOfP2p.C3bCounterpartyPartialSignedData = latestCommitmentTxInfo.ToCounterpartyRawTxData
-	toAliceDataOfP2p.C3bRsmcPartialSignedData = latestCommitmentTxInfo.RsmcRawTxData
-	toAliceDataOfP2p.C3bHtlcPartialSignedData = latestCommitmentTxInfo.HtlcRawTxData
-	toAliceDataOfP2p.PayeeCommitmentTxHash = latestCommitmentTxInfo.CurrHash
+	toAliceDataOf41P.C3bCounterpartyPartialSignedData = latestCommitmentTxInfo.ToCounterpartyRawTxData
+	toAliceDataOf41P.C3bRsmcPartialSignedData = latestCommitmentTxInfo.RsmcRawTxData
+	toAliceDataOf41P.C3bHtlcPartialSignedData = latestCommitmentTxInfo.HtlcRawTxData
+	toAliceDataOf41P.PayeeCommitmentTxHash = latestCommitmentTxInfo.CurrHash
 
 	var myAddress = channelInfo.AddressB
 	if user.PeerId == channelInfo.PeerIdA {
@@ -1046,7 +1055,7 @@ func (service *htlcForwardTxManager) PayeeSignGetAddHtlc_41(jsonData string, use
 		signHexData.PubKeyA = payerRequestAddHtlc.CurrRsmcTempAddressPubKey
 		signHexData.PubKeyB = bobChannelPubKey
 		needBobSignData.C3aRsmcRdRawData = signHexData
-		toAliceDataOfP2p.C3aRsmcRdPartialSignedData = signHexData
+		toAliceDataOf41P.C3aRsmcRdPartialSignedData = signHexData
 		//endregion
 	}
 
@@ -1079,7 +1088,7 @@ func (service *htlcForwardTxManager) PayeeSignGetAddHtlc_41(jsonData string, use
 	lockByHForBobTx.PubKeyB = bobChannelPubKey
 
 	needBobSignData.C3aHtlcHlockRawData = *lockByHForBobTx
-	toAliceDataOfP2p.C3aHtlcHlockPartialSignedData = *lockByHForBobTx
+	toAliceDataOf41P.C3aHtlcHlockPartialSignedData = *lockByHForBobTx
 	//endregion
 
 	// region 9、ht1a 根据signedHtlcHex（alice签名后C3a的第三个输出）作为输入生成
@@ -1090,8 +1099,8 @@ func (service *htlcForwardTxManager) PayeeSignGetAddHtlc_41(jsonData string, use
 	ht1aTxData.PubKeyA = bobChannelPubKey
 	ht1aTxData.PubKeyB = payerRequestAddHtlc.CurrHtlcTempAddressPubKey
 	needBobSignData.C3aHtlcHtRawData = *ht1aTxData
-	toAliceDataOfP2p.C3aHtlcHtPartialSignedData = *ht1aTxData
-	toAliceDataOfP2p.C3aHtlcTempAddressForHtPubKey = payerRequestAddHtlc.CurrHtlcTempAddressForHt1aPubKey
+	toAliceDataOf41P.C3aHtlcHtPartialSignedData = *ht1aTxData
+	toAliceDataOf41P.C3aHtlcTempAddressForHtPubKey = payerRequestAddHtlc.CurrHtlcTempAddressForHt1aPubKey
 	//endregion
 
 	channelInfo.CurrState = dao.ChannelState_HtlcTx
@@ -1099,28 +1108,31 @@ func (service *htlcForwardTxManager) PayeeSignGetAddHtlc_41(jsonData string, use
 
 	_ = tx.Commit()
 
-	if service.cacheDataForC3bAtBobSide_41 == nil {
-		service.cacheDataForC3bAtBobSide_41 = make(map[string]bean.NeedAliceSignHtlcTxOfC3bP2p)
+	if service.tempDataSendTo41PAtBobSide == nil {
+		service.tempDataSendTo41PAtBobSide = make(map[string]bean.NeedAliceSignHtlcTxOfC3bP2p)
 	}
-	service.cacheDataForC3bAtBobSide_41[user.PeerId+"_"+channelInfo.ChannelId] = toAliceDataOfP2p
+	service.tempDataSendTo41PAtBobSide[user.PeerId+"_"+channelInfo.ChannelId] = toAliceDataOf41P
+
 	return needBobSignData, nil
 }
 
-// step 5 -100101 bob完成对C3b的签名
-func (service *htlcForwardTxManager) OnBobSignedC3b(msg bean.RequestMessage, user bean.User) (toAlice, toBob interface{}, err error) {
+// step 5 bob -100101 bob完成对C3b的签名，构建41号协议的消息体，推送41号协议
+func (service *htlcForwardTxManager) OnBobSignedC3bAtBobSide(msg bean.RequestMessage, user bean.User) (toAlice, toBob interface{}, err error) {
 	c3bResult := bean.BobSignedHtlcTxOfC3b{}
 	err = json.Unmarshal([]byte(msg.Data), &c3bResult)
 	if err != nil {
 		log.Println(err)
 		return nil, nil, err
 	}
+
 	key := user.PeerId + "_" + c3bResult.ChannelId
-	toAliceDataOfP2p := service.cacheDataForC3bAtBobSide_41[key]
+	toAliceDataOfP2p := service.tempDataSendTo41PAtBobSide[key]
+
 	if len(toAliceDataOfP2p.ChannelId) == 0 {
 		return nil, nil, errors.New(enum.Tips_common_wrong + "channel_id")
 	}
 
-	aliceMsg := service.addHtlcTempDataAt40P[toAliceDataOfP2p.PayerCommitmentTxHash]
+	aliceMsg := service.addHtlcTempDataAtBobSide[toAliceDataOfP2p.PayerCommitmentTxHash]
 	if tool.CheckIsString(&aliceMsg) == false {
 		return nil, nil, errors.New(enum.Tips_common_empty + "payer_commitment_tx_hash")
 	}
@@ -1268,8 +1280,8 @@ func (service *htlcForwardTxManager) OnBobSignedC3b(msg bean.RequestMessage, use
 	tx.UpdateField(latestCommitmentTxInfo, "CurrState", dao.TxInfoState_Create)
 	tx.Commit()
 
-	delete(service.cacheDataForC3bAtBobSide_41, key)
-	delete(service.addHtlcTempDataAt40P, payerRequestAddHtlc.PayerCommitmentTxHash)
+	delete(service.tempDataSendTo41PAtBobSide, key)
+	delete(service.addHtlcTempDataAtBobSide, payerRequestAddHtlc.PayerCommitmentTxHash)
 
 	toBobData := bean.BobSignedHtlcTxOfC3bResult{}
 	toBobData.ChannelId = channelInfo.ChannelId
@@ -1277,7 +1289,7 @@ func (service *htlcForwardTxManager) OnBobSignedC3b(msg bean.RequestMessage, use
 	return toAliceDataOfP2p, toBobData, nil
 }
 
-// step 6 p2p 41号协议，推送c3b等信息给alice，让客户端签名 推送110041
+// step 6 alice p2p 41号协议，构建需要alice签名的数据，缓存41号协议的数据， 推送（110041）信息给alice签名
 func (service *htlcForwardTxManager) AfterBobSignAddHtlcAtAliceSide_41(msgData string, user bean.User) (data interface{}, needNoticeBob bool, err error) {
 	dataFromBob := bean.NeedAliceSignHtlcTxOfC3bP2p{}
 	_ = json.Unmarshal([]byte(msgData), &dataFromBob)
@@ -1331,21 +1343,21 @@ func (service *htlcForwardTxManager) AfterBobSignAddHtlcAtAliceSide_41(msgData s
 	needAliceSignHtlcTxOfC3b.C3bHtlcPartialSignedData = dataFromBob.C3bHtlcPartialSignedData
 	needAliceSignHtlcTxOfC3b.C3bCounterpartyPartialSignedData = dataFromBob.C3bCounterpartyPartialSignedData
 
-	if service.cacheDataForC3bAtAliceSide_41 == nil {
-		service.cacheDataForC3bAtAliceSide_41 = make(map[string]bean.NeedAliceSignHtlcTxOfC3bP2p)
+	if service.tempDataFrom41PAtAliceSide == nil {
+		service.tempDataFrom41PAtAliceSide = make(map[string]bean.NeedAliceSignHtlcTxOfC3bP2p)
 	}
-	service.cacheDataForC3bAtAliceSide_41[user.PeerId+"_"+channelId] = dataFromBob
+	service.tempDataFrom41PAtAliceSide[user.PeerId+"_"+channelId] = dataFromBob
 	return needAliceSignHtlcTxOfC3b, false, nil
 }
 
-// step 7 响应100102号协议，创建C3b的rmsc的rd，br，htlc的br，htd，hlock，以及创建C3a的htrd和htbr
-func (service *htlcForwardTxManager) OnAliceSignC3b(msg bean.RequestMessage, user bean.User) (interface{}, error) {
+// step 7 alice 响应100102号协议，根据C3b的签名结果创建C3b的rmsc的rd，br，htlc的br，htd，hlock，以及创建C3a的htrd和htbr
+func (service *htlcForwardTxManager) OnAliceSignC3bAtAliceSide(msg bean.RequestMessage, user bean.User) (interface{}, error) {
 
 	aliceSignedC3b := bean.AliceSignedHtlcTxOfC3bResult{}
 	_ = json.Unmarshal([]byte(msg.Data), &aliceSignedC3b)
 
 	channelId := aliceSignedC3b.ChannelId
-	dataFromBob := service.cacheDataForC3bAtAliceSide_41[user.PeerId+"_"+channelId]
+	dataFromBob := service.tempDataFrom41PAtAliceSide[user.PeerId+"_"+channelId]
 
 	//为了准备给42传数据
 	needBobSignData := bean.NeedBobSignHtlcSubTxOfC3bP2p{}
@@ -1670,23 +1682,23 @@ func (service *htlcForwardTxManager) OnAliceSignC3b(msg bean.RequestMessage, use
 	needBobSignData.C3aHtlcHedRawData = c3aHedRawData
 	//endregion
 
-	if service.cacheDataForC3bAtAliceSide_42 == nil {
-		service.cacheDataForC3bAtAliceSide_42 = make(map[string]bean.NeedBobSignHtlcSubTxOfC3bP2p)
+	if service.tempDataSendTo42PAtAliceSide == nil {
+		service.tempDataSendTo42PAtAliceSide = make(map[string]bean.NeedBobSignHtlcSubTxOfC3bP2p)
 	}
-	service.cacheDataForC3bAtAliceSide_42[user.PeerId+"_"+channelId] = needBobSignData
+	service.tempDataSendTo42PAtAliceSide[user.PeerId+"_"+channelId] = needBobSignData
 	_ = tx.Commit()
 
 	return needAliceSignData, nil
 }
 
-// step 8 响应 100103号协议，保存alice的承诺交易，推送42号p2p协议
-func (service *htlcForwardTxManager) OnAliceSignedC3bSubTx(msg bean.RequestMessage, user bean.User) (interface{}, error) {
+// step 8 alice 响应 100103号协议，更新alice的承诺交易，推送42号p2p协议
+func (service *htlcForwardTxManager) OnAliceSignedC3bSubTxAtAliceSide(msg bean.RequestMessage, user bean.User) (interface{}, error) {
 	aliceSignedC3b := bean.AliceSignHtlcSubTxOfC3bResult{}
 	_ = json.Unmarshal([]byte(msg.Data), &aliceSignedC3b)
 
 	channelId := aliceSignedC3b.ChannelId
-	dataFromBob_41 := service.cacheDataForC3bAtAliceSide_41[user.PeerId+"_"+channelId]
-	needBobSignData := service.cacheDataForC3bAtAliceSide_42[user.PeerId+"_"+channelId]
+	dataFromBob_41 := service.tempDataFrom41PAtAliceSide[user.PeerId+"_"+channelId]
+	needBobSignData := service.tempDataSendTo42PAtAliceSide[user.PeerId+"_"+channelId]
 
 	bobRsmcHexIsExist := false
 	if len(needBobSignData.C3bRsmcRdPartialData.Hex) > 0 {
@@ -1853,28 +1865,28 @@ func (service *htlcForwardTxManager) OnAliceSignedC3bSubTx(msg bean.RequestMessa
 	return needBobSignData, nil
 }
 
-// step 9 响应42号协议 推送110042
+// step 9 bob 响应 42号协议 构造需要bob签名的数据，缓存来自42号协议的数据 推送110042
 func (service *htlcForwardTxManager) OnGetNeedBobSignC3bSubTxAtBobSide(msgData string, user bean.User) (interface{}, error) {
-	jsonObj := bean.NeedBobSignHtlcSubTxOfC3bP2p{}
-	_ = json.Unmarshal([]byte(msgData), &jsonObj)
+	c3bCacheData := bean.NeedBobSignHtlcSubTxOfC3bP2p{}
+	_ = json.Unmarshal([]byte(msgData), &c3bCacheData)
 
-	if service.cacheDataForC3bAtBobSide_42 == nil {
-		service.cacheDataForC3bAtBobSide_42 = make(map[string]bean.NeedBobSignHtlcSubTxOfC3bP2p)
+	if service.tempDataFrom42PAtBobSide == nil {
+		service.tempDataFrom42PAtBobSide = make(map[string]bean.NeedBobSignHtlcSubTxOfC3bP2p)
 	}
-	service.cacheDataForC3bAtBobSide_42[user.PeerId+"_"+jsonObj.ChannelId] = jsonObj
+	service.tempDataFrom42PAtBobSide[user.PeerId+"_"+c3bCacheData.ChannelId] = c3bCacheData
 
 	needBobSign := bean.NeedBobSignHtlcSubTxOfC3b{}
-	needBobSign.ChannelId = jsonObj.ChannelId
-	needBobSign.C3aHtlcHedRawData = jsonObj.C3aHtlcHedRawData
-	needBobSign.C3aHtlcHtrdPartialData = jsonObj.C3aHtlcHtrdPartialData
-	needBobSign.C3aHtlcHtbrRawData = jsonObj.C3aHtlcHtbrRawData
-	needBobSign.C3bRsmcRdPartialData = jsonObj.C3bRsmcRdPartialData
-	needBobSign.C3bHtlcHlockPartialData = jsonObj.C3bHtlcHlockPartialData
-	needBobSign.C3bHtlcHtdPartialData = jsonObj.C3bHtlcHtdPartialData
+	needBobSign.ChannelId = c3bCacheData.ChannelId
+	needBobSign.C3aHtlcHedRawData = c3bCacheData.C3aHtlcHedRawData
+	needBobSign.C3aHtlcHtrdPartialData = c3bCacheData.C3aHtlcHtrdPartialData
+	needBobSign.C3aHtlcHtbrRawData = c3bCacheData.C3aHtlcHtbrRawData
+	needBobSign.C3bRsmcRdPartialData = c3bCacheData.C3bRsmcRdPartialData
+	needBobSign.C3bHtlcHlockPartialData = c3bCacheData.C3bHtlcHlockPartialData
+	needBobSign.C3bHtlcHtdPartialData = c3bCacheData.C3bHtlcHtdPartialData
 	return needBobSign, nil
 }
 
-// step 10 响应100104号协议:签收100104的签名，缓存签名的结果，生成hlock的 he让bob继续签名
+// step 10 bob 响应100104:缓存签名的结果，生成hlock的 he让bob继续签名
 func (service *htlcForwardTxManager) OnBobSignedC3bSubTxAtBobSide(msg bean.RequestMessage, user bean.User) (interface{}, error) {
 
 	jsonObj := bean.BobSignedHtlcSubTxOfC3b{}
@@ -1884,7 +1896,7 @@ func (service *htlcForwardTxManager) OnBobSignedC3bSubTxAtBobSide(msg bean.Reque
 		return nil, errors.New(enum.Tips_common_empty + "channel_id")
 	}
 
-	c3bCacheData := service.cacheDataForC3bAtBobSide_42[user.PeerId+"_"+jsonObj.ChannelId]
+	c3bCacheData := service.tempDataFrom42PAtBobSide[user.PeerId+"_"+jsonObj.ChannelId]
 
 	if pass, _ := rpcClient.CheckMultiSign(false, jsonObj.C3aHtlcHtrdCompleteSignedHex, 2); pass == false {
 		return nil, errors.New("error sign c3a_htlc_htrd_complete_signed_hex")
@@ -1917,7 +1929,7 @@ func (service *htlcForwardTxManager) OnBobSignedC3bSubTxAtBobSide(msg bean.Reque
 	}
 	c3bCacheData.C3bHtlcHtdPartialData.Hex = jsonObj.C3bHtlcHtdCompleteSignedHex
 
-	service.cacheDataForC3bAtBobSide_42[user.PeerId+"_"+jsonObj.ChannelId] = c3bCacheData
+	service.tempDataFrom42PAtBobSide[user.PeerId+"_"+jsonObj.ChannelId] = c3bCacheData
 
 	//根据Hlock，创建C3b的He H+bobChannelPubkey作为输入，aliceChannelPubkey+bob的临时地址3作为输出
 	tx, err := user.Db.Begin(true)
@@ -1956,7 +1968,7 @@ func (service *htlcForwardTxManager) OnBobSignedC3bSubTxAtBobSide(msg bean.Reque
 	return needBobSignData, nil
 }
 
-// step 11 响应100105号协议:收款方完成Hlock的he的部分签名，开始更新C3b的信息，最后推送43给alice和推送正向H的创建htlc的结果
+// step 11 bob 响应100105:收款方完成Hlock的he的部分签名，更新C3b的信息，最后推送43给alice和推送正向H的创建htlc的结果
 func (service *htlcForwardTxManager) OnBobSignHtRdAtBobSide_42(msgData string, user bean.User) (toAlice, toBob interface{}, err error) {
 	jsonObj := bean.BobSignedHtlcHeTxOfC3b{}
 	_ = json.Unmarshal([]byte(msgData), &jsonObj)
@@ -1965,7 +1977,7 @@ func (service *htlcForwardTxManager) OnBobSignHtRdAtBobSide_42(msgData string, u
 		return nil, nil, errors.New(enum.Tips_common_empty + "channel_id")
 	}
 
-	c3bCacheData := service.cacheDataForC3bAtBobSide_42[user.PeerId+"_"+jsonObj.ChannelId]
+	c3bCacheData := service.tempDataFrom42PAtBobSide[user.PeerId+"_"+jsonObj.ChannelId]
 	if len(c3bCacheData.ChannelId) == 0 {
 		return nil, nil, errors.New(enum.Tips_common_wrong + "channel_id")
 	}
@@ -2053,8 +2065,8 @@ func (service *htlcForwardTxManager) OnBobSignHtRdAtBobSide_42(msgData string, u
 
 	_ = tx.Commit()
 
-	delete(service.cacheDataForC3bAtAliceSide_42, user.PeerId+"_"+jsonObj.ChannelId)
-
+	key := user.PeerId + "_" + channelInfo.ChannelId
+	delete(service.tempDataFrom42PAtBobSide, key)
 	return c3aRetData, latestCommitmentTx, nil
 }
 
@@ -2118,6 +2130,11 @@ func (service *htlcForwardTxManager) OnGetHtrdTxDataFromBobAtAliceSide_43(msgDat
 
 	//同步通道信息到tracker
 	sendChannelStateToTracker(*channelInfo, *latestCommitmentTx)
+
+	key := user.PeerId + "_" + channelInfo.ChannelId
+	delete(service.tempDataSendTo40PAtAliceSide, key)
+	delete(service.tempDataFrom41PAtAliceSide, key)
+	delete(service.tempDataSendTo42PAtAliceSide, key)
 
 	return latestCommitmentTx, nil
 }

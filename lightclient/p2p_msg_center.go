@@ -104,7 +104,7 @@ func routerOfP2PNode(msg bean.RequestMessage, data string, client *Client) (retD
 		}
 		defaultErr = err
 	case enum.MsgType_HTLC_AddHTLC_40:
-		node, err := service.HtlcForwardTxService.BeforeBobSignPayerAddHtlcRequestAtBobSide_40(data, *client.User)
+		node, err := service.HtlcForwardTxService.BeforeBobSignAddHtlcRequestAtBobSide_40(data, *client.User)
 		if err == nil {
 			retData, _ := json.Marshal(node)
 			status = true

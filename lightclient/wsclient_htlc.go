@@ -82,7 +82,7 @@ func (client *Client) htlcHModule(msg bean.RequestMessage) (enum.SendTargetType,
 		sendType = enum.SendTargetType_SendToSomeone
 
 	case enum.MsgType_HTLC_SendAddHTLC_40:
-		respond, needSign, err := service.HtlcForwardTxService.UpdateAddHtlc_40(msg, *client.User)
+		respond, needSign, err := service.HtlcForwardTxService.AliceUpdateHtlcAtAliceSide_40(msg, *client.User)
 		if err != nil {
 			data = err.Error()
 		} else {
@@ -108,7 +108,7 @@ func (client *Client) htlcHModule(msg bean.RequestMessage) (enum.SendTargetType,
 		client.sendToMyself(msg.Type, status, data)
 
 	case enum.MsgType_HTLC_ClientSign_Alice_C3a_100:
-		toAlice, toBob, err := service.HtlcForwardTxService.OnAliceSignedC3a(msg, *client.User)
+		toAlice, toBob, err := service.HtlcForwardTxService.OnAliceSignedC3aAtAliceSide(msg, *client.User)
 		if err != nil {
 			data = err.Error()
 		} else {
@@ -143,7 +143,7 @@ func (client *Client) htlcHModule(msg bean.RequestMessage) (enum.SendTargetType,
 		client.sendToMyself(msg.Type, status, data)
 
 	case enum.MsgType_HTLC_SendAddHTLCSigned_41:
-		returnData, err := service.HtlcForwardTxService.PayeeSignGetAddHtlc_41(msg.Data, *client.User)
+		returnData, err := service.HtlcForwardTxService.BobSignedAddHtlcAtBobSide_41(msg.Data, *client.User)
 		if err != nil {
 			data = err.Error()
 		} else {
@@ -157,7 +157,7 @@ func (client *Client) htlcHModule(msg bean.RequestMessage) (enum.SendTargetType,
 		}
 		client.sendToMyself(msg.Type, status, data)
 	case enum.MsgType_HTLC_ClientSign_Bob_C3b_101:
-		toAlice, toBob, err := service.HtlcForwardTxService.OnBobSignedC3b(msg, *client.User)
+		toAlice, toBob, err := service.HtlcForwardTxService.OnBobSignedC3bAtBobSide(msg, *client.User)
 		if err != nil {
 			data = err.Error()
 		} else {
@@ -190,7 +190,7 @@ func (client *Client) htlcHModule(msg bean.RequestMessage) (enum.SendTargetType,
 		msg.Type = enum.MsgType_HTLC_SendAddHTLCSigned_41
 		client.sendToMyself(msg.Type, status, data)
 	case enum.MsgType_HTLC_ClientSign_Alice_C3b_102:
-		returnData, err := service.HtlcForwardTxService.OnAliceSignC3b(msg, *client.User)
+		returnData, err := service.HtlcForwardTxService.OnAliceSignC3bAtAliceSide(msg, *client.User)
 		if err != nil {
 			data = err.Error()
 		} else {
@@ -204,7 +204,7 @@ func (client *Client) htlcHModule(msg bean.RequestMessage) (enum.SendTargetType,
 		}
 		client.sendToMyself(msg.Type, status, data)
 	case enum.MsgType_HTLC_ClientSign_Alice_C3bSub_103:
-		returnData, err := service.HtlcForwardTxService.OnAliceSignedC3bSubTx(msg, *client.User)
+		returnData, err := service.HtlcForwardTxService.OnAliceSignedC3bSubTxAtAliceSide(msg, *client.User)
 		if err != nil {
 			data = err.Error()
 		} else {
