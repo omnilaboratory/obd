@@ -256,22 +256,6 @@ type AliceRequestAddHtlc struct {
 }
 
 //  p2p消息 收款人的obd发给付款人的obd的消息体 在获得R后
-// -100045 -> -45
-type BobSendROfP2p struct {
-	ChannelId        string `json:"channel_id"`
-	R                string `json:"r"`
-	He1bTxHex        string `json:"he1b_tx_hex"`
-	He1bTempPubKey   string `json:"he1b_temp_pub_key"`
-	Herd1bTxHex      string `json:"herd1b_tx_hex"`
-	PayeeNodeAddress string `json:"payee_node_address"`
-	PayeePeerId      string `json:"payee_peer_id"`
-}
-
-// ws消息 收款人的obd发给付款人的obd的消息体 在获得R后
-type BobSendROfWs struct {
-	BobSendROfP2p
-	MsgHash string `json:"msg_hash"`
-}
 
 //  p2p消息 请求关闭htlc交易
 type RequestCloseHtlcTxOfP2p struct {

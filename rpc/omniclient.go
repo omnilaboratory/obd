@@ -784,13 +784,6 @@ func (client *Client) OmniSignRawTransactionForUnsend(hex string, inputItems []T
 		return "", hex, err
 	}
 
-	//result, err := client.OmniDecodeTransaction(hex)
-	//if err == nil {
-	//	log.Println(result)
-	//} else {
-	//	log.Println(err)
-	//}
-
 	return txId, hex, nil
 }
 

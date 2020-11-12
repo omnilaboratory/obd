@@ -134,14 +134,14 @@ func routerOfP2PNode(msg bean.RequestMessage, data string, client *Client) (retD
 		}
 		defaultErr = err
 	case enum.MsgType_HTLC_VerifyR_45:
-		responseData, _, err := service.HtlcBackwardTxService.BeforeSendRInfoToPayerAtAliceSide_Step2(data, *client.User)
+		responseData, err := service.HtlcBackwardTxService.OnGetHeSubTxDataAtAliceObdAtAliceSide(data, *client.User)
 		if err == nil {
 			retData, _ := json.Marshal(responseData)
 			return string(retData), nil
 		}
 		defaultErr = err
-	case enum.MsgType_HTLC_SendHerdHex_47:
-		responseData, err := service.HtlcBackwardTxService.SignHed1aAndUpdate_Step4(data, *client.User)
+	case enum.MsgType_HTLC_SendHerdHex_46:
+		responseData, err := service.HtlcBackwardTxService.OnGetHeRdDataAtBobObd(data, *client.User)
 		if err == nil {
 			retData, _ := json.Marshal(responseData)
 			return string(retData), nil

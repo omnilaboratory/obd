@@ -180,8 +180,6 @@ const (
 	MsgType_HTLC_ClientSign_Alice_C3bSub_103 MsgType = -100103
 	MsgType_HTLC_ClientSign_Bob_C3bSub_104   MsgType = -100104
 	MsgType_HTLC_ClientSign_Alice_He_105     MsgType = -100105
-	MsgType_HTLC_ClientSign_Bob_HeSub_106    MsgType = -100106
-	MsgType_HTLC_ClientSign_Alice_HeSub_107  MsgType = -100107
 	MsgType_HTLC_SendAddHTLC_40              MsgType = -100040
 	MsgType_HTLC_AddHTLC_40                  MsgType = -40
 	MsgType_HTLC_RecvAddHTLC_40              MsgType = -110040
@@ -193,13 +191,15 @@ const (
 	MsgType_HTLC_PayerSignHTRD1a_43          MsgType = -43
 	MsgType_HTLC_FinishTransferH_43          MsgType = -110043
 
-	MsgType_HTLC_SendVerifyR_45     MsgType = -100045
-	MsgType_HTLC_VerifyR_45         MsgType = -45
-	MsgType_HTLC_RecvVerifyR_45     MsgType = -110045
-	MsgType_HTLC_SendSignVerifyR_46 MsgType = -100046
-	MsgType_HTLC_SendHerdHex_47     MsgType = -47
-	MsgType_HTLC_SignHedHex_48      MsgType = -48
-	MsgType_HTLC_RecvSignVerifyR_46 MsgType = -110046
+	MsgType_HTLC_ClientSign_Bob_HeSub_106   MsgType = -100106
+	MsgType_HTLC_ClientSign_Alice_HeSub_107 MsgType = -100107
+	MsgType_HTLC_SendVerifyR_45             MsgType = -100045
+	MsgType_HTLC_VerifyR_45                 MsgType = -45
+	MsgType_HTLC_RecvVerifyR_45             MsgType = -110045
+	MsgType_HTLC_SendSignVerifyR_46         MsgType = -100046
+	MsgType_HTLC_SendHerdHex_46             MsgType = -46
+	MsgType_HTLC_SignHedHex_48              MsgType = -48
+	MsgType_HTLC_RecvSignVerifyR_46         MsgType = -110046
 
 	MsgType_HTLC_SendRequestCloseCurrTx_49 MsgType = -100049
 	MsgType_HTLC_RequestCloseCurrTx_49     MsgType = -49
@@ -404,6 +404,10 @@ func CheckExist(msgType MsgType) bool {
 	case MsgType_HTLC_ClientSign_Bob_C3bSub_104:
 		return true
 	case MsgType_HTLC_ClientSign_Alice_He_105:
+		return true
+	case MsgType_HTLC_ClientSign_Bob_HeSub_106:
+		return true
+	case MsgType_HTLC_ClientSign_Alice_HeSub_107:
 		return true
 	case MsgType_HTLC_SendAddHTLCSigned_41:
 		return true

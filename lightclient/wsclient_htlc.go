@@ -325,9 +325,22 @@ func (client *Client) htlcTxModule(msg bean.RequestMessage) (enum.SendTargetType
 	var sendType = enum.SendTargetType_SendToSomeone
 	data := ""
 	switch msg.Type {
-	// Coding by Kevin 2019-10-28
 	case enum.MsgType_HTLC_SendVerifyR_45:
-		respond, err := service.HtlcBackwardTxService.SendRToPreviousNode_Step1(msg, *client.User)
+		respond, err := service.HtlcBackwardTxService.SendRToPreviousNodeAtBobSide(msg, *client.User)
+		if err != nil {
+			data = err.Error()
+		} else {
+			bytes, err := json.Marshal(respond)
+			if err != nil {
+				data = err.Error()
+			} else {
+				data = string(bytes)
+				status = true
+			}
+		}
+		client.sendToMyself(msg.Type, status, data)
+	case enum.MsgType_HTLC_ClientSign_Bob_HeSub_106:
+		respond, err := service.HtlcBackwardTxService.OnBobSignedHeRdAtBobSide(msg, *client.User)
 		if err != nil {
 			data = err.Error()
 		} else {
@@ -345,30 +358,41 @@ func (client *Client) htlcTxModule(msg bean.RequestMessage) (enum.SendTargetType
 				}
 			}
 		}
-		msg.Type = enum.MsgType_HTLC_SendVerifyR_45
-		client.sendToMyself(msg.Type, status, data)
-	case enum.MsgType_HTLC_SendSignVerifyR_46:
-		respond, err := service.HtlcBackwardTxService.VerifyRAndCreateTxs_Step3(msg, *client.User)
+		if status == false {
+			msg.Type = enum.MsgType_HTLC_ClientSign_Bob_HeSub_106
+			client.sendToMyself(msg.Type, status, data)
+		}
+	case enum.MsgType_HTLC_ClientSign_Alice_HeSub_107:
+		toAlice, toBob, err := service.HtlcBackwardTxService.OnAliceSignedHeRdAtAliceSide(msg, *client.User)
 		if err != nil {
 			data = err.Error()
 		} else {
-			bytes, err := json.Marshal(respond)
+			bytes, err := json.Marshal(toBob)
 			if err != nil {
 				data = err.Error()
 			} else {
 				data = string(bytes)
 				status = true
-				msg.Type = enum.MsgType_HTLC_SendHerdHex_47
+				msg.Type = enum.MsgType_HTLC_SendHerdHex_46
 				err = client.sendDataToP2PUser(msg, status, data)
 				if err != nil {
 					data = err.Error()
 					status = false
 				}
 			}
+			if status {
+				bytes, err := json.Marshal(toAlice)
+				if err != nil {
+					data = err.Error()
+				} else {
+					data = string(bytes)
+					status = true
+				}
+			}
+
 		}
-		if status == false {
-			client.sendToMyself(msg.Type, status, data)
-		}
+		msg.Type = enum.MsgType_HTLC_ClientSign_Alice_HeSub_107
+		client.sendToMyself(msg.Type, status, data)
 	}
 	return sendType, []byte(data), status
 }

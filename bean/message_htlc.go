@@ -294,45 +294,38 @@ type HtlcBobSendR struct {
 
 // type 响应 100045
 type HtlcBobSendRResult struct {
-	ChannelId          string                    `json:"channel_id"`
-	C3bHtlcHerdRawData NeedClientSignTxData      `json:"c3b_htlc_herd_raw_data"`
-	C3bHtlcHebrRawData NeedClientSignRawBRTxData `json:"c3b_htlc_hebr_raw_data"`
+	ChannelId          string               `json:"channel_id"`
+	C3bHtlcHerdRawData NeedClientSignTxData `json:"c3b_htlc_herd_raw_data"`
 }
 
 // type 消息 100106
-type BobSignHerdAndHebrForC3b struct {
+type BobSignHerdForC3b struct {
 	ChannelId                   string `json:"channel_id"`
 	C3bHtlcHerdPartialSignedHex string `json:"c3b_htlc_herd_partial_signed_hex"`
-	C3bHtlcHebrPartialSignedHex string `json:"c3b_htlc_hebr_partial_signed_hex"`
 }
 
 // type p2p消息 45
 type NeedAliceSignHerdTxOfC3bP2p struct {
-	ChannelId                    string                    `json:"channel_id"` //the global channel id.
-	C3bHtlcHerdPartialSignedData NeedClientSignTxData      `json:"c3b_htlc_herd_partial_signed_data"`
-	C3bHtlcHebrPartialSignedData NeedClientSignRawBRTxData `json:"c3b_htlc_hebr_partial_signed_data"`
-}
-
-// type obd推送消息 110045
-type NeedAliceSignHerdTxOfC3b struct {
-	ChannelId                    string               `json:"channel_id"` //the global channel id.
-	C3bHtlcHerdPartialSignedData NeedClientSignTxData `json:"c3b_htlc_herd_partial_signed_data"`
+	ChannelId                     string               `json:"channel_id"`
+	R                             string               `json:"r"`
+	C3bHtlcHerdPartialSignedData  NeedClientSignTxData `json:"c3b_htlc_herd_partial_signed_data"`
+	C3bHtlcHebrRawData            NeedClientSignTxData `json:"c3b_htlc_hebr_raw_data"`
+	C3bHtlcTempAddressForHePubKey string               `json:"c3b_htlc_temp_address_for_he_pub_key"`
+	HeCompleteSignedHex           string               `json:"he_complete_signed_hex"`
+	PayeeNodeAddress              string               `json:"payee_node_address"`
+	PayeePeerId                   string               `json:"payee_peer_id"`
 }
 
 // type 消息 100107
-type AliceSignHerdTxOfC3a struct {
-	ChannelId                    string `json:"channel_id"` //the global channel id.
+type AliceSignHerdTxOfC3e struct {
+	ChannelId                    string `json:"channel_id"`
 	C3bHtlcHerdCompleteSignedHex string `json:"c3b_htlc_herd_complete_signed_hex"`
-}
-
-// type 响应 100107 反向R传递的最终结果
-type AfterVerifyROfC3a struct {
-	ChannelId string `json:"channel_id"` //the global channel id.
+	C3bHtlcHebrPartialSignedHex  string `json:"c3b_htlc_hebr_partial_signed_hex"`
 }
 
 // type p2p消息 46 Alice啊我那次herd的签名，发送结果给bob所在的obd
 type AliceSignedHerdTxOfC3bP2p struct {
-	ChannelId                    string `json:"channel_id"` //the global channel id.
+	ChannelId                    string `json:"channel_id"`
 	C3bHtlcHerdCompleteSignedHex string `json:"c3b_htlc_herd_complete_signed_hex"`
 }
 
@@ -429,12 +422,8 @@ type PayeeCreateHt1aRDForPayer struct {
 
 //type -45: Send R to previous node. and create commitment transactions.
 type HtlcSendR struct {
-	ChannelId                            string `json:"channel_id"`
-	R                                    string `json:"r"`
-	ChannelAddressPrivateKey             string `json:"channel_address_private_key"` // The key of Sender. Example Bob send R to Alice, the Sender is Bob.
-	CurrHtlcTempAddressForHE1bIndex      int    `json:"curr_htlc_temp_address_for_he1b_index"`
-	CurrHtlcTempAddressForHE1bPubKey     string `json:"curr_htlc_temp_address_for_he1b_pub_key"` // These keys of HE1b output. Example Bob send R to Alice, these is Bob3's.
-	CurrHtlcTempAddressForHE1bPrivateKey string `json:"curr_htlc_temp_address_for_he1b_private_key"`
+	ChannelId string `json:"channel_id"`
+	R         string `json:"r"`
 	typeLengthValue
 }
 
