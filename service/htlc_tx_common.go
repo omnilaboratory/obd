@@ -404,7 +404,7 @@ func saveHtlcHeTxForPayee(tx storm.Node, channelInfo dao.ChannelInfo, commitment
 
 	payeeChannelPubKey := channelInfo.PubKeyB
 	payerChannelPubkey := channelInfo.PubKeyA
-	if user.PeerId == channelInfo.PeerIdB {
+	if user.PeerId == channelInfo.PeerIdA {
 		payeeChannelPubKey = channelInfo.PubKeyA
 		payerChannelPubkey = channelInfo.PubKeyB
 	}
@@ -419,7 +419,7 @@ func saveHtlcHeTxForPayee(tx storm.Node, channelInfo dao.ChannelInfo, commitment
 		return nil, err
 	}
 
-	c3bHlocOutputs, err := getInputsForNextTxByParseTxHashVout(c3bHlockHex, c3bHlockMultiAddress, c3bHlockRedeemScript, c3bHlockAddrScriptPubKey)
+	c3bHlocOutputs, err := getInputsForNextTxByParseTxHashVout(c3bHlockHex, c3bHlockMultiAddress, c3bHlockAddrScriptPubKey, c3bHlockRedeemScript)
 	if err != nil {
 		log.Println(err)
 		return nil, err

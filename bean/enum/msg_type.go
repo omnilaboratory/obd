@@ -403,6 +403,8 @@ func CheckExist(msgType MsgType) bool {
 		return true
 	case MsgType_HTLC_ClientSign_Bob_C3bSub_104:
 		return true
+	case MsgType_HTLC_ClientSign_Alice_He_105:
+		return true
 	case MsgType_HTLC_SendAddHTLCSigned_41:
 		return true
 	case MsgType_HTLC_SendVerifyR_45:

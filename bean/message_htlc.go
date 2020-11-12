@@ -64,7 +64,7 @@ type AliceSignedHtlcDataForC3a struct {
 //type 响应 --100100: alice完成部分签名的C3a的交易数据
 type AliceSignedHtlcDataForC3aResult struct {
 	ChannelId        string `json:"channel_id"` //the global channel id.
-	CommitmentTxHash string `json:"c3a_rsmc_partial_signed_hex"`
+	CommitmentTxHash string `json:"commitment_tx_hash"`
 }
 
 //type p2p消息 --40 Alice新增htlc交易C3a的请求，p2p推给bob
@@ -89,17 +89,19 @@ type CreateHtlcTxForC3aOfP2p struct {
 
 //type obd推送 --110040 obd主动推送alice的C3a的信息给bob的客户端
 type CreateHtlcTxForC3aToBob struct {
-	ChannelId                        string               `json:"channel_id"` //the global channel id.
+	ChannelId                        string               `json:"channel_id"`
+	PayerCommitmentTxHash            string               `json:"payer_commitment_tx_hash"`
 	C3aCounterpartyPartialSignedData NeedClientSignTxData `json:"c3a_counterparty_partial_signed_data"`
 	C3aRsmcPartialSignedData         NeedClientSignTxData `json:"c3a_rsmc_partial_signed_data"`
 	C3aHtlcPartialSignedData         NeedClientSignTxData `json:"c3a_htlc_partial_signed_data"`
 	Amount                           float64              `json:"amount"`
 	Memo                             string               `json:"memo"`
+	PayerNodeAddress                 string               `json:"payer_node_address"`
+	PayerPeerId                      string               `json:"payer_peer_id"`
 }
 
 //type 消息 --100041 bob签名C3a的结果
 type BobSignedC3a struct {
-	ChannelId                        string `json:"channel_id"` //the global channel id.
 	PayerCommitmentTxHash            string `json:"payer_commitment_tx_hash"`
 	C3aCompleteSignedRsmcHex         string `json:"c3a_complete_signed_rsmc_hex"`
 	C3aCompleteSignedCounterpartyHex string `json:"c3a_complete_signed_counterparty_hex"`
