@@ -291,7 +291,7 @@ func (service *htlcBackwardTxManager) OnGetHeSubTxDataAtAliceObdAtAliceSide(msg 
 // step 4 alice  -46 Alice完成herd签名 保存hebr 推送46 herd
 func (service *htlcBackwardTxManager) OnAliceSignedHeRdAtAliceSide(msg bean.RequestMessage, user bean.User) (toAlice, toBob interface{}, err error) {
 	herdSignedResult := bean.AliceSignHerdTxOfC3e{}
-	_ = json.Unmarshal([]byte(msg.Data), herdSignedResult)
+	_ = json.Unmarshal([]byte(msg.Data), &herdSignedResult)
 
 	if tool.CheckIsString(&herdSignedResult.ChannelId) == false {
 		return nil, nil, errors.New("error channel_id")
@@ -323,7 +323,6 @@ func (service *htlcBackwardTxManager) OnAliceSignedHeRdAtAliceSide(msg bean.Requ
 	}
 	defer tx.Rollback()
 
-	// region Check data inputed from websocket client of sender.
 	if tool.CheckIsString(&herdSignedResult.ChannelId) == false {
 		err = errors.New(enum.Tips_common_empty + "channel_id ")
 		log.Println(err)
@@ -394,7 +393,7 @@ func (service *htlcBackwardTxManager) OnAliceSignedHeRdAtAliceSide(msg bean.Requ
 // step 5 bob  -110046 bob保存herd
 func (service *htlcBackwardTxManager) OnGetHeRdDataAtBobObd(msg string, user bean.User) (retData interface{}, err error) {
 	dataFrom46P := bean.AliceSignedHerdTxOfC3bP2p{}
-	_ = json.Unmarshal([]byte(msg), dataFrom46P)
+	_ = json.Unmarshal([]byte(msg), &dataFrom46P)
 
 	if tool.CheckIsString(&dataFrom46P.ChannelId) == false {
 		return nil, errors.New("error channel_id")
@@ -428,7 +427,6 @@ func (service *htlcBackwardTxManager) OnGetHeRdDataAtBobObd(msg string, user bea
 
 	latestCommitment.CurrState = dao.TxInfoState_Htlc_GetR
 	_ = tx.Update(latestCommitment)
-	//endregion
 	_ = tx.Commit()
 
 	if channelInfo.IsPrivate == false {
@@ -788,16 +786,24 @@ func (service *htlcBackwardTxManager) CheckHed1aHex_Step5(msgData string, user b
 
 //45 签名He1b
 func signHe1bAtPayeeSide_at45(tx storm.Node, channelInfo dao.ChannelInfo, commitmentId int, reqData bean.HtlcBobSendR, user bean.User) (he1b *dao.HTLCTimeoutTxForAAndExecutionForB, err error) {
+	hlock := &dao.HtlcLockTxByH{}
+	_ = tx.Select(
+		q.Eq("ChannelId", channelInfo.ChannelId),
+		q.Eq("CommitmentTxId", commitmentId),
+		q.Eq("Owner", user.PeerId)).First(hlock)
+	if hlock.Id == 0 {
+		return nil, errors.New("fail to find hlock")
+	}
 	he1b = &dao.HTLCTimeoutTxForAAndExecutionForB{}
 	_ = tx.Select(
 		q.Eq("ChannelId", channelInfo.ChannelId),
 		q.Eq("CommitmentTxId", commitmentId),
 		q.Eq("Owner", user.PeerId)).First(he1b)
 	if he1b.Id == 0 {
-		return he1b, nil
+		return nil, errors.New("fail to find he1b")
 	}
 
-	hlockOutputs, err := getInputsForNextTxByParseTxHashVout(he1b.InputHex, he1b.RSMCMultiAddress, he1b.RSMCMultiAddressScriptPubKey, he1b.RSMCRedeemScript)
+	hlockOutputs, err := getInputsForNextTxByParseTxHashVout(he1b.InputHex, hlock.OutputAddress, hlock.ScriptPubKey, hlock.RedeemScript)
 	if err != nil || len(hlockOutputs) == 0 {
 		log.Println(err)
 		return nil, err
@@ -1172,12 +1178,12 @@ func signHed1a(tx storm.Node, channelInfo dao.ChannelInfo, commitmentTxInfo dao.
 			payeeChannelPubKey = channelInfo.PubKeyA
 		}
 
-		c3aHlockMultiAddress, c3aHlockRedeemScript, c3aHlockAddrScriptPubKey, err := createMultiSig(commitmentTxInfo.HtlcH, payeeChannelPubKey)
+		c3bHlockMultiAddress, c3bHlockRedeemScript, c3bHlockAddrScriptPubKey, err := createMultiSig(commitmentTxInfo.HtlcH, payeeChannelPubKey)
 		if err != nil {
 			return err
 		}
 
-		inputs, err := getInputsForNextTxByParseTxHashVout(hed1a.InputHex, c3aHlockMultiAddress, c3aHlockAddrScriptPubKey, c3aHlockRedeemScript)
+		inputs, err := getInputsForNextTxByParseTxHashVout(hed1a.InputHex, c3bHlockMultiAddress, c3bHlockAddrScriptPubKey, c3bHlockRedeemScript)
 		if err != nil || len(inputs) == 0 {
 			log.Println(err)
 			return err
@@ -1189,7 +1195,7 @@ func signHed1a(tx storm.Node, channelInfo dao.ChannelInfo, commitmentTxInfo dao.
 		}
 		hed1a.TxHex = hex
 		hed1a.Txid = txId
-		_ = tx.Update(hed1a)
+		return tx.Update(hed1a)
 	}
 	return errors.New("fail to sign")
 }

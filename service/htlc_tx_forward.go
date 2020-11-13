@@ -2138,9 +2138,9 @@ func (service *htlcForwardTxManager) OnGetHtrdTxDataFromBobAtAliceSide_43(msgDat
 		_ = createHed1a(tx, c3aHtrdData.C3aHtlcHedPartialSignedHex, channelInfo, *latestCommitmentTx, user)
 	}
 
-	latestCommitmentTx.RsmcRawTxData = bean.NeedClientSignTxData{}
-	latestCommitmentTx.HtlcRawTxData = bean.NeedClientSignTxData{}
-	latestCommitmentTx.ToCounterpartyRawTxData = bean.NeedClientSignTxData{}
+	latestCommitmentTx.ToCounterpartyRawTxData = bean.NeedClientSignTxData{Hex: " ", Inputs: nil, IsMultisig: false}
+	latestCommitmentTx.RsmcRawTxData = bean.NeedClientSignTxData{Hex: " ", Inputs: nil, IsMultisig: false}
+	latestCommitmentTx.HtlcRawTxData = bean.NeedClientSignTxData{Hex: " ", Inputs: nil, IsMultisig: false}
 	latestCommitmentTx.CurrState = dao.TxInfoState_Htlc_GetH
 	_ = tx.Update(latestCommitmentTx)
 
@@ -2982,10 +2982,9 @@ func checkHexAndUpdateC3bOn42Protocal(tx storm.Node, jsonObj bean.NeedBobSignHtl
 		return nil, false, err
 	}
 	//endregion
-
-	latestCommitmentTx.RsmcRawTxData = bean.NeedClientSignTxData{}
-	latestCommitmentTx.HtlcRawTxData = bean.NeedClientSignTxData{}
-	latestCommitmentTx.ToCounterpartyRawTxData = bean.NeedClientSignTxData{}
+	latestCommitmentTx.ToCounterpartyRawTxData = bean.NeedClientSignTxData{Hex: " ", Inputs: nil, IsMultisig: false}
+	latestCommitmentTx.RsmcRawTxData = bean.NeedClientSignTxData{Hex: " ", Inputs: nil, IsMultisig: false}
+	latestCommitmentTx.HtlcRawTxData = bean.NeedClientSignTxData{Hex: " ", Inputs: nil, IsMultisig: false}
 
 	latestCommitmentTx.CurrState = dao.TxInfoState_Htlc_GetH
 	bytes, err := json.Marshal(latestCommitmentTx)

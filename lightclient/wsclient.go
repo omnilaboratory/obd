@@ -503,21 +503,7 @@ func p2pMiddleNodeTransferData(msg *bean.RequestMessage, itemClient Client, data
 
 	//当47处理完成，发送48号协议给收款方
 	if msg.Type == enum.MsgType_HTLC_SendHerdHex_46 {
-
-		newMsg := bean.RequestMessage{}
-		newMsg.Type = enum.MsgType_HTLC_SignHedHex_48
-		newMsg.SenderUserPeerId = itemClient.User.PeerId
-		newMsg.SenderNodePeerId = p2PLocalPeerId
-		newMsg.RecipientUserPeerId = msg.SenderUserPeerId
-		newMsg.RecipientNodePeerId = msg.SenderNodePeerId
-		payerData := gjson.Parse(retData).Get("payerData").String()
-		//转发给payer alice，
-		_ = itemClient.sendDataToP2PUser(newMsg, true, payerData)
-
-		//发给bob的
 		msg.Type = enum.MsgType_HTLC_RecvSignVerifyR_46
-		payeeData := gjson.Parse(retData).Get("payeeData").String()
-		data = payeeData
 	}
 
 	//当48理完成，就改成46的返回 47和48对用户是透明的

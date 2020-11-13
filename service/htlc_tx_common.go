@@ -446,7 +446,7 @@ func saveHtlcHeTxForPayee(tx storm.Node, channelInfo dao.ChannelInfo, commitment
 	c3bHeRawData.PubKeyA = commitmentTransaction.HtlcH
 	c3bHeRawData.PubKeyB = payeeChannelPubKey
 
-	if he1b.Id > 0 {
+	if he1b.Id == 0 {
 		he1b.InputHex = c3bHlockHex
 		he1b.InputTxid = c3bHlocOutputs[0].Txid
 		he1b.InputAmount = commitmentTransaction.AmountToHtlc

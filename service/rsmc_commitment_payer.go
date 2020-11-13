@@ -663,9 +663,8 @@ func (this *commitmentTxManager) OnAliceSignedC2b_RDTxAtAliceSide(data string, u
 		}
 	}
 
-	//更新alice的当前承诺交易
-	latestCommitmentTxInfo.RsmcRawTxData = bean.NeedClientSignTxData{}
-	latestCommitmentTxInfo.ToCounterpartyRawTxData = bean.NeedClientSignTxData{}
+	latestCommitmentTxInfo.ToCounterpartyRawTxData = bean.NeedClientSignTxData{Hex: " ", Inputs: nil, IsMultisig: false}
+	latestCommitmentTxInfo.RsmcRawTxData = bean.NeedClientSignTxData{Hex: " ", Inputs: nil, IsMultisig: false}
 	latestCommitmentTxInfo.CurrState = dao.TxInfoState_CreateAndSign
 	latestCommitmentTxInfo.SignAt = time.Now()
 
