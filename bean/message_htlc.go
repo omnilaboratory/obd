@@ -164,6 +164,8 @@ type NeedAliceSignHtlcTxOfC3bP2p struct {
 	C3bRsmcPartialSignedData            NeedClientSignTxData `json:"c3b_rsmc_partial_signed_data"`
 	C3bCounterpartyPartialSignedData    NeedClientSignTxData `json:"c3b_counterparty_partial_signed_data"`
 	C3bHtlcPartialSignedData            NeedClientSignTxData `json:"c3b_htlc_partial_signed_data"`
+	PayeeNodeAddress                    string               `json:"payee_node_address"`
+	PayeePeerId                         string               `json:"payee_peer_id"`
 }
 
 //type 消息 --110041 把41的消息推送给Alice
@@ -197,6 +199,8 @@ type NeedAliceSignHtlcSubTxOfC3b struct {
 	C3bHtlcHtdRawData   NeedClientSignTxData `json:"c3b_htlc_htd_raw_data"`
 	C3bHtlcHlockRawData NeedClientSignTxData `json:"c3b_htlc_hlock_raw_data"`
 	C3bHtlcBrRawData    NeedClientSignTxData `json:"c3b_htlc_br_raw_data"`
+	PayeeNodeAddress    string               `json:"payee_node_address"`
+	PayeePeerId         string               `json:"payee_peer_id"`
 }
 
 //type 消息 --100103
@@ -226,6 +230,8 @@ type NeedBobSignHtlcSubTxOfC3bP2p struct {
 	C3aHtlcHtrdPartialData           NeedClientSignTxData `json:"c3a_htlc_htrd_partial_data"`
 	C3aHtlcHtbrRawData               NeedClientSignTxData `json:"c3a_htlc_htbr_partial_data"`
 	C3aHtlcHedRawData                NeedClientSignTxData `json:"c3a_htlc_hed_raw_data"`
+	PayerNodeAddress                 string               `json:"payer_node_address"`
+	PayerPeerId                      string               `json:"payer_peer_id"`
 }
 
 // type 110042 需要bob签名C3b的子交易及C3a的ht的子交易
@@ -256,6 +262,8 @@ type BobSignedHtlcSubTxOfC3b struct {
 type NeedBobSignHtlcHeTxOfC3b struct {
 	ChannelId             string               `json:"channel_id"`
 	C3bHtlcHlockHeRawData NeedClientSignTxData `json:"c3b_htlc_hlock_he_raw_data"`
+	PayerNodeAddress      string               `json:"payer_node_address"`
+	PayerPeerId           string               `json:"payer_peer_id"`
 }
 
 // type 消息 100105 bob完成对he的签名

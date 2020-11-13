@@ -779,6 +779,8 @@ func (service *htlcForwardTxManager) BobSignedAddHtlcAtBobSide(jsonData string, 
 	toAliceDataOf41P := bean.NeedAliceSignHtlcTxOfC3bP2p{}
 
 	toAliceDataOf41P.PayerCommitmentTxHash = requestData.PayerCommitmentTxHash
+	toAliceDataOf41P.PayeePeerId = user.PeerId
+	toAliceDataOf41P.PayeeNodeAddress = user.P2PLocalPeerId
 
 	if len(payerRequestAddHtlc.C3aRsmcPartialSignedData.Hex) > 0 {
 		if pass, _ := rpcClient.CheckMultiSign(true, requestData.C3aCompleteSignedRsmcHex, 2); pass == false {
@@ -1368,9 +1370,13 @@ func (service *htlcForwardTxManager) OnAliceSignC3bAtAliceSide(msg bean.RequestM
 	needBobSignData.ChannelId = channelId
 	needBobSignData.PayeeCommitmentTxHash = dataFromBob.PayeeCommitmentTxHash
 	needBobSignData.C3aHtlcTempAddressForHtPubKey = dataFromBob.C3aHtlcTempAddressForHtPubKey
+	needBobSignData.PayerPeerId = user.PeerId
+	needBobSignData.PayerNodeAddress = user.P2PLocalPeerId
 
 	needAliceSignData := bean.NeedAliceSignHtlcSubTxOfC3b{}
 	needAliceSignData.ChannelId = channelId
+	needAliceSignData.PayeePeerId = dataFromBob.PayeePeerId
+	needAliceSignData.PayeeNodeAddress = dataFromBob.PayeeNodeAddress
 
 	tx, err := user.Db.Begin(true)
 	if err != nil {
@@ -1975,6 +1981,8 @@ func (service *htlcForwardTxManager) OnBobSignedC3bSubTxAtBobSide(msg bean.Reque
 	needBobSignData := bean.NeedBobSignHtlcHeTxOfC3b{}
 	needBobSignData.ChannelId = jsonObj.ChannelId
 	needBobSignData.C3bHtlcHlockHeRawData = *c3bHeRawData
+	needBobSignData.PayerPeerId = c3bCacheData.PayerPeerId
+	needBobSignData.PayerNodeAddress = c3bCacheData.PayerNodeAddress
 	return needBobSignData, nil
 }
 

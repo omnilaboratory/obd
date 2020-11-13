@@ -227,18 +227,59 @@ func (service *htlcBackwardTxManager) SendRToPreviousNodeAtBobSide(msg bean.Requ
 func (service *htlcBackwardTxManager) OnBobSignedHeRdAtBobSide(msg bean.RequestMessage, user bean.User) (retData interface{}, err error) {
 	bobSignedData := bean.BobSignHerdForC3b{}
 	_ = json.Unmarshal([]byte(msg.Data), &bobSignedData)
+
+	if tool.CheckIsString(&bobSignedData.ChannelId) == false {
+		return nil, errors.New("error channel_id")
+	}
 	dataSendTo45P := service.tempDataSendTo45PAtBobSide[user.PeerId+"_"+bobSignedData.ChannelId]
+	if len(dataSendTo45P.ChannelId) == 0 {
+		return nil, errors.New("error channel_id")
+	}
+
 	if pass, _ := rpcClient.CheckMultiSign(false, bobSignedData.C3bHtlcHerdPartialSignedHex, 1); pass == false {
 		return nil, errors.New("error sign c3b_htlc_herd_partial_signed_hex")
 	}
 	dataSendTo45P.C3bHtlcHerdPartialSignedData.Hex = bobSignedData.C3bHtlcHerdPartialSignedHex
+	service.tempDataSendTo45PAtBobSide[user.PeerId+"_"+bobSignedData.ChannelId] = dataSendTo45P
 	return dataSendTo45P, nil
 }
 
-// step 3 alice p2p -45 保存hebr 推送herd
+// step 3 alice p2p -45 推送待签名的herd
 func (service *htlcBackwardTxManager) OnGetHeSubTxDataAtAliceObdAtAliceSide(msg string, user bean.User) (retData interface{}, err error) {
 	dataFrom45P := bean.NeedAliceSignHerdTxOfC3bP2p{}
 	_ = json.Unmarshal([]byte(msg), &dataFrom45P)
+
+	if tool.CheckIsString(&dataFrom45P.ChannelId) == false {
+		return nil, errors.New("error channel_id")
+	}
+
+	if tool.CheckIsString(&dataFrom45P.R) == false {
+		return nil, errors.New(enum.Tips_common_empty + "R")
+	}
+
+	tx, err := user.Db.Begin(true)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	defer tx.Rollback()
+
+	latestCommitmentTx, err := getLatestCommitmentTxUseDbTx(tx, dataFrom45P.ChannelId, user.PeerId)
+	if err != nil {
+		return nil, err
+	}
+	if _, err = tool.GetPubKeyFromWifAndCheck(dataFrom45P.R, latestCommitmentTx.HtlcH); err != nil {
+		return nil, errors.New(enum.Tips_htlc_wrongRForH)
+	}
+	tx.Commit()
+
+	if tool.CheckIsString(&dataFrom45P.C3bHtlcTempAddressForHePubKey) == false {
+		return nil, errors.New(enum.Tips_common_empty + "c3b_htlc_temp_address_for_he_pub_key")
+	}
+
+	if tool.CheckIsString(&dataFrom45P.HeCompleteSignedHex) == false {
+		return nil, errors.New(enum.Tips_common_empty + "he_complete_signed_hex")
+	}
 
 	if service.tempDataFrom45PAtAliceSide == nil {
 		service.tempDataFrom45PAtAliceSide = make(map[string]bean.NeedAliceSignHerdTxOfC3bP2p)
@@ -251,9 +292,24 @@ func (service *htlcBackwardTxManager) OnGetHeSubTxDataAtAliceObdAtAliceSide(msg 
 func (service *htlcBackwardTxManager) OnAliceSignedHeRdAtAliceSide(msg bean.RequestMessage, user bean.User) (toAlice, toBob interface{}, err error) {
 	herdSignedResult := bean.AliceSignHerdTxOfC3e{}
 	_ = json.Unmarshal([]byte(msg.Data), herdSignedResult)
-	dataFrom45P := service.tempDataFrom45PAtAliceSide[user.PeerId+"_"+herdSignedResult.ChannelId]
 
+	if tool.CheckIsString(&herdSignedResult.ChannelId) == false {
+		return nil, nil, errors.New("error channel_id")
+	}
+
+	dataFrom45P := service.tempDataFrom45PAtAliceSide[user.PeerId+"_"+herdSignedResult.ChannelId]
+	if len(dataFrom45P.ChannelId) == 0 {
+		return nil, nil, errors.New("error channel_id")
+	}
+
+	if pass, _ := rpcClient.CheckMultiSign(false, herdSignedResult.C3bHtlcHerdCompleteSignedHex, 2); pass == false {
+		return nil, nil, errors.New("error sign c3b_htlc_herd_complete_signed_hex")
+	}
 	dataFrom45P.C3bHtlcHerdPartialSignedData.Hex = herdSignedResult.C3bHtlcHerdCompleteSignedHex
+
+	if pass, _ := rpcClient.CheckMultiSign(false, herdSignedResult.C3bHtlcHebrPartialSignedHex, 1); pass == false {
+		return nil, nil, errors.New("error sign c3b_htlc_hebr_partial_signed_hex")
+	}
 	dataFrom45P.C3bHtlcHebrRawData.Hex = herdSignedResult.C3bHtlcHebrPartialSignedHex
 
 	dataTo46P := bean.AliceSignedHerdTxOfC3bP2p{}
@@ -286,6 +342,13 @@ func (service *htlcBackwardTxManager) OnAliceSignedHeRdAtAliceSide(msg bean.Requ
 		return nil, nil, err
 	}
 	latestCommitment, err := getLatestCommitmentTxUseDbTx(tx, herdSignedResult.ChannelId, user.PeerId)
+
+	//签名Hed
+	latestCommitment.HtlcR = dataFrom45P.R
+	err = signHed1a(tx, *channelInfo, *latestCommitment, user)
+	if err != nil {
+		return nil, nil, err
+	}
 
 	aliceChannelPubKey := channelInfo.PubKeyA
 	aliceChannelAddress := channelInfo.AddressA
@@ -321,14 +384,26 @@ func (service *htlcBackwardTxManager) OnAliceSignedHeRdAtAliceSide(msg bean.Requ
 		return nil, nil, err
 	}
 
+	latestCommitment.CurrState = dao.TxInfoState_Htlc_GetR
+	tx.Update(latestCommitment)
+
 	tx.Commit()
 	return latestCommitment, dataTo46P, nil
 }
 
 // step 5 bob  -110046 bob保存herd
 func (service *htlcBackwardTxManager) OnGetHeRdDataAtBobObd(msg string, user bean.User) (retData interface{}, err error) {
-	herdSignedResult := bean.AliceSignedHerdTxOfC3bP2p{}
-	_ = json.Unmarshal([]byte(msg), herdSignedResult)
+	dataFrom46P := bean.AliceSignedHerdTxOfC3bP2p{}
+	_ = json.Unmarshal([]byte(msg), dataFrom46P)
+
+	if tool.CheckIsString(&dataFrom46P.ChannelId) == false {
+		return nil, errors.New("error channel_id")
+	}
+
+	if pass, _ := rpcClient.CheckMultiSign(false, dataFrom46P.C3bHtlcHerdCompleteSignedHex, 2); pass == false {
+		return nil, errors.New("error sign c3b_htlc_herd_complete_signed_hex")
+	}
+
 	tx, err := user.Db.Begin(true)
 	if err != nil {
 		log.Println(err)
@@ -338,7 +413,7 @@ func (service *htlcBackwardTxManager) OnGetHeRdDataAtBobObd(msg string, user bea
 
 	channelInfo := dao.ChannelInfo{}
 	err = tx.Select(
-		q.Eq("ChannelId", herdSignedResult.ChannelId),
+		q.Eq("ChannelId", dataFrom46P.ChannelId),
 		q.Or(
 			q.Eq("PeerIdA", user.PeerId),
 			q.Eq("PeerIdB", user.PeerId))).First(&channelInfo)
@@ -347,14 +422,27 @@ func (service *htlcBackwardTxManager) OnGetHeRdDataAtBobObd(msg string, user bea
 		return nil, err
 	}
 
-	latestCommitment, err := getLatestCommitmentTxUseDbTx(tx, herdSignedResult.ChannelId, user.PeerId)
+	latestCommitment, err := getLatestCommitmentTxUseDbTx(tx, dataFrom46P.ChannelId, user.PeerId)
 
-	_, _ = updateHerd1bAtPayeeSide(tx, channelInfo, latestCommitment.Id, herdSignedResult.C3bHtlcHerdCompleteSignedHex, user)
+	_, _ = updateHerd1bAtPayeeSide(tx, channelInfo, latestCommitment.Id, dataFrom46P.C3bHtlcHerdCompleteSignedHex, user)
 
 	latestCommitment.CurrState = dao.TxInfoState_Htlc_GetR
-	tx.Update(latestCommitment)
+	_ = tx.Update(latestCommitment)
+	//endregion
+	_ = tx.Commit()
 
-	tx.Commit()
+	if channelInfo.IsPrivate == false {
+		//update htlc state on tracker
+		txStateRequest := trackerBean.UpdateHtlcTxStateRequest{}
+		txStateRequest.Path = latestCommitment.HtlcRoutingPacket
+		txStateRequest.H = latestCommitment.HtlcH
+		if strings.HasSuffix(latestCommitment.HtlcRoutingPacket, channelInfo.ChannelId) {
+			txStateRequest.R = latestCommitment.HtlcR
+		}
+		txStateRequest.DirectionFlag = trackerBean.HtlcTxState_ConfirmPayMoney
+		txStateRequest.CurrChannelId = channelInfo.ChannelId
+		sendMsgToTracker(enum.MsgType_Tracker_UpdateHtlcTxState_352, txStateRequest)
+	}
 	return latestCommitment, nil
 }
 
@@ -1010,6 +1098,7 @@ func createAndSaveHed1a_at48(tx storm.Node, signedHed1aHex string, channelInfo d
 	}
 	return nil
 }
+
 func createHed1a(tx storm.Node, signedHed1aHex string, channelInfo dao.ChannelInfo, commitmentTxInfo dao.CommitmentTransaction, user bean.User) (err error) {
 	hlockTx := &dao.HtlcLockTxByH{}
 	err = tx.Select(
@@ -1059,4 +1148,48 @@ func createHed1a(tx storm.Node, signedHed1aHex string, channelInfo dao.ChannelIn
 		_ = tx.Save(hed1a)
 	}
 	return nil
+}
+
+func signHed1a(tx storm.Node, channelInfo dao.ChannelInfo, commitmentTxInfo dao.CommitmentTransaction, user bean.User) (err error) {
+	hlockTx := &dao.HtlcLockTxByH{}
+	err = tx.Select(
+		q.Eq("ChannelId", channelInfo.ChannelId),
+		q.Eq("CommitmentTxId", commitmentTxInfo.Id)).First(hlockTx)
+	if err != nil {
+		err = errors.New("not found the hLockTx")
+		log.Println(err)
+		return err
+	}
+
+	hed1a := &dao.HTLCExecutionDeliveryOfR{}
+	_ = tx.Select(
+		q.Eq("ChannelId", channelInfo.ChannelId),
+		q.Eq("CommitmentTxId", commitmentTxInfo.Id),
+		q.Eq("HLockTxId", hlockTx.Id)).First(hed1a)
+	if hed1a.Id > 0 {
+		payeeChannelPubKey := channelInfo.PubKeyB
+		if user.PeerId == channelInfo.PeerIdB {
+			payeeChannelPubKey = channelInfo.PubKeyA
+		}
+
+		c3aHlockMultiAddress, c3aHlockRedeemScript, c3aHlockAddrScriptPubKey, err := createMultiSig(commitmentTxInfo.HtlcH, payeeChannelPubKey)
+		if err != nil {
+			return err
+		}
+
+		inputs, err := getInputsForNextTxByParseTxHashVout(hed1a.InputHex, c3aHlockMultiAddress, c3aHlockAddrScriptPubKey, c3aHlockRedeemScript)
+		if err != nil || len(inputs) == 0 {
+			log.Println(err)
+			return err
+		}
+
+		txId, hex, err := rpcClient.OmniSignRawTransactionForUnsend(hed1a.TxHex, inputs, commitmentTxInfo.HtlcR)
+		if err != nil {
+			return err
+		}
+		hed1a.TxHex = hex
+		hed1a.Txid = txId
+		_ = tx.Update(hed1a)
+	}
+	return errors.New("fail to sign")
 }

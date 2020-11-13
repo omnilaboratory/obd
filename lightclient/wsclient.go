@@ -146,8 +146,8 @@ func (client *Client) Read() {
 					msg.Type == enum.MsgType_HTLC_ClientSign_Alice_C3bSub_103 ||
 					msg.Type == enum.MsgType_HTLC_ClientSign_Alice_He_105 ||
 					msg.Type == enum.MsgType_HTLC_ClientSign_Bob_HeSub_106 ||
-					msg.Type == enum.MsgType_HTLC_ClientSign_Alice_HeSub_107 ||
-					msg.Type == enum.MsgType_HTLC_SendVerifyR_45 || msg.Type == enum.MsgType_HTLC_SendSignVerifyR_46 ||
+					msg.Type == enum.MsgType_HTLC_ClientSign_Alice_HeSub_46 ||
+					msg.Type == enum.MsgType_HTLC_SendVerifyR_45 ||
 					msg.Type == enum.MsgType_HTLC_SendRequestCloseCurrTx_49 || msg.Type == enum.MsgType_HTLC_SendCloseSigned_50 ||
 					msg.Type == enum.MsgType_Atomic_SendSwap_80 || msg.Type == enum.MsgType_Atomic_SendSwapAccept_81 {
 					if tool.CheckIsString(&msg.RecipientUserPeerId) == false {
@@ -251,8 +251,7 @@ func (client *Client) Read() {
 					//-42 -43 -44 -45 -46 -47
 					if msg.Type == enum.MsgType_HTLC_SendVerifyR_45 ||
 						msg.Type == enum.MsgType_HTLC_ClientSign_Bob_HeSub_106 ||
-						msg.Type == enum.MsgType_HTLC_ClientSign_Alice_HeSub_107 ||
-						msg.Type == enum.MsgType_HTLC_SendSignVerifyR_46 {
+						msg.Type == enum.MsgType_HTLC_ClientSign_Alice_HeSub_46 {
 						sendType, dataOut, status = client.htlcTxModule(msg)
 						break
 					}
@@ -525,7 +524,7 @@ func p2pMiddleNodeTransferData(msg *bean.RequestMessage, itemClient Client, data
 	if msg.Type == enum.MsgType_HTLC_SignHedHex_48 {
 		msg.SenderUserPeerId = msg.RecipientUserPeerId
 		msg.SenderNodePeerId = msg.RecipientNodePeerId
-		msg.Type = enum.MsgType_HTLC_SendSignVerifyR_46
+		msg.Type = enum.MsgType_HTLC_ClientSign_Alice_HeSub_46
 	}
 
 	if msg.Type == enum.MsgType_HTLC_RequestCloseCurrTx_49 {

@@ -191,15 +191,14 @@ const (
 	MsgType_HTLC_PayerSignHTRD1a_43          MsgType = -43
 	MsgType_HTLC_FinishTransferH_43          MsgType = -110043
 
-	MsgType_HTLC_ClientSign_Bob_HeSub_106   MsgType = -100106
-	MsgType_HTLC_ClientSign_Alice_HeSub_107 MsgType = -100107
-	MsgType_HTLC_SendVerifyR_45             MsgType = -100045
-	MsgType_HTLC_VerifyR_45                 MsgType = -45
-	MsgType_HTLC_RecvVerifyR_45             MsgType = -110045
-	MsgType_HTLC_SendSignVerifyR_46         MsgType = -100046
-	MsgType_HTLC_SendHerdHex_46             MsgType = -46
-	MsgType_HTLC_SignHedHex_48              MsgType = -48
-	MsgType_HTLC_RecvSignVerifyR_46         MsgType = -110046
+	MsgType_HTLC_ClientSign_Bob_HeSub_106  MsgType = -100106
+	MsgType_HTLC_ClientSign_Alice_HeSub_46 MsgType = -100046
+	MsgType_HTLC_SendVerifyR_45            MsgType = -100045
+	MsgType_HTLC_VerifyR_45                MsgType = -45
+	MsgType_HTLC_RecvVerifyR_45            MsgType = -110045
+	MsgType_HTLC_SendHerdHex_46            MsgType = -46
+	MsgType_HTLC_SignHedHex_48             MsgType = -48
+	MsgType_HTLC_RecvSignVerifyR_46        MsgType = -110046
 
 	MsgType_HTLC_SendRequestCloseCurrTx_49 MsgType = -100049
 	MsgType_HTLC_RequestCloseCurrTx_49     MsgType = -49
@@ -407,13 +406,11 @@ func CheckExist(msgType MsgType) bool {
 		return true
 	case MsgType_HTLC_ClientSign_Bob_HeSub_106:
 		return true
-	case MsgType_HTLC_ClientSign_Alice_HeSub_107:
+	case MsgType_HTLC_ClientSign_Alice_HeSub_46:
 		return true
 	case MsgType_HTLC_SendAddHTLCSigned_41:
 		return true
 	case MsgType_HTLC_SendVerifyR_45:
-		return true
-	case MsgType_HTLC_SendSignVerifyR_46:
 		return true
 	case MsgType_HTLC_SendRequestCloseCurrTx_49:
 		return true

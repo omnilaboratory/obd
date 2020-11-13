@@ -362,7 +362,7 @@ func (client *Client) htlcTxModule(msg bean.RequestMessage) (enum.SendTargetType
 			msg.Type = enum.MsgType_HTLC_ClientSign_Bob_HeSub_106
 			client.sendToMyself(msg.Type, status, data)
 		}
-	case enum.MsgType_HTLC_ClientSign_Alice_HeSub_107:
+	case enum.MsgType_HTLC_ClientSign_Alice_HeSub_46:
 		toAlice, toBob, err := service.HtlcBackwardTxService.OnAliceSignedHeRdAtAliceSide(msg, *client.User)
 		if err != nil {
 			data = err.Error()
@@ -391,7 +391,7 @@ func (client *Client) htlcTxModule(msg bean.RequestMessage) (enum.SendTargetType
 			}
 
 		}
-		msg.Type = enum.MsgType_HTLC_ClientSign_Alice_HeSub_107
+		msg.Type = enum.MsgType_HTLC_ClientSign_Alice_HeSub_46
 		client.sendToMyself(msg.Type, status, data)
 	}
 	return sendType, []byte(data), status

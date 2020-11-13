@@ -465,13 +465,13 @@ func saveRdTx(tx storm.Node, channelInfo *dao.ChannelInfo, signedRsmcHex string,
 	return nil
 }
 
-func signHTD1bTx(tx storm.Node, signedHtlcHex string, htd1bHex string, latestCcommitmentTxInfo dao.CommitmentTransaction, outputAddress string, user *bean.User) (err error) {
-	inputs, err := getInputsForNextTxByParseTxHashVout(signedHtlcHex, latestCcommitmentTxInfo.HTLCMultiAddress, latestCcommitmentTxInfo.HTLCMultiAddressScriptPubKey, latestCcommitmentTxInfo.HTLCRedeemScript)
+func signHTD1bTx(tx storm.Node, signedHtlcHex string, htd1bHex string, latestCommitmentTxInfo dao.CommitmentTransaction, outputAddress string, user *bean.User) (err error) {
+	inputs, err := getInputsForNextTxByParseTxHashVout(signedHtlcHex, latestCommitmentTxInfo.HTLCMultiAddress, latestCommitmentTxInfo.HTLCMultiAddressScriptPubKey, latestCommitmentTxInfo.HTLCRedeemScript)
 	if err != nil || len(inputs) == 0 {
 		log.Println(err)
 		return err
 	}
-	signedHtd1bTxid, signedHtd1bHex, err := rpcClient.OmniSignRawTransactionForUnsend(htd1bHex, inputs, tempAddrPrivateKeyMap[latestCcommitmentTxInfo.HTLCTempAddressPubKey])
+	signedHtd1bTxid, signedHtd1bHex, err := rpcClient.OmniSignRawTransactionForUnsend(htd1bHex, inputs, tempAddrPrivateKeyMap[latestCommitmentTxInfo.HTLCTempAddressPubKey])
 	if err != nil {
 		return err
 	}
@@ -485,20 +485,20 @@ func signHTD1bTx(tx storm.Node, signedHtlcHex string, htd1bHex string, latestCco
 		}
 	}
 
-	owner := latestCcommitmentTxInfo.PeerIdA
-	if user.PeerId == latestCcommitmentTxInfo.PeerIdA {
-		owner = latestCcommitmentTxInfo.PeerIdB
+	owner := latestCommitmentTxInfo.PeerIdA
+	if user.PeerId == latestCommitmentTxInfo.PeerIdA {
+		owner = latestCommitmentTxInfo.PeerIdB
 	}
 
-	htlcTimeOut := latestCcommitmentTxInfo.HtlcCltvExpiry
+	htlcTimeOut := latestCommitmentTxInfo.HtlcCltvExpiry
 	htlcTimeoutDeliveryTx := &dao.HTLCTimeoutDeliveryTxB{}
-	htlcTimeoutDeliveryTx.ChannelId = latestCcommitmentTxInfo.ChannelId
-	htlcTimeoutDeliveryTx.CommitmentTxId = latestCcommitmentTxInfo.Id
-	htlcTimeoutDeliveryTx.PropertyId = latestCcommitmentTxInfo.PropertyId
+	htlcTimeoutDeliveryTx.ChannelId = latestCommitmentTxInfo.ChannelId
+	htlcTimeoutDeliveryTx.CommitmentTxId = latestCommitmentTxInfo.Id
+	htlcTimeoutDeliveryTx.PropertyId = latestCommitmentTxInfo.PropertyId
 	htlcTimeoutDeliveryTx.OutputAddress = outputAddress
-	htlcTimeoutDeliveryTx.InputTxid = latestCcommitmentTxInfo.HTLCTxid
-	htlcTimeoutDeliveryTx.InputHex = latestCcommitmentTxInfo.HtlcTxHex
-	htlcTimeoutDeliveryTx.OutAmount = latestCcommitmentTxInfo.AmountToHtlc
+	htlcTimeoutDeliveryTx.InputTxid = latestCommitmentTxInfo.HTLCTxid
+	htlcTimeoutDeliveryTx.InputHex = latestCommitmentTxInfo.HtlcTxHex
+	htlcTimeoutDeliveryTx.OutAmount = latestCommitmentTxInfo.AmountToHtlc
 	htlcTimeoutDeliveryTx.Owner = owner
 	htlcTimeoutDeliveryTx.CurrState = dao.TxInfoState_CreateAndSign
 	htlcTimeoutDeliveryTx.CreateBy = user.PeerId
@@ -514,27 +514,28 @@ func signHTD1bTx(tx storm.Node, signedHtlcHex string, htd1bHex string, latestCco
 	}
 	return nil
 }
-func saveHTD1bTx(tx storm.Node, signedHtlcHex string, signedHtd1bHex string, latestCcommitmentTxInfo dao.CommitmentTransaction, outputAddress string, user *bean.User) (err error) {
-	inputs, err := getInputsForNextTxByParseTxHashVout(signedHtlcHex, latestCcommitmentTxInfo.HTLCMultiAddress, latestCcommitmentTxInfo.HTLCMultiAddressScriptPubKey, latestCcommitmentTxInfo.HTLCRedeemScript)
+
+func saveHTD1bTx(tx storm.Node, signedHtlcHex string, signedHtd1bHex string, latestCommitmentTxInfo dao.CommitmentTransaction, outputAddress string, user *bean.User) (err error) {
+	inputs, err := getInputsForNextTxByParseTxHashVout(signedHtlcHex, latestCommitmentTxInfo.HTLCMultiAddress, latestCommitmentTxInfo.HTLCMultiAddressScriptPubKey, latestCommitmentTxInfo.HTLCRedeemScript)
 	if err != nil || len(inputs) == 0 {
 		log.Println(err)
 		return err
 	}
 
-	owner := latestCcommitmentTxInfo.PeerIdA
-	if user.PeerId == latestCcommitmentTxInfo.PeerIdA {
-		owner = latestCcommitmentTxInfo.PeerIdB
+	owner := latestCommitmentTxInfo.PeerIdA
+	if user.PeerId == latestCommitmentTxInfo.PeerIdA {
+		owner = latestCommitmentTxInfo.PeerIdB
 	}
 
-	htlcTimeOut := latestCcommitmentTxInfo.HtlcCltvExpiry
+	htlcTimeOut := latestCommitmentTxInfo.HtlcCltvExpiry
 	htlcTimeoutDeliveryTx := &dao.HTLCTimeoutDeliveryTxB{}
-	htlcTimeoutDeliveryTx.ChannelId = latestCcommitmentTxInfo.ChannelId
-	htlcTimeoutDeliveryTx.CommitmentTxId = latestCcommitmentTxInfo.Id
-	htlcTimeoutDeliveryTx.PropertyId = latestCcommitmentTxInfo.PropertyId
+	htlcTimeoutDeliveryTx.ChannelId = latestCommitmentTxInfo.ChannelId
+	htlcTimeoutDeliveryTx.CommitmentTxId = latestCommitmentTxInfo.Id
+	htlcTimeoutDeliveryTx.PropertyId = latestCommitmentTxInfo.PropertyId
 	htlcTimeoutDeliveryTx.OutputAddress = outputAddress
-	htlcTimeoutDeliveryTx.InputTxid = latestCcommitmentTxInfo.HTLCTxid
-	htlcTimeoutDeliveryTx.InputHex = latestCcommitmentTxInfo.HtlcTxHex
-	htlcTimeoutDeliveryTx.OutAmount = latestCcommitmentTxInfo.AmountToHtlc
+	htlcTimeoutDeliveryTx.InputTxid = latestCommitmentTxInfo.HTLCTxid
+	htlcTimeoutDeliveryTx.InputHex = latestCommitmentTxInfo.HtlcTxHex
+	htlcTimeoutDeliveryTx.OutAmount = latestCommitmentTxInfo.AmountToHtlc
 	htlcTimeoutDeliveryTx.Owner = owner
 	htlcTimeoutDeliveryTx.CurrState = dao.TxInfoState_CreateAndSign
 	htlcTimeoutDeliveryTx.CreateBy = user.PeerId
