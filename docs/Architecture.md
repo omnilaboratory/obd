@@ -24,18 +24,23 @@ We recommend users to connect to liquidity providers' nodes and regularly backup
 
 ## individual user
 
-If you have complete knowledge of how block chain and lightning network works, you will try to run your own full obd node. Which means you shall install omnicore/btccore, syc chain data, manage the network security and availability.
+If you have complete knowledge of how block chain and lightning network works, you will try to run your own full obd node. Which means you shall install omnicore/btccore, sync chain data, manage the network security and availability.
 
 
-## LND integrated
+## LND integration
 
 OBD releases two versions of SDK, one is [js SDK](https://omnilaboratory.github.io/obd/#/js-sdk), the other is integrated with current LND SDK.
 
-Since LND is a custodial wallet, it stores your seeds and keys in its local storage, so that you shall run your own ln daemon to initialte a wallet. While obd allows remote connection. 
- 
-For the purpose of lesser dependency, it is reasonable to assume developers are willing to work with current LND programming interface, so we just add extra functions which process omni assets lightning transactions to LND API set. Our current solution is:  
+<p align="center">
+  <img width="750" alt="LND integration" src="assets/LND-integration-2.png">
+</p>
 
-1. Release an installation package including both lnd and obd, and the two nodes share one omnicore/btccore;  
+Since LND wallet is a custodial wallet, it stores your seeds and keys in its local storage, so that you shall run your own lnd full node to initialte a wallet. While obd allows remote connections. 
+ 
+For the purpose of lesser dependency to integrators, it is reasonable to assume developers are willing to work with current LND programming interface, so we just add extra functions to LND gRPC set. Our current solution is:  
+
+<!-- 
+1. Release an installation package including both lnd and obd, and the two nodes share one omnicore/btccore;   
 
 2. For existing LND nodes, user shall install obd as a plugin, OR: ;  
 
@@ -45,7 +50,20 @@ For the purpose of lesser dependency, it is reasonable to assume developers are 
 
 5. The original LND APIs are and will be BTC transaction only. Our newly added functions will automatically switch the context to obd node that connected;  
 
-6. New functions have clear context when program an application, and are better than embedding metadata to existing LND api;  
+6. New functions have clear context when program an application, and are better than embedding metadata to existing LND api;  -->
+
+1. OBD SDK consists of a websocket client that operates OBD node, and a gRPC server that provide services to applications;  
+
+2. OBD gRPC server calls LND wallet kit to generate seed for a new user, and all keys of this user are derived from this seed;  
+
+3. OBD websocket client connects remote/local OBD node;  
+
+4. Merge OBD gRPC interfaces into LND gRPC api set. Newly added gRPC APIs have distinguishable but indicative names. For example: openAssetChannel, comparing to LND's openChannel which is the BTC only method;  
+
+5. You (application developer) will still work with LND gPRC server, hence no extraneous dependency is brought into your tech stack. When you call asset related functions, OBD gRPC server will automatically switch the context to obd node that is connected;  
+
+It has much more clear context in the way offerring new functions, instead of embedding metadata to existing LND api. BTC channel network is logically seperated from asset channel network. This solution is not finalized yet. If you disagree and believe there are other better ways to let the two network work together, then I’d love to hear your thinking as well.
+
 
 The project address is: https://github.com/omnilaboratory/lnd
 
