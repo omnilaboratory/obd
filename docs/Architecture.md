@@ -62,7 +62,7 @@ For the purpose of lesser dependency to integrators, it is reasonable to assume 
 
 5. You (application developer) will still work with LND gPRC server, hence no extraneous dependency is brought into your tech stack. When you call asset related functions, OBD gRPC server will automatically switch the context to obd node that is connected;  
 
-It has much more clear context in the way offerring new functions, instead of embedding metadata to existing LND api. BTC channel network is logically seperated from asset channel network. This solution is not finalized yet. If you disagree and believe there are other better ways to let the two network work together, then I’d love to hear your thinking as well.
+It has much more clear context in the way offerring new functions, instead of embedding metadata into existing LND api. BTC channel network is logically seperated from asset channel network. This solution is not finalized yet. If you disagree and believe there are other better ways to let the two network work together, then I’d love to hear your thinking as well.
 
 
 The project address is: https://github.com/omnilaboratory/lnd
