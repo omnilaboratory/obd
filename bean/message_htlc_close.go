@@ -34,8 +34,8 @@ type NeedAliceSignRsmcDataForC4a struct {
 //消息 -100110(alice to obd) alice发给obd (Alice签名C4a的结果)
 type AliceSignedRsmcDataForC4a struct {
 	ChannelId                    string `json:"channel_id"`
-	RsmcPartialSignedHex         string `json:"rsmc_signed_hex"`
-	CounterpartyPartialSignedHex string `json:"counterparty_signed_hex"`
+	RsmcPartialSignedHex         string `json:"rsmc_partial_signed_hex"`
+	CounterpartyPartialSignedHex string `json:"counterparty_partial_signed_hex"`
 	typeLengthValue
 }
 

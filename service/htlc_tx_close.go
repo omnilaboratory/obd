@@ -247,11 +247,89 @@ func (service *htlcCloseTxManager) RequestCloseHtlc(msg bean.RequestMessage, use
 
 // step2 Alice 100100 Alice签名Cxa 并推送49号协议
 func (service *htlcCloseTxManager) OnAliceSignedCxa(msg bean.RequestMessage, user bean.User) (toALice, toBob interface{}, err error) {
+	if tool.CheckIsString(&msg.Data) == false {
+		err = errors.New(enum.Tips_common_empty + "msg.data")
+		log.Println(err)
+		return nil, nil, err
+	}
+	signedData := bean.AliceSignedRsmcDataForC4a{}
+	_ = json.Unmarshal([]byte(msg.Data), &signedData)
 
-	return nil, nil, nil
+	if tool.CheckIsString(&signedData.ChannelId) == false {
+		err = errors.New(enum.Tips_common_empty + "channel_id")
+		log.Println(err)
+		return nil, nil, err
+	}
+
+	p2pData := service.tempDataSendTo49PAtAliceSide[user.PeerId+"_"+signedData.ChannelId]
+	if &p2pData == nil {
+		return nil, nil, errors.New(enum.Tips_common_wrong + "channel_id")
+	}
+
+	if tool.CheckIsString(&signedData.RsmcPartialSignedHex) {
+		if pass, _ := rpcClient.CheckMultiSign(true, signedData.RsmcPartialSignedHex, 1); pass == false {
+			err = errors.New(enum.Tips_common_wrong + "rsmc_partial_signed_hex")
+			log.Println(err)
+			return nil, nil, err
+		}
+	}
+
+	if tool.CheckIsString(&signedData.CounterpartyPartialSignedHex) == false {
+		err = errors.New(enum.Tips_common_empty + "counterparty_partial_signed_hex")
+		log.Println(err)
+		return nil, nil, err
+	}
+
+	if pass, _ := rpcClient.CheckMultiSign(true, signedData.CounterpartyPartialSignedHex, 1); pass == false {
+		err = errors.New(enum.Tips_common_wrong + "counterparty_signed_hex")
+		log.Println(err)
+		return nil, nil, err
+	}
+
+	tx, err := user.Db.Begin(true)
+	if err != nil {
+		log.Println(err)
+		return nil, nil, err
+	}
+	defer tx.Rollback()
+
+	latestCommitmentTxInfo, err := getLatestCommitmentTxUseDbTx(tx, signedData.ChannelId, user.PeerId)
+	if err != nil {
+		return nil, nil, errors.New(enum.Tips_channel_notFoundLatestCommitmentTx)
+	}
+
+	if len(latestCommitmentTxInfo.RSMCTxHex) > 0 {
+		//封装好的签名数据，给bob的客户端签名使用
+		latestCommitmentTxInfo.RsmcRawTxData.Hex = signedData.RsmcPartialSignedHex
+		latestCommitmentTxInfo.RSMCTxHex = signedData.CounterpartyPartialSignedHex
+		latestCommitmentTxInfo.RSMCTxid = rpcClient.GetTxId(signedData.CounterpartyPartialSignedHex)
+	}
+
+	if len(latestCommitmentTxInfo.ToCounterpartyTxHex) > 0 {
+		//封装好的签名数据，给bob的客户端签名使用
+		latestCommitmentTxInfo.ToCounterpartyRawTxData.Hex = signedData.CounterpartyPartialSignedHex
+		latestCommitmentTxInfo.ToCounterpartyTxHex = signedData.CounterpartyPartialSignedHex
+		latestCommitmentTxInfo.ToCounterpartyTxid = rpcClient.GetTxId(signedData.CounterpartyPartialSignedHex)
+	}
+
+	p2pData.RsmcPartialSignedData = latestCommitmentTxInfo.RsmcRawTxData
+	p2pData.CounterpartyPartialSignedData = latestCommitmentTxInfo.ToCounterpartyRawTxData
+
+	latestCommitmentTxInfo.RsmcRawTxData = bean.NeedClientSignTxData{Hex: "", Inputs: nil, IsMultisig: false}
+	latestCommitmentTxInfo.ToCounterpartyRawTxData = bean.NeedClientSignTxData{Hex: "", Inputs: nil, IsMultisig: false}
+	latestCommitmentTxInfo.CurrState = dao.TxInfoState_Create
+	_ = tx.Update(latestCommitmentTxInfo)
+	tx.Commit()
+
+	toAliceResult := bean.AliceSignedRsmcDataForC2aResult{}
+	toAliceResult.ChannelId = p2pData.ChannelId
+	toAliceResult.CurrTempAddressPubKey = p2pData.CurrTempAddressPubKey
+	toAliceResult.CommitmentTxHash = p2pData.CommitmentTxHash
+	toAliceResult.Amount = latestCommitmentTxInfo.AmountToHtlc
+	return toAliceResult, p2pData, nil
 }
 
-//// step3 obd 110049 推送p2p消息给bob
+// step3 obd 110049 推送p2p消息给bob
 //func (service *htlcCloseTxManager) OnObdOfBobGet49PData(msg string, user bean.User) (toBob interface{}, err error) {
 //
 //}
@@ -285,7 +363,7 @@ func (service *htlcCloseTxManager) OnAliceSignedCxa(msg bean.RequestMessage, use
 //func (service *htlcCloseTxManager) OnObdOfBobGet51PData(msg string, user bean.User) (toBob interface{}, err error) {
 //
 //}
-
+//
 //// step10 bob 110114 bob完成Cxb的Rd的签名
 //func (service *htlcCloseTxManager) OnBobSignedCxbSubTx(msg bean.RequestMessage, user bean.User) (toBob interface{}, err error) {
 //

@@ -544,6 +544,7 @@ func (service *htlcForwardTxManager) AliceAddHtlcAtAliceSide(msg bean.RequestMes
 
 	if latestCommitmentTx.CurrState == dao.TxInfoState_Init {
 		txForC3a := bean.NeedAliceSignCreateHtlcTxForC3a{}
+		txForC3a.H = c3aP2pData.H
 		txForC3a.ChannelId = latestCommitmentTx.ChannelId
 		txForC3a.C3aRsmcRawData = latestCommitmentTx.RsmcRawTxData
 		txForC3a.C3aHtlcRawData = latestCommitmentTx.HtlcRawTxData
