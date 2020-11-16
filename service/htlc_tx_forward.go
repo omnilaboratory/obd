@@ -704,6 +704,7 @@ func (service *htlcForwardTxManager) BeforeBobSignAddHtlcRequestAtBobSide_40(msg
 	service.addHtlcTempDataAtBobSide[requestAddHtlc.PayerCommitmentTxHash] = msgData
 	toBobData := bean.CreateHtlcTxForC3aToBob{}
 	toBobData.ChannelId = requestAddHtlc.ChannelId
+	toBobData.H = requestAddHtlc.H
 	toBobData.PayerCommitmentTxHash = requestAddHtlc.PayerCommitmentTxHash
 	toBobData.PayerPeerId = requestAddHtlc.PayerPeerId
 	toBobData.PayerNodeAddress = requestAddHtlc.PayerNodeAddress

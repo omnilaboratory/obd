@@ -91,6 +91,7 @@ type CreateHtlcTxForC3aOfP2p struct {
 //type obd推送 --110040 obd主动推送alice的C3a的信息给bob的客户端
 type CreateHtlcTxForC3aToBob struct {
 	ChannelId                        string               `json:"channel_id"`
+	H                                string               `json:"h"`
 	PayerCommitmentTxHash            string               `json:"payer_commitment_tx_hash"`
 	C3aCounterpartyPartialSignedData NeedClientSignTxData `json:"c3a_counterparty_partial_signed_data"`
 	C3aRsmcPartialSignedData         NeedClientSignTxData `json:"c3a_rsmc_partial_signed_data"`
