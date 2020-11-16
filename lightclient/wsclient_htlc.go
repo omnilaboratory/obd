@@ -187,7 +187,7 @@ func (client *Client) htlcHModule(msg bean.RequestMessage) (enum.SendTargetType,
 			}
 
 		}
-		msg.Type = enum.MsgType_HTLC_SendAddHTLCSigned_41
+		msg.Type = enum.MsgType_HTLC_ClientSign_Bob_C3b_101
 		client.sendToMyself(msg.Type, status, data)
 	case enum.MsgType_HTLC_ClientSign_Alice_C3b_102:
 		returnData, err := service.HtlcForwardTxService.OnAliceSignC3bAtAliceSide(msg, *client.User)
@@ -403,8 +403,8 @@ func (client *Client) htlcCloseModule(msg bean.RequestMessage) (enum.SendTargetT
 	var sendType = enum.SendTargetType_SendToNone
 	data := ""
 	switch msg.Type {
-	case enum.MsgType_HTLC_SendRequestCloseCurrTx_49:
-		outData, err := service.HtlcCloseTxService.RequestCloseHtlc(msg, *client.User)
+	case enum.MsgType_HTLC_Close_SendRequestCloseCurrTx_49:
+		outData, needSign, err := service.HtlcCloseTxService.RequestCloseHtlc(msg, *client.User)
 		if err != nil {
 			data = err.Error()
 		} else {
@@ -414,18 +414,55 @@ func (client *Client) htlcCloseModule(msg bean.RequestMessage) (enum.SendTargetT
 			} else {
 				data = string(bytes)
 				status = true
-				msg.Type = enum.MsgType_HTLC_RequestCloseCurrTx_49
+				if needSign == false {
+					msg.Type = enum.MsgType_HTLC_Close_RequestCloseCurrTx_49
+					err = client.sendDataToP2PUser(msg, status, data)
+					if err != nil {
+						data = err.Error()
+						status = false
+					}
+				}
+			}
+		}
+		msg.Type = enum.MsgType_HTLC_Close_SendRequestCloseCurrTx_49
+		client.sendToMyself(msg.Type, status, data)
+		sendType = enum.SendTargetType_SendToSomeone
+	case enum.MsgType_HTLC_Close_ClientSign_Alice_C4a_110:
+		toAlice, toBob, err := service.HtlcCloseTxService.OnAliceSignedCxa(msg, *client.User)
+		if err != nil {
+			data = err.Error()
+		} else {
+			bytes, err := json.Marshal(toBob)
+			if err != nil {
+				data = err.Error()
+			} else {
+				data = string(bytes)
+				status = true
+			}
+			if status {
+				msg.Type = enum.MsgType_HTLC_Close_RequestCloseCurrTx_49
 				err = client.sendDataToP2PUser(msg, status, data)
 				if err != nil {
 					data = err.Error()
 					status = false
 				}
 			}
+
+			if status {
+				bytes, err = json.Marshal(toAlice)
+				if err != nil {
+					data = err.Error()
+				} else {
+					data = string(bytes)
+					status = true
+				}
+			}
 		}
-		msg.Type = enum.MsgType_HTLC_SendRequestCloseCurrTx_49
+		msg.Type = enum.MsgType_HTLC_Close_ClientSign_Alice_C4a_110
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
-	case enum.MsgType_HTLC_SendCloseSigned_50:
+
+	case enum.MsgType_HTLC_Close_SendCloseSigned_50:
 		outData, err := service.HtlcCloseTxService.CloseHTLCSigned(msg, *client.User)
 		if err != nil {
 			data = err.Error()
@@ -436,7 +473,7 @@ func (client *Client) htlcCloseModule(msg bean.RequestMessage) (enum.SendTargetT
 			} else {
 				data = string(bytes)
 				status = true
-				msg.Type = enum.MsgType_HTLC_CloseHtlcRequestSignBR_51
+				msg.Type = enum.MsgType_HTLC_CloseHtlcRequestSignBR_50
 				err = client.sendDataToP2PUser(msg, status, data)
 				if err != nil {
 					data = err.Error()

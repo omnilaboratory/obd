@@ -77,6 +77,7 @@ func (client *Client) OmniCreateRawTransaction(fromBitCoinAddress string, toBitC
 	}
 	log.Println("2 payload " + payload)
 
+	balance = 0.0
 	inputs := make([]map[string]interface{}, 0, len(arrayListUnspent))
 	for _, item := range arrayListUnspent {
 		node := make(map[string]interface{})
@@ -90,6 +91,10 @@ func (client *Client) OmniCreateRawTransaction(fromBitCoinAddress string, toBitC
 		node["scriptPubKey"] = item.Get("scriptPubKey").String()
 		node["amount"] = item.Get("amount").Float()
 		inputs = append(inputs, node)
+		balance, _ = decimal.NewFromFloat(balance).Add(decimal.NewFromFloat(item.Get("amount").Float())).Round(8).Float64()
+		if balance >= out {
+			break
+		}
 	}
 
 	outputs := make(map[string]interface{})

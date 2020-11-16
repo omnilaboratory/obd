@@ -306,7 +306,7 @@ func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction
 		//endregion
 
 		//region 4、创建C2b
-		commitmentTxRequest := &bean.RequestToCreateCommitmentTx{}
+		commitmentTxRequest := &bean.RequestCreateCommitmentTx{}
 		commitmentTxRequest.ChannelId = channelInfo.ChannelId
 		commitmentTxRequest.Amount = c2aDataJson.Amount
 		commitmentTxRequest.CurrTempAddressIndex = reqData.CurrTempAddressIndex

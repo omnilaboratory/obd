@@ -148,7 +148,7 @@ func (client *Client) Read() {
 					msg.Type == enum.MsgType_HTLC_ClientSign_Bob_HeSub_106 ||
 					msg.Type == enum.MsgType_HTLC_ClientSign_Alice_HeSub_46 ||
 					msg.Type == enum.MsgType_HTLC_SendVerifyR_45 ||
-					msg.Type == enum.MsgType_HTLC_SendRequestCloseCurrTx_49 || msg.Type == enum.MsgType_HTLC_SendCloseSigned_50 ||
+					msg.Type == enum.MsgType_HTLC_Close_SendRequestCloseCurrTx_49 || msg.Type == enum.MsgType_HTLC_Close_SendCloseSigned_50 ||
 					msg.Type == enum.MsgType_Atomic_SendSwap_80 || msg.Type == enum.MsgType_Atomic_SendSwapAccept_81 {
 					if tool.CheckIsString(&msg.RecipientUserPeerId) == false {
 						client.sendToMyself(msg.Type, false, enum.Tips_common_empty+" recipient_user_peer_id")
@@ -257,8 +257,8 @@ func (client *Client) Read() {
 					}
 
 					// -49 -50
-					if msg.Type == enum.MsgType_HTLC_SendRequestCloseCurrTx_49 ||
-						msg.Type == enum.MsgType_HTLC_SendCloseSigned_50 {
+					if msg.Type == enum.MsgType_HTLC_Close_SendRequestCloseCurrTx_49 ||
+						msg.Type == enum.MsgType_HTLC_Close_SendCloseSigned_50 {
 						sendType, dataOut, status = client.htlcCloseModule(msg)
 						break
 					}
@@ -513,14 +513,14 @@ func p2pMiddleNodeTransferData(msg *bean.RequestMessage, itemClient Client, data
 		msg.Type = enum.MsgType_HTLC_ClientSign_Alice_HeSub_46
 	}
 
-	if msg.Type == enum.MsgType_HTLC_RequestCloseCurrTx_49 {
-		msg.Type = enum.MsgType_HTLC_RecvRequestCloseCurrTx_49
+	if msg.Type == enum.MsgType_HTLC_Close_RequestCloseCurrTx_49 {
+		msg.Type = enum.MsgType_HTLC_Close_RecvRequestCloseCurrTx_49
 	}
 
-	if msg.Type == enum.MsgType_HTLC_CloseHtlcRequestSignBR_51 {
+	if msg.Type == enum.MsgType_HTLC_CloseHtlcRequestSignBR_50 {
 		//	发给bob的信息
 		newMsg := bean.RequestMessage{}
-		newMsg.Type = enum.MsgType_HTLC_CloseHtlcUpdateCnb_52
+		newMsg.Type = enum.MsgType_HTLC_CloseHtlcUpdateCnb_51
 		newMsg.SenderUserPeerId = itemClient.User.PeerId
 		newMsg.SenderNodePeerId = p2PLocalPeerId
 		newMsg.RecipientUserPeerId = msg.SenderUserPeerId
@@ -534,10 +534,10 @@ func p2pMiddleNodeTransferData(msg *bean.RequestMessage, itemClient Client, data
 		data = payerData
 	}
 
-	if msg.Type == enum.MsgType_HTLC_CloseHtlcUpdateCnb_52 {
+	if msg.Type == enum.MsgType_HTLC_CloseHtlcUpdateCnb_51 {
 		msg.SenderUserPeerId = msg.RecipientUserPeerId
 		msg.SenderNodePeerId = msg.RecipientNodePeerId
-		msg.Type = enum.MsgType_HTLC_SendCloseSigned_50
+		msg.Type = enum.MsgType_HTLC_Close_SendCloseSigned_50
 	}
 
 	if msg.Type == enum.MsgType_Atomic_Swap_80 {

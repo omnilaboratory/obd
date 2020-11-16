@@ -186,47 +186,6 @@ type AliceSignRDOfAssetFunding struct {
 	typeLengthValue
 }
 
-//type -49: user wanna close htlc tx when tx is on getH state
-type HtlcRequestCloseCurrTx struct {
-	ChannelId                            string `json:"channel_id"`
-	ChannelAddressPrivateKey             string `json:"channel_address_private_key"` //	开通通道用到的私钥
-	LastRsmcTempAddressPrivateKey        string `json:"last_rsmc_temp_address_private_key"`
-	LastHtlcTempAddressPrivateKey        string `json:"last_htlc_temp_address_private_key"`
-	LastHtlcTempAddressForHtnxPrivateKey string `json:"last_htlc_temp_address_for_htnx_private_key"`
-	CurrRsmcTempAddressIndex             int    `json:"curr_rsmc_temp_address_index"`
-	CurrRsmcTempAddressPubKey            string `json:"curr_rsmc_temp_address_pub_key"`
-	CurrRsmcTempAddressPrivateKey        string `json:"curr_rsmc_temp_address_private_key"`
-	typeLengthValue
-}
-
-//type -50: receiver sign the close request
-type HtlcSignCloseCurrTx struct {
-	MsgHash                              string `json:"msg_hash"`
-	ChannelAddressPrivateKey             string `json:"channel_address_private_key"` //	开通通道用到的私钥
-	LastRsmcTempAddressPrivateKey        string `json:"last_rsmc_temp_address_private_key"`
-	LastHtlcTempAddressPrivateKey        string `json:"last_htlc_temp_address_private_key"`
-	LastHtlcTempAddressForHtnxPrivateKey string `json:"last_htlc_temp_address_for_htnx_private_key"`
-	CurrRsmcTempAddressIndex             int    `json:"curr_rsmc_temp_address_index"`
-	CurrRsmcTempAddressPubKey            string `json:"curr_rsmc_temp_address_pub_key"`
-	CurrRsmcTempAddressPrivateKey        string `json:"curr_rsmc_temp_address_private_key"`
-	typeLengthValue
-}
-
-//50->51
-type HtlcCloseCloseeSignedInfoToCloser struct {
-	ChannelId                                  string `json:"channel_id"`
-	CloseeLastRsmcTempAddressPrivateKey        string `json:"closee_last_rsmc_temp_address_private_key"`
-	CloseeLastHtlcTempAddressPrivateKey        string `json:"closee_last_htlc_temp_address_private_key"`
-	CloseeLastHtlcTempAddressForHtnxPrivateKey string `json:"closee_last_htlc_temp_address_for_htnx_private_key"`
-	CloseeCurrRsmcTempAddressPubKey            string `json:"closee_curr_rsmc_temp_address_pub_key"`
-	CloseeRsmcHex                              string `json:"closee_rsmc_hex"`
-	CloseeToCounterpartyTxHex                  string `json:"closee_to_counterparty_tx_hex"`
-	CloserCommitmentTxHash                     string `json:"closer_commitment_tx_hash"`
-	CloserSignedRsmcHex                        string `json:"closer_signed_rsmc_hex"`
-	CloserRsmcRdHex                            string `json:"closer_rsmc_rd_hex"`
-	CloserSignedToCounterpartyTxHex            string `json:"closer_signed_to_counterparty_tx_hex"`
-}
-
 //51->52
 type HtlcCloseCloserSignTxInfoToClosee struct {
 	ChannelId                       string `json:"channel_id"`

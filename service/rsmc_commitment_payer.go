@@ -33,7 +33,7 @@ func (this *commitmentTxManager) CommitmentTransactionCreated(msg bean.RequestMe
 		return nil, false, errors.New(enum.Tips_common_empty + "msg.Data")
 	}
 
-	reqData := &bean.RequestToCreateCommitmentTx{}
+	reqData := &bean.RequestCreateCommitmentTx{}
 	err = json.Unmarshal([]byte(msg.Data), reqData)
 	if err != nil {
 		return nil, false, err

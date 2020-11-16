@@ -154,21 +154,21 @@ func routerOfP2PNode(msg bean.RequestMessage, data string, client *Client) (retD
 			return string(retData), nil
 		}
 		defaultErr = err
-	case enum.MsgType_HTLC_RequestCloseCurrTx_49:
+	case enum.MsgType_HTLC_Close_RequestCloseCurrTx_49:
 		responseData, err := service.HtlcCloseTxService.BeforeBobSignCloseHtlcAtBobSide(data, client.User)
 		if err == nil {
 			retData, _ := json.Marshal(responseData)
 			return string(retData), nil
 		}
 		defaultErr = err
-	case enum.MsgType_HTLC_CloseHtlcRequestSignBR_51:
+	case enum.MsgType_HTLC_CloseHtlcRequestSignBR_50:
 		responseData, _, err := service.HtlcCloseTxService.AfterBobCloseHTLCSigned_AtAliceSide(data, client.User)
 		if err == nil {
 			retData, _ := json.Marshal(responseData)
 			return string(retData), nil
 		}
 		defaultErr = err
-	case enum.MsgType_HTLC_CloseHtlcUpdateCnb_52:
+	case enum.MsgType_HTLC_CloseHtlcUpdateCnb_51:
 		node, err := service.HtlcCloseTxService.AfterAliceSignCloseHTLCAtBobSide(data, client.User)
 		if err == nil {
 			retData, _ := json.Marshal(node)

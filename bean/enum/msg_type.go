@@ -200,13 +200,19 @@ const (
 	MsgType_HTLC_SignHedHex_48             MsgType = -48
 	MsgType_HTLC_RecvSignVerifyR_46        MsgType = -110046
 
-	MsgType_HTLC_SendRequestCloseCurrTx_49 MsgType = -100049
-	MsgType_HTLC_RequestCloseCurrTx_49     MsgType = -49
-	MsgType_HTLC_RecvRequestCloseCurrTx_49 MsgType = -110049
-	MsgType_HTLC_SendCloseSigned_50        MsgType = -100050
-	MsgType_HTLC_CloseHtlcRequestSignBR_51 MsgType = -51
-	MsgType_HTLC_CloseHtlcUpdateCnb_52     MsgType = -52
-	MsgType_HTLC_RecvCloseSigned_50        MsgType = -110050
+	MsgType_HTLC_Close_SendRequestCloseCurrTx_49       MsgType = -100049
+	MsgType_HTLC_Close_ClientSign_Alice_C4a_110        MsgType = -100110
+	MsgType_HTLC_Close_RequestCloseCurrTx_49           MsgType = -49
+	MsgType_HTLC_Close_RecvRequestCloseCurrTx_49       MsgType = -110049
+	MsgType_HTLC_Close_SendCloseSigned_50              MsgType = -100050
+	MsgType_HTLC_Close_ClientSign_Bob_C4b_111          MsgType = -100111
+	MsgType_HTLC_CloseHtlcRequestSignBR_50             MsgType = -50
+	MsgType_HTLC_RecvCloseSigned_50                    MsgType = -110050
+	MsgType_HTLC_Close_ClientSign_Alice_C4b_112        MsgType = -100112
+	MsgType_HTLC_Close_ClientSign_Alice_C4bSub_113     MsgType = -100113
+	MsgType_HTLC_CloseHtlcUpdateCnb_51                 MsgType = -51
+	MsgType_HTLC_Close_ClientSign_Bob_C4bSub_51        MsgType = -110051
+	MsgType_HTLC_Close_ClientSign_Bob_C4bSubResult_114 MsgType = -100114
 
 	//https://github.com/LightningOnOmnilayer/Omni-BOLT-spec/blob/master/OmniBOLT-05-Atomic-Swap-among-Channels.md
 	MsgType_Atomic_SendSwap_80       MsgType = -100080
@@ -412,9 +418,9 @@ func CheckExist(msgType MsgType) bool {
 		return true
 	case MsgType_HTLC_SendVerifyR_45:
 		return true
-	case MsgType_HTLC_SendRequestCloseCurrTx_49:
+	case MsgType_HTLC_Close_SendRequestCloseCurrTx_49:
 		return true
-	case MsgType_HTLC_SendCloseSigned_50:
+	case MsgType_HTLC_Close_SendCloseSigned_50:
 		return true
 	case MsgType_Atomic_SendSwap_80:
 		return true

@@ -1,7 +1,7 @@
 package bean
 
 //消息 -100351(alice to obd) Alice发给obd (commitment_tx) 申请转账
-type RequestToCreateCommitmentTx struct {
+type RequestCreateCommitmentTx struct {
 	ChannelId                 string  `json:"channel_id"` //the global channel id.
 	Amount                    float64 `json:"amount"`     //amount of the payment
 	LastTempAddressPrivateKey string  `json:"last_temp_address_private_key"`
