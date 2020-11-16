@@ -420,6 +420,16 @@ func CheckExist(msgType MsgType) bool {
 		return true
 	case MsgType_HTLC_Close_SendRequestCloseCurrTx_49:
 		return true
+	case MsgType_HTLC_Close_ClientSign_Alice_C4a_110:
+		return true
+	case MsgType_HTLC_Close_ClientSign_Bob_C4b_111:
+		return true
+	case MsgType_HTLC_Close_ClientSign_Alice_C4b_112:
+		return true
+	case MsgType_HTLC_Close_ClientSign_Alice_C4bSub_113:
+		return true
+	case MsgType_HTLC_Close_ClientSign_Bob_C4bSubResult_114:
+		return true
 	case MsgType_HTLC_Close_SendCloseSigned_50:
 		return true
 	case MsgType_Atomic_SendSwap_80:

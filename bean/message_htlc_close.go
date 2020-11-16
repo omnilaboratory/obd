@@ -19,8 +19,8 @@ type HtlcCloseRequestCurrTx struct {
 	LastRsmcTempAddressPrivateKey        string `json:"last_rsmc_temp_address_private_key"`
 	LastHtlcTempAddressPrivateKey        string `json:"last_htlc_temp_address_private_key"`
 	LastHtlcTempAddressForHtnxPrivateKey string `json:"last_htlc_temp_address_for_htnx_private_key"`
-	CurrRsmcTempAddressIndex             int    `json:"curr_rsmc_temp_address_index"`
-	CurrRsmcTempAddressPubKey            string `json:"curr_rsmc_temp_address_pub_key"`
+	CurrTempAddressIndex                 int    `json:"curr_temp_address_index"`
+	CurrTempAddressPubKey                string `json:"curr_temp_address_pub_key"`
 	typeLengthValue
 }
 
@@ -90,24 +90,25 @@ type HtlcBobSignCloseCurrTx struct {
 
 //响应 100050的结果
 type NeedBobSignRawDataForC4b struct {
-	ChannelId              string               `json:"channel_id"`
-	C4bRsmcRawData         NeedClientSignTxData `json:"c4b_rsmc_raw_data"`
-	C4bCounterpartyRawData NeedClientSignTxData `json:"c4b_counterparty_raw_data"`
-	C4aRdRawData           NeedClientSignTxData `json:"c4a_rd_raw_data"`
-	C4aBrRawData           NeedClientSignTxData `json:"c4a_br_raw_data"`
+	ChannelId              string                    `json:"channel_id"`
+	C4bRsmcRawData         NeedClientSignTxData      `json:"c4b_rsmc_raw_data"`
+	C4bCounterpartyRawData NeedClientSignTxData      `json:"c4b_counterparty_raw_data"`
+	C4aRdRawData           NeedClientSignTxData      `json:"c4a_rd_raw_data"`
+	C4aBrRawData           NeedClientSignRawBRTxData `json:"c4a_br_raw_data"`
 }
 
 // 消息 1000111对100050的签名结果
 type BobSignedRsmcDataForC4b struct {
 	ChannelId                       string `json:"channel_id"`
-	C4bRsmcPartialSignedHex         string `json:"c4b_rsmc_signed_hex"`
-	C4bCounterpartyPartialSignedHex string `json:"c4b_counterparty_signed_hex"`
 	C4aRdPartialSignedHex           string `json:"c4a_rd_signed_hex"`
 	C4aBrPartialSignedHex           string `json:"c4a_br_signed_hex"`
+	C4aBrId                         int64  `json:"c4a_br_id"`
+	C4bRsmcPartialSignedHex         string `json:"c4b_rsmc_signed_hex"`
+	C4bCounterpartyPartialSignedHex string `json:"c4b_counterparty_signed_hex"`
 	typeLengthValue
 }
 
-// 消息 100361 （bob to obd） bob对C2b的签名结果
+// 响应 100111 （bob to obd） bob对C2b的签名结果
 type BobSignedRsmcDataForC4bResult struct {
 	ChannelId        string `json:"channel_id"`
 	CommitmentTxHash string `json:"commitment_tx_hash"`
@@ -141,8 +142,8 @@ type CloseeSignCloseHtlcTxOfP2p struct {
 	C4aRdPartialSignedData                     NeedClientSignTxData `json:"c4a_rd_partial_signed_data"`
 	C4bRsmcPartialSignedData                   NeedClientSignTxData `json:"c4b_rsmc_partial_signed_data"`
 	C4bCounterpartyPartialSignedData           NeedClientSignTxData `json:"c4b_counterparty_partial_signed_data"`
-	PayeeNodeAddress                           string               `json:"payee_node_address"`
-	PayeePeerId                                string               `json:"payee_peer_id"`
+	CloseeNodeAddress                          string               `json:"closee_node_address"`
+	CloseeePeerId                              string               `json:"closeee_peer_id"`
 }
 
 // 110050的推送信息
@@ -164,19 +165,19 @@ type AliceSignedRsmcTxForC4b struct {
 
 // 返回值 100112的返回值（obd to Alice） obd推送给alice，为c4b的Rd和BR签名
 type NeedAliceSignRdTxForC4b struct {
-	ChannelId        string                    `json:"channel_id"` //the global channel id.
-	C4bRdRawData     NeedClientSignTxData      `json:"c4b_rd_raw_data"`
-	C4bBrRawData     NeedClientSignRawBRTxData `json:"c4b_br_raw_data"`
-	PayeeNodeAddress string                    `json:"payee_node_address"`
-	PayeePeerId      string                    `json:"payee_peer_id"`
+	ChannelId         string                    `json:"channel_id"` //the global channel id.
+	C4bRdRawData      NeedClientSignTxData      `json:"c4b_rd_raw_data"`
+	C4bBrRawData      NeedClientSignRawBRTxData `json:"c4b_br_raw_data"`
+	CloseeNodeAddress string                    `json:"closee_node_address"`
+	CloseeePeerId     string                    `json:"closeee_peer_id"`
 }
 
 // 消息 100113（alice to obd） Alice完成对C4b的Rd和BR的相关信息签名
 type AliceSignedRdTxForC4b struct {
 	ChannelId             string `json:"channel_id"`
-	C2bRdPartialSignedHex string `json:"c_2_b_rd_partial_signed_hex"`
-	C2bBrPartialSignedHex string `json:"c_2_b_br_partial_signed_hex"`
-	C2bBrId               int64  `json:"c_2_b_br_id"`
+	C2bRdPartialSignedHex string `json:"c2b_rd_partial_signed_hex"`
+	C2bBrPartialSignedHex string `json:"c2b_br_partial_signed_hex"`
+	C2bBrId               int64  `json:"c2b_br_id"`
 	typeLengthValue
 }
 
@@ -197,7 +198,7 @@ type NeedBobSignRdTxForC4b struct {
 
 // 消息 100364（to obd） bob签名rd完成后的结果
 type BobSignedRdTxForC4b struct {
-	ChannelId                  string `json:"channel_id"`
-	C4bRdRsmcCompleteSignedHex string `json:"c4b_rd_rsmc_complete_signed_hex"`
+	ChannelId              string `json:"channel_id"`
+	C4bRdCompleteSignedHex string `json:"c4b_rd_complete_signed_hex"`
 	typeLengthValue
 }

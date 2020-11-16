@@ -2147,7 +2147,7 @@ func (service *htlcForwardTxManager) OnGetHtrdTxDataFromBobAtAliceSide_43(msgDat
 	_ = tx.Update(latestCommitmentTx)
 
 	channelInfo.CurrState = dao.ChannelState_HtlcTx
-	_ = tx.Update(channelInfo)
+	_ = tx.Update(&channelInfo)
 	tx.Commit()
 
 	//同步通道信息到tracker
