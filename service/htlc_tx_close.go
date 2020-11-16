@@ -325,6 +325,8 @@ func (service *htlcCloseTxManager) OnAliceSignedCxa(msg bean.RequestMessage, use
 	latestCommitmentTxInfo.CurrState = dao.TxInfoState_Create
 	_ = tx.Update(latestCommitmentTxInfo)
 
+	_ = tx.Commit()
+
 	toAliceResult := bean.AliceSignedRsmcDataForC2aResult{}
 	toAliceResult.ChannelId = p2pData.ChannelId
 	toAliceResult.CurrTempAddressPubKey = p2pData.CurrTempAddressPubKey
@@ -1300,7 +1302,7 @@ func (service *htlcCloseTxManager) OnAliceSignedCxbBubTx(msg bean.RequestMessage
 			return nil, nil, errors.New("fail to create rd")
 		}
 		cnbRdRawData := bean.NeedClientSignTxData{}
-		cnbRdRawData.Hex = aliceSignedRdTxForCnb.C2bRdPartialSignedHex
+		cnbRdRawData.Hex = aliceSignedRdTxForCnb.C4bRdPartialSignedHex
 		cnbRdRawData.Inputs = c2bRdHexData["inputs"]
 		cnbRdRawData.IsMultisig = true
 		cnbRdRawData.PubKeyA = dataFromP2p50P.CloseeCurrRsmcTempAddressPubKey
@@ -1309,7 +1311,7 @@ func (service *htlcCloseTxManager) OnAliceSignedCxbBubTx(msg bean.RequestMessage
 		//endregion create RD tx for alice
 
 		//region 根据对对方的Rsmc签名，生成惩罚对方，自己获益BR
-		err = updateCurrCommitmentTxRawBR(tx, aliceSignedRdTxForCnb.C2bBrId, aliceSignedRdTxForCnb.C2bRdPartialSignedHex, user)
+		err = updateCurrCommitmentTxRawBR(tx, aliceSignedRdTxForCnb.C4bBrId, aliceSignedRdTxForCnb.C4bRdPartialSignedHex, user)
 		if err != nil {
 			log.Println(err)
 			return nil, nil, err

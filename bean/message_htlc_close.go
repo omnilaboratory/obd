@@ -175,9 +175,9 @@ type NeedAliceSignRdTxForC4b struct {
 // 消息 100113（alice to obd） Alice完成对C4b的Rd和BR的相关信息签名
 type AliceSignedRdTxForC4b struct {
 	ChannelId             string `json:"channel_id"`
-	C2bRdPartialSignedHex string `json:"c2b_rd_partial_signed_hex"`
-	C2bBrPartialSignedHex string `json:"c2b_br_partial_signed_hex"`
-	C2bBrId               int64  `json:"c2b_br_id"`
+	C4bRdPartialSignedHex string `json:"c4b_rd_partial_signed_hex"`
+	C4bBrPartialSignedHex string `json:"c4b_br_partial_signed_hex"`
+	C4bBrId               int64  `json:"c4b_br_id"`
 	typeLengthValue
 }
 
