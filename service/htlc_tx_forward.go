@@ -26,8 +26,7 @@ type htlcForwardTxManager struct {
 	operationFlag sync.Mutex
 
 	//缓存数据
-	addHtlcTempDataAtBobSide map[string]string
-	htlcInvoiceTempData      map[string]bean.HtlcRequestFindPathInfo
+	htlcInvoiceTempData map[string]bean.HtlcRequestFindPathInfo
 
 	//在步骤1，缓存需要发往40号协议的信息
 	tempDataSendTo40PAtAliceSide map[string]bean.CreateHtlcTxForC3aOfP2p
@@ -44,7 +43,7 @@ type htlcForwardTxManager struct {
 // htlc pay money  付款
 var HtlcForwardTxService htlcForwardTxManager
 
-func (service *htlcForwardTxManager) CreateHtlcInvoice(msg bean.RequestMessage, user bean.User) (data interface{}, err error) {
+func (service *htlcForwardTxManager) CreateHtlcInvoice(msg bean.RequestMessage) (data interface{}, err error) {
 
 	if tool.CheckIsString(&msg.Data) == false {
 		return nil, errors.New(enum.Tips_common_empty + "msd data")
@@ -702,12 +701,13 @@ func (service *htlcForwardTxManager) BeforeBobSignAddHtlcRequestAtBobSide_40(msg
 	channelInfo.CurrState = dao.ChannelState_NewTx
 	_ = tx.Update(channelInfo)
 
+	cacheDataForTx := dao.CacheDataForTx{}
+	cacheDataForTx.KeyName = requestAddHtlc.PayerCommitmentTxHash
+	cacheDataForTx.Data = msgData
+	_ = tx.Save(cacheDataForTx)
+
 	_ = tx.Commit()
 
-	if service.addHtlcTempDataAtBobSide == nil {
-		service.addHtlcTempDataAtBobSide = make(map[string]string)
-	}
-	service.addHtlcTempDataAtBobSide[requestAddHtlc.PayerCommitmentTxHash] = msgData
 	toBobData := bean.CreateHtlcTxForC3aToBob{}
 	toBobData.ChannelId = requestAddHtlc.ChannelId
 	toBobData.H = requestAddHtlc.H
@@ -746,7 +746,12 @@ func (service *htlcForwardTxManager) BobSignedAddHtlcAtBobSide(jsonData string, 
 		return nil, errors.New(enum.Tips_common_empty + "payer_commitment_tx_hash")
 	}
 
-	aliceMsg := service.addHtlcTempDataAtBobSide[requestData.PayerCommitmentTxHash]
+	cacheDataForTx := dao.CacheDataForTx{}
+	err = tx.Select(q.Eq("KeyName", requestData.PayerCommitmentTxHash)).First(&cacheDataForTx)
+	if cacheDataForTx.Id == 0 {
+		return nil, errors.New(enum.Tips_common_wrong + "payer_commitment_tx_hash")
+	}
+	aliceMsg := cacheDataForTx.Data
 	if tool.CheckIsString(&aliceMsg) == false {
 		return nil, errors.New(enum.Tips_common_wrong + "payer_commitment_tx_hash")
 	}
@@ -1148,10 +1153,24 @@ func (service *htlcForwardTxManager) OnBobSignedC3bAtBobSide(msg bean.RequestMes
 		return nil, nil, errors.New(enum.Tips_common_wrong + "channel_id")
 	}
 
-	aliceMsg := service.addHtlcTempDataAtBobSide[toAliceDataOfP2p.PayerCommitmentTxHash]
+	tx, err := user.Db.Begin(true)
+	if err != nil {
+		log.Println(err)
+		return nil, nil, err
+	}
+	defer tx.Rollback()
+
+	cacheDataForTx := dao.CacheDataForTx{}
+	err = tx.Select(q.Eq("KeyName", toAliceDataOfP2p.PayerCommitmentTxHash)).First(&cacheDataForTx)
+	if cacheDataForTx.Id == 0 {
+		return nil, nil, errors.New(enum.Tips_common_wrong + "payer_commitment_tx_hash")
+	}
+
+	aliceMsg := cacheDataForTx.Data
 	if tool.CheckIsString(&aliceMsg) == false {
 		return nil, nil, errors.New(enum.Tips_common_empty + "payer_commitment_tx_hash")
 	}
+
 	payerRequestAddHtlc := &bean.CreateHtlcTxForC3aOfP2p{}
 	_ = json.Unmarshal([]byte(aliceMsg), payerRequestAddHtlc)
 
@@ -1170,13 +1189,6 @@ func (service *htlcForwardTxManager) OnBobSignedC3bAtBobSide(msg bean.RequestMes
 			return nil, nil, errors.New(enum.Tips_common_wrong + "c3a_complete_signed_counterparty_hex")
 		}
 	}
-
-	tx, err := user.Db.Begin(true)
-	if err != nil {
-		log.Println(err)
-		return nil, nil, err
-	}
-	defer tx.Rollback()
 
 	channelInfo := &dao.ChannelInfo{}
 	err = tx.Select(
@@ -1293,11 +1305,11 @@ func (service *htlcForwardTxManager) OnBobSignedC3bAtBobSide(msg bean.RequestMes
 	toAliceDataOfP2p.C3bHtlcPartialSignedData.Hex = c3bResult.C3bHtlcPartialSignedHex
 
 	latestCommitmentTxInfo.CurrState = dao.TxInfoState_Create
-	tx.UpdateField(latestCommitmentTxInfo, "CurrState", dao.TxInfoState_Create)
-	tx.Commit()
+	_ = tx.UpdateField(latestCommitmentTxInfo, "CurrState", dao.TxInfoState_Create)
+
+	_ = tx.Commit()
 
 	delete(service.tempDataSendTo41PAtBobSide, key)
-	delete(service.addHtlcTempDataAtBobSide, payerRequestAddHtlc.PayerCommitmentTxHash)
 
 	toBobData := bean.BobSignedHtlcTxOfC3bResult{}
 	toBobData.ChannelId = channelInfo.ChannelId
@@ -1334,7 +1346,7 @@ func (service *htlcForwardTxManager) AfterBobSignAddHtlcAtAliceSide_41(msgData s
 			q.Eq("PeerIdA", user.PeerId),
 			q.Eq("PeerIdB", user.PeerId))).
 		First(channelInfo)
-	if channelInfo == nil {
+	if channelInfo.Id == 0 {
 		return nil, true, errors.New("not found the channel " + channelId)
 	}
 
@@ -1409,7 +1421,7 @@ func (service *htlcForwardTxManager) OnAliceSignC3bAtAliceSide(msg bean.RequestM
 			q.Eq("PeerIdA", user.PeerId),
 			q.Eq("PeerIdB", user.PeerId))).
 		First(channelInfo)
-	if channelInfo == nil {
+	if channelInfo.Id == 0 {
 		return nil, errors.New("not found the channel " + channelId)
 	}
 
@@ -1773,7 +1785,7 @@ func (service *htlcForwardTxManager) OnAliceSignedC3bSubTxAtAliceSide(msg bean.R
 			q.Eq("PeerIdA", user.PeerId),
 			q.Eq("PeerIdB", user.PeerId))).
 		First(channelInfo)
-	if channelInfo == nil {
+	if channelInfo.Id == 0 {
 		return nil, nil, errors.New("not found the channel " + channelId)
 	}
 
@@ -1939,10 +1951,12 @@ func (service *htlcForwardTxManager) OnBobSignedC3bSubTxAtBobSide(msg bean.Reque
 	}
 	c3bCacheData.C3aHtlcHtbrRawData.Hex = jsonObj.C3aHtlcHtbrPartialSignedHex
 
-	if pass, _ := rpcClient.CheckMultiSign(false, jsonObj.C3bRsmcRdCompleteSignedHex, 2); pass == false {
-		return nil, errors.New("error sign c3b_rsmc_rd_complete_signed_hex")
+	if tool.CheckIsString(&jsonObj.C3bRsmcRdCompleteSignedHex) {
+		if pass, _ := rpcClient.CheckMultiSign(false, jsonObj.C3bRsmcRdCompleteSignedHex, 2); pass == false {
+			return nil, errors.New("error sign c3b_rsmc_rd_complete_signed_hex")
+		}
+		c3bCacheData.C3bRsmcRdPartialData.Hex = jsonObj.C3bRsmcRdCompleteSignedHex
 	}
-	c3bCacheData.C3bRsmcRdPartialData.Hex = jsonObj.C3bRsmcRdCompleteSignedHex
 
 	if pass, _ := rpcClient.CheckMultiSign(false, jsonObj.C3bHtlcHlockCompleteSignedHex, 2); pass == false {
 		return nil, errors.New("error sign c3b_htlc_hlock_complete_signed_hex")
@@ -1976,7 +1990,7 @@ func (service *htlcForwardTxManager) OnBobSignedC3bSubTxAtBobSide(msg bean.Reque
 			q.Eq("PeerIdA", user.PeerId),
 			q.Eq("PeerIdB", user.PeerId))).
 		First(channelInfo)
-	if channelInfo == nil {
+	if channelInfo.Id == 0 {
 		return nil, errors.New("not found the channel " + jsonObj.ChannelId)
 	}
 

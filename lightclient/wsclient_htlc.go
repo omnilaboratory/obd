@@ -49,7 +49,7 @@ func (client *Client) htlcHModule(msg bean.RequestMessage) (enum.SendTargetType,
 		if err != nil {
 			data = err.Error()
 		} else {
-			respond, err := service.HtlcForwardTxService.CreateHtlcInvoice(msg, *client.User)
+			respond, err := service.HtlcForwardTxService.CreateHtlcInvoice(msg)
 			if err != nil {
 				data = err.Error()
 			} else {

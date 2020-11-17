@@ -311,3 +311,9 @@ type AtomicSwapAcceptedInfo struct {
 	CreateAt     time.Time `json:"create_at"`
 	LatestEditAt time.Time `json:"latest_edit_at"`
 }
+
+type CacheDataForTx struct {
+	Id      int    `storm:"id,increment" json:"id" `
+	KeyName string `json:"key_name"`
+	Data    string `json:"data"`
+}
