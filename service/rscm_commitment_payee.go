@@ -311,7 +311,7 @@ func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction
 		commitmentTxRequest.Amount = c2aDataJson.Amount
 		commitmentTxRequest.CurrTempAddressIndex = reqData.CurrTempAddressIndex
 		commitmentTxRequest.CurrTempAddressPubKey = reqData.CurrTempAddressPubKey
-		newCommitmentTxInfo, err := createCommitmentTxHex(tx, false, commitmentTxRequest, channelInfo, latestCommitmentTxInfo, *signer)
+		newCommitmentTxInfo, rawTx, err := createCommitmentTxHex(tx, false, commitmentTxRequest, channelInfo, latestCommitmentTxInfo, *signer)
 		if err != nil {
 			log.Println(err)
 			return nil, false, err
@@ -319,8 +319,8 @@ func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction
 		c2bAmountToCounterparty = newCommitmentTxInfo.AmountToCounterparty
 		c2bCommitmentId = newCommitmentTxInfo.Id
 
-		toAliceP2pData.C2bRsmcTxData = newCommitmentTxInfo.RsmcRawTxData
-		toAliceP2pData.C2bCounterpartyTxData = newCommitmentTxInfo.ToCounterpartyRawTxData
+		toAliceP2pData.C2bRsmcTxData = rawTx.RsmcRawTxData
+		toAliceP2pData.C2bCounterpartyTxData = rawTx.ToCounterpartyRawTxData
 
 		//endregion
 	} else {
@@ -331,8 +331,14 @@ func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction
 		c2bAmountToCounterparty = latestCommitmentTxInfo.AmountToCounterparty
 		c2bCommitmentId = latestCommitmentTxInfo.Id
 
-		toAliceP2pData.C2bRsmcTxData = latestCommitmentTxInfo.RsmcRawTxData
-		toAliceP2pData.C2bCounterpartyTxData = latestCommitmentTxInfo.ToCounterpartyRawTxData
+		rawTx := &dao.CommitmentTxRawTx{}
+		tx.Select(q.Eq("CommitmentTxId", latestCommitmentTxInfo.Id)).First(rawTx)
+		if rawTx.Id == 0 {
+			return nil, false, errors.New("not found rawTx")
+		}
+
+		toAliceP2pData.C2bRsmcTxData = rawTx.RsmcRawTxData
+		toAliceP2pData.C2bCounterpartyTxData = rawTx.ToCounterpartyRawTxData
 	}
 
 	needSignData.C2bRsmcRawData = toAliceP2pData.C2bRsmcTxData
@@ -496,7 +502,6 @@ func (this *commitmentTxSignedManager) OnBobSignC2bTransactionAtBobSide(data str
 			return nil, nil, err
 		}
 		txid := gjson.Parse(result).Array()[0].Get("txid").Str
-		latestCommitmentTxInfo.RsmcRawTxData.Hex = signedDataForC2b.C2bRsmcSignedHex
 		latestCommitmentTxInfo.RSMCTxHex = signedDataForC2b.C2bRsmcSignedHex
 		latestCommitmentTxInfo.RSMCTxid = txid
 	}
@@ -507,7 +512,6 @@ func (this *commitmentTxSignedManager) OnBobSignC2bTransactionAtBobSide(data str
 			return nil, nil, err
 		}
 		txid := gjson.Parse(result).Array()[0].Get("txid").Str
-		latestCommitmentTxInfo.ToCounterpartyRawTxData.Hex = signedDataForC2b.C2bCounterpartySignedHex
 		latestCommitmentTxInfo.ToCounterpartyTxHex = signedDataForC2b.C2bCounterpartySignedHex
 		latestCommitmentTxInfo.ToCounterpartyTxid = txid
 	}
@@ -634,8 +638,6 @@ func (this *commitmentTxSignedManager) BobSignC2b_RdAtBobSide(data string, user 
 		latestCommitmentTxInfo.ToCounterpartyTxid = gjson.Get(decodeSignedToCounterpartyHex, "txid").Str
 	}
 
-	latestCommitmentTxInfo.ToCounterpartyRawTxData = bean.NeedClientSignTxData{Hex: " ", Inputs: nil, IsMultisig: false}
-	latestCommitmentTxInfo.RsmcRawTxData = bean.NeedClientSignTxData{Hex: " ", Inputs: nil, IsMultisig: false}
 	latestCommitmentTxInfo.CurrState = dao.TxInfoState_CreateAndSign
 	latestCommitmentTxInfo.SignAt = time.Now()
 

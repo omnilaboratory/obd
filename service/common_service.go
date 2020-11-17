@@ -567,14 +567,14 @@ func createMultiSig(pubkey1 string, pubkey2 string) (multiAddress, redeemScript,
 	return multiAddress, redeemScript, scriptPubKey, nil
 }
 
-func createCommitmentTxHex(dbTx storm.Node, isSender bool, reqData *bean.RequestCreateCommitmentTx, channelInfo *dao.ChannelInfo, lastCommitmentTx *dao.CommitmentTransaction, currUser bean.User) (commitmentTxInfo *dao.CommitmentTransaction, err error) {
+func createCommitmentTxHex(dbTx storm.Node, isSender bool, reqData *bean.RequestCreateCommitmentTx, channelInfo *dao.ChannelInfo, lastCommitmentTx *dao.CommitmentTransaction, currUser bean.User) (commitmentTxInfo *dao.CommitmentTransaction, rawTx dao.CommitmentTxRawTx, err error) {
 	//1、转账给bob的交易：输入：通道其中一个input，输出：给bob
 	//2、转账后的余额的交易：输入：通道总的一个input,输出：一个多签地址，这个钱又需要后续的RD才能赎回
 	// create Cna tx
 	fundingTransaction := getFundingTransactionByChannelId(dbTx, channelInfo.ChannelId, currUser.PeerId)
 	if fundingTransaction == nil {
 		err = errors.New(enum.Tips_funding_notFoundFundAssetTx)
-		return nil, err
+		return nil, rawTx, err
 	}
 
 	var outputBean = commitmentTxOutputBean{}
@@ -622,11 +622,12 @@ func createCommitmentTxHex(dbTx storm.Node, isSender bool, reqData *bean.Request
 	commitmentTxInfo, err = createCommitmentTx(currUser.PeerId, channelInfo, fundingTransaction, outputBean, &currUser)
 	if err != nil {
 		log.Println(err)
-		return nil, err
+		return nil, rawTx, err
 	}
 	commitmentTxInfo.TxType = dao.CommitmentTransactionType_Rsmc
 	commitmentTxInfo.RSMCTempAddressIndex = reqData.CurrTempAddressIndex
 
+	rawTx = dao.CommitmentTxRawTx{}
 	usedTxidTemp := ""
 	if commitmentTxInfo.AmountToRSMC > 0 {
 		rsmcTxData, usedTxid, err := rpcClient.OmniCreateRawTransactionUseSingleInput(
@@ -639,7 +640,7 @@ func createCommitmentTxHex(dbTx storm.Node, isSender bool, reqData *bean.Request
 			0, &channelInfo.ChannelAddressRedeemScript, "")
 		if err != nil {
 			log.Println(err)
-			return nil, err
+			return nil, rawTx, err
 		}
 
 		usedTxidTemp = usedTxid
@@ -652,7 +653,7 @@ func createCommitmentTxHex(dbTx storm.Node, isSender bool, reqData *bean.Request
 		signHexData.IsMultisig = true
 		signHexData.PubKeyA = channelInfo.PubKeyA
 		signHexData.PubKeyB = channelInfo.PubKeyB
-		commitmentTxInfo.RsmcRawTxData = signHexData
+		rawTx.RsmcRawTxData = signHexData
 	}
 
 	//create to Counterparty tx
@@ -669,7 +670,7 @@ func createCommitmentTxHex(dbTx storm.Node, isSender bool, reqData *bean.Request
 			&channelInfo.ChannelAddressRedeemScript)
 		if err != nil {
 			log.Println(err)
-			return nil, err
+			return nil, rawTx, err
 		}
 		commitmentTxInfo.ToCounterpartyTxHex = toBobTxData["hex"].(string)
 
@@ -679,7 +680,7 @@ func createCommitmentTxHex(dbTx storm.Node, isSender bool, reqData *bean.Request
 		signHexData.IsMultisig = true
 		signHexData.PubKeyA = channelInfo.PubKeyA
 		signHexData.PubKeyB = channelInfo.PubKeyB
-		commitmentTxInfo.ToCounterpartyRawTxData = signHexData
+		rawTx.ToCounterpartyRawTxData = signHexData
 	}
 
 	commitmentTxInfo.LastHash = ""
@@ -692,8 +693,11 @@ func createCommitmentTxHex(dbTx storm.Node, isSender bool, reqData *bean.Request
 	err = dbTx.Save(commitmentTxInfo)
 	if err != nil {
 		log.Println(err)
-		return nil, err
+		return nil, rawTx, err
 	}
+
+	rawTx.CommitmentTxId = commitmentTxInfo.Id
+	_ = dbTx.Save(rawTx)
 
 	bytes, err := json.Marshal(commitmentTxInfo)
 	msgHash := tool.SignMsgWithSha256(bytes)
@@ -701,9 +705,9 @@ func createCommitmentTxHex(dbTx storm.Node, isSender bool, reqData *bean.Request
 	err = dbTx.Update(commitmentTxInfo)
 	if err != nil {
 		log.Println(err)
-		return nil, err
+		return nil, rawTx, err
 	}
-	return commitmentTxInfo, nil
+	return commitmentTxInfo, rawTx, nil
 }
 
 func GetBtcMinerFundMiniAmount() float64 {

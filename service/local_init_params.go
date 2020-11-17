@@ -22,9 +22,3 @@ var rpcClient *rpc.Client
 var tempAddrPrivateKeyMap = make(map[string]string)
 
 var OnlineUserMap = make(map[string]*bean.User)
-
-type CommitmentTxRawTx struct {
-	RsmcRawTx         bean.NeedClientSignTxData
-	CounterpartyRawTx bean.NeedClientSignTxData
-	HtlcRawTx         bean.NeedClientSignTxData
-}

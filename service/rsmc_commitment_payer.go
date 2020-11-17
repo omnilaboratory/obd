@@ -154,7 +154,7 @@ func (this *commitmentTxManager) CommitmentTransactionCreated(msg bean.RequestMe
 
 	if latestCommitmentTxInfo.CurrState == dao.TxInfoState_CreateAndSign {
 		//创建c2a omni的交易不能一个输入，多个输出，所以就是两个交易
-		newCommitmentTxInfo, err := createCommitmentTxHex(tx, true, reqData, channelInfo, latestCommitmentTxInfo, *creator)
+		newCommitmentTxInfo, rawTx, err := createCommitmentTxHex(tx, true, reqData, channelInfo, latestCommitmentTxInfo, *creator)
 		if err != nil {
 			return nil, false, err
 		}
@@ -162,23 +162,21 @@ func (this *commitmentTxManager) CommitmentTransactionCreated(msg bean.RequestMe
 		_ = tx.UpdateField(newCommitmentTxInfo, "CurrState", dao.TxInfoState_Init)
 
 		p2pData.CommitmentTxHash = newCommitmentTxInfo.CurrHash
-		p2pData.RsmcRawData = newCommitmentTxInfo.RsmcRawTxData
-		p2pData.CounterpartyRawData = newCommitmentTxInfo.ToCounterpartyRawTxData
+		p2pData.RsmcRawData = rawTx.RsmcRawTxData
+		p2pData.CounterpartyRawData = rawTx.ToCounterpartyRawTxData
 
-		retSignData.ChannelId = channelInfo.ChannelId
-		retSignData.RsmcRawData = newCommitmentTxInfo.RsmcRawTxData
-		retSignData.CounterpartyRawData = newCommitmentTxInfo.ToCounterpartyRawTxData
 		needSign = true
 
 	} else {
 		p2pData.CommitmentTxHash = latestCommitmentTxInfo.CurrHash
-		p2pData.RsmcRawData = latestCommitmentTxInfo.RsmcRawTxData
-		p2pData.CounterpartyRawData = latestCommitmentTxInfo.ToCounterpartyRawTxData
-
 		if len(latestCommitmentTxInfo.RSMCTxid) == 0 {
-			retSignData.ChannelId = channelInfo.ChannelId
-			retSignData.RsmcRawData = latestCommitmentTxInfo.RsmcRawTxData
-			retSignData.CounterpartyRawData = latestCommitmentTxInfo.ToCounterpartyRawTxData
+			rawTx := &dao.CommitmentTxRawTx{}
+			tx.Select(q.Eq("CommitmentTxId", latestCommitmentTxInfo.Id)).First(rawTx)
+			if rawTx.Id == 0 {
+				return nil, false, errors.New("not found rawTx")
+			}
+			p2pData.RsmcRawData = rawTx.RsmcRawTxData
+			p2pData.CounterpartyRawData = rawTx.ToCounterpartyRawTxData
 			needSign = true
 		}
 	}
@@ -193,6 +191,11 @@ func (this *commitmentTxManager) CommitmentTransactionCreated(msg bean.RequestMe
 			tempRsmcCreateP2pData = make(map[string]bean.AliceRequestToCreateCommitmentTxOfP2p)
 		}
 		tempRsmcCreateP2pData[creator.PeerId+"_"+p2pData.ChannelId] = *p2pData
+
+		retSignData.ChannelId = channelInfo.ChannelId
+		retSignData.RsmcRawData = p2pData.RsmcRawData
+		retSignData.CounterpartyRawData = p2pData.CounterpartyRawData
+
 		return retSignData, true, nil
 	}
 
@@ -259,7 +262,6 @@ func (this *commitmentTxManager) OnAliceSignC2aRawTxAtAliceSide(msg bean.Request
 		}
 		txid := gjson.Parse(result).Array()[0].Get("txid").Str
 		//封装好的签名数据，给bob的客户端签名使用
-		latestCommitmentTxInfo.RsmcRawTxData.Hex = signedDataForC2a.RsmcSignedHex
 		latestCommitmentTxInfo.RSMCTxHex = signedDataForC2a.RsmcSignedHex
 		latestCommitmentTxInfo.RSMCTxid = txid
 	}
@@ -271,7 +273,6 @@ func (this *commitmentTxManager) OnAliceSignC2aRawTxAtAliceSide(msg bean.Request
 		}
 		txid := gjson.Parse(result).Array()[0].Get("txid").Str
 		//封装好的签名数据，给bob的客户端签名使用
-		latestCommitmentTxInfo.ToCounterpartyRawTxData.Hex = signedDataForC2a.CounterpartySignedHex
 		latestCommitmentTxInfo.ToCounterpartyTxHex = signedDataForC2a.CounterpartySignedHex
 		latestCommitmentTxInfo.ToCounterpartyTxid = txid
 	}
@@ -280,8 +281,8 @@ func (this *commitmentTxManager) OnAliceSignC2aRawTxAtAliceSide(msg bean.Request
 
 	tx.Commit()
 
-	p2pData.RsmcRawData = latestCommitmentTxInfo.RsmcRawTxData
-	p2pData.CounterpartyRawData = latestCommitmentTxInfo.ToCounterpartyRawTxData
+	p2pData.RsmcRawData.Hex = signedDataForC2a.RsmcSignedHex
+	p2pData.CounterpartyRawData.Hex = signedDataForC2a.CounterpartySignedHex
 
 	toAliceResult := bean.AliceSignedRsmcDataForC2aResult{}
 	toAliceResult.ChannelId = p2pData.ChannelId
@@ -663,8 +664,6 @@ func (this *commitmentTxManager) OnAliceSignedC2b_RDTxAtAliceSide(data string, u
 		}
 	}
 
-	latestCommitmentTxInfo.ToCounterpartyRawTxData = bean.NeedClientSignTxData{Hex: " ", Inputs: nil, IsMultisig: false}
-	latestCommitmentTxInfo.RsmcRawTxData = bean.NeedClientSignTxData{Hex: " ", Inputs: nil, IsMultisig: false}
 	latestCommitmentTxInfo.CurrState = dao.TxInfoState_CreateAndSign
 	latestCommitmentTxInfo.SignAt = time.Now()
 

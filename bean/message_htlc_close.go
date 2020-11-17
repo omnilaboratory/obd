@@ -51,19 +51,6 @@ type AliceRequestCloseHtlcCurrTxOfP2pToBobClient struct {
 	SenderPeerId                     string               `json:"sender_peer_id"`
 }
 
-//type -50: receiver sign the close request
-type HtlcSignCloseCurrTx struct {
-	MsgHash                              string `json:"msg_hash"`
-	ChannelAddressPrivateKey             string `json:"channel_address_private_key"` //	开通通道用到的私钥
-	LastRsmcTempAddressPrivateKey        string `json:"last_rsmc_temp_address_private_key"`
-	LastHtlcTempAddressPrivateKey        string `json:"last_htlc_temp_address_private_key"`
-	LastHtlcTempAddressForHtnxPrivateKey string `json:"last_htlc_temp_address_for_htnx_private_key"`
-	CurrRsmcTempAddressIndex             int    `json:"curr_rsmc_temp_address_index"`
-	CurrRsmcTempAddressPubKey            string `json:"curr_rsmc_temp_address_pub_key"`
-	CurrRsmcTempAddressPrivateKey        string `json:"curr_rsmc_temp_address_private_key"`
-	typeLengthValue
-}
-
 //消息 100050 bob对关闭htlc交易请求的签收
 type HtlcBobSignCloseCurrTx struct {
 	MsgHash                              string `json:"msg_hash"`
@@ -72,8 +59,8 @@ type HtlcBobSignCloseCurrTx struct {
 	LastRsmcTempAddressPrivateKey        string `json:"last_rsmc_temp_address_private_key"`
 	LastHtlcTempAddressPrivateKey        string `json:"last_htlc_temp_address_private_key"`
 	LastHtlcTempAddressForHtnxPrivateKey string `json:"last_htlc_temp_address_for_htnx_private_key"`
-	CurrRsmcTempAddressIndex             int    `json:"curr_rsmc_temp_address_index"`
-	CurrRsmcTempAddressPubKey            string `json:"curr_rsmc_temp_address_pub_key"`
+	CurrTempAddressIndex                 int    `json:"curr_temp_address_index"`
+	CurrTempAddressPubKey                string `json:"curr_temp_address_pub_key"`
 	typeLengthValue
 }
 

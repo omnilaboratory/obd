@@ -484,6 +484,7 @@ func (service *htlcForwardTxManager) AliceAddHtlcAtAliceSide(msg bean.RequestMes
 		q.Eq("RoutingPacket", requestData.RoutingPacket),
 		q.Eq("RecipientUserPeerId", msg.RecipientUserPeerId)).First(htlcRequestInfo)
 
+	rawTx := dao.CommitmentTxRawTx{}
 	if htlcRequestInfo.Id == 0 || latestCommitmentTx.Id == 0 || latestCommitmentTx.CurrState == dao.TxInfoState_CreateAndSign {
 		htlcRequestInfo.RecipientUserPeerId = msg.RecipientUserPeerId
 		htlcRequestInfo.H = requestData.H
@@ -502,7 +503,7 @@ func (service *htlcForwardTxManager) AliceAddHtlcAtAliceSide(msg bean.RequestMes
 		_ = tx.Save(htlcRequestInfo)
 
 		totalStep := len(channelIds)
-		latestCommitmentTx, err = htlcPayerCreateCommitmentTx_C3a(tx, channelInfo, *requestData, totalStep, currStep, latestCommitmentTx, user)
+		latestCommitmentTx, rawTx, err = htlcPayerCreateCommitmentTx_C3a(tx, channelInfo, *requestData, totalStep, currStep, latestCommitmentTx, user)
 		if err != nil {
 			log.Println(err)
 			return nil, false, err
@@ -521,6 +522,10 @@ func (service *htlcForwardTxManager) AliceAddHtlcAtAliceSide(msg bean.RequestMes
 		if requestData.CurrHtlcTempAddressForHt1aPubKey != htlcRequestInfo.CurrHtlcTempAddressForHt1aPubKey {
 			return nil, false, errors.New(fmt.Sprintf(enum.Tips_rsmc_notSameValueWhenCreate, requestData.CurrHtlcTempAddressForHt1aPubKey, htlcRequestInfo.CurrHtlcTempAddressForHt1aPubKey))
 		}
+		tx.Select(q.Eq("CommitmentTxId", latestCommitmentTx.Id)).First(&rawTx)
+		if rawTx.Id == 0 {
+			return nil, false, errors.New("not found rawTx")
+		}
 	}
 	_ = tx.Commit()
 
@@ -534,9 +539,9 @@ func (service *htlcForwardTxManager) AliceAddHtlcAtAliceSide(msg bean.RequestMes
 	c3aP2pData.LastTempAddressPrivateKey = requestData.LastTempAddressPrivateKey
 	c3aP2pData.CurrRsmcTempAddressPubKey = requestData.CurrRsmcTempAddressPubKey
 	c3aP2pData.CurrHtlcTempAddressPubKey = requestData.CurrHtlcTempAddressPubKey
-	c3aP2pData.C3aRsmcPartialSignedData = latestCommitmentTx.RsmcRawTxData
-	c3aP2pData.C3aHtlcPartialSignedData = latestCommitmentTx.HtlcRawTxData
-	c3aP2pData.C3aCounterpartyPartialSignedData = latestCommitmentTx.ToCounterpartyRawTxData
+	c3aP2pData.C3aRsmcPartialSignedData = rawTx.RsmcRawTxData
+	c3aP2pData.C3aHtlcPartialSignedData = rawTx.HtlcRawTxData
+	c3aP2pData.C3aCounterpartyPartialSignedData = rawTx.ToCounterpartyRawTxData
 	c3aP2pData.CurrHtlcTempAddressForHt1aPubKey = requestData.CurrHtlcTempAddressForHt1aPubKey
 	c3aP2pData.PayerCommitmentTxHash = latestCommitmentTx.CurrHash
 	c3aP2pData.PayerNodeAddress = msg.SenderNodePeerId
@@ -546,9 +551,9 @@ func (service *htlcForwardTxManager) AliceAddHtlcAtAliceSide(msg bean.RequestMes
 		txForC3a := bean.NeedAliceSignCreateHtlcTxForC3a{}
 		txForC3a.H = c3aP2pData.H
 		txForC3a.ChannelId = latestCommitmentTx.ChannelId
-		txForC3a.C3aRsmcRawData = latestCommitmentTx.RsmcRawTxData
-		txForC3a.C3aHtlcRawData = latestCommitmentTx.HtlcRawTxData
-		txForC3a.C3aCounterpartyRawData = latestCommitmentTx.ToCounterpartyRawTxData
+		txForC3a.C3aRsmcRawData = c3aP2pData.C3aRsmcPartialSignedData
+		txForC3a.C3aHtlcRawData = c3aP2pData.C3aHtlcPartialSignedData
+		txForC3a.C3aCounterpartyRawData = c3aP2pData.C3aCounterpartyPartialSignedData
 		txForC3a.PayerNodeAddress = msg.SenderNodePeerId
 		txForC3a.PayerPeerId = msg.SenderUserPeerId
 
@@ -629,7 +634,6 @@ func (service *htlcForwardTxManager) OnAliceSignedC3aAtAliceSide(msg bean.Reques
 			return nil, nil, errors.New("error sign c3a_rsmc_partial_signed_hex")
 		}
 		//封装好的签名数据，给bob的客户端签名使用
-		latestCommitmentTxInfo.RsmcRawTxData.Hex = signedDataForC3a.C3aRsmcPartialSignedHex
 		latestCommitmentTxInfo.RSMCTxHex = signedDataForC3a.C3aRsmcPartialSignedHex
 		latestCommitmentTxInfo.RSMCTxid = rpcClient.GetTxId(signedDataForC3a.C3aRsmcPartialSignedHex)
 		latestCommitmentTxInfo.CurrState = dao.TxInfoState_Create
@@ -640,7 +644,6 @@ func (service *htlcForwardTxManager) OnAliceSignedC3aAtAliceSide(msg bean.Reques
 		return nil, nil, errors.New("error sign c3a_htlc_partial_signed_hex")
 	}
 	//封装好的签名数据，给bob的客户端签名使用
-	latestCommitmentTxInfo.HtlcRawTxData.Hex = signedDataForC3a.C3aHtlcPartialSignedHex
 	latestCommitmentTxInfo.HtlcTxHex = signedDataForC3a.C3aHtlcPartialSignedHex
 	latestCommitmentTxInfo.HTLCTxid = rpcClient.GetTxId(signedDataForC3a.C3aHtlcPartialSignedHex)
 
@@ -650,7 +653,6 @@ func (service *htlcForwardTxManager) OnAliceSignedC3aAtAliceSide(msg bean.Reques
 			return nil, nil, errors.New("error sign c3a_counterparty_partial_signed_hex")
 		}
 		//封装好的签名数据，给bob的客户端签名使用
-		latestCommitmentTxInfo.ToCounterpartyRawTxData.Hex = signedDataForC3a.C3aCounterpartyPartialSignedHex
 		latestCommitmentTxInfo.ToCounterpartyTxHex = signedDataForC3a.C3aCounterpartyPartialSignedHex
 		latestCommitmentTxInfo.ToCounterpartyTxid = rpcClient.GetTxId(signedDataForC3a.C3aCounterpartyPartialSignedHex)
 	}
@@ -659,9 +661,9 @@ func (service *htlcForwardTxManager) OnAliceSignedC3aAtAliceSide(msg bean.Reques
 	_ = tx.Update(latestCommitmentTxInfo)
 	_ = tx.Commit()
 
-	dataTo40P.C3aRsmcPartialSignedData = latestCommitmentTxInfo.RsmcRawTxData
-	dataTo40P.C3aHtlcPartialSignedData = latestCommitmentTxInfo.HtlcRawTxData
-	dataTo40P.C3aCounterpartyPartialSignedData = latestCommitmentTxInfo.ToCounterpartyRawTxData
+	dataTo40P.C3aRsmcPartialSignedData.Hex = signedDataForC3a.C3aRsmcPartialSignedHex
+	dataTo40P.C3aHtlcPartialSignedData.Hex = signedDataForC3a.C3aHtlcPartialSignedHex
+	dataTo40P.C3aCounterpartyPartialSignedData.Hex = signedDataForC3a.C3aCounterpartyPartialSignedHex
 
 	toAliceResult := bean.AliceSignedHtlcDataForC3aResult{}
 	toAliceResult.ChannelId = dataTo40P.ChannelId
@@ -976,6 +978,7 @@ func (service *htlcForwardTxManager) BobSignedAddHtlcAtBobSide(jsonData string, 
 	var amountToOther = 0.0
 	var amountToHtlc = 0.0
 	//如果是本轮的第一次请求交易
+	rawTx := dao.CommitmentTxRawTx{}
 	if isFirstRequest {
 		//region 4、根据对方传过来的上一个交易的临时rsmc私钥，签名最近的BR交易，保证对方确实放弃了上一个承诺交易
 		err := signLastBR(tx, dao.BRType_Rmsc, *channelInfo, user.PeerId, payerRequestAddHtlc.LastTempAddressPrivateKey, latestCommitmentTxInfo.Id)
@@ -991,20 +994,20 @@ func (service *htlcForwardTxManager) BobSignedAddHtlcAtBobSide(jsonData string, 
 		}
 
 		//region 5、创建C3b
-		latestCommitmentTxInfo, err = htlcPayeeCreateCommitmentTx_C3b(tx, channelInfo, requestData, *payerRequestAddHtlc, latestCommitmentTxInfo, c3aSignedToCounterpartyTxHex, user)
+		latestCommitmentTxInfo, rawTx, err = htlcPayeeCreateCommitmentTx_C3b(tx, channelInfo, requestData, *payerRequestAddHtlc, latestCommitmentTxInfo, c3aSignedToCounterpartyTxHex, user)
 		//endregion
 	}
 
 	amountToOther = latestCommitmentTxInfo.AmountToCounterparty
 	amountToHtlc = latestCommitmentTxInfo.AmountToHtlc
 
-	needBobSignData.C3bCounterpartyRawData = latestCommitmentTxInfo.ToCounterpartyRawTxData
-	needBobSignData.C3bRsmcRawData = latestCommitmentTxInfo.RsmcRawTxData
-	needBobSignData.C3bHtlcRawData = latestCommitmentTxInfo.HtlcRawTxData
+	needBobSignData.C3bCounterpartyRawData = rawTx.ToCounterpartyRawTxData
+	needBobSignData.C3bRsmcRawData = rawTx.RsmcRawTxData
+	needBobSignData.C3bHtlcRawData = rawTx.HtlcRawTxData
 
-	toAliceDataOf41P.C3bCounterpartyPartialSignedData = latestCommitmentTxInfo.ToCounterpartyRawTxData
-	toAliceDataOf41P.C3bRsmcPartialSignedData = latestCommitmentTxInfo.RsmcRawTxData
-	toAliceDataOf41P.C3bHtlcPartialSignedData = latestCommitmentTxInfo.HtlcRawTxData
+	toAliceDataOf41P.C3bCounterpartyPartialSignedData = rawTx.ToCounterpartyRawTxData
+	toAliceDataOf41P.C3bRsmcPartialSignedData = rawTx.RsmcRawTxData
+	toAliceDataOf41P.C3bHtlcPartialSignedData = rawTx.HtlcRawTxData
 	toAliceDataOf41P.PayeeCommitmentTxHash = latestCommitmentTxInfo.CurrHash
 
 	var myAddress = channelInfo.AddressB
@@ -1868,9 +1871,6 @@ func (service *htlcForwardTxManager) OnAliceSignedC3bSubTxAtAliceSide(msg bean.R
 	}
 	//endregion
 
-	commitmentTransaction.RsmcRawTxData = bean.NeedClientSignTxData{}
-	commitmentTransaction.HtlcRawTxData = bean.NeedClientSignTxData{}
-	commitmentTransaction.ToCounterpartyRawTxData = bean.NeedClientSignTxData{}
 	commitmentTransaction.CurrState = dao.TxInfoState_Htlc_WaitHTRD1aSign
 	commitmentTransaction.SignAt = time.Now()
 	_ = tx.Update(commitmentTransaction)
@@ -2140,9 +2140,6 @@ func (service *htlcForwardTxManager) OnGetHtrdTxDataFromBobAtAliceSide_43(msgDat
 		_ = createHed1a(tx, c3aHtrdData.C3aHtlcHedPartialSignedHex, channelInfo, *latestCommitmentTx, user)
 	}
 
-	latestCommitmentTx.ToCounterpartyRawTxData = bean.NeedClientSignTxData{Hex: " ", Inputs: nil, IsMultisig: false}
-	latestCommitmentTx.RsmcRawTxData = bean.NeedClientSignTxData{Hex: " ", Inputs: nil, IsMultisig: false}
-	latestCommitmentTx.HtlcRawTxData = bean.NeedClientSignTxData{Hex: " ", Inputs: nil, IsMultisig: false}
 	latestCommitmentTx.CurrState = dao.TxInfoState_Htlc_GetH
 	_ = tx.Update(latestCommitmentTx)
 
@@ -2162,11 +2159,11 @@ func (service *htlcForwardTxManager) OnGetHtrdTxDataFromBobAtAliceSide_43(msgDat
 }
 
 // 创建付款方C3a
-func htlcPayerCreateCommitmentTx_C3a(tx storm.Node, channelInfo *dao.ChannelInfo, requestData bean.CreateHtlcTxForC3a, totalStep int, currStep int, latestCommitmentTx *dao.CommitmentTransaction, user bean.User) (*dao.CommitmentTransaction, error) {
-
+func htlcPayerCreateCommitmentTx_C3a(tx storm.Node, channelInfo *dao.ChannelInfo, requestData bean.CreateHtlcTxForC3a, totalStep int, currStep int, latestCommitmentTx *dao.CommitmentTransaction, user bean.User) (*dao.CommitmentTransaction, dao.CommitmentTxRawTx, error) {
+	rawTx := dao.CommitmentTxRawTx{}
 	fundingTransaction := getFundingTransactionByChannelId(tx, channelInfo.ChannelId, user.PeerId)
 	if fundingTransaction == nil {
-		return nil, errors.New("not found fundingTransaction")
+		return nil, rawTx, errors.New("not found fundingTransaction")
 	}
 	// htlc的资产分配方案
 	var outputBean = commitmentTxOutputBean{}
@@ -2198,7 +2195,7 @@ func htlcPayerCreateCommitmentTx_C3a(tx storm.Node, channelInfo *dao.ChannelInfo
 	newCommitmentTxInfo, err := createCommitmentTx(user.PeerId, channelInfo, fundingTransaction, outputBean, &user)
 	if err != nil {
 		log.Println(err)
-		return nil, err
+		return nil, rawTx, err
 	}
 	newCommitmentTxInfo.TxType = dao.CommitmentTransactionType_Htlc
 	newCommitmentTxInfo.RSMCTempAddressIndex = requestData.CurrRsmcTempAddressIndex
@@ -2217,7 +2214,7 @@ func htlcPayerCreateCommitmentTx_C3a(tx storm.Node, channelInfo *dao.ChannelInfo
 			0, &channelInfo.ChannelAddressRedeemScript, "")
 		if err != nil {
 			log.Println(err)
-			return nil, err
+			return nil, rawTx, err
 		}
 		allUsedTxidTemp += usedTxid
 		newCommitmentTxInfo.RsmcInputTxid = usedTxid
@@ -2229,7 +2226,7 @@ func htlcPayerCreateCommitmentTx_C3a(tx storm.Node, channelInfo *dao.ChannelInfo
 		signHexData.IsMultisig = true
 		signHexData.PubKeyA = channelInfo.PubKeyA
 		signHexData.PubKeyB = channelInfo.PubKeyB
-		newCommitmentTxInfo.RsmcRawTxData = signHexData
+		rawTx.RsmcRawTxData = signHexData
 	}
 
 	//htlc
@@ -2244,14 +2241,14 @@ func htlcPayerCreateCommitmentTx_C3a(tx storm.Node, channelInfo *dao.ChannelInfo
 			0, &channelInfo.ChannelAddressRedeemScript, allUsedTxidTemp)
 		if err != nil {
 			log.Println(err)
-			return nil, err
+			return nil, rawTx, err
 		}
 		allUsedTxidTemp += "," + usedTxid
 		newCommitmentTxInfo.HtlcRoutingPacket = requestData.RoutingPacket
 
 		currBlockHeight, err := rpcClient.GetBlockCount()
 		if err != nil {
-			return nil, errors.New("fail to get blockHeight ,please try again later")
+			return nil, rawTx, errors.New("fail to get blockHeight ,please try again later")
 		}
 		newCommitmentTxInfo.HtlcCltvExpiry = requestData.CltvExpiry
 		newCommitmentTxInfo.BeginBlockHeight = currBlockHeight
@@ -2270,7 +2267,7 @@ func htlcPayerCreateCommitmentTx_C3a(tx storm.Node, channelInfo *dao.ChannelInfo
 		signHexData.IsMultisig = true
 		signHexData.PubKeyA = channelInfo.PubKeyA
 		signHexData.PubKeyB = channelInfo.PubKeyB
-		newCommitmentTxInfo.HtlcRawTxData = signHexData
+		rawTx.HtlcRawTxData = signHexData
 
 	}
 
@@ -2288,7 +2285,7 @@ func htlcPayerCreateCommitmentTx_C3a(tx storm.Node, channelInfo *dao.ChannelInfo
 			&channelInfo.ChannelAddressRedeemScript)
 		if err != nil {
 			log.Println(err)
-			return nil, err
+			return nil, rawTx, err
 		}
 		newCommitmentTxInfo.ToCounterpartyTxHex = toBobTxData["hex"].(string)
 
@@ -2298,7 +2295,7 @@ func htlcPayerCreateCommitmentTx_C3a(tx storm.Node, channelInfo *dao.ChannelInfo
 		signHexData.IsMultisig = true
 		signHexData.PubKeyA = channelInfo.PubKeyA
 		signHexData.PubKeyB = channelInfo.PubKeyB
-		newCommitmentTxInfo.ToCounterpartyRawTxData = signHexData
+		rawTx.ToCounterpartyRawTxData = signHexData
 
 	}
 
@@ -2312,8 +2309,11 @@ func htlcPayerCreateCommitmentTx_C3a(tx storm.Node, channelInfo *dao.ChannelInfo
 	err = tx.Save(newCommitmentTxInfo)
 	if err != nil {
 		log.Println(err)
-		return nil, err
+		return nil, rawTx, err
 	}
+
+	rawTx.CommitmentTxId = newCommitmentTxInfo.Id
+	tx.Save(&rawTx)
 
 	bytes, err := json.Marshal(newCommitmentTxInfo)
 	msgHash := tool.SignMsgWithSha256(bytes)
@@ -2321,13 +2321,13 @@ func htlcPayerCreateCommitmentTx_C3a(tx storm.Node, channelInfo *dao.ChannelInfo
 	err = tx.Update(newCommitmentTxInfo)
 	if err != nil {
 		log.Println(err)
-		return nil, err
+		return nil, rawTx, err
 	}
-	return newCommitmentTxInfo, nil
+	return newCommitmentTxInfo, rawTx, nil
 }
 
 // 创建收款方C3b
-func htlcPayeeCreateCommitmentTx_C3b(tx storm.Node, channelInfo *dao.ChannelInfo, reqData bean.BobSignedC3a, payerData bean.CreateHtlcTxForC3aOfP2p, latestCommitmentTx *dao.CommitmentTransaction, signedToOtherHex string, user bean.User) (*dao.CommitmentTransaction, error) {
+func htlcPayeeCreateCommitmentTx_C3b(tx storm.Node, channelInfo *dao.ChannelInfo, reqData bean.BobSignedC3a, payerData bean.CreateHtlcTxForC3aOfP2p, latestCommitmentTx *dao.CommitmentTransaction, signedToOtherHex string, user bean.User) (*dao.CommitmentTransaction, dao.CommitmentTxRawTx, error) {
 
 	channelIds := strings.Split(payerData.RoutingPacket, ",")
 	var totalStep = len(channelIds)
@@ -2338,9 +2338,10 @@ func htlcPayeeCreateCommitmentTx_C3b(tx storm.Node, channelInfo *dao.ChannelInfo
 			break
 		}
 	}
+	rawTx := dao.CommitmentTxRawTx{}
 	fundingTransaction := getFundingTransactionByChannelId(tx, channelInfo.ChannelId, user.PeerId)
 	if fundingTransaction == nil {
-		return nil, errors.New("not found fundingTransaction")
+		return nil, rawTx, errors.New("not found fundingTransaction")
 	}
 
 	// htlc的资产分配方案
@@ -2374,7 +2375,7 @@ func htlcPayeeCreateCommitmentTx_C3b(tx storm.Node, channelInfo *dao.ChannelInfo
 	newCommitmentTxInfo, err := createCommitmentTx(user.PeerId, channelInfo, fundingTransaction, outputBean, &user)
 	if err != nil {
 		log.Println(err)
-		return nil, err
+		return nil, rawTx, err
 	}
 	newCommitmentTxInfo.FromCounterpartySideForMeTxHex = signedToOtherHex
 	newCommitmentTxInfo.TxType = dao.CommitmentTransactionType_Htlc
@@ -2394,7 +2395,7 @@ func htlcPayeeCreateCommitmentTx_C3b(tx storm.Node, channelInfo *dao.ChannelInfo
 			0, &channelInfo.ChannelAddressRedeemScript, "")
 		if err != nil {
 			log.Println(err)
-			return nil, err
+			return nil, rawTx, err
 		}
 		allUsedTxidTemp += usedTxid
 		newCommitmentTxInfo.RsmcInputTxid = usedTxid
@@ -2406,7 +2407,7 @@ func htlcPayeeCreateCommitmentTx_C3b(tx storm.Node, channelInfo *dao.ChannelInfo
 		signHexData.IsMultisig = true
 		signHexData.PubKeyA = channelInfo.PubKeyA
 		signHexData.PubKeyB = channelInfo.PubKeyB
-		newCommitmentTxInfo.RsmcRawTxData = signHexData
+		rawTx.RsmcRawTxData = signHexData
 	}
 
 	// htlc
@@ -2421,13 +2422,13 @@ func htlcPayeeCreateCommitmentTx_C3b(tx storm.Node, channelInfo *dao.ChannelInfo
 			0, &channelInfo.ChannelAddressRedeemScript, allUsedTxidTemp)
 		if err != nil {
 			log.Println(err)
-			return nil, err
+			return nil, rawTx, err
 		}
 		allUsedTxidTemp += "," + usedTxid
 		newCommitmentTxInfo.HtlcRoutingPacket = payerData.RoutingPacket
 		currBlockHeight, err := rpcClient.GetBlockCount()
 		if err != nil {
-			return nil, errors.New("fail to get blockHeight ,please try again later")
+			return nil, rawTx, errors.New("fail to get blockHeight ,please try again later")
 		}
 		newCommitmentTxInfo.HtlcCltvExpiry = payerData.CltvExpiry
 		newCommitmentTxInfo.BeginBlockHeight = currBlockHeight
@@ -2439,7 +2440,7 @@ func htlcPayeeCreateCommitmentTx_C3b(tx storm.Node, channelInfo *dao.ChannelInfo
 		signHexData.IsMultisig = true
 		signHexData.PubKeyA = channelInfo.PubKeyA
 		signHexData.PubKeyB = channelInfo.PubKeyB
-		newCommitmentTxInfo.HtlcRawTxData = signHexData
+		rawTx.HtlcRawTxData = signHexData
 
 		newCommitmentTxInfo.HtlcH = payerData.H
 		if bobIsPayee {
@@ -2463,7 +2464,7 @@ func htlcPayeeCreateCommitmentTx_C3b(tx storm.Node, channelInfo *dao.ChannelInfo
 			&channelInfo.ChannelAddressRedeemScript)
 		if err != nil {
 			log.Println(err)
-			return nil, err
+			return nil, rawTx, err
 		}
 		newCommitmentTxInfo.ToCounterpartyTxHex = toBobTxData["hex"].(string)
 
@@ -2473,7 +2474,7 @@ func htlcPayeeCreateCommitmentTx_C3b(tx storm.Node, channelInfo *dao.ChannelInfo
 		signHexData.IsMultisig = true
 		signHexData.PubKeyA = channelInfo.PubKeyA
 		signHexData.PubKeyB = channelInfo.PubKeyB
-		newCommitmentTxInfo.ToCounterpartyRawTxData = signHexData
+		rawTx.ToCounterpartyRawTxData = signHexData
 	}
 
 	newCommitmentTxInfo.CurrState = dao.TxInfoState_Init
@@ -2486,8 +2487,10 @@ func htlcPayeeCreateCommitmentTx_C3b(tx storm.Node, channelInfo *dao.ChannelInfo
 	err = tx.Save(newCommitmentTxInfo)
 	if err != nil {
 		log.Println(err)
-		return nil, err
+		return nil, rawTx, err
 	}
+	rawTx.CommitmentTxId = newCommitmentTxInfo.Id
+	tx.Save(&rawTx)
 
 	bytes, err := json.Marshal(newCommitmentTxInfo)
 	msgHash := tool.SignMsgWithSha256(bytes)
@@ -2495,9 +2498,9 @@ func htlcPayeeCreateCommitmentTx_C3b(tx storm.Node, channelInfo *dao.ChannelInfo
 	err = tx.Update(newCommitmentTxInfo)
 	if err != nil {
 		log.Println(err)
-		return nil, err
+		return nil, rawTx, err
 	}
-	return newCommitmentTxInfo, nil
+	return newCommitmentTxInfo, rawTx, nil
 }
 
 // 付款方更新C3a的信息
@@ -2984,10 +2987,6 @@ func checkHexAndUpdateC3bOn42Protocal(tx storm.Node, jsonObj bean.NeedBobSignHtl
 		return nil, false, err
 	}
 	//endregion
-	latestCommitmentTx.ToCounterpartyRawTxData = bean.NeedClientSignTxData{Hex: " ", Inputs: nil, IsMultisig: false}
-	latestCommitmentTx.RsmcRawTxData = bean.NeedClientSignTxData{Hex: " ", Inputs: nil, IsMultisig: false}
-	latestCommitmentTx.HtlcRawTxData = bean.NeedClientSignTxData{Hex: " ", Inputs: nil, IsMultisig: false}
-
 	latestCommitmentTx.CurrState = dao.TxInfoState_Htlc_GetH
 	bytes, err := json.Marshal(latestCommitmentTx)
 	msgHash := tool.SignMsgWithSha256(bytes)
