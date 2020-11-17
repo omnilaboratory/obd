@@ -197,7 +197,6 @@ const (
 	MsgType_HTLC_VerifyR_45                MsgType = -45
 	MsgType_HTLC_RecvVerifyR_45            MsgType = -110045
 	MsgType_HTLC_SendHerdHex_46            MsgType = -46
-	MsgType_HTLC_SignHedHex_48             MsgType = -48
 	MsgType_HTLC_RecvSignVerifyR_46        MsgType = -110046
 
 	MsgType_HTLC_Close_SendRequestCloseCurrTx_49       MsgType = -100049

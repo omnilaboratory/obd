@@ -514,33 +514,12 @@ func p2pMiddleNodeTransferData(msg *bean.RequestMessage, itemClient Client, data
 		msg.Type = enum.MsgType_HTLC_RecvSignVerifyR_46
 	}
 
-	//当48理完成，就改成46的返回 47和48对用户是透明的
-	if msg.Type == enum.MsgType_HTLC_SignHedHex_48 {
-		msg.SenderUserPeerId = msg.RecipientUserPeerId
-		msg.SenderNodePeerId = msg.RecipientNodePeerId
-		msg.Type = enum.MsgType_HTLC_ClientSign_Alice_HeSub_46
-	}
-
 	if msg.Type == enum.MsgType_HTLC_Close_RequestCloseCurrTx_49 {
 		msg.Type = enum.MsgType_HTLC_Close_RecvRequestCloseCurrTx_49
 	}
 
 	if msg.Type == enum.MsgType_HTLC_CloseHtlcRequestSignBR_50 {
-		//	发给bob的信息
 		msg.Type = enum.MsgType_HTLC_RecvCloseSigned_50
-		//newMsg := bean.RequestMessage{}
-		//newMsg.Type = enum.MsgType_HTLC_CloseHtlcUpdateCnb_51
-		//newMsg.SenderUserPeerId = itemClient.User.PeerId
-		//newMsg.SenderNodePeerId = p2PLocalPeerId
-		//newMsg.RecipientUserPeerId = msg.SenderUserPeerId
-		//newMsg.RecipientNodePeerId = msg.SenderNodePeerId
-		//payeeData := gjson.Parse(retData).Get("bobData").String()
-		////转发给bob，
-		//_ = itemClient.sendDataToP2PUser(newMsg, true, payeeData)
-		////发给alice
-		//msg.Type = enum.MsgType_HTLC_RecvCloseSigned_50
-		//payerData := gjson.Parse(retData).Get("aliceData").String()
-		//data = payerData
 	}
 
 	if msg.Type == enum.MsgType_HTLC_CloseHtlcUpdateCnb_51 {

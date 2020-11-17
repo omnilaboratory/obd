@@ -147,13 +147,6 @@ func routerOfP2PNode(msg bean.RequestMessage, data string, client *Client) (retD
 			return string(retData), nil
 		}
 		defaultErr = err
-	case enum.MsgType_HTLC_SignHedHex_48:
-		responseData, err := service.HtlcBackwardTxService.CheckHed1aHex_Step5(data, *client.User)
-		if err == nil {
-			retData, _ := json.Marshal(responseData)
-			return string(retData), nil
-		}
-		defaultErr = err
 	case enum.MsgType_HTLC_Close_RequestCloseCurrTx_49:
 		responseData, err := service.HtlcCloseTxService.OnObdOfBobGet49PData(data, *client.User)
 		if err == nil {
