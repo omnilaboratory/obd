@@ -704,7 +704,7 @@ func (service *htlcForwardTxManager) BeforeBobSignAddHtlcRequestAtBobSide_40(msg
 	cacheDataForTx := dao.CacheDataForTx{}
 	cacheDataForTx.KeyName = requestAddHtlc.PayerCommitmentTxHash
 	cacheDataForTx.Data = msgData
-	_ = tx.Save(cacheDataForTx)
+	_ = tx.Save(&cacheDataForTx)
 
 	_ = tx.Commit()
 

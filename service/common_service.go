@@ -200,7 +200,7 @@ func checkBtcTxHex(btcFeeTxHexDecode string, channelInfo *dao.ChannelInfo, peerI
 	vin1 := jsonFundingTxHexDecode.Get("vin").Array()[0]
 	asm := vin1.Get("scriptSig").Get("asm").Str
 	if len(asm) == 0 {
-		return "", 0, 0, errors.New(enum.Tips_funding_notFoundVin)
+		return "", 0, 0, errors.New("wrong vin asm")
 	}
 	split := strings.Split(asm, " ")
 	if split[0] == "0" {
