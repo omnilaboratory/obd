@@ -199,8 +199,8 @@ func (service *htlcCloseTxManager) RequestCloseHtlc(msg bean.RequestMessage, use
 	dataTo49P.LastRsmcTempAddressPrivateKey = reqData.LastRsmcTempAddressPrivateKey
 	dataTo49P.LastHtlcTempAddressPrivateKey = reqData.LastHtlcTempAddressPrivateKey
 	dataTo49P.CurrTempAddressPubKey = reqData.CurrTempAddressPubKey
-	dataTo49P.CloserNodeAddress = msg.SenderNodePeerId
-	dataTo49P.CloserPeerId = msg.SenderUserPeerId
+	dataTo49P.SenderNodeAddress = msg.SenderNodePeerId
+	dataTo49P.SenderPeerId = msg.SenderUserPeerId
 
 	needSign = false
 	//如果是第一次请求
@@ -376,6 +376,8 @@ func (service *htlcCloseTxManager) OnObdOfBobGet49PData(data string, user bean.U
 	closeHtlcTxOfWs.C4aCounterpartyPartialSignedData = closeHtlcTxOfP2p.CounterpartyPartialSignedData
 	closeHtlcTxOfWs.ChannelId = channelInfo.ChannelId
 	closeHtlcTxOfWs.MsgHash = messageHash
+	closeHtlcTxOfWs.SenderNodeAddress = closeHtlcTxOfP2p.SenderNodeAddress
+	closeHtlcTxOfWs.SenderPeerId = closeHtlcTxOfP2p.SenderPeerId
 
 	return closeHtlcTxOfWs, nil
 }
@@ -540,6 +542,9 @@ func (service *htlcCloseTxManager) OnBobSignCloseHtlcRequest(msg bean.RequestMes
 	}
 
 	dataSendToBob := bean.NeedBobSignRawDataForC4b{}
+	dataSendToBob.ChannelId = channelInfo.ChannelId
+	dataSendToBob.SenderNodeAddress = user.P2PLocalPeerId
+	dataSendToBob.SenderPeerId = user.PeerId
 
 	dataSendTo50P := bean.CloseeSignCloseHtlcTxOfP2p{}
 	if he1b.Id > 0 {
@@ -551,8 +556,8 @@ func (service *htlcCloseTxManager) OnBobSignCloseHtlcRequest(msg bean.RequestMes
 	}
 
 	dataSendTo50P.ChannelId = channelInfo.ChannelId
-	dataSendTo50P.CloseeNodeAddress = user.P2PLocalPeerId
-	dataSendTo50P.CloseeePeerId = user.PeerId
+	dataSendTo50P.SendeeNodeAddress = user.P2PLocalPeerId
+	dataSendTo50P.SendeePeerId = user.PeerId
 	dataSendTo50P.CloserCommitmentTxHash = dataFrom49POfP2p.CommitmentTxHash
 	dataSendTo50P.CloseeLastRsmcTempAddressPrivateKey = reqData.LastRsmcTempAddressPrivateKey
 	dataSendTo50P.CloseeLastHtlcTempAddressPrivateKey = reqData.LastHtlcTempAddressPrivateKey
@@ -882,7 +887,8 @@ func (service *htlcCloseTxManager) OnObdOfAliceGet50PData(data string, user bean
 	needAliceSignData.C4aRdPartialSignedData = dataFrom50P.C4aRdPartialSignedData
 	needAliceSignData.C4bRsmcPartialSignedData = dataFrom50P.C4bRsmcPartialSignedData
 	needAliceSignData.C4bCounterpartyPartialSignedData = dataFrom50P.C4bCounterpartyPartialSignedData
-
+	needAliceSignData.SendeeNodeAddress = dataFrom50P.SendeeNodeAddress
+	needAliceSignData.SendeePeerId = dataFrom50P.SendeePeerId
 	return needAliceSignData, false, nil
 }
 
@@ -1048,8 +1054,8 @@ func (service *htlcCloseTxManager) OnAliceSignedCxb(msg bean.RequestMessage, use
 	//endregion
 
 	_ = tx.Commit()
-	needAliceSignRdTxForC4b.CloseeNodeAddress = dataFromP2p50P.CloseeNodeAddress
-	needAliceSignRdTxForC4b.CloseeePeerId = dataFromP2p50P.CloseeePeerId
+	needAliceSignRdTxForC4b.SendeeNodeAddress = dataFromP2p50P.SendeeNodeAddress
+	needAliceSignRdTxForC4b.SendeePeerId = dataFromP2p50P.SendeePeerId
 	return needAliceSignRdTxForC4b, nil
 }
 

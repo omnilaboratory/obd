@@ -1,18 +1,5 @@
 package bean
 
-// 原有 type -100049: user wanna close htlc tx when tx is on getH state
-type HtlcRequestCloseCurrTx struct {
-	ChannelId                            string `json:"channel_id"`
-	ChannelAddressPrivateKey             string `json:"channel_address_private_key"` //	开通通道用到的私钥
-	LastRsmcTempAddressPrivateKey        string `json:"last_rsmc_temp_address_private_key"`
-	LastHtlcTempAddressPrivateKey        string `json:"last_htlc_temp_address_private_key"`
-	LastHtlcTempAddressForHtnxPrivateKey string `json:"last_htlc_temp_address_for_htnx_private_key"`
-	CurrRsmcTempAddressIndex             int    `json:"curr_rsmc_temp_address_index"`
-	CurrRsmcTempAddressPubKey            string `json:"curr_rsmc_temp_address_pub_key"`
-	CurrRsmcTempAddressPrivateKey        string `json:"curr_rsmc_temp_address_private_key"`
-	typeLengthValue
-}
-
 // 消息 -100049: user wanna close htlc tx when tx is on getH state
 type HtlcCloseRequestCurrTx struct {
 	ChannelId                            string `json:"channel_id"`
@@ -49,8 +36,8 @@ type AliceRequestCloseHtlcCurrTxOfP2p struct {
 	LastHtlcTempAddressForHtnxPrivateKey string               `json:"last_htlc_temp_address_for_htnx_private_key"`
 	RsmcPartialSignedData                NeedClientSignTxData `json:"rsmc_partial_signed_data"`
 	CounterpartyPartialSignedData        NeedClientSignTxData `json:"counterparty_partial_signed_data"`
-	CloserNodeAddress                    string               `json:"closer_node_address"`
-	CloserPeerId                         string               `json:"closer_peer_id"`
+	SenderNodeAddress                    string               `json:"sender_node_address"`
+	SenderPeerId                         string               `json:"sender_peer_id"`
 	typeLengthValue
 }
 
@@ -60,6 +47,8 @@ type AliceRequestCloseHtlcCurrTxOfP2pToBobClient struct {
 	C4aRsmcPartialSignedData         NeedClientSignTxData `json:"c4a_rsmc_partial_signed_data"`
 	C4aCounterpartyPartialSignedData NeedClientSignTxData `json:"c4a_counterparty_partial_signed_data"`
 	MsgHash                          string               `json:"msg_hash"`
+	SenderNodeAddress                string               `json:"sender_node_address"`
+	SenderPeerId                     string               `json:"sender_peer_id"`
 }
 
 //type -50: receiver sign the close request
@@ -95,6 +84,8 @@ type NeedBobSignRawDataForC4b struct {
 	C4bCounterpartyRawData NeedClientSignTxData      `json:"c4b_counterparty_raw_data"`
 	C4aRdRawData           NeedClientSignTxData      `json:"c4a_rd_raw_data"`
 	C4aBrRawData           NeedClientSignRawBRTxData `json:"c4a_br_raw_data"`
+	SenderNodeAddress      string                    `json:"sender_node_address"`
+	SenderPeerId           string                    `json:"sender_peer_id"`
 }
 
 // 消息 1000111对100050的签名结果
@@ -114,21 +105,6 @@ type BobSignedRsmcDataForC4bResult struct {
 	CommitmentTxHash string `json:"commitment_tx_hash"`
 }
 
-// 原有 p2p消息 50号协议
-type HtlcCloseCloseeSignedInfoToCloser struct {
-	ChannelId                                  string `json:"channel_id"`
-	CloseeLastRsmcTempAddressPrivateKey        string `json:"closee_last_rsmc_temp_address_private_key"`
-	CloseeLastHtlcTempAddressPrivateKey        string `json:"closee_last_htlc_temp_address_private_key"`
-	CloseeLastHtlcTempAddressForHtnxPrivateKey string `json:"closee_last_htlc_temp_address_for_htnx_private_key"`
-	CloseeCurrRsmcTempAddressPubKey            string `json:"closee_curr_rsmc_temp_address_pub_key"`
-	CloseeRsmcHex                              string `json:"closee_rsmc_hex"`
-	CloseeToCounterpartyTxHex                  string `json:"closee_to_counterparty_tx_hex"`
-	CloserCommitmentTxHash                     string `json:"closer_commitment_tx_hash"`
-	CloserSignedRsmcHex                        string `json:"closer_signed_rsmc_hex"`
-	CloserRsmcRdHex                            string `json:"closer_rsmc_rd_hex"`
-	CloserSignedToCounterpartyTxHex            string `json:"closer_signed_to_counterparty_tx_hex"`
-}
-
 // p2p消息 50号协议传递的消息
 type CloseeSignCloseHtlcTxOfP2p struct {
 	ChannelId                                  string               `json:"channel_id"`
@@ -142,8 +118,8 @@ type CloseeSignCloseHtlcTxOfP2p struct {
 	C4aRdPartialSignedData                     NeedClientSignTxData `json:"c4a_rd_partial_signed_data"`
 	C4bRsmcPartialSignedData                   NeedClientSignTxData `json:"c4b_rsmc_partial_signed_data"`
 	C4bCounterpartyPartialSignedData           NeedClientSignTxData `json:"c4b_counterparty_partial_signed_data"`
-	CloseeNodeAddress                          string               `json:"closee_node_address"`
-	CloseeePeerId                              string               `json:"closeee_peer_id"`
+	SendeeNodeAddress                          string               `json:"sendee_node_address"`
+	SendeePeerId                               string               `json:"sendee_peer_id"`
 }
 
 // 110050的推送信息
@@ -152,6 +128,8 @@ type NeedAliceSignRsmcTxForC4b struct {
 	C4aRdPartialSignedData           NeedClientSignTxData `json:"c4a_rd_partial_signed_data"`
 	C4bRsmcPartialSignedData         NeedClientSignTxData `json:"c4b_rsmc_partial_signed_data"`
 	C4bCounterpartyPartialSignedData NeedClientSignTxData `json:"c4b_counterparty_partial_signed_data"`
+	SendeeNodeAddress                string               `json:"sendee_node_address"`
+	SendeePeerId                     string               `json:"sendee_peer_id"`
 }
 
 // 消息 100112（alice to obd） Alice完成对C2b的相关信息签名
@@ -168,8 +146,8 @@ type NeedAliceSignRdTxForC4b struct {
 	ChannelId         string                    `json:"channel_id"` //the global channel id.
 	C4bRdRawData      NeedClientSignTxData      `json:"c4b_rd_raw_data"`
 	C4bBrRawData      NeedClientSignRawBRTxData `json:"c4b_br_raw_data"`
-	CloseeNodeAddress string                    `json:"closee_node_address"`
-	CloseeePeerId     string                    `json:"closeee_peer_id"`
+	SendeeNodeAddress string                    `json:"sendee_node_address"`
+	SendeePeerId      string                    `json:"sendee_peer_id"`
 }
 
 // 消息 100113（alice to obd） Alice完成对C4b的Rd和BR的相关信息签名
