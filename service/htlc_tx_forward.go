@@ -770,7 +770,7 @@ func (service *htlcForwardTxManager) BobSignedAddHtlcAtBobSide(jsonData string, 
 	}
 	payerRequestAddHtlc.C3aHtlcPartialSignedData.Hex = requestData.C3aCompleteSignedHtlcHex
 
-	if len(payerRequestAddHtlc.C3aRsmcPartialSignedData.Hex) > 0 {
+	if len(payerRequestAddHtlc.C3aCounterpartyPartialSignedData.Hex) > 0 {
 		if pass, _ := rpcClient.CheckMultiSign(true, requestData.C3aCompleteSignedCounterpartyHex, 2); pass == false {
 			err = errors.New(enum.Tips_common_empty + "c3a_complete_signed_counterparty_hex")
 			log.Println(err)
