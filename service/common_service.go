@@ -719,14 +719,15 @@ func getBtcMinerAmount(total float64) float64 {
 	return rpc.GetBtcMinerAmount(total)
 }
 
-func checkChannelOmniAssetAmount(channelInfo dao.ChannelInfo) bool {
+func checkChannelOmniAssetAmount(channelInfo dao.ChannelInfo) (bool, error) {
 	result, err := rpcClient.OmniGetbalance(channelInfo.ChannelAddress, int(channelInfo.PropertyId))
 	if err != nil {
-		return false
+		log.Println(result)
+		return false, err
 	}
 	balance := gjson.Get(result, "balance").Float()
 	if balance == channelInfo.Amount {
-		return true
+		return true, nil
 	}
-	return false
+	return false, nil
 }

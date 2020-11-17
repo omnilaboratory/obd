@@ -874,8 +874,7 @@ func (service *fundingTransactionManager) OnBobSignedRDAndBR(data string, user *
 		q.Or(
 			q.Eq("PeerIdA", user.PeerId),
 			q.Eq("PeerIdB", user.PeerId)),
-	).
-		First(channelInfo)
+	).First(channelInfo)
 	if err != nil {
 		return nil, nil, err
 	}

@@ -185,7 +185,6 @@ func (client *Client) htlcHModule(msg bean.RequestMessage) (enum.SendTargetType,
 					status = true
 				}
 			}
-
 		}
 		msg.Type = enum.MsgType_HTLC_ClientSign_Bob_C3b_101
 		client.sendToMyself(msg.Type, status, data)
@@ -204,11 +203,11 @@ func (client *Client) htlcHModule(msg bean.RequestMessage) (enum.SendTargetType,
 		}
 		client.sendToMyself(msg.Type, status, data)
 	case enum.MsgType_HTLC_ClientSign_Alice_C3bSub_103:
-		returnData, err := service.HtlcForwardTxService.OnAliceSignedC3bSubTxAtAliceSide(msg, *client.User)
+		toAlice, toBob, err := service.HtlcForwardTxService.OnAliceSignedC3bSubTxAtAliceSide(msg, *client.User)
 		if err != nil {
 			data = err.Error()
 		} else {
-			bytes, err := json.Marshal(returnData)
+			bytes, err := json.Marshal(toBob)
 			if err != nil {
 				data = err.Error()
 			} else {
@@ -224,11 +223,18 @@ func (client *Client) htlcHModule(msg bean.RequestMessage) (enum.SendTargetType,
 					data = err.Error()
 				}
 			}
+			if status {
+				bytes, err := json.Marshal(toAlice)
+				if err != nil {
+					data = err.Error()
+				} else {
+					data = string(bytes)
+					status = true
+				}
+			}
 		}
-		if status == false {
-			msg.Type = enum.MsgType_HTLC_ClientSign_Alice_C3bSub_103
-			client.sendToMyself(msg.Type, status, data)
-		}
+		msg.Type = enum.MsgType_HTLC_ClientSign_Alice_C3bSub_103
+		client.sendToMyself(msg.Type, status, data)
 	case enum.MsgType_HTLC_ClientSign_Bob_C3bSub_104:
 		returnData, err := service.HtlcForwardTxService.OnBobSignedC3bSubTxAtBobSide(msg, *client.User)
 		if err != nil {
@@ -358,10 +364,8 @@ func (client *Client) htlcTxModule(msg bean.RequestMessage) (enum.SendTargetType
 				}
 			}
 		}
-		if status == false {
-			msg.Type = enum.MsgType_HTLC_ClientSign_Bob_HeSub_106
-			client.sendToMyself(msg.Type, status, data)
-		}
+		msg.Type = enum.MsgType_HTLC_ClientSign_Bob_HeSub_106
+		client.sendToMyself(msg.Type, status, data)
 	case enum.MsgType_HTLC_ClientSign_Alice_HeSub_46:
 		toAlice, toBob, err := service.HtlcBackwardTxService.OnAliceSignedHeRdAtAliceSide(msg, *client.User)
 		if err != nil {

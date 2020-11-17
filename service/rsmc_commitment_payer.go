@@ -71,7 +71,11 @@ func (this *commitmentTxManager) CommitmentTransactionCreated(msg bean.RequestMe
 	fundingTransaction := getFundingTransactionByChannelId(tx, channelInfo.ChannelId, creator.PeerId)
 	duration := time.Now().Sub(fundingTransaction.CreateAt)
 	if duration > time.Minute*30 {
-		if checkChannelOmniAssetAmount(*channelInfo) == false {
+		pass, err := checkChannelOmniAssetAmount(*channelInfo)
+		if err != nil {
+			return nil, false, err
+		}
+		if pass == false {
 			err = errors.New(enum.Tips_rsmc_broadcastedChannel)
 			log.Println(err)
 			return nil, false, err

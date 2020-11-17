@@ -239,8 +239,10 @@ func (service *htlcBackwardTxManager) OnBobSignedHeRdAtBobSide(msg bean.RequestM
 	if pass, _ := rpcClient.CheckMultiSign(false, bobSignedData.C3bHtlcHerdPartialSignedHex, 1); pass == false {
 		return nil, errors.New("error sign c3b_htlc_herd_partial_signed_hex")
 	}
+
 	dataSendTo45P.C3bHtlcHerdPartialSignedData.Hex = bobSignedData.C3bHtlcHerdPartialSignedHex
 	service.tempDataSendTo45PAtBobSide[user.PeerId+"_"+bobSignedData.ChannelId] = dataSendTo45P
+
 	return dataSendTo45P, nil
 }
 

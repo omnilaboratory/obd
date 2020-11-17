@@ -206,7 +206,7 @@ type NeedAliceSignHtlcSubTxOfC3b struct {
 }
 
 //type 消息 --100103
-type AliceSignHtlcSubTxOfC3bResult struct {
+type AliceSignedHtlcSubTxOfC3b struct {
 	ChannelId                    string `json:"channel_id"` //the global channel id.
 	C3aHtlcHtrdPartialSignedHex  string `json:"c3a_htlc_htrd_partial_signed_hex"`
 	C3bRsmcRdPartialSignedHex    string `json:"c3b_rsmc_rd_partial_signed_hex"`
@@ -214,6 +214,12 @@ type AliceSignHtlcSubTxOfC3bResult struct {
 	C3bHtlcHtdPartialSignedHex   string `json:"c3b_htlc_htd_partial_signed_hex"`
 	C3bHtlcHlockPartialSignedHex string `json:"c3b_htlc_hlock_partial_signed_hex"`
 	C3bHtlcBrPartialSignedHex    string `json:"c3b_htlc_br_partial_signed_hex"`
+}
+
+//type 响应 --100103
+type AliceSignedHtlcSubTxOfC3bResult struct {
+	ChannelId      string `json:"channel_id"`
+	CommitmentTxId string `json:"commitment_tx_id"`
 }
 
 // type p2p消息 42 Alice对c3b完成签名，把结果通过p2p推送给bob所在的obd

@@ -396,7 +396,11 @@ func (service *htlcForwardTxManager) AliceAddHtlcAtAliceSide(msg bean.RequestMes
 	fundingTransaction := getFundingTransactionByChannelId(tx, channelInfo.ChannelId, user.PeerId)
 	duration := time.Now().Sub(fundingTransaction.CreateAt)
 	if duration > time.Minute*30 {
-		if checkChannelOmniAssetAmount(*channelInfo) == false {
+		pass, err := checkChannelOmniAssetAmount(*channelInfo)
+		if err != nil {
+			return nil, false, err
+		}
+		if pass == false {
 			err = errors.New(enum.Tips_rsmc_broadcastedChannel)
 			log.Println(err)
 			return nil, false, err
@@ -1707,8 +1711,8 @@ func (service *htlcForwardTxManager) OnAliceSignC3bAtAliceSide(msg bean.RequestM
 }
 
 // step 8 alice 响应 100103号协议，更新alice的承诺交易，推送42号p2p协议
-func (service *htlcForwardTxManager) OnAliceSignedC3bSubTxAtAliceSide(msg bean.RequestMessage, user bean.User) (interface{}, error) {
-	aliceSignedC3b := bean.AliceSignHtlcSubTxOfC3bResult{}
+func (service *htlcForwardTxManager) OnAliceSignedC3bSubTxAtAliceSide(msg bean.RequestMessage, user bean.User) (toAlice, toBob interface{}, err error) {
+	aliceSignedC3b := bean.AliceSignedHtlcSubTxOfC3b{}
 	_ = json.Unmarshal([]byte(msg.Data), &aliceSignedC3b)
 
 	channelId := aliceSignedC3b.ChannelId
@@ -1718,47 +1722,47 @@ func (service *htlcForwardTxManager) OnAliceSignedC3bSubTxAtAliceSide(msg bean.R
 	bobRsmcHexIsExist := false
 	if len(needBobSignData.C3bRsmcRdPartialData.Hex) > 0 {
 		if pass, _ := rpcClient.CheckMultiSign(false, aliceSignedC3b.C3bRsmcRdPartialSignedHex, 1); pass == false {
-			return nil, errors.New(enum.Tips_common_wrong + "c3b_rsmc_rd_partial_signed_hex")
+			return nil, nil, errors.New(enum.Tips_common_wrong + "c3b_rsmc_rd_partial_signed_hex")
 		}
 		needBobSignData.C3bRsmcRdPartialData.Hex = aliceSignedC3b.C3bRsmcRdPartialSignedHex
 
 		if pass, _ := rpcClient.CheckMultiSign(false, aliceSignedC3b.C3bRsmcBrPartialSignedHex, 1); pass == false {
-			return nil, errors.New(enum.Tips_common_wrong + "c3b_rsmc_br_partial_signed_hex")
+			return nil, nil, errors.New(enum.Tips_common_wrong + "c3b_rsmc_br_partial_signed_hex")
 		}
 		bobRsmcHexIsExist = true
 	}
 
 	if pass, _ := rpcClient.CheckMultiSign(false, aliceSignedC3b.C3bHtlcHtdPartialSignedHex, 1); pass == false {
-		return nil, errors.New(enum.Tips_common_wrong + "c3b_htlc_htd_partial_signed_hex")
+		return nil, nil, errors.New(enum.Tips_common_wrong + "c3b_htlc_htd_partial_signed_hex")
 	}
 	needBobSignData.C3bHtlcHtdPartialData.Hex = aliceSignedC3b.C3bHtlcHtdPartialSignedHex
 
 	if pass, _ := rpcClient.CheckMultiSign(false, aliceSignedC3b.C3bHtlcBrPartialSignedHex, 1); pass == false {
-		return nil, errors.New(enum.Tips_common_wrong + "c3b_htlc_br_partial_signed_hex")
+		return nil, nil, errors.New(enum.Tips_common_wrong + "c3b_htlc_br_partial_signed_hex")
 	}
 
 	if pass, _ := rpcClient.CheckMultiSign(false, aliceSignedC3b.C3bHtlcHlockPartialSignedHex, 1); pass == false {
-		return nil, errors.New(enum.Tips_common_wrong + "c3b_htlc_hlock_partial_signed_hex")
+		return nil, nil, errors.New(enum.Tips_common_wrong + "c3b_htlc_hlock_partial_signed_hex")
 	}
 	needBobSignData.C3bHtlcHlockPartialData.Hex = aliceSignedC3b.C3bHtlcHlockPartialSignedHex
 
 	if pass, _ := rpcClient.CheckMultiSign(false, aliceSignedC3b.C3aHtlcHtrdPartialSignedHex, 1); pass == false {
-		return nil, errors.New(enum.Tips_common_wrong + "c3a_htlc_htrd_partial_signed_hex")
+		return nil, nil, errors.New(enum.Tips_common_wrong + "c3a_htlc_htrd_partial_signed_hex")
 	}
 	needBobSignData.C3aHtlcHtrdPartialData.Hex = aliceSignedC3b.C3aHtlcHtrdPartialSignedHex
 
 	tx, err := user.Db.Begin(true)
 	if err != nil {
 		log.Println(err)
-		return nil, err
+		return nil, nil, err
 	}
 	defer tx.Rollback()
-	commitmentTransaction := &dao.CommitmentTransaction{}
+	commitmentTx := &dao.CommitmentTransaction{}
 	err = tx.Select(
 		q.Eq("CurrHash", dataFromBob_41.PayerCommitmentTxHash),
-		q.Eq("ChannelId", channelId)).First(commitmentTransaction)
+		q.Eq("ChannelId", channelId)).First(commitmentTx)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	channelInfo := &dao.ChannelInfo{}
@@ -1769,19 +1773,19 @@ func (service *htlcForwardTxManager) OnAliceSignedC3bSubTxAtAliceSide(msg bean.R
 			q.Eq("PeerIdB", user.PeerId))).
 		First(channelInfo)
 	if channelInfo == nil {
-		return nil, errors.New("not found the channel " + channelId)
+		return nil, nil, errors.New("not found the channel " + channelId)
 	}
 
 	htlcRequestInfo := &dao.AddHtlcRequestInfo{}
 	err = tx.Select(
 		q.Eq("ChannelId", channelId),
-		q.Eq("H", commitmentTransaction.HtlcH),
+		q.Eq("H", commitmentTx.HtlcH),
 		q.Eq("PropertyId", channelInfo.PropertyId)).
 		OrderBy("CreateAt").
 		Reverse().
 		First(htlcRequestInfo)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	htlcRequestInfo.CurrState = dao.NS_Finish
@@ -1795,13 +1799,13 @@ func (service *htlcForwardTxManager) OnAliceSignedC3bSubTxAtAliceSide(msg bean.R
 	}
 
 	//region 处理付款方收到的已经签名C3a的子交易，及上一个BR的签名，RSMCBR，HBR的创建
-	if commitmentTransaction.CurrState == dao.TxInfoState_Create {
+	if commitmentTx.CurrState == dao.TxInfoState_Create {
 
 		//region 1 根据对方传过来的上一个交易的临时rsmc私钥，签名最近的BR交易，保证对方确实放弃了上一个承诺交易
-		err := signLastBR(tx, dao.BRType_Rmsc, *channelInfo, user.PeerId, dataFromBob_41.PayeeLastTempAddressPrivateKey, commitmentTransaction.LastCommitmentTxId)
+		err := signLastBR(tx, dao.BRType_Rmsc, *channelInfo, user.PeerId, dataFromBob_41.PayeeLastTempAddressPrivateKey, commitmentTx.LastCommitmentTxId)
 		if err != nil {
 			log.Println(err)
-			return nil, err
+			return nil, nil, err
 		}
 		//endregion
 
@@ -1810,14 +1814,14 @@ func (service *htlcForwardTxManager) OnAliceSignedC3bSubTxAtAliceSide(msg bean.R
 		if bobRsmcHexIsExist {
 			bobRsmcMultiAddress, bobRsmcRedeemScript, bobRsmcMultiAddressScriptPubKey, err := createMultiSig(dataFromBob_41.PayeeCurrRsmcTempAddressPubKey, payerChannelPubKey)
 			if err != nil {
-				return nil, err
+				return nil, nil, err
 			}
 			c3bRsmcOutputs, err := getInputsForNextTxByParseTxHashVout(dataFromBob_41.C3bRsmcPartialSignedData.Hex, bobRsmcMultiAddress, bobRsmcMultiAddressScriptPubKey, bobRsmcRedeemScript)
 			if err != nil {
 				log.Println(err)
-				return nil, err
+				return nil, nil, err
 			}
-			tempOtherSideCommitmentTx.Id = commitmentTransaction.Id
+			tempOtherSideCommitmentTx.Id = commitmentTx.Id
 			tempOtherSideCommitmentTx.PropertyId = channelInfo.PropertyId
 			tempOtherSideCommitmentTx.RSMCTempAddressPubKey = dataFromBob_41.PayeeCurrRsmcTempAddressPubKey
 			tempOtherSideCommitmentTx.RSMCMultiAddress = bobRsmcMultiAddress
@@ -1825,11 +1829,11 @@ func (service *htlcForwardTxManager) OnAliceSignedC3bSubTxAtAliceSide(msg bean.R
 			tempOtherSideCommitmentTx.RSMCMultiAddressScriptPubKey = bobRsmcMultiAddressScriptPubKey
 			tempOtherSideCommitmentTx.RSMCTxHex = dataFromBob_41.C3bRsmcPartialSignedData.Hex
 			tempOtherSideCommitmentTx.RSMCTxid = rpcClient.GetTxId(tempOtherSideCommitmentTx.RSMCTxHex)
-			tempOtherSideCommitmentTx.AmountToRSMC = commitmentTransaction.AmountToCounterparty
+			tempOtherSideCommitmentTx.AmountToRSMC = commitmentTx.AmountToCounterparty
 			err = createCurrCommitmentTxPartialSignedBR(tx, dao.BRType_Rmsc, channelInfo, tempOtherSideCommitmentTx, c3bRsmcOutputs, payerChannelAddress, aliceSignedC3b.C3bRsmcBrPartialSignedHex, user)
 			if err != nil {
 				log.Println(err)
-				return nil, err
+				return nil, nil, err
 			}
 		}
 		//endregion
@@ -1837,16 +1841,16 @@ func (service *htlcForwardTxManager) OnAliceSignedC3bSubTxAtAliceSide(msg bean.R
 		// region 3 保存c3b的htlc的br到本地
 		bobHtlcMultiAddress, bobHtlcRedeemScript, bobHtlcMultiAddressScriptPubKey, err := createMultiSig(dataFromBob_41.PayeeCurrHtlcTempAddressPubKey, payerChannelPubKey)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 
 		c3bHtlcOutputs, err := getInputsForNextTxByParseTxHashVout(dataFromBob_41.C3bHtlcPartialSignedData.Hex, bobHtlcMultiAddress, bobHtlcMultiAddressScriptPubKey, bobHtlcRedeemScript)
 		if err != nil {
 			log.Println(err)
-			return nil, err
+			return nil, nil, err
 		}
 
-		tempOtherSideCommitmentTx.Id = commitmentTransaction.Id
+		tempOtherSideCommitmentTx.Id = commitmentTx.Id
 		tempOtherSideCommitmentTx.PropertyId = channelInfo.PropertyId
 		tempOtherSideCommitmentTx.RSMCTempAddressPubKey = dataFromBob_41.PayeeCurrHtlcTempAddressPubKey
 		tempOtherSideCommitmentTx.RSMCMultiAddress = bobHtlcMultiAddress
@@ -1854,30 +1858,32 @@ func (service *htlcForwardTxManager) OnAliceSignedC3bSubTxAtAliceSide(msg bean.R
 		tempOtherSideCommitmentTx.RSMCRedeemScript = bobHtlcRedeemScript
 		tempOtherSideCommitmentTx.RSMCTxHex = dataFromBob_41.C3bHtlcPartialSignedData.Hex
 		tempOtherSideCommitmentTx.RSMCTxid = rpcClient.GetTxId(tempOtherSideCommitmentTx.RSMCTxHex)
-		tempOtherSideCommitmentTx.AmountToRSMC = commitmentTransaction.AmountToHtlc
+		tempOtherSideCommitmentTx.AmountToRSMC = commitmentTx.AmountToHtlc
 		err = createCurrCommitmentTxPartialSignedBR(tx, dao.BRType_Htlc, channelInfo, tempOtherSideCommitmentTx, c3bHtlcOutputs, payerChannelAddress, aliceSignedC3b.C3bHtlcBrPartialSignedHex, user)
 		if err != nil {
 			log.Println(err)
-			return nil, err
+			return nil, nil, err
 		}
 		//endregion
 
 		//region 4 更新收到的签名交易
-		_, _, err = checkHexAndUpdateC3aOn42Protocal(tx, dataFromBob_41, *htlcRequestInfo, *channelInfo, commitmentTransaction, user)
+		_, _, err = checkHexAndUpdateC3aOn42Protocal(tx, dataFromBob_41, *htlcRequestInfo, *channelInfo, commitmentTx, user)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		//endregion
 	}
 	//endregion
 
-	commitmentTransaction.CurrState = dao.TxInfoState_Htlc_WaitHTRD1aSign
-	commitmentTransaction.SignAt = time.Now()
-	_ = tx.Update(commitmentTransaction)
-
+	commitmentTx.CurrState = dao.TxInfoState_Htlc_WaitHTRD1aSign
+	commitmentTx.SignAt = time.Now()
+	_ = tx.Update(commitmentTx)
 	_ = tx.Commit()
 
-	return needBobSignData, nil
+	toAliceData := bean.AliceSignedHtlcSubTxOfC3bResult{}
+	toAliceData.ChannelId = commitmentTx.ChannelId
+	toAliceData.CommitmentTxId = commitmentTx.CurrHash
+	return toAliceData, needBobSignData, nil
 }
 
 // step 9 bob 响应 42号协议 构造需要bob签名的数据，缓存来自42号协议的数据 推送110042
