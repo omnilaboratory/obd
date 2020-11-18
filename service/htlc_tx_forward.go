@@ -26,10 +26,6 @@ type htlcForwardTxManager struct {
 	operationFlag sync.Mutex
 
 	//缓存数据
-	htlcInvoiceTempData map[string]bean.HtlcRequestFindPathInfo
-
-	//在步骤1，缓存需要发往40号协议的信息
-	tempDataSendTo40PAtAliceSide map[string]bean.CreateHtlcTxForC3aOfP2p
 	//在步骤4，缓存需要发往41号协议的信息
 	tempDataSendTo41PAtBobSide map[string]bean.NeedAliceSignHtlcTxOfC3bP2p
 	//在步骤6，缓存来自41号协议的信息
@@ -227,10 +223,13 @@ func (service *htlcForwardTxManager) PayerRequestFindPath(msgData string, user b
 		pathRequest.PayerObdNodeId = tool.GetObdNodeId()
 		pathRequest.PayeePeerId = requestFindPathInfo.RecipientUserPeerId
 		sendMsgToTracker(enum.MsgType_Tracker_GetHtlcPath_351, pathRequest)
-		if service.htlcInvoiceTempData == nil {
-			service.htlcInvoiceTempData = make(map[string]bean.HtlcRequestFindPathInfo)
-		}
-		service.htlcInvoiceTempData[user.PeerId+"_"+pathRequest.H] = requestFindPathInfo
+
+		cacheDataForTx := dao.CacheDataForTx{}
+		cacheDataForTx.KeyName = user.PeerId + "_" + pathRequest.H
+		bytes, _ := json.Marshal(requestFindPathInfo)
+		cacheDataForTx.Data = bytes
+		user.Db.Save(&cacheDataForTx)
+
 		return make(map[string]interface{}), requestFindPathInfo.IsPrivate, nil
 	} else {
 		requestData.HtlcRequestFindPathInfo = requestFindPathInfo
@@ -301,7 +300,15 @@ func (service *htlcForwardTxManager) GetResponseFromTrackerOfPayerRequestFindPat
 	}
 
 	h := dataArr[0]
-	requestFindPathInfo := service.htlcInvoiceTempData[user.PeerId+"_"+h]
+
+	cacheDataForTx := &dao.CacheDataForTx{}
+	user.Db.Select(q.Eq("KeyName", user.PeerId+"_"+h)).First(cacheDataForTx)
+	if cacheDataForTx.Id == 0 {
+		return nil, errors.New("has no channel path")
+	}
+
+	requestFindPathInfo := bean.HtlcRequestFindPathInfo{}
+	_ = json.Unmarshal(cacheDataForTx.Data, &requestFindPathInfo)
 	if &requestFindPathInfo == nil {
 		return nil, errors.New("has no channel path")
 	}
@@ -335,7 +342,8 @@ func (service *htlcForwardTxManager) GetResponseFromTrackerOfPayerRequestFindPat
 	retData["next_node_peerId"] = nextNodePeerId
 	retData["memo"] = requestFindPathInfo.Description
 
-	delete(service.htlcInvoiceTempData, user.PeerId+"_"+h)
+	user.Db.DeleteStruct(cacheDataForTx)
+
 	return retData, nil
 }
 
@@ -530,7 +538,6 @@ func (service *htlcForwardTxManager) AliceAddHtlcAtAliceSide(msg bean.RequestMes
 			return nil, false, errors.New("not found rawTx")
 		}
 	}
-	_ = tx.Commit()
 
 	c3aP2pData := &bean.CreateHtlcTxForC3aOfP2p{}
 	c3aP2pData.RoutingPacket = requestData.RoutingPacket
@@ -560,12 +567,20 @@ func (service *htlcForwardTxManager) AliceAddHtlcAtAliceSide(msg bean.RequestMes
 		txForC3a.PayerNodeAddress = msg.SenderNodePeerId
 		txForC3a.PayerPeerId = msg.SenderUserPeerId
 
-		if service.tempDataSendTo40PAtAliceSide == nil {
-			service.tempDataSendTo40PAtAliceSide = make(map[string]bean.CreateHtlcTxForC3aOfP2p)
+		cacheDataForTx := &dao.CacheDataForTx{}
+		cacheDataForTx.KeyName = user.PeerId + "_" + channelInfo.ChannelId
+		_ = tx.Select(q.Eq("KeyName", cacheDataForTx.KeyName)).First(cacheDataForTx)
+		if cacheDataForTx.Id != 0 {
+			_ = tx.DeleteStruct(cacheDataForTx)
 		}
-		service.tempDataSendTo40PAtAliceSide[user.PeerId+"_"+channelInfo.ChannelId] = *c3aP2pData
+		bytes, _ := json.Marshal(c3aP2pData)
+		cacheDataForTx.Data = bytes
+		_ = tx.Save(cacheDataForTx)
+
+		_ = tx.Commit()
 		return txForC3a, true, nil
 	}
+	_ = tx.Commit()
 	return c3aP2pData, false, nil
 }
 
@@ -587,7 +602,22 @@ func (service *htlcForwardTxManager) OnAliceSignedC3aAtAliceSide(msg bean.Reques
 		return nil, nil, err
 	}
 
-	dataTo40P := service.tempDataSendTo40PAtAliceSide[user.PeerId+"_"+signedDataForC3a.ChannelId]
+	tx, err := user.Db.Begin(true)
+	if err != nil {
+		log.Println(err)
+		return nil, nil, err
+	}
+	defer tx.Rollback()
+
+	cacheDataForTx := &dao.CacheDataForTx{}
+	tx.Select(q.Eq("KeyName", user.PeerId+"_"+signedDataForC3a.ChannelId)).First(cacheDataForTx)
+	if cacheDataForTx.Id == 0 {
+		return nil, nil, errors.New(enum.Tips_common_wrong + "channel_id")
+	}
+
+	dataTo40P := &bean.CreateHtlcTxForC3aOfP2p{}
+	_ = json.Unmarshal(cacheDataForTx.Data, dataTo40P)
+	//dataTo40P = cacheDataForTx.Data.(bean.CreateHtlcTxForC3aOfP2p)
 	if len(dataTo40P.ChannelId) == 0 {
 		return nil, nil, errors.New(enum.Tips_common_wrong + "channel_id")
 	}
@@ -618,13 +648,6 @@ func (service *htlcForwardTxManager) OnAliceSignedC3aAtAliceSide(msg bean.Reques
 			return nil, nil, err
 		}
 	}
-
-	tx, err := user.Db.Begin(true)
-	if err != nil {
-		log.Println(err)
-		return nil, nil, err
-	}
-	defer tx.Rollback()
 
 	latestCommitmentTxInfo, err := getLatestCommitmentTxUseDbTx(tx, signedDataForC3a.ChannelId, user.PeerId)
 	if err != nil {
@@ -694,17 +717,21 @@ func (service *htlcForwardTxManager) BeforeBobSignAddHtlcRequestAtBobSide_40(msg
 			q.Eq("PeerIdA", user.PeerId),
 			q.Eq("PeerIdB", user.PeerId))).
 		First(channelInfo)
-	if channelInfo == nil {
+	if channelInfo.Id == 0 {
 		return nil, errors.New("not found channel info")
 	}
 
 	channelInfo.CurrState = dao.ChannelState_NewTx
 	_ = tx.Update(channelInfo)
 
-	cacheDataForTx := dao.CacheDataForTx{}
+	cacheDataForTx := &dao.CacheDataForTx{}
 	cacheDataForTx.KeyName = requestAddHtlc.PayerCommitmentTxHash
-	cacheDataForTx.Data = msgData
-	_ = tx.Save(&cacheDataForTx)
+	tx.Select(q.Eq("KeyName", cacheDataForTx.KeyName)).First(cacheDataForTx)
+	if cacheDataForTx.Id != 0 {
+		tx.DeleteStruct(cacheDataForTx)
+	}
+	cacheDataForTx.Data = []byte(msgData)
+	_ = tx.Save(cacheDataForTx)
 
 	_ = tx.Commit()
 
@@ -751,7 +778,7 @@ func (service *htlcForwardTxManager) BobSignedAddHtlcAtBobSide(jsonData string, 
 	if cacheDataForTx.Id == 0 {
 		return nil, errors.New(enum.Tips_common_wrong + "payer_commitment_tx_hash")
 	}
-	aliceMsg := cacheDataForTx.Data
+	aliceMsg := string(cacheDataForTx.Data)
 	if tool.CheckIsString(&aliceMsg) == false {
 		return nil, errors.New(enum.Tips_common_wrong + "payer_commitment_tx_hash")
 	}
@@ -1166,7 +1193,7 @@ func (service *htlcForwardTxManager) OnBobSignedC3bAtBobSide(msg bean.RequestMes
 		return nil, nil, errors.New(enum.Tips_common_wrong + "payer_commitment_tx_hash")
 	}
 
-	aliceMsg := cacheDataForTx.Data
+	aliceMsg := string(cacheDataForTx.Data)
 	if tool.CheckIsString(&aliceMsg) == false {
 		return nil, nil, errors.New(enum.Tips_common_empty + "payer_commitment_tx_hash")
 	}
@@ -2166,15 +2193,19 @@ func (service *htlcForwardTxManager) OnGetHtrdTxDataFromBobAtAliceSide_43(msgDat
 
 	channelInfo.CurrState = dao.ChannelState_HtlcTx
 	_ = tx.Update(&channelInfo)
-	tx.Commit()
 
 	//同步通道信息到tracker
 	sendChannelStateToTracker(channelInfo, *latestCommitmentTx)
 
 	key := user.PeerId + "_" + channelInfo.ChannelId
-	delete(service.tempDataSendTo40PAtAliceSide, key)
+	cacheDataForTx := &dao.CacheDataForTx{}
+	tx.Select(q.Eq("KeyName", key)).First(cacheDataForTx)
+	if cacheDataForTx.Id != 0 {
+		_ = tx.DeleteStruct(cacheDataForTx)
+	}
 	delete(service.tempDataFrom41PAtAliceSide, key)
 	delete(service.tempDataSendTo42PAtAliceSide, key)
+	_ = tx.Commit()
 
 	return latestCommitmentTx, nil
 }
