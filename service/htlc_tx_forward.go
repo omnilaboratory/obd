@@ -222,14 +222,23 @@ func (service *htlcForwardTxManager) PayerRequestFindPath(msgData string, user b
 		pathRequest.RealPayerPeerId = user.PeerId
 		pathRequest.PayerObdNodeId = tool.GetObdNodeId()
 		pathRequest.PayeePeerId = requestFindPathInfo.RecipientUserPeerId
-		sendMsgToTracker(enum.MsgType_Tracker_GetHtlcPath_351, pathRequest)
 
-		cacheDataForTx := dao.CacheDataForTx{}
+		cacheDataForTx := &dao.CacheDataForTx{}
+		cacheDataForTx.KeyName = user.PeerId + "_" + pathRequest.H
+		err = user.Db.Select(q.Eq("KeyName", cacheDataForTx.KeyName)).First(cacheDataForTx)
+		if err != nil {
+			log.Println(err)
+		}
+		if cacheDataForTx.Id != 0 {
+			user.Db.DeleteStruct(cacheDataForTx)
+		}
+
 		cacheDataForTx.KeyName = user.PeerId + "_" + pathRequest.H
 		bytes, _ := json.Marshal(requestFindPathInfo)
 		cacheDataForTx.Data = bytes
-		user.Db.Save(&cacheDataForTx)
+		user.Db.Save(cacheDataForTx)
 
+		sendMsgToTracker(enum.MsgType_Tracker_GetHtlcPath_351, pathRequest)
 		return make(map[string]interface{}), requestFindPathInfo.IsPrivate, nil
 	} else {
 		requestData.HtlcRequestFindPathInfo = requestFindPathInfo
@@ -302,15 +311,19 @@ func (service *htlcForwardTxManager) GetResponseFromTrackerOfPayerRequestFindPat
 	h := dataArr[0]
 
 	cacheDataForTx := &dao.CacheDataForTx{}
-	user.Db.Select(q.Eq("KeyName", user.PeerId+"_"+h)).First(cacheDataForTx)
+	err = user.Db.Select(q.Eq("KeyName", user.PeerId+"_"+h)).First(cacheDataForTx)
 	if cacheDataForTx.Id == 0 {
-		return nil, errors.New("has no channel path")
+		err = errors.New("has no channel path")
+		log.Println(err)
+		return nil, err
 	}
 
 	requestFindPathInfo := bean.HtlcRequestFindPathInfo{}
 	_ = json.Unmarshal(cacheDataForTx.Data, &requestFindPathInfo)
 	if &requestFindPathInfo == nil {
-		return nil, errors.New("has no channel path")
+		err = errors.New("has no channel path")
+		log.Println(err)
+		return nil, err
 	}
 
 	splitArr := strings.Split(dataArr[1], ",")
