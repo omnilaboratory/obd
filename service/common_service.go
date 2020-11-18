@@ -41,7 +41,7 @@ func checkBtcFundFinish(address string, isFundOmni bool) error {
 		return err
 	}
 	array := gjson.Parse(result).Array()
-	log.Println("listunspent", array)
+	//log.Println("listunspent", array)
 	if len(array) < config.BtcNeedFundTimes {
 		return errors.New(enum.Tips_funding_notEnoughBtcFundingTime)
 	}
@@ -618,7 +618,6 @@ func createCommitmentTxHex(dbTx storm.Node, isSender bool, reqData *bean.Request
 			}
 		}
 	}
-
 	commitmentTxInfo, err = createCommitmentTx(currUser.PeerId, channelInfo, fundingTransaction, outputBean, &currUser)
 	if err != nil {
 		log.Println(err)
@@ -626,7 +625,6 @@ func createCommitmentTxHex(dbTx storm.Node, isSender bool, reqData *bean.Request
 	}
 	commitmentTxInfo.TxType = dao.CommitmentTransactionType_Rsmc
 	commitmentTxInfo.RSMCTempAddressIndex = reqData.CurrTempAddressIndex
-
 	rawTx = dao.CommitmentTxRawTx{}
 	usedTxidTemp := ""
 	if commitmentTxInfo.AmountToRSMC > 0 {
@@ -682,7 +680,6 @@ func createCommitmentTxHex(dbTx storm.Node, isSender bool, reqData *bean.Request
 		signHexData.PubKeyB = channelInfo.PubKeyB
 		rawTx.ToCounterpartyRawTxData = signHexData
 	}
-
 	commitmentTxInfo.LastHash = ""
 	commitmentTxInfo.CurrHash = ""
 	if lastCommitmentTx != nil && lastCommitmentTx.Id > 0 {

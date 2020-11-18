@@ -34,7 +34,7 @@ func (client *Client) Write() {
 				_ = client.Socket.WriteMessage(websocket.CloseMessage, []byte{})
 				return
 			}
-			log.Println("send data to client ", string(data))
+			//log.Println("send data to client ", string(data))
 			_ = client.Socket.WriteMessage(websocket.TextMessage, data)
 		}
 	}
@@ -54,7 +54,7 @@ func (client *Client) Read() {
 		}
 
 		var msg bean.RequestMessage
-		log.Println("input data: ", string(dataReq))
+		//log.Println("input data: ", string(dataReq))
 
 		temp := make(map[string]interface{})
 		err = json.Unmarshal(dataReq, &temp)

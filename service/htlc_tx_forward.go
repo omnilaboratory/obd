@@ -773,8 +773,8 @@ func (service *htlcForwardTxManager) BobSignedAddHtlcAtBobSide(jsonData string, 
 		return nil, errors.New(enum.Tips_common_empty + "payer_commitment_tx_hash")
 	}
 
-	cacheDataForTx := dao.CacheDataForTx{}
-	err = tx.Select(q.Eq("KeyName", requestData.PayerCommitmentTxHash)).First(&cacheDataForTx)
+	cacheDataForTx := &dao.CacheDataForTx{}
+	err = tx.Select(q.Eq("KeyName", requestData.PayerCommitmentTxHash)).First(cacheDataForTx)
 	if cacheDataForTx.Id == 0 {
 		return nil, errors.New(enum.Tips_common_wrong + "payer_commitment_tx_hash")
 	}
@@ -1154,12 +1154,11 @@ func (service *htlcForwardTxManager) BobSignedAddHtlcAtBobSide(jsonData string, 
 	channelInfo.CurrState = dao.ChannelState_HtlcTx
 	_ = tx.Update(channelInfo)
 
-	_ = tx.Commit()
-
 	if service.tempDataSendTo41PAtBobSide == nil {
 		service.tempDataSendTo41PAtBobSide = make(map[string]bean.NeedAliceSignHtlcTxOfC3bP2p)
 	}
 	service.tempDataSendTo41PAtBobSide[user.PeerId+"_"+channelInfo.ChannelId] = toAliceDataOf41P
+	_ = tx.Commit()
 
 	return needBobSignData, nil
 }

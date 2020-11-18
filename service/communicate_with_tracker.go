@@ -116,7 +116,7 @@ func sendMsgToTracker(msgType enum.MsgType, data interface{}) {
 	}
 
 	message.Data = result
-	log.Println(message.Data)
+	//log.Println(message.Data)
 	bytes, _ := json.Marshal(message)
 	if TrackerChan != nil {
 		TrackerChan <- bytes

@@ -237,7 +237,7 @@ func (client *Client) OmniCreateRawTransactionUseRestInput(txType int, fromBitCo
 		return nil, err
 	}
 	arrayListUnspent := gjson.Parse(resultListUnspent).Array()
-	log.Println("listunspent", arrayListUnspent)
+	//log.Println("listunspent", arrayListUnspent)
 	inputCount := 3 + txType
 	if len(arrayListUnspent) < inputCount {
 		return nil, errors.New("wrong input num, need " + strconv.Itoa(inputCount) + " input:one for omni token, " + strconv.Itoa(inputCount-1) + "  btc  inputs for miner fee ")

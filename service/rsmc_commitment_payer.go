@@ -32,7 +32,8 @@ func (this *commitmentTxManager) CommitmentTransactionCreated(msg bean.RequestMe
 	if tool.CheckIsString(&msg.Data) == false {
 		return nil, false, errors.New(enum.Tips_common_empty + "msg.Data")
 	}
-
+	now := time.Now()
+	log.Println("begin rsmc step 1 ", now)
 	reqData := &bean.RequestCreateCommitmentTx{}
 	err = json.Unmarshal([]byte(msg.Data), reqData)
 	if err != nil {
@@ -190,6 +191,7 @@ func (this *commitmentTxManager) CommitmentTransactionCreated(msg bean.RequestMe
 
 	_ = tx.Commit()
 
+	log.Println("end rsmc step 1 ", time.Now())
 	if needSign {
 		if tempRsmcCreateP2pData == nil {
 			tempRsmcCreateP2pData = make(map[string]bean.AliceRequestToCreateCommitmentTxOfP2p)
@@ -208,6 +210,8 @@ func (this *commitmentTxManager) CommitmentTransactionCreated(msg bean.RequestMe
 
 // step 2 协议号：100360 当alice完成C2a的rsmc部分签名操作
 func (this *commitmentTxManager) OnAliceSignC2aRawTxAtAliceSide(msg bean.RequestMessage, user *bean.User) (toAlice, retData interface{}, err error) {
+	now := time.Now()
+	log.Println("begin rsmc step 2 ", now)
 	if tool.CheckIsString(&msg.Data) == false {
 		err = errors.New(enum.Tips_common_empty + "msg.data")
 		log.Println(err)
@@ -293,11 +297,15 @@ func (this *commitmentTxManager) OnAliceSignC2aRawTxAtAliceSide(msg bean.Request
 	toAliceResult.CurrTempAddressPubKey = p2pData.CurrTempAddressPubKey
 	toAliceResult.CommitmentTxHash = p2pData.CommitmentTxHash
 	toAliceResult.Amount = p2pData.Amount
+	log.Println("end rsmc step 2 ", time.Now())
+	log.Println("end rsmc step 2 ", time.Now().Sub(now))
 	return toAliceResult, p2pData, nil
 }
 
 // step 6 协议号：352 响应来自p2p的352号消息 推送110352消息
 func (this *commitmentTxManager) OnGetBobC2bPartialSignTxAtAliceSide(msg bean.RequestMessage, data string, user *bean.User) (retData interface{}, needNoticeAlice bool, err error) {
+	now := time.Now()
+	log.Println("begin rsmc step 6 ", now)
 	dataFromP2p352 := bean.PayeeSignCommitmentTxOfP2p{}
 	_ = json.Unmarshal([]byte(data), &dataFromP2p352)
 
@@ -343,13 +351,14 @@ func (this *commitmentTxManager) OnGetBobC2bPartialSignTxAtAliceSide(msg bean.Re
 	needAliceSignRmscTxForC2b.C2aRdPartialData = dataFromP2p352.C2aRdTxData
 	needAliceSignRmscTxForC2b.PayeeNodeAddress = msg.SenderNodePeerId
 	needAliceSignRmscTxForC2b.PayeePeerId = msg.SenderUserPeerId
-
+	log.Println("end rsmc step 6 ", time.Now().Sub(now))
 	return needAliceSignRmscTxForC2b, false, nil
 }
 
 // step 7 协议号：100362(to Obd) 响应Alice对C2b的Rsmc的签名，然后创建C2b的Br和Rd，再推送Rd和Br的Raw交易给alice签名
 func (this *commitmentTxManager) OnAliceSignedC2bTxAtAliceSide(data string, user *bean.User) (retData interface{}, err error) {
-
+	now := time.Now()
+	log.Println("begin rsmc step 7 ", now)
 	aliceSignedRmscTxForC2b := bean.AliceSignedRsmcTxForC2b{}
 	_ = json.Unmarshal([]byte(data), &aliceSignedRmscTxForC2b)
 
@@ -512,13 +521,14 @@ func (this *commitmentTxManager) OnAliceSignedC2bTxAtAliceSide(data string, user
 	//endregion
 
 	_ = tx.Commit()
-
+	log.Println("end rsmc step 7 ", time.Now().Sub(now))
 	return needAliceSignRdTxForC2b, nil
 }
 
 // step 8 协议号：100363 Alice完成对C2b的RD的签名
 func (this *commitmentTxManager) OnAliceSignedC2b_RDTxAtAliceSide(data string, user *bean.User) (aliceRetData, bobRetData interface{}, needNoticeAlice bool, err error) {
-
+	now := time.Now()
+	log.Println("begin rsmc step 8 ", now)
 	aliceSignedRdTxForC2b := bean.AliceSignedRdTxForC2b{}
 	_ = json.Unmarshal([]byte(data), &aliceSignedRdTxForC2b)
 
@@ -772,6 +782,7 @@ func (this *commitmentTxManager) OnAliceSignedC2b_RDTxAtAliceSide(data string, u
 
 	bobData.C2bCounterpartySignedHex = c2bToCounterpartyTxHex
 	bobData.ChannelId = channelId
+	log.Println("end rsmc step 8 ", time.Now().Sub(now))
 	return aliceData, bobData, true, nil
 }
 

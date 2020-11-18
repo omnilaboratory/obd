@@ -7,14 +7,13 @@ import (
 	"fmt"
 	"github.com/omnilaboratory/obd/bean"
 	"github.com/omnilaboratory/obd/config"
+	"github.com/tidwall/gjson"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"strconv"
 	"strings"
 	"sync/atomic"
-
-	"github.com/tidwall/gjson"
 )
 
 var connConfig *ConnConfig

@@ -28,7 +28,8 @@ var CommitmentTxSignedService commitmentTxSignedManager
 
 // step 3 协议号：351 bob所在的obd接收到了alice的转账申请 提送110351
 func (this *commitmentTxSignedManager) BeforeBobSignCommitmentTransactionAtBobSide(data string, user *bean.User) (retData *bean.PayerRequestCommitmentTxToBobClient, err error) {
-
+	now := time.Now()
+	log.Println("begin rsmc step 3 ", now)
 	requestCreateCommitmentTx := &bean.AliceRequestToCreateCommitmentTxOfP2p{}
 	_ = json.Unmarshal([]byte(data), requestCreateCommitmentTx)
 
@@ -68,12 +69,15 @@ func (this *commitmentTxSignedManager) BeforeBobSignCommitmentTransactionAtBobSi
 	sendChannelStateToTracker(*channelInfo, *commitmentTxInfo)
 
 	_ = tx.Commit()
-
+	log.Println("end rsmc step 3 ", time.Now())
+	log.Println("end rsmc step 3 ", time.Now().Sub(now))
 	return retData, nil
 }
 
 // step 4 协议号：100352 bob签收这次转账
 func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction(msg bean.RequestMessage, signer *bean.User) (retData interface{}, needSignC2b bool, err error) {
+	now := time.Now()
+	log.Println("begin rsmc step 4 ", now)
 	if tool.CheckIsString(&msg.Data) == false {
 		err = errors.New(enum.Tips_common_empty + "msg.data")
 		log.Println(err)
@@ -420,12 +424,14 @@ func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction
 		tempRsmcSignP2pData = make(map[string]bean.PayeeSignCommitmentTxOfP2p)
 	}
 	tempRsmcSignP2pData[signer.PeerId+"_"+channelInfo.ChannelId] = toAliceP2pData
+	log.Println("end rsmc step 4 ", time.Now().Sub(now))
 	return needSignData, true, err
 }
 
 // step 5 协议号：100361 完成后推送352协议 bob对C2b的Rsmc，toBob和c2a的Rd和C2a的Br进行签名
 func (this *commitmentTxSignedManager) OnBobSignC2bTransactionAtBobSide(data string, user *bean.User) (toBob, retData interface{}, err error) {
-
+	now := time.Now()
+	log.Println("begin rsmc step 5 ", now)
 	if tool.CheckIsString(&data) == false {
 		err = errors.New(enum.Tips_common_empty + "msg.data")
 		log.Println(err)
@@ -538,11 +544,14 @@ func (this *commitmentTxSignedManager) OnBobSignC2bTransactionAtBobSide(data str
 	toBobData.ChannelId = p2pData.ChannelId
 	toBobData.CommitmentTxHash = p2pData.CommitmentTxHash
 	toBobData.Approval = p2pData.Approval
+	log.Println("end rsmc step 5 ", time.Now().Sub(now))
 	return toBobData, p2pData, nil
 }
 
 // step 9 协议号：响应353 obd节点接收到alice的二次签名信息 推送110353信息给bob
 func (this *commitmentTxSignedManager) OnGetAliceSignC2bTransactionAtBobSide(data string, user *bean.User) (retData bean.NeedBobSignRdTxForC2b, err error) {
+	now := time.Now()
+	log.Println("begin rsmc step 9 ", now)
 	aliceSignedC2bTxDataP2p := bean.AliceSignedC2bTxDataP2p{}
 	err = json.Unmarshal([]byte(data), &aliceSignedC2bTxDataP2p)
 	if err != nil {
@@ -557,13 +566,14 @@ func (this *commitmentTxSignedManager) OnGetAliceSignC2bTransactionAtBobSide(dat
 	needBobSignRdTxForC2b := bean.NeedBobSignRdTxForC2b{}
 	needBobSignRdTxForC2b.ChannelId = aliceSignedC2bTxDataP2p.ChannelId
 	needBobSignRdTxForC2b.C2bRdPartialData = aliceSignedC2bTxDataP2p.C2bRdPartialData
-
+	log.Println("end rsmc step 9 ", time.Now().Sub(now))
 	return needBobSignRdTxForC2b, nil
 }
 
 // step 10 协议号：100364 响应bob的才c2b的Rd的签名
 func (this *commitmentTxSignedManager) BobSignC2b_RdAtBobSide(data string, user *bean.User) (retData interface{}, err error) {
-
+	now := time.Now()
+	log.Println("begin rsmc step 10 ", now)
 	bobSignedRdTxForC2b := bean.BobSignedRdTxForC2b{}
 	_ = json.Unmarshal([]byte(data), &bobSignedRdTxForC2b)
 
@@ -666,6 +676,7 @@ func (this *commitmentTxSignedManager) BobSignC2b_RdAtBobSide(data string, user 
 
 	//同步通道信息到tracker
 	sendChannelStateToTracker(*channelInfo, *latestCommitmentTxInfo)
-
+	log.Println("end rsmc step 10", time.Now().Sub(now))
+	log.Println("end rsmc step 10", time.Now())
 	return latestCommitmentTxInfo, nil
 }

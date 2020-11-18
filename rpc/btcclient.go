@@ -54,11 +54,24 @@ func (client *Client) ListReceivedByAddress(address string) (result string, err 
 	return client.send("listreceivedbyaddress", []interface{}{0, false, true, address})
 }
 
+var tempTestMemPoolAcceptData map[string]string
+
 //https://bitcoin.org/en/developer-reference#testmempoolaccept
 func (client *Client) TestMemPoolAccept(signedhex string) (result string, err error) {
+	if tempTestMemPoolAcceptData == nil {
+		tempTestMemPoolAcceptData = make(map[string]string)
+	}
+	hexHash := tool.SignMsgWithSha256([]byte(signedhex))
+	if len(tempTestMemPoolAcceptData[hexHash]) > 0 {
+		return tempTestMemPoolAcceptData[hexHash], nil
+	}
 	rawtxs := make([]string, 0)
 	rawtxs = append(rawtxs, signedhex)
-	return client.send("testmempoolaccept", []interface{}{rawtxs})
+	result, err = client.send("testmempoolaccept", []interface{}{rawtxs})
+	if err == nil {
+		tempTestMemPoolAcceptData[hexHash] = result
+	}
+	return result, err
 }
 
 func (client *Client) GetTxOut(txid string, num int) (result string, err error) {
@@ -103,14 +116,60 @@ func (client *Client) SendRawTransaction(hex string) (result string, err error) 
 	return client.send("sendrawtransaction", []interface{}{hex})
 }
 
+var tempDecodeRawTransactionData map[string]string
+
 func (client *Client) DecodeRawTransaction(hex string) (result string, err error) {
-	return client.send("decoderawtransaction", []interface{}{hex})
+
+	if tempDecodeRawTransactionData == nil {
+		tempDecodeRawTransactionData = make(map[string]string)
+	}
+	hexHash := tool.SignMsgWithSha256([]byte(hex))
+	if len(tempDecodeRawTransactionData[hexHash]) > 0 {
+		return tempDecodeRawTransactionData[hexHash], nil
+	}
+
+	result, err = client.send("decoderawtransaction", []interface{}{hex})
+	if err == nil {
+		tempDecodeRawTransactionData[hexHash] = result
+	}
+	return result, err
 }
+
+var tempOmniDecodeTransactionData map[string]string
+
 func (client *Client) OmniDecodeTransaction(hex string) (result string, err error) {
-	return client.send("omni_decodetransaction", []interface{}{hex})
+
+	if tempOmniDecodeTransactionData == nil {
+		tempOmniDecodeTransactionData = make(map[string]string)
+	}
+	hexHash := tool.SignMsgWithSha256([]byte(hex))
+	if len(tempOmniDecodeTransactionData[hexHash]) > 0 {
+		return tempOmniDecodeTransactionData[hexHash], nil
+	}
+	result, err = client.send("omni_decodetransaction", []interface{}{hex})
+	if err == nil {
+		tempOmniDecodeTransactionData[hexHash] = result
+	}
+
+	return result, err
 }
+
+var tempOmniDecodeTransactionData2 map[string]string
+
 func (client *Client) OmniDecodeTransactionWithPrevTxs(hex string, prevtxs []TransactionInputItem) (result string, err error) {
-	return client.send("omni_decodetransaction", []interface{}{hex, prevtxs})
+
+	if tempOmniDecodeTransactionData2 == nil {
+		tempOmniDecodeTransactionData2 = make(map[string]string)
+	}
+	hexHash := tool.SignMsgWithSha256([]byte(hex))
+	if len(tempOmniDecodeTransactionData2[hexHash]) > 0 {
+		return tempOmniDecodeTransactionData2[hexHash], nil
+	}
+	result, err = client.send("omni_decodetransaction", []interface{}{hex, prevtxs})
+	if err == nil {
+		tempOmniDecodeTransactionData2[hexHash] = result
+	}
+	return result, err
 }
 
 func (client *Client) GetBlockCount() (result int, err error) {
