@@ -500,12 +500,6 @@ func (client *Client) OmniCreateAndSignRawTransactionUseSingleInput(txType int, 
 	//log.Println("7 DecodeSignRawTransactionWithKey", decodeHex)
 	txid = gjson.Get(decodeHex, "txid").String()
 
-	//result, err := client.OmniDecodeTransaction(hex)
-	//if err == nil {
-	//	log.Println(result)
-	//} else {
-	//	log.Println(err)
-	//}
 	return txid, hex, currUseTxid, nil
 }
 
@@ -543,7 +537,7 @@ func (client *Client) OmniCreateAndSignRawTransactionUseRestInput(txType int, fr
 			node := make(map[string]interface{})
 			node["txid"] = txid
 			node["vout"] = item.Get("vout").Int()
-			node["amount"] = item.Get("amount").Float()
+			node["value"] = item.Get("amount").Float()
 			node["scriptPubKey"] = item.Get("scriptPubKey").String()
 			if redeemScript != nil {
 				node["redeemScript"] = *redeemScript
@@ -700,13 +694,6 @@ func (client *Client) OmniCreateAndSignRawTransactionUseUnsendInput(fromBitCoinA
 		return "", "", err
 	}
 
-	//log.Println("3 createrawtransactionStr", createrawtransactionStr)
-	//result, err := client.DecodeRawTransaction(createrawtransactionStr)
-	//if err != nil {
-	//	return "", "", err
-	//}
-	//log.Println(result)
-
 	//4.Omni_createrawtx_opreturn
 	opreturn, err := client.omniCreateRawtxOpreturn(createrawtransactionStr, payload)
 	if err != nil {
@@ -719,13 +706,7 @@ func (client *Client) OmniCreateAndSignRawTransactionUseUnsendInput(fromBitCoinA
 	if err != nil {
 		return "", "", err
 	}
-	//log.Println("5 reference", reference)
 
-	//result, err = client.DecodeRawTransaction(reference)
-	//if err != nil {
-	//	return "", "", err
-	//}
-	//log.Println(result)
 	//6.Omni_createrawtx_change
 	prevtxs := make([]map[string]interface{}, 0, 0)
 	for _, item := range inputItems {
@@ -802,13 +783,6 @@ func (client *Client) OmniSignRawTransactionForUnsend(hex string, inputItems []T
 	if err != nil {
 		return "", hex, err
 	}
-
-	//result, err := client.OmniDecodeTransaction(hex)
-	//if err == nil {
-	//	log.Println(result)
-	//} else {
-	//	log.Println(err)
-	//}
 
 	return txId, hex, nil
 }

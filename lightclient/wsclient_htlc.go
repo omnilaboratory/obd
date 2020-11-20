@@ -49,7 +49,7 @@ func (client *Client) htlcHModule(msg bean.RequestMessage) (enum.SendTargetType,
 		if err != nil {
 			data = err.Error()
 		} else {
-			respond, err := service.HtlcForwardTxService.CreateHtlcInvoice(msg, *client.User)
+			respond, err := service.HtlcForwardTxService.CreateHtlcInvoice(msg)
 			if err != nil {
 				data = err.Error()
 			} else {
@@ -60,6 +60,7 @@ func (client *Client) htlcHModule(msg bean.RequestMessage) (enum.SendTargetType,
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_HTLC_FindPath_401:
+		tempClientMap[client.User.PeerId] = client
 		respond, isPrivate, err := service.HtlcForwardTxService.PayerRequestFindPath(msg.Data, *client.User)
 		if err != nil {
 			data = err.Error()
@@ -76,13 +77,12 @@ func (client *Client) htlcHModule(msg bean.RequestMessage) (enum.SendTargetType,
 				client.sendToMyself(msg.Type, status, data)
 			} else {
 				status = true
-				tempClientMap[client.User.PeerId] = client
 			}
 		}
 		sendType = enum.SendTargetType_SendToSomeone
 
 	case enum.MsgType_HTLC_SendAddHTLC_40:
-		respond, err := service.HtlcForwardTxService.UpdateAddHtlc_40(msg, *client.User)
+		respond, needSign, err := service.HtlcForwardTxService.AliceAddHtlcAtAliceSide(msg, *client.User)
 		if err != nil {
 			data = err.Error()
 		} else {
@@ -93,19 +93,57 @@ func (client *Client) htlcHModule(msg bean.RequestMessage) (enum.SendTargetType,
 				data = string(bytes)
 				status = true
 			}
-		}
-		if status {
-			msg.Type = enum.MsgType_HTLC_AddHTLC_40
-			err = client.sendDataToP2PUser(msg, true, data)
-			if err != nil {
-				status = false
-				data = err.Error()
+			if status {
+				if needSign == false {
+					msg.Type = enum.MsgType_HTLC_AddHTLC_40
+					err = client.sendDataToP2PUser(msg, true, data)
+					if err != nil {
+						status = false
+						data = err.Error()
+					}
+				}
 			}
 		}
 		msg.Type = enum.MsgType_HTLC_SendAddHTLC_40
 		client.sendToMyself(msg.Type, status, data)
+
+	case enum.MsgType_HTLC_ClientSign_Alice_C3a_100:
+		toAlice, toBob, err := service.HtlcForwardTxService.OnAliceSignedC3aAtAliceSide(msg, *client.User)
+		if err != nil {
+			data = err.Error()
+		} else {
+			bytes, err := json.Marshal(toBob)
+			if err != nil {
+				data = err.Error()
+			} else {
+				data = string(bytes)
+				status = true
+			}
+
+			if status {
+				msg.Type = enum.MsgType_HTLC_AddHTLC_40
+				err = client.sendDataToP2PUser(msg, true, data)
+				if err != nil {
+					status = false
+					data = err.Error()
+				}
+			}
+
+			if status {
+				bytes, err := json.Marshal(toAlice)
+				if err != nil {
+					data = err.Error()
+				} else {
+					data = string(bytes)
+					status = true
+				}
+			}
+		}
+		msg.Type = enum.MsgType_HTLC_ClientSign_Alice_C3a_100
+		client.sendToMyself(msg.Type, status, data)
+
 	case enum.MsgType_HTLC_SendAddHTLCSigned_41:
-		returnData, err := service.HtlcForwardTxService.PayeeSignGetAddHtlc_41(msg.Data, *client.User)
+		returnData, err := service.HtlcForwardTxService.BobSignedAddHtlcAtBobSide(msg.Data, *client.User)
 		if err != nil {
 			data = err.Error()
 		} else {
@@ -116,19 +154,133 @@ func (client *Client) htlcHModule(msg bean.RequestMessage) (enum.SendTargetType,
 				data = string(bytes)
 				status = true
 			}
+		}
+		client.sendToMyself(msg.Type, status, data)
+	case enum.MsgType_HTLC_ClientSign_Bob_C3b_101:
+		toAlice, toBob, err := service.HtlcForwardTxService.OnBobSignedC3bAtBobSide(msg, *client.User)
+		if err != nil {
+			data = err.Error()
+		} else {
+			bytes, err := json.Marshal(toAlice)
+			if err != nil {
+				data = err.Error()
+			} else {
+				data = string(bytes)
+				status = true
+			}
 			if status {
-				msg.Type = enum.MsgType_HTLC_PayerSignC3b_42
+				msg.Type = enum.MsgType_HTLC_NeedPayerSignC3b_41
 				err = client.sendDataToP2PUser(msg, status, data)
 				if err != nil {
 					status = false
 					data = err.Error()
 				}
 			}
+			if status {
+				bytes, err := json.Marshal(toBob)
+				if err != nil {
+					data = err.Error()
+				} else {
+					data = string(bytes)
+					status = true
+				}
+			}
 		}
-		if status == false {
-			msg.Type = enum.MsgType_HTLC_SendAddHTLCSigned_41
-			client.sendToMyself(msg.Type, status, data)
+		msg.Type = enum.MsgType_HTLC_ClientSign_Bob_C3b_101
+		client.sendToMyself(msg.Type, status, data)
+	case enum.MsgType_HTLC_ClientSign_Alice_C3b_102:
+		returnData, err := service.HtlcForwardTxService.OnAliceSignC3bAtAliceSide(msg, *client.User)
+		if err != nil {
+			data = err.Error()
+		} else {
+			bytes, err := json.Marshal(returnData)
+			if err != nil {
+				data = err.Error()
+			} else {
+				data = string(bytes)
+				status = true
+			}
 		}
+		client.sendToMyself(msg.Type, status, data)
+	case enum.MsgType_HTLC_ClientSign_Alice_C3bSub_103:
+		toAlice, toBob, err := service.HtlcForwardTxService.OnAliceSignedC3bSubTxAtAliceSide(msg, *client.User)
+		if err != nil {
+			data = err.Error()
+		} else {
+			bytes, err := json.Marshal(toBob)
+			if err != nil {
+				data = err.Error()
+			} else {
+				data = string(bytes)
+				status = true
+			}
+
+			if status {
+				msg.Type = enum.MsgType_HTLC_PayeeCreateHTRD1a_42
+				err = client.sendDataToP2PUser(msg, status, data)
+				if err != nil {
+					status = false
+					data = err.Error()
+				}
+			}
+			if status {
+				bytes, err := json.Marshal(toAlice)
+				if err != nil {
+					data = err.Error()
+				} else {
+					data = string(bytes)
+					status = true
+				}
+			}
+		}
+		msg.Type = enum.MsgType_HTLC_ClientSign_Alice_C3bSub_103
+		client.sendToMyself(msg.Type, status, data)
+	case enum.MsgType_HTLC_ClientSign_Bob_C3bSub_104:
+		returnData, err := service.HtlcForwardTxService.OnBobSignedC3bSubTxAtBobSide(msg, *client.User)
+		if err != nil {
+			data = err.Error()
+		} else {
+			bytes, err := json.Marshal(returnData)
+			if err != nil {
+				data = err.Error()
+			} else {
+				data = string(bytes)
+				status = true
+			}
+		}
+		client.sendToMyself(msg.Type, status, data)
+	case enum.MsgType_HTLC_ClientSign_Alice_He_105:
+		toAlice, toBob, err := service.HtlcForwardTxService.OnBobSignHtRdAtBobSide_42(msg.Data, *client.User)
+		if err != nil {
+			data = err.Error()
+		} else {
+			bytes, err := json.Marshal(toAlice)
+			if err != nil {
+				data = err.Error()
+			} else {
+				data = string(bytes)
+				status = true
+			}
+			if status {
+				msg.Type = enum.MsgType_HTLC_PayerSignHTRD1a_43
+				err = client.sendDataToP2PUser(msg, status, data)
+				if err != nil {
+					status = false
+					data = err.Error()
+				}
+			}
+			if status {
+				bytes, err := json.Marshal(toBob)
+				if err != nil {
+					data = err.Error()
+				} else {
+					data = string(bytes)
+					status = true
+				}
+			}
+		}
+		msg.Type = enum.MsgType_HTLC_ClientSign_Alice_He_105
+		client.sendToMyself(msg.Type, status, data)
 	}
 	return sendType, []byte(data), status
 }
@@ -179,9 +331,22 @@ func (client *Client) htlcTxModule(msg bean.RequestMessage) (enum.SendTargetType
 	var sendType = enum.SendTargetType_SendToSomeone
 	data := ""
 	switch msg.Type {
-	// Coding by Kevin 2019-10-28
 	case enum.MsgType_HTLC_SendVerifyR_45:
-		respond, err := service.HtlcBackwardTxService.SendRToPreviousNode_Step1(msg, *client.User)
+		respond, err := service.HtlcBackwardTxService.SendRToPreviousNodeAtBobSide(msg, *client.User)
+		if err != nil {
+			data = err.Error()
+		} else {
+			bytes, err := json.Marshal(respond)
+			if err != nil {
+				data = err.Error()
+			} else {
+				data = string(bytes)
+				status = true
+			}
+		}
+		client.sendToMyself(msg.Type, status, data)
+	case enum.MsgType_HTLC_ClientSign_Bob_HeSub_106:
+		respond, err := service.HtlcBackwardTxService.OnBobSignedHeRdAtBobSide(msg, *client.User)
 		if err != nil {
 			data = err.Error()
 		} else {
@@ -199,30 +364,39 @@ func (client *Client) htlcTxModule(msg bean.RequestMessage) (enum.SendTargetType
 				}
 			}
 		}
-		msg.Type = enum.MsgType_HTLC_SendVerifyR_45
+		msg.Type = enum.MsgType_HTLC_ClientSign_Bob_HeSub_106
 		client.sendToMyself(msg.Type, status, data)
-	case enum.MsgType_HTLC_SendSignVerifyR_46:
-		respond, err := service.HtlcBackwardTxService.VerifyRAndCreateTxs_Step3(msg, *client.User)
+	case enum.MsgType_HTLC_ClientSign_Alice_HeSub_46:
+		toAlice, toBob, err := service.HtlcBackwardTxService.OnAliceSignedHeRdAtAliceSide(msg, *client.User)
 		if err != nil {
 			data = err.Error()
 		} else {
-			bytes, err := json.Marshal(respond)
+			bytes, err := json.Marshal(toBob)
 			if err != nil {
 				data = err.Error()
 			} else {
 				data = string(bytes)
 				status = true
-				msg.Type = enum.MsgType_HTLC_SendHerdHex_47
+				msg.Type = enum.MsgType_HTLC_SendHerdHex_46
 				err = client.sendDataToP2PUser(msg, status, data)
 				if err != nil {
 					data = err.Error()
 					status = false
 				}
 			}
+			if status {
+				bytes, err := json.Marshal(toAlice)
+				if err != nil {
+					data = err.Error()
+				} else {
+					data = string(bytes)
+					status = true
+				}
+			}
+
 		}
-		if status == false {
-			client.sendToMyself(msg.Type, status, data)
-		}
+		msg.Type = enum.MsgType_HTLC_ClientSign_Alice_HeSub_46
+		client.sendToMyself(msg.Type, status, data)
 	}
 	return sendType, []byte(data), status
 }
@@ -233,8 +407,8 @@ func (client *Client) htlcCloseModule(msg bean.RequestMessage) (enum.SendTargetT
 	var sendType = enum.SendTargetType_SendToNone
 	data := ""
 	switch msg.Type {
-	case enum.MsgType_HTLC_SendRequestCloseCurrTx_49:
-		outData, err := service.HtlcCloseTxService.RequestCloseHtlc(msg, *client.User)
+	case enum.MsgType_HTLC_Close_SendRequestCloseCurrTx_49:
+		outData, needSign, err := service.HtlcCloseTxService.RequestCloseHtlc(msg, *client.User)
 		if err != nil {
 			data = err.Error()
 		} else {
@@ -244,19 +418,56 @@ func (client *Client) htlcCloseModule(msg bean.RequestMessage) (enum.SendTargetT
 			} else {
 				data = string(bytes)
 				status = true
-				msg.Type = enum.MsgType_HTLC_RequestCloseCurrTx_49
-				err = client.sendDataToP2PUser(msg, status, data)
-				if err != nil {
-					data = err.Error()
-					status = false
+				if needSign == false {
+					msg.Type = enum.MsgType_HTLC_Close_RequestCloseCurrTx_49
+					err = client.sendDataToP2PUser(msg, status, data)
+					if err != nil {
+						data = err.Error()
+						status = false
+					}
 				}
 			}
 		}
-		msg.Type = enum.MsgType_HTLC_SendRequestCloseCurrTx_49
+		msg.Type = enum.MsgType_HTLC_Close_SendRequestCloseCurrTx_49
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
-	case enum.MsgType_HTLC_SendCloseSigned_50:
-		outData, err := service.HtlcCloseTxService.CloseHTLCSigned(msg, *client.User)
+	case enum.MsgType_HTLC_Close_ClientSign_Alice_C4a_110:
+		toAlice, toBob, err := service.HtlcCloseTxService.OnAliceSignedCxa(msg, *client.User)
+		if err != nil {
+			data = err.Error()
+		} else {
+			bytes, err := json.Marshal(toBob)
+			if err != nil {
+				data = err.Error()
+			} else {
+				data = string(bytes)
+				status = true
+			}
+			if status {
+				msg.Type = enum.MsgType_HTLC_Close_RequestCloseCurrTx_49
+				err = client.sendDataToP2PUser(msg, status, data)
+				if err != nil {
+					data = err.Error()
+					status = false
+				}
+			}
+
+			if status {
+				bytes, err = json.Marshal(toAlice)
+				if err != nil {
+					data = err.Error()
+				} else {
+					data = string(bytes)
+					status = true
+				}
+			}
+		}
+		msg.Type = enum.MsgType_HTLC_Close_ClientSign_Alice_C4a_110
+		client.sendToMyself(msg.Type, status, data)
+		sendType = enum.SendTargetType_SendToSomeone
+
+	case enum.MsgType_HTLC_Close_SendCloseSigned_50:
+		outData, err := service.HtlcCloseTxService.OnBobSignCloseHtlcRequest(msg, *client.User)
 		if err != nil {
 			data = err.Error()
 		} else {
@@ -266,17 +477,102 @@ func (client *Client) htlcCloseModule(msg bean.RequestMessage) (enum.SendTargetT
 			} else {
 				data = string(bytes)
 				status = true
-				msg.Type = enum.MsgType_HTLC_CloseHtlcRequestSignBR_51
+			}
+		}
+		client.sendToMyself(msg.Type, status, data)
+	case enum.MsgType_HTLC_Close_ClientSign_Bob_C4b_111:
+		toAlice, toBob, err := service.HtlcCloseTxService.OnBobSignedCxb(msg, *client.User)
+		if err != nil {
+			data = err.Error()
+		} else {
+			bytes, err := json.Marshal(toAlice)
+			if err != nil {
+				data = err.Error()
+			} else {
+				data = string(bytes)
+				status = true
+			}
+			if status {
+				msg.Type = enum.MsgType_HTLC_CloseHtlcRequestSignBR_50
 				err = client.sendDataToP2PUser(msg, status, data)
 				if err != nil {
 					data = err.Error()
 					status = false
 				}
 			}
+			if status {
+				bytes, err := json.Marshal(toBob)
+				if err != nil {
+					data = err.Error()
+				} else {
+					data = string(bytes)
+					status = true
+				}
+			}
 		}
+		msg.Type = enum.MsgType_HTLC_Close_ClientSign_Bob_C4b_111
+		client.sendToMyself(msg.Type, status, data)
+	case enum.MsgType_HTLC_Close_ClientSign_Alice_C4b_112:
+		toAlice, err := service.HtlcCloseTxService.OnAliceSignedCxb(msg, *client.User)
 		if err != nil {
-			client.sendToMyself(msg.Type, status, data)
+			data = err.Error()
+		} else {
+			bytes, err := json.Marshal(toAlice)
+			if err != nil {
+				data = err.Error()
+			} else {
+				data = string(bytes)
+				status = true
+			}
 		}
+		client.sendToMyself(msg.Type, status, data)
+	case enum.MsgType_HTLC_Close_ClientSign_Alice_C4bSub_113:
+		toAlice, toBob, err := service.HtlcCloseTxService.OnAliceSignedCxbBubTx(msg, *client.User)
+		if err != nil {
+			data = err.Error()
+		} else {
+			bytes, err := json.Marshal(toBob)
+			if err != nil {
+				data = err.Error()
+			} else {
+				data = string(bytes)
+				status = true
+			}
+
+			if status {
+				msg.Type = enum.MsgType_HTLC_CloseHtlcUpdateCnb_51
+				err = client.sendDataToP2PUser(msg, status, data)
+				if err != nil {
+					data = err.Error()
+					status = false
+				}
+			}
+			if status {
+				bytes, err := json.Marshal(toAlice)
+				if err != nil {
+					data = err.Error()
+				} else {
+					data = string(bytes)
+					status = true
+				}
+			}
+		}
+		msg.Type = enum.MsgType_HTLC_Close_ClientSign_Alice_C4bSub_113
+		client.sendToMyself(msg.Type, status, data)
+	case enum.MsgType_HTLC_Close_ClientSign_Bob_C4bSubResult_114:
+		toBob, err := service.HtlcCloseTxService.OnBobSignedCxbSubTx(msg, *client.User)
+		if err != nil {
+			data = err.Error()
+		} else {
+			bytes, err := json.Marshal(toBob)
+			if err != nil {
+				data = err.Error()
+			} else {
+				data = string(bytes)
+				status = true
+			}
+		}
+		client.sendToMyself(msg.Type, status, data)
 	}
 	return sendType, []byte(data), status
 }

@@ -52,7 +52,7 @@ func (manager *htlcManager) getPath(obdClient *ObdNode, msgData string) (path in
 		return "", errors.New("wrong realPayerPeerId")
 	}
 	if tool.CheckIsString(&pathRequest.PayeePeerId) == false {
-		return "", errors.New("wrong PayeePeerId")
+		return "", errors.New("wrong SendeePeerId")
 	}
 	if pathRequest.Amount < config.GetOmniDustBtc() {
 		return "", errors.New("wrong amount")

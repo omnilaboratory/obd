@@ -304,28 +304,31 @@ func (client *Client) omniCoreModule(msg bean.RequestMessage) (enum.SendTargetTy
 		}
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
+	case enum.MsgType_Core_SignRawTransaction_2123:
+		result, err := rpcClient.BtcSignRawTransactionFromJson(msg.Data)
+		if err != nil {
+			data = err.Error()
+		} else {
+			data = result
+			status = true
+		}
+		client.sendToMyself(msg.Type, status, data)
+		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_Core_FundingBTC_2109:
 		sendInfo := &bean.FundingBtc{}
 		err := json.Unmarshal([]byte(msg.Data), sendInfo)
 		if err != nil {
 			data = "error data: " + err.Error()
 		} else {
-			privKeys := make([]string, 0)
-			if tool.CheckIsString(&sendInfo.FromAddressPrivateKey) {
-				privKeys = append(privKeys, sendInfo.FromAddressPrivateKey)
-			}
 			if tool.CheckIsString(&sendInfo.FromAddress) &&
 				tool.CheckIsString(&sendInfo.ToAddress) &&
 				sendInfo.Amount > 0 {
-				txid, hex, err := rpcClient.BtcCreateAndSignRawTransaction(sendInfo.FromAddress, privKeys, []rpc.TransactionOutputItem{{sendInfo.ToAddress, sendInfo.Amount}}, sendInfo.MinerFee, 0, nil)
-				node := make(map[string]interface{})
-				node["txid"] = txid
-				node["hex"] = hex
-
+				resp, err := rpcClient.BtcCreateRawTransaction(sendInfo.FromAddress, []rpc.TransactionOutputItem{{sendInfo.ToAddress, sendInfo.Amount}}, sendInfo.MinerFee, 0, nil)
 				if err != nil {
 					data = err.Error()
 				} else {
-					bytes, _ := json.Marshal(node)
+					resp["is_multisig"] = false
+					bytes, _ := json.Marshal(resp)
 					data = string(bytes)
 					status = true
 				}
@@ -362,10 +365,6 @@ func (client *Client) omniCoreModule(msg bean.RequestMessage) (enum.SendTargetTy
 		if err != nil {
 			data = "error data"
 		} else {
-			privKeys := make([]string, 0)
-			if tool.CheckIsString(&sendInfo.FromAddressPrivateKey) {
-				privKeys = append(privKeys, sendInfo.FromAddressPrivateKey)
-			}
 			_, err := rpcClient.OmniGetProperty(sendInfo.PropertyId)
 			if err != nil {
 				data = err.Error()
@@ -373,14 +372,12 @@ func (client *Client) omniCoreModule(msg bean.RequestMessage) (enum.SendTargetTy
 				if tool.CheckIsString(&sendInfo.FromAddress) &&
 					tool.CheckIsString(&sendInfo.ToAddress) &&
 					sendInfo.Amount > 0 {
-					_, hex, err := rpcClient.OmniCreateAndSignRawTransaction(sendInfo.FromAddress, privKeys, sendInfo.ToAddress, sendInfo.PropertyId, sendInfo.Amount, sendInfo.MinerFee, 0)
-					node := make(map[string]interface{})
-					node["hex"] = hex
-
+					respNode, err := rpcClient.OmniCreateRawTransaction(sendInfo.FromAddress, sendInfo.ToAddress, sendInfo.PropertyId, sendInfo.Amount, sendInfo.MinerFee)
 					if err != nil {
 						data = err.Error()
 					} else {
-						bytes, _ := json.Marshal(node)
+						respNode["is_multisig"] = false
+						bytes, _ := json.Marshal(respNode)
 						data = string(bytes)
 						status = true
 					}

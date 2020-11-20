@@ -62,6 +62,7 @@ const (
 	MsgType_Core_Omni_FundingAsset_2120                MsgType = -102120
 	MsgType_Core_Omni_Send_2121                        MsgType = -102121
 	MsgType_Core_GetTransactionByTxid_2122             MsgType = -102122
+	MsgType_Core_SignRawTransaction_2123               MsgType = -102123
 	MsgType_Core_Omni_End_2199                         MsgType = -102199
 	MsgType_Common_End_2999                            MsgType = -102999
 	// endregion
@@ -109,6 +110,7 @@ const (
 	MsgType_CommitmentTx_SendSomeCommitmentById_3206     MsgType = -103206
 	MsgType_CommitmentTx_AllRDByChanId_3207              MsgType = -103207
 	MsgType_CommitmentTx_AllBRByChanId_3208              MsgType = -103208
+	MsgType_CommitmentTx_DelItemByChanId_3209            MsgType = -103209
 
 	MsgType_Htlc_GetLatestHT1aOrHE1b_3250             MsgType = -103250
 	MsgType_Htlc_GetHT1aOrHE1bBySomeCommitmentId_3251 MsgType = -103251
@@ -125,19 +127,24 @@ const (
 	MsgType_ChannelAccept_33     MsgType = -33
 	MsgType_RecvChannelAccept_33 MsgType = -110033
 
-	MsgType_FundingCreate_SendBtcFundingCreated_340 MsgType = -100340
-	MsgType_FundingCreate_BtcFundingCreated_340     MsgType = -340
-	MsgType_FundingCreate_RecvBtcFundingCreated_340 MsgType = -110340
+	MsgType_FundingCreate_SendBtcFundingCreated_340   MsgType = -100340
+	MsgType_ClientSign_Duplex_BtcFundingMinerRDTx_341 MsgType = -100341
+	MsgType_FundingCreate_BtcFundingCreated_340       MsgType = -340
+	MsgType_FundingCreate_RecvBtcFundingCreated_340   MsgType = -110340
 
 	MsgType_FundingSign_SendBtcSign_350 MsgType = -100350
 	MsgType_FundingSign_BtcSign_350     MsgType = -350
 	MsgType_FundingSign_RecvBtcSign_350 MsgType = -110350
 
 	MsgType_FundingCreate_SendAssetFundingCreated_34 MsgType = -100034
-	MsgType_FundingCreate_AssetFundingCreated_34     MsgType = -34
-	MsgType_FundingCreate_RecvAssetFundingCreated_34 MsgType = -110034
+	// 客户端签名：alice签名C1a
+	MsgType_ClientSign_AssetFunding_AliceSignC1a_1034 MsgType = -101034
+	MsgType_ClientSign_AssetFunding_AliceSignRD_1134  MsgType = -101134
+	MsgType_FundingCreate_AssetFundingCreated_34      MsgType = -34
+	MsgType_FundingCreate_RecvAssetFundingCreated_34  MsgType = -110034
 
 	MsgType_FundingSign_SendAssetFundingSigned_35 MsgType = -100035
+	MsgType_ClientSign_AssetFunding_RdAndBr_1035  MsgType = -101035
 	MsgType_FundingSign_AssetFundingSigned_35     MsgType = -35
 	MsgType_FundingSign_RecvAssetFundingSigned_35 MsgType = -110035
 
@@ -145,9 +152,15 @@ const (
 	MsgType_CommitmentTx_CommitmentTransactionCreated_351                        MsgType = -351
 	MsgType_CommitmentTx_RecvCommitmentTransactionCreated_351                    MsgType = -110351
 	MsgType_CommitmentTxSigned_SendRevokeAndAcknowledgeCommitmentTransaction_352 MsgType = -100352
-	MsgType_CommitmentTxSigned_ToAliceSign_353                                   MsgType = -353
-	MsgType_CommitmentTxSigned_SecondToBobSign_354                               MsgType = -354
+	MsgType_CommitmentTxSigned_ToAliceSign_352                                   MsgType = -352
 	MsgType_CommitmentTxSigned_RecvRevokeAndAcknowledgeCommitmentTransaction_352 MsgType = -110352
+	MsgType_CommitmentTxSigned_SecondToBobSign_353                               MsgType = -353
+	MsgType_ClientSign_BobC2b_Rd_353                                             MsgType = -110353
+	MsgType_ClientSign_CommitmentTx_AliceSignC2a_360                             MsgType = -100360
+	MsgType_ClientSign_CommitmentTx_BobSignC2b_361                               MsgType = -100361
+	MsgType_ClientSign_CommitmentTx_AliceSignC2b_362                             MsgType = -100362
+	MsgType_ClientSign_CommitmentTx_AliceSignC2b_Rd_363                          MsgType = -100363
+	MsgType_ClientSign_CommitmentTx_BobSignC2b_Rd_364                            MsgType = -100364
 
 	MsgType_SendCloseChannelRequest_38 MsgType = -100038
 	MsgType_CloseChannelRequest_38     MsgType = -38
@@ -161,30 +174,44 @@ const (
 	MsgType_HTLC_FindPath_401 MsgType = -100401
 	MsgType_HTLC_Invoice_402  MsgType = -100402
 
-	MsgType_HTLC_SendAddHTLC_40       MsgType = -100040
-	MsgType_HTLC_AddHTLC_40           MsgType = -40
-	MsgType_HTLC_RecvAddHTLC_40       MsgType = -110040
-	MsgType_HTLC_SendAddHTLCSigned_41 MsgType = -100041
-	MsgType_HTLC_PayerSignC3b_42      MsgType = -42
-	MsgType_HTLC_PayeeCreateHTRD1a_43 MsgType = -43
-	MsgType_HTLC_PayerSignHTRD1a_44   MsgType = -44
-	MsgType_HTLC_RecvAddHTLCSigned_41 MsgType = -110041
+	MsgType_HTLC_ClientSign_Alice_C3a_100    MsgType = -100100
+	MsgType_HTLC_ClientSign_Bob_C3b_101      MsgType = -100101
+	MsgType_HTLC_ClientSign_Alice_C3b_102    MsgType = -100102
+	MsgType_HTLC_ClientSign_Alice_C3bSub_103 MsgType = -100103
+	MsgType_HTLC_ClientSign_Bob_C3bSub_104   MsgType = -100104
+	MsgType_HTLC_ClientSign_Alice_He_105     MsgType = -100105
+	MsgType_HTLC_SendAddHTLC_40              MsgType = -100040
+	MsgType_HTLC_AddHTLC_40                  MsgType = -40
+	MsgType_HTLC_RecvAddHTLC_40              MsgType = -110040
+	MsgType_HTLC_SendAddHTLCSigned_41        MsgType = -100041
+	MsgType_HTLC_NeedPayerSignC3b_41         MsgType = -41
+	MsgType_HTLC_RecvAddHTLCSigned_41        MsgType = -110041
+	MsgType_HTLC_PayeeCreateHTRD1a_42        MsgType = -42
+	MsgType_HTLC_BobSignC3bSubTx_42          MsgType = -110042
+	MsgType_HTLC_PayerSignHTRD1a_43          MsgType = -43
+	MsgType_HTLC_FinishTransferH_43          MsgType = -110043
 
-	MsgType_HTLC_SendVerifyR_45     MsgType = -100045
-	MsgType_HTLC_VerifyR_45         MsgType = -45
-	MsgType_HTLC_RecvVerifyR_45     MsgType = -110045
-	MsgType_HTLC_SendSignVerifyR_46 MsgType = -100046
-	MsgType_HTLC_SendHerdHex_47     MsgType = -47
-	MsgType_HTLC_SignHedHex_48      MsgType = -48
-	MsgType_HTLC_RecvSignVerifyR_46 MsgType = -110046
+	MsgType_HTLC_ClientSign_Bob_HeSub_106  MsgType = -100106
+	MsgType_HTLC_ClientSign_Alice_HeSub_46 MsgType = -100046
+	MsgType_HTLC_SendVerifyR_45            MsgType = -100045
+	MsgType_HTLC_VerifyR_45                MsgType = -45
+	MsgType_HTLC_RecvVerifyR_45            MsgType = -110045
+	MsgType_HTLC_SendHerdHex_46            MsgType = -46
+	MsgType_HTLC_RecvSignVerifyR_46        MsgType = -110046
 
-	MsgType_HTLC_SendRequestCloseCurrTx_49 MsgType = -100049
-	MsgType_HTLC_RequestCloseCurrTx_49     MsgType = -49
-	MsgType_HTLC_RecvRequestCloseCurrTx_49 MsgType = -110049
-	MsgType_HTLC_SendCloseSigned_50        MsgType = -100050
-	MsgType_HTLC_CloseHtlcRequestSignBR_51 MsgType = -51
-	MsgType_HTLC_CloseHtlcUpdateCnb_52     MsgType = -52
-	MsgType_HTLC_RecvCloseSigned_50        MsgType = -110050
+	MsgType_HTLC_Close_SendRequestCloseCurrTx_49       MsgType = -100049
+	MsgType_HTLC_Close_ClientSign_Alice_C4a_110        MsgType = -100110
+	MsgType_HTLC_Close_RequestCloseCurrTx_49           MsgType = -49
+	MsgType_HTLC_Close_RecvRequestCloseCurrTx_49       MsgType = -110049
+	MsgType_HTLC_Close_SendCloseSigned_50              MsgType = -100050
+	MsgType_HTLC_Close_ClientSign_Bob_C4b_111          MsgType = -100111
+	MsgType_HTLC_CloseHtlcRequestSignBR_50             MsgType = -50
+	MsgType_HTLC_RecvCloseSigned_50                    MsgType = -110050
+	MsgType_HTLC_Close_ClientSign_Alice_C4b_112        MsgType = -100112
+	MsgType_HTLC_Close_ClientSign_Alice_C4bSub_113     MsgType = -100113
+	MsgType_HTLC_CloseHtlcUpdateCnb_51                 MsgType = -51
+	MsgType_HTLC_Close_ClientSign_Bob_C4bSub_51        MsgType = -110051
+	MsgType_HTLC_Close_ClientSign_Bob_C4bSubResult_114 MsgType = -100114
 
 	//https://github.com/LightningOnOmnilayer/Omni-BOLT-spec/blob/master/OmniBOLT-05-Atomic-Swap-among-Channels.md
 	MsgType_Atomic_SendSwap_80       MsgType = -100080
@@ -258,6 +285,8 @@ func CheckExist(msgType MsgType) bool {
 		return true
 	case MsgType_Core_GetTransactionByTxid_2122:
 		return true
+	case MsgType_Core_SignRawTransaction_2123:
+		return true
 	case MsgType_Mnemonic_CreateAddress_3000:
 		return true
 	case MsgType_Mnemonic_GetAddressByIndex_3001:
@@ -282,6 +311,10 @@ func CheckExist(msgType MsgType) bool {
 		return true
 	case MsgType_FundingCreate_SendAssetFundingCreated_34:
 		return true
+	case MsgType_ClientSign_AssetFunding_AliceSignC1a_1034:
+		return true
+	case MsgType_ClientSign_AssetFunding_AliceSignRD_1134:
+		return true
 	case MsgType_FundingCreate_Asset_AllItem_3100:
 		return true
 	case MsgType_FundingCreate_Asset_ItemById_3101:
@@ -291,6 +324,8 @@ func CheckExist(msgType MsgType) bool {
 	case MsgType_FundingCreate_Asset_Count_3103:
 		return true
 	case MsgType_FundingCreate_SendBtcFundingCreated_340:
+		return true
+	case MsgType_ClientSign_Duplex_BtcFundingMinerRDTx_341:
 		return true
 	case MsgType_FundingCreate_Btc_AllItem_3104:
 		return true
@@ -310,13 +345,27 @@ func CheckExist(msgType MsgType) bool {
 		return true
 	case MsgType_FundingSign_SendAssetFundingSigned_35:
 		return true
+	case MsgType_ClientSign_AssetFunding_RdAndBr_1035:
+		return true
 	case MsgType_FundingSign_SendBtcSign_350:
 		return true
 	case MsgType_CommitmentTx_SendCommitmentTransactionCreated_351:
 		return true
+	case MsgType_ClientSign_CommitmentTx_AliceSignC2a_360:
+		return true
 	case MsgType_CommitmentTxSigned_SendRevokeAndAcknowledgeCommitmentTransaction_352:
 		return true
+	case MsgType_ClientSign_CommitmentTx_BobSignC2b_361:
+		return true
+	case MsgType_ClientSign_CommitmentTx_AliceSignC2b_362:
+		return true
+	case MsgType_ClientSign_CommitmentTx_AliceSignC2b_Rd_363:
+		return true
+	case MsgType_ClientSign_CommitmentTx_BobSignC2b_Rd_364:
+		return true
 	case MsgType_CommitmentTx_ItemsByChanId_3200:
+		return true
+	case MsgType_CommitmentTx_DelItemByChanId_3209:
 		return true
 	case MsgType_CommitmentTx_ItemById_3201:
 		return true
@@ -348,15 +397,39 @@ func CheckExist(msgType MsgType) bool {
 		return true
 	case MsgType_HTLC_SendAddHTLC_40:
 		return true
+	case MsgType_HTLC_ClientSign_Alice_C3a_100:
+		return true
+	case MsgType_HTLC_ClientSign_Bob_C3b_101:
+		return true
+	case MsgType_HTLC_ClientSign_Alice_C3b_102:
+		return true
+	case MsgType_HTLC_ClientSign_Alice_C3bSub_103:
+		return true
+	case MsgType_HTLC_ClientSign_Bob_C3bSub_104:
+		return true
+	case MsgType_HTLC_ClientSign_Alice_He_105:
+		return true
+	case MsgType_HTLC_ClientSign_Bob_HeSub_106:
+		return true
+	case MsgType_HTLC_ClientSign_Alice_HeSub_46:
+		return true
 	case MsgType_HTLC_SendAddHTLCSigned_41:
 		return true
 	case MsgType_HTLC_SendVerifyR_45:
 		return true
-	case MsgType_HTLC_SendSignVerifyR_46:
+	case MsgType_HTLC_Close_SendRequestCloseCurrTx_49:
 		return true
-	case MsgType_HTLC_SendRequestCloseCurrTx_49:
+	case MsgType_HTLC_Close_ClientSign_Alice_C4a_110:
 		return true
-	case MsgType_HTLC_SendCloseSigned_50:
+	case MsgType_HTLC_Close_ClientSign_Bob_C4b_111:
+		return true
+	case MsgType_HTLC_Close_ClientSign_Alice_C4b_112:
+		return true
+	case MsgType_HTLC_Close_ClientSign_Alice_C4bSub_113:
+		return true
+	case MsgType_HTLC_Close_ClientSign_Bob_C4bSubResult_114:
+		return true
+	case MsgType_HTLC_Close_SendCloseSigned_50:
 		return true
 	case MsgType_Atomic_SendSwap_80:
 		return true

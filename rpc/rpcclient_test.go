@@ -15,13 +15,43 @@ func init() {
 func TestClient_GetMiningInfo(t *testing.T) {
 
 	client := NewClient()
-	result, _ := client.ListReceivedByAddress("2N3GWPBvcyjXoXaXjWetKTzUXndGQCkgMna")
-	//balance, err := client.OmniGetbalance("n4ExCKJY11hCu3xKkjDFLE1ZG4awjYsk3E", 137)
-	//log.Println(balance)
 
-	//result := client.EstimateSmartFee()
-	//result, err := client.DecodeRawTransaction("02000000018451f5b707c6f1a1eb0b3f3e9eb6d736b3a8e15c70d01e3cc136783449d13174000000006a473044022079bcf8b5a3daf409990ce5fb89b3b734f421b90b24f8262d4920f5c92630d92b02200200dbdd98029dff9bb02cbff638a446b4b5b7597a55a9b03f4e62756b1566370121022496530640e1c4c7a2a9a5878439b19eebb2fbce2fabf7a9d847402860d10813ffffffff02c43500000000000017a914129965444fa07857158de1178ace3aa3afc82efd87b00a0a00000000001976a91428272468efa366443623045f833f53e7d63aa4d388ac00000000")
+	hex := "0200000001f0b40133a65f08440ab5c56076a98f0c9bae31f7af28428dd707c52816fe59580000000000ffffffff020000000000000000166a146f6d6e6900000000000000890000000013ab668000000000000000001976a914a8225793d977cc4818c2b6643efed5b8129ca9d888ac00000000"
+	result, err := client.DecodeRawTransaction(hex)
+	log.Println(err)
 	log.Println(result)
+	return
+	result, err = client.OmniDecodeTransaction(hex)
+	log.Println(err)
+	log.Println(result)
+	//txId, err := client.SendRawTransaction(hex)
+	//log.Println(err)
+	//log.Println(txId)
+	txId, err := client.OmniGetAllBalancesForAddress("mre4gBmjKiBm8gwZmpCNcnnHiDY7TXr2wD")
+	log.Println(err)
+	log.Println(txId)
+	txId, err = client.OmniGetAllBalancesForAddress("mvqxxQskQkLVA9MNC5FFXPM1oY8uuMDBQa")
+	log.Println(err)
+	log.Println(txId)
+	txId, err = client.OmniGettransaction("3eb735c4bdcfab26f9b8d44b31cac8d5f5de0165f15db7a997e4513c759050ff")
+	//txId, err = client.OmniGettransaction("3eb735c4bdcfab26f9b8d44b31cac8d5f5de0165f15db7a997e4513c759050ff")
+	log.Println(err)
+	log.Println(txId)
+	//
+	//hex ="02000000029268cc2b0431d103cbeeb1ed9a54bc11acc579ebfc6f359067abee201b5297aa00000000d900473044022049098355519704d8127eb110f361d5db162f27cbbb572987a2f210df6207035102206e4a0d34e72887532ad1fafbe5c86da35a7297b610af26b0b33962b01a9d86c30147304402200eff836e6ce9be3ab77089cae34240ffbc63bd0dbbc8460ceba03bf78a98086402204122f462aef2b83a82c9802b256d2d4274ae20fc06c4f4042269442dd800028401475221035ae96b9763347ea51c673b976c57e5033908a1f02c9719aba57d5ec21413b903210360917f53381f2b05bb3ec299b6bf7e7446a5c6ed287d65cfc6e38858c380017252aee80300009268cc2b0431d103cbeeb1ed9a54bc11acc579ebfc6f359067abee201b5297aa02000000d900473044022016b104dc322a9aeb689181169cecf77ed8a126a9a4d28b2a61125953cb4f7d7102206b960be4389e19270a5ac600b4bbe5093388e981ab4cd2fb39c47af6c5f9a92d01473044022064bc9bc94f11bfb64bc7546c788ef36e68dfa03c52cf2d575adc8fb69eeaf85202205f2488bd372426c56e0e8319525d4771b894234fc862c4a8845a50863eb0279e01475221035ae96b9763347ea51c673b976c57e5033908a1f02c9719aba57d5ec21413b903210360917f53381f2b05bb3ec299b6bf7e7446a5c6ed287d65cfc6e38858c380017252aee80300000336500000000000001976a9147a019f584f6a65d114d5f17264c9eb32f763d72c88ac0000000000000000166a146f6d6e690000000000000089000000000bebc20022020000000000001976a9147a019f584f6a65d114d5f17264c9eb32f763d72c88ac00000000"
+	//result, err = client.TestMemPoolAccept(hex)
+	//log.Println(err)
+	//log.Println(result)
+	//result, err = client.DecodeRawTransaction(hex)
+	//log.Println(err)
+	//log.Println(result)
+	//pass, err = client.CheckMultiSign(hex, 2)
+	//log.Println(err)
+	//log.Println(pass)
+	//
+	//result, err = client.OmniDecodeTransaction(hex)
+	//log.Println(err)
+	//log.Println(result)
 
 }
 

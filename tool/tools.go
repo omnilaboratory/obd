@@ -94,7 +94,6 @@ func GetAddressFromPubKey(pubKey string) (address string, err error) {
 	}
 	netAddr.SetFormat(btcutil.PKFCompressed)
 	address = netAddr.EncodeAddress()
-	log.Println("BitCoin Address:", address)
 
 	return address, nil
 }
