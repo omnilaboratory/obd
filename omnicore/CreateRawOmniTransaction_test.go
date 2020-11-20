@@ -155,6 +155,7 @@ func TestCreateTransactionOpreturn(t *testing.T) {
 	}
 
 	//6) Specify miner fee and attach change output (as needed)
+	//This test specifies miner fee of 0.0006 btc
 	fmt.Println("step 6: attach change output to the sender")
 
 	const prev_txs_json = `

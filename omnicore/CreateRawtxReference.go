@@ -147,7 +147,8 @@ func Omni_createrawtx_change(base_tx *wire.MsgTx, prev_txs_json_list string, des
 	 *
 	 */
 
-	txChange := total_val_in - txFee_in_satoshi
+	// because in Omni_createrawtx_reference(...) there is a dust output.
+	txChange := total_val_in - OmniGetDustThreshold(destinationPkScript) - txFee_in_satoshi
 	minValue := OmniGetDustThreshold(destinationPkScript)
 
 	if txChange < minValue {
