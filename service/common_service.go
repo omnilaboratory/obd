@@ -35,8 +35,11 @@ func findUserIsOnline(nodePeerId, userPeerId string) error {
 	return errors.New(fmt.Sprintf(enum.Tips_user_notExistOrOnline, userPeerId))
 }
 
-func checkBtcFundFinish(address string, isFundOmni bool) error {
-	result, err := rpcClient.ListUnspent(address)
+func checkBtcFundFinish(channel dao.ChannelInfo, isFundOmni bool) error {
+	if channel.CurrState > dao.ChannelState_WaitFundAsset {
+		return nil
+	}
+	result, err := rpcClient.ListUnspent(channel.ChannelAddress)
 	if err != nil {
 		return err
 	}

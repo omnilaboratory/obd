@@ -372,7 +372,7 @@ func (client *Client) omniCoreModule(msg bean.RequestMessage) (enum.SendTargetTy
 				if tool.CheckIsString(&sendInfo.FromAddress) &&
 					tool.CheckIsString(&sendInfo.ToAddress) &&
 					sendInfo.Amount > 0 {
-					respNode, err := rpcClient.OmniCreateRawTransaction(sendInfo.FromAddress, sendInfo.ToAddress, sendInfo.PropertyId, sendInfo.Amount, sendInfo.MinerFee, 0)
+					respNode, err := rpcClient.OmniCreateRawTransaction(sendInfo.FromAddress, sendInfo.ToAddress, sendInfo.PropertyId, sendInfo.Amount, sendInfo.MinerFee)
 					if err != nil {
 						data = err.Error()
 					} else {

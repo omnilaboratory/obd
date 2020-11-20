@@ -76,20 +76,15 @@ func (service *htlcForwardTxManager) CreateHtlcInvoice(msg bean.RequestMessage) 
 	if requestData.PropertyId < 0 {
 		return nil, errors.New(enum.Tips_common_wrong + "property_id")
 	}
-	_, err = rpcClient.OmniGetProperty(requestData.PropertyId)
+	propertyId := ""
+	tool.ConvertNumToString(int(requestData.PropertyId), &propertyId)
+	code, err := tool.GetMsgLengthFromInt(len(propertyId))
 	if err != nil {
 		return nil, err
-	} else {
-		propertyId := ""
-		tool.ConvertNumToString(int(requestData.PropertyId), &propertyId)
-		code, err := tool.GetMsgLengthFromInt(len(propertyId))
-		if err != nil {
-			return nil, err
-		}
-		addr += "p" + code + propertyId
 	}
+	addr += "p" + code + propertyId
 
-	code, err := tool.GetMsgLengthFromInt(len(msg.SenderNodePeerId))
+	code, err = tool.GetMsgLengthFromInt(len(msg.SenderNodePeerId))
 	if err != nil {
 		return nil, err
 	}
@@ -200,11 +195,6 @@ func (service *htlcForwardTxManager) PayerRequestFindPath(msgData string, user b
 		return nil, requestFindPathInfo.IsPrivate, errors.New(enum.Tips_common_wrong + "property_id")
 	}
 
-	_, err = rpcClient.OmniGetProperty(requestFindPathInfo.PropertyId)
-	if err != nil {
-		return nil, requestFindPathInfo.IsPrivate, err
-	}
-
 	if requestFindPathInfo.Amount < config.GetOmniDustBtc() {
 		return nil, requestFindPathInfo.IsPrivate, errors.New(enum.Tips_common_wrong + "amount")
 	}
@@ -297,8 +287,6 @@ func (service *htlcForwardTxManager) GetResponseFromTrackerOfPayerRequestFindPat
 		log.Println(err)
 		return nil, err
 	}
-
-	log.Println(channelPath)
 
 	dataArr := strings.Split(channelPath, "_")
 	if len(dataArr) != 3 {
@@ -428,10 +416,8 @@ func (service *htlcForwardTxManager) AliceAddHtlcAtAliceSide(msg bean.RequestMes
 		requestData.CltvExpiry = totalStep - currStep
 	}
 
-	err = checkBtcFundFinish(channelInfo.ChannelAddress, false)
-	if err != nil {
-		log.Println(err)
-		return nil, false, err
+	if channelInfo.CurrState < dao.ChannelState_NewTx {
+		return nil, false, errors.New("do not finish funding")
 	}
 
 	if tool.CheckIsString(&requestData.LastTempAddressPrivateKey) == false {
@@ -863,10 +849,9 @@ func (service *htlcForwardTxManager) BobSignedAddHtlcAtBobSide(jsonData string, 
 	if err != nil {
 		return nil, errors.New(enum.Tips_htlc_noChanneFromRountingPacket)
 	}
-	err = checkBtcFundFinish(channelInfo.ChannelAddress, false)
-	if err != nil {
-		log.Println(err)
-		return nil, err
+
+	if channelInfo.CurrState < dao.ChannelState_NewTx {
+		return nil, errors.New("do not finish funding")
 	}
 
 	toAliceDataOf41P.ChannelId = channelInfo.ChannelId

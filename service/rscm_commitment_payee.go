@@ -124,10 +124,9 @@ func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction
 		log.Println(err)
 		return nil, false, err
 	}
-	err = checkBtcFundFinish(channelInfo.ChannelAddress, false)
-	if err != nil {
-		log.Println(err)
-		return nil, false, err
+
+	if channelInfo.CurrState < dao.ChannelState_NewTx {
+		return nil, false, errors.New("do not finish funding")
 	}
 
 	payeeRevokeAndAcknowledgeCommitment := &dao.PayeeRevokeAndAcknowledgeCommitment{}

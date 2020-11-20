@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-func (client *Client) OmniCreateRawTransaction(fromBitCoinAddress string, toBitCoinAddress string, propertyId int64, amount float64, minerFee float64, sequence int) (retMap map[string]interface{}, err error) {
+func (client *Client) OmniCreateRawTransaction(fromBitCoinAddress string, toBitCoinAddress string, propertyId int64, amount float64, minerFee float64) (retMap map[string]interface{}, err error) {
 	beginTime := time.Now()
 	log.Println("OmniCreateAndSignRawTransaction beginTime", beginTime.String())
 	if tool.CheckIsString(&fromBitCoinAddress) == false {

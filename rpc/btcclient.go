@@ -3,6 +3,8 @@ package rpc
 import (
 	"encoding/json"
 	"errors"
+	"github.com/btcsuite/btcd/chaincfg"
+	"github.com/btcsuite/btcutil"
 	"github.com/omnilaboratory/obd/config"
 	"github.com/omnilaboratory/obd/tool"
 	"github.com/shopspring/decimal"
@@ -211,6 +213,11 @@ func (client *Client) ValidateAddress(address string) (isValid bool, err error) 
 	if tool.CheckIsString(&address) == false {
 		return false, errors.New("address not exist")
 	}
+	_, err = btcutil.DecodeAddress(address, &chaincfg.TestNet3Params)
+	if err != nil {
+		return false, err
+	}
+	return true, nil
 
 	if validatedAddress[address] {
 		return true, nil

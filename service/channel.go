@@ -216,7 +216,6 @@ func (this *channelManager) BobAcceptChannel(msg bean.RequestMessage, user *bean
 			channelInfo.ChannelAddressScriptPubKey = gjson.Parse(addrInfoStr).Get("scriptPubKey").String()
 			channelInfo.CurrState = dao.ChannelState_WaitFundAsset
 		} else {
-
 			return nil, errors.New(enum.Tips_channel_changePubkeyForChannel + reqData.FundingPubKey)
 		}
 	} else {

@@ -83,10 +83,8 @@ func (this *commitmentTxManager) CommitmentTransactionCreated(msg bean.RequestMe
 		}
 	}
 
-	err = checkBtcFundFinish(channelInfo.ChannelAddress, false)
-	if err != nil {
-		log.Println(err)
-		return nil, false, err
+	if channelInfo.CurrState < dao.ChannelState_NewTx {
+		return nil, false, errors.New("do not finish funding")
 	}
 
 	targetUser := channelInfo.PeerIdB
