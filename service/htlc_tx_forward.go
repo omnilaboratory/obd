@@ -226,9 +226,6 @@ func (service *htlcForwardTxManager) PayerRequestFindPath(msgData string, user b
 		cacheDataForTx := &dao.CacheDataForTx{}
 		cacheDataForTx.KeyName = user.PeerId + "_" + pathRequest.H
 		err = user.Db.Select(q.Eq("KeyName", cacheDataForTx.KeyName)).First(cacheDataForTx)
-		if err != nil {
-			log.Println(err)
-		}
 		if cacheDataForTx.Id != 0 {
 			user.Db.DeleteStruct(cacheDataForTx)
 		}

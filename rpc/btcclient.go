@@ -228,11 +228,25 @@ func (client *Client) ValidateAddress(address string) (isValid bool, err error) 
 
 	return gjson.Get(result, "iswatchonly").Bool(), nil
 }
-func (client *Client) GetAddressInfo(address string) (json string, err error) {
-	result, err := client.send("getaddressinfo", []interface{}{address})
+
+var tempGetAddressInfoMap map[string]string
+
+func (client *Client) GetAddressInfo(address string) (result string, err error) {
+
+	if tempGetAddressInfoMap == nil {
+		tempGetAddressInfoMap = make(map[string]string)
+	}
+	if len(tempGetAddressInfoMap[address]) > 0 {
+		return tempGetAddressInfoMap[address], nil
+	}
+
+	result, err = client.send("getaddressinfo", []interface{}{address})
 	if err != nil {
 		return "", err
 	}
+
+	tempGetAddressInfoMap[address] = result
+
 	return result, nil
 }
 
