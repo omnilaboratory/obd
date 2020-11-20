@@ -254,7 +254,11 @@ func AddOpReturn(tx *wire.MsgTx, data []byte) *wire.MsgTx {
 	return tx
 }
 
-//omnicore-cli "omni_createrawtx_opreturn" "0100000002de95b97cf4c67ec01485fd698ec154a325ff69dd3e58435d7024bae7f69534c20000000000ffffffffb3b60aaa69b860c9bf31e742e3b37e75a2a553fd0bebf8aaf7da0e9bb07316ee0200000000ffffffff0000000000" "00000000000000020000000000989680"
+/*
+ * step 4) Attach payload output
+ * omnicore-cli "omni_createrawtx_opreturn" "0100000002de95b97cf4c67ec01485fd698ec154a325ff69dd3e58435d7024bae7f69534c20000000000ffffffffb3b60aaa69b860c9bf31e742e3b37e75a2a553fd0bebf8aaf7da0e9bb07316ee0200000000ffffffff0000000000" "00000000000000020000000000989680"
+ *
+ */
 func Omni_createrawtx_opreturn(base_tx *wire.MsgTx, payload_bytes []byte, payload_str string) (*wire.MsgTx, error) {
 
 	// extend the transaction

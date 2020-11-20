@@ -9,12 +9,12 @@ import (
  * omnicore/parse_string.cpp
  * the golang code is a straight forward transalaton of cpp source code.
  */
-func StrToInt64(str string, divisible bool) uint64 {
+func StrToInt64(str string, divisible bool) int64 {
 	// copy original, so it remains unchanged
 	var strAmount string
 
 	strAmount = str
-	var nAmount uint64
+	var nAmount int64
 	nAmount = 0
 
 	// check for a negative (minus sign) and invalidate if present
@@ -70,7 +70,7 @@ func StrToInt64(str string, divisible bool) uint64 {
 		//    nAmount = boost::lexical_cast<int64_t>(strAmount);
 		//} catch (const boost::bad_lexical_cast &e) {}
 
-		nAmount, _ = strconv.ParseUint(strAmount, 10, 64)
+		nAmount, _ = strconv.ParseInt(strAmount, 10, 64)
 		//if err != nil {
 		//	fmt.Printf(strAmount)
 		//	return 0
@@ -84,10 +84,10 @@ func StrToInt64(str string, divisible bool) uint64 {
 		//   } catch (const boost::bad_lexical_cast &e) {}
 		pos := strings.Index(strAmount, ".")
 		if pos == -1 {
-			nAmount, _ = strconv.ParseUint(strAmount, 10, 64)
+			nAmount, _ = strconv.ParseInt(strAmount, 10, 64)
 		} else {
 			newStrAmount := strAmount[0:pos]
-			nAmount, _ = strconv.ParseUint(newStrAmount, 10, 64)
+			nAmount, _ = strconv.ParseInt(newStrAmount, 10, 64)
 		}
 	}
 

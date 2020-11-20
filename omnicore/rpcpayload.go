@@ -136,13 +136,22 @@ func HexStr(byte_array []byte) string {
 }
 
 /*
+ * step 2) Construct payload
+ * omnicore-cli "omni_createpayload_simplesend" 2 "0.1"
+ *
  * rpcpayload.cpp, static UniValue omni_createpayload_simplesend(const JSONRPCRequest& request)
+ *
  */
 func Omni_createpayload_simplesend(property_id_str string, amount_str string, divisible bool) ([]byte, string) {
 	property_id, _ := ParsePropertyId(property_id_str)
 	amount := StrToInt64(amount_str, divisible)
 
-	payload := OmniCreatePayloadSimpleSend(property_id, amount)
+	//because amount must be less than the biggest unsigned 64-bit integer, and bigger than 0
+	//so that here we transform amount to be uint64
+	//TO DO: add check here.
+	amount_uint64 := uint64(amount)
+
+	payload := OmniCreatePayloadSimpleSend(property_id, amount_uint64)
 
 	return payload, HexStr(payload)
 

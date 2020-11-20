@@ -71,3 +71,7 @@ func TestStrToInt64(t *testing.T) {
 	fmt.Printf("%v \n", number)
 
 }
+
+func TestAmountFromValue(t *testing.T) {
+	fmt.Printf("%v \n", AmountFromValue("0.006"))
+}
