@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/lestrrat-go/file-rotatelogs"
 	"io"
 	"log"
 	"net/http"
