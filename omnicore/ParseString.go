@@ -1,9 +1,18 @@
 package omnicore
 
 import (
+	"encoding/hex"
 	"strconv"
 	"strings"
 )
+
+func HexStr(byte_array []byte) string {
+	return hex.EncodeToString(byte_array)
+}
+
+func StrToByteArray(str string) ([]byte, error) {
+	return hex.DecodeString(str)
+}
 
 /*
  * omnicore/parse_string.cpp

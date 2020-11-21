@@ -176,4 +176,16 @@ func TestCreateTransactionOpreturn(t *testing.T) {
 	if strings.Compare(expected, exported) == 0 {
 		fmt.Println("succeed constructing opreturn raw transaction offline")
 	}
+
+	fmt.Println("Hex from step 6 may be different than what expected, because omnicore c++ reorder the outputs. ")
+	fmt.Println("Use DecodeRawtrnasaction to verify the two hexs. ")
+
+	transaction_json_expected := DecodeRawTransaction(expected, &chaincfg.MainNetParams)
+	transaction_json_exported := DecodeRawTransaction(exported, &chaincfg.MainNetParams)
+
+	fmt.Println("expect")
+	fmt.Println(transaction_json_expected)
+	fmt.Println("export")
+	fmt.Println(transaction_json_exported)
+
 }

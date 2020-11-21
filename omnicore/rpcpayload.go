@@ -131,10 +131,6 @@ func ParsePropertyId(property_id string) (uint32, error) {
 
 }
 
-func HexStr(byte_array []byte) string {
-	return hex.EncodeToString(byte_array)
-}
-
 /*
  * step 2) Construct payload
  * omnicore-cli "omni_createpayload_simplesend" 2 "0.1"

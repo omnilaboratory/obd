@@ -10,15 +10,6 @@ import (
 	"github.com/btcsuite/btcd/wire"
 )
 
-type Transaction struct {
-	TxId               string `json:"txid"`
-	SourceAddress      string `json:"source_address"`
-	DestinationAddress string `json:"destination_address"`
-	Amount             int64  `json:"amount"`
-	UnsignedTx         string `json:"unsignedtx"`
-	SignedTx           string `json:"signedtx"`
-}
-
 type Unspent struct {
 	TxID string `json:"txid"`
 	VOut uint32 `json:"vout"`
