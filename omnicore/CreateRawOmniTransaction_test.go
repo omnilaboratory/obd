@@ -115,7 +115,7 @@ func TestCreateTransactionOpreturn(t *testing.T) {
 	// 2) Construct payload
 	payload, payload_hex := Omni_createpayload_simplesend("2", "0.1", true)
 	fmt.Println("expect: 00000000000000020000000000989680")
-
+	fmt.Println("export:")
 	fmt.Println(payload_hex)
 
 	// 3) Construct transaction base
