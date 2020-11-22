@@ -8,7 +8,7 @@ OmniGo implements part of Omnilayer spec in Go (golang), for constructing omni t
 * High efficiency in constructing transactions, hence HTLCs. Benchmark below reports 900+ TPS.  
 * Agile architecture. Both high end server and small size device can deploy a lightning node.  
 
-Full node will be used in opening and closing channels. 
+Full node will be used in funding/closing channels, monioring/punishing counterparties, broadcasting txs. These are not high frequent operatiosn and can be delegated to trackers.  
 
 ## Construct simple send transaction
 
