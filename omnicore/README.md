@@ -17,10 +17,11 @@ Full node will be used in opening and closing channels.
 ## 1) List unspent outputs
 
 List unspent outputs for 1K6JtSvrHtyFmxdtGZyZEF7ydytTGqasNc.
-`
+```
 omnicore-cli "listunspent" 0 999999 '["1K6JtSvrHtyFmxdtGZyZEF7ydytTGqasNc"]'
-`
-`
+```
+
+```
 [
     ...,
     {
@@ -44,11 +45,11 @@ omnicore-cli "listunspent" 0 999999 '["1K6JtSvrHtyFmxdtGZyZEF7ydytTGqasNc"]'
         "spendable" : true
     }
 ]
-`
+```
 
 ## 2) Construct payload
 
-`
+```
 const jsonStream = `
 		{ "txid" : "c23495f6e7ba24705d43583edd69ff25a354c18e69fd8514c07ec6f47cb995de" , "vout" : 0} 
 		{ "txid" : "ee1673b09b0edaf7aaf8eb0bfd53a5a2757eb3e342e731bfc960b869aa0ab6b3" , "vout" : 2 } 
@@ -58,6 +59,8 @@ payload, payload_hex := Omni_createpayload_simplesend("2", "0.1", true)
 fmt.Println("expect: 00000000000000020000000000989680")
 fmt.Println("export:")
 fmt.Println(payload_hex)
-`
+```
+
+
 
 
