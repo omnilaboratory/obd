@@ -59,7 +59,10 @@ func CreateRawTransaction(unspent_json_list string, btc_version int32) (*wire.Ms
 		outPoint := wire.NewOutPoint(hash, unspentTx.VOut)
 		txIn := wire.NewTxIn(outPoint, nil, nil)
 
-		txIn.Sequence = unspentTx.Sequence
+		if unspentTx.Sequence != 0 {
+			txIn.Sequence = unspentTx.Sequence
+		}
+
 		tx.AddTxIn(txIn)
 
 		//fmt.Printf("%s \n ", txToHex(tx))
