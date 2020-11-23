@@ -217,23 +217,12 @@ func (client *Client) ValidateAddress(address string) (isValid bool, err error) 
 	if err != nil {
 		return false, err
 	}
-	return true, nil
 
-	if validatedAddress[address] {
-		return true, nil
-	}
-
-	result, err := client.GetAddressInfo(address)
-	if err != nil {
-		return false, err
-	}
-	if gjson.Get(result, "iswatchonly").Bool() == false {
-		_, _ = client.send("importaddress", []interface{}{address, "", false})
-	}
+	_, _ = client.send("importaddress", []interface{}{address, "", false})
 	//log.Println(result)
 	validatedAddress[address] = true
 
-	return gjson.Get(result, "iswatchonly").Bool(), nil
+	return true, nil
 }
 
 var tempGetAddressInfoMap map[string]string

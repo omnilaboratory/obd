@@ -43,6 +43,8 @@ func checkBtcFundFinish(channel dao.ChannelInfo, isFundOmni bool) error {
 	if err != nil {
 		return err
 	}
+	return nil
+
 	array := gjson.Parse(result).Array()
 	//log.Println("listunspent", array)
 	if len(array) < config.BtcNeedFundTimes {
