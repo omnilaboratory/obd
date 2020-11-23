@@ -33,11 +33,11 @@ func witnessToHex(witness wire.TxWitness) []string {
 }
 
 type RawTxDecodeResult struct {
-	Txid     string
-	Version  int32
-	Locktime uint32
-	Vin      []btcjson.Vin
-	Vout     []btcjson.Vout
+	Txid     string         `json:"txid"`
+	Version  int32          `json:"version"`
+	Locktime uint32         `json:"locktime"`
+	Vin      []btcjson.Vin  `json:"vin"`
+	Vout     []btcjson.Vout `json:"vout"`
 }
 
 // createVinList returns a slice of JSON objects for the inputs of the passed
