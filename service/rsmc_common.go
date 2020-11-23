@@ -14,55 +14,6 @@ import (
 	"time"
 )
 
-//创建BR
-func createCurrCommitmentTxBR(tx storm.Node, brType dao.BRType, channelInfo *dao.ChannelInfo, commitmentTx *dao.CommitmentTransaction, inputs []rpc.TransactionInputItem,
-	outputAddress, channelPrivateKey string, user bean.User) (err error) {
-	if len(inputs) == 0 {
-		return nil
-	}
-	breachRemedyTransaction := &dao.BreachRemedyTransaction{}
-	_ = tx.Select(
-		q.Eq("ChannelId", channelInfo.ChannelId),
-		q.Eq("InputTxid", commitmentTx.RSMCTxid),
-		q.Eq("Type", brType),
-		q.Or(
-			q.Eq("PeerIdA", user.PeerId),
-			q.Eq("PeerIdB", user.PeerId))).
-		First(breachRemedyTransaction)
-	if breachRemedyTransaction.Id == 0 {
-		breachRemedyTransaction, err = createBRTxObj(user.PeerId, channelInfo, brType, commitmentTx, &user)
-		if err != nil {
-			log.Println(err)
-			return err
-		}
-		if breachRemedyTransaction.Amount > 0 {
-			txid, hex, err := rpcClient.OmniCreateAndSignRawTransactionUseUnsendInput(
-				commitmentTx.RSMCMultiAddress,
-				[]string{
-					channelPrivateKey,
-				},
-				inputs,
-				outputAddress,
-				channelInfo.FundingAddress,
-				channelInfo.PropertyId,
-				breachRemedyTransaction.Amount,
-				getBtcMinerAmount(channelInfo.BtcAmount),
-				0,
-				&commitmentTx.RSMCRedeemScript)
-			if err != nil {
-				log.Println(err)
-				return err
-			}
-			breachRemedyTransaction.OutAddress = outputAddress
-			breachRemedyTransaction.Txid = txid
-			breachRemedyTransaction.BrTxHex = hex
-			breachRemedyTransaction.CurrState = dao.TxInfoState_Create
-			_ = tx.Save(breachRemedyTransaction)
-		}
-	}
-	return nil
-}
-
 //创建RawBR
 func createCurrCommitmentTxRawBR(tx storm.Node, brType dao.BRType, channelInfo *dao.ChannelInfo,
 	commitmentTx *dao.CommitmentTransaction, inputs []rpc.TransactionInputItem,

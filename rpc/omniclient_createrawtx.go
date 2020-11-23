@@ -1,8 +1,10 @@
 package rpc
 
 import (
+	"encoding/json"
 	"errors"
 	"github.com/omnilaboratory/obd/config"
+	"github.com/omnilaboratory/obd/omnicore"
 	"github.com/omnilaboratory/obd/tool"
 	"github.com/shopspring/decimal"
 	"github.com/tidwall/gjson"
@@ -57,35 +59,11 @@ func (client *Client) OmniCreateRawTransaction(fromBitCoinAddress string, toBitC
 	log.Println("listunspent", arrayListUnspent)
 
 	out, _ := decimal.NewFromFloat(minerFee).Add(decimal.NewFromFloat(pMoney)).Round(8).Float64()
+
 	balance := 0.0
-	for _, item := range arrayListUnspent {
-		balance, _ = decimal.NewFromFloat(balance).Add(decimal.NewFromFloat(item.Get("amount").Float())).Round(8).Float64()
-		if balance >= out {
-			break
-		}
-	}
-
-	log.Println("1 balance", balance)
-	if balance < out {
-		return nil, errors.New("not enough balance")
-	}
-
-	//2.Omni_createpayload_simplesend
-	payload, err := client.omniCreatePayloadSimpleSend(propertyId, amount)
-	if err != nil {
-		return nil, err
-	}
-	log.Println("2 payload " + payload)
-
-	balance = 0.0
 	inputs := make([]map[string]interface{}, 0, len(arrayListUnspent))
 	for _, item := range arrayListUnspent {
 		node := make(map[string]interface{})
-		//node["confirmations"] = item.Get("confirmations").Int()
-		//node["spendable"] = item.Get("spendable").Bool()
-		//node["solvable"] = item.Get("solvable").Bool()
-		//node["address"] = item.Get("address").String()
-		//node["account"] = item.Get("account").String()
 		node["txid"] = item.Get("txid").String()
 		node["vout"] = item.Get("vout").Int()
 		node["scriptPubKey"] = item.Get("scriptPubKey").String()
@@ -97,48 +75,10 @@ func (client *Client) OmniCreateRawTransaction(fromBitCoinAddress string, toBitC
 		}
 	}
 
-	outputs := make(map[string]interface{})
-
-	//3.CreateRawTransaction
-	createrawtransactionStr, err := client.CreateRawTransaction(inputs, outputs)
+	retMap, err = createOmniRawTransaction(balance, out, amount, minerFee, propertyId, inputs, toBitCoinAddress, fromBitCoinAddress, nil)
 	if err != nil {
 		return nil, err
 	}
-	log.Println("3 createrawtransactionStr", createrawtransactionStr)
-
-	//4.Omni_createrawtx_opreturn
-	opreturn, err := client.omniCreateRawtxOpreturn(createrawtransactionStr, payload)
-	if err != nil {
-		return nil, err
-	}
-	log.Println("4 opreturn", opreturn)
-
-	//5. Omni_createrawtx_reference
-	reference, err := client.omniCreateRawtxReference(opreturn, toBitCoinAddress)
-	if err != nil {
-		return nil, err
-	}
-	log.Println("5 reference", reference)
-
-	//6.Omni_createrawtx_change
-	prevtxs := make([]map[string]interface{}, 0, len(arrayListUnspent))
-	for _, item := range arrayListUnspent {
-		node := make(map[string]interface{})
-		node["txid"] = item.Get("txid").String()
-		node["vout"] = item.Get("vout").Int()
-		node["scriptPubKey"] = item.Get("scriptPubKey").String()
-		node["value"] = item.Get("amount").Float()
-		prevtxs = append(prevtxs, node)
-	}
-	change, err := client.omniCreateRawtxChange(reference, prevtxs, fromBitCoinAddress, minerFee)
-	if err != nil {
-		return nil, err
-	}
-	log.Println("6 change", change)
-
-	retMap = make(map[string]interface{})
-	retMap["hex"] = change
-	retMap["inputs"] = inputs
 	return retMap, nil
 }
 
@@ -366,32 +306,43 @@ func createOmniRawTransaction(balance, out, amount, minerFee float64, propertyId
 	}
 
 	//2.Omni_createpayload_simplesend
-	payload, err := client.omniCreatePayloadSimpleSend(propertyId, amount)
-	if err != nil {
-		return nil, err
-	}
+	//payload, err := client.omniCreatePayloadSimpleSend(propertyId, amount)
+	//if err != nil {
+	//	return nil, err
+	//}
 	//log.Println("2 payload " + payload)
+	payloadBytes, payloadHex := omnicore.Omni_createpayload_simplesend(strconv.Itoa(int(propertyId)), tool.FloatToString(amount, 8), true)
 
 	//3.CreateRawTransaction
-	outputs := make(map[string]interface{})
+	//outputs := make(map[string]interface{})
+	//createrawtransactionStr, err := client.CreateRawTransaction(inputs, outputs)
+	//if err != nil {
+	//	return nil, err
+	//}
 
-	createrawtransactionStr, err := client.CreateRawTransaction(inputs, outputs)
-	if err != nil {
-		return nil, err
-	}
+	inputsBytes, _ := json.Marshal(inputs)
+	inputsStr := string(inputsBytes)
+	inputsStr = strings.TrimLeft(inputsStr, "[")
+	inputsStr = strings.TrimRight(inputsStr, "]")
+	inputsStr = strings.ReplaceAll(inputsStr, "},", "}")
+	rawTx, _, _ := omnicore.CreateRawTransaction(inputsStr, 2)
 
 	//4.Omni_createrawtx_opreturn
-	opreturn, err := client.omniCreateRawtxOpreturn(createrawtransactionStr, payload)
-	if err != nil {
-		return nil, err
-	}
+	//opreturn, err := client.omniCreateRawtxOpreturn(createrawtransactionStr, payload)
+	//if err != nil {
+	//	return nil, err
+	//}
 	//log.Println("4 opreturn", opreturn)
 
+	opreturnTxMsg, err := omnicore.Omni_createrawtx_opreturn(rawTx, payloadBytes, payloadHex)
+
 	//5. Omni_createrawtx_reference
-	reference, err := client.omniCreateRawtxReference(opreturn, toBitCoinAddress)
-	if err != nil {
-		return nil, err
-	}
+	//reference, err := client.omniCreateRawtxReference(opreturn, toBitCoinAddress)
+	//if err != nil {
+	//	return nil, err
+	//}
+
+	referenceTxMsg, err := omnicore.Omni_createrawtx_reference(opreturnTxMsg, toBitCoinAddress, tool.GetCoreNet())
 
 	//6.Omni_createrawtx_change
 	prevtxs := make([]map[string]interface{}, 0, 0)
@@ -400,20 +351,27 @@ func createOmniRawTransaction(balance, out, amount, minerFee float64, propertyId
 		node["txid"] = item["txid"]
 		node["vout"] = item["vout"]
 		node["scriptPubKey"] = item["scriptPubKey"]
-		node["value"] = item["amount"]
+		value := decimal.NewFromFloat(item["amount"].(float64))
+		node["value"] = value.String()
 		if redeemScript != nil {
 			node["redeemScript"] = *redeemScript
 		}
 		prevtxs = append(prevtxs, node)
 	}
 
-	change, err := client.omniCreateRawtxChange(reference, prevtxs, changeToAddress, minerFee)
-	if err != nil {
-		return nil, err
-	}
+	//change, err := client.omniCreateRawtxChange(reference, prevtxs, changeToAddress, minerFee)
+	//if err != nil {
+	//	return nil, err
+	//}
+	prevtxsBytes, _ := json.Marshal(prevtxs)
+	prevtxsStr := string(prevtxsBytes)
+	prevtxsStr = strings.TrimLeft(prevtxsStr, "[")
+	prevtxsStr = strings.TrimRight(prevtxsStr, "]")
+	prevtxsStr = strings.ReplaceAll(prevtxsStr, "},", "}")
+	change, err := omnicore.Omni_createrawtx_change(referenceTxMsg, prevtxsStr, changeToAddress, tool.FloatToString(minerFee, 8), tool.GetCoreNet())
 
 	retMap = make(map[string]interface{})
-	retMap["hex"] = change
+	retMap["hex"] = omnicore.TxToHex(change)
 	retMap["inputs"] = inputs
 	return retMap, nil
 }

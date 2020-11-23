@@ -6,13 +6,13 @@ import (
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcutil"
 	"github.com/omnilaboratory/obd/config"
+	"github.com/omnilaboratory/obd/omnicore"
 	"github.com/omnilaboratory/obd/tool"
 	"github.com/shopspring/decimal"
 	"github.com/tidwall/gjson"
 	"log"
 	"math"
 	"strconv"
-	"time"
 )
 
 //https://developer.bitcoin.org/reference/rpc/index.html
@@ -106,6 +106,14 @@ func (client *Client) GetBalanceByAddress(address string) (balance decimal.Decim
 }
 
 func (client *Client) CreateRawTransaction(inputs []map[string]interface{}, outputs map[string]interface{}) (result string, err error) {
+	//inputsBytes, _ := json.Marshal(inputs)
+	//inputsStr := string(inputsBytes)
+	//inputsStr = strings.TrimLeft(inputsStr,"[")
+	//inputsStr = strings.TrimRight(inputsStr,"]")
+	//inputsStr = strings.ReplaceAll(inputsStr,"},","}")
+	//_, rawTxhex,err := omnicore.CreateRawTransaction(inputsStr,2)
+	//return rawTxhex, err
+
 	return client.send("createrawtransaction", []interface{}{inputs, outputs})
 }
 
@@ -118,22 +126,8 @@ func (client *Client) SendRawTransaction(hex string) (result string, err error) 
 	return client.send("sendrawtransaction", []interface{}{hex})
 }
 
-var tempDecodeRawTransactionData map[string]string
-
 func (client *Client) DecodeRawTransaction(hex string) (result string, err error) {
-
-	if tempDecodeRawTransactionData == nil {
-		tempDecodeRawTransactionData = make(map[string]string)
-	}
-	hexHash := tool.SignMsgWithSha256([]byte(hex))
-	if len(tempDecodeRawTransactionData[hexHash]) > 0 {
-		return tempDecodeRawTransactionData[hexHash], nil
-	}
-
-	result, err = client.send("decoderawtransaction", []interface{}{hex})
-	if err == nil {
-		tempDecodeRawTransactionData[hexHash] = result
-	}
+	result = omnicore.DecodeRawTransaction(hex, tool.GetCoreNet())
 	return result, err
 }
 
@@ -217,23 +211,9 @@ func (client *Client) ValidateAddress(address string) (isValid bool, err error) 
 	if err != nil {
 		return false, err
 	}
-	return true, nil
-
-	if validatedAddress[address] {
-		return true, nil
-	}
-
-	result, err := client.GetAddressInfo(address)
-	if err != nil {
-		return false, err
-	}
-	if gjson.Get(result, "iswatchonly").Bool() == false {
-		_, _ = client.send("importaddress", []interface{}{address, "", false})
-	}
-	//log.Println(result)
+	_, _ = client.send("importaddress", []interface{}{address, "", false})
 	validatedAddress[address] = true
-
-	return gjson.Get(result, "iswatchonly").Bool(), nil
+	return true, nil
 }
 
 var tempGetAddressInfoMap map[string]string
@@ -407,136 +387,6 @@ func (client *Client) BtcSignRawTransactionFromJson(dataJson string) (signHex st
 	return signHex, nil
 }
 
-// create a transaction and just signnature , not send to the network,get the hash of signature
-func (client *Client) BtcCreateAndSignRawTransaction(fromBitCoinAddress string, privkeys []string, outputItems []TransactionOutputItem, minerFee float64, sequence int, redeemScript *string) (txid string, hex string, err error) {
-	if len(fromBitCoinAddress) < 1 {
-		return "", "", errors.New("fromBitCoinAddress is empty")
-	}
-	if len(outputItems) < 1 {
-		return "", "", errors.New("toBitCoinAddress is empty")
-	}
-
-	_, err = client.ValidateAddress(fromBitCoinAddress)
-	if err != nil {
-		return "", "", err
-	}
-
-	if minerFee <= 0 {
-		minerFee = client.GetMinerFee()
-	}
-
-	outTotalAmount := decimal.NewFromFloat(0)
-	for _, item := range outputItems {
-		outTotalAmount = outTotalAmount.Add(decimal.NewFromFloat(item.Amount))
-	}
-
-	if outTotalAmount.LessThan(decimal.NewFromFloat(config.GetOmniDustBtc())) {
-		return "", "", errors.New("wrong outTotalAmount")
-	}
-
-	if minerFee < config.GetOmniDustBtc() {
-		return "", "", errors.New("minerFee too small")
-	}
-
-	result, err := client.ListUnspent(fromBitCoinAddress)
-	if err != nil {
-		return "", "", err
-	}
-
-	array := gjson.Parse(result).Array()
-	if len(array) == 0 {
-		return "", "", errors.New("empty balance")
-	}
-	log.Println("listunspent", array)
-
-	//out, _ := decimal.NewFromFloat(minerFee).Add(outTotalAmount).Float64()
-	out, _ := outTotalAmount.Round(8).Float64()
-
-	balance := 0.0
-	var inputs []map[string]interface{}
-	for _, item := range array {
-		node := make(map[string]interface{})
-		node["txid"] = item.Get("txid").String()
-		node["vout"] = item.Get("vout").Int()
-		if redeemScript != nil {
-			node["redeemScript"] = *redeemScript
-		} else {
-			if item.Get("redeemScript").Exists() {
-				node["redeemScript"] = item.Get("redeemScript")
-			}
-		}
-		if sequence > 0 {
-			node["sequence"] = sequence
-		}
-		node["scriptPubKey"] = item.Get("scriptPubKey").String()
-		inputs = append(inputs, node)
-		balance, _ = decimal.NewFromFloat(balance).Add(decimal.NewFromFloat(item.Get("amount").Float())).Round(8).Float64()
-	}
-	log.Println("input list ", inputs)
-
-	if len(inputs) == 0 || balance < out {
-		return "", "", errors.New("not enough balance")
-	}
-
-	minerFeeAndOut, _ := decimal.NewFromFloat(minerFee).Add(outTotalAmount).Round(8).Float64()
-
-	subMinerFee := 0.0
-	if balance <= minerFeeAndOut {
-		needLessFee, _ := decimal.NewFromFloat(minerFeeAndOut).Sub(decimal.NewFromFloat(balance)).Round(8).Float64()
-		if needLessFee > 0 {
-			var outTotalCount = 0
-			for _, item := range outputItems {
-				if item.Amount > 0 {
-					outTotalCount++
-				}
-			}
-			if outTotalCount > 0 {
-				count, _ := decimal.NewFromString(strconv.Itoa(outTotalCount))
-				subMinerFee, _ = decimal.NewFromFloat(minerFee).DivRound(count, 8).Float64()
-			}
-		}
-	}
-
-	drawback, _ := decimal.NewFromFloat(balance).Sub(decimal.NewFromFloat(minerFeeAndOut)).Round(8).Float64()
-	output := make(map[string]interface{})
-	for _, item := range outputItems {
-		if item.Amount > 0 {
-			output[item.ToBitCoinAddress], _ = decimal.NewFromFloat(item.Amount).Sub(decimal.NewFromFloat(subMinerFee)).Round(8).Float64()
-		}
-	}
-	if drawback > 0 {
-		output[fromBitCoinAddress] = drawback
-	}
-
-	//output["data"] = "59756b692077696c6c20796f75206d61727279206d65203f2054657473752e59756b692077696c6c20796f75206d61727279206d65203f2054657473752e"
-
-	hex, err = client.CreateRawTransaction(inputs, output)
-	if err != nil {
-		return "", "", err
-	}
-
-	log.Println("CreateRawTransaction", hex)
-
-	decodeHex, _ := client.DecodeRawTransaction(hex)
-	log.Println("CreateRawTransaction DecodeRawTransaction", decodeHex)
-
-	if privkeys == nil || len(privkeys) == 0 {
-		privkeys = nil
-	}
-	signHex, err := client.SignRawTransactionWithKey(hex, privkeys, inputs, "ALL")
-	if err != nil {
-		return "", "", err
-	}
-	log.Println("SignRawTransactionWithKey", signHex)
-
-	hex = gjson.Get(signHex, "hex").String()
-	log.Println("SignRawTransactionWithKey", hex)
-	decodeHex, _ = client.DecodeRawTransaction(hex)
-	txid = gjson.Get(decodeHex, "txid").String()
-	log.Println("SignRawTransactionWithKey DecodeRawTransaction", decodeHex)
-	return txid, hex, err
-}
-
 //创建btc的raw交易：输入为未广播的预交易,输出为交易hex，支持单签和多签，如果是单签，就需要后续步骤再签名
 func (client *Client) BtcCreateRawTransactionForUnsendInputTx(fromBitCoinAddress string, inputItems []TransactionInputItem, outputItems []TransactionOutputItem, minerFee float64, sequence int, redeemScript *string) (retMap map[string]interface{}, err error) {
 	if len(fromBitCoinAddress) < 1 {
@@ -642,205 +492,4 @@ func (client *Client) BtcCreateRawTransactionForUnsendInputTx(fromBitCoinAddress
 	retMap["total_in_amount"] = balance
 	retMap["total_out_amount"] = totalOutAmount
 	return retMap, nil
-}
-
-//创建btc的raw交易：输入为未广播的预交易,输出为交易hex，支持单签和多签，如果是单签，就需要后续步骤再签名
-func (client *Client) BtcCreateAndSignRawTransactionForUnsendInputTx(fromBitCoinAddress string, privkeys []string, inputItems []TransactionInputItem, outputItems []TransactionOutputItem, minerFee float64, sequence int, redeemScript *string) (txid string, hex string, err error) {
-	beginTime := time.Now()
-	if len(fromBitCoinAddress) < 1 {
-		return "", "", errors.New("fromBitCoinAddress is empty")
-	}
-	if len(outputItems) < 1 {
-		return "", "", errors.New("toBitCoinAddress is empty")
-	}
-
-	_, err = client.ValidateAddress(fromBitCoinAddress)
-	if err != nil {
-		return "", "", err
-	}
-
-	if minerFee <= config.GetOmniDustBtc() {
-		minerFee = client.GetMinerFee()
-	}
-
-	outAmount := decimal.NewFromFloat(0)
-	for _, item := range outputItems {
-		outAmount = outAmount.Add(decimal.NewFromFloat(item.Amount))
-	}
-
-	if outAmount.LessThan(decimal.NewFromFloat(config.GetOmniDustBtc())) {
-		return "", "", errors.New("wrong outAmount")
-	}
-
-	if minerFee < config.GetOmniDustBtc() {
-		return "", "", errors.New("minerFee too small")
-	}
-
-	var outTotalCount = 0
-	for _, item := range outputItems {
-		if item.Amount > 0 {
-			outTotalCount++
-		}
-	}
-
-	subMinerFee := 0.0
-	if outTotalCount > 0 {
-		count, _ := decimal.NewFromString(strconv.Itoa(outTotalCount))
-		subMinerFee, _ = decimal.NewFromFloat(minerFee).DivRound(count, 8).Float64()
-	}
-	minerFee = 0
-	for i := 0; i < outTotalCount; i++ {
-		minerFee, _ = decimal.NewFromFloat(minerFee).Add(decimal.NewFromFloat(subMinerFee)).Round(8).Float64()
-	}
-
-	balance := 0.0
-	var inputs []map[string]interface{}
-	for _, item := range inputItems {
-		node := make(map[string]interface{})
-		node["txid"] = item.Txid
-		node["vout"] = item.Vout
-		if sequence > 0 {
-			node["sequence"] = sequence
-		}
-		if tool.CheckIsString(redeemScript) {
-			node["redeemScript"] = *redeemScript
-		}
-		node["scriptPubKey"] = item.ScriptPubKey
-		balance, _ = decimal.NewFromFloat(balance).Add(decimal.NewFromFloat(item.Amount)).Round(8).Float64()
-		inputs = append(inputs, node)
-	}
-	//not enough money
-	if outAmount.GreaterThan(decimal.NewFromFloat(balance)) {
-		return "", "", errors.New("not enough balance")
-	}
-
-	//not enough money for minerFee
-	if outAmount.Equal(decimal.NewFromFloat(balance)) {
-		outAmount = outAmount.Sub(decimal.NewFromFloat(minerFee))
-	}
-
-	out, _ := decimal.NewFromFloat(minerFee).Add(outAmount).Round(8).Float64()
-	log.Println("input list ", inputs)
-
-	if len(inputs) == 0 || balance < out {
-		return "", "", errors.New("not enough balance")
-	}
-	drawback, _ := decimal.NewFromFloat(balance).Sub(decimal.NewFromFloat(out)).Round(8).Float64()
-
-	output := make(map[string]interface{})
-	for _, item := range outputItems {
-		if item.Amount > 0 {
-			output[item.ToBitCoinAddress], _ = decimal.NewFromFloat(item.Amount).Sub(decimal.NewFromFloat(subMinerFee)).Round(8).Float64()
-		}
-	}
-	if drawback > 0 {
-		output[fromBitCoinAddress] = drawback
-	}
-	hex, err = client.CreateRawTransaction(inputs, output)
-	if err != nil {
-		return "", "", err
-	}
-
-	log.Println("CreateRawTransaction", hex)
-
-	decodeHex, _ := client.DecodeRawTransaction(hex)
-	log.Println("CreateRawTransaction DecodeRawTransaction", decodeHex)
-
-	if privkeys == nil || len(privkeys) == 0 {
-		privkeys = nil
-	}
-	signHex, err := client.SignRawTransactionWithKey(hex, privkeys, inputs, "ALL")
-	if err != nil {
-		return "", "", err
-	}
-	log.Println("SignRawTransactionWithKey", signHex)
-
-	hex = gjson.Get(signHex, "hex").String()
-	log.Println("SignRawTransactionWithKey", hex)
-	decodeHex, _ = client.DecodeRawTransaction(hex)
-	txid = gjson.Get(decodeHex, "txid").String()
-	log.Println("SignRawTransactionWithKey DecodeRawTransaction", decodeHex)
-	log.Println("endTime.Sub(beginTime)", time.Now().Sub(beginTime).String())
-
-	return txid, hex, err
-}
-
-func (client *Client) BtcSignRawTransactionForUnsend(hex string, inputItems []TransactionInputItem, privKey string) (string, string, error) {
-
-	var inputs []map[string]interface{}
-	for _, item := range inputItems {
-		node := make(map[string]interface{})
-		node["txid"] = item.Txid
-		node["vout"] = item.Vout
-		node["scriptPubKey"] = item.ScriptPubKey
-		node["redeemScript"] = item.RedeemScript
-		inputs = append(inputs, node)
-	}
-	signHex, err := client.SignRawTransactionWithKey(hex, []string{privKey}, inputs, "ALL")
-	if err != nil {
-		return "", "", err
-	}
-	hex = gjson.Get(signHex, "hex").String()
-	decodeHex, err := client.DecodeRawTransaction(hex)
-	txId := gjson.Get(decodeHex, "txid").String()
-	if err != nil {
-		return "", hex, err
-	}
-	return txId, hex, nil
-}
-
-func (client *Client) BtcSignRawTransaction(hex string, privKey string) (string, string, error) {
-	signHex, err := client.SignRawTransactionWithKey(hex, []string{privKey}, nil, "ALL")
-	if err != nil {
-		return "", "", err
-	}
-	hex = gjson.Get(signHex, "hex").String()
-	decodeHex, err := client.DecodeRawTransaction(hex)
-	if err != nil {
-		log.Println(err)
-	}
-	txId := gjson.Get(decodeHex, "txid").String()
-	if err != nil {
-		return "", hex, err
-	}
-
-	//result, err := client.OmniDecodeTransaction(hex)
-	//if err == nil {
-	//	log.Println(result)
-	//} else {
-	//	log.Println(err)
-	//}
-
-	return txId, hex, nil
-}
-
-func (client *Client) BtcSignAndSendRawTransaction(hex string, privKey string) (string, string, error) {
-	signHex, err := client.SignRawTransactionWithKey(hex, []string{privKey}, nil, "ALL")
-	if err != nil {
-		return "", "", err
-	}
-	hex = gjson.Get(signHex, "hex").String()
-	decodeHex, err := client.DecodeRawTransaction(hex)
-	txId := gjson.Get(decodeHex, "txid").String()
-	log.Println("SignRawTransactionWithKey DecodeRawTransaction", decodeHex)
-	//txId, err = client.SendRawTransaction(hex)
-	if err != nil {
-		return "", hex, err
-	}
-	log.Println("SendRawTransaction", txId)
-	return txId, hex, nil
-}
-
-// create a transaction and signature and send to the network
-func (client *Client) BtcCreateAndSignAndSendRawTransaction(fromBitCoinAddress string, privkeys []string, outputItems []TransactionOutputItem, minerFee float64, sequence int) (txId string, err error) {
-	_, hex, err := client.BtcCreateAndSignRawTransaction(fromBitCoinAddress, privkeys, outputItems, minerFee, sequence, nil)
-	if err != nil {
-		return "", err
-	}
-	txId, err = client.SendRawTransaction(hex)
-	if err != nil {
-		return "", err
-	}
-	log.Println("SendRawTransaction", txId)
-	return txId, nil
 }

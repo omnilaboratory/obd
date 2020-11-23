@@ -80,7 +80,7 @@ func (service *fundingTransactionManager) AssetFundingCreated(msg bean.RequestMe
 		return nil, false, err
 	}
 
-	err = checkBtcFundFinish(*channelInfo, true)
+	err = checkBtcFundFinish(tx, *channelInfo, true)
 	if err != nil {
 		log.Println(err)
 		return nil, false, err

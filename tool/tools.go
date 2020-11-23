@@ -184,3 +184,17 @@ func GetTrackerNodeId() string {
 	source := GetMacAddrs() + ":" + strconv.Itoa(config.TrackerServerPort)
 	return SignMsgWithSha256([]byte(source))
 }
+
+func GetCoreNet() *chaincfg.Params {
+	net := &chaincfg.MainNetParams
+	if strings.Contains(config.ChainNode_Type, "main") {
+		net = &chaincfg.MainNetParams
+	}
+	if strings.Contains(config.ChainNode_Type, "test") {
+		net = &chaincfg.TestNet3Params
+	}
+	if strings.Contains(config.ChainNode_Type, "reg") {
+		net = &chaincfg.RegressionNetParams
+	}
+	return net
+}

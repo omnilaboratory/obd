@@ -2,8 +2,6 @@ package rpc
 
 import (
 	"encoding/hex"
-	"github.com/shopspring/decimal"
-	"github.com/tidwall/gjson"
 	"log"
 	"testing"
 )
@@ -16,7 +14,7 @@ func TestClient_GetMiningInfo(t *testing.T) {
 
 	client := NewClient()
 
-	hex := "0200000001f0b40133a65f08440ab5c56076a98f0c9bae31f7af28428dd707c52816fe59580000000000ffffffff020000000000000000166a146f6d6e6900000000000000890000000013ab668000000000000000001976a914a8225793d977cc4818c2b6643efed5b8129ca9d888ac00000000"
+	hex := "0200000002feb90a24f508df6fd8978cfabf713e1c4b9c87827e5407ef918f54e84b8543f101000000da00483045022100b0c5da804c2145bc6d62da83bccdfd0f882a1afa5b8943ec020d5944130978670220133c5fe4177b6d709631966664145fc3065b348ff83302d6b6bbe3f51087e9440147304402200c48047c9f6373b82d04b9e9e4186574b1afad5a08d43b29431c08c11237201d02207e041406bae0fa0b5693177e31cba03a1709d5232a9a244c89c008c76c4bf4700147522102ad9fd969f846ce0c98b481130a586f08fd0601cc79c6ca75ce074fa0ecea5bf6210238b21ae976c7059057b2b973fec5be8c7b37cea1b15aff52ecf309d5f527e76e52aefffffffffeb90a24f508df6fd8978cfabf713e1c4b9c87827e5407ef918f54e84b8543f102000000db00483045022100d9e513ed9383c4870036c69d4973a06687125e200f024c9dcff1bdd0ead2a2e5022039c169dfea07adf3610537e948a2e2253934d8d10ab9f74c5b2a9344c2fad70301483045022100ef4760a912002fcab59d74a507674dd93eeb1e52586eb602daaa7b21862770c502203c9f84ea4045d99191c27e6188b91d49ec5fe97bceb4aa7a4e0b8efc86e793a20147522102ad9fd969f846ce0c98b481130a586f08fd0601cc79c6ca75ce074fa0ecea5bf6210238b21ae976c7059057b2b973fec5be8c7b37cea1b15aff52ecf309d5f527e76e52aeffffffff030000000000000000166a146f6d6e69000000000000008900000000000f424022020000000000001976a9149a8a575ddf89cb9f4a1269f6ff1a21b83ca883a888ac26140000000000001976a914a2bebc3bbc138a248296ad96e6aaf71d83f69c3688ac00000000"
 	result, err := client.DecodeRawTransaction(hex)
 	log.Println(err)
 	log.Println(result)
@@ -82,58 +80,4 @@ func TestClient_SendRawTransaction(t *testing.T) {
 }
 
 func TestClient_GetBalanceByAddress(t *testing.T) {
-	client := NewClient()
-
-	privkeys := []string{
-		"cTBs2yp9DFeJhsJmg9ChFDuC694oiVjSakmU7s6CFr35dfhcko1V",
-	}
-
-	//srciptPubkey := "a91475138ee96bf42cec92a6815d4fd47b821fbdeceb87"
-	outputItems := []TransactionOutputItem{
-		{ToBitCoinAddress: "2Mx1x4dp19FUvHEoyM2Lt5toX4n22oaTXxo", Amount: 0.0001},
-	}
-
-	redeemScript := "52210389cc1a24ee6aa7e9b8133df08b60ee2fc41ea2a37e50ebafb4392d313594f1c0210303391b3681f48f5f181bbfbdea741b9a2fdac0e8d99def43b6faed78bb8a4e2852ae"
-
-	txid, hex, err := client.BtcCreateAndSignRawTransaction("2N3vGUfBSNALGGxUo8gTYpVQAmLwjXomLhF", privkeys, outputItems, 0, 0, &redeemScript)
-	log.Println(err)
-	//log.Println(hex)
-	log.Println(txid)
-
-	privkeys = []string{
-		"cUC9UsuybBiS7ZBFBhEFaeuhBXbPSm6yUBZVaMSD2DqS3aiBouvS",
-	}
-
-	fromBitCoinAddress := "2N3vGUfBSNALGGxUo8gTYpVQAmLwjXomLhF"
-	result, err := client.ListUnspent(fromBitCoinAddress)
-
-	array := gjson.Parse(result).Array()
-	log.Println("listunspent", array)
-
-	//out, _ := decimal.NewFromFloat(minerFee).Add(outTotalAmount).Float64()
-
-	balance := 0.0
-	var inputs []map[string]interface{}
-	for _, item := range array {
-		node := make(map[string]interface{})
-		node["txid"] = item.Get("txid").String()
-		node["vout"] = item.Get("vout").Int()
-		node["redeemScript"] = redeemScript
-		node["scriptPubKey"] = item.Get("scriptPubKey").String()
-		inputs = append(inputs, node)
-		balance, _ = decimal.NewFromFloat(balance).Add(decimal.NewFromFloat(item.Get("amount").Float())).Round(8).Float64()
-	}
-	log.Println("input list ", inputs)
-
-	hex, err = client.SignRawTransactionWithKey(hex, privkeys, inputs, "NONE|ANYONECANPAY")
-	parse := gjson.Parse(hex)
-	//log.Println(parse)
-	//log.Println(err)
-	//log.Println(hex)
-	result, err = client.DecodeRawTransaction(parse.Get("hex").String())
-	//log.Println(result)
-	log.Println(gjson.Get(result, "txid"))
-	//result, err := client.SendRawTransaction(hex)
-	//log.Println(err)
-	//log.Println(result)
 }

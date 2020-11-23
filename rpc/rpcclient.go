@@ -131,7 +131,7 @@ func (client *Client) CheckVersion() error {
 }
 
 func (client *Client) send(method string, params []interface{}) (result string, err error) {
-	log.Println(method)
+	//log.Println(method)
 	rawParams := make([]json.RawMessage, 0, len(params))
 	for _, item := range params {
 		marshaledParam, err := json.Marshal(item)
