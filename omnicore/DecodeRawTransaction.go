@@ -1,11 +1,12 @@
 package omnicore
 
 import (
-	"btcd/btcd/txscript"
 	"bytes"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+
+	"github.com/btcsuite/btcd/txscript"
 
 	"github.com/btcsuite/btcd/blockchain"
 	"github.com/btcsuite/btcd/btcjson"
