@@ -88,7 +88,7 @@ func AmountFromValue(value string) int64 {
  *
  */
 func OmniGetDustThreshold(scriptPubKey []byte) int64 {
-	//TO DO, add real logic to calculate dust threshhold.
+	//TO DO, add logic to calculate dust threshhold.
 	if len(scriptPubKey) > 0 {
 		return 546
 	} else {
@@ -156,7 +156,19 @@ func Omni_createrawtx_change(base_tx *wire.MsgTx, prev_txs_json_list string, des
 	}
 	redeemTxOut := wire.NewTxOut(txChange, destinationPkScript)
 
-	base_tx.AddTxOut(redeemTxOut)
+	/*
+	*  std::vector<CTxOut>::iterator it = transaction.vout.end();
+	*  if (position < transaction.vout.size()) {
+	*  it = transaction.vout.begin() + position;
+	*  }
+	 */
+
+	TxOutArray := base_tx.TxOut
+	redeemTxOutArray := []*wire.TxOut{redeemTxOut}
+	TxOutArray = append(redeemTxOutArray, TxOutArray...)
+
+	base_tx.TxOut = TxOutArray
+	//base_tx.AddTxOut(redeemTxOut)
 
 	return base_tx, nil
 }
