@@ -11,8 +11,9 @@ import (
 )
 
 type Unspent struct {
-	TxID string `json:"txid"`
-	VOut uint32 `json:"vout"`
+	TxID     string `json:"txid"`
+	VOut     uint32 `json:"vout"`
+	Sequence uint32 `json:"sequence"`
 }
 
 type PrevTx struct {
@@ -57,6 +58,8 @@ func CreateRawTransaction(unspent_json_list string, btc_version int32) (*wire.Ms
 		}
 		outPoint := wire.NewOutPoint(hash, unspentTx.VOut)
 		txIn := wire.NewTxIn(outPoint, nil, nil)
+
+		txIn.Sequence = unspentTx.Sequence
 		tx.AddTxIn(txIn)
 
 		//fmt.Printf("%s \n ", txToHex(tx))
