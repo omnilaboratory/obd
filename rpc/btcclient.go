@@ -105,6 +105,7 @@ func (client *Client) GetBalanceByAddress(address string) (balance decimal.Decim
 	return balance, nil
 }
 
+//https://developer.bitcoin.org/reference/rpc/createrawtransaction.html
 func (client *Client) CreateRawTransaction(inputs []map[string]interface{}, outputs map[string]interface{}) (result string, err error) {
 	//inputsBytes, _ := json.Marshal(inputs)
 	//inputsStr := string(inputsBytes)
