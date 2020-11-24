@@ -33,6 +33,16 @@ func CheckIsString(str *string) bool {
 	}
 	return true
 }
+func CheckIsAddress(address string) bool {
+	if CheckIsString(&address) == false {
+		return false
+	}
+	_, err := btcutil.DecodeAddress(address, &chaincfg.TestNet3Params)
+	if err != nil {
+		return false
+	}
+	return true
+}
 
 func VerifyEmailFormat(email string) bool {
 	isString := CheckIsString(&email)

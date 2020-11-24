@@ -1,8 +1,8 @@
 package omnicore
 
 import (
-	"btcd/btcd/txscript"
 	"encoding/hex"
+	"github.com/btcsuite/btcd/txscript"
 
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcutil"

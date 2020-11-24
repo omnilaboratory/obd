@@ -1463,5 +1463,6 @@ func (service *htlcCloseTxManager) OnBobSignedCxbSubTx(msg bean.RequestMessage, 
 	//同步通道信息到tracker
 	sendChannelStateToTracker(*channelInfo, *latestCommitmentTxInfo)
 
+	log.Println("htlc end", time.Now())
 	return latestCommitmentTxInfo, nil
 }

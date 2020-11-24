@@ -553,8 +553,6 @@ func (this *commitmentTxSignedManager) OnGetAliceSignC2bTransactionAtBobSide(dat
 	needBobSignRdTxForC2b := bean.NeedBobSignRdTxForC2b{}
 	needBobSignRdTxForC2b.ChannelId = aliceSignedC2bTxDataP2p.ChannelId
 	needBobSignRdTxForC2b.C2bRdPartialData = aliceSignedC2bTxDataP2p.C2bRdPartialData
-	transaction, err := rpcClient.DecodeRawTransaction(needBobSignRdTxForC2b.C2bRdPartialData.Hex)
-	log.Println(transaction)
 	return needBobSignRdTxForC2b, nil
 }
 

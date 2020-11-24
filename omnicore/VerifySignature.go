@@ -1,8 +1,8 @@
 package omnicore
 
 import (
-	"btcd/btcd/btcec"
 	"encoding/hex"
+	"github.com/btcsuite/btcd/btcec"
 )
 
 func VerifySignature(pubkey_hex string, signature_hex string) bool {

@@ -347,6 +347,7 @@ func (service *htlcForwardTxManager) GetResponseFromTrackerOfPayerRequestFindPat
 
 // step 1 alice -100040协议的alice方的逻辑 alice start a htlc as payer
 func (service *htlcForwardTxManager) AliceAddHtlcAtAliceSide(msg bean.RequestMessage, user bean.User) (data interface{}, needSign bool, err error) {
+	log.Println("htlc begin", time.Now())
 	if tool.CheckIsString(&msg.Data) == false {
 		return nil, false, errors.New(enum.Tips_common_empty + "msg data")
 	}
@@ -1480,8 +1481,10 @@ func (service *htlcForwardTxManager) OnAliceSignC3bAtAliceSide(msg bean.RequestM
 		return nil, errors.New(enum.Tips_common_wrong + "c3a_htlc_hlock_complete_signed_hex")
 	}
 
-	if pass, _ := rpcClient.CheckMultiSign(false, aliceSignedC3b.C3aRsmcRdCompleteSignedHex, 2); pass == false {
-		return nil, errors.New(enum.Tips_common_wrong + "c3a_rsmc_rd_complete_signed_hex")
+	if tool.CheckIsString(&aliceSignedC3b.C3aRsmcRdCompleteSignedHex) {
+		if pass, _ := rpcClient.CheckMultiSign(false, aliceSignedC3b.C3aRsmcRdCompleteSignedHex, 2); pass == false {
+			return nil, errors.New(enum.Tips_common_wrong + "c3a_rsmc_rd_complete_signed_hex")
+		}
 	}
 
 	payerChannelPubKey := channelInfo.PubKeyA

@@ -59,5 +59,5 @@ func GetMinMinerFee(ins int) float64 {
 }
 
 func GetOmniDustBtc() float64 {
-	return 0.0000054
+	return 0.00000546
 }

@@ -745,8 +745,6 @@ func (this *commitmentTxManager) OnAliceSignedC2b_RDTxAtAliceSide(data string, u
 			return nil, nil, false, errors.New("fail to create rd")
 		}
 
-		transaction, err := rpcClient.DecodeRawTransaction(aliceSignedRdTxForC2b.C2bRdSignedHex)
-		log.Println(transaction)
 		c2bRdRawData := bean.NeedClientSignTxData{}
 		c2bRdRawData.Hex = aliceSignedRdTxForC2b.C2bRdSignedHex
 		c2bRdRawData.Inputs = c2bRdHexData["inputs"]

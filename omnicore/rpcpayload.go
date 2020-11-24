@@ -119,7 +119,7 @@ func OmniCreatePayloadSimpleSend(property_id uint32, amount uint64) []byte {
 func ParsePropertyId(property_id string) (uint32, error) {
 	id, err := strconv.ParseInt(property_id, 10, 64)
 	if err == nil {
-		fmt.Printf("i64 %v \n", id)
+		//fmt.Printf("i64 %v \n", id)
 	}
 
 	if id < 1 || int64(4294967295) < id {

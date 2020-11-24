@@ -87,7 +87,7 @@ func (client *Client) OmniCreateRawTransactionUseSingleInput(txType int, fromBit
 	if tool.CheckIsString(&fromBitCoinAddress) == false {
 		return nil, "", errors.New("fromBitCoinAddress is empty")
 	}
-	if tool.CheckIsString(&toBitCoinAddress) == false {
+	if tool.CheckIsAddress(toBitCoinAddress) == false {
 		return nil, "", errors.New("toBitCoinAddress is empty")
 	}
 	if amount < config.GetOmniDustBtc() {
@@ -96,7 +96,6 @@ func (client *Client) OmniCreateRawTransactionUseSingleInput(txType int, fromBit
 	pMoney := config.GetOmniDustBtc()
 
 	_, _ = client.ValidateAddress(fromBitCoinAddress)
-	_, _ = client.ValidateAddress(toBitCoinAddress)
 	resultListUnspent, err := client.ListUnspent(fromBitCoinAddress)
 	if err != nil {
 		return nil, "", err
@@ -157,10 +156,10 @@ func (client *Client) OmniCreateRawTransactionUseSingleInput(txType int, fromBit
 
 // 通道地址的剩余input全部花掉
 func (client *Client) OmniCreateRawTransactionUseRestInput(txType int, fromBitCoinAddress string, usedTxid string, toBitCoinAddress, changeToAddress string, propertyId int64, amount float64, minerFee float64, redeemScript *string) (retMap map[string]interface{}, err error) {
-	if tool.CheckIsString(&fromBitCoinAddress) == false {
+	if tool.CheckIsAddress(fromBitCoinAddress) == false {
 		return nil, errors.New("fromBitCoinAddress is empty")
 	}
-	if tool.CheckIsString(&toBitCoinAddress) == false {
+	if tool.CheckIsAddress(toBitCoinAddress) == false {
 		return nil, errors.New("toBitCoinAddress is empty")
 	}
 	if amount < config.GetOmniDustBtc() {
@@ -170,7 +169,6 @@ func (client *Client) OmniCreateRawTransactionUseRestInput(txType int, fromBitCo
 	pMoney := config.GetOmniDustBtc()
 
 	_, _ = client.ValidateAddress(fromBitCoinAddress)
-	_, _ = client.ValidateAddress(toBitCoinAddress)
 
 	resultListUnspent, err := client.ListUnspent(fromBitCoinAddress)
 	if err != nil {
@@ -219,11 +217,14 @@ func (client *Client) OmniCreateRawTransactionUseRestInput(txType int, fromBitCo
 }
 
 func (client *Client) OmniCreateRawTransactionUseUnsendInput(fromBitCoinAddress string, inputItems []TransactionInputItem, toBitCoinAddress, changeToAddress string, propertyId int64, amount float64, minerFee float64, sequence int, redeemScript *string) (retMap map[string]interface{}, err error) {
-	if tool.CheckIsString(&fromBitCoinAddress) == false {
+	if tool.CheckIsAddress(fromBitCoinAddress) == false {
 		return nil, errors.New("fromBitCoinAddress is empty")
 	}
-	if tool.CheckIsString(&toBitCoinAddress) == false {
+	if tool.CheckIsAddress(toBitCoinAddress) == false {
 		return nil, errors.New("toBitCoinAddress is empty")
+	}
+	if tool.CheckIsAddress(changeToAddress) == false {
+		return nil, errors.New("changeToAddress is empty")
 	}
 
 	if len(inputItems) == 0 {
@@ -233,12 +234,8 @@ func (client *Client) OmniCreateRawTransactionUseUnsendInput(fromBitCoinAddress 
 	if amount < config.GetOmniDustBtc() {
 		return nil, errors.New("wrong amount")
 	}
-
 	pMoney := config.GetOmniDustBtc()
-
 	_, _ = client.ValidateAddress(fromBitCoinAddress)
-	_, _ = client.ValidateAddress(toBitCoinAddress)
-	_, _ = client.ValidateAddress(changeToAddress)
 
 	inputs := make([]map[string]interface{}, 0, 0)
 	for _, item := range inputItems {

@@ -28,15 +28,20 @@ func (client *Client) EstimateSmartFee() (feeRate float64) {
 	}
 	return 2
 }
-func (client *Client) CreateMultiSig(minSignNum int, keys []string) (result string, err error) {
-	return client.send("createmultisig", []interface{}{minSignNum, keys})
+
+type multiSign struct {
+	Address      string `json:"address"`
+	RedeemScript string `json:"redeemScript"`
 }
 
-func (client *Client) AddMultiSigAddress(minSignNum int, keys []string) (result string, err error) {
-	for _, item := range keys {
-		_, _ = client.ValidateAddress(item)
-	}
-	return client.send("addmultisigaddress", []interface{}{minSignNum, keys})
+func (client *Client) CreateMultiSig(minSignNum int, keys []string) (result string, err error) {
+	addr, redeemScript := omnicore.CreateMultiSigAddr(keys[0], keys[1], tool.GetCoreNet())
+	sign := multiSign{}
+	sign.Address = addr
+	sign.RedeemScript = redeemScript
+	marshal, _ := json.Marshal(&sign)
+	return string(marshal), nil
+
 }
 
 func (client *Client) DumpPrivKey(address string) (result string, err error) {
@@ -212,6 +217,11 @@ func (client *Client) ValidateAddress(address string) (isValid bool, err error) 
 	if err != nil {
 		return false, err
 	}
+
+	if validatedAddress[address] {
+		return true, nil
+	}
+
 	_, _ = client.send("importaddress", []interface{}{address, "", false})
 	validatedAddress[address] = true
 	return true, nil
