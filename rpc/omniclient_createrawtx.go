@@ -98,10 +98,10 @@ func (client *Client) OmniCreateRawTransactionUseSingleInput(txType int, resultL
 
 	arrayListUnspent := gjson.Parse(resultListUnspent).Array()
 	//log.Println("listunspent", arrayListUnspent)
-	inputCount := 3 + txType
-	if len(arrayListUnspent) < inputCount {
-		return nil, "", errors.New("wrong input num, need " + strconv.Itoa(inputCount) + " input:one for omni token, " + strconv.Itoa(inputCount-1) + "  btc  inputs for miner fee ")
-	}
+	//inputCount := 3 + txType
+	//if len(arrayListUnspent) < inputCount {
+	//	return nil, "", errors.New("wrong input num, need " + strconv.Itoa(inputCount) + " input:one for omni token, " + strconv.Itoa(inputCount-1) + "  btc  inputs for miner fee ")
+	//}
 
 	balance := 0.0
 	inputs := make([]map[string]interface{}, 0, 0)
@@ -165,10 +165,10 @@ func (client *Client) OmniCreateRawTransactionUseRestInput(txType int, resultLis
 
 	arrayListUnspent := gjson.Parse(resultListUnspent).Array()
 	//log.Println("listunspent", arrayListUnspent)
-	inputCount := 3 + txType
-	if len(arrayListUnspent) < inputCount {
-		return nil, errors.New("wrong input num, need " + strconv.Itoa(inputCount) + " input:one for omni token, " + strconv.Itoa(inputCount-1) + "  btc  inputs for miner fee ")
-	}
+	//inputCount := 3 + txType
+	//if len(arrayListUnspent) < inputCount {
+	//	return nil, errors.New("wrong input num, need " + strconv.Itoa(inputCount) + " input:one for omni token, " + strconv.Itoa(inputCount-1) + "  btc  inputs for miner fee ")
+	//}
 
 	inputs := make([]map[string]interface{}, 0, 0)
 	for _, item := range arrayListUnspent {

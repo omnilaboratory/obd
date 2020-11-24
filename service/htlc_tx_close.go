@@ -284,16 +284,12 @@ func (service *htlcCloseTxManager) OnAliceSignedCxa(msg bean.RequestMessage, use
 		}
 	}
 
-	if tool.CheckIsString(&signedData.CounterpartyPartialSignedHex) == false {
-		err = errors.New(enum.Tips_common_empty + "counterparty_partial_signed_hex")
-		log.Println(err)
-		return nil, nil, err
-	}
-
-	if pass, _ := rpcClient.CheckMultiSign(true, signedData.CounterpartyPartialSignedHex, 1); pass == false {
-		err = errors.New(enum.Tips_common_wrong + "counterparty_signed_hex")
-		log.Println(err)
-		return nil, nil, err
+	if tool.CheckIsString(&signedData.CounterpartyPartialSignedHex) {
+		if pass, _ := rpcClient.CheckMultiSign(true, signedData.CounterpartyPartialSignedHex, 1); pass == false {
+			err = errors.New(enum.Tips_common_wrong + "counterparty_partial_signed_hex")
+			log.Println(err)
+			return nil, nil, err
+		}
 	}
 
 	tx, err := user.Db.Begin(true)
@@ -1001,17 +997,17 @@ func (service *htlcCloseTxManager) OnAliceSignedCxb(msg bean.RequestMessage, use
 	}
 	cnbRsmcMultiAddressScriptPubKey := gjson.Get(addressJson, "scriptPubKey").String()
 
-	rsmcOutputs, err := getInputsForNextTxByParseTxHashVout(
-		bobSignedRsmcHex,
-		cnbRsmcMultiAddress,
-		cnbRsmcMultiAddressScriptPubKey,
-		cnbRsmcRedeemScript)
-	if err != nil {
-		log.Println(err)
-		return nil, err
-	}
-
 	if tool.CheckIsString(&bobSignedRsmcHex) {
+		rsmcOutputs, err := getInputsForNextTxByParseTxHashVout(
+			bobSignedRsmcHex,
+			cnbRsmcMultiAddress,
+			cnbRsmcMultiAddressScriptPubKey,
+			cnbRsmcRedeemScript)
+		if err != nil {
+			log.Println(err)
+			return nil, err
+		}
+
 		c2bRdHexData, err := rpcClient.OmniCreateRawTransactionUseUnsendInput(
 			cnbRsmcMultiAddress,
 			rsmcOutputs,
@@ -1268,12 +1264,12 @@ func (service *htlcCloseTxManager) OnAliceSignedCxbBubTx(msg bean.RequestMessage
 		if pass, _ := rpcClient.CheckMultiSign(true, cnbSignedRsmcHex, 2); pass == false {
 			return nil, nil, errors.New(enum.Tips_common_wrong + "c4b_rsmc_tx_data_hex")
 		}
+		err = checkBobRemcData(cnbSignedRsmcHex, latestCommitmentTxInfo)
+		if err != nil {
+			return nil, nil, err
+		}
 	}
 
-	err = checkBobRemcData(cnbSignedRsmcHex, latestCommitmentTxInfo)
-	if err != nil {
-		return nil, nil, err
-	}
 	bobData.C4bRsmcCompleteSignedHex = cnbSignedRsmcHex
 
 	//region create RD tx for bob
@@ -1289,17 +1285,17 @@ func (service *htlcCloseTxManager) OnAliceSignedCxbBubTx(msg bean.RequestMessage
 	}
 	cnbRsmcMultiAddressScriptPubKey := gjson.Get(addressJson, "scriptPubKey").String()
 
-	cnbRsmcOutputs, err := getInputsForNextTxByParseTxHashVout(
-		cnbSignedRsmcHex,
-		cnbRsmcMultiAddress,
-		cnbRsmcMultiAddressScriptPubKey,
-		cnbRsmcRedeemScript)
-	if err != nil {
-		log.Println(err)
-		return nil, nil, err
-	}
+	if len(cnbSignedRsmcHex) > 0 {
+		cnbRsmcOutputs, err := getInputsForNextTxByParseTxHashVout(
+			cnbSignedRsmcHex,
+			cnbRsmcMultiAddress,
+			cnbRsmcMultiAddressScriptPubKey,
+			cnbRsmcRedeemScript)
+		if err != nil {
+			log.Println(err)
+			return nil, nil, err
+		}
 
-	if len(cnbRsmcOutputs) > 0 {
 		c2bRdHexData, err := rpcClient.OmniCreateRawTransactionUseUnsendInput(
 			cnbRsmcMultiAddress,
 			cnbRsmcOutputs,

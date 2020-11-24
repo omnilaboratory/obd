@@ -206,7 +206,7 @@ func (service *fundingTransactionManager) AssetFundingCreated(msg bean.RequestMe
 
 	var commitmentTxInfo *dao.CommitmentTransaction
 
-	listUnspent, err := GetAddressListUnspent(tx, *channelInfo)
+	unspent, err := rpcClient.ListUnspent(channelInfo.ChannelAddress)
 	if err != nil {
 		return nil, false, err
 	}
@@ -242,7 +242,7 @@ func (service *fundingTransactionManager) AssetFundingCreated(msg bean.RequestMe
 		if commitmentTxInfo.AmountToRSMC > 0 {
 			c1aTxData, usedTxid, err = rpcClient.OmniCreateRawTransactionUseSingleInput(
 				int(commitmentTxInfo.TxType),
-				listUnspent.ListUnspent,
+				unspent,
 				channelInfo.ChannelAddress,
 				commitmentTxInfo.RSMCMultiAddress,
 				fundingTransaction.PropertyId,
@@ -285,7 +285,7 @@ func (service *fundingTransactionManager) AssetFundingCreated(msg bean.RequestMe
 			if commitmentTxInfo.AmountToRSMC > 0 {
 				c1aTxData, usedTxid, err = rpcClient.OmniCreateRawTransactionUseSingleInput(
 					int(commitmentTxInfo.TxType),
-					listUnspent.ListUnspent,
+					unspent,
 					channelInfo.ChannelAddress,
 					commitmentTxInfo.RSMCMultiAddress,
 					fundingTransaction.PropertyId,
@@ -1122,6 +1122,8 @@ func (service *fundingTransactionManager) OnAliceSignedRdAtAliceSide(data string
 
 	fundingTransaction.CurrState = dao.FundingTransactionState_Accept
 	_ = tx.Update(fundingTransaction)
+
+	_, _ = GetAddressListUnspent(tx, *channelInfo)
 
 	err = tx.Commit()
 	if err != nil {
