@@ -17,17 +17,17 @@ import (
 func (client *Client) OmniCreateRawTransaction(fromBitCoinAddress string, toBitCoinAddress string, propertyId int64, amount float64, minerFee float64) (retMap map[string]interface{}, err error) {
 	beginTime := time.Now()
 	log.Println("OmniCreateAndSignRawTransaction beginTime", beginTime.String())
-	if tool.CheckIsString(&fromBitCoinAddress) == false {
+	if tool.CheckIsAddress(fromBitCoinAddress) == false {
 		return nil, errors.New("fromBitCoinAddress is empty")
 	}
-	if tool.CheckIsString(&toBitCoinAddress) == false {
+	if tool.CheckIsAddress(toBitCoinAddress) == false {
 		return nil, errors.New("toBitCoinAddress is empty")
 	}
 	if amount < config.GetOmniDustBtc() {
 		return nil, errors.New("wrong amount")
 	}
 
-	_, err = client.OmniGetProperty(propertyId)
+	_, err = omnicore.ParsePropertyId(strconv.Itoa(int(propertyId)))
 	if err != nil {
 		return nil, err
 	}
@@ -83,8 +83,8 @@ func (client *Client) OmniCreateRawTransaction(fromBitCoinAddress string, toBitC
 }
 
 // From channelAddress to temp multi address, to Create CommitmentTx
-func (client *Client) OmniCreateRawTransactionUseSingleInput(txType int, fromBitCoinAddress string, toBitCoinAddress string, propertyId int64, amount float64, minerFee float64, sequence int, redeemScript *string, usedTxid string) (retMap map[string]interface{}, currUseTxid string, err error) {
-	if tool.CheckIsString(&fromBitCoinAddress) == false {
+func (client *Client) OmniCreateRawTransactionUseSingleInput(txType int, resultListUnspent string, fromBitCoinAddress string, toBitCoinAddress string, propertyId int64, amount float64, minerFee float64, sequence int, redeemScript *string, usedTxid string) (retMap map[string]interface{}, currUseTxid string, err error) {
+	if tool.CheckIsAddress(fromBitCoinAddress) == false {
 		return nil, "", errors.New("fromBitCoinAddress is empty")
 	}
 	if tool.CheckIsAddress(toBitCoinAddress) == false {
@@ -93,13 +93,8 @@ func (client *Client) OmniCreateRawTransactionUseSingleInput(txType int, fromBit
 	if amount < config.GetOmniDustBtc() {
 		return nil, "", errors.New("wrong amount")
 	}
-	pMoney := config.GetOmniDustBtc()
 
-	_, _ = client.ValidateAddress(fromBitCoinAddress)
-	resultListUnspent, err := client.ListUnspent(fromBitCoinAddress)
-	if err != nil {
-		return nil, "", err
-	}
+	pMoney := config.GetOmniDustBtc()
 
 	arrayListUnspent := gjson.Parse(resultListUnspent).Array()
 	//log.Println("listunspent", arrayListUnspent)
@@ -155,7 +150,7 @@ func (client *Client) OmniCreateRawTransactionUseSingleInput(txType int, fromBit
 }
 
 // 通道地址的剩余input全部花掉
-func (client *Client) OmniCreateRawTransactionUseRestInput(txType int, fromBitCoinAddress string, usedTxid string, toBitCoinAddress, changeToAddress string, propertyId int64, amount float64, minerFee float64, redeemScript *string) (retMap map[string]interface{}, err error) {
+func (client *Client) OmniCreateRawTransactionUseRestInput(txType int, resultListUnspent string, fromBitCoinAddress string, usedTxid string, toBitCoinAddress, changeToAddress string, propertyId int64, amount float64, minerFee float64, redeemScript *string) (retMap map[string]interface{}, err error) {
 	if tool.CheckIsAddress(fromBitCoinAddress) == false {
 		return nil, errors.New("fromBitCoinAddress is empty")
 	}
@@ -168,12 +163,6 @@ func (client *Client) OmniCreateRawTransactionUseRestInput(txType int, fromBitCo
 
 	pMoney := config.GetOmniDustBtc()
 
-	_, _ = client.ValidateAddress(fromBitCoinAddress)
-
-	resultListUnspent, err := client.ListUnspent(fromBitCoinAddress)
-	if err != nil {
-		return nil, err
-	}
 	arrayListUnspent := gjson.Parse(resultListUnspent).Array()
 	//log.Println("listunspent", arrayListUnspent)
 	inputCount := 3 + txType
@@ -235,7 +224,6 @@ func (client *Client) OmniCreateRawTransactionUseUnsendInput(fromBitCoinAddress 
 		return nil, errors.New("wrong amount")
 	}
 	pMoney := config.GetOmniDustBtc()
-	_, _ = client.ValidateAddress(fromBitCoinAddress)
 
 	inputs := make([]map[string]interface{}, 0, 0)
 	for _, item := range inputItems {
@@ -297,25 +285,11 @@ func (client *Client) GetInputInfo(fromBitCoinAddress string, txid, redeemScript
 }
 
 func createOmniRawTransaction(balance, out, amount, minerFee float64, propertyId int64, inputs []map[string]interface{}, toBitCoinAddress, changeToAddress string, redeemScript *string) (retMap map[string]interface{}, err error) {
-	//log.Println("1 balance", balance)
 	if balance < out {
 		return nil, errors.New("not enough balance")
 	}
 
-	//2.Omni_createpayload_simplesend
-	//payload, err := client.omniCreatePayloadSimpleSend(propertyId, amount)
-	//if err != nil {
-	//	return nil, err
-	//}
-	//log.Println("2 payload " + payload)
 	payloadBytes, payloadHex := omnicore.Omni_createpayload_simplesend(strconv.Itoa(int(propertyId)), tool.FloatToString(amount, 8), true)
-
-	//3.CreateRawTransaction
-	//outputs := make(map[string]interface{})
-	//createrawtransactionStr, err := client.CreateRawTransaction(inputs, outputs)
-	//if err != nil {
-	//	return nil, err
-	//}
 
 	inputsBytes, _ := json.Marshal(inputs)
 	inputsStr := string(inputsBytes)
@@ -324,20 +298,7 @@ func createOmniRawTransaction(balance, out, amount, minerFee float64, propertyId
 	inputsStr = strings.ReplaceAll(inputsStr, "},", "}")
 	rawTx, _, _ := omnicore.CreateRawTransaction(inputsStr, 2)
 
-	//4.Omni_createrawtx_opreturn
-	//opreturn, err := client.omniCreateRawtxOpreturn(createrawtransactionStr, payload)
-	//if err != nil {
-	//	return nil, err
-	//}
-	//log.Println("4 opreturn", opreturn)
-
 	opreturnTxMsg, err := omnicore.Omni_createrawtx_opreturn(rawTx, payloadBytes, payloadHex)
-
-	//5. Omni_createrawtx_reference
-	//reference, err := client.omniCreateRawtxReference(opreturn, toBitCoinAddress)
-	//if err != nil {
-	//	return nil, err
-	//}
 
 	referenceTxMsg, err := omnicore.Omni_createrawtx_reference(opreturnTxMsg, toBitCoinAddress, tool.GetCoreNet())
 
@@ -356,10 +317,6 @@ func createOmniRawTransaction(balance, out, amount, minerFee float64, propertyId
 		prevtxs = append(prevtxs, node)
 	}
 
-	//change, err := client.omniCreateRawtxChange(reference, prevtxs, changeToAddress, minerFee)
-	//if err != nil {
-	//	return nil, err
-	//}
 	prevtxsBytes, _ := json.Marshal(prevtxs)
 	prevtxsStr := string(prevtxsBytes)
 	prevtxsStr = strings.TrimLeft(prevtxsStr, "[")

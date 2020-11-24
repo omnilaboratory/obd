@@ -8,9 +8,11 @@ import (
 	"github.com/omnilaboratory/obd/bean/chainhash"
 	"github.com/omnilaboratory/obd/bean/enum"
 	"github.com/omnilaboratory/obd/dao"
+	"github.com/omnilaboratory/obd/omnicore"
 	"github.com/omnilaboratory/obd/tool"
 	"github.com/tidwall/gjson"
 	"log"
+	"strconv"
 	"time"
 )
 
@@ -122,7 +124,7 @@ func (service *fundingTransactionManager) AssetFundingCreated(msg bean.RequestMe
 
 	// getProperty from omnicore
 	// 验证PropertyId是否在omni存在
-	_, err = rpcClient.OmniGetProperty(propertyId)
+	_, err = omnicore.ParsePropertyId(strconv.Itoa(int(propertyId)))
 	if err != nil {
 		log.Println(err)
 		return nil, false, err
@@ -204,6 +206,11 @@ func (service *fundingTransactionManager) AssetFundingCreated(msg bean.RequestMe
 
 	var commitmentTxInfo *dao.CommitmentTransaction
 
+	listUnspent, err := GetAddressListUnspent(tx, *channelInfo)
+	if err != nil {
+		return nil, false, err
+	}
+
 	var c1aTxData map[string]interface{}
 	var usedTxid string
 	needAliceSignC1aObj := bean.NeedClientSignHexData{}
@@ -235,6 +242,7 @@ func (service *fundingTransactionManager) AssetFundingCreated(msg bean.RequestMe
 		if commitmentTxInfo.AmountToRSMC > 0 {
 			c1aTxData, usedTxid, err = rpcClient.OmniCreateRawTransactionUseSingleInput(
 				int(commitmentTxInfo.TxType),
+				listUnspent.ListUnspent,
 				channelInfo.ChannelAddress,
 				commitmentTxInfo.RSMCMultiAddress,
 				fundingTransaction.PropertyId,
@@ -277,6 +285,7 @@ func (service *fundingTransactionManager) AssetFundingCreated(msg bean.RequestMe
 			if commitmentTxInfo.AmountToRSMC > 0 {
 				c1aTxData, usedTxid, err = rpcClient.OmniCreateRawTransactionUseSingleInput(
 					int(commitmentTxInfo.TxType),
+					listUnspent.ListUnspent,
 					channelInfo.ChannelAddress,
 					commitmentTxInfo.RSMCMultiAddress,
 					fundingTransaction.PropertyId,

@@ -60,10 +60,6 @@ func getAddressFromPubKey(pubKey string) (address string, err error) {
 	if err != nil {
 		return "", err
 	}
-	_, err = rpcClient.ValidateAddress(address)
-	if err != nil {
-		return "", err
-	}
 	return address, nil
 }
 
@@ -521,6 +517,12 @@ func createCommitmentTxHex(dbTx storm.Node, isSender bool, reqData *bean.Request
 		log.Println(err)
 		return nil, rawTx, err
 	}
+
+	listUnspent, err := GetAddressListUnspent(dbTx, *channelInfo)
+	if err != nil {
+		return nil, rawTx, err
+	}
+
 	commitmentTxInfo.TxType = dao.CommitmentTransactionType_Rsmc
 	commitmentTxInfo.RSMCTempAddressIndex = reqData.CurrTempAddressIndex
 	rawTx = dao.CommitmentTxRawTx{}
@@ -528,6 +530,7 @@ func createCommitmentTxHex(dbTx storm.Node, isSender bool, reqData *bean.Request
 	if commitmentTxInfo.AmountToRSMC > 0 {
 		rsmcTxData, usedTxid, err := rpcClient.OmniCreateRawTransactionUseSingleInput(
 			int(commitmentTxInfo.TxType),
+			listUnspent.ListUnspent,
 			channelInfo.ChannelAddress,
 			commitmentTxInfo.RSMCMultiAddress,
 			fundingTransaction.PropertyId,
@@ -556,6 +559,7 @@ func createCommitmentTxHex(dbTx storm.Node, isSender bool, reqData *bean.Request
 	if commitmentTxInfo.AmountToCounterparty > 0 {
 		toBobTxData, err := rpcClient.OmniCreateRawTransactionUseRestInput(
 			int(commitmentTxInfo.TxType),
+			listUnspent.ListUnspent,
 			channelInfo.ChannelAddress,
 			usedTxidTemp,
 			outputBean.OppositeSideChannelAddress,
@@ -625,4 +629,19 @@ func checkChannelOmniAssetAmount(channelInfo dao.ChannelInfo) (bool, error) {
 		return true, nil
 	}
 	return false, nil
+}
+
+func GetAddressListUnspent(tx storm.Node, channelInfo dao.ChannelInfo) (listUnspent dao.ChannelBtcListUnspent, err error) {
+	listUnspent = dao.ChannelBtcListUnspent{}
+	tx.Select(q.Eq("ChannelId", channelInfo.ChannelId)).First(&listUnspent)
+	if listUnspent.Id == 0 {
+		unspent, err := rpcClient.ListUnspent(channelInfo.ChannelAddress)
+		if err != nil {
+			return listUnspent, err
+		}
+		listUnspent.ChannelId = channelInfo.ChannelId
+		listUnspent.ListUnspent = unspent
+		_ = tx.Save(&listUnspent)
+	}
+	return listUnspent, nil
 }

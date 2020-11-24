@@ -59,6 +59,12 @@ type ChannelInfo struct {
 	CloseAt                    time.Time    `json:"close_at"`
 }
 
+type ChannelBtcListUnspent struct {
+	Id          int    `storm:"id,increment" json:"id"`
+	ChannelId   string `json:"channel_id"`
+	ListUnspent string `json:"list_unspent"`
+}
+
 type CloseChannel struct {
 	bean.CloseChannel
 	Id             int       `storm:"id,increment" json:"id"`

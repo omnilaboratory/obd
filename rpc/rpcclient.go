@@ -17,7 +17,6 @@ import (
 )
 
 var connConfig *ConnConfig
-var validatedAddress map[string]bool
 
 func init() {
 	connConfig = &ConnConfig{
@@ -25,9 +24,6 @@ func init() {
 		User: config.ChainNode_User,
 		Pass: config.ChainNode_Pass,
 	}
-
-	validatedAddress = make(map[string]bool)
-	//log.Println(connConfig)
 }
 
 type ConnConfig struct {
@@ -131,7 +127,7 @@ func (client *Client) CheckVersion() error {
 }
 
 func (client *Client) send(method string, params []interface{}) (result string, err error) {
-	//log.Println(method)
+	log.Println(method)
 	rawParams := make([]json.RawMessage, 0, len(params))
 	for _, item := range params {
 		marshaledParam, err := json.Marshal(item)

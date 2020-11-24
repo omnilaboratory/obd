@@ -242,7 +242,6 @@ func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction
 		}
 	}
 	toAliceP2pData.C2aSignedRsmcHex = signedRsmcHex
-
 	//endregion
 
 	// region 2、签名 ToCounterpartyTxHex
