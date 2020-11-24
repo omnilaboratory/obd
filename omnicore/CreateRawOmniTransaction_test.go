@@ -100,6 +100,14 @@ func TestCreateTransactionBase(t *testing.T) {
 
 }
 
+func TestCreateTransactionWithSequence(t *testing.T) {
+
+	const jsonStream = `
+		{ "txid" : "c23495f6e7ba24705d43583edd69ff25a354c18e69fd8514c07ec6f47cb995de" , "vout" : 0, "sequence" : 1000} 
+		{ "txid" : "ee1673b09b0edaf7aaf8eb0bfd53a5a2757eb3e342e731bfc960b869aa0ab6b3" , "vout" : 2, "sequence" : 1000} 
+	   `
+}
+
 /*
  * extend the opreturn data to base transaction.
  * The expected values are computed by wire.TxVersion = 1.
@@ -109,7 +117,7 @@ func TestCreateTransactionOpreturn(t *testing.T) {
 
 	const jsonStream = `
 		{ "txid" : "c23495f6e7ba24705d43583edd69ff25a354c18e69fd8514c07ec6f47cb995de" , "vout" : 0} 
-		{ "txid" : "ee1673b09b0edaf7aaf8eb0bfd53a5a2757eb3e342e731bfc960b869aa0ab6b3" , "vout" : 2 } 
+		{ "txid" : "ee1673b09b0edaf7aaf8eb0bfd53a5a2757eb3e342e731bfc960b869aa0ab6b3" , "vout" : 2} 
 	   `
 
 	// 2) Construct payload
