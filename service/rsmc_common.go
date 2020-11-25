@@ -206,7 +206,7 @@ func signLastBR(tx storm.Node, brType dao.BRType, channelInfo dao.ChannelInfo, u
 			q.Eq("PeerIdB", userPeerId))).
 		OrderBy("CreateAt").
 		Reverse().First(lastBreachRemedyTransaction)
-	if lastBreachRemedyTransaction != nil && lastBreachRemedyTransaction.Id > 0 {
+	if lastBreachRemedyTransaction.Id > 0 {
 		inputs, err := getInputsForNextTxByParseTxHashVout(
 			lastBreachRemedyTransaction.InputTxHex,
 			lastBreachRemedyTransaction.InputAddress,
@@ -225,15 +225,6 @@ func signLastBR(tx storm.Node, brType dao.BRType, channelInfo dao.ChannelInfo, u
 		if err != nil {
 			return errors.New(fmt.Sprintf(enum.Tips_common_failToSign, "breachRemedyTransaction"))
 		}
-		result, err := rpcClient.TestMemPoolAccept(signedBRHex)
-		if err != nil {
-			return errors.New(fmt.Sprintf(enum.Tips_common_failToSign, "breachRemedyTransaction"))
-		}
-		if gjson.Parse(result).Array()[0].Get("allowed").Bool() == false {
-			if gjson.Parse(result).Array()[0].Get("reject-reason").String() != "missing-inputs" {
-				return errors.New(gjson.Parse(result).Array()[0].Get("reject-reason").String())
-			}
-		}
 		lastBreachRemedyTransaction.Txid = signedBRTxid
 		lastBreachRemedyTransaction.BrTxHex = signedBRHex
 		lastBreachRemedyTransaction.SignAt = time.Now()
@@ -241,6 +232,42 @@ func signLastBR(tx storm.Node, brType dao.BRType, channelInfo dao.ChannelInfo, u
 		return tx.Update(lastBreachRemedyTransaction)
 	}
 	return nil
+}
+
+//对上一个承诺交易的br进行签名
+func getLastBR(tx storm.Node, brType dao.BRType, channelInfo dao.ChannelInfo, userPeerId string, lastTempAddressPrivateKey string, lastCommitmentTxid int) (hexData bean.NeedClientSignTxData, err error) {
+	lastBreachRemedyTransaction := &dao.BreachRemedyTransaction{}
+	err = tx.Select(
+		q.Eq("ChannelId", channelInfo.ChannelId),
+		q.Eq("CommitmentTxId", lastCommitmentTxid),
+		q.Eq("Type", brType),
+		q.Or(
+			q.Eq("PeerIdA", userPeerId),
+			q.Eq("PeerIdB", userPeerId))).
+		OrderBy("CreateAt").
+		Reverse().First(lastBreachRemedyTransaction)
+	if lastBreachRemedyTransaction.Id > 0 {
+		inputs, err := getInputsForNextTxByParseTxHashVout(
+			lastBreachRemedyTransaction.InputTxHex,
+			lastBreachRemedyTransaction.InputAddress,
+			lastBreachRemedyTransaction.InputAddressScriptPubKey,
+			lastBreachRemedyTransaction.InputRedeemScript)
+		if err != nil {
+			log.Println(err)
+			return hexData, errors.New(fmt.Sprintf(enum.Tips_rsmc_failToGetInput, "breachRemedyTransaction"))
+		}
+
+		if lastBreachRemedyTransaction.CurrState == dao.TxInfoState_CreateAndSign {
+			return hexData, nil
+		}
+		hexData = bean.NeedClientSignTxData{}
+		hexData.Hex = lastBreachRemedyTransaction.BrTxHex
+		hexData.Inputs = inputs
+		hexData.IsMultisig = true
+		hexData.PrivateKey = lastTempAddressPrivateKey
+		return hexData, nil
+	}
+	return hexData, errors.New(fmt.Sprintf(enum.Tips_rsmc_failToGetInput, "breachRemedyTransaction"))
 }
 
 func checkBobRemcData(rsmcHex string, commitmentTransaction *dao.CommitmentTransaction) error {

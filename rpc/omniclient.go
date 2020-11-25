@@ -139,10 +139,6 @@ func (client *Client) OmniSendRevoke(fromAddress string, propertyId int64, amoun
 }
 
 func (client *Client) OmniGetbalance(address string, propertyId int) (result string, err error) {
-	_, err = client.ValidateAddress(address)
-	if err != nil {
-		return "", err
-	}
 	return client.send("omni_getbalance", []interface{}{address, propertyId})
 }
 

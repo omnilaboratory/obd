@@ -728,11 +728,7 @@ func (service *fundingTransactionManager) AssetFundingSigned(jsonData string, si
 	}
 	aliceRsmcMultiAddress := gjson.Get(multiAddr, "address").String()
 	aliceRsmcRedeemScript := gjson.Get(multiAddr, "redeemScript").String()
-	tempJson, err := rpcClient.GetAddressInfo(aliceRsmcMultiAddress)
-	if err != nil {
-		return nil, err
-	}
-	rsmcMultiAddressScriptPubKey := gjson.Get(tempJson, "scriptPubKey").String()
+	rsmcMultiAddressScriptPubKey := gjson.Get(multiAddr, "scriptPubKey").String()
 
 	inputs, err := getInputsForNextTxByParseTxHashVout(signedRsmcHex, aliceRsmcMultiAddress, rsmcMultiAddressScriptPubKey, aliceRsmcRedeemScript)
 	if err != nil {
@@ -1124,6 +1120,7 @@ func (service *fundingTransactionManager) OnAliceSignedRdAtAliceSide(data string
 	_ = tx.Update(fundingTransaction)
 
 	_, _ = GetAddressListUnspent(tx, *channelInfo)
+	rpcClient.ValidateAddress(channelInfo.ChannelAddress)
 
 	err = tx.Commit()
 	if err != nil {

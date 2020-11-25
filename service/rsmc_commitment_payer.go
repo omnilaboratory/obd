@@ -438,11 +438,7 @@ func (this *commitmentTxManager) OnAliceSignedC2bTxAtAliceSide(data string, user
 	}
 	c2bRsmcMultiAddress := gjson.Get(bobMultiAddr, "address").String()
 	c2bRsmcRedeemScript := gjson.Get(bobMultiAddr, "redeemScript").String()
-	addressJson, err := rpcClient.GetAddressInfo(c2bRsmcMultiAddress)
-	if err != nil {
-		return nil, err
-	}
-	c2bRsmcMultiAddressScriptPubKey := gjson.Get(addressJson, "scriptPubKey").String()
+	c2bRsmcMultiAddressScriptPubKey := gjson.Get(bobMultiAddr, "scriptPubKey").String()
 
 	c2bRsmcOutputs, err := getInputsForNextTxByParseTxHashVout(
 		bobSignedRsmcHex,
@@ -479,8 +475,7 @@ func (this *commitmentTxManager) OnAliceSignedC2bTxAtAliceSide(data string, user
 		//endregion create RD tx for bob
 
 		//region 根据对对方的Rsmc签名，生成惩罚对方，自己获益BR
-		res, err := rpcClient.TestMemPoolAccept(dataFromP2p352.C2bRsmcTxData.Hex)
-		bobRsmcTxid := gjson.Parse(res).Array()[0].Get("txid").Str
+		bobRsmcTxid := rpcClient.GetTxId(dataFromP2p352.C2bRsmcTxData.Hex)
 
 		bobCommitmentTx := &dao.CommitmentTransaction{}
 		bobCommitmentTx.Id = latestCommitmentTxInfo.Id
@@ -713,11 +708,7 @@ func (this *commitmentTxManager) OnAliceSignedC2b_RDTxAtAliceSide(data string, u
 	}
 	c2bRsmcMultiAddress := gjson.Get(c2bMultiAddr, "address").String()
 	c2bRsmcRedeemScript := gjson.Get(c2bMultiAddr, "redeemScript").String()
-	addressJson, err := rpcClient.GetAddressInfo(c2bRsmcMultiAddress)
-	if err != nil {
-		return nil, nil, false, err
-	}
-	c2bRsmcMultiAddressScriptPubKey := gjson.Get(addressJson, "scriptPubKey").String()
+	c2bRsmcMultiAddressScriptPubKey := gjson.Get(c2bMultiAddr, "scriptPubKey").String()
 
 	c2bRsmcOutputs, err := getInputsForNextTxByParseTxHashVout(
 		c2bSignedRsmcHex,

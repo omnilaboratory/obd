@@ -195,54 +195,32 @@ func (client *Client) send(method string, params []interface{}) (result string, 
 }
 
 func (client *Client) CheckMultiSign(sendedInput bool, hex string, step int) (pass bool, err error) {
-
 	if len(hex) == 0 {
 		return false, errors.New("Empty hex")
 	}
-
-	result, err := client.TestMemPoolAccept(hex)
-	if err != nil {
-		return false, err
-	}
-	testData := gjson.Parse(result).Array()[0]
-	allowed := testData.Get("allowed").Bool()
-	rejectReason := testData.Get("reject-reason").Str
-
-	if sendedInput && step == 2 {
-		if allowed {
-			return true, nil
-		} else {
-			return false, errors.New(rejectReason)
-		}
-	}
-
-	if allowed {
-		return true, nil
-	} else {
-		result, err = client.DecodeRawTransaction(hex)
-		vins := gjson.Get(result, "vin").Array()
-		for i := 0; i < len(vins); i++ {
-			asm := vins[i].Get("scriptSig").Get("asm").Str
-			asmArr := strings.Split(asm, " ")
-			if step == 1 {
-				if len(asmArr) != 4 || (asmArr[1] == "0" && asmArr[2] == "0") {
-					return false, errors.New(rejectReason)
-				}
-			}
-			if step == 2 {
-				if len(asmArr) != 4 || asmArr[1] == "0" || asmArr[2] == "0" {
-					return false, errors.New(rejectReason)
-				}
+	result, err := client.DecodeRawTransaction(hex)
+	vins := gjson.Get(result, "vin").Array()
+	for i := 0; i < len(vins); i++ {
+		asm := vins[i].Get("scriptSig").Get("asm").Str
+		asmArr := strings.Split(asm, " ")
+		if step == 1 {
+			if len(asmArr) != 4 || (asmArr[1] == "0" && asmArr[2] == "0") {
+				return false, errors.New("err sign")
 			}
 		}
-		return true, nil
+		if step == 2 {
+			if len(asmArr) != 4 || asmArr[1] == "0" || asmArr[2] == "0" {
+				return false, errors.New("err sign")
+			}
+		}
 	}
+	return true, nil
 }
 
 func (client *Client) GetTxId(hex string) string {
-	testResult, err := client.TestMemPoolAccept(hex)
+	testResult, err := client.DecodeRawTransaction(hex)
 	if err == nil {
-		return gjson.Parse(testResult).Array()[0].Get("txid").Str
+		return gjson.Parse(testResult).Get("txid").Str
 	}
 	return ""
 }

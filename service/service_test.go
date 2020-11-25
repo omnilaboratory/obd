@@ -4,7 +4,6 @@ import (
 	"github.com/omnilaboratory/obd/config"
 	"github.com/omnilaboratory/obd/rpc"
 	"github.com/shopspring/decimal"
-	"github.com/tidwall/gjson"
 	"log"
 	"testing"
 	"time"
@@ -84,15 +83,6 @@ func TestDelDemoChannelInfoOne(t *testing.T) {
 }
 
 func TestPathManager_GetPath(t *testing.T) {
-	multiAddr, err := rpcClient.CreateMultiSig(2, []string{"039ee94a8131ef437059383bd0bb9ca3b7fd9cae0554f9df8b7d786ebf173f1c20", "0216847047b926a1ff88e97fb0ebed8d0482c69521e9f8bc499c06b108a4972b82"})
-	rsmcMultiAddress := gjson.Get(multiAddr, "address").String()
-	rsmcRedeemScript := gjson.Get(multiAddr, "redeemScript").String()
-	json, err := rpcClient.GetAddressInfo(rsmcMultiAddress)
-	rsmcMultiAddressScriptPubKey := gjson.Get(json, "scriptPubKey").String()
-	log.Println(err)
-	log.Println(rsmcMultiAddress)
-	log.Println(rsmcRedeemScript)
-	log.Println(rsmcMultiAddressScriptPubKey)
 }
 
 func TestChannelManager_AliceOpenChannel(t *testing.T) {

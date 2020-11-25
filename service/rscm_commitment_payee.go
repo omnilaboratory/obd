@@ -229,11 +229,7 @@ func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction
 		}
 		c2aRsmcMultiAddress = gjson.Get(c2aRsmcMultiAddr, "address").String()
 		c2aRsmcRedeemScript = gjson.Get(c2aRsmcMultiAddr, "redeemScript").String()
-		tempJson, err := rpcClient.GetAddressInfo(c2aRsmcMultiAddress)
-		if err != nil {
-			return nil, false, err
-		}
-		c2aRsmcMultiAddressScriptPubKey = gjson.Get(tempJson, "scriptPubKey").String()
+		c2aRsmcMultiAddressScriptPubKey = gjson.Get(c2aRsmcMultiAddr, "scriptPubKey").String()
 
 		c2aRsmcOutputs, err = getInputsForNextTxByParseTxHashVout(signedRsmcHex, c2aRsmcMultiAddress, c2aRsmcMultiAddressScriptPubKey, c2aRsmcRedeemScript)
 		if err != nil {

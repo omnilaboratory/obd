@@ -2260,7 +2260,7 @@ func htlcPayerCreateCommitmentTx_C3a(tx storm.Node, channelInfo *dao.ChannelInfo
 	if newCommitmentTxInfo.AmountToRSMC > 0 {
 		rsmcTxData, usedTxid, err := rpcClient.OmniCreateRawTransactionUseSingleInput(
 			int(newCommitmentTxInfo.TxType),
-			listUnspent.ListUnspent,
+			listUnspent,
 			channelInfo.ChannelAddress,
 			newCommitmentTxInfo.RSMCMultiAddress,
 			channelInfo.PropertyId,
@@ -2288,7 +2288,7 @@ func htlcPayerCreateCommitmentTx_C3a(tx storm.Node, channelInfo *dao.ChannelInfo
 	if newCommitmentTxInfo.AmountToHtlc > 0 {
 		htlcTxData, usedTxid, err := rpcClient.OmniCreateRawTransactionUseSingleInput(
 			int(newCommitmentTxInfo.TxType),
-			listUnspent.ListUnspent,
+			listUnspent,
 			channelInfo.ChannelAddress,
 			newCommitmentTxInfo.HTLCMultiAddress,
 			channelInfo.PropertyId,
@@ -2331,7 +2331,7 @@ func htlcPayerCreateCommitmentTx_C3a(tx storm.Node, channelInfo *dao.ChannelInfo
 	if newCommitmentTxInfo.AmountToCounterparty > 0 {
 		toBobTxData, err := rpcClient.OmniCreateRawTransactionUseRestInput(
 			int(newCommitmentTxInfo.TxType),
-			listUnspent.ListUnspent,
+			listUnspent,
 			channelInfo.ChannelAddress,
 			allUsedTxidTemp,
 			outputBean.OppositeSideChannelAddress,
@@ -2449,7 +2449,7 @@ func htlcPayeeCreateCommitmentTx_C3b(tx storm.Node, channelInfo *dao.ChannelInfo
 	if newCommitmentTxInfo.AmountToRSMC > 0 {
 		rsmcTxData, usedTxid, err := rpcClient.OmniCreateRawTransactionUseSingleInput(
 			int(newCommitmentTxInfo.TxType),
-			listUnspent.ListUnspent,
+			listUnspent,
 			channelInfo.ChannelAddress,
 			newCommitmentTxInfo.RSMCMultiAddress,
 			channelInfo.PropertyId,
@@ -2477,7 +2477,7 @@ func htlcPayeeCreateCommitmentTx_C3b(tx storm.Node, channelInfo *dao.ChannelInfo
 	if newCommitmentTxInfo.AmountToHtlc > 0 {
 		htlcTxData, usedTxid, err := rpcClient.OmniCreateRawTransactionUseSingleInput(
 			int(newCommitmentTxInfo.TxType),
-			listUnspent.ListUnspent,
+			listUnspent,
 			channelInfo.ChannelAddress,
 			newCommitmentTxInfo.HTLCMultiAddress,
 			channelInfo.PropertyId,
@@ -2518,7 +2518,7 @@ func htlcPayeeCreateCommitmentTx_C3b(tx storm.Node, channelInfo *dao.ChannelInfo
 	if newCommitmentTxInfo.AmountToCounterparty > 0 {
 		toBobTxData, err := rpcClient.OmniCreateRawTransactionUseRestInput(
 			int(newCommitmentTxInfo.TxType),
-			listUnspent.ListUnspent,
+			listUnspent,
 			channelInfo.ChannelAddress,
 			allUsedTxidTemp,
 			outputBean.OppositeSideChannelAddress,

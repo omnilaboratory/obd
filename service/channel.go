@@ -207,13 +207,7 @@ func (this *channelManager) BobAcceptChannel(msg bean.RequestMessage, user *bean
 		if existAddress == false {
 			channelInfo.ChannelAddress = gjson.Get(multiSig, "address").String()
 			channelInfo.ChannelAddressRedeemScript = gjson.Get(multiSig, "redeemScript").String()
-
-			addrInfoStr, err := rpcClient.GetAddressInfo(channelInfo.ChannelAddress)
-			if err != nil {
-				log.Println(err)
-				return nil, err
-			}
-			channelInfo.ChannelAddressScriptPubKey = gjson.Parse(addrInfoStr).Get("scriptPubKey").String()
+			channelInfo.ChannelAddressScriptPubKey = gjson.Get(multiSig, "scriptPubKey").String()
 			channelInfo.CurrState = dao.ChannelState_WaitFundAsset
 		} else {
 			return nil, errors.New(enum.Tips_channel_changePubkeyForChannel + reqData.FundingPubKey)

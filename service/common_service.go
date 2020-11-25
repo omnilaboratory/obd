@@ -84,11 +84,7 @@ func createCommitmentTx(owner string, channelInfo *dao.ChannelInfo, fundingTrans
 	}
 	commitmentTxInfo.RSMCMultiAddress = gjson.Get(multiAddr, "address").String()
 	commitmentTxInfo.RSMCRedeemScript = gjson.Get(multiAddr, "redeemScript").String()
-	json, err := rpcClient.GetAddressInfo(commitmentTxInfo.RSMCMultiAddress)
-	if err != nil {
-		return nil, err
-	}
-	commitmentTxInfo.RSMCMultiAddressScriptPubKey = gjson.Get(json, "scriptPubKey").String()
+	commitmentTxInfo.RSMCMultiAddressScriptPubKey = gjson.Get(multiAddr, "scriptPubKey").String()
 
 	if tool.CheckIsString(&outputBean.HtlcTempPubKey) {
 		commitmentTxInfo.HTLCTempAddressPubKey = outputBean.HtlcTempPubKey
@@ -98,11 +94,7 @@ func createCommitmentTx(owner string, channelInfo *dao.ChannelInfo, fundingTrans
 		}
 		commitmentTxInfo.HTLCMultiAddress = gjson.Get(multiAddr, "address").String()
 		commitmentTxInfo.HTLCRedeemScript = gjson.Get(multiAddr, "redeemScript").String()
-		json, err := rpcClient.GetAddressInfo(commitmentTxInfo.HTLCMultiAddress)
-		if err != nil {
-			return nil, err
-		}
-		commitmentTxInfo.HTLCMultiAddressScriptPubKey = gjson.Get(json, "scriptPubKey").String()
+		commitmentTxInfo.HTLCMultiAddressScriptPubKey = gjson.Get(multiAddr, "scriptPubKey").String()
 	}
 
 	commitmentTxInfo.AmountToRSMC = outputBean.AmountToRsmc
@@ -377,15 +369,6 @@ func saveRdTx(tx storm.Node, channelInfo *dao.ChannelInfo, signedRsmcHex string,
 		log.Println(err)
 		return err
 	}
-	result, err := rpcClient.TestMemPoolAccept(signedRdHex)
-	if err != nil {
-		return err
-	}
-	if gjson.Parse(result).Array()[0].Get("allowed").Bool() == false {
-		if gjson.Parse(result).Array()[0].Get("reject-reason").String() != "missing-inputs" {
-			return errors.New(gjson.Parse(result).Array()[0].Get("reject-reason").String())
-		}
-	}
 
 	aliceRdTxid := checkHexOutputAddressFromOmniDecode(signedRdHex, inputs, outputAddress)
 	if aliceRdTxid == "" {
@@ -453,11 +436,7 @@ func createMultiSig(pubkey1 string, pubkey2 string) (multiAddress, redeemScript,
 	}
 	multiAddress = gjson.Get(aliceRsmcMultiAddr, "address").String()
 	redeemScript = gjson.Get(aliceRsmcMultiAddr, "redeemScript").String()
-	tempJson, err := rpcClient.GetAddressInfo(multiAddress)
-	if err != nil {
-		return "", "", "", err
-	}
-	scriptPubKey = gjson.Get(tempJson, "scriptPubKey").String()
+	scriptPubKey = gjson.Get(aliceRsmcMultiAddr, "scriptPubKey").String()
 	return multiAddress, redeemScript, scriptPubKey, nil
 }
 
@@ -530,7 +509,7 @@ func createCommitmentTxHex(dbTx storm.Node, isSender bool, reqData *bean.Request
 	if commitmentTxInfo.AmountToRSMC > 0 {
 		rsmcTxData, usedTxid, err := rpcClient.OmniCreateRawTransactionUseSingleInput(
 			int(commitmentTxInfo.TxType),
-			listUnspent.ListUnspent,
+			listUnspent,
 			channelInfo.ChannelAddress,
 			commitmentTxInfo.RSMCMultiAddress,
 			fundingTransaction.PropertyId,
@@ -559,7 +538,7 @@ func createCommitmentTxHex(dbTx storm.Node, isSender bool, reqData *bean.Request
 	if commitmentTxInfo.AmountToCounterparty > 0 {
 		toBobTxData, err := rpcClient.OmniCreateRawTransactionUseRestInput(
 			int(commitmentTxInfo.TxType),
-			listUnspent.ListUnspent,
+			listUnspent,
 			channelInfo.ChannelAddress,
 			usedTxidTemp,
 			outputBean.OppositeSideChannelAddress,
@@ -631,17 +610,60 @@ func checkChannelOmniAssetAmount(channelInfo dao.ChannelInfo) (bool, error) {
 	return false, nil
 }
 
-func GetAddressListUnspent(tx storm.Node, channelInfo dao.ChannelInfo) (listUnspent dao.ChannelBtcListUnspent, err error) {
-	listUnspent = dao.ChannelBtcListUnspent{}
-	tx.Select(q.Eq("ChannelId", channelInfo.ChannelId)).First(&listUnspent)
-	if listUnspent.Id == 0 {
-		unspent, err := rpcClient.ListUnspent(channelInfo.ChannelAddress)
-		if err != nil {
-			return listUnspent, err
+func GetAddressListUnspent(tx storm.Node, channelInfo dao.ChannelInfo) (listUnspentResult string, err error) {
+	listUnspentArr := []dao.ChannelAddressListUnspent{}
+	tx.Select(q.Eq("ChannelId", channelInfo.ChannelId)).Find(&listUnspentArr)
+	if len(listUnspentArr) < 4 {
+		btcRequestArr := []dao.FundingBtcRequest{}
+		_ = tx.Select(q.Eq("TemporaryChannelId", channelInfo.TemporaryChannelId), q.Eq("IsFinish", true)).Find(&btcRequestArr)
+		if len(btcRequestArr) != 3 {
+			return "", errors.New("error btc fund")
 		}
-		listUnspent.ChannelId = channelInfo.ChannelId
-		listUnspent.ListUnspent = unspent
-		_ = tx.Save(&listUnspent)
+		for _, item := range btcRequestArr {
+			outputFromHex := getOutputFromHex(item.TxHash, channelInfo.ChannelAddress)
+			outputFromHex.ChannelId = channelInfo.ChannelId
+			tx.Save(outputFromHex)
+		}
+		omniRequestArr := []dao.FundingTransaction{}
+		_ = tx.Select(q.Eq("TemporaryChannelId", channelInfo.TemporaryChannelId)).Find(&omniRequestArr)
+		if len(omniRequestArr) != 1 {
+			return "", errors.New("error omni fund")
+		}
+		for _, item := range omniRequestArr {
+			outputFromHex := getOutputFromHex(item.FundingTxHex, channelInfo.ChannelAddress)
+			outputFromHex.ChannelId = channelInfo.ChannelId
+			tx.Save(outputFromHex)
+		}
+		tx.Select(q.Eq("ChannelId", channelInfo.ChannelId)).Find(&listUnspentArr)
 	}
-	return listUnspent, nil
+	marshal, _ := json.Marshal(&listUnspentArr)
+	return string(marshal), nil
+}
+
+func getOutputFromHex(hex string, toAddress string) *dao.ChannelAddressListUnspent {
+	result, err := rpcClient.DecodeRawTransaction(hex)
+	if err != nil {
+		return nil
+	}
+	jsonHex := gjson.Parse(result)
+	if jsonHex.Get("vout").IsArray() {
+		for _, item := range jsonHex.Get("vout").Array() {
+			if item.Get("scriptPubKey").Get("addresses").Exists() {
+				addresses := item.Get("scriptPubKey").Get("addresses").Array()
+				for _, address := range addresses {
+					if address.String() == toAddress {
+						if item.Get("value").Float() > 0 {
+							node := &dao.ChannelAddressListUnspent{}
+							node.Txid = jsonHex.Get("txid").String()
+							node.ScriptPubKey = item.Get("scriptPubKey").Get("hex").Str
+							node.Vout = uint32(item.Get("n").Uint())
+							node.Amount = item.Get("value").Float()
+							return node
+						}
+					}
+				}
+			}
+		}
+	}
+	return nil
 }

@@ -30,13 +30,15 @@ func (client *Client) EstimateSmartFee() (feeRate float64) {
 type multiSign struct {
 	Address      string `json:"address"`
 	RedeemScript string `json:"redeemScript"`
+	ScriptPubKey string `json:"scriptPubKey"`
 }
 
 func (client *Client) CreateMultiSig(minSignNum int, keys []string) (result string, err error) {
-	addr, redeemScript := omnicore.CreateMultiSigAddr(keys[0], keys[1], tool.GetCoreNet())
+	addr, redeemScript, scriptPubKey := omnicore.CreateMultiSigAddr(keys[0], keys[1], tool.GetCoreNet())
 	sign := multiSign{}
 	sign.Address = addr
 	sign.RedeemScript = redeemScript
+	sign.ScriptPubKey = scriptPubKey
 	marshal, _ := json.Marshal(&sign)
 	return string(marshal), nil
 
@@ -59,23 +61,11 @@ func (client *Client) ListReceivedByAddress(address string) (result string, err 
 	return client.send("listreceivedbyaddress", []interface{}{0, false, true, address})
 }
 
-var tempTestMemPoolAcceptData map[string]string
-
 //https://bitcoin.org/en/developer-reference#testmempoolaccept
 func (client *Client) TestMemPoolAccept(signedhex string) (result string, err error) {
-	if tempTestMemPoolAcceptData == nil {
-		tempTestMemPoolAcceptData = make(map[string]string)
-	}
-	hexHash := tool.SignMsgWithSha256([]byte(signedhex))
-	if len(tempTestMemPoolAcceptData[hexHash]) > 0 {
-		return tempTestMemPoolAcceptData[hexHash], nil
-	}
 	rawtxs := make([]string, 0)
 	rawtxs = append(rawtxs, signedhex)
 	result, err = client.send("testmempoolaccept", []interface{}{rawtxs})
-	if err == nil {
-		tempTestMemPoolAcceptData[hexHash] = result
-	}
 	return result, err
 }
 
@@ -135,40 +125,13 @@ func (client *Client) DecodeRawTransaction(hex string) (result string, err error
 	return result, err
 }
 
-var tempOmniDecodeTransactionData map[string]string
-
 func (client *Client) OmniDecodeTransaction(hex string) (result string, err error) {
-
-	if tempOmniDecodeTransactionData == nil {
-		tempOmniDecodeTransactionData = make(map[string]string)
-	}
-	hexHash := tool.SignMsgWithSha256([]byte(hex))
-	if len(tempOmniDecodeTransactionData[hexHash]) > 0 {
-		return tempOmniDecodeTransactionData[hexHash], nil
-	}
 	result, err = client.send("omni_decodetransaction", []interface{}{hex})
-	if err == nil {
-		tempOmniDecodeTransactionData[hexHash] = result
-	}
-
 	return result, err
 }
 
-var tempOmniDecodeTransactionData2 map[string]string
-
 func (client *Client) OmniDecodeTransactionWithPrevTxs(hex string, prevtxs []TransactionInputItem) (result string, err error) {
-
-	if tempOmniDecodeTransactionData2 == nil {
-		tempOmniDecodeTransactionData2 = make(map[string]string)
-	}
-	hexHash := tool.SignMsgWithSha256([]byte(hex))
-	if len(tempOmniDecodeTransactionData2[hexHash]) > 0 {
-		return tempOmniDecodeTransactionData2[hexHash], nil
-	}
 	result, err = client.send("omni_decodetransaction", []interface{}{hex, prevtxs})
-	if err == nil {
-		tempOmniDecodeTransactionData2[hexHash] = result
-	}
 	return result, err
 }
 
@@ -215,24 +178,11 @@ func (client *Client) ValidateAddress(address string) (isValid bool, err error) 
 	return true, nil
 }
 
-var tempGetAddressInfoMap map[string]string
-
 func (client *Client) GetAddressInfo(address string) (result string, err error) {
-
-	if tempGetAddressInfoMap == nil {
-		tempGetAddressInfoMap = make(map[string]string)
-	}
-	if len(tempGetAddressInfoMap[address]) > 0 {
-		return tempGetAddressInfoMap[address], nil
-	}
-
 	result, err = client.send("getaddressinfo", []interface{}{address})
 	if err != nil {
 		return "", err
 	}
-
-	tempGetAddressInfoMap[address] = result
-
 	return result, nil
 }
 

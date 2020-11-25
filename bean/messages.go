@@ -275,6 +275,7 @@ type NeedClientSignTxData struct {
 	IsMultisig bool        `json:"is_multisig"`
 	PubKeyA    string      `json:"pub_key_a"`
 	PubKeyB    string      `json:"pub_key_b"`
+	PrivateKey string      `json:"private_key"`
 }
 type NeedClientSignRawBRTxData struct {
 	NeedClientSignTxData

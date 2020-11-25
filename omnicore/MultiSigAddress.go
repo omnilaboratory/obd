@@ -2,13 +2,12 @@ package omnicore
 
 import (
 	"encoding/hex"
-	"github.com/btcsuite/btcd/txscript"
-
 	"github.com/btcsuite/btcd/chaincfg"
+	"github.com/btcsuite/btcd/txscript"
 	"github.com/btcsuite/btcutil"
 )
 
-func CreateMultiSigAddr(addr1_pubkey_str string, addr2_pubkey_str string, defaultNet *chaincfg.Params) (string, string) {
+func CreateMultiSigAddr(addr1_pubkey_str string, addr2_pubkey_str string, defaultNet *chaincfg.Params) (string, string, string) {
 
 	addr1_pubkey_byte_arr, _ := hex.DecodeString(addr1_pubkey_str)
 	addr2_pubkey_byte_arr, _ := hex.DecodeString(addr2_pubkey_str)
@@ -22,6 +21,9 @@ func CreateMultiSigAddr(addr1_pubkey_str string, addr2_pubkey_str string, defaul
 
 	scriptAddr, _ := btcutil.NewAddressScriptHash(pkScript, defaultNet)
 
-	return scriptAddr.EncodeAddress(), hex.EncodeToString(pkScript)
+	scriptPubKey := hex.EncodeToString(scriptAddr.ScriptAddress())
+	scriptPubKey = "a914" + scriptPubKey + "87"
+
+	return scriptAddr.EncodeAddress(), hex.EncodeToString(pkScript), scriptPubKey
 
 }

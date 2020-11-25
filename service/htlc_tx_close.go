@@ -613,12 +613,10 @@ func (service *htlcCloseTxManager) OnBobSignCloseHtlcRequest(msg bean.RequestMes
 			log.Println(err)
 			return nil, err
 		}
-		if latestCommitmentTxInfo.CurrState == dao.TxInfoState_Htlc_GetR {
-			err = signLastBR(tx, dao.BRType_Ht1a, *channelInfo, user.PeerId, dataFrom49POfP2p.LastHtlcTempAddressForHtnxPrivateKey, latestCommitmentTxInfo.Id)
-			if err != nil {
-				log.Println(err)
-				return nil, err
-			}
+		err = signLastBR(tx, dao.BRType_Ht1a, *channelInfo, user.PeerId, dataFrom49POfP2p.LastHtlcTempAddressForHtnxPrivateKey, latestCommitmentTxInfo.Id)
+		if err != nil {
+			log.Println(err)
+			return nil, err
 		}
 		//endregion
 
@@ -991,11 +989,7 @@ func (service *htlcCloseTxManager) OnAliceSignedCxb(msg bean.RequestMessage, use
 	}
 	cnbRsmcMultiAddress := gjson.Get(bobMultiAddr, "address").String()
 	cnbRsmcRedeemScript := gjson.Get(bobMultiAddr, "redeemScript").String()
-	addressJson, err := rpcClient.GetAddressInfo(cnbRsmcMultiAddress)
-	if err != nil {
-		return nil, err
-	}
-	cnbRsmcMultiAddressScriptPubKey := gjson.Get(addressJson, "scriptPubKey").String()
+	cnbRsmcMultiAddressScriptPubKey := gjson.Get(bobMultiAddr, "scriptPubKey").String()
 
 	if tool.CheckIsString(&bobSignedRsmcHex) {
 		rsmcOutputs, err := getInputsForNextTxByParseTxHashVout(
@@ -1208,12 +1202,10 @@ func (service *htlcCloseTxManager) OnAliceSignedCxbBubTx(msg bean.RequestMessage
 		log.Println(err)
 		return nil, false, err
 	}
-	if latestCommitmentTxInfo.CurrState == dao.TxInfoState_Htlc_GetR {
-		err = signLastBR(tx, dao.BRType_HE1b, *channelInfo, user.PeerId, bobLastHtlcTempAddressForHtnxPrivateKey, latestCommitmentTxInfo.LastCommitmentTxId)
-		if err != nil {
-			log.Println(err)
-			return nil, false, err
-		}
+	err = signLastBR(tx, dao.BRType_HE1b, *channelInfo, user.PeerId, bobLastHtlcTempAddressForHtnxPrivateKey, latestCommitmentTxInfo.LastCommitmentTxId)
+	if err != nil {
+		log.Println(err)
+		return nil, false, err
 	}
 	//endregion
 
@@ -1279,11 +1271,7 @@ func (service *htlcCloseTxManager) OnAliceSignedCxbBubTx(msg bean.RequestMessage
 	}
 	cnbRsmcMultiAddress := gjson.Get(c2bMultiAddr, "address").String()
 	cnbRsmcRedeemScript := gjson.Get(c2bMultiAddr, "redeemScript").String()
-	addressJson, err := rpcClient.GetAddressInfo(cnbRsmcMultiAddress)
-	if err != nil {
-		return nil, nil, err
-	}
-	cnbRsmcMultiAddressScriptPubKey := gjson.Get(addressJson, "scriptPubKey").String()
+	cnbRsmcMultiAddressScriptPubKey := gjson.Get(c2bMultiAddr, "scriptPubKey").String()
 
 	if len(cnbSignedRsmcHex) > 0 {
 		cnbRsmcOutputs, err := getInputsForNextTxByParseTxHashVout(

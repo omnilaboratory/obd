@@ -65,6 +65,15 @@ type ChannelBtcListUnspent struct {
 	ListUnspent string `json:"list_unspent"`
 }
 
+type ChannelAddressListUnspent struct {
+	Id           int     `storm:"id,increment" json:"id"`
+	ChannelId    string  `json:"channel_id"`
+	Txid         string  `json:"txid"`
+	Vout         uint32  `json:"vout"`
+	ScriptPubKey string  `json:"scriptPubKey"`
+	Amount       float64 `json:"amount"`
+}
+
 type CloseChannel struct {
 	bean.CloseChannel
 	Id             int       `storm:"id,increment" json:"id"`
