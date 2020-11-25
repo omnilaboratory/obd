@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/btcsuite/btcd/txscript"
 
@@ -153,5 +154,21 @@ func DecodeRawTransaction(hexadecimal_str string, chainParams *chaincfg.Params) 
 	json_reply, _ := json.Marshal(txReply)
 	return string(json_reply)
 	//return string(txReply)
+
+}
+
+func VerfyOpreturnPayload(opreturn_str string, property_id_expected string, amount_expected string, devisible_expected bool) bool {
+
+	payload, _ := Omni_createpayload_simplesend(property_id_expected, amount_expected, devisible_expected)
+	outputs := OmniCore_Encode_ClassC(payload)
+	//output_str := string(outputs[:])
+	output_hex := hex.EncodeToString(outputs)
+
+	if strings.Compare(opreturn_str, output_hex) == 0 {
+		//fmt.Println("succeed in 4) Attach reference/receiver output")
+		return true
+	} else {
+		return false
+	}
 
 }
