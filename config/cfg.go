@@ -3,6 +3,7 @@ package config
 import (
 	"flag"
 	"log"
+	"net"
 	"strconv"
 	"testing"
 	"time"
@@ -32,6 +33,15 @@ var (
 	P2P_hostIp     = "127.0.0.1"
 	P2P_sourcePort = 4001
 )
+
+func parseHostname(hostname string) string {
+	P2pHostIps, err := net.LookupIP(hostname)
+	if err != nil {
+		panic("Can't parse hostname")
+	}
+
+	return P2pHostIps[0].String()
+}
 
 func init() {
 	testing.Init()
@@ -79,7 +89,8 @@ func init() {
 		log.Println(err)
 		return
 	}
-	P2P_hostIp = p2pNode.Key("hostIp").String()
+
+	P2P_hostIp = parseHostname(p2pNode.Key("hostIp").String())
 	P2P_sourcePort = p2pNode.Key("sourcePort").MustInt()
 
 	//tracker
@@ -92,6 +103,7 @@ func init() {
 		panic("empty tracker hostIp")
 	}
 
+	trackerHostIp := parseHostname(p2pNode.Key("hostIp").String())
 	TrackerServerPort = tracker.Key("port").MustInt(60060)
-	TrackerHost = tracker.Key("hostIp").MustString("localhost") + ":" + strconv.Itoa(TrackerServerPort)
+	TrackerHost = trackerHostIp + ":" + strconv.Itoa(TrackerServerPort)
 }
