@@ -22,6 +22,7 @@ import (
 	"math/rand"
 	"net/http"
 	"strings"
+	"time"
 )
 
 type P2PChannel struct {
@@ -40,11 +41,7 @@ var p2pChannelMap map[string]*P2PChannel
 
 func generatePrivateKey() (crypto.PrivKey, error) {
 	if privateKey == nil {
-		nodeId := httpGetNodeIdFromTracker()
-		if nodeId == 0 {
-			return nil, errors.New("fail to get nodeId from tracker")
-		}
-		r := rand.New(rand.NewSource(int64(8080 + nodeId)))
+		r := rand.New(rand.NewSource(time.Now().UTC().UnixNano()))
 		prvKey, _, err := crypto.GenerateECDSAKeyPair(r)
 		if err != nil {
 			log.Println(err)
