@@ -161,14 +161,17 @@ func (client *Client) Read() {
 						client.sendToMyself(msg.Type, false, enum.Tips_common_empty+"error recipient_node_peer_id")
 						continue
 					}
-					if p2pChannelMap[msg.RecipientNodePeerId] == nil {
-						client.sendToMyself(msg.Type, false, fmt.Sprintf(enum.Tips_common_errorObdPeerId, msg.RecipientNodePeerId))
-						continue
-					}
 
-					if _, err = findUserOnLine(msg); err != nil {
-						client.sendToMyself(msg.Type, false, err.Error())
-						continue
+					if p2PLocalPeerId == msg.RecipientNodePeerId {
+						if _, err = findUserOnLine(msg); err != nil {
+							client.sendToMyself(msg.Type, false, err.Error())
+							continue
+						}
+					} else {
+						if p2pChannelMap[msg.RecipientNodePeerId] == nil {
+							client.sendToMyself(msg.Type, false, fmt.Sprintf(enum.Tips_common_errorObdPeerId, msg.RecipientNodePeerId))
+							continue
+						}
 					}
 				}
 
