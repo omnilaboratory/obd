@@ -75,6 +75,7 @@ origin	https://github.com/omnilaboratory/obd.git (fetch)
 origin	https://github.com/omnilaboratory/obd.git (push)
 ```
 
+<!-- 
 ## Step 2: 
 #### option 1: Remote Omnicore node 
 Use our remote OmniCore node. Go to `\config\conf.ini`, you will see:
@@ -98,6 +99,20 @@ host=127.0.0.1:port
 user=your user name
 pass=your password
 ```
+-->
+## Step 2: Connect to a tracker
+
+Trackers offer such anomymous services: monitor node service quality, record channel balance if the channel is not private, update routing table for connected nodes, broadcaste transactions, and help nodes to find paths for payments.
+
+Any one can be a tracker. Runing a tracker requires a full omnilayer core node, which may take days to synchronize the whole database to your device. So that we deployed several tracker for our community. 
+
+Edit the configure file: `\config\conf.ini`
+```
+[tracker]
+hostIp = 62.234.216.108 
+port = 60060
+```
+
 
 ## Step 3: Compile and Run OmniBOLT Daemon
 
