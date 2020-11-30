@@ -10,11 +10,11 @@ import (
 	"github.com/omnilaboratory/obd/bean/enum"
 	"github.com/omnilaboratory/obd/config"
 	"github.com/omnilaboratory/obd/dao"
+	"github.com/omnilaboratory/obd/omnicore"
 	"github.com/omnilaboratory/obd/rpc"
 	"github.com/omnilaboratory/obd/tool"
 	trackerBean "github.com/omnilaboratory/obd/tracker/bean"
 	"github.com/shopspring/decimal"
-	"github.com/tidwall/gjson"
 	"log"
 	"strconv"
 	"strings"
@@ -347,7 +347,7 @@ func (service *htlcForwardTxManager) GetResponseFromTrackerOfPayerRequestFindPat
 
 // step 1 alice -100040协议的alice方的逻辑 alice start a htlc as payer
 func (service *htlcForwardTxManager) AliceAddHtlcAtAliceSide(msg bean.RequestMessage, user bean.User) (data interface{}, needSign bool, err error) {
-	log.Println("htlc begin", time.Now())
+	log.Println("htlc step 1 begin", time.Now())
 	if tool.CheckIsString(&msg.Data) == false {
 		return nil, false, errors.New(enum.Tips_common_empty + "msg data")
 	}
@@ -575,6 +575,9 @@ func (service *htlcForwardTxManager) AliceAddHtlcAtAliceSide(msg bean.RequestMes
 		_ = tx.Save(cacheDataForTx)
 
 		_ = tx.Commit()
+
+		log.Println("htlc step 1 end", time.Now())
+
 		return txForC3a, true, nil
 	}
 	_ = tx.Commit()
@@ -583,7 +586,7 @@ func (service *htlcForwardTxManager) AliceAddHtlcAtAliceSide(msg bean.RequestMes
 
 // step 2 alice -100100 Alice对C3a的部分签名结果
 func (service *htlcForwardTxManager) OnAliceSignedC3aAtAliceSide(msg bean.RequestMessage, user bean.User) (toAlice, toBob interface{}, err error) {
-
+	log.Println("htlc step 2 begin", time.Now())
 	if tool.CheckIsString(&msg.Data) == false {
 		err = errors.New(enum.Tips_common_empty + "msg.data")
 		log.Println(err)
@@ -691,11 +694,13 @@ func (service *htlcForwardTxManager) OnAliceSignedC3aAtAliceSide(msg bean.Reques
 	toAliceResult := bean.AliceSignedHtlcDataForC3aResult{}
 	toAliceResult.ChannelId = dataTo40P.ChannelId
 	toAliceResult.CommitmentTxHash = dataTo40P.PayerCommitmentTxHash
+	log.Println("htlc step 2 end", time.Now())
 	return toAliceResult, dataTo40P, nil
 }
 
 // step 3 bob -40号协议 缓存来自40号协议的信息 推送110040消息，需要bob对C3a的交易进行签名
 func (service *htlcForwardTxManager) BeforeBobSignAddHtlcRequestAtBobSide_40(msgData string, user bean.User) (data interface{}, err error) {
+	log.Println("htlc step 3 begin", time.Now())
 	requestAddHtlc := &bean.CreateHtlcTxForC3aOfP2p{}
 	_ = json.Unmarshal([]byte(msgData), requestAddHtlc)
 	channelId := requestAddHtlc.ChannelId
@@ -741,11 +746,13 @@ func (service *htlcForwardTxManager) BeforeBobSignAddHtlcRequestAtBobSide_40(msg
 	toBobData.C3aRsmcPartialSignedData = requestAddHtlc.C3aRsmcPartialSignedData
 	toBobData.C3aCounterpartyPartialSignedData = requestAddHtlc.C3aCounterpartyPartialSignedData
 	toBobData.C3aHtlcPartialSignedData = requestAddHtlc.C3aHtlcPartialSignedData
+	log.Println("htlc step 3 end", time.Now())
 	return toBobData, nil
 }
 
 // step 4 bob 响应-100041号协议，创建C3a的Rsmc的Rd和Br，toHtlc的Br，Ht1a，Hlock，以及C3b的toB，toRsmc，toHtlc
 func (service *htlcForwardTxManager) BobSignedAddHtlcAtBobSide(jsonData string, user bean.User) (returnData interface{}, err error) {
+	log.Println("htlc step 4 begin", time.Now())
 	if tool.CheckIsString(&jsonData) == false {
 		err := errors.New(enum.Tips_common_empty + "msg data")
 		log.Println(err)
@@ -925,14 +932,7 @@ func (service *htlcForwardTxManager) BobSignedAddHtlcAtBobSide(jsonData string, 
 	var c3aRsmcOutputs []rpc.TransactionInputItem
 	if tool.CheckIsString(&payerRequestAddHtlc.C3aRsmcPartialSignedData.Hex) {
 		c3aSignedRsmcHex = requestData.C3aCompleteSignedRsmcHex
-		testResult, err := rpcClient.TestMemPoolAccept(c3aSignedRsmcHex)
-		if err != nil {
-			return nil, err
-		}
-		if gjson.Parse(testResult).Array()[0].Get("allowed").Bool() == false {
-			return nil, errors.New(gjson.Parse(testResult).Array()[0].Get("reject-reason").String())
-		}
-		c3aRsmcTxId = gjson.Parse(testResult).Array()[0].Get("txid").Str
+		c3aRsmcTxId = rpcClient.GetTxId(c3aSignedRsmcHex)
 
 		// region 根据alice的临时地址+bob的通道address,获取alice2+bob的多签地址，并得到AliceSignedRsmcHex签名后的交易的input，为创建alice的RD和bob的BR做准备
 		c3aRsmcMultiAddress, c3aRsmcRedeemScript, c3aRsmcMultiAddressScriptPubKey, err = createMultiSig(payerRequestAddHtlc.CurrRsmcTempAddressPubKey, bobChannelPubKey)
@@ -956,23 +956,12 @@ func (service *htlcForwardTxManager) BobSignedAddHtlcAtBobSide(jsonData string, 
 	c3aSignedToCounterpartyTxHex := ""
 	if len(payerRequestAddHtlc.C3aCounterpartyPartialSignedData.Hex) > 0 {
 		c3aSignedToCounterpartyTxHex = payerRequestAddHtlc.C3aCounterpartyPartialSignedData.Hex
-		testResult, err := rpcClient.TestMemPoolAccept(c3aSignedToCounterpartyTxHex)
-		if err != nil {
-			return nil, err
-		}
-		if gjson.Parse(testResult).Array()[0].Get("allowed").Bool() == false {
-			return nil, errors.New(gjson.Parse(testResult).Array()[0].Get("reject-reason").String())
-		}
 	}
 	//endregion
 
 	// region 3、验证C3a的 htlcHex
 	c3aSignedHtlcHex := requestData.C3aCompleteSignedHtlcHex
-	testResult, err := rpcClient.TestMemPoolAccept(c3aSignedHtlcHex)
-	if err != nil {
-		return nil, err
-	}
-	c3aHtlcTxId := gjson.Parse(testResult).Array()[0].Get("txid").Str
+	c3aHtlcTxId := rpcClient.GetTxId(c3aSignedHtlcHex)
 
 	// region 根据alice的htlc临时地址+bob的通道address,获取alice2+bob的多签地址，并得到AliceSignedHtlcHex签名后的交易的input，为创建bob的HBR做准备
 	c3aHtlcMultiAddress, c3aHtlcRedeemScript, c3aHtlcAddrScriptPubKey, err := createMultiSig(payerRequestAddHtlc.CurrHtlcTempAddressPubKey, bobChannelPubKey)
@@ -1155,12 +1144,13 @@ func (service *htlcForwardTxManager) BobSignedAddHtlcAtBobSide(jsonData string, 
 	}
 	service.tempDataSendTo41PAtBobSide[user.PeerId+"_"+channelInfo.ChannelId] = toAliceDataOf41P
 	_ = tx.Commit()
-
+	log.Println("htlc step 4 end", time.Now())
 	return needBobSignData, nil
 }
 
 // step 5 bob -100101 bob完成对C3b的签名，构建41号协议的消息体，推送41号协议
 func (service *htlcForwardTxManager) OnBobSignedC3bAtBobSide(msg bean.RequestMessage, user bean.User) (toAlice, toBob interface{}, err error) {
+	log.Println("htlc step 5 begin", time.Now())
 	c3bResult := bean.BobSignedHtlcTxOfC3b{}
 	err = json.Unmarshal([]byte(msg.Data), &c3bResult)
 	if err != nil {
@@ -1336,11 +1326,13 @@ func (service *htlcForwardTxManager) OnBobSignedC3bAtBobSide(msg bean.RequestMes
 	toBobData := bean.BobSignedHtlcTxOfC3bResult{}
 	toBobData.ChannelId = channelInfo.ChannelId
 	toBobData.CommitmentTxHash = latestCommitmentTxInfo.CurrHash
+	log.Println("htlc step 5 end", time.Now())
 	return toAliceDataOfP2p, toBobData, nil
 }
 
 // step 6 alice p2p 41号协议，构建需要alice签名的数据，缓存41号协议的数据， 推送（110041）信息给alice签名
 func (service *htlcForwardTxManager) AfterBobSignAddHtlcAtAliceSide_41(msgData string, user bean.User) (data interface{}, needNoticeBob bool, err error) {
+	log.Println("htlc step 6 begin", time.Now())
 	dataFromBob := bean.NeedAliceSignHtlcTxOfC3bP2p{}
 	_ = json.Unmarshal([]byte(msgData), &dataFromBob)
 
@@ -1397,12 +1389,13 @@ func (service *htlcForwardTxManager) AfterBobSignAddHtlcAtAliceSide_41(msgData s
 		service.tempDataFrom41PAtAliceSide = make(map[string]bean.NeedAliceSignHtlcTxOfC3bP2p)
 	}
 	service.tempDataFrom41PAtAliceSide[user.PeerId+"_"+channelId] = dataFromBob
+	log.Println("htlc step 6 end", time.Now())
 	return needAliceSignHtlcTxOfC3b, false, nil
 }
 
 // step 7 alice 响应100102号协议，根据C3b的签名结果创建C3b的rmsc的rd，br，htlc的br，htd，hlock，以及创建C3a的htrd和htbr
 func (service *htlcForwardTxManager) OnAliceSignC3bAtAliceSide(msg bean.RequestMessage, user bean.User) (interface{}, error) {
-
+	log.Println("htlc step 7 begin", time.Now())
 	aliceSignedC3b := bean.AliceSignedHtlcTxOfC3bResult{}
 	_ = json.Unmarshal([]byte(msg.Data), &aliceSignedC3b)
 
@@ -1743,12 +1736,13 @@ func (service *htlcForwardTxManager) OnAliceSignC3bAtAliceSide(msg bean.RequestM
 	}
 	service.tempDataSendTo42PAtAliceSide[user.PeerId+"_"+channelId] = needBobSignData
 	_ = tx.Commit()
-
+	log.Println("htlc step 7 end", time.Now())
 	return needAliceSignData, nil
 }
 
 // step 8 alice 响应 100103号协议，更新alice的承诺交易，推送42号p2p协议
 func (service *htlcForwardTxManager) OnAliceSignedC3bSubTxAtAliceSide(msg bean.RequestMessage, user bean.User) (toAlice, toBob interface{}, err error) {
+	log.Println("htlc step 8 begin", time.Now())
 	aliceSignedC3b := bean.AliceSignedHtlcSubTxOfC3b{}
 	_ = json.Unmarshal([]byte(msg.Data), &aliceSignedC3b)
 
@@ -1920,11 +1914,13 @@ func (service *htlcForwardTxManager) OnAliceSignedC3bSubTxAtAliceSide(msg bean.R
 	toAliceData := bean.AliceSignedHtlcSubTxOfC3bResult{}
 	toAliceData.ChannelId = commitmentTx.ChannelId
 	toAliceData.CommitmentTxId = commitmentTx.CurrHash
+	log.Println("htlc step 8 end", time.Now())
 	return toAliceData, needBobSignData, nil
 }
 
 // step 9 bob 响应 42号协议 构造需要bob签名的数据，缓存来自42号协议的数据 推送110042
 func (service *htlcForwardTxManager) OnGetNeedBobSignC3bSubTxAtBobSide(msgData string, user bean.User) (interface{}, error) {
+	log.Println("htlc step 9 begin", time.Now())
 	c3bCacheData := bean.NeedBobSignHtlcSubTxOfC3bP2p{}
 	_ = json.Unmarshal([]byte(msgData), &c3bCacheData)
 
@@ -1941,12 +1937,13 @@ func (service *htlcForwardTxManager) OnGetNeedBobSignC3bSubTxAtBobSide(msgData s
 	needBobSign.C3bRsmcRdPartialData = c3bCacheData.C3bRsmcRdPartialData
 	needBobSign.C3bHtlcHlockPartialData = c3bCacheData.C3bHtlcHlockPartialData
 	needBobSign.C3bHtlcHtdPartialData = c3bCacheData.C3bHtlcHtdPartialData
+	log.Println("htlc step 9 end", time.Now())
 	return needBobSign, nil
 }
 
 // step 10 bob 响应100104:缓存签名的结果，生成hlock的 he让bob继续签名
 func (service *htlcForwardTxManager) OnBobSignedC3bSubTxAtBobSide(msg bean.RequestMessage, user bean.User) (interface{}, error) {
-
+	log.Println("htlc step 10 begin", time.Now())
 	jsonObj := bean.BobSignedHtlcSubTxOfC3b{}
 	_ = json.Unmarshal([]byte(msg.Data), &jsonObj)
 
@@ -2030,11 +2027,13 @@ func (service *htlcForwardTxManager) OnBobSignedC3bSubTxAtBobSide(msg bean.Reque
 	needBobSignData.C3bHtlcHlockHeRawData = *c3bHeRawData
 	needBobSignData.PayerPeerId = c3bCacheData.PayerPeerId
 	needBobSignData.PayerNodeAddress = c3bCacheData.PayerNodeAddress
+	log.Println("htlc step 10 end", time.Now())
 	return needBobSignData, nil
 }
 
 // step 11 bob 响应100105:收款方完成Hlock的he的部分签名，更新C3b的信息，最后推送43给alice和推送正向H的创建htlc的结果
 func (service *htlcForwardTxManager) OnBobSignHtRdAtBobSide_42(msgData string, user bean.User) (toAlice, toBob interface{}, err error) {
+	log.Println("htlc step 11 begin", time.Now())
 	jsonObj := bean.BobSignedHtlcHeTxOfC3b{}
 	_ = json.Unmarshal([]byte(msgData), &jsonObj)
 
@@ -2132,12 +2131,13 @@ func (service *htlcForwardTxManager) OnBobSignHtRdAtBobSide_42(msgData string, u
 
 	key := user.PeerId + "_" + channelInfo.ChannelId
 	delete(service.tempDataFrom42PAtBobSide, key)
+	log.Println("htlc step 11 end", time.Now())
 	return c3aRetData, latestCommitmentTx, nil
 }
 
 // step 12 响应43号协议: 保存htrd和hed 推送110043给Alice
 func (service *htlcForwardTxManager) OnGetHtrdTxDataFromBobAtAliceSide_43(msgData string, user bean.User) (data interface{}, err error) {
-
+	log.Println("htlc step 12 begin", time.Now())
 	c3aHtrdData := bean.C3aSignedHerdTxOfC3bP2p{}
 	_ = json.Unmarshal([]byte(msgData), &c3aHtrdData)
 
@@ -2203,7 +2203,7 @@ func (service *htlcForwardTxManager) OnGetHtrdTxDataFromBobAtAliceSide_43(msgDat
 	delete(service.tempDataFrom41PAtAliceSide, key)
 	delete(service.tempDataSendTo42PAtAliceSide, key)
 	_ = tx.Commit()
-
+	log.Println("htlc step 12 end", time.Now())
 	return latestCommitmentTx, nil
 }
 
@@ -2302,12 +2302,8 @@ func htlcPayerCreateCommitmentTx_C3a(tx storm.Node, channelInfo *dao.ChannelInfo
 		allUsedTxidTemp += "," + usedTxid
 		newCommitmentTxInfo.HtlcRoutingPacket = requestData.RoutingPacket
 
-		currBlockHeight, err := rpcClient.GetBlockCount()
-		if err != nil {
-			return nil, rawTx, errors.New("fail to get blockHeight ,please try again later")
-		}
 		newCommitmentTxInfo.HtlcCltvExpiry = requestData.CltvExpiry
-		newCommitmentTxInfo.BeginBlockHeight = currBlockHeight
+		newCommitmentTxInfo.BeginBlockHeight = httpGetBlockCountFromTracker()
 
 		newCommitmentTxInfo.HtlcTxHex = htlcTxData["hex"].(string)
 		newCommitmentTxInfo.HtlcH = requestData.H
@@ -2490,12 +2486,8 @@ func htlcPayeeCreateCommitmentTx_C3b(tx storm.Node, channelInfo *dao.ChannelInfo
 		}
 		allUsedTxidTemp += "," + usedTxid
 		newCommitmentTxInfo.HtlcRoutingPacket = payerData.RoutingPacket
-		currBlockHeight, err := rpcClient.GetBlockCount()
-		if err != nil {
-			return nil, rawTx, errors.New("fail to get blockHeight ,please try again later")
-		}
 		newCommitmentTxInfo.HtlcCltvExpiry = payerData.CltvExpiry
-		newCommitmentTxInfo.BeginBlockHeight = currBlockHeight
+		newCommitmentTxInfo.BeginBlockHeight = httpGetBlockCountFromTracker()
 		newCommitmentTxInfo.HtlcTxHex = htlcTxData["hex"].(string)
 
 		signHexData := bean.NeedClientSignTxData{}
@@ -2588,70 +2580,35 @@ func checkHexAndUpdateC3aOn42Protocal(tx storm.Node, jsonObj bean.NeedAliceSignH
 			log.Println(err)
 			return nil, true, err
 		}
-
-		result, err := rpcClient.OmniDecodeTransaction(signedToCounterpartyHex)
+		_, err = omnicore.VerifyOmniTxHex(signedToCounterpartyHex,
+			commitmentTransaction.PropertyId,
+			commitmentTransaction.AmountToCounterparty,
+			otherSideAddress,
+			true)
 		if err != nil {
-			return nil, true, err
-		}
-		hexJsonObj := gjson.Parse(result)
-		if channelInfo.ChannelAddress != hexJsonObj.Get("sendingaddress").String() {
-			err = errors.New("wrong inputAddress at signedToOtherHex  at 41 protocol")
 			log.Println(err)
-			return nil, true, err
-		}
-		if channelInfo.PropertyId != hexJsonObj.Get("propertyid").Int() {
-			err = errors.New("wrong propertyId at signedToOtherHex  at 41 protocol")
-			log.Println(err)
-			return nil, true, err
-		}
-
-		if otherSideAddress != hexJsonObj.Get("referenceaddress").String() {
-			err = errors.New("wrong outputAddress at signedToOtherHex  at 41 protocol")
-			log.Println(err)
-			return nil, true, err
-		}
-		if commitmentTransaction.AmountToCounterparty != hexJsonObj.Get("amount").Float() {
-			err = errors.New("wrong amount at signedToOtherHex  at 41 protocol")
-			log.Println(err)
-			return nil, true, err
+			return nil, false, err
 		}
 		commitmentTransaction.ToCounterpartyTxHex = signedToCounterpartyHex
-		commitmentTransaction.ToCounterpartyTxid = hexJsonObj.Get("txid").String()
+		commitmentTransaction.ToCounterpartyTxid = rpcClient.GetTxId(signedToCounterpartyHex)
 	}
 	//endregion
 
 	//region 2、检测 signedRsmcHex
 	signedRsmcHex := jsonObj.C3aCompleteSignedRsmcHex
 	if tool.CheckIsString(&signedRsmcHex) {
-		result, err := rpcClient.OmniDecodeTransaction(signedRsmcHex)
+		_, err = omnicore.VerifyOmniTxHex(signedRsmcHex,
+			commitmentTransaction.PropertyId,
+			commitmentTransaction.AmountToRSMC,
+			commitmentTransaction.RSMCMultiAddress,
+			true)
 		if err != nil {
-			return nil, true, err
-		}
-		hexJsonObj := gjson.Parse(result)
-
-		if channelInfo.ChannelAddress != hexJsonObj.Get("sendingaddress").String() {
-			err = errors.New("wrong inputAddress at signedRsmcHex  at 41 protocol")
 			log.Println(err)
-			return nil, true, err
-		}
-		if channelInfo.PropertyId != hexJsonObj.Get("propertyid").Int() {
-			err = errors.New("wrong propertyId at signedRsmcHex  at 41 protocol")
-			log.Println(err)
-			return nil, true, err
+			return nil, false, err
 		}
 
-		if commitmentTransaction.RSMCMultiAddress != hexJsonObj.Get("referenceaddress").String() {
-			err = errors.New("wrong outputAddress at signedRsmcHex  at 41 protocol")
-			log.Println(err)
-			return nil, true, err
-		}
-		if commitmentTransaction.AmountToRSMC != hexJsonObj.Get("amount").Float() {
-			err = errors.New("wrong amount at signedRsmcHex  at 41 protocol")
-			log.Println(err)
-			return nil, true, err
-		}
 		commitmentTransaction.RSMCTxHex = signedRsmcHex
-		commitmentTransaction.RSMCTxid = hexJsonObj.Get("txid").String()
+		commitmentTransaction.RSMCTxid = rpcClient.GetTxId(signedRsmcHex)
 	}
 	//endregion
 
@@ -2662,75 +2619,30 @@ func checkHexAndUpdateC3aOn42Protocal(tx storm.Node, jsonObj bean.NeedAliceSignH
 		log.Println(err)
 		return nil, true, err
 	}
-
-	result, err := rpcClient.OmniDecodeTransaction(signedHtlcHex)
+	_, err = omnicore.VerifyOmniTxHex(signedHtlcHex,
+		commitmentTransaction.PropertyId,
+		commitmentTransaction.AmountToHtlc,
+		commitmentTransaction.HTLCMultiAddress,
+		true)
 	if err != nil {
-		return nil, true, err
-	}
-	hexJsonObj := gjson.Parse(result)
-	if channelInfo.ChannelAddress != hexJsonObj.Get("sendingaddress").String() {
-		err = errors.New("wrong inputAddress at signedHtlcHex  at 41 protocol")
 		log.Println(err)
-		return nil, true, err
-	}
-	if channelInfo.PropertyId != hexJsonObj.Get("propertyid").Int() {
-		err = errors.New("wrong propertyId at signedHtlcHex  at 41 protocol")
-		log.Println(err)
-		return nil, true, err
-	}
-
-	if commitmentTransaction.HTLCMultiAddress != hexJsonObj.Get("referenceaddress").String() {
-		err = errors.New("wrong outputAddress at signedHtlcHex  at 41 protocol")
-		log.Println(err)
-		return nil, true, err
-	}
-	if commitmentTransaction.AmountToHtlc != hexJsonObj.Get("amount").Float() {
-		err = errors.New("wrong amount at signedHtlcHex  at 41 protocol")
-		log.Println(err)
-		return nil, true, err
+		return nil, false, err
 	}
 	commitmentTransaction.HtlcTxHex = signedHtlcHex
-	commitmentTransaction.HTLCTxid = hexJsonObj.Get("txid").String()
+	commitmentTransaction.HTLCTxid = rpcClient.GetTxId(signedHtlcHex)
 	//endregion
 
 	//region 4、rsmc Rd的保存
 	payerRsmcRdHex := jsonObj.C3aRsmcRdPartialSignedData.Hex
 	if tool.CheckIsString(&payerRsmcRdHex) {
-		payerRDInputsFromRsmc, err := getInputsForNextTxByParseTxHashVout(
-			signedRsmcHex,
-			commitmentTransaction.RSMCMultiAddress,
-			commitmentTransaction.RSMCMultiAddressScriptPubKey,
-			commitmentTransaction.RSMCRedeemScript)
+		_, err = omnicore.VerifyOmniTxHex(payerRsmcRdHex,
+			commitmentTransaction.PropertyId,
+			commitmentTransaction.AmountToRSMC,
+			payerAddress,
+			true)
 		if err != nil {
 			log.Println(err)
-			return nil, true, err
-		}
-		result, err = rpcClient.OmniDecodeTransactionWithPrevTxs(payerRsmcRdHex, payerRDInputsFromRsmc)
-		if err != nil {
-			log.Println(err)
-			return nil, true, err
-		}
-		hexJsonObj = gjson.Parse(result)
-		if commitmentTransaction.RSMCMultiAddress != hexJsonObj.Get("sendingaddress").String() {
-			err = errors.New("wrong inputAddress at payerRsmcRdHex  at 41 protocol")
-			log.Println(err)
-			return nil, true, err
-		}
-
-		if payerAddress != hexJsonObj.Get("referenceaddress").String() {
-			err = errors.New("wrong outputAddress at payerRsmcRdHex  at 41 protocol")
-			log.Println(err)
-			return nil, true, err
-		}
-		if channelInfo.PropertyId != hexJsonObj.Get("propertyid").Int() {
-			err = errors.New("wrong propertyId at payerRsmcRdHex  at 41 protocol")
-			log.Println(err)
-			return nil, true, err
-		}
-		if commitmentTransaction.AmountToRSMC != hexJsonObj.Get("amount").Float() {
-			err = errors.New("wrong amount at payerRsmcRdHex  at 41 protocol")
-			log.Println(err)
-			return nil, true, err
+			return nil, false, err
 		}
 
 		err = saveRdTx(tx, &channelInfo, signedRsmcHex, payerRsmcRdHex, commitmentTransaction, payerAddress, &user)
@@ -2742,48 +2654,22 @@ func checkHexAndUpdateC3aOn42Protocal(tx storm.Node, jsonObj bean.NeedAliceSignH
 
 	//region 5、对ht1a进行二次签名，并保存
 	payerHt1aHex := jsonObj.C3aHtlcHtPartialSignedData.Hex
-	payerHt1aInputsFromHtlc, err := getInputsForNextTxByParseTxHashVout(
-		signedHtlcHex,
-		commitmentTransaction.HTLCMultiAddress,
-		commitmentTransaction.HTLCMultiAddressScriptPubKey,
-		commitmentTransaction.HTLCRedeemScript)
-	if err != nil {
-		log.Println(err)
-		return nil, true, err
-	}
 	multiAddress, _, _, err := createMultiSig(htlcRequestInfo.CurrHtlcTempAddressForHt1aPubKey, payeePubKey)
 	if err != nil {
 		log.Println(err)
 		return nil, false, err
 	}
 
-	result, err = rpcClient.OmniDecodeTransactionWithPrevTxs(payerHt1aHex, payerHt1aInputsFromHtlc)
+	_, err = omnicore.VerifyOmniTxHex(payerHt1aHex,
+		commitmentTransaction.PropertyId,
+		commitmentTransaction.AmountToHtlc,
+		multiAddress,
+		true)
 	if err != nil {
 		log.Println(err)
-		return nil, true, err
-	}
-	hexJsonObj = gjson.Parse(result)
-	if commitmentTransaction.HTLCMultiAddress != hexJsonObj.Get("sendingaddress").String() {
-		err = errors.New("wrong inputAddress at payerHt1aHex  at 41 protocol")
-		log.Println(err)
-		return nil, true, err
+		return nil, false, err
 	}
 
-	if multiAddress != hexJsonObj.Get("referenceaddress").String() {
-		err = errors.New("wrong outputAddress at payerHt1aHex  at 41 protocol")
-		log.Println(err)
-		return nil, true, err
-	}
-	if channelInfo.PropertyId != hexJsonObj.Get("propertyid").Int() {
-		err = errors.New("wrong propertyId at payerHt1aHex  at 41 protocol")
-		log.Println(err)
-		return nil, true, err
-	}
-	if commitmentTransaction.AmountToHtlc != hexJsonObj.Get("amount").Float() {
-		err = errors.New("wrong amount at payerHt1aHex  at 41 protocol")
-		log.Println(err)
-		return nil, true, err
-	}
 	htlcTimeOut := commitmentTransaction.HtlcCltvExpiry
 	ht1a, err := saveHT1aForAlice(tx, channelInfo, commitmentTransaction, payerHt1aHex, htlcRequestInfo, payeePubKey, htlcTimeOut, user)
 	if err != nil {
@@ -2822,40 +2708,22 @@ func checkHexAndUpdateC3bOn42Protocal(tx storm.Node, jsonObj bean.NeedBobSignHtl
 	//region 1、检测 signedToOtherHex
 	signedToCounterpartyTxHex := jsonObj.C3bCompleteSignedCounterpartyHex
 	if tool.CheckIsString(&signedToCounterpartyTxHex) {
-		_, err = rpcClient.TestMemPoolAccept(signedToCounterpartyTxHex)
+		if pass, _ := rpcClient.CheckMultiSign(true, signedToCounterpartyTxHex, 2); pass == false {
+			err = errors.New("signedToCounterpartyTxHex is empty at 42 protocol")
+			log.Println(err)
+			return nil, true, err
+		}
+		_, err = omnicore.VerifyOmniTxHex(signedToCounterpartyTxHex,
+			latestCommitmentTx.PropertyId,
+			latestCommitmentTx.AmountToCounterparty,
+			aliceChannelAddress,
+			true)
 		if err != nil {
-			err = errors.New("wrong signedToCounterpartyTxHex at 42 protocol")
 			log.Println(err)
-			return nil, true, err
-		}
-		result, err := rpcClient.OmniDecodeTransaction(signedToCounterpartyTxHex)
-		if err != nil {
-			return nil, true, err
-		}
-		hexJsonObj := gjson.Parse(result)
-		if channelInfo.ChannelAddress != hexJsonObj.Get("sendingaddress").String() {
-			err = errors.New("wrong inputAddress at signedToOtherHex  at 42 protocol")
-			log.Println(err)
-			return nil, true, err
-		}
-		if channelInfo.PropertyId != hexJsonObj.Get("propertyid").Int() {
-			err = errors.New("wrong propertyId at signedToOtherHex  at 42 protocol")
-			log.Println(err)
-			return nil, true, err
-		}
-
-		if aliceChannelAddress != hexJsonObj.Get("referenceaddress").String() {
-			err = errors.New("wrong outputAddress at signedToOtherHex  at 42 protocol")
-			log.Println(err)
-			return nil, true, err
-		}
-		if latestCommitmentTx.AmountToCounterparty != hexJsonObj.Get("amount").Float() {
-			err = errors.New("wrong amount at signedToOtherHex  at 42 protocol")
-			log.Println(err)
-			return nil, true, err
+			return nil, false, err
 		}
 		latestCommitmentTx.ToCounterpartyTxHex = signedToCounterpartyTxHex
-		latestCommitmentTx.ToCounterpartyTxid = hexJsonObj.Get("txid").String()
+		latestCommitmentTx.ToCounterpartyTxid = rpcClient.GetTxId(signedToCounterpartyTxHex)
 	}
 	//endregion
 
@@ -2868,35 +2736,18 @@ func checkHexAndUpdateC3bOn42Protocal(tx storm.Node, jsonObj bean.NeedBobSignHtl
 			log.Println(err)
 			return nil, true, err
 		}
-		result, err := rpcClient.OmniDecodeTransaction(signedRsmcHex)
+		_, err = omnicore.VerifyOmniTxHex(signedRsmcHex,
+			latestCommitmentTx.PropertyId,
+			latestCommitmentTx.AmountToRSMC,
+			latestCommitmentTx.RSMCMultiAddress,
+			true)
 		if err != nil {
-			return nil, true, err
-		}
-		hexJsonObj := gjson.Parse(result)
-
-		if channelInfo.ChannelAddress != hexJsonObj.Get("sendingaddress").String() {
-			err = errors.New("wrong inputAddress at signedRsmcHex  at 42 protocol")
 			log.Println(err)
-			return nil, true, err
-		}
-		if channelInfo.PropertyId != hexJsonObj.Get("propertyid").Int() {
-			err = errors.New("wrong propertyId at signedRsmcHex  at 42 protocol")
-			log.Println(err)
-			return nil, true, err
+			return nil, false, err
 		}
 
-		if latestCommitmentTx.RSMCMultiAddress != hexJsonObj.Get("referenceaddress").String() {
-			err = errors.New("wrong outputAddress at signedRsmcHex  at 42 protocol")
-			log.Println(err)
-			return nil, true, err
-		}
-		if latestCommitmentTx.AmountToRSMC != hexJsonObj.Get("amount").Float() {
-			err = errors.New("wrong amount at signedRsmcHex  at 42 protocol")
-			log.Println(err)
-			return nil, true, err
-		}
 		latestCommitmentTx.RSMCTxHex = signedRsmcHex
-		latestCommitmentTx.RSMCTxid = hexJsonObj.Get("txid").String()
+		latestCommitmentTx.RSMCTxid = rpcClient.GetTxId(signedRsmcHex)
 	}
 	//endregion
 
@@ -2907,34 +2758,19 @@ func checkHexAndUpdateC3bOn42Protocal(tx storm.Node, jsonObj bean.NeedBobSignHtl
 		log.Println(err)
 		return nil, true, err
 	}
-	result, err := rpcClient.OmniDecodeTransaction(signedHtlcHex)
+
+	_, err = omnicore.VerifyOmniTxHex(signedHtlcHex,
+		latestCommitmentTx.PropertyId,
+		latestCommitmentTx.AmountToHtlc,
+		latestCommitmentTx.HTLCMultiAddress,
+		true)
 	if err != nil {
-		return nil, true, err
-	}
-	hexJsonObj := gjson.Parse(result)
-	if channelInfo.ChannelAddress != hexJsonObj.Get("sendingaddress").String() {
-		err = errors.New("wrong inputAddress at signedHtlcHex  at 42 protocol")
 		log.Println(err)
-		return nil, true, err
-	}
-	if channelInfo.PropertyId != hexJsonObj.Get("propertyid").Int() {
-		err = errors.New("wrong propertyId at signedHtlcHex  at 42 protocol")
-		log.Println(err)
-		return nil, true, err
+		return nil, false, err
 	}
 
-	if latestCommitmentTx.HTLCMultiAddress != hexJsonObj.Get("referenceaddress").String() {
-		err = errors.New("wrong outputAddress at signedHtlcHex  at 42 protocol")
-		log.Println(err)
-		return nil, true, err
-	}
-	if latestCommitmentTx.AmountToHtlc != hexJsonObj.Get("amount").Float() {
-		err = errors.New("wrong amount at signedHtlcHex  at 42 protocol")
-		log.Println(err)
-		return nil, true, err
-	}
 	latestCommitmentTx.HtlcTxHex = signedHtlcHex
-	latestCommitmentTx.HTLCTxid = hexJsonObj.Get("txid").String()
+	latestCommitmentTx.HTLCTxid = rpcClient.GetTxId(signedRsmcHex)
 	//endregion
 
 	//region 4、rsmc Rd
@@ -2945,41 +2781,15 @@ func checkHexAndUpdateC3bOn42Protocal(tx storm.Node, jsonObj bean.NeedBobSignHtl
 			log.Println(err)
 			return nil, true, err
 		}
-		payerRDInputsFromRsmc, err := getInputsForNextTxByParseTxHashVout(
-			signedRsmcHex,
-			latestCommitmentTx.RSMCMultiAddress,
-			latestCommitmentTx.RSMCMultiAddressScriptPubKey,
-			latestCommitmentTx.RSMCRedeemScript)
-		if err != nil {
-			log.Println(err)
-			return nil, true, err
-		}
-		result, err = rpcClient.OmniDecodeTransactionWithPrevTxs(payeeRsmcRdHex, payerRDInputsFromRsmc)
-		if err != nil {
-			log.Println(err)
-			return nil, true, err
-		}
-		hexJsonObj = gjson.Parse(result)
-		if latestCommitmentTx.RSMCMultiAddress != hexJsonObj.Get("sendingaddress").String() {
-			err = errors.New("wrong inputAddress at payeeRsmcRdHex  at 41 protocol")
-			log.Println(err)
-			return nil, true, err
-		}
 
-		if bobChannelAddress != hexJsonObj.Get("referenceaddress").String() {
-			err = errors.New("wrong outputAddress at payeeRsmcRdHex  at 41 protocol")
+		_, err = omnicore.VerifyOmniTxHex(payeeRsmcRdHex,
+			latestCommitmentTx.PropertyId,
+			latestCommitmentTx.AmountToRSMC,
+			bobChannelAddress,
+			true)
+		if err != nil {
 			log.Println(err)
-			return nil, true, err
-		}
-		if channelInfo.PropertyId != hexJsonObj.Get("propertyid").Int() {
-			err = errors.New("wrong propertyId at payeeRsmcRdHex  at 41 protocol")
-			log.Println(err)
-			return nil, true, err
-		}
-		if latestCommitmentTx.AmountToRSMC != hexJsonObj.Get("amount").Float() {
-			err = errors.New("wrong amount at payeeRsmcRdHex  at 41 protocol")
-			log.Println(err)
-			return nil, true, err
+			return nil, false, err
 		}
 
 		err = saveRdTx(tx, &channelInfo, signedRsmcHex, payeeRsmcRdHex, latestCommitmentTx, bobChannelAddress, &user)
@@ -3011,40 +2821,15 @@ func checkHexAndUpdateC3bOn42Protocal(tx storm.Node, jsonObj bean.NeedBobSignHtl
 		log.Println(err)
 		return nil, true, err
 	}
-	payeeHTD1bInputsFromHtlc, err := getInputsForNextTxByParseTxHashVout(
-		signedHtlcHex,
-		latestCommitmentTx.HTLCMultiAddress,
-		latestCommitmentTx.HTLCMultiAddressScriptPubKey,
-		latestCommitmentTx.HTLCRedeemScript)
+
+	_, err = omnicore.VerifyOmniTxHex(payeeHTD1bHex,
+		latestCommitmentTx.PropertyId,
+		latestCommitmentTx.AmountToHtlc,
+		aliceChannelAddress,
+		true)
 	if err != nil {
 		log.Println(err)
-		return nil, true, err
-	}
-	result, err = rpcClient.OmniDecodeTransactionWithPrevTxs(payeeHTD1bHex, payeeHTD1bInputsFromHtlc)
-	if err != nil {
-		log.Println(err)
-		return nil, true, err
-	}
-	hexJsonObj = gjson.Parse(result)
-	if latestCommitmentTx.HTLCMultiAddress != hexJsonObj.Get("sendingaddress").String() {
-		err = errors.New("wrong inputAddress at payeeHTD1bHex  at 41 protocol")
-		log.Println(err)
-		return nil, true, err
-	}
-	if aliceChannelAddress != hexJsonObj.Get("referenceaddress").String() {
-		err = errors.New("wrong outputAddress at payeeHTD1bHex  at 41 protocol")
-		log.Println(err)
-		return nil, true, err
-	}
-	if channelInfo.PropertyId != hexJsonObj.Get("propertyid").Int() {
-		err = errors.New("wrong propertyId at payeeHTD1bHex  at 41 protocol")
-		log.Println(err)
-		return nil, true, err
-	}
-	if latestCommitmentTx.AmountToHtlc != hexJsonObj.Get("amount").Float() {
-		err = errors.New("wrong amount at payeeHTD1bHex  at 41 protocol")
-		log.Println(err)
-		return nil, true, err
+		return nil, false, err
 	}
 
 	err = saveHTD1bTx(tx, signedHtlcHex, payeeHTD1bHex, *latestCommitmentTx, aliceChannelAddress, &user)

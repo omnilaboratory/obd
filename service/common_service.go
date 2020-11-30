@@ -170,7 +170,7 @@ func checkBtcTxHex(btcFeeTxHexDecode string, channelInfo *dao.ChannelInfo, peerI
 
 	//vin
 	if jsonFundingTxHexDecode.Get("vin").IsArray() == false {
-		err = errors.New(enum.Tips_funding_notFoundVin)
+		err = errors.New(enum.Tips_funding_noVin)
 		log.Println(err)
 		return "", 0, 0, err
 	}
@@ -182,7 +182,7 @@ func checkBtcTxHex(btcFeeTxHexDecode string, channelInfo *dao.ChannelInfo, peerI
 	}
 	split := strings.Split(asm, " ")
 	if split[0] == "0" {
-		return "", 0, 0, errors.New(enum.Tips_funding_notFoundVin)
+		return "", 0, 0, errors.New(enum.Tips_funding_noVin)
 	}
 
 	inTxid := vin1.Get("txid").String()
@@ -370,7 +370,7 @@ func saveRdTx(tx storm.Node, channelInfo *dao.ChannelInfo, signedRsmcHex string,
 		return err
 	}
 
-	aliceRdTxid := checkHexOutputAddressFromOmniDecode(signedRdHex, inputs, outputAddress)
+	aliceRdTxid := checkHexOutputAddressFromOmniDecode(signedRdHex, outputAddress)
 	if aliceRdTxid == "" {
 		return errors.New(enum.Tips_common_wrongAddressOfRD)
 	}

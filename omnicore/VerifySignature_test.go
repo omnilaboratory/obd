@@ -105,7 +105,7 @@ func TestSignature(t *testing.T) {
 	txOut = wire.NewTxOut(0, nil)
 	redeemTx.AddTxOut(txOut)
 
-	// Sign the redeeming transaction.
+	// SignRawHex the redeeming transaction.
 	lookupKey := func(a btcutil.Address) (*btcec.PrivateKey, bool, error) {
 		// Ordinarily this function would involve looking up the private
 		// key for the provided address, but since the only thing being

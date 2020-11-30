@@ -8,6 +8,7 @@ import (
 	"github.com/omnilaboratory/obd/bean"
 	"github.com/omnilaboratory/obd/bean/enum"
 	"github.com/omnilaboratory/obd/dao"
+	"github.com/omnilaboratory/obd/omnicore"
 	"github.com/omnilaboratory/obd/rpc"
 	"github.com/tidwall/gjson"
 	"log"
@@ -270,17 +271,10 @@ func getLastBR(tx storm.Node, brType dao.BRType, channelInfo dao.ChannelInfo, us
 	return hexData, errors.New(fmt.Sprintf(enum.Tips_rsmc_failToGetInput, "breachRemedyTransaction"))
 }
 
-func checkBobRemcData(rsmcHex string, commitmentTransaction *dao.CommitmentTransaction) error {
-	result, err := rpcClient.OmniDecodeTransaction(rsmcHex)
+func checkBobRemcData(rsmcHex, toAddress string, commitmentTransaction *dao.CommitmentTransaction) error {
+	_, err := omnicore.VerifyOmniTxHex(rsmcHex, commitmentTransaction.PropertyId, commitmentTransaction.AmountToCounterparty, toAddress, true)
 	if err != nil {
-		return errors.New("error rsmcHex")
-	}
-	parse := gjson.Parse(result)
-	if parse.Get("propertyid").Int() != commitmentTransaction.PropertyId {
-		return errors.New("error propertyId in rsmcHex ")
-	}
-	if parse.Get("amount").Float() != commitmentTransaction.AmountToCounterparty {
-		return errors.New("error amount in rsmcHex ")
+		return err
 	}
 	return nil
 }

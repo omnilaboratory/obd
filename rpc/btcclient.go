@@ -8,7 +8,6 @@ import (
 	"github.com/omnilaboratory/obd/tool"
 	"github.com/shopspring/decimal"
 	"github.com/tidwall/gjson"
-	"log"
 	"math"
 	"strconv"
 )
@@ -242,7 +241,6 @@ func (client *Client) BtcCreateRawTransaction(fromBitCoinAddress string, outputI
 	if len(array) == 0 {
 		return nil, errors.New("empty balance")
 	}
-	log.Println("listunspent", array)
 
 	out, _ := outTotalAmount.Round(8).Float64()
 
@@ -412,7 +410,6 @@ func (client *Client) BtcCreateRawTransactionForUnsendInputTx(fromBitCoinAddress
 	}
 
 	out, _ := decimal.NewFromFloat(minerFee).Add(outAmount).Round(8).Float64()
-	log.Println("input list ", inputs)
 
 	if len(inputs) == 0 || balance < out {
 		return nil, errors.New("not enough balance")

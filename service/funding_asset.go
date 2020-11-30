@@ -1026,28 +1026,12 @@ func (service *fundingTransactionManager) OnAliceSignedRdAtAliceSide(data string
 		return nil, err
 	}
 
-	fundingTxHexDecode, err := rpcClient.OmniDecodeTransaction(rsmcSignedHex)
+	_, err = omnicore.VerifyOmniTxHex(rsmcSignedHex, commitmentTxInfo.PropertyId, commitmentTxInfo.AmountToRSMC, commitmentTxInfo.RSMCMultiAddress, true)
 	if err != nil {
-		err = errors.New("TxHex  parse fail " + err.Error())
-		log.Println(err)
 		return nil, err
 	}
 
-	txid := gjson.Get(fundingTxHexDecode, "txid").String()
-	amountA := gjson.Get(fundingTxHexDecode, "amount").Float()
-	propertyId := gjson.Get(fundingTxHexDecode, "propertyid").Int()
-	sendingAddress := gjson.Get(fundingTxHexDecode, "sendingaddress").String()
-	referenceAddress := gjson.Get(fundingTxHexDecode, "referenceaddress").String()
-	if sendingAddress != channelInfo.ChannelAddress && referenceAddress != commitmentTxInfo.RSMCMultiAddress {
-		return nil, errors.New("error address from signed hex")
-	}
-	if commitmentTxInfo.AmountToRSMC != amountA {
-		return nil, errors.New("error amount from signed hex")
-	}
-	if commitmentTxInfo.PropertyId != propertyId {
-		return nil, errors.New("error propertyId from signed hex")
-	}
-	commitmentTxInfo.RSMCTxid = txid
+	commitmentTxInfo.RSMCTxid = rpcClient.GetTxId(rsmcSignedHex)
 	commitmentTxInfo.RSMCTxHex = rsmcSignedHex
 
 	commitmentTxInfo.CurrState = dao.TxInfoState_CreateAndSign
@@ -1084,7 +1068,7 @@ func (service *fundingTransactionManager) OnAliceSignedRdAtAliceSide(data string
 			return nil, errors.New(gjson.Parse(result).Array()[0].Get("reject-reason").String())
 		}
 	}
-	txid = checkHexOutputAddressFromOmniDecode(signedRdHex, inputs, toAddress)
+	txid := checkHexOutputAddressFromOmniDecode(signedRdHex, toAddress)
 	if txid == "" {
 		return nil, errors.New("rdtx has wrong output address")
 	}

@@ -8,6 +8,7 @@ import (
 	"github.com/omnilaboratory/obd/bean/enum"
 	"github.com/omnilaboratory/obd/config"
 	"github.com/omnilaboratory/obd/dao"
+	"github.com/omnilaboratory/obd/omnicore"
 	"github.com/omnilaboratory/obd/rpc"
 	"github.com/omnilaboratory/obd/tool"
 	"github.com/tidwall/gjson"
@@ -770,15 +771,12 @@ func (service *fundingTransactionManager) AfterBobSignBtcFundingAtAliceSide(data
 	return fundingBtcRequest, nil
 }
 
-func checkHexOutputAddressFromOmniDecode(hexDecode string, inputs []rpc.TransactionInputItem, toAddress string) string {
-	result, err := rpcClient.OmniDecodeTransactionWithPrevTxs(hexDecode, inputs)
+func checkHexOutputAddressFromOmniDecode(hexDecode string, toAddress string) string {
+	_, err := omnicore.VerifyOmniTxHexOutAddress(hexDecode, toAddress)
 	if err != nil {
 		return ""
 	}
-	if gjson.Parse(result).Get("referenceaddress").String() == toAddress {
-		return gjson.Parse(result).Get("txid").String()
-	}
-	return ""
+	return rpcClient.GetTxId(hexDecode)
 }
 
 func (service *fundingTransactionManager) BtcFundingAllItem(user bean.User) (node []dao.FundingBtcRequest, err error) {

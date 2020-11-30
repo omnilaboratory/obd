@@ -2,11 +2,12 @@ package rpc
 
 import (
 	"errors"
+	"github.com/omnilaboratory/obd/bean"
 	"github.com/omnilaboratory/obd/config"
+	"github.com/omnilaboratory/obd/omnicore"
 	"github.com/omnilaboratory/obd/tool"
 	"github.com/shopspring/decimal"
 	"github.com/tidwall/gjson"
-	"log"
 	"strconv"
 )
 
@@ -198,6 +199,8 @@ func (client *Client) omniCreateRawtxReference(rawtx string, destination string)
 func (client *Client) OmniSignRawTransactionForUnsend(hex string, inputItems []TransactionInputItem, privKey string) (string, string, error) {
 
 	var inputs []map[string]interface{}
+	var items []bean.RawTxInputItem
+
 	for _, item := range inputItems {
 		node := make(map[string]interface{})
 		node["txid"] = item.Txid
@@ -205,25 +208,21 @@ func (client *Client) OmniSignRawTransactionForUnsend(hex string, inputItems []T
 		node["amount"] = item.Amount
 		node["scriptPubKey"] = item.ScriptPubKey
 		node["redeemScript"] = item.RedeemScript
+
+		inputItem := bean.RawTxInputItem{}
+		inputItem.Vout = int(item.Vout)
+		inputItem.ScriptPubKey = item.ScriptPubKey
+		inputItem.RedeemScript = item.RedeemScript
+		items = append(items, inputItem)
+
 		inputs = append(inputs, node)
 	}
-	signHex, err := client.SignRawTransactionWithKey(hex, []string{privKey}, inputs, "ALL")
-	if err != nil {
-		return "", "", err
-	}
-	hex = gjson.Get(signHex, "hex").String()
-	decodeHex, err := client.DecodeRawTransaction(hex)
-	if err == nil {
-		//log.Println(decodeHex)
-	} else {
-		log.Println(err)
-	}
-	txId := gjson.Get(decodeHex, "txid").String()
+	hex, err := omnicore.SignRawHex(items, hex, privKey)
 	if err != nil {
 		return "", hex, err
 	}
 
-	return txId, hex, nil
+	return client.GetTxId(hex), hex, nil
 }
 
 func GetBtcMinerAmount(total float64) float64 {

@@ -40,7 +40,7 @@ const (
 	Tips_funding_fundTxIsRunning                 = "Please wait till the ongoing bitcoin funding process is finished."
 	Tips_funding_notFoundFundBtcTx               = "Can not find the bitcoin funding transaction."
 	Tips_funding_notFoundFundAssetTx             = "Can not find the asset funding transaction."
-	Tips_funding_notFoundVin                     = "Can not find vin in transaction hex."
+	Tips_funding_noVin                           = "Can not find vin in transaction hex."
 	Tips_funding_notFoundVout                    = "Can not find vout in transaction hex."
 	Tips_funding_wrongBtcHexVin                  = "Data error of vin in transaction hex："
 	Tips_funding_wrongFunderAddressFromBtcHex    = "Input address of current bitcoin funding transaction is not the funder's address(funderAddress) in creading this channel."

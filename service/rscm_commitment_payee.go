@@ -218,9 +218,7 @@ func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction
 		if pass, _ := rpcClient.CheckMultiSign(true, signedRsmcHex, 2); pass == false {
 			return nil, false, errors.New(fmt.Sprintf(enum.Tips_common_failToSign, "c2a_rsmc_signed_hex"))
 		}
-
-		c2aRsmcTestResult, _ := rpcClient.TestMemPoolAccept(signedRsmcHex)
-		aliceRsmcTxId = gjson.Parse(c2aRsmcTestResult).Array()[0].Get("txid").Str
+		aliceRsmcTxId = rpcClient.GetTxId(signedRsmcHex)
 
 		// region 根据alice的临时地址+bob的通道address,获取alice2+bob的多签地址，并得到AliceSignedRsmcHex签名后的交易的input，为创建alice的RD和bob的BR做准备
 		c2aRsmcMultiAddr, err := rpcClient.CreateMultiSig(2, []string{c2aDataJson.CurrTempAddressPubKey, currNodeChannelPubKey})
@@ -488,30 +486,16 @@ func (this *commitmentTxSignedManager) OnBobSignC2bTransactionAtBobSide(data str
 	}
 
 	if len(signedDataForC2b.C2bRsmcSignedHex) > 0 {
-		result, err := rpcClient.TestMemPoolAccept(signedDataForC2b.C2bRsmcSignedHex)
-		if err != nil {
-			return nil, nil, err
-		}
-		txid := gjson.Parse(result).Array()[0].Get("txid").Str
 		latestCommitmentTxInfo.RSMCTxHex = signedDataForC2b.C2bRsmcSignedHex
-		latestCommitmentTxInfo.RSMCTxid = txid
+		latestCommitmentTxInfo.RSMCTxid = rpcClient.GetTxId(signedDataForC2b.C2bRsmcSignedHex)
 	}
 
 	if len(signedDataForC2b.C2bCounterpartySignedHex) > 0 {
-		result, err := rpcClient.TestMemPoolAccept(signedDataForC2b.C2bCounterpartySignedHex)
-		if err != nil {
-			return nil, nil, err
-		}
-		txid := gjson.Parse(result).Array()[0].Get("txid").Str
 		latestCommitmentTxInfo.ToCounterpartyTxHex = signedDataForC2b.C2bCounterpartySignedHex
-		latestCommitmentTxInfo.ToCounterpartyTxid = txid
+		latestCommitmentTxInfo.ToCounterpartyTxid = rpcClient.GetTxId(signedDataForC2b.C2bCounterpartySignedHex)
 	}
 
 	if len(signedDataForC2b.C2aBrSignedHex) > 0 {
-		_, err = rpcClient.TestMemPoolAccept(signedDataForC2b.C2aBrSignedHex)
-		if err != nil {
-			return nil, nil, err
-		}
 		err = updateCurrCommitmentTxRawBR(tx, signedDataForC2b.C2aBrId, signedDataForC2b.C2aBrSignedHex, *user)
 		if err != nil {
 			return nil, nil, err
@@ -606,12 +590,8 @@ func (this *commitmentTxSignedManager) BobSignC2b_RdAtBobSide(data string, user 
 	}
 
 	if tool.CheckIsString(&signedRsmcHex) {
-		decodeRsmcHex, err := rpcClient.OmniDecodeTransaction(signedRsmcHex)
-		if err != nil {
-			return nil, err
-		}
 		latestCommitmentTxInfo.RSMCTxHex = signedRsmcHex
-		latestCommitmentTxInfo.RSMCTxid = gjson.Get(decodeRsmcHex, "txid").Str
+		latestCommitmentTxInfo.RSMCTxid = rpcClient.GetTxId(signedRsmcHex)
 		err = saveRdTx(tx, channelInfo, signedRsmcHex, c2bSignedRdHex, latestCommitmentTxInfo, myChannelAddress, user)
 		if err != nil {
 			return nil, err
@@ -619,12 +599,8 @@ func (this *commitmentTxSignedManager) BobSignC2b_RdAtBobSide(data string, user 
 	}
 
 	if tool.CheckIsString(&signedToCounterpartyTxHex) {
-		decodeSignedToCounterpartyHex, err := rpcClient.OmniDecodeTransaction(signedToCounterpartyTxHex)
-		if err != nil {
-			return nil, err
-		}
 		latestCommitmentTxInfo.ToCounterpartyTxHex = signedToCounterpartyTxHex
-		latestCommitmentTxInfo.ToCounterpartyTxid = gjson.Get(decodeSignedToCounterpartyHex, "txid").Str
+		latestCommitmentTxInfo.ToCounterpartyTxid = rpcClient.GetTxId(signedToCounterpartyTxHex)
 	}
 
 	latestCommitmentTxInfo.CurrState = dao.TxInfoState_CreateAndSign

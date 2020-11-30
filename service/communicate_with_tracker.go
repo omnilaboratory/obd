@@ -122,3 +122,19 @@ func sendMsgToTracker(msgType enum.MsgType, data interface{}) {
 		TrackerChan <- bytes
 	}
 }
+
+func httpGetBlockCountFromTracker() (flag int) {
+	url := "http://" + config.TrackerHost + "/api/v1/GetBlockCount"
+	log.Println(url)
+	resp, err := http.Get(url)
+	if err != nil {
+		return 0
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode == 200 {
+		body, _ := ioutil.ReadAll(resp.Body)
+		log.Println(string(body))
+		return int(gjson.Get(string(body), "data").Int())
+	}
+	return 0
+}

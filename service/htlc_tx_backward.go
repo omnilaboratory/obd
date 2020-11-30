@@ -30,6 +30,9 @@ var HtlcBackwardTxService htlcBackwardTxManager
 
 // step 1 bob -100045 收款方收到R，发送R到obd进行验证
 func (service *htlcBackwardTxManager) SendRToPreviousNodeAtBobSide(msg bean.RequestMessage, user bean.User) (retData interface{}, err error) {
+
+	log.Println("htlc step 13 begin", time.Now())
+
 	if tool.CheckIsString(&msg.Data) == false {
 		return nil, errors.New(enum.Tips_common_empty + "msg data")
 	}
@@ -121,10 +124,7 @@ func (service *htlcBackwardTxManager) SendRToPreviousNodeAtBobSide(msg bean.Requ
 
 	// endregion
 
-	currBlockHeight, err := rpcClient.GetBlockCount()
-	if err != nil {
-		return nil, errors.New(enum.Tips_htlc_failToGetBlockHeight)
-	}
+	currBlockHeight := httpGetBlockCountFromTracker()
 
 	htlcTimeOut := latestCommitmentTxInfo.HtlcCltvExpiry
 	maxHeight := latestCommitmentTxInfo.BeginBlockHeight + htlcTimeOut
@@ -220,11 +220,14 @@ func (service *htlcBackwardTxManager) SendRToPreviousNodeAtBobSide(msg bean.Requ
 		service.tempDataSendTo45PAtBobSide = make(map[string]bean.NeedAliceSignHerdTxOfC3bP2p)
 	}
 	service.tempDataSendTo45PAtBobSide[user.PeerId+"_"+channelInfo.ChannelId] = dataSendTo45P
+
+	log.Println("htlc step 13 end", time.Now())
 	return dataNeedBobSign, nil
 }
 
 // step 2 bob -100106 bob签名HeRd的结果 推送45号协议
 func (service *htlcBackwardTxManager) OnBobSignedHeRdAtBobSide(msg bean.RequestMessage, user bean.User) (retData interface{}, err error) {
+	log.Println("htlc step 14 begin", time.Now())
 	bobSignedData := bean.BobSignHerdForC3b{}
 	_ = json.Unmarshal([]byte(msg.Data), &bobSignedData)
 
@@ -242,12 +245,13 @@ func (service *htlcBackwardTxManager) OnBobSignedHeRdAtBobSide(msg bean.RequestM
 
 	dataSendTo45P.C3bHtlcHerdPartialSignedData.Hex = bobSignedData.C3bHtlcHerdPartialSignedHex
 	service.tempDataSendTo45PAtBobSide[user.PeerId+"_"+bobSignedData.ChannelId] = dataSendTo45P
-
+	log.Println("htlc step 14 end", time.Now())
 	return dataSendTo45P, nil
 }
 
 // step 3 alice p2p -45 推送待签名的herd
 func (service *htlcBackwardTxManager) OnGetHeSubTxDataAtAliceObdAtAliceSide(msg string, user bean.User) (retData interface{}, err error) {
+	log.Println("htlc step 15 begin", time.Now())
 	dataFrom45P := bean.NeedAliceSignHerdTxOfC3bP2p{}
 	_ = json.Unmarshal([]byte(msg), &dataFrom45P)
 
@@ -287,11 +291,13 @@ func (service *htlcBackwardTxManager) OnGetHeSubTxDataAtAliceObdAtAliceSide(msg 
 		service.tempDataFrom45PAtAliceSide = make(map[string]bean.NeedAliceSignHerdTxOfC3bP2p)
 	}
 	service.tempDataFrom45PAtAliceSide[user.PeerId+"_"+dataFrom45P.ChannelId] = dataFrom45P
+	log.Println("htlc step 15 end", time.Now())
 	return dataFrom45P, nil
 }
 
 // step 4 alice  -46 Alice完成herd签名 保存hebr 推送46 herd
 func (service *htlcBackwardTxManager) OnAliceSignedHeRdAtAliceSide(msg bean.RequestMessage, user bean.User) (toAlice, toBob interface{}, err error) {
+	log.Println("htlc step 16 begin", time.Now())
 	herdSignedResult := bean.AliceSignHerdTxOfC3e{}
 	_ = json.Unmarshal([]byte(msg.Data), &herdSignedResult)
 
@@ -389,11 +395,13 @@ func (service *htlcBackwardTxManager) OnAliceSignedHeRdAtAliceSide(msg bean.Requ
 	tx.Update(latestCommitment)
 
 	tx.Commit()
+	log.Println("htlc step 16 end", time.Now())
 	return latestCommitment, dataTo46P, nil
 }
 
 // step 5 bob  -110046 bob保存herd
 func (service *htlcBackwardTxManager) OnGetHeRdDataAtBobObd(msg string, user bean.User) (retData interface{}, err error) {
+	log.Println("htlc step 17 begin", time.Now())
 	dataFrom46P := bean.AliceSignedHerdTxOfC3bP2p{}
 	_ = json.Unmarshal([]byte(msg), &dataFrom46P)
 
@@ -443,6 +451,7 @@ func (service *htlcBackwardTxManager) OnGetHeRdDataAtBobObd(msg string, user bea
 		txStateRequest.CurrChannelId = channelInfo.ChannelId
 		sendMsgToTracker(enum.MsgType_Tracker_UpdateHtlcTxState_352, txStateRequest)
 	}
+	log.Println("htlc step 17 end", time.Now())
 	return latestCommitment, nil
 }
 
@@ -569,132 +578,6 @@ func updateHerd1bAtPayeeSide(tx storm.Node, channelInfo dao.ChannelInfo, commitm
 	}
 
 	return herd, nil
-}
-
-func checkSignedHerdHexAtPayeeSide_at47(tx storm.Node, signedHerd1bHex string, channelInfo dao.ChannelInfo, commitmentTxInfo dao.CommitmentTransaction, user bean.User) (err error) {
-	he1b := &dao.HTLCTimeoutTxForAAndExecutionForB{}
-	err = tx.Select(
-		q.Eq("ChannelId", channelInfo.ChannelId),
-		q.Eq("CommitmentTxId", commitmentTxInfo.Id),
-		q.Eq("Owner", user.PeerId)).First(he1b)
-	if err != nil {
-		log.Println(err)
-		return err
-	}
-
-	herd := &dao.RevocableDeliveryTransaction{}
-	_ = tx.Select(
-		q.Eq("ChannelId", channelInfo.ChannelId),
-		q.Eq("CommitmentTxId", he1b.Id),
-		q.Eq("RDType", 1),
-		q.Eq("Owner", user.PeerId)).First(herd)
-	if err != nil {
-		log.Println(err)
-		return err
-	}
-
-	result, err := rpcClient.TestMemPoolAccept(signedHerd1bHex)
-	if err != nil {
-		return err
-	}
-	if gjson.Parse(result).Array()[0].Get("allowed").Bool() == false {
-		if gjson.Parse(result).Array()[0].Get("reject-reason").String() != "missing-inputs" {
-			return errors.New(gjson.Parse(result).Array()[0].Get("reject-reason").String())
-		}
-	}
-
-	he1bOutputs, err := getInputsForNextTxByParseTxHashVout(he1b.RSMCTxHex, he1b.RSMCMultiAddress, he1b.RSMCMultiAddressScriptPubKey, he1b.RSMCRedeemScript)
-	if err != nil || len(he1bOutputs) == 0 {
-		log.Println(err)
-		return err
-	}
-
-	result, err = rpcClient.OmniDecodeTransactionWithPrevTxs(signedHerd1bHex, he1bOutputs)
-	if err != nil {
-		log.Println(err)
-		return err
-	}
-
-	hexJsonObj := gjson.Parse(result)
-	if he1b.RSMCMultiAddress != hexJsonObj.Get("sendingaddress").String() {
-		err = errors.New("wrong inputAddress at payerHt1aHex  at 41 protocol")
-		log.Println(err)
-		return err
-	}
-
-	if herd.OutputAddress != hexJsonObj.Get("referenceaddress").String() {
-		err = errors.New("wrong outputAddress at payerHt1aHex  at 41 protocol")
-		log.Println(err)
-		return err
-	}
-	if channelInfo.PropertyId != hexJsonObj.Get("propertyid").Int() {
-		err = errors.New("wrong propertyId at payerHt1aHex  at 41 protocol")
-		log.Println(err)
-		return err
-	}
-	if commitmentTxInfo.AmountToHtlc != hexJsonObj.Get("amount").Float() {
-		err = errors.New("wrong amount at payerHt1aHex  at 41 protocol")
-		log.Println(err)
-		return err
-	}
-
-	herd.TxHex = signedHerd1bHex
-	herd.Txid = hexJsonObj.Get("txid").Str
-	herd.CurrState = dao.TxInfoState_CreateAndSign
-	herd.SignAt = time.Now()
-	_ = tx.Update(herd)
-	return nil
-}
-
-func createAndSaveHed1a_at48(tx storm.Node, signedHed1aHex string, channelInfo dao.ChannelInfo, commitmentTxInfo dao.CommitmentTransaction, user bean.User) (err error) {
-	hlockTx := &dao.HtlcLockTxByH{}
-	err = tx.Select(
-		q.Eq("ChannelId", channelInfo.ChannelId),
-		q.Eq("CommitmentTxId", commitmentTxInfo.Id)).First(hlockTx)
-	if err != nil {
-		err = errors.New("not found the hLockTx")
-		log.Println(err)
-		return err
-	}
-
-	hed1a := &dao.HTLCExecutionDeliveryOfR{}
-	_ = tx.Select(
-		q.Eq("ChannelId", channelInfo.ChannelId),
-		q.Eq("CommitmentTxId", commitmentTxInfo.Id),
-		q.Eq("HLockTxId", hlockTx.Id)).First(hed1a)
-	if hed1a.Id == 0 {
-		payeeChannelAddress := channelInfo.AddressB
-		payeePeerId := channelInfo.PeerIdB
-		if user.PeerId == channelInfo.PeerIdB {
-			payeeChannelAddress = channelInfo.AddressA
-			payeePeerId = channelInfo.PeerIdA
-		}
-		decodeHed1aHex, err := rpcClient.DecodeRawTransaction(signedHed1aHex)
-		if err != nil {
-			return err
-		}
-
-		hed1a.ChannelId = channelInfo.ChannelId
-		hed1a.CommitmentTxId = commitmentTxInfo.Id
-		hed1a.HLockTxId = hlockTx.Id
-
-		hed1a.InputAmount = hlockTx.OutAmount
-		hed1a.InputTxid = hlockTx.Txid
-		hed1a.InputHex = hlockTx.TxHex
-		hed1a.HtlcR = commitmentTxInfo.HtlcR
-
-		hed1a.OutputAddress = payeeChannelAddress
-		hed1a.TxHex = signedHed1aHex
-		hed1a.Txid = gjson.Get(decodeHed1aHex, "txid").Str
-		hed1a.OutAmount = hlockTx.OutAmount
-
-		hed1a.CurrState = dao.TxInfoState_CreateAndSign
-		hed1a.Owner = payeePeerId
-		hed1a.CreateAt = time.Now()
-		hed1a.CreateBy = user.PeerId
-		_ = tx.Save(hed1a)
-	}
-	return nil
 }
 
 func createHed1a(tx storm.Node, signedHed1aHex string, channelInfo dao.ChannelInfo, commitmentTxInfo dao.CommitmentTransaction, user bean.User) (err error) {
