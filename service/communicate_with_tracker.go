@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 )
 
@@ -135,6 +136,22 @@ func httpGetBlockCountFromTracker() (flag int) {
 		body, _ := ioutil.ReadAll(resp.Body)
 		log.Println(string(body))
 		return int(gjson.Get(string(body), "data").Int())
+	}
+	return 0
+}
+
+func httpGetOmniBalanceFromTracker(address string, propertyId int) (balance float64) {
+	url := "http://" + config.TrackerHost + "/api/v1/GetOmniBalance?address=" + address + "&propertyId=" + strconv.Itoa(propertyId)
+	log.Println(url)
+	resp, err := http.Get(url)
+	if err != nil {
+		return 0
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode == 200 {
+		body, _ := ioutil.ReadAll(resp.Body)
+		log.Println(string(body))
+		return gjson.Get(string(body), "data").Float()
 	}
 	return 0
 }

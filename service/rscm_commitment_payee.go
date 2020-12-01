@@ -21,8 +21,7 @@ type commitmentTxSignedManager struct {
 	operationFlag sync.Mutex
 }
 
-var tempRsmcSignP2pData map[string]bean.PayeeSignCommitmentTxOfP2p
-var tempP2pData_353 map[string]bean.AliceSignedC2bTxDataP2p
+//var tempP2pData_353 map[string]bean.AliceSignedC2bTxDataP2p
 
 var CommitmentTxSignedService commitmentTxSignedManager
 
@@ -218,6 +217,11 @@ func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction
 		if pass, _ := rpcClient.CheckMultiSign(true, signedRsmcHex, 2); pass == false {
 			return nil, false, errors.New(fmt.Sprintf(enum.Tips_common_failToSign, "c2a_rsmc_signed_hex"))
 		}
+
+		if verifyCompleteSignHex(c2aDataJson.RsmcRawData.Inputs, signedRsmcHex) != nil {
+			return nil, false, errors.New(fmt.Sprintf(enum.Tips_common_failToSign, "c2a_rsmc_signed_hex"))
+		}
+
 		aliceRsmcTxId = rpcClient.GetTxId(signedRsmcHex)
 
 		// region 根据alice的临时地址+bob的通道address,获取alice2+bob的多签地址，并得到AliceSignedRsmcHex签名后的交易的input，为创建alice的RD和bob的BR做准备
@@ -243,6 +247,10 @@ func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction
 	if tool.CheckIsString(&c2aDataJson.CounterpartyRawData.Hex) {
 		if pass, _ := rpcClient.CheckMultiSign(true, signedToCounterpartyTxHex, 2); pass == false {
 			return nil, false, errors.New(fmt.Sprintf(enum.Tips_common_failToSign, "to_counterparty_tx_hex"))
+		}
+
+		if verifyCompleteSignHex(c2aDataJson.CounterpartyRawData.Inputs, signedToCounterpartyTxHex) != nil {
+			return nil, false, errors.New(fmt.Sprintf(enum.Tips_common_failToSign, "c2a_rsmc_signed_hex"))
 		}
 	}
 	toAliceP2pData.C2aSignedToCounterpartyTxHex = signedToCounterpartyTxHex
@@ -400,16 +408,27 @@ func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction
 	//endregion
 
 	_ = messageService.updateMsgStateUseTx(tx, message)
+
+	// 缓存数据
+	cacheDataForTx := &dao.CacheDataForTx{}
+	cacheDataForTx.KeyName = signer.PeerId + "_" + channelInfo.ChannelId
+	_ = tx.Select(q.Eq("KeyName", cacheDataForTx.KeyName)).First(cacheDataForTx)
+	if cacheDataForTx.Id != 0 {
+		_ = tx.DeleteStruct(cacheDataForTx)
+	}
+	if cacheDataForTx.Id != 0 {
+		_ = tx.DeleteStruct(cacheDataForTx)
+	}
+	bytes, _ := json.Marshal(&toAliceP2pData)
+	cacheDataForTx.Data = bytes
+	_ = tx.Save(cacheDataForTx)
+
 	err = tx.Commit()
 	if err != nil {
 		log.Println(err)
 		return nil, false, err
 	}
-	// 缓存数据
-	if tempRsmcSignP2pData == nil {
-		tempRsmcSignP2pData = make(map[string]bean.PayeeSignCommitmentTxOfP2p)
-	}
-	tempRsmcSignP2pData[signer.PeerId+"_"+channelInfo.ChannelId] = toAliceP2pData
+
 	return needSignData, true, err
 }
 
@@ -430,7 +449,21 @@ func (this *commitmentTxSignedManager) OnBobSignC2bTransactionAtBobSide(data str
 	}
 
 	//得到step4缓存的数据
-	p2pData := tempRsmcSignP2pData[user.PeerId+"_"+signedDataForC2b.ChannelId]
+	tx, err := user.Db.Begin(true)
+	if err != nil {
+		log.Println(err)
+		return nil, nil, err
+	}
+	defer tx.Rollback()
+
+	cacheDataForTx := &dao.CacheDataForTx{}
+	tx.Select(q.Eq("KeyName", user.PeerId+"_"+signedDataForC2b.ChannelId)).First(cacheDataForTx)
+	if cacheDataForTx.Id == 0 {
+		return nil, nil, errors.New(enum.Tips_common_wrong + "channel_id")
+	}
+	p2pData := &bean.PayeeSignCommitmentTxOfP2p{}
+	_ = json.Unmarshal(cacheDataForTx.Data, p2pData)
+
 	if len(p2pData.ChannelId) == 0 {
 		return nil, nil, errors.New(enum.Tips_common_wrong + "channel_id")
 	}
@@ -472,13 +505,6 @@ func (this *commitmentTxSignedManager) OnBobSignC2bTransactionAtBobSide(data str
 			return nil, nil, err
 		}
 	}
-
-	tx, err := user.Db.Begin(true)
-	if err != nil {
-		log.Println(err)
-		return nil, nil, err
-	}
-	defer tx.Rollback()
 
 	latestCommitmentTxInfo, err := getLatestCommitmentTxUseDbTx(tx, signedDataForC2b.ChannelId, user.PeerId)
 	if err != nil {
@@ -524,10 +550,38 @@ func (this *commitmentTxSignedManager) OnGetAliceSignC2bTransactionAtBobSide(dat
 		return retData, err
 	}
 
-	if tempP2pData_353 == nil {
-		tempP2pData_353 = make(map[string]bean.AliceSignedC2bTxDataP2p)
+	cacheDataForTx := &dao.CacheDataForTx{}
+	user.Db.Select(q.Eq("KeyName", user.PeerId+"_"+aliceSignedC2bTxDataP2p.ChannelId)).First(cacheDataForTx)
+	if cacheDataForTx.Id == 0 {
+		return retData, errors.New(enum.Tips_common_wrong + "channel_id")
 	}
-	tempP2pData_353[user.PeerId+"_"+aliceSignedC2bTxDataP2p.ChannelId] = aliceSignedC2bTxDataP2p
+	cacheDataFrom352 := &bean.PayeeSignCommitmentTxOfP2p{}
+	_ = json.Unmarshal(cacheDataForTx.Data, cacheDataFrom352)
+
+	if tool.CheckIsString(&cacheDataFrom352.C2bRsmcTxData.Hex) {
+		if verifyCompleteSignHex(cacheDataFrom352.C2bRsmcTxData.Inputs, aliceSignedC2bTxDataP2p.C2bRsmcSignedHex) != nil {
+			return retData, errors.New(fmt.Sprintf(enum.Tips_common_failToSign, "c2b_rsmc_signed_hex"))
+		}
+	}
+
+	if tool.CheckIsString(&cacheDataFrom352.C2bCounterpartyTxData.Hex) {
+		if verifyCompleteSignHex(cacheDataFrom352.C2bCounterpartyTxData.Inputs, aliceSignedC2bTxDataP2p.C2bCounterpartySignedHex) != nil {
+			return retData, errors.New(fmt.Sprintf(enum.Tips_common_failToSign, "c2b_signed_to_counterparty_tx_hex"))
+		}
+	}
+
+	cacheDataForTx = &dao.CacheDataForTx{}
+	cacheDataForTx.KeyName = user.PeerId + "_353_" + aliceSignedC2bTxDataP2p.ChannelId
+	_ = user.Db.Select(q.Eq("KeyName", cacheDataForTx.KeyName)).First(cacheDataForTx)
+	if cacheDataForTx.Id != 0 {
+		_ = user.Db.DeleteStruct(cacheDataForTx)
+	}
+	if cacheDataForTx.Id != 0 {
+		_ = user.Db.DeleteStruct(cacheDataForTx)
+	}
+	bytes, _ := json.Marshal(&aliceSignedC2bTxDataP2p)
+	cacheDataForTx.Data = bytes
+	_ = user.Db.Save(cacheDataForTx)
 
 	needBobSignRdTxForC2b := bean.NeedBobSignRdTxForC2b{}
 	needBobSignRdTxForC2b.ChannelId = aliceSignedC2bTxDataP2p.ChannelId
@@ -540,7 +594,13 @@ func (this *commitmentTxSignedManager) BobSignC2b_RdAtBobSide(data string, user 
 	bobSignedRdTxForC2b := bean.BobSignedRdTxForC2b{}
 	_ = json.Unmarshal([]byte(data), &bobSignedRdTxForC2b)
 
-	dataFrom353 := tempP2pData_353[user.PeerId+"_"+bobSignedRdTxForC2b.ChannelId]
+	cacheDataForTx := &dao.CacheDataForTx{}
+	user.Db.Select(q.Eq("KeyName", user.PeerId+"_353_"+bobSignedRdTxForC2b.ChannelId)).First(cacheDataForTx)
+	if cacheDataForTx.Id == 0 {
+		return nil, errors.New(enum.Tips_common_wrong + "channel_id")
+	}
+	dataFrom353 := &bean.AliceSignedC2bTxDataP2p{}
+	_ = json.Unmarshal(cacheDataForTx.Data, dataFrom353)
 	if len(dataFrom353.ChannelId) == 0 {
 		return nil, errors.New(enum.Tips_common_empty + "channel_id")
 	}
@@ -550,6 +610,12 @@ func (this *commitmentTxSignedManager) BobSignC2b_RdAtBobSide(data string, user 
 			err = errors.New(enum.Tips_common_wrong + "signed c2b_rd_signed_hex")
 			log.Println(err)
 			return nil, err
+		}
+
+		if tool.CheckIsString(&dataFrom353.C2bRdPartialData.Hex) {
+			if verifyCompleteSignHex(dataFrom353.C2bRdPartialData.Inputs, bobSignedRdTxForC2b.C2bRdSignedHex) != nil {
+				return retData, errors.New(fmt.Sprintf(enum.Tips_common_failToSign, "c2b_rd_signed_hex"))
+			}
 		}
 	}
 

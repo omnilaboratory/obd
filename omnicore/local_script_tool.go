@@ -146,27 +146,25 @@ func mkGetScript(scripts map[string][]byte) txscript.ScriptDB {
 // emptySign: index 0 is invalid for stack size 0
 // partial sign: not all signatures empty on failed checkmultisig
 // all sign: nil
-func VerifySignatureHex(sourceHex, redeemHex string, step int) (err error) {
-	sourceHexBytes, _ := hex.DecodeString(sourceHex)
-	sourceTx := wire.MsgTx{}
-	sourceTx.Deserialize(bytes.NewReader(sourceHexBytes))
-
+func VerifySignatureHex(inputs []bean.RawTxInputItem, redeemHex string) (err error) {
 	redeemTx := wire.MsgTx{}
 	redeemHexBytes, _ := hex.DecodeString(redeemHex)
 	redeemTx.Deserialize(bytes.NewReader(redeemHexBytes))
 
 	flags := txscript.StandardVerifyFlags
-	vm, err := txscript.NewEngine(sourceTx.TxOut[0].PkScript, &redeemTx, 0, flags, nil, nil, 0)
-	if err != nil {
-		return err
-	}
 
-	err = vm.Execute()
-	if err != nil {
-		if err.Error() == "not all signatures empty on failed checkmultisig" && step == 1 {
-			return nil
+	for index, _ := range redeemTx.TxIn {
+		item := inputs[index]
+		inputPkScriptBytes, _ := hex.DecodeString(item.ScriptPubKey)
+		vm, err := txscript.NewEngine(inputPkScriptBytes, &redeemTx, 0, flags, nil, nil, -1)
+		if err != nil {
+			return err
+		}
+		err = vm.Execute()
+		if err != nil {
+			return err
 		}
 	}
 
-	return err
+	return nil
 }

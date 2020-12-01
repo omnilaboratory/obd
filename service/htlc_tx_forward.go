@@ -617,7 +617,7 @@ func (service *htlcForwardTxManager) OnAliceSignedC3aAtAliceSide(msg bean.Reques
 
 	dataTo40P := &bean.CreateHtlcTxForC3aOfP2p{}
 	_ = json.Unmarshal(cacheDataForTx.Data, dataTo40P)
-	//dataTo40P = cacheDataForTx.Data.(bean.CreateHtlcTxForC3aOfP2p)
+
 	if len(dataTo40P.ChannelId) == 0 {
 		return nil, nil, errors.New(enum.Tips_common_wrong + "channel_id")
 	}

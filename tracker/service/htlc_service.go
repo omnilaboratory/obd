@@ -10,8 +10,10 @@ import (
 	"github.com/omnilaboratory/obd/tool"
 	"github.com/omnilaboratory/obd/tracker/bean"
 	"github.com/omnilaboratory/obd/tracker/dao"
+	"github.com/tidwall/gjson"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -182,6 +184,33 @@ func (manager *htlcManager) GetBlockCount(context *gin.Context) {
 	context.JSON(http.StatusOK, gin.H{
 		"msg":  "blockCount",
 		"data": cacheBlockCount,
+	})
+}
+func (manager *htlcManager) GetOmniBalance(context *gin.Context) {
+	reqData := &bean.GetOmniBalanceRequest{}
+	reqData.Address = context.Query("address")
+	if tool.CheckIsString(&reqData.Address) == false {
+		context.JSON(http.StatusInternalServerError, gin.H{
+			"msg": "error Address",
+		})
+		return
+	}
+	reqData.PropertyId, _ = strconv.Atoi(context.Query("propertyId"))
+	if reqData.PropertyId == 0 {
+		context.JSON(http.StatusInternalServerError, gin.H{
+			"msg": "error propertyId",
+		})
+		return
+	}
+
+	getbalance, err := rpc.NewClient().OmniGetbalance(reqData.Address, reqData.PropertyId)
+	balance := 0.0
+	if err == nil {
+		balance = gjson.Get(getbalance, "balance").Float()
+	}
+	context.JSON(http.StatusOK, gin.H{
+		"msg":  "OmniGetbalance",
+		"data": balance,
 	})
 }
 

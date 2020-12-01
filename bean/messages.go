@@ -283,7 +283,6 @@ type NeedClientSignRawBRTxData struct {
 }
 
 type RawTxInputItem struct {
-	Vout         int    `json:"vout"`
 	ScriptPubKey string `json:"scriptPubKey"`
 	RedeemScript string `json:"redeem_script"`
 }

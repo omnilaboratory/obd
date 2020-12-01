@@ -235,42 +235,6 @@ func signLastBR(tx storm.Node, brType dao.BRType, channelInfo dao.ChannelInfo, u
 	return nil
 }
 
-//对上一个承诺交易的br进行签名
-func getLastBR(tx storm.Node, brType dao.BRType, channelInfo dao.ChannelInfo, userPeerId string, lastTempAddressPrivateKey string, lastCommitmentTxid int) (hexData bean.NeedClientSignTxData, err error) {
-	lastBreachRemedyTransaction := &dao.BreachRemedyTransaction{}
-	err = tx.Select(
-		q.Eq("ChannelId", channelInfo.ChannelId),
-		q.Eq("CommitmentTxId", lastCommitmentTxid),
-		q.Eq("Type", brType),
-		q.Or(
-			q.Eq("PeerIdA", userPeerId),
-			q.Eq("PeerIdB", userPeerId))).
-		OrderBy("CreateAt").
-		Reverse().First(lastBreachRemedyTransaction)
-	if lastBreachRemedyTransaction.Id > 0 {
-		inputs, err := getInputsForNextTxByParseTxHashVout(
-			lastBreachRemedyTransaction.InputTxHex,
-			lastBreachRemedyTransaction.InputAddress,
-			lastBreachRemedyTransaction.InputAddressScriptPubKey,
-			lastBreachRemedyTransaction.InputRedeemScript)
-		if err != nil {
-			log.Println(err)
-			return hexData, errors.New(fmt.Sprintf(enum.Tips_rsmc_failToGetInput, "breachRemedyTransaction"))
-		}
-
-		if lastBreachRemedyTransaction.CurrState == dao.TxInfoState_CreateAndSign {
-			return hexData, nil
-		}
-		hexData = bean.NeedClientSignTxData{}
-		hexData.Hex = lastBreachRemedyTransaction.BrTxHex
-		hexData.Inputs = inputs
-		hexData.IsMultisig = true
-		hexData.PrivateKey = lastTempAddressPrivateKey
-		return hexData, nil
-	}
-	return hexData, errors.New(fmt.Sprintf(enum.Tips_rsmc_failToGetInput, "breachRemedyTransaction"))
-}
-
 func checkBobRemcData(rsmcHex, toAddress string, commitmentTransaction *dao.CommitmentTransaction) error {
 	_, err := omnicore.VerifyOmniTxHex(rsmcHex, commitmentTransaction.PropertyId, commitmentTransaction.AmountToCounterparty, toAddress, true)
 	if err != nil {

@@ -9,6 +9,7 @@ import (
 	"github.com/omnilaboratory/obd/bean/enum"
 	"github.com/omnilaboratory/obd/config"
 	"github.com/omnilaboratory/obd/dao"
+	"github.com/omnilaboratory/obd/omnicore"
 	"github.com/omnilaboratory/obd/rpc"
 	"github.com/omnilaboratory/obd/tool"
 	"github.com/shopspring/decimal"
@@ -603,7 +604,7 @@ func checkChannelOmniAssetAmount(channelInfo dao.ChannelInfo) (bool, error) {
 		log.Println(result)
 		return false, err
 	}
-	balance := gjson.Get(result, "balance").Float()
+	balance := httpGetOmniBalanceFromTracker(channelInfo.ChannelAddress, int(channelInfo.PropertyId))
 	if balance == channelInfo.Amount {
 		return true, nil
 	}
@@ -664,6 +665,31 @@ func getOutputFromHex(hex string, toAddress string) *dao.ChannelAddressListUnspe
 				}
 			}
 		}
+	}
+	return nil
+}
+
+func verifyCompleteSignHex(inputs interface{}, signedHex string) error {
+	var items []bean.RawTxInputItem
+
+	var inputArr []interface{}
+	switch inputs.(type) {
+	case []interface{}:
+		inputArr = inputs.([]interface{})
+	case []map[string]interface{}:
+		for _, temp := range inputs.([]map[string]interface{}) {
+			inputArr = append(inputArr, temp)
+		}
+	}
+	for _, temp := range inputArr {
+		item := temp.(map[string]interface{})
+		inputItem := bean.RawTxInputItem{}
+		inputItem.ScriptPubKey = item["scriptPubKey"].(string)
+		inputItem.RedeemScript = item["redeemScript"].(string)
+		items = append(items, inputItem)
+	}
+	if omnicore.VerifySignatureHex(items, signedHex) != nil {
+		return errors.New(fmt.Sprintf(enum.Tips_common_failToSign, "signed_hex"))
 	}
 	return nil
 }

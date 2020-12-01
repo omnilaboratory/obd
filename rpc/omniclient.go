@@ -210,7 +210,6 @@ func (client *Client) OmniSignRawTransactionForUnsend(hex string, inputItems []T
 		node["redeemScript"] = item.RedeemScript
 
 		inputItem := bean.RawTxInputItem{}
-		inputItem.Vout = int(item.Vout)
 		inputItem.ScriptPubKey = item.ScriptPubKey
 		inputItem.RedeemScript = item.RedeemScript
 		items = append(items, inputItem)

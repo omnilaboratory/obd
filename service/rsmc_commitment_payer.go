@@ -22,9 +22,6 @@ type commitmentTxManager struct {
 	operationFlag sync.Mutex
 }
 
-var tempRsmcCreateP2pData map[string]bean.AliceRequestToCreateCommitmentTxOfP2p
-var tempP2pData_352 map[string]bean.PayeeSignCommitmentTxOfP2p
-
 var CommitmentTxService commitmentTxManager
 
 // step 1 协议号：100351  当发起转账人alice申请发起转账
@@ -186,20 +183,28 @@ func (this *commitmentTxManager) CommitmentTransactionCreated(msg bean.RequestMe
 	p2pData.PayerNodeAddress = msg.SenderNodePeerId
 	p2pData.PayerPeerId = msg.SenderUserPeerId
 
-	_ = tx.Commit()
 	if needSign {
-		if tempRsmcCreateP2pData == nil {
-			tempRsmcCreateP2pData = make(map[string]bean.AliceRequestToCreateCommitmentTxOfP2p)
+		cacheDataForTx := &dao.CacheDataForTx{}
+		cacheDataForTx.KeyName = creator.PeerId + "_" + channelInfo.ChannelId
+		_ = tx.Select(q.Eq("KeyName", cacheDataForTx.KeyName)).First(cacheDataForTx)
+		if cacheDataForTx.Id != 0 {
+			_ = tx.DeleteStruct(cacheDataForTx)
 		}
-		tempRsmcCreateP2pData[creator.PeerId+"_"+p2pData.ChannelId] = *p2pData
+		if cacheDataForTx.Id != 0 {
+			_ = tx.DeleteStruct(cacheDataForTx)
+		}
+		bytes, _ := json.Marshal(p2pData)
+		cacheDataForTx.Data = bytes
+		_ = tx.Save(cacheDataForTx)
 
 		retSignData.ChannelId = channelInfo.ChannelId
 		retSignData.RsmcRawData = p2pData.RsmcRawData
 		retSignData.CounterpartyRawData = p2pData.CounterpartyRawData
-
+		_ = tx.Commit()
 		return retSignData, true, nil
 	}
 
+	_ = tx.Commit()
 	return p2pData, false, err
 }
 
@@ -220,7 +225,20 @@ func (this *commitmentTxManager) OnAliceSignC2aRawTxAtAliceSide(msg bean.Request
 		return nil, nil, err
 	}
 
-	p2pData := tempRsmcCreateP2pData[user.PeerId+"_"+signedDataForC2a.ChannelId]
+	tx, err := user.Db.Begin(true)
+	if err != nil {
+		log.Println(err)
+		return nil, nil, err
+	}
+	defer tx.Rollback()
+
+	cacheDataForTx := &dao.CacheDataForTx{}
+	tx.Select(q.Eq("KeyName", user.PeerId+"_"+signedDataForC2a.ChannelId)).First(cacheDataForTx)
+	if cacheDataForTx.Id == 0 {
+		return nil, nil, errors.New(enum.Tips_common_wrong + "channel_id")
+	}
+	p2pData := &bean.AliceRequestToCreateCommitmentTxOfP2p{}
+	_ = json.Unmarshal(cacheDataForTx.Data, p2pData)
 	if &p2pData == nil {
 		return nil, nil, errors.New(enum.Tips_common_wrong + "channel_id")
 	}
@@ -245,12 +263,6 @@ func (this *commitmentTxManager) OnAliceSignC2aRawTxAtAliceSide(msg bean.Request
 		return nil, nil, err
 	}
 	log.Println("rsmc step 2.0 ", time.Now())
-	tx, err := user.Db.Begin(true)
-	if err != nil {
-		log.Println(err)
-		return nil, nil, err
-	}
-	defer tx.Rollback()
 
 	latestCommitmentTxInfo, err := getLatestCommitmentTxUseDbTx(tx, signedDataForC2a.ChannelId, user.PeerId)
 	if err != nil {
@@ -270,9 +282,7 @@ func (this *commitmentTxManager) OnAliceSignC2aRawTxAtAliceSide(msg bean.Request
 	}
 	latestCommitmentTxInfo.CurrState = dao.TxInfoState_Create
 	_ = tx.Update(latestCommitmentTxInfo)
-	log.Println("rsmc step 2.1 ", time.Now())
 	tx.Commit()
-	log.Println("rsmc step 2.2 ", time.Now())
 
 	p2pData.RsmcRawData.Hex = signedDataForC2a.RsmcSignedHex
 	p2pData.CounterpartyRawData.Hex = signedDataForC2a.CounterpartySignedHex
@@ -316,16 +326,43 @@ func (this *commitmentTxManager) OnGetBobC2bPartialSignTxAtAliceSide(msg bean.Re
 		return dataFromP2p352, false, nil
 	}
 
+	cacheDataForTx := &dao.CacheDataForTx{}
+	tx.Select(q.Eq("KeyName", user.PeerId+"_"+channelInfo.ChannelId)).First(cacheDataForTx)
+	if cacheDataForTx.Id == 0 {
+		return nil, false, errors.New(enum.Tips_common_wrong + "channel_id")
+	}
+	cacheDataFrom351 := &bean.AliceRequestToCreateCommitmentTxOfP2p{}
+	_ = json.Unmarshal(cacheDataForTx.Data, cacheDataFrom351)
+	if &cacheDataFrom351 == nil {
+		return nil, false, errors.New(enum.Tips_common_wrong + "channel_id")
+	}
+
+	if tool.CheckIsString(&cacheDataFrom351.RsmcRawData.Hex) {
+		if verifyCompleteSignHex(cacheDataFrom351.RsmcRawData.Inputs, dataFromP2p352.C2aSignedRsmcHex) != nil {
+			return nil, false, errors.New(fmt.Sprintf(enum.Tips_common_failToSign, "c2a_rsmc_signed_hex"))
+		}
+	}
+
+	if tool.CheckIsString(&cacheDataFrom351.CounterpartyRawData.Hex) {
+		if verifyCompleteSignHex(cacheDataFrom351.CounterpartyRawData.Inputs, dataFromP2p352.C2aSignedToCounterpartyTxHex) != nil {
+			return nil, false, errors.New(fmt.Sprintf(enum.Tips_common_failToSign, "c2a_signed_to_counterparty_tx_hex"))
+		}
+	}
+
 	channelInfo.CurrState = dao.ChannelState_NewTx
 	_ = tx.Update(channelInfo)
 
-	_ = tx.Commit()
-
-	if tempP2pData_352 == nil {
-		tempP2pData_352 = make(map[string]bean.PayeeSignCommitmentTxOfP2p)
+	cacheDataForTx = &dao.CacheDataForTx{}
+	cacheDataForTx.KeyName = user.PeerId + "_352_" + channelInfo.ChannelId
+	_ = tx.Select(q.Eq("KeyName", cacheDataForTx.KeyName)).First(cacheDataForTx)
+	if cacheDataForTx.Id != 0 {
+		_ = tx.DeleteStruct(cacheDataForTx)
 	}
-	tempP2pData_352[user.PeerId+"_"+dataFromP2p352.ChannelId] = dataFromP2p352
+	bytes, _ := json.Marshal(&dataFromP2p352)
+	cacheDataForTx.Data = bytes
+	_ = tx.Save(cacheDataForTx)
 
+	_ = tx.Commit()
 	needAliceSignRmscTxForC2b := bean.NeedAliceSignRsmcTxForC2b{}
 	needAliceSignRmscTxForC2b.ChannelId = dataFromP2p352.ChannelId
 	needAliceSignRmscTxForC2b.C2bRsmcPartialData = dataFromP2p352.C2bRsmcTxData
@@ -341,7 +378,21 @@ func (this *commitmentTxManager) OnAliceSignedC2bTxAtAliceSide(data string, user
 	aliceSignedRmscTxForC2b := bean.AliceSignedRsmcTxForC2b{}
 	_ = json.Unmarshal([]byte(data), &aliceSignedRmscTxForC2b)
 
-	dataFromP2p352 := tempP2pData_352[user.PeerId+"_"+aliceSignedRmscTxForC2b.ChannelId]
+	tx, err := user.Db.Begin(true)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	defer tx.Rollback()
+
+	cacheDataForTx := &dao.CacheDataForTx{}
+	tx.Select(q.Eq("KeyName", user.PeerId+"_352_"+aliceSignedRmscTxForC2b.ChannelId)).First(cacheDataForTx)
+	if cacheDataForTx.Id == 0 {
+		return nil, errors.New(enum.Tips_common_wrong + "channel_id")
+	}
+	dataFromP2p352 := &bean.PayeeSignCommitmentTxOfP2p{}
+	_ = json.Unmarshal(cacheDataForTx.Data, dataFromP2p352)
+
 	if len(dataFromP2p352.ChannelId) == 0 {
 		return nil, errors.New(enum.Tips_common_empty + "channel_id")
 	}
@@ -352,6 +403,10 @@ func (this *commitmentTxManager) OnAliceSignedC2bTxAtAliceSide(data string, user
 			log.Println(err)
 			return nil, err
 		}
+
+		if verifyCompleteSignHex(dataFromP2p352.C2bRsmcTxData.Inputs, aliceSignedRmscTxForC2b.C2bRsmcSignedHex) != nil {
+			return nil, errors.New(fmt.Sprintf(enum.Tips_common_failToSign, "c2b_rsmc_signed_hex"))
+		}
 	}
 	dataFromP2p352.C2bRsmcTxData.Hex = aliceSignedRmscTxForC2b.C2bRsmcSignedHex
 
@@ -360,6 +415,10 @@ func (this *commitmentTxManager) OnAliceSignedC2bTxAtAliceSide(data string, user
 			err = errors.New(enum.Tips_common_wrong + "signed c2b_counterparty_signed_hex")
 			log.Println(err)
 			return nil, err
+		}
+
+		if verifyCompleteSignHex(dataFromP2p352.C2bCounterpartyTxData.Inputs, aliceSignedRmscTxForC2b.C2bCounterpartySignedHex) != nil {
+			return nil, errors.New(fmt.Sprintf(enum.Tips_common_failToSign, "c2b_counterparty_signed_hex"))
 		}
 	}
 	dataFromP2p352.C2bCounterpartyTxData.Hex = aliceSignedRmscTxForC2b.C2bCounterpartySignedHex
@@ -370,17 +429,17 @@ func (this *commitmentTxManager) OnAliceSignedC2bTxAtAliceSide(data string, user
 			log.Println(err)
 			return nil, err
 		}
+
+		if verifyCompleteSignHex(dataFromP2p352.C2aRdTxData.Inputs, aliceSignedRmscTxForC2b.C2aRdSignedHex) != nil {
+			return nil, errors.New(fmt.Sprintf(enum.Tips_common_failToSign, "c2a_rd_signed_hex"))
+		}
+
 	}
 	dataFromP2p352.C2aRdTxData.Hex = aliceSignedRmscTxForC2b.C2aRdSignedHex
 
-	tempP2pData_352[user.PeerId+"_"+dataFromP2p352.ChannelId] = dataFromP2p352
-
-	tx, err := user.Db.Begin(true)
-	if err != nil {
-		log.Println(err)
-		return nil, err
-	}
-	defer tx.Rollback()
+	bytes, _ := json.Marshal(&dataFromP2p352)
+	cacheDataForTx.Data = bytes
+	_ = tx.Update(cacheDataForTx)
 
 	needAliceSignRdTxForC2b := bean.NeedAliceSignRdTxForC2b{}
 
@@ -503,7 +562,20 @@ func (this *commitmentTxManager) OnAliceSignedC2b_RDTxAtAliceSide(data string, u
 	aliceSignedRdTxForC2b := bean.AliceSignedRdTxForC2b{}
 	_ = json.Unmarshal([]byte(data), &aliceSignedRdTxForC2b)
 
-	dataFromP2p352 := tempP2pData_352[user.PeerId+"_"+aliceSignedRdTxForC2b.ChannelId]
+	tx, err := user.Db.Begin(true)
+	if err != nil {
+		log.Println(err)
+		return nil, nil, true, err
+	}
+	defer tx.Rollback()
+
+	cacheDataForTx := &dao.CacheDataForTx{}
+	tx.Select(q.Eq("KeyName", user.PeerId+"_352_"+aliceSignedRdTxForC2b.ChannelId)).First(cacheDataForTx)
+	if cacheDataForTx.Id == 0 {
+		return nil, nil, false, errors.New(enum.Tips_common_empty + "channel_id")
+	}
+	dataFromP2p352 := &bean.PayeeSignCommitmentTxOfP2p{}
+	_ = json.Unmarshal(cacheDataForTx.Data, dataFromP2p352)
 	if len(dataFromP2p352.ChannelId) == 0 {
 		return nil, nil, false, errors.New(enum.Tips_common_empty + "channel_id")
 	}
@@ -521,13 +593,6 @@ func (this *commitmentTxManager) OnAliceSignedC2b_RDTxAtAliceSide(data string, u
 		log.Println(err)
 		return nil, nil, false, err
 	}
-
-	tx, err := user.Db.Begin(true)
-	if err != nil {
-		log.Println(err)
-		return nil, nil, true, err
-	}
-	defer tx.Rollback()
 
 	channelInfo := getChannelInfoByChannelId(tx, channelId, user.PeerId)
 	if channelInfo == nil {

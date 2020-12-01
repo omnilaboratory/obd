@@ -76,3 +76,9 @@ type UpdateHtlcTxStateRequest struct {
 	DirectionFlag int    `json:"direction_flag"`
 	CurrChannelId string `json:"curr_channel_id"`
 }
+
+//GetChannelStateRequest
+type GetOmniBalanceRequest struct {
+	Address    string `json:"address"`
+	PropertyId int    `json:"property_id"`
+}
