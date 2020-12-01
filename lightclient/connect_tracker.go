@@ -26,7 +26,7 @@ import (
 var conn *websocket.Conn
 var ticker3m *time.Ticker
 
-func ConnectToTracker() (err error) {
+func ConnectToTracker(isInit bool) (err error) {
 
 	u := url.URL{Scheme: "ws", Host: config.TrackerHost, Path: "/ws"}
 	log.Printf("begin to connect to tracker: %s", u.String())
@@ -45,7 +45,9 @@ func ConnectToTracker() (err error) {
 		return errors.New("fail to login tracker")
 	}
 	if isReset {
-		updateP2pAddressLogin()
+		if isInit == false {
+			SynData()
+		}
 		go goroutine()
 	}
 
@@ -122,6 +124,9 @@ func goroutine() {
 				err = conn.WriteMessage(websocket.TextMessage, bytes)
 				if err != nil {
 					log.Println("HeartBeat:", err)
+					isReset = true
+					log.Println("socket to tracker get err:", err)
+					conn = nil
 					return
 				}
 			} else {
@@ -176,11 +181,11 @@ func sycUserInfos() {
 		nodes = append(nodes, user)
 	}
 	if len(nodes) > 0 {
-		log.Println("syn channel data to tracker", nodes)
+		log.Println("syn UserInfo data to tracker", nodes)
 		info := make(map[string]interface{})
 		info["type"] = enum.MsgType_Tracker_UpdateUserInfo_353
 		info["data"] = nodes
-		bytes, err := json.Marshal(info)
+		bytes, err := json.Marshal(&info)
 		if err == nil {
 			sendMsgToTracker(bytes)
 		}
@@ -322,7 +327,7 @@ func sendMsgToTracker(msg []byte) {
 	//log.Println("send to tracker", string(msg))
 	if conn == nil {
 		isReset = true
-		err := ConnectToTracker()
+		err := ConnectToTracker(false)
 		if err != nil {
 			log.Println(err)
 			return
@@ -346,14 +351,14 @@ func startSchedule() {
 	}()
 
 	go func() {
-		ticker3m = time.NewTicker(3 * time.Minute)
+		ticker3m = time.NewTicker(1 * time.Minute)
 		defer ticker3m.Stop()
 		for {
 			select {
 			case t := <-ticker3m.C:
 				if conn == nil {
 					log.Println("reconnect tracker ", t)
-					_ = ConnectToTracker()
+					_ = ConnectToTracker(false)
 				}
 			}
 		}

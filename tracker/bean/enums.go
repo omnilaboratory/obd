@@ -24,6 +24,8 @@ func CheckExist(msgType enum.MsgType) bool {
 		return true
 	case enum.MsgType_Tracker_UpdateHtlcTxState_352:
 		return true
+	case enum.MsgType_Tracker_UpdateUserInfo_353:
+		return true
 	}
 	return false
 }

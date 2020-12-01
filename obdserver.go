@@ -53,7 +53,7 @@ func main() {
 	}
 
 	//tracker
-	err = lightclient.ConnectToTracker()
+	err = lightclient.ConnectToTracker(true)
 	if err != nil {
 		log.Println(err)
 		log.Println("because fail to connect to tracker, obd fail to start")

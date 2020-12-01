@@ -207,13 +207,6 @@ func (manager *htlcManager) createChannelNetwork(payerObdNodeId, realPayerPeerId
 		pathIndexArr = make([]int, 0)
 	}
 	pathIndexArr = append(pathIndexArr, currNodeIndex)
-	newEdge := graphEdge{
-		ParentNodeIndex: currNodeIndex,
-		PathPeerIds:     pathPeerIds,
-		PathIndexArr:    pathIndexArr,
-		Level:           currNode.Level + 1,
-		IsRoot:          false,
-	}
 
 	var nodes []dao.ChannelInfo
 	err := errors.New("no channel")
@@ -226,7 +219,7 @@ func (manager *htlcManager) createChannelNetwork(payerObdNodeId, realPayerPeerId
 				q.Eq("PeerIdA", currPayeePeerId)),
 			q.Or(
 				q.Eq("ObdNodeIdA", payerObdNodeId),
-				q.Eq("ObdNodeIdB", payerObdNodeId))).OrderBy("CreateAt").Reverse().
+				q.Eq("ObdNodeIdB", payerObdNodeId))).OrderBy("Id").Reverse().
 			Find(&nodes)
 	} else {
 		err = db.Select(
@@ -234,7 +227,7 @@ func (manager *htlcManager) createChannelNetwork(payerObdNodeId, realPayerPeerId
 			q.Eq("CurrState", 20),
 			q.Or(
 				q.Eq("PeerIdB", currPayeePeerId),
-				q.Eq("PeerIdA", currPayeePeerId))).OrderBy("CreateAt").Reverse().
+				q.Eq("PeerIdA", currPayeePeerId))).OrderBy("Id").Reverse().
 			Find(&nodes)
 	}
 
@@ -256,6 +249,13 @@ func (manager *htlcManager) createChannelNetwork(payerObdNodeId, realPayerPeerId
 					channelIds = currNode.ChannelIds + "," + item.ChannelId
 				}
 
+				newEdge := graphEdge{
+					ParentNodeIndex: currNodeIndex,
+					PathPeerIds:     pathPeerIds,
+					PathIndexArr:    pathIndexArr,
+					Level:           currNode.Level + 1,
+					IsRoot:          false,
+				}
 				newEdge.ChannelIds = channelIds
 				newEdge.ChannelId = item.ChannelId
 				newEdge.CurrNodePeerId = interSender
