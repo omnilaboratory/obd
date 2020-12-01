@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/omnilaboratory/obd/config"
+	"github.com/omnilaboratory/obd/conn"
 	"github.com/omnilaboratory/obd/omnicore"
 	"github.com/omnilaboratory/obd/tool"
 	"github.com/shopspring/decimal"
@@ -41,14 +42,6 @@ func (client *Client) CreateMultiSig(minSignNum int, keys []string) (result stri
 	marshal, _ := json.Marshal(&sign)
 	return string(marshal), nil
 
-}
-
-func (client *Client) DumpPrivKey(address string) (result string, err error) {
-	_, err = client.ValidateAddress(address)
-	if err != nil {
-		return "", err
-	}
-	return client.send("dumpprivkey", []interface{}{address})
 }
 
 func (client *Client) GetTransactionById(txid string) (result string, err error) {
@@ -99,14 +92,6 @@ func (client *Client) GetBalanceByAddress(address string) (balance decimal.Decim
 
 //https://developer.bitcoin.org/reference/rpc/createrawtransaction.html
 func (client *Client) CreateRawTransaction(inputs []map[string]interface{}, outputs map[string]interface{}) (result string, err error) {
-	//inputsBytes, _ := json.Marshal(inputs)
-	//inputsStr := string(inputsBytes)
-	//inputsStr = strings.TrimLeft(inputsStr,"[")
-	//inputsStr = strings.TrimRight(inputsStr,"]")
-	//inputsStr = strings.ReplaceAll(inputsStr,"},","}")
-	//_, rawTxhex,err := omnicore.CreateRawTransaction(inputsStr,2)
-	//return rawTxhex, err
-
 	return client.send("createrawtransaction", []interface{}{inputs, outputs})
 }
 
@@ -203,16 +188,11 @@ type TransactionInputItem struct {
 
 // create a raw transaction and no sign , not send to the network,get the hash of signature
 func (client *Client) BtcCreateRawTransaction(fromBitCoinAddress string, outputItems []TransactionOutputItem, minerFee float64, sequence int, redeemScript *string) (retMap map[string]interface{}, err error) {
-	if len(fromBitCoinAddress) < 1 {
+	if tool.CheckIsAddress(fromBitCoinAddress) == false {
 		return nil, errors.New("fromBitCoinAddress is empty")
 	}
 	if len(outputItems) < 1 {
 		return nil, errors.New("toBitCoinAddress is empty")
-	}
-
-	_, err = client.ValidateAddress(fromBitCoinAddress)
-	if err != nil {
-		return nil, err
 	}
 
 	if minerFee <= 0 {
@@ -232,11 +212,7 @@ func (client *Client) BtcCreateRawTransaction(fromBitCoinAddress string, outputI
 		return nil, errors.New("minerFee too small")
 	}
 
-	result, err := client.ListUnspent(fromBitCoinAddress)
-	if err != nil {
-		return nil, err
-	}
-
+	result := conn.HttpListUnspentFromTracker(fromBitCoinAddress)
 	array := gjson.Parse(result).Array()
 	if len(array) == 0 {
 		return nil, errors.New("empty balance")
@@ -302,10 +278,16 @@ func (client *Client) BtcCreateRawTransaction(fromBitCoinAddress string, outputI
 	if drawback > 0 {
 		output[fromBitCoinAddress] = drawback
 	}
-	hex, err := client.CreateRawTransaction(inputs, output)
-	if err != nil {
-		return nil, err
+
+	dataToTracker := make(map[string]interface{})
+	dataToTracker["inputs"] = inputs
+	dataToTracker["outputs"] = output
+	bytes, err := json.Marshal(dataToTracker)
+	hex := conn.HttpCreateRawTransactionFromTracker(string(bytes))
+	if hex == "" {
+		return nil, errors.New("error createRawTransaction")
 	}
+
 	retMap = make(map[string]interface{})
 	retMap["hex"] = hex
 	retMap["inputs"] = inputs
@@ -336,16 +318,11 @@ func (client *Client) BtcSignRawTransactionFromJson(dataJson string) (signHex st
 
 //创建btc的raw交易：输入为未广播的预交易,输出为交易hex，支持单签和多签，如果是单签，就需要后续步骤再签名
 func (client *Client) BtcCreateRawTransactionForUnsendInputTx(fromBitCoinAddress string, inputItems []TransactionInputItem, outputItems []TransactionOutputItem, minerFee float64, sequence int, redeemScript *string) (retMap map[string]interface{}, err error) {
-	if len(fromBitCoinAddress) < 1 {
+	if tool.CheckIsAddress(fromBitCoinAddress) == false {
 		return nil, errors.New("fromBitCoinAddress is empty")
 	}
 	if len(outputItems) < 1 {
 		return nil, errors.New("toBitCoinAddress is empty")
-	}
-
-	_, err = client.ValidateAddress(fromBitCoinAddress)
-	if err != nil {
-		return nil, err
 	}
 
 	if minerFee <= config.GetOmniDustBtc() {
@@ -428,10 +405,21 @@ func (client *Client) BtcCreateRawTransactionForUnsendInputTx(fromBitCoinAddress
 	if drawback > 0 {
 		output[fromBitCoinAddress] = drawback
 	}
+
 	hex, err := client.CreateRawTransaction(inputs, output)
 	if err != nil {
 		return nil, err
 	}
+
+	dataToTracker := make(map[string]interface{})
+	dataToTracker["inputs"] = inputs
+	dataToTracker["outputs"] = output
+	bytes, err := json.Marshal(dataToTracker)
+	hex = conn.HttpCreateRawTransactionFromTracker(string(bytes))
+	if hex == "" {
+		return nil, errors.New("error createRawTransaction")
+	}
+
 	retMap = make(map[string]interface{})
 	retMap["hex"] = hex
 	retMap["inputs"] = inputs

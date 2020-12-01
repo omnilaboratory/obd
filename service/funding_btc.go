@@ -7,6 +7,7 @@ import (
 	"github.com/omnilaboratory/obd/bean"
 	"github.com/omnilaboratory/obd/bean/enum"
 	"github.com/omnilaboratory/obd/config"
+	"github.com/omnilaboratory/obd/conn"
 	"github.com/omnilaboratory/obd/dao"
 	"github.com/omnilaboratory/obd/omnicore"
 	"github.com/omnilaboratory/obd/rpc"
@@ -74,8 +75,9 @@ func (service *fundingTransactionManager) BtcFundingCreated(msg bean.RequestMess
 	}
 
 	//check btc funding time
-	result, err := rpcClient.ListReceivedByAddress(channelInfo.ChannelAddress)
-	if err == nil {
+	result := conn.HttpListReceivedByAddressFromTracker(channelInfo.ChannelAddress)
+
+	if result != "" {
 		if len(gjson.Parse(result).Array()) > 0 {
 			btcFundingTimes := len(gjson.Parse(result).Array()[0].Get("txids").Array())
 			if btcFundingTimes >= config.BtcNeedFundTimes {

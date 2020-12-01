@@ -8,6 +8,7 @@ import (
 	"github.com/omnilaboratory/obd/bean"
 	"github.com/omnilaboratory/obd/bean/enum"
 	"github.com/omnilaboratory/obd/config"
+	"github.com/omnilaboratory/obd/conn"
 	"github.com/omnilaboratory/obd/dao"
 	"github.com/omnilaboratory/obd/tool"
 	"github.com/tidwall/gjson"
@@ -122,8 +123,8 @@ func (this *channelManager) BobCheckChannelAddressExist(jsonData string, user *b
 	channelAddress := gjson.Get(multiSig, "address").String()
 
 	existAddress := false
-	result, err := rpcClient.ListReceivedByAddress(channelAddress)
-	if err == nil {
+	result := conn.HttpListReceivedByAddressFromTracker(channelAddress)
+	if result != "" {
 		array := gjson.Parse(result).Array()
 		if len(array) > 0 {
 			existAddress = true
@@ -192,8 +193,8 @@ func (this *channelManager) BobAcceptChannel(msg bean.RequestMessage, user *bean
 		channelAddress := gjson.Get(multiSig, "address").String()
 
 		existAddress := false
-		result, err := rpcClient.ListReceivedByAddress(channelAddress)
-		if err == nil {
+		result := conn.HttpListReceivedByAddressFromTracker(channelAddress)
+		if result != "" {
 			array := gjson.Parse(result).Array()
 			if len(array) > 0 {
 				existAddress = true
@@ -355,8 +356,8 @@ func (this *channelManager) AllItem(jsonData string, user bean.User) (data *page
 			item.CreateAt = info.CreateAt
 			item.BtcFundingTimes = 3
 			if item.CurrState == dao.ChannelState_Create {
-				result, err := rpcClient.ListReceivedByAddress(info.ChannelAddress)
-				if err == nil {
+				result := conn.HttpListReceivedByAddressFromTracker(info.ChannelAddress)
+				if result != "" {
 					if len(gjson.Parse(result).Array()) > 0 {
 						btcFundingTimes := len(gjson.Parse(result).Array()[0].Get("txids").Array())
 						if btcFundingTimes > 3 {
@@ -500,7 +501,7 @@ func (this *channelManager) RequestCloseChannel(msg bean.RequestMessage, user *b
 	}
 
 	if channelInfo.CurrState == dao.ChannelState_HtlcTx {
-		flag := httpGetHtlcStateFromTracker(lastCommitmentTx.HtlcRoutingPacket, lastCommitmentTx.HtlcH)
+		flag := HttpGetHtlcStateFromTracker(lastCommitmentTx.HtlcRoutingPacket, lastCommitmentTx.HtlcH)
 		if flag == 1 {
 			return nil, errors.New("R is backward")
 		}

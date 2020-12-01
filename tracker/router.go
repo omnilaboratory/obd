@@ -27,22 +27,32 @@ func InitRouter() *gin.Engine {
 	go service.ObdNodeManager.TrackerStart()
 	router.GET("/ws", wsClientConnect)
 
-	apiv1 := router.Group("/api/v1")
+	apiv1 := router.Group("/api/v1/")
 	{
-		apiv1.GET("/GetBlockCount", service.HtlcService.GetBlockCount)
-		apiv1.GET("/GetOmniBalance", service.HtlcService.GetOmniBalance)
-		apiv1.GET("/GetHtlcCurrState", service.HtlcService.GetHtlcCurrState)
-		apiv1.GET("/getChannelState", service.ChannelService.GetChannelState)
-		apiv1.GET("/checkChainType", service.NodeAccountService.InitNodeAndCheckChainType)
-		apiv1.GET("/getUserState", service.NodeAccountService.GetUserState)
-		apiv1.GET("/getNodeDbId", service.NodeAccountService.GetNodeDbIdByNodeId)
-		apiv1.GET("/getNodeInfoByP2pAddress", service.NodeAccountService.GetNodeInfoByP2pAddress)
+		apiv1.GET("GetHtlcCurrState", service.HtlcService.GetHtlcCurrState)
+		apiv1.GET("getChannelState", service.ChannelService.GetChannelState)
+		apiv1.GET("checkChainType", service.NodeAccountService.InitNodeAndCheckChainType)
+		apiv1.GET("getUserState", service.NodeAccountService.GetUserState)
+		apiv1.GET("getNodeDbId", service.NodeAccountService.GetNodeDbIdByNodeId)
+		apiv1.GET("getNodeInfoByP2pAddress", service.NodeAccountService.GetNodeInfoByP2pAddress)
 	}
-	apiv2 := router.Group("/api/common")
+	apiv2 := router.Group("/api/common/")
 	{
-		apiv2.GET("/getObdNodes", service.NodeAccountService.GetAllObdNodes)
-		apiv2.GET("/getUsers", service.NodeAccountService.GetAllUsers)
-		apiv2.GET("/getChannels", service.ChannelService.GetChannels)
+		apiv2.GET("getObdNodes", service.NodeAccountService.GetAllObdNodes)
+		apiv2.GET("getUsers", service.NodeAccountService.GetAllUsers)
+		apiv2.GET("getChannels", service.ChannelService.GetChannels)
+	}
+
+	apiv3 := router.Group("/api/rpc/")
+	{
+		apiv3.GET("getBlockCount", service.RpcService.GetBlockCount)
+		apiv3.GET("getOmniBalance", service.RpcService.GetOmniBalance)
+		apiv3.GET("importAddress", service.RpcService.ImportAddress)
+		apiv3.GET("listReceivedByAddress", service.RpcService.ListReceivedByAddress)
+		apiv3.GET("getTransactionById", service.RpcService.GetTransactionById)
+		apiv3.POST("createRawTransaction", service.RpcService.CreateRawTransaction)
+		apiv3.GET("estimateSmartFee", service.RpcService.EstimateSmartFee)
+		apiv3.GET("listUnspent", service.RpcService.ListUnspent)
 	}
 
 	return router

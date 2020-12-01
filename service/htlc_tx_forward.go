@@ -9,6 +9,7 @@ import (
 	"github.com/omnilaboratory/obd/bean"
 	"github.com/omnilaboratory/obd/bean/enum"
 	"github.com/omnilaboratory/obd/config"
+	"github.com/omnilaboratory/obd/conn"
 	"github.com/omnilaboratory/obd/dao"
 	"github.com/omnilaboratory/obd/omnicore"
 	"github.com/omnilaboratory/obd/rpc"
@@ -2303,7 +2304,7 @@ func htlcPayerCreateCommitmentTx_C3a(tx storm.Node, channelInfo *dao.ChannelInfo
 		newCommitmentTxInfo.HtlcRoutingPacket = requestData.RoutingPacket
 
 		newCommitmentTxInfo.HtlcCltvExpiry = requestData.CltvExpiry
-		newCommitmentTxInfo.BeginBlockHeight = httpGetBlockCountFromTracker()
+		newCommitmentTxInfo.BeginBlockHeight = conn.HttpGetBlockCountFromTracker()
 
 		newCommitmentTxInfo.HtlcTxHex = htlcTxData["hex"].(string)
 		newCommitmentTxInfo.HtlcH = requestData.H
@@ -2487,7 +2488,7 @@ func htlcPayeeCreateCommitmentTx_C3b(tx storm.Node, channelInfo *dao.ChannelInfo
 		allUsedTxidTemp += "," + usedTxid
 		newCommitmentTxInfo.HtlcRoutingPacket = payerData.RoutingPacket
 		newCommitmentTxInfo.HtlcCltvExpiry = payerData.CltvExpiry
-		newCommitmentTxInfo.BeginBlockHeight = httpGetBlockCountFromTracker()
+		newCommitmentTxInfo.BeginBlockHeight = conn.HttpGetBlockCountFromTracker()
 		newCommitmentTxInfo.HtlcTxHex = htlcTxData["hex"].(string)
 
 		signHexData := bean.NeedClientSignTxData{}

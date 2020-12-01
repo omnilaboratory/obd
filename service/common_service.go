@@ -8,6 +8,7 @@ import (
 	"github.com/omnilaboratory/obd/bean"
 	"github.com/omnilaboratory/obd/bean/enum"
 	"github.com/omnilaboratory/obd/config"
+	"github.com/omnilaboratory/obd/conn"
 	"github.com/omnilaboratory/obd/dao"
 	"github.com/omnilaboratory/obd/omnicore"
 	"github.com/omnilaboratory/obd/rpc"
@@ -187,7 +188,7 @@ func checkBtcTxHex(btcFeeTxHexDecode string, channelInfo *dao.ChannelInfo, peerI
 	}
 
 	inTxid := vin1.Get("txid").String()
-	inputTx, err := rpcClient.GetTransactionById(inTxid)
+	inputTx := conn.HttpGetTransactionByIdFromTracker(inTxid)
 	if err != nil {
 		err = errors.New(enum.Tips_funding_wrongBtcHexVin + err.Error())
 		log.Println(err)
@@ -604,7 +605,7 @@ func checkChannelOmniAssetAmount(channelInfo dao.ChannelInfo) (bool, error) {
 		log.Println(result)
 		return false, err
 	}
-	balance := httpGetOmniBalanceFromTracker(channelInfo.ChannelAddress, int(channelInfo.PropertyId))
+	balance := conn.HttpGetOmniBalanceFromTracker(channelInfo.ChannelAddress, int(channelInfo.PropertyId))
 	if balance == channelInfo.Amount {
 		return true, nil
 	}

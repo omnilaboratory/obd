@@ -10,7 +10,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"strconv"
 	"strings"
 )
 
@@ -42,7 +41,7 @@ func sendChannelStateToTracker(channelInfo dao.ChannelInfo, commitmentTx dao.Com
 	sendMsgToTracker(enum.MsgType_Tracker_UpdateChannelInfo_350, nodes)
 }
 
-func httpGetHtlcStateFromTracker(path string, h string) (flag int) {
+func HttpGetHtlcStateFromTracker(path string, h string) (flag int) {
 	url := "http://" + config.TrackerHost + "/api/v1/getHtlcTxState?path=" + path + "&h=" + h
 	log.Println(url)
 	resp, err := http.Get(url)
@@ -58,7 +57,7 @@ func httpGetHtlcStateFromTracker(path string, h string) (flag int) {
 	return 0
 }
 
-func httpGetChannelStateFromTracker(channelId string) (flag int) {
+func HttpGetChannelStateFromTracker(channelId string) (flag int) {
 	url := "http://" + config.TrackerHost + "/api/v1/getChannelState?channelId=" + channelId
 	log.Println(url)
 	resp, err := http.Get(url)
@@ -122,36 +121,4 @@ func sendMsgToTracker(msgType enum.MsgType, data interface{}) {
 	if TrackerChan != nil {
 		TrackerChan <- bytes
 	}
-}
-
-func httpGetBlockCountFromTracker() (flag int) {
-	url := "http://" + config.TrackerHost + "/api/v1/GetBlockCount"
-	log.Println(url)
-	resp, err := http.Get(url)
-	if err != nil {
-		return 0
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode == 200 {
-		body, _ := ioutil.ReadAll(resp.Body)
-		log.Println(string(body))
-		return int(gjson.Get(string(body), "data").Int())
-	}
-	return 0
-}
-
-func httpGetOmniBalanceFromTracker(address string, propertyId int) (balance float64) {
-	url := "http://" + config.TrackerHost + "/api/v1/GetOmniBalance?address=" + address + "&propertyId=" + strconv.Itoa(propertyId)
-	log.Println(url)
-	resp, err := http.Get(url)
-	if err != nil {
-		return 0
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode == 200 {
-		body, _ := ioutil.ReadAll(resp.Body)
-		log.Println(string(body))
-		return gjson.Get(string(body), "data").Float()
-	}
-	return 0
 }

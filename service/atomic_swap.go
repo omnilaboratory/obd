@@ -90,7 +90,7 @@ func (this *atomicSwapManager) AtomicSwap(msg bean.RequestMessage, user bean.Use
 		return nil, errors.New("error transaction_id")
 	}
 
-	flag := httpGetChannelStateFromTracker(reqData.ChannelIdTo)
+	flag := HttpGetChannelStateFromTracker(reqData.ChannelIdTo)
 	if flag == 0 {
 		return nil, errors.New("not found this channel_id_to")
 	}
@@ -255,7 +255,7 @@ func (this *atomicSwapManager) AtomicSwapAccepted(msg bean.RequestMessage, user 
 		return nil, errors.New("error target_transaction_id")
 	}
 
-	flag := httpGetChannelStateFromTracker(reqData.ChannelIdTo)
+	flag := HttpGetChannelStateFromTracker(reqData.ChannelIdTo)
 	if flag == 0 {
 		return nil, errors.New("not found this channel_id_to")
 	}

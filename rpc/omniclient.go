@@ -4,6 +4,7 @@ import (
 	"errors"
 	"github.com/omnilaboratory/obd/bean"
 	"github.com/omnilaboratory/obd/config"
+	"github.com/omnilaboratory/obd/conn"
 	"github.com/omnilaboratory/obd/omnicore"
 	"github.com/omnilaboratory/obd/tool"
 	"github.com/shopspring/decimal"
@@ -233,7 +234,7 @@ func GetBtcMinerAmount(total float64) float64 {
 // https://shimo.im/docs/5w9Fi1c9vm8yp1ly
 //https://bitcoinfees.earn.com/api/v1/fees/recommended
 func (client *Client) GetMinerFee() float64 {
-	price := client.EstimateSmartFee()
+	price := conn.HttpEstimateSmartFeeFromTracker()
 	if price == 0 {
 		price = 6
 	} else {
