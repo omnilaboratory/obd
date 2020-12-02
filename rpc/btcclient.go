@@ -406,16 +406,11 @@ func (client *Client) BtcCreateRawTransactionForUnsendInputTx(fromBitCoinAddress
 		output[fromBitCoinAddress] = drawback
 	}
 
-	hex, err := client.CreateRawTransaction(inputs, output)
-	if err != nil {
-		return nil, err
-	}
-
 	dataToTracker := make(map[string]interface{})
 	dataToTracker["inputs"] = inputs
 	dataToTracker["outputs"] = output
 	bytes, err := json.Marshal(dataToTracker)
-	hex = conn.HttpCreateRawTransactionFromTracker(string(bytes))
+	hex := conn.HttpCreateRawTransactionFromTracker(string(bytes))
 	if hex == "" {
 		return nil, errors.New("error createRawTransaction")
 	}

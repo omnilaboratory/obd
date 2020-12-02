@@ -7,6 +7,7 @@ import (
 	"github.com/omnilaboratory/obd/bean"
 	"github.com/omnilaboratory/obd/bean/chainhash"
 	"github.com/omnilaboratory/obd/bean/enum"
+	"github.com/omnilaboratory/obd/conn"
 	"github.com/omnilaboratory/obd/dao"
 	"github.com/omnilaboratory/obd/omnicore"
 	"github.com/omnilaboratory/obd/tool"
@@ -43,8 +44,12 @@ func (service *fundingTransactionManager) AssetFundingCreated(msg bean.RequestMe
 		log.Println(err)
 		return nil, false, err
 	}
-
-	testResult, _ := rpcClient.TestMemPoolAccept(reqData.FundingTxHex)
+	testResult := conn.HttpTestMemPoolAcceptFromTracker(reqData.FundingTxHex)
+	if testResult == "" {
+		err = errors.New(enum.Tips_common_empty + " funding_tx_hex ")
+		log.Println(err)
+		return nil, false, err
+	}
 	if gjson.Parse(testResult).Array()[0].Get("allowed").Bool() == false {
 		return nil, false, errors.New(gjson.Parse(testResult).Array()[0].Get("reject-reason").String())
 	}
@@ -1059,9 +1064,9 @@ func (service *fundingTransactionManager) OnAliceSignedRdAtAliceSide(data string
 		return nil, err
 	}
 
-	result, err := rpcClient.TestMemPoolAccept(signedRdHex)
-	if err != nil {
-		return nil, err
+	result := conn.HttpTestMemPoolAcceptFromTracker(signedRdHex)
+	if result == "" {
+		return nil, errors.New("wrong signedRdHex")
 	}
 	if gjson.Parse(result).Array()[0].Get("allowed").Bool() == false {
 		if gjson.Parse(result).Array()[0].Get("reject-reason").String() != "missing-inputs" {
@@ -1094,8 +1099,10 @@ func (service *fundingTransactionManager) OnAliceSignedRdAtAliceSide(data string
 		log.Println(err)
 		return nil, err
 	}
-	_, err = rpcClient.SendRawTransaction(fundingTransaction.FundingTxHex)
+
+	_, err = conn.HttpSendRawTransactionFromTracker(fundingTransaction.FundingTxHex)
 	if err != nil {
+		err = errors.New("fail to send")
 		log.Println(err)
 		return nil, err
 	}

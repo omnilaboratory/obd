@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/omnilaboratory/obd/bean"
 	"github.com/omnilaboratory/obd/bean/enum"
+	. "github.com/omnilaboratory/obd/conn"
 	"github.com/omnilaboratory/obd/rpc"
 	"github.com/omnilaboratory/obd/tool"
 
@@ -181,10 +182,10 @@ func (client *Client) omniCoreModule(msg bean.RequestMessage) (enum.SendTargetTy
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_Core_Omni_GetBalance_2112:
 		address := gjson.Get(msg.Data, "address").String()
-		if tool.CheckIsString(&address) {
-			result, err := rpcClient.OmniGetAllBalancesForAddress(address)
-			if err != nil {
-				data = err.Error()
+		if tool.CheckIsAddress(address) {
+			result := HttpOmniGetAllBalancesForAddressFromTracker(address)
+			if result == "" {
+				data = "empty result"
 			} else {
 				data = result
 				status = true

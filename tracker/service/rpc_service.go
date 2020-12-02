@@ -125,6 +125,51 @@ func (manager *rpcManager) ListUnspent(context *gin.Context) {
 		"data": result,
 	})
 }
+func (manager *rpcManager) OmniGetAllBalancesForAddress(context *gin.Context) {
+	address := context.Query("address")
+	if tool.CheckIsString(&address) == false {
+		context.JSON(http.StatusInternalServerError, gin.H{
+			"msg": "error Address",
+		})
+		return
+	}
+	result, err := rpc.NewClient().OmniGetAllBalancesForAddress(address)
+	if err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{
+			"msg": err.Error(),
+		})
+		return
+	}
+	context.JSON(http.StatusOK, gin.H{
+		"msg":  "OmniGetAllBalancesForAddress",
+		"data": result,
+	})
+}
+func (manager *rpcManager) TestMemPoolAccept(context *gin.Context) {
+	hex := context.Query("hex")
+	result, err := rpc.NewClient().TestMemPoolAccept(hex)
+	if err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{
+			"msg": err.Error(),
+		})
+		return
+	}
+	context.JSON(http.StatusOK, gin.H{
+		"msg":  "TestMemPoolAccept",
+		"data": result,
+	})
+}
+func (manager *rpcManager) SendRawTransaction(context *gin.Context) {
+	hex := context.Query("hex")
+	result, err := rpc.NewClient().SendRawTransaction(hex)
+	if err != nil {
+		result = ""
+	}
+	context.JSON(http.StatusOK, gin.H{
+		"msg":  err.Error(),
+		"data": result,
+	})
+}
 
 func (manager *rpcManager) GetTransactionById(context *gin.Context) {
 	txid := context.Query("txid")

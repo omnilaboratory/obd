@@ -53,6 +53,9 @@ func InitRouter() *gin.Engine {
 		apiv3.POST("createRawTransaction", service.RpcService.CreateRawTransaction)
 		apiv3.GET("estimateSmartFee", service.RpcService.EstimateSmartFee)
 		apiv3.GET("listUnspent", service.RpcService.ListUnspent)
+		apiv3.GET("omniGetAllBalancesForAddress", service.RpcService.OmniGetAllBalancesForAddress)
+		apiv3.GET("testMemPoolAccept", service.RpcService.TestMemPoolAccept)
+		apiv3.GET("sendRawTransaction", service.RpcService.SendRawTransaction)
 	}
 
 	return router

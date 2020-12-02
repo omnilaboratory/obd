@@ -137,8 +137,8 @@ func (service *fundingTransactionManager) BtcFundingCreated(msg bean.RequestMess
 		Reverse().
 		First(latestBtcFundingRequest)
 	if latestBtcFundingRequest.Id > 0 && latestBtcFundingRequest.TxId != fundingTxid {
-		result, err = rpcClient.TestMemPoolAccept(latestBtcFundingRequest.TxHash)
-		if err == nil {
+		result = conn.HttpTestMemPoolAcceptFromTracker(latestBtcFundingRequest.TxHash)
+		if result != "" {
 			allowed := gjson.Parse(result).Get("allowed").Bool()
 			if allowed == false {
 				latestBtcFundingRequest.IsFinish = true
@@ -331,11 +331,7 @@ func (service *fundingTransactionManager) OnAliceSignBtcFundingMinerFeeRedeemTx(
 		return nil, "", err
 	}
 
-	result, err := rpcClient.TestMemPoolAccept(hex)
-	if err != nil {
-		return nil, "", err
-	}
-	txid := gjson.Parse(result).Array()[0].Get("txid").Str
+	txid := rpcClient.GetTxId(hex)
 	if len(txid) == 0 {
 		return nil, "", errors.New("fail to test the hex")
 	}
@@ -641,7 +637,7 @@ func (service *fundingTransactionManager) FundingBtcTxSigned(msg bean.RequestMes
 	}
 
 	//赎回交易签名成功后，广播交易
-	_, err = rpcClient.SendRawTransaction(fundingBtcRequest.TxHash)
+	_, err = conn.HttpSendRawTransactionFromTracker(fundingBtcRequest.TxHash)
 	if err != nil {
 		if strings.Contains(err.Error(), "Transaction already in block chain") == false {
 			return nil, funder, err
