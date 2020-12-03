@@ -67,7 +67,6 @@ func HttpGetChannelStateFromTracker(channelId string) (flag int) {
 	defer resp.Body.Close()
 	if resp.StatusCode == 200 {
 		body, _ := ioutil.ReadAll(resp.Body)
-		log.Println(string(body))
 		return int(gjson.Get(string(body), "data").Get("state").Int())
 	}
 	return 0

@@ -94,7 +94,7 @@ func (service *fundingTransactionManager) AssetFundingCreated(msg bean.RequestMe
 	}
 
 	// if alice launch funding
-	fundingTxHexDecode, err := rpcClient.OmniDecodeTransaction(reqData.FundingTxHex)
+	fundingTxHexDecode, err := conn.HttpOmniDecodeTransactionFromTracker(reqData.FundingTxHex)
 	if err != nil {
 		err = errors.New(enum.Tips_funding_failDecodeRawTransaction + " : " + err.Error())
 		log.Println(err)
@@ -211,9 +211,9 @@ func (service *fundingTransactionManager) AssetFundingCreated(msg bean.RequestMe
 
 	var commitmentTxInfo *dao.CommitmentTransaction
 
-	unspent, err := rpcClient.ListUnspent(channelInfo.ChannelAddress)
-	if err != nil {
-		return nil, false, err
+	unspent := conn.HttpListUnspentFromTracker(channelInfo.ChannelAddress)
+	if unspent == "" {
+		return nil, false, errors.New("empty listunspent")
 	}
 
 	var c1aTxData map[string]interface{}
@@ -412,7 +412,7 @@ func (service *fundingTransactionManager) OnAliceSignC1a(msg bean.RequestMessage
 	}
 
 	// 检测 输出地址，数量是否一致
-	omniDecode, err := rpcClient.OmniDecodeTransaction(hex)
+	omniDecode, err := conn.HttpOmniDecodeTransactionFromTracker(hex)
 	if err != nil {
 		return nil, err
 	}
@@ -514,7 +514,7 @@ func (service *fundingTransactionManager) BeforeSignAssetFundingCreateAtBobSide(
 		First(fundingTransaction)
 	if fundingTransaction.Id == 0 {
 		fundingTransaction.ChannelId = channelId
-		fundingTxHexDecode, err := rpcClient.OmniDecodeTransaction(fundingTxHex)
+		fundingTxHexDecode, err := conn.HttpOmniDecodeTransactionFromTracker(fundingTxHex)
 		if err != nil {
 			err = errors.New("TxHex  parse fail " + err.Error())
 			log.Println(err)
@@ -700,7 +700,7 @@ func (service *fundingTransactionManager) AssetFundingSigned(jsonData string, si
 	// 二次签名的验证
 	signedRsmcHex := reqData.SignedAliceRsmcHex
 
-	beforeSignAliceRsmcDecode, err := rpcClient.OmniDecodeTransaction(fundingTransaction.FunderRsmcHex)
+	beforeSignAliceRsmcDecode, err := conn.HttpOmniDecodeTransactionFromTracker(fundingTransaction.FunderRsmcHex)
 	if err != nil {
 		return nil, err
 	}
@@ -709,7 +709,7 @@ func (service *fundingTransactionManager) AssetFundingSigned(jsonData string, si
 	beforeSignAliceRsmcReferenceaddress := gjson.Get(beforeSignAliceRsmcDecode, "referenceaddress").Str
 	beforeSignAliceRsmcAmount := gjson.Get(beforeSignAliceRsmcDecode, "amount").Float()
 
-	omniDecode, err := rpcClient.OmniDecodeTransaction(signedRsmcHex)
+	omniDecode, err := conn.HttpOmniDecodeTransactionFromTracker(signedRsmcHex)
 	if err != nil {
 		return nil, err
 	}
@@ -1111,7 +1111,6 @@ func (service *fundingTransactionManager) OnAliceSignedRdAtAliceSide(data string
 	_ = tx.Update(fundingTransaction)
 
 	_, _ = GetAddressListUnspent(tx, *channelInfo)
-	rpcClient.ValidateAddress(channelInfo.ChannelAddress)
 
 	err = tx.Commit()
 	if err != nil {

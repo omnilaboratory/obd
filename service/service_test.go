@@ -29,46 +29,6 @@ func TestCommitmentTxManager_GetItemById(t *testing.T) {
 
 }
 
-func TestDelDemoChannelInfoData(t *testing.T) {
-
-	info, err := rpcClient.OmniGetInfo()
-	log.Println(info)
-	log.Println(err)
-	return
-
-	//multiAddr, err := rpcClient.CreateMultiSig(2, []string{"03b2e7ecc5ff62feb342943a1364f555e8302f507f78c6392c82b9e12c95ccb40b", "03f1603966fc3986d7681a7bf7a1e6b8b44c6009939c28da21f065c1b991aeff12"})
-	//if err != nil {
-	//}
-	//var  RSMCMultiAddress = gjson.Get(multiAddr, "address").String()
-	//var RSMCRedeemScript = gjson.Get(multiAddr, "redeemScript").String()
-	//log.Println(RSMCMultiAddress)
-	//log.Println(RSMCRedeemScript)
-
-	hex := "0200000001b196f5b373c6b8d1f3b688d14d865bdd33366dae7cc4e12e1f2691ad710aad7c000000004a000047522103f1603966fc3986d7681a7bf7a1e6b8b44c6009939c28da21f065c1b991aeff1221023cd1ad5e232182d51ef75bc9fb4821a86e3b057a34f7ec30de0ed138681d133a52aeffffffff03241d00000000000017a9140b727d44cc8eba2f9e81ac040c54e68376905685870000000000000000166a146f6d6e6900000000000000790000000017d784001c0200000000000017a9140b727d44cc8eba2f9e81ac040c54e683769056858700000000"
-	hex = "0200000001b196f5b373c6b8d1f3b688d14d865bdd33366dae7cc4e12e1f2691ad710aad7c00000000d9004730440220156c3ef2449fcca3f5df395bcd5ada67c3fe3cd025b68713b0178803bb91543d02203c57a136c58d167a65a7bbf5eda5d2902e0eca284eac34454daa6d0fd5784c2201473044022054d6c37e39ceed3bcf693201b942193fab6784217869108374caada7ffabca6f02205cc212ed336263524bebd1419ce04e8fc19940865a24a6d430ebd87efbe934480147522103f1603966fc3986d7681a7bf7a1e6b8b44c6009939c28da21f065c1b991aeff1221023cd1ad5e232182d51ef75bc9fb4821a86e3b057a34f7ec30de0ed138681d133a52aeffffffff03241d00000000000017a914eb11c3cf8ccae06e28ed5d081a94c53487991e9e870000000000000000166a146f6d6e690000000000000079000000005f5e10001c0200000000000017a914eb11c3cf8ccae06e28ed5d081a94c53487991e9e8700000000"
-	//priv := "cSyJChW5xdhhWCwdSFvWuNC5SgwYqgpWwbVXXKE5gs293BwnM4q5"
-	//prevtxts :="[{\"txid\":\"770099f1b24bc17783852932c7f92badcdb0dee83b495bc3c4e71e0624172aaa\",\"scriptPubkey\":\"a914eb11c3cf8ccae06e28ed5d081a94c53487991e9e87\",\"vout\":0,\"value\":0.0000746},{\"txid\":\"770099f1b24bc17783852932c7f92badcdb0dee83b495bc3c4e71e0624172aaa\",\"scriptPubkey\":\"a914eb11c3cf8ccae06e28ed5d081a94c53487991e9e87\",\"vout\":2,\"value\":0.0000054}]"
-	inputs := make([]rpc.TransactionInputItem, 0)
-	var node = rpc.TransactionInputItem{
-		Txid:         "770099f1b24bc17783852932c7f92badcdb0dee83b495bc3c4e71e0624172aaa",
-		ScriptPubKey: "a914eb11c3cf8ccae06e28ed5d081a94c53487991e9e87",
-		Vout:         0,
-		Amount:       0.0000746,
-	}
-	inputs = append(inputs, node)
-	node = rpc.TransactionInputItem{
-		Txid:         "770099f1b24bc17783852932c7f92badcdb0dee83b495bc3c4e71e0624172aaa",
-		ScriptPubKey: "a914eb11c3cf8ccae06e28ed5d081a94c53487991e9e87",
-		Vout:         2,
-		Amount:       0.0000054,
-	}
-	inputs = append(inputs, node)
-	result, err := rpcClient.OmniDecodeTransactionWithPrevTxs(hex, inputs)
-	log.Println(result)
-	log.Println(err)
-
-}
-
 func TestDelDemoChannelInfoOne(t *testing.T) {
 	parse, err := time.ParseInLocation("2006-01-02 15:04:05", "2020-08-06 10:40:00", time.Local)
 	log.Println(err)

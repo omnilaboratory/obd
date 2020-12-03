@@ -48,7 +48,7 @@ func (manager *rpcManager) GetOmniBalance(context *gin.Context) {
 
 func (manager *rpcManager) ImportAddress(context *gin.Context) {
 	address := context.Query("address")
-	if tool.CheckIsString(&address) == false {
+	if tool.CheckIsAddress(address) == false {
 		context.JSON(http.StatusInternalServerError, gin.H{
 			"msg": "error Address",
 		})
@@ -145,6 +145,27 @@ func (manager *rpcManager) OmniGetAllBalancesForAddress(context *gin.Context) {
 		"data": result,
 	})
 }
+func (manager *rpcManager) OmniGetBalancesForAddress(context *gin.Context) {
+	address := context.Query("address")
+	propertyId, _ := strconv.Atoi(context.Query("propertyId"))
+	if tool.CheckIsString(&address) == false {
+		context.JSON(http.StatusInternalServerError, gin.H{
+			"msg": "error Address",
+		})
+		return
+	}
+	result, err := rpc.NewClient().OmniGetbalance(address, propertyId)
+	if err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{
+			"msg": err.Error(),
+		})
+		return
+	}
+	context.JSON(http.StatusOK, gin.H{
+		"msg":  "OmniGetAllBalancesForAddress",
+		"data": result,
+	})
+}
 func (manager *rpcManager) TestMemPoolAccept(context *gin.Context) {
 	hex := context.Query("hex")
 	result, err := rpc.NewClient().TestMemPoolAccept(hex)
@@ -162,11 +183,27 @@ func (manager *rpcManager) TestMemPoolAccept(context *gin.Context) {
 func (manager *rpcManager) SendRawTransaction(context *gin.Context) {
 	hex := context.Query("hex")
 	result, err := rpc.NewClient().SendRawTransaction(hex)
+	msg := ""
 	if err != nil {
 		result = ""
+		msg = err.Error()
+	}
+
+	context.JSON(http.StatusOK, gin.H{
+		"msg":  msg,
+		"data": result,
+	})
+}
+func (manager *rpcManager) OmniDecodeTransaction(context *gin.Context) {
+	hex := context.Query("hex")
+	result, err := rpc.NewClient().OmniDecodeTransaction(hex)
+	msg := ""
+	if err != nil {
+		result = ""
+		msg = err.Error()
 	}
 	context.JSON(http.StatusOK, gin.H{
-		"msg":  err.Error(),
+		"msg":  msg,
 		"data": result,
 	})
 }

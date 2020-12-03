@@ -192,6 +192,10 @@ func (service *htlcForwardTxManager) PayerRequestFindPath(msgData string, user b
 		}
 	}
 
+	if requestFindPathInfo.RecipientUserPeerId == user.PeerId && requestFindPathInfo.RecipientNodePeerId == user.P2PLocalPeerId {
+		return nil, requestFindPathInfo.IsPrivate, errors.New("recipient_user_peer_id can not be yourself")
+	}
+
 	if requestFindPathInfo.PropertyId < 0 {
 		return nil, requestFindPathInfo.IsPrivate, errors.New(enum.Tips_common_wrong + "property_id")
 	}

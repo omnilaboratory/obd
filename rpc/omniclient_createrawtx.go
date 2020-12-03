@@ -4,19 +4,16 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/omnilaboratory/obd/config"
+	"github.com/omnilaboratory/obd/conn"
 	"github.com/omnilaboratory/obd/omnicore"
 	"github.com/omnilaboratory/obd/tool"
 	"github.com/shopspring/decimal"
 	"github.com/tidwall/gjson"
-	"log"
 	"strconv"
 	"strings"
-	"time"
 )
 
 func (client *Client) OmniCreateRawTransaction(fromBitCoinAddress string, toBitCoinAddress string, propertyId int64, amount float64, minerFee float64) (retMap map[string]interface{}, err error) {
-	beginTime := time.Now()
-	log.Println("OmniCreateAndSignRawTransaction beginTime", beginTime.String())
 	if tool.CheckIsAddress(fromBitCoinAddress) == false {
 		return nil, errors.New("fromBitCoinAddress is empty")
 	}
@@ -37,26 +34,25 @@ func (client *Client) OmniCreateRawTransaction(fromBitCoinAddress string, toBitC
 		minerFee = 0.00003
 	}
 
-	balanceResult, err := client.OmniGetbalance(fromBitCoinAddress, int(propertyId))
-	if err != nil {
-		return nil, err
+	balanceResult := conn.HttpOmniGetBalancesForAddressFromTracker(fromBitCoinAddress, int(propertyId))
+	if balanceResult == "" {
+		return nil, errors.New("empty omni balance")
 	}
+
 	omniBalance := gjson.Get(balanceResult, "balance").Float()
 	if omniBalance < amount {
 		return nil, errors.New("not enough omni balance")
 	}
 
-	_, _ = client.ValidateAddress(fromBitCoinAddress)
-	resultListUnspent, err := client.ListUnspent(fromBitCoinAddress)
-	if err != nil {
-		return nil, err
+	resultListUnspent := conn.HttpListUnspentFromTracker(fromBitCoinAddress)
+	if resultListUnspent == "" {
+		return nil, errors.New("enmpty ListUnspent")
 	}
 
 	arrayListUnspent := gjson.Parse(resultListUnspent).Array()
 	if len(arrayListUnspent) == 0 {
 		return nil, errors.New("empty balance")
 	}
-	log.Println("listunspent", arrayListUnspent)
 
 	out, _ := decimal.NewFromFloat(minerFee).Add(decimal.NewFromFloat(pMoney)).Round(8).Float64()
 

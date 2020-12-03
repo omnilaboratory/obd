@@ -351,25 +351,20 @@ func (client *Client) omniCoreModule(msg bean.RequestMessage) (enum.SendTargetTy
 		if err != nil {
 			data = "error data"
 		} else {
-			_, err := rpcClient.OmniGetProperty(sendInfo.PropertyId)
-			if err != nil {
-				data = err.Error()
-			} else {
-				if tool.CheckIsString(&sendInfo.FromAddress) &&
-					tool.CheckIsString(&sendInfo.ToAddress) &&
-					sendInfo.Amount > 0 {
-					respNode, err := rpcClient.OmniCreateRawTransaction(sendInfo.FromAddress, sendInfo.ToAddress, sendInfo.PropertyId, sendInfo.Amount, sendInfo.MinerFee)
-					if err != nil {
-						data = err.Error()
-					} else {
-						respNode["is_multisig"] = false
-						bytes, _ := json.Marshal(respNode)
-						data = string(bytes)
-						status = true
-					}
+			if tool.CheckIsString(&sendInfo.FromAddress) &&
+				tool.CheckIsString(&sendInfo.ToAddress) &&
+				sendInfo.Amount > 0 {
+				respNode, err := rpcClient.OmniCreateRawTransaction(sendInfo.FromAddress, sendInfo.ToAddress, sendInfo.PropertyId, sendInfo.Amount, sendInfo.MinerFee)
+				if err != nil {
+					data = err.Error()
 				} else {
-					data = "error address"
+					respNode["is_multisig"] = false
+					bytes, _ := json.Marshal(respNode)
+					data = string(bytes)
+					status = true
 				}
+			} else {
+				data = "error address"
 			}
 		}
 		client.sendToMyself(msg.Type, status, data)

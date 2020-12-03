@@ -355,7 +355,8 @@ func (this *channelManager) AllItem(jsonData string, user bean.User) (data *page
 			item.PeerIdB = info.PeerIdB
 			item.CreateAt = info.CreateAt
 			item.BtcFundingTimes = 3
-			if item.CurrState == dao.ChannelState_Create {
+			if item.CurrState <= dao.ChannelState_WaitFundAsset {
+				item.BtcFundingTimes = 0
 				result := conn.HttpListReceivedByAddressFromTracker(info.ChannelAddress)
 				if result != "" {
 					if len(gjson.Parse(result).Array()) > 0 {

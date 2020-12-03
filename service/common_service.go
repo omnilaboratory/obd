@@ -600,11 +600,6 @@ func getBtcMinerAmount(total float64) float64 {
 }
 
 func checkChannelOmniAssetAmount(channelInfo dao.ChannelInfo) (bool, error) {
-	result, err := rpcClient.OmniGetbalance(channelInfo.ChannelAddress, int(channelInfo.PropertyId))
-	if err != nil {
-		log.Println(result)
-		return false, err
-	}
 	balance := conn.HttpGetOmniBalanceFromTracker(channelInfo.ChannelAddress, int(channelInfo.PropertyId))
 	if balance == channelInfo.Amount {
 		return true, nil
