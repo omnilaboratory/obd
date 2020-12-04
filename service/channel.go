@@ -745,7 +745,7 @@ func (this *channelManager) ForceCloseChannel(msg bean.RequestMessage, user *bea
 
 		//region 广播承诺交易 最近的rsmc的资产分配交易 因为是omni资产，承诺交易被拆分成了两个独立的交易
 		if tool.CheckIsString(&latestCommitmentTx.RSMCTxHex) {
-			commitmentTxid, err := rpcClient.SendRawTransaction(latestCommitmentTx.RSMCTxHex)
+			commitmentTxid, err := conn.HttpSendRawTransactionFromTracker(latestCommitmentTx.RSMCTxHex)
 			if err != nil {
 				log.Println(err)
 				return nil, err
@@ -753,7 +753,7 @@ func (this *channelManager) ForceCloseChannel(msg bean.RequestMessage, user *bea
 			log.Println(commitmentTxid)
 		}
 		if tool.CheckIsString(&latestCommitmentTx.ToCounterpartyTxHex) {
-			commitmentTxidToBob, err := rpcClient.SendRawTransaction(latestCommitmentTx.ToCounterpartyTxHex)
+			commitmentTxidToBob, err := conn.HttpSendRawTransactionFromTracker(latestCommitmentTx.ToCounterpartyTxHex)
 			if err != nil {
 				log.Println(err)
 				return nil, err
@@ -772,7 +772,7 @@ func (this *channelManager) ForceCloseChannel(msg bean.RequestMessage, user *bea
 			First(latestRevocableDeliveryTx)
 
 		if latestRevocableDeliveryTx.Id > 0 {
-			_, err = rpcClient.SendRawTransaction(latestRevocableDeliveryTx.TxHex)
+			_, err = conn.HttpSendRawTransactionFromTracker(latestRevocableDeliveryTx.TxHex)
 			if err != nil {
 				log.Println(err)
 				msg := err.Error()
@@ -907,7 +907,7 @@ func (this *channelManager) AfterBobSignCloseChannelAtAliceSide(jsonData string,
 	} else {
 		//region 广播承诺交易 最近的rsmc的资产分配交易 因为是omni资产，承诺交易被拆分成了两个独立的交易
 		if tool.CheckIsString(&latestCommitmentTx.RSMCTxHex) {
-			commitmentTxid, err := rpcClient.SendRawTransaction(latestCommitmentTx.RSMCTxHex)
+			commitmentTxid, err := conn.HttpSendRawTransactionFromTracker(latestCommitmentTx.RSMCTxHex)
 			if err != nil {
 				log.Println(err)
 				return nil, err
@@ -915,7 +915,7 @@ func (this *channelManager) AfterBobSignCloseChannelAtAliceSide(jsonData string,
 			log.Println(commitmentTxid)
 		}
 		if tool.CheckIsString(&latestCommitmentTx.ToCounterpartyTxHex) {
-			commitmentTxidToBob, err := rpcClient.SendRawTransaction(latestCommitmentTx.ToCounterpartyTxHex)
+			commitmentTxidToBob, err := conn.HttpSendRawTransactionFromTracker(latestCommitmentTx.ToCounterpartyTxHex)
 			if err != nil {
 				log.Println(err)
 				return nil, err
@@ -936,7 +936,7 @@ func (this *channelManager) AfterBobSignCloseChannelAtAliceSide(jsonData string,
 			return nil, err
 		}
 
-		_, err = rpcClient.SendRawTransaction(latestRevocableDeliveryTx.TxHex)
+		_, err = conn.HttpSendRawTransactionFromTracker(latestRevocableDeliveryTx.TxHex)
 		if err != nil {
 			log.Println(err)
 			msg := err.Error()
@@ -997,7 +997,7 @@ func (this *channelManager) CloseHtlcChannelSigned(tx storm.Node, channelInfo *d
 
 	//region 广播主承诺交易 三笔
 	if tool.CheckIsString(&latestCommitmentTx.RSMCTxHex) {
-		commitmentTxid, err := rpcClient.SendRawTransaction(latestCommitmentTx.RSMCTxHex)
+		commitmentTxid, err := conn.HttpSendRawTransactionFromTracker(latestCommitmentTx.RSMCTxHex)
 		if err != nil {
 			log.Println(err)
 			return nil, err
@@ -1018,7 +1018,7 @@ func (this *channelManager) CloseHtlcChannelSigned(tx storm.Node, channelInfo *d
 		return nil, err
 	}
 
-	_, err = rpcClient.SendRawTransaction(latestRsmcRD.TxHex)
+	_, err = conn.HttpSendRawTransactionFromTracker(latestRsmcRD.TxHex)
 	if err != nil {
 		log.Println(err)
 		msg := err.Error()
@@ -1028,7 +1028,7 @@ func (this *channelManager) CloseHtlcChannelSigned(tx storm.Node, channelInfo *d
 	}
 
 	if tool.CheckIsString(&latestCommitmentTx.ToCounterpartyTxHex) {
-		commitmentTxidToBob, err := rpcClient.SendRawTransaction(latestCommitmentTx.ToCounterpartyTxHex)
+		commitmentTxidToBob, err := conn.HttpSendRawTransactionFromTracker(latestCommitmentTx.ToCounterpartyTxHex)
 		if err != nil {
 			log.Println(err)
 			return nil, err
@@ -1038,7 +1038,7 @@ func (this *channelManager) CloseHtlcChannelSigned(tx storm.Node, channelInfo *d
 
 	// htlc部分
 	if tool.CheckIsString(&latestCommitmentTx.HtlcTxHex) {
-		commitmentTxidToHtlc, err := rpcClient.SendRawTransaction(latestCommitmentTx.HtlcTxHex)
+		commitmentTxidToHtlc, err := conn.HttpSendRawTransactionFromTracker(latestCommitmentTx.HtlcTxHex)
 		if err != nil {
 			log.Println(err)
 			return nil, err
@@ -1068,10 +1068,10 @@ func (this *channelManager) CloseHtlcChannelSigned(tx storm.Node, channelInfo *d
 				First(htrd)
 			if htrd.Id > 0 && tool.CheckIsString(&ht1a.RSMCTxHex) {
 				//广播alice的ht1a
-				_, err = rpcClient.SendRawTransaction(ht1a.RSMCTxHex)
+				_, err = conn.HttpSendRawTransactionFromTracker(ht1a.RSMCTxHex)
 				if err == nil { //如果已经超时 比如alice的3天超时，bob得到R后的交易的无等待锁定
 					if tool.CheckIsString(&htrd.TxHex) {
-						_, err = rpcClient.SendRawTransaction(htrd.TxHex)
+						_, err = conn.HttpSendRawTransactionFromTracker(htrd.TxHex)
 						if err != nil {
 							log.Println(err)
 							msg := err.Error()
@@ -1104,7 +1104,7 @@ func (this *channelManager) CloseHtlcChannelSigned(tx storm.Node, channelInfo *d
 			q.Eq("Owner", closeOpStarter)).
 			First(htdnx)
 		if htdnx.Id > 0 && tool.CheckIsString(&htdnx.TxHex) {
-			_, err = rpcClient.SendRawTransaction(htdnx.TxHex)
+			_, err = conn.HttpSendRawTransactionFromTracker(htdnx.TxHex)
 			if err != nil {
 				log.Println(err)
 				msg := err.Error()
