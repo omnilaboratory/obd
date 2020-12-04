@@ -63,7 +63,7 @@ func (client *Client) omniCoreModule(msg bean.RequestMessage) (enum.SendTargetTy
 		if propertyId == 0 {
 			data = "error propertyId"
 		} else {
-			result, err := rpcClient.OmniGetProperty(propertyId)
+			result, err := HttpOmniGetPropertyFromTracker(propertyId)
 			if err != nil {
 				data = err.Error()
 			} else {
@@ -123,7 +123,7 @@ func (client *Client) omniCoreModule(msg bean.RequestMessage) (enum.SendTargetTy
 	case enum.MsgType_Core_Omni_GetTransaction_2118:
 		txid := gjson.Get(msg.Data, "txid").String()
 		if tool.CheckIsString(&txid) {
-			result, err := rpcClient.OmniGettransaction(txid)
+			result, err := HttpOmniGettransactionFromTracker(txid)
 			if err != nil {
 				data = err.Error()
 			} else {

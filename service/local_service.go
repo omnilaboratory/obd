@@ -5,6 +5,7 @@ import (
 	"github.com/asdine/storm"
 	"github.com/asdine/storm/q"
 	"github.com/omnilaboratory/obd/bean/enum"
+	"github.com/omnilaboratory/obd/conn"
 	"github.com/omnilaboratory/obd/dao"
 	"github.com/omnilaboratory/obd/rpc"
 	"github.com/omnilaboratory/obd/tool"
@@ -144,7 +145,7 @@ func sendRdTx() {
 
 	for _, node := range nodes {
 		if tool.CheckIsString(&node.TransactionHex) {
-			_, err = rpcClient.SendRawTransaction(node.TransactionHex)
+			_, err := conn.HttpSendRawTransactionFromTracker(node.TransactionHex)
 			if err == nil {
 				if node.Type == 1 {
 					_ = addHTRD1aTxToWaitDB(node.HtnxIdAndHtnxRdId)

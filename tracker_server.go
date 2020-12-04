@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/lestrrat-go/file-rotatelogs"
 	"github.com/omnilaboratory/obd/config"
+	"github.com/omnilaboratory/obd/rpc"
 	"github.com/omnilaboratory/obd/tool"
 	"github.com/omnilaboratory/obd/tracker"
 	"github.com/omnilaboratory/obd/tracker/service"
@@ -39,6 +40,13 @@ func initTrackerLog() {
 // gox -os "linux" -arch amd64
 func main() {
 	initTrackerLog()
+
+	err := rpc.NewClient().CheckVersion()
+	if err != nil {
+		log.Println(err)
+		log.Println("because get wrong omniCore version, tracker fail to start")
+		return
+	}
 
 	routersInit := tracker.InitRouter()
 	if routersInit == nil {

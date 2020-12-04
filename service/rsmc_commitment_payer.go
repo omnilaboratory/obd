@@ -262,7 +262,6 @@ func (this *commitmentTxManager) OnAliceSignC2aRawTxAtAliceSide(msg bean.Request
 		log.Println(err)
 		return nil, nil, err
 	}
-	log.Println("rsmc step 2.0 ", time.Now())
 
 	latestCommitmentTxInfo, err := getLatestCommitmentTxUseDbTx(tx, signedDataForC2a.ChannelId, user.PeerId)
 	if err != nil {
@@ -282,7 +281,7 @@ func (this *commitmentTxManager) OnAliceSignC2aRawTxAtAliceSide(msg bean.Request
 	}
 	latestCommitmentTxInfo.CurrState = dao.TxInfoState_Create
 	_ = tx.Update(latestCommitmentTxInfo)
-	tx.Commit()
+	_ = tx.Commit()
 
 	p2pData.RsmcRawData.Hex = signedDataForC2a.RsmcSignedHex
 	p2pData.CounterpartyRawData.Hex = signedDataForC2a.CounterpartySignedHex

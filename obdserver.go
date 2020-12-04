@@ -12,7 +12,6 @@ import (
 	"github.com/omnilaboratory/obd/bean"
 	"github.com/omnilaboratory/obd/config"
 	"github.com/omnilaboratory/obd/lightclient"
-	"github.com/omnilaboratory/obd/rpc"
 	"github.com/omnilaboratory/obd/service"
 	"github.com/omnilaboratory/obd/tool"
 )
@@ -45,15 +44,8 @@ func initObdLog() {
 func main() {
 	initObdLog()
 
-	err := rpc.NewClient().CheckVersion()
-	if err != nil {
-		log.Println(err)
-		log.Println("because get wrong omniCore version, obd fail to start")
-		return
-	}
-
 	//tracker
-	err = lightclient.ConnectToTracker(true)
+	err := lightclient.ConnectToTracker(true)
 	if err != nil {
 		log.Println(err)
 		log.Println("because fail to connect to tracker, obd fail to start")
@@ -86,7 +78,7 @@ func main() {
 	// Timer
 	service.ScheduleService.StartSchedule()
 
-	log.Println("obd " + tool.GetObdNodeId() + " start at  " + config.P2P_hostIp + ":" + strconv.Itoa(config.ServerPort) + " in " + config.ChainNode_Type)
+	log.Println("obd " + tool.GetObdNodeId() + " start  in " + config.ChainNode_Type)
 	log.Println("wsAddress: " + bean.CurrObdNodeInfo.WebsocketLink)
 	log.Fatal(server.ListenAndServe())
 }

@@ -207,6 +207,19 @@ func (manager *rpcManager) OmniDecodeTransaction(context *gin.Context) {
 		"data": result,
 	})
 }
+func (manager *rpcManager) OmniListTransactions(context *gin.Context) {
+	address := context.Query("address")
+	result, err := rpc.NewClient().OmniListTransactions(address, 100, 1)
+	msg := ""
+	if err != nil {
+		result = ""
+		msg = err.Error()
+	}
+	context.JSON(http.StatusOK, gin.H{
+		"msg":  msg,
+		"data": result,
+	})
+}
 
 func (manager *rpcManager) GetTransactionById(context *gin.Context) {
 	txid := context.Query("txid")
@@ -228,10 +241,60 @@ func (manager *rpcManager) GetTransactionById(context *gin.Context) {
 		"data": result,
 	})
 }
+func (manager *rpcManager) OmniGettransaction(context *gin.Context) {
+	txid := context.Query("txid")
+	var err error
+	var msg string
+	var result string
+	if tool.CheckIsString(&txid) == false {
+		msg = "error txid"
+	}
+	result, err = rpc.NewClient().OmniGettransaction(txid)
+	if err != nil {
+		msg = err.Error()
+	}
+	context.JSON(http.StatusOK, gin.H{
+		"msg":  msg,
+		"data": result,
+	})
+}
+func (manager *rpcManager) OmniGetProperty(context *gin.Context) {
+	propertyId := context.Query("propertyId")
+	id, err := strconv.Atoi(propertyId)
+	result := ""
+	msg := ""
+	if err != nil {
+		msg = err.Error()
+	}
+
+	result, err = rpc.NewClient().OmniGetProperty(int64(id))
+	if err != nil {
+		msg = err.Error()
+	}
+	context.JSON(http.StatusOK, gin.H{
+		"msg":  msg,
+		"data": result,
+	})
+}
+
+var smartFeeSpanTime time.Time
+var cacheFeeRate float64
+
 func (manager *rpcManager) EstimateSmartFee(context *gin.Context) {
+	if smartFeeSpanTime.IsZero() == false {
+		if time.Now().Sub(smartFeeSpanTime).Minutes() > 10 {
+			cacheFeeRate = 0
+		}
+	}
+	if cacheFeeRate == 0 {
+		fee := rpc.NewClient().EstimateSmartFee()
+		cacheFeeRate = fee
+		smartFeeSpanTime = time.Now()
+	}
+
 	context.JSON(http.StatusOK, gin.H{
 		"msg":  "EstimateSmartFee",
-		"data": rpc.NewClient().EstimateSmartFee(),
+		"data": cacheFeeRate,
 	})
 }
 func (manager *rpcManager) CreateRawTransaction(context *gin.Context) {

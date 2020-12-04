@@ -5,9 +5,9 @@ import (
 	"github.com/omnilaboratory/obd/bean/enum"
 )
 
-var CurrObdNodeInfo obdNodeInfo
+var CurrObdNodeInfo ObdNodeInfo
 
-type obdNodeInfo struct {
+type ObdNodeInfo struct {
 	ChainNetworkType string `json:"chain_network_type"`
 	OmniCoreVersion  string `json:"omni_core_version"`
 	BtcCoreVersion   string `json:"btc_core_version"`

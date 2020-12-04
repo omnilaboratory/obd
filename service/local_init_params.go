@@ -18,7 +18,4 @@ type commitmentTxOutputBean struct {
 var P2PLocalPeerId string
 var rpcClient *rpc.Client
 
-//for store the privateKey
-var tempAddrPrivateKeyMap = make(map[string]string)
-
 var OnlineUserMap = make(map[string]*bean.User)

@@ -93,6 +93,7 @@ func NewClient() *Client {
 func (client *Client) NextID() uint64 {
 	return atomic.AddUint64(&client.id, 1)
 }
+
 func (client *Client) CheckVersion() error {
 
 	result, err := client.GetBlockChainInfo()

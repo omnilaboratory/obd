@@ -36,6 +36,7 @@ func ConnectToTracker(isInit bool) (err error) {
 		log.Println("error ================ fail to dial tracker:", err)
 		return err
 	}
+
 	if service.TrackerChan == nil {
 		service.TrackerChan = make(chan []byte)
 	}
@@ -48,7 +49,7 @@ func ConnectToTracker(isInit bool) (err error) {
 		if isInit == false {
 			SynData()
 		}
-		go goroutine()
+		go readDataFromWs()
 	}
 
 	if ticker3m == nil {
@@ -59,7 +60,7 @@ func ConnectToTracker(isInit bool) (err error) {
 
 var isReset = true
 
-func goroutine() {
+func readDataFromWs() {
 	isReset = false
 	ticker := time.NewTicker(time.Minute * 2)
 	defer ticker.Stop()
@@ -89,7 +90,6 @@ func goroutine() {
 				conn = nil
 				return
 			}
-			//log.Println("recv from tracker: " + string(message))
 
 			replyMessage := bean.ReplyMessage{}
 			err = json.Unmarshal(message, &replyMessage)
@@ -107,6 +107,8 @@ func goroutine() {
 						//requestMessage.Data = dataMap["h"].(string) + "_" + dataMap["path"].(string)
 					}
 					htlcTrackerDealModule(requestMessage)
+				case enum.MsgType_Tracker_Connect_301:
+					config.ChainNode_Type = replyMessage.Result.(string)
 				}
 			}
 		}

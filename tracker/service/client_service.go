@@ -163,7 +163,7 @@ func (endManager *obdNodeManager) TrackerStart() {
 		case newConn := <-endManager.Connected:
 			endManager.ClientsMap[newConn] = true
 			endManager.ObdNodeMap[newConn.Id] = newConn
-			newConn.sendMsgBackToSender(enum.MsgType_Tracker_Connect_301, true, "connect server successfully")
+			newConn.sendMsgBackToSender(enum.MsgType_Tracker_Connect_301, true, ChannelService.BtcChainType)
 		case currConn := <-endManager.Disconnected:
 			if _, ok := endManager.ClientsMap[currConn]; ok {
 				currConn.sendMsgBackToSender(enum.MsgType_Tracker_Connect_301, true, "disconnect from server successfully")

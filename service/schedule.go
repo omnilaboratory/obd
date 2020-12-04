@@ -4,6 +4,7 @@ import (
 	"github.com/asdine/storm"
 	"github.com/asdine/storm/q"
 	"github.com/omnilaboratory/obd/config"
+	"github.com/omnilaboratory/obd/conn"
 	"github.com/omnilaboratory/obd/dao"
 	"github.com/omnilaboratory/obd/tool"
 	"github.com/tidwall/gjson"
@@ -19,15 +20,15 @@ var ScheduleService = scheduleManager{}
 
 func (service *scheduleManager) StartSchedule() {
 	go func() {
-		ticker10m := time.NewTicker(10 * time.Minute)
-		defer ticker10m.Stop()
+		ticker8m := time.NewTicker(8 * time.Minute)
+		defer ticker8m.Stop()
 
 		for {
 			select {
-			case t := <-ticker10m.C:
-				log.Println("timer 10m", t)
-				sendRdTx()
-				checkBR()
+			case t := <-ticker8m.C:
+				log.Println("timer 8m", t)
+				go sendRdTx()
+				go checkBR()
 			}
 		}
 	}()
@@ -75,13 +76,13 @@ func checkRsmcAndSendBR(db storm.Node) {
 		for _, channelInfo := range channelInfos {
 			if len(channelInfo.ChannelId) > 0 {
 				if channelInfo.CurrState == dao.ChannelState_CanUse || channelInfo.CurrState == dao.ChannelState_HtlcTx {
-					result, err := rpcClient.OmniGetbalance(channelInfo.ChannelAddress, int(channelInfo.PropertyId))
-					if err != nil {
+					result := conn.HttpOmniGetBalancesForAddressFromTracker(channelInfo.ChannelAddress, int(channelInfo.PropertyId))
+					if result == "" {
 						continue
 					}
 					balance := gjson.Get(result, "balance").Float()
 					if balance < channelInfo.Amount {
-						transactionsStr, err := rpcClient.OmniListTransactions(channelInfo.ChannelAddress, 100, 1)
+						transactionsStr, err := conn.HttpOmniListTransactionsFromTracker(channelInfo.ChannelAddress)
 						if err != nil {
 							continue
 						}
@@ -94,7 +95,7 @@ func checkRsmcAndSendBR(db storm.Node) {
 							rsmcBreachRemedy := &dao.BreachRemedyTransaction{}
 							_ = db.Select(q.Eq("CurrState", dao.TxInfoState_CreateAndSign), q.Eq("InputTxid", txid)).First(rsmcBreachRemedy)
 							if rsmcBreachRemedy != nil && rsmcBreachRemedy.Id > 0 {
-								_, err = rpcClient.SendRawTransaction(rsmcBreachRemedy.BrTxHex)
+								_, err = conn.HttpSendRawTransactionFromTracker(rsmcBreachRemedy.BrTxHex)
 								if err == nil {
 									log.Println("send rsmcBr by timer")
 									rsmcBreachRemedy.CurrState = dao.TxInfoState_SendHex
@@ -110,7 +111,7 @@ func checkRsmcAndSendBR(db storm.Node) {
 									q.Eq("ChannelId", rsmcBreachRemedy.ChannelId),
 									q.Eq("CommitmentTxId", rsmcBreachRemedy.CommitmentTxId)).First(htlcBreachRemedy)
 								if htlcBreachRemedy.Id > 0 {
-									_, err = rpcClient.SendRawTransaction(htlcBreachRemedy.BrTxHex)
+									_, err = conn.HttpSendRawTransactionFromTracker(htlcBreachRemedy.BrTxHex)
 									if err != nil {
 										log.Println("send htlcBr by timer")
 										htlcBreachRemedy.CurrState = dao.TxInfoState_SendHex
@@ -130,7 +131,7 @@ func checkRsmcAndSendBR(db storm.Node) {
 										q.Eq("ChannelId", sentRsmcBreachRemedy.ChannelId),
 										q.Eq("CommitmentTxId", sentRsmcBreachRemedy.CommitmentTxId)).First(htBreachRemedy)
 									if htBreachRemedy.Id > 0 {
-										_, err = rpcClient.SendRawTransaction(htBreachRemedy.BrTxHex)
+										_, err = conn.HttpSendRawTransactionFromTracker(htBreachRemedy.BrTxHex)
 										if err != nil {
 											log.Println("send htBr by timer")
 											htBreachRemedy.CurrState = dao.TxInfoState_SendHex
@@ -146,7 +147,7 @@ func checkRsmcAndSendBR(db storm.Node) {
 										q.Eq("ChannelId", sentRsmcBreachRemedy.ChannelId),
 										q.Eq("CommitmentTxId", sentRsmcBreachRemedy.CommitmentTxId)).First(heBreachRemedy)
 									if heBreachRemedy.Id > 0 {
-										_, err = rpcClient.SendRawTransaction(heBreachRemedy.BrTxHex)
+										_, err = conn.HttpSendRawTransactionFromTracker(heBreachRemedy.BrTxHex)
 										if err != nil {
 											log.Println("send heBr by timer")
 											heBreachRemedy.CurrState = dao.TxInfoState_SendHex

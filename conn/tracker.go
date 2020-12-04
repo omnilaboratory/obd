@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 )
 
 func HttpGetBlockCountFromTracker() (flag int) {
@@ -22,7 +23,6 @@ func HttpGetBlockCountFromTracker() (flag int) {
 	defer resp.Body.Close()
 	if resp.StatusCode == 200 {
 		body, _ := ioutil.ReadAll(resp.Body)
-		log.Println(string(body))
 		return int(gjson.Get(string(body), "data").Int())
 	}
 	return 0
@@ -38,7 +38,6 @@ func HttpGetOmniBalanceFromTracker(address string, propertyId int) (balance floa
 	defer resp.Body.Close()
 	if resp.StatusCode == 200 {
 		body, _ := ioutil.ReadAll(resp.Body)
-		log.Println(string(body))
 		return gjson.Get(string(body), "data").Float()
 	}
 	return 0
@@ -109,19 +108,31 @@ func HttpListUnspentFromTracker(address string) (result string) {
 	}
 	return ""
 }
+
+var smartFeeSpanTime time.Time
+var cacheFeeRate float64
+
 func HttpEstimateSmartFeeFromTracker() (result float64) {
-	url := "http://" + config.TrackerHost + "/api/rpc/estimateSmartFee"
-	log.Println(url)
-	resp, err := http.Get(url)
-	if err != nil {
-		return 0
+	if smartFeeSpanTime.IsZero() == false {
+		if time.Now().Sub(smartFeeSpanTime).Minutes() > 10 {
+			cacheFeeRate = 0
+		}
 	}
-	defer resp.Body.Close()
-	if resp.StatusCode == 200 {
-		body, _ := ioutil.ReadAll(resp.Body)
-		return gjson.Get(string(body), "data").Float()
+	if cacheFeeRate == 0 {
+		url := "http://" + config.TrackerHost + "/api/rpc/estimateSmartFee"
+		log.Println(url)
+		resp, err := http.Get(url)
+		if err != nil {
+			return 0
+		}
+		defer resp.Body.Close()
+		if resp.StatusCode == 200 {
+			body, _ := ioutil.ReadAll(resp.Body)
+			cacheFeeRate = gjson.Get(string(body), "data").Float()
+			smartFeeSpanTime = time.Now()
+		}
 	}
-	return 0
+	return cacheFeeRate
 }
 
 func HttpCreateRawTransactionFromTracker(data string) (result string) {
@@ -233,4 +244,68 @@ func HttpOmniDecodeTransactionFromTracker(hex string) (result string, err error)
 		return gjson.Get(string(body), "data").Str, err
 	}
 	return "", errors.New("error hex")
+}
+func HttpOmniListTransactionsFromTracker(address string) (result string, err error) {
+	if tool.CheckIsAddress(address) == false {
+		return "", errors.New("error address")
+	}
+	url := "http://" + config.TrackerHost + "/api/rpc/OmniListTransactions?address=" + address
+	log.Println(url)
+	resp, err := http.Get(url)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode == 200 {
+		body, _ := ioutil.ReadAll(resp.Body)
+		err = nil
+		if gjson.Get(string(body), "data").Str == "" {
+			err = errors.New(gjson.Get(string(body), "msg").Str)
+		}
+		return gjson.Get(string(body), "data").Str, err
+	}
+	return "", errors.New("error result")
+}
+
+func HttpOmniGetPropertyFromTracker(propertyId int64) (result string, err error) {
+	if propertyId < 1 {
+		return "", errors.New("error propertyId")
+	}
+	url := "http://" + config.TrackerHost + "/api/rpc/omniGetProperty?propertyId=" + strconv.Itoa(int(propertyId))
+	log.Println(url)
+	resp, err := http.Get(url)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode == 200 {
+		body, _ := ioutil.ReadAll(resp.Body)
+		err = nil
+		if gjson.Get(string(body), "data").Str == "" {
+			err = errors.New(gjson.Get(string(body), "msg").Str)
+		}
+		return gjson.Get(string(body), "data").Str, err
+	}
+	return "", errors.New("error result")
+}
+func HttpOmniGettransactionFromTracker(txid string) (result string, err error) {
+	if tool.CheckIsString(&txid) == false && len(txid) != 64 {
+		return "", errors.New("wrong txid")
+	}
+	url := "http://" + config.TrackerHost + "/api/rpc/omniGettransaction?txid=" + txid
+	log.Println(url)
+	resp, err := http.Get(url)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode == 200 {
+		body, _ := ioutil.ReadAll(resp.Body)
+		err = nil
+		if gjson.Get(string(body), "data").Str == "" {
+			err = errors.New(gjson.Get(string(body), "msg").Str)
+		}
+		return gjson.Get(string(body), "data").Str, err
+	}
+	return "", errors.New("error result")
 }
