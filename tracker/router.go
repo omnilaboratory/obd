@@ -47,6 +47,7 @@ func InitRouter() *gin.Engine {
 	{
 		apiv3.GET("getBlockCount", service.RpcService.GetBlockCount)
 		apiv3.GET("getOmniBalance", service.RpcService.GetOmniBalance)
+		apiv3.GET("getBalanceByAddress", service.RpcService.GetBalanceByAddress)
 		apiv3.GET("importAddress", service.RpcService.ImportAddress)
 		apiv3.GET("listReceivedByAddress", service.RpcService.ListReceivedByAddress)
 		apiv3.GET("getTransactionById", service.RpcService.GetTransactionById)
@@ -61,6 +62,16 @@ func InitRouter() *gin.Engine {
 		apiv3.GET("sendRawTransaction", service.RpcService.SendRawTransaction)
 		apiv3.GET("omniDecodeTransaction", service.RpcService.OmniDecodeTransaction)
 		apiv3.GET("omniListTransactions", service.RpcService.OmniListTransactions)
+		apiv3.GET("getNewAddress", service.RpcService.GetNewAddress)
+		apiv3.GET("omniSend", service.RpcService.OmniSend)
+		apiv3.GET("omniListProperties", service.RpcService.OmniListProperties)
+		apiv3.GET("omniSendIssuanceFixed", service.RpcService.OmniSendIssuanceFixed)
+		apiv3.GET("omniSendIssuanceManaged", service.RpcService.OmniSendIssuanceManaged)
+		apiv3.GET("omniSendGrant", service.RpcService.OmniSendGrant)
+		apiv3.GET("omniSendRevoke", service.RpcService.OmniSendRevoke)
+		apiv3.GET("btcSignRawTransactionFromJson", service.RpcService.BtcSignRawTransactionFromJson)
+		apiv3.GET("getMiningInfo", service.RpcService.GetMiningInfo)
+		apiv3.GET("getNetworkInfo", service.RpcService.GetNetworkInfo)
 	}
 
 	return router

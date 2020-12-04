@@ -45,6 +45,27 @@ func (manager *rpcManager) GetOmniBalance(context *gin.Context) {
 		"data": balance,
 	})
 }
+func (manager *rpcManager) GetBalanceByAddress(context *gin.Context) {
+	address := context.Query("address")
+	var result string
+	var msg string
+	if tool.CheckIsAddress(address) == false {
+		msg = "wrong address"
+	}
+	getbalance, err := rpc.NewClient().GetBalanceByAddress(address)
+	if err != nil {
+		msg = err.Error()
+	}
+	f, flag := getbalance.Float64()
+	if flag == false {
+		msg = "wrong balance"
+	}
+	result = tool.FloatToString(f, 8)
+	context.JSON(http.StatusOK, gin.H{
+		"msg":  msg,
+		"data": result,
+	})
+}
 
 func (manager *rpcManager) ImportAddress(context *gin.Context) {
 	address := context.Query("address")
@@ -221,6 +242,199 @@ func (manager *rpcManager) OmniListTransactions(context *gin.Context) {
 	})
 }
 
+func (manager *rpcManager) GetNewAddress(context *gin.Context) {
+	label := context.Query("label")
+	result, err := rpc.NewClient().GetNewAddress(label)
+	msg := ""
+	if err != nil {
+		result = ""
+		msg = err.Error()
+	}
+	context.JSON(http.StatusOK, gin.H{
+		"msg":  msg,
+		"data": result,
+	})
+}
+
+func (manager *rpcManager) OmniSend(context *gin.Context) {
+	fromAddress := context.Query("fromAddress")
+	msg := ""
+	if tool.CheckIsAddress(fromAddress) == false {
+		msg = "wrong fromAddress"
+	}
+
+	toAddress := context.Query("toAddress")
+	if tool.CheckIsAddress(toAddress) == false {
+		msg = "wrong toAddress"
+	}
+
+	propertyIdStr := context.Query("propertyId")
+
+	propertyId, err := strconv.Atoi(propertyIdStr)
+	if err != nil {
+		msg = "wrong propertyId"
+	}
+	amountStr := context.Query("amount")
+	amount, err := strconv.ParseFloat(amountStr, 64)
+	if err != nil {
+		msg = "wrong amount"
+	}
+
+	result, err := rpc.NewClient().OmniSend(fromAddress, toAddress, propertyId, amount)
+	if err != nil {
+		result = ""
+		msg = err.Error()
+	}
+	context.JSON(http.StatusOK, gin.H{
+		"msg":  msg,
+		"data": result,
+	})
+}
+
+func (manager *rpcManager) OmniListProperties(context *gin.Context) {
+	result, err := rpc.NewClient().OmniListProperties()
+	msg := ""
+	if err != nil {
+		result = ""
+		msg = err.Error()
+	}
+	context.JSON(http.StatusOK, gin.H{
+		"msg":  msg,
+		"data": result,
+	})
+}
+
+func (manager *rpcManager) OmniSendIssuanceFixed(context *gin.Context) {
+	fromAddress := context.Query("fromAddress")
+	msg := ""
+	if tool.CheckIsAddress(fromAddress) == false {
+		msg = "wrong fromAddress"
+	}
+
+	ecosystem, err := strconv.Atoi(context.Query("ecosystem"))
+	if err != nil {
+		msg = "wrong ecosystem"
+	}
+	divisibleType, err := strconv.Atoi(context.Query("divisibleType"))
+	if err != nil {
+		msg = "wrong divisibleType"
+	}
+	name := context.Query("name")
+	data := context.Query("data")
+
+	amount, err := strconv.ParseFloat(context.Query("amount"), 64)
+	if err != nil {
+		msg = "wrong amount"
+	}
+
+	result, err := rpc.NewClient().OmniSendIssuanceFixed(fromAddress, ecosystem, divisibleType, name, data, amount)
+	if err != nil {
+		result = ""
+		msg = err.Error()
+	}
+	context.JSON(http.StatusOK, gin.H{
+		"msg":  msg,
+		"data": result,
+	})
+}
+func (manager *rpcManager) OmniSendIssuanceManaged(context *gin.Context) {
+	fromAddress := context.Query("fromAddress")
+	msg := ""
+	if tool.CheckIsAddress(fromAddress) == false {
+		msg = "wrong fromAddress"
+	}
+
+	ecosystem, err := strconv.Atoi(context.Query("ecosystem"))
+	if err != nil {
+		msg = "wrong ecosystem"
+	}
+	divisibleType, err := strconv.Atoi(context.Query("divisibleType"))
+	if err != nil {
+		msg = "wrong divisibleType"
+	}
+	name := context.Query("name")
+	data := context.Query("data")
+
+	result, err := rpc.NewClient().OmniSendIssuanceManaged(fromAddress, ecosystem, divisibleType, name, data)
+	if err != nil {
+		result = ""
+		msg = err.Error()
+	}
+	context.JSON(http.StatusOK, gin.H{
+		"msg":  msg,
+		"data": result,
+	})
+}
+
+func (manager *rpcManager) OmniSendGrant(context *gin.Context) {
+	fromAddress := context.Query("fromAddress")
+	msg := ""
+	if tool.CheckIsAddress(fromAddress) == false {
+		msg = "wrong fromAddress"
+	}
+
+	propertyId, err := strconv.Atoi(context.Query("propertyId"))
+	if err != nil {
+		msg = "wrong propertyId"
+	}
+	amount, err := strconv.ParseFloat(context.Query("amount"), 64)
+	if err != nil {
+		msg = "wrong amount"
+	}
+	memo := context.Query("data")
+
+	result, err := rpc.NewClient().OmniSendGrant(fromAddress, int64(propertyId), amount, memo)
+	if err != nil {
+		result = ""
+		msg = err.Error()
+	}
+	context.JSON(http.StatusOK, gin.H{
+		"msg":  msg,
+		"data": result,
+	})
+}
+
+func (manager *rpcManager) OmniSendRevoke(context *gin.Context) {
+	fromAddress := context.Query("fromAddress")
+	msg := ""
+	if tool.CheckIsAddress(fromAddress) == false {
+		msg = "wrong fromAddress"
+	}
+
+	propertyId, err := strconv.Atoi(context.Query("propertyId"))
+	if err != nil {
+		msg = "wrong propertyId"
+	}
+	amount, err := strconv.ParseFloat(context.Query("amount"), 64)
+	if err != nil {
+		msg = "wrong amount"
+	}
+	memo := context.Query("data")
+
+	result, err := rpc.NewClient().OmniSendRevoke(fromAddress, int64(propertyId), amount, memo)
+	if err != nil {
+		result = ""
+		msg = err.Error()
+	}
+	context.JSON(http.StatusOK, gin.H{
+		"msg":  msg,
+		"data": result,
+	})
+}
+func (manager *rpcManager) BtcSignRawTransactionFromJson(context *gin.Context) {
+	data := context.Query("data")
+	result, err := rpc.NewClient().BtcSignRawTransactionFromJson(data)
+	msg := ""
+	if err != nil {
+		result = ""
+		msg = err.Error()
+	}
+	context.JSON(http.StatusOK, gin.H{
+		"msg":  msg,
+		"data": result,
+	})
+}
+
 func (manager *rpcManager) GetTransactionById(context *gin.Context) {
 	txid := context.Query("txid")
 	if tool.CheckIsString(&txid) == false {
@@ -345,5 +559,29 @@ func (manager *rpcManager) GetBlockCount(context *gin.Context) {
 	context.JSON(http.StatusOK, gin.H{
 		"msg":  "blockCount",
 		"data": cacheBlockCount,
+	})
+}
+
+func (manager *rpcManager) GetMiningInfo(context *gin.Context) {
+	result, err := rpc.NewClient().GetMiningInfo()
+	msg := ""
+	if err != nil {
+		msg = err.Error()
+	}
+	context.JSON(http.StatusOK, gin.H{
+		"msg":  msg,
+		"data": result,
+	})
+}
+
+func (manager *rpcManager) GetNetworkInfo(context *gin.Context) {
+	result, err := rpc.NewClient().GetNetworkInfo()
+	msg := ""
+	if err != nil {
+		msg = err.Error()
+	}
+	context.JSON(http.StatusOK, gin.H{
+		"msg":  msg,
+		"data": result,
 	})
 }

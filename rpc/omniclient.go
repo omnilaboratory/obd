@@ -33,7 +33,7 @@ func (client *Client) OmniSend(fromAddress string, toAddress string, propertyId 
 
 //Create new tokens with manageable supply. https://github.com/OmniLayer/omnicore/blob/master/src/omnicore/doc/rpc-api.md#omni_sendissuancemanaged
 func (client *Client) OmniSendIssuanceFixed(fromAddress string, ecosystem int, divisibleType int, name string, data string, amount float64) (result string, err error) {
-	if tool.CheckIsString(&fromAddress) == false {
+	if tool.CheckIsAddress(fromAddress) == false {
 		return "", errors.New("error fromAddress")
 	}
 	if tool.CheckIsString(&name) == false {
@@ -91,22 +91,17 @@ func (client *Client) OmniSendGrant(fromAddress string, propertyId int64, amount
 		return "", errors.New("error propertyId")
 	}
 
-	s, err := client.OmniGetProperty(propertyId)
+	_, err = client.OmniGetProperty(propertyId)
 	if err != nil {
 		return "", err
 	}
 	if amount < 0 {
-		return "", errors.New("error amout")
-	}
-	amountStr := strconv.FormatFloat(amount, 'f', 0, 64)
-	divisible := gjson.Get(s, "divisible").Bool()
-	if divisible {
-		amountStr = strconv.FormatFloat(amount, 'f', 8, 64)
+		return "", errors.New("error amount")
 	}
 	if tool.CheckIsString(&memo) == false {
 		memo = ""
 	}
-	return client.send("omni_sendgrant", []interface{}{fromAddress, "", propertyId, amountStr, memo})
+	return client.send("omni_sendgrant", []interface{}{fromAddress, "", propertyId, tool.FloatToString(amount, 8), memo})
 }
 
 // Revoke units of managed tokens. https://github.com/OmniLayer/omnicore/blob/master/src/omnicore/doc/rpc-api.md#omni_sendrevoke

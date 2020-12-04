@@ -288,11 +288,237 @@ func HttpOmniGetPropertyFromTracker(propertyId int64) (result string, err error)
 	}
 	return "", errors.New("error result")
 }
-func HttpOmniGettransactionFromTracker(txid string) (result string, err error) {
+func HttpOmniGetTransactionFromTracker(txid string) (result string, err error) {
 	if tool.CheckIsString(&txid) == false && len(txid) != 64 {
 		return "", errors.New("wrong txid")
 	}
 	url := "http://" + config.TrackerHost + "/api/rpc/omniGettransaction?txid=" + txid
+	log.Println(url)
+	resp, err := http.Get(url)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode == 200 {
+		body, _ := ioutil.ReadAll(resp.Body)
+		err = nil
+		if gjson.Get(string(body), "data").Str == "" {
+			err = errors.New(gjson.Get(string(body), "msg").Str)
+		}
+		return gjson.Get(string(body), "data").Str, err
+	}
+	return "", errors.New("error result")
+}
+func HttpGetBalanceByAddressFromTracker(address string) (result float64, err error) {
+	if tool.CheckIsAddress(address) == false {
+		return 0.0, errors.New("error address")
+	}
+	url := "http://" + config.TrackerHost + "/api/rpc/getBalanceByAddress?address=" + address
+	log.Println(url)
+	resp, err := http.Get(url)
+	if err != nil {
+		return 0.0, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode == 200 {
+		body, _ := ioutil.ReadAll(resp.Body)
+		err = nil
+		if gjson.Get(string(body), "data").Str == "" {
+			err = errors.New(gjson.Get(string(body), "msg").Str)
+		}
+		return gjson.Get(string(body), "data").Float(), err
+	}
+	return 0.0, errors.New("error result")
+}
+
+func HttpGetNewAddressFromTracker(label string) (result string, err error) {
+	url := "http://" + config.TrackerHost + "/api/rpc/getNewAddress?label=" + label
+	log.Println(url)
+	resp, err := http.Get(url)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode == 200 {
+		body, _ := ioutil.ReadAll(resp.Body)
+		err = nil
+		if gjson.Get(string(body), "data").Str == "" {
+			err = errors.New(gjson.Get(string(body), "msg").Str)
+		}
+		return gjson.Get(string(body), "data").Str, err
+	}
+	return "", errors.New("error result")
+}
+
+func HttpOmniSendOnTracker(fromAddress, toAddress string, propertyId int, amount float64) (result string, err error) {
+	url := "http://" + config.TrackerHost + "/api/rpc/omniSend?fromAddress=" + fromAddress +
+		"&toAddress=" + toAddress +
+		"&propertyId=" + strconv.Itoa(propertyId) +
+		"&amount=" + tool.FloatToString(amount, 8)
+	log.Println(url)
+	resp, err := http.Get(url)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode == 200 {
+		body, _ := ioutil.ReadAll(resp.Body)
+		err = nil
+		if gjson.Get(string(body), "data").Str == "" {
+			err = errors.New(gjson.Get(string(body), "msg").Str)
+		}
+		return gjson.Get(string(body), "data").Str, err
+	}
+	return "", errors.New("error result")
+}
+
+func HttpOmniListPropertiesFromTracker() (result string, err error) {
+	url := "http://" + config.TrackerHost + "/api/rpc/omniListProperties"
+	log.Println(url)
+	resp, err := http.Get(url)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode == 200 {
+		body, _ := ioutil.ReadAll(resp.Body)
+		err = nil
+		if gjson.Get(string(body), "data").Str == "" {
+			err = errors.New(gjson.Get(string(body), "msg").Str)
+		}
+		return gjson.Get(string(body), "data").Str, err
+	}
+	return "", errors.New("error result")
+}
+
+func HttpOmniSendIssuanceFixedOnTracker(fromAddress string, ecosystem int, divisibleType int, name string, data string, amount float64) (result string, err error) {
+	url := "http://" + config.TrackerHost + "/api/rpc/omniSendIssuanceFixed?fromAddress=" + fromAddress +
+		"&ecosystem=" + strconv.Itoa(ecosystem) +
+		"&divisibleType=" + strconv.Itoa(divisibleType) +
+		"&name=" + name +
+		"&data=" + data +
+		"&amount=" + tool.FloatToString(amount, 8)
+	log.Println(url)
+	resp, err := http.Get(url)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode == 200 {
+		body, _ := ioutil.ReadAll(resp.Body)
+		err = nil
+		if gjson.Get(string(body), "data").Str == "" {
+			err = errors.New(gjson.Get(string(body), "msg").Str)
+		}
+		return gjson.Get(string(body), "data").Str, err
+	}
+	return "", errors.New("error result")
+}
+
+func HttpOmniSendIssuanceManagedOnTracker(fromAddress string, ecosystem int, divisibleType int, name string, data string) (result string, err error) {
+	url := "http://" + config.TrackerHost + "/api/rpc/omniSendIssuanceManaged?fromAddress=" + fromAddress +
+		"&ecosystem=" + strconv.Itoa(ecosystem) +
+		"&divisibleType=" + strconv.Itoa(divisibleType) +
+		"&name=" + name +
+		"&data=" + data
+	log.Println(url)
+	resp, err := http.Get(url)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode == 200 {
+		body, _ := ioutil.ReadAll(resp.Body)
+		err = nil
+		if gjson.Get(string(body), "data").Str == "" {
+			err = errors.New(gjson.Get(string(body), "msg").Str)
+		}
+		return gjson.Get(string(body), "data").Str, err
+	}
+	return "", errors.New("error result")
+}
+
+func HttpOmniSendGrantOnTracker(fromAddress string, propertyId int64, amount float64, memo string) (result string, err error) {
+	url := "http://" + config.TrackerHost + "/api/rpc/omniSendGrant?fromAddress=" + fromAddress +
+		"&propertyId=" + strconv.Itoa(int(propertyId)) +
+		"&memo=" + memo +
+		"&amount=" + tool.FloatToString(amount, 8)
+	log.Println(url)
+	resp, err := http.Get(url)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode == 200 {
+		body, _ := ioutil.ReadAll(resp.Body)
+		err = nil
+		if gjson.Get(string(body), "data").Str == "" {
+			err = errors.New(gjson.Get(string(body), "msg").Str)
+		}
+		return gjson.Get(string(body), "data").Str, err
+	}
+	return "", errors.New("error result")
+}
+
+func HttpOmniSendRevokeOnTracker(fromAddress string, propertyId int64, amount float64, memo string) (result string, err error) {
+	url := "http://" + config.TrackerHost + "/api/rpc/omniSendRevoke?fromAddress=" + fromAddress +
+		"&propertyId=" + strconv.Itoa(int(propertyId)) +
+		"&memo=" + memo +
+		"&amount=" + tool.FloatToString(amount, 8)
+	log.Println(url)
+	resp, err := http.Get(url)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode == 200 {
+		body, _ := ioutil.ReadAll(resp.Body)
+		err = nil
+		if gjson.Get(string(body), "data").Str == "" {
+			err = errors.New(gjson.Get(string(body), "msg").Str)
+		}
+		return gjson.Get(string(body), "data").Str, err
+	}
+	return "", errors.New("error result")
+}
+func HttpBtcSignRawTransactionFromJsonOnTracker(data string) (result string, err error) {
+	url := "http://" + config.TrackerHost + "/api/rpc/btcSignRawTransactionFromJson?data=" + data
+	log.Println(url)
+	resp, err := http.Get(url)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode == 200 {
+		body, _ := ioutil.ReadAll(resp.Body)
+		err = nil
+		if gjson.Get(string(body), "data").Str == "" {
+			err = errors.New(gjson.Get(string(body), "msg").Str)
+		}
+		return gjson.Get(string(body), "data").Str, err
+	}
+	return "", errors.New("error result")
+}
+func HttpGetMiningInfoFromJsonOnTracker() (result string, err error) {
+	url := "http://" + config.TrackerHost + "/api/rpc/getMiningInfo"
+	log.Println(url)
+	resp, err := http.Get(url)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode == 200 {
+		body, _ := ioutil.ReadAll(resp.Body)
+		err = nil
+		if gjson.Get(string(body), "data").Str == "" {
+			err = errors.New(gjson.Get(string(body), "msg").Str)
+		}
+		return gjson.Get(string(body), "data").Str, err
+	}
+	return "", errors.New("error result")
+}
+func HttpGetNetworkInfoFromJsonOnTracker() (result string, err error) {
+	url := "http://" + config.TrackerHost + "/api/rpc/getNetworkInfo"
 	log.Println(url)
 	resp, err := http.Get(url)
 	if err != nil {
