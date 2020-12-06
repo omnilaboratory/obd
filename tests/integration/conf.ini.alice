@@ -1,0 +1,19 @@
+[server]
+mode = sole
+port = 60020
+readTimeout = 30
+writeTimeout = 30
+
+[chainNode]
+netType = reg
+host = omnicore:18444
+user = omniwallet
+pass = omnipass123
+
+[p2p]
+hostIp = omnibolt_alice
+sourcePort = 4001
+
+[tracker]
+hostIp = localhost
+port = 60060
