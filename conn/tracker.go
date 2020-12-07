@@ -21,7 +21,7 @@ func GetBlockCount() (flag int) {
 		return 0
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode == 200 {
+	if resp.StatusCode == http.StatusOK {
 		body, _ := ioutil.ReadAll(resp.Body)
 		return int(gjson.Get(string(body), "data").Int())
 	}
@@ -36,7 +36,7 @@ func GetOmniBalance(address string, propertyId int) (balance float64) {
 		return 0
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode == 200 {
+	if resp.StatusCode == http.StatusOK {
 		body, _ := ioutil.ReadAll(resp.Body)
 		return gjson.Get(string(body), "data").Float()
 	}
@@ -54,7 +54,7 @@ func ListReceivedByAddress(address string) (result string) {
 		return ""
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode == 200 {
+	if resp.StatusCode == http.StatusOK {
 		body, _ := ioutil.ReadAll(resp.Body)
 		return gjson.Get(string(body), "data").Str
 	}
@@ -72,7 +72,7 @@ func ImportAddress(address string) (result string) {
 		return ""
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode == 200 {
+	if resp.StatusCode == http.StatusOK {
 		body, _ := ioutil.ReadAll(resp.Body)
 		return gjson.Get(string(body), "data").Str
 	}
@@ -87,7 +87,7 @@ func GetTransactionById(txid string) (result string) {
 		return ""
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode == 200 {
+	if resp.StatusCode == http.StatusOK {
 		body, _ := ioutil.ReadAll(resp.Body)
 		return gjson.Get(string(body), "data").Str
 	}
@@ -104,7 +104,7 @@ func ListUnspent(address string) (result string) {
 		return ""
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode == 200 {
+	if resp.StatusCode == http.StatusOK {
 		body, _ := ioutil.ReadAll(resp.Body)
 		return gjson.Get(string(body), "data").Str
 	}
@@ -128,7 +128,7 @@ func EstimateSmartFee() (result float64) {
 			return 0
 		}
 		defer resp.Body.Close()
-		if resp.StatusCode == 200 {
+		if resp.StatusCode == http.StatusOK {
 			body, _ := ioutil.ReadAll(resp.Body)
 			cacheFeeRate = gjson.Get(string(body), "data").Float()
 			smartFeeSpanTime = time.Now()
@@ -146,7 +146,7 @@ func CreateRawTransaction(data string) (result string) {
 		return ""
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode == 200 {
+	if resp.StatusCode == http.StatusOK {
 		body, _ := ioutil.ReadAll(resp.Body)
 		return gjson.Get(string(body), "data").Str
 	}
@@ -164,7 +164,7 @@ func OmniGetAllBalancesByAddress(address string) (result string) {
 		return ""
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode == 200 {
+	if resp.StatusCode == http.StatusOK {
 		body, _ := ioutil.ReadAll(resp.Body)
 		return gjson.Get(string(body), "data").Str
 	}
@@ -181,7 +181,7 @@ func OmniGetBalancesForAddress(address string, propertyId int) (result string) {
 		return ""
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode == 200 {
+	if resp.StatusCode == http.StatusOK {
 		body, _ := ioutil.ReadAll(resp.Body)
 		return gjson.Get(string(body), "data").Str
 	}
@@ -199,7 +199,7 @@ func TestMemPoolAccept(hex string) (result string) {
 		return ""
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode == 200 {
+	if resp.StatusCode == http.StatusOK {
 		body, _ := ioutil.ReadAll(resp.Body)
 		return gjson.Get(string(body), "data").Str
 	}
@@ -217,7 +217,7 @@ func SendRawTransaction(hex string) (result string, err error) {
 		return "", err
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode == 200 {
+	if resp.StatusCode == http.StatusOK {
 		body, _ := ioutil.ReadAll(resp.Body)
 		err = nil
 		if gjson.Get(string(body), "data").Str == "" {
@@ -239,7 +239,7 @@ func OmniDecodeTransaction(hex string) (result string, err error) {
 		return "", err
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode == 200 {
+	if resp.StatusCode == http.StatusOK {
 		body, _ := ioutil.ReadAll(resp.Body)
 		err = nil
 		if gjson.Get(string(body), "data").Str == "" {
@@ -261,7 +261,7 @@ func OmniListTransactions(address string) (result string, err error) {
 		return "", err
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode == 200 {
+	if resp.StatusCode == http.StatusOK {
 		body, _ := ioutil.ReadAll(resp.Body)
 		err = nil
 		if gjson.Get(string(body), "data").Str == "" {
@@ -283,7 +283,7 @@ func OmniGetProperty(propertyId int64) (result string, err error) {
 		return "", err
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode == 200 {
+	if resp.StatusCode == http.StatusOK {
 		body, _ := ioutil.ReadAll(resp.Body)
 		err = nil
 		if gjson.Get(string(body), "data").Str == "" {
@@ -305,7 +305,7 @@ func OmniGetTransaction(txid string) (result string, err error) {
 		return "", err
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode == 200 {
+	if resp.StatusCode == http.StatusOK {
 		body, _ := ioutil.ReadAll(resp.Body)
 		err = nil
 		if gjson.Get(string(body), "data").Str == "" {
@@ -326,7 +326,7 @@ func GetBalanceByAddress(address string) (result float64, err error) {
 		return 0.0, err
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode == 200 {
+	if resp.StatusCode == http.StatusOK {
 		body, _ := ioutil.ReadAll(resp.Body)
 		err = nil
 		if gjson.Get(string(body), "data").Str == "" {
@@ -345,7 +345,7 @@ func GetNewAddress(label string) (result string, err error) {
 		return "", err
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode == 200 {
+	if resp.StatusCode == http.StatusOK {
 		body, _ := ioutil.ReadAll(resp.Body)
 		err = nil
 		if gjson.Get(string(body), "data").Str == "" {
@@ -367,7 +367,7 @@ func OmniSend(fromAddress, toAddress string, propertyId int, amount float64) (re
 		return "", err
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode == 200 {
+	if resp.StatusCode == http.StatusOK {
 		body, _ := ioutil.ReadAll(resp.Body)
 		err = nil
 		if gjson.Get(string(body), "data").Str == "" {
@@ -386,7 +386,7 @@ func OmniListProperties() (result string, err error) {
 		return "", err
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode == 200 {
+	if resp.StatusCode == http.StatusOK {
 		body, _ := ioutil.ReadAll(resp.Body)
 		err = nil
 		if gjson.Get(string(body), "data").Str == "" {
@@ -410,7 +410,7 @@ func OmniSendIssuanceFixed(fromAddress string, ecosystem int, divisibleType int,
 		return "", err
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode == 200 {
+	if resp.StatusCode == http.StatusOK {
 		body, _ := ioutil.ReadAll(resp.Body)
 		err = nil
 		if gjson.Get(string(body), "data").Str == "" {
@@ -433,7 +433,7 @@ func OmniSendIssuanceManaged(fromAddress string, ecosystem int, divisibleType in
 		return "", err
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode == 200 {
+	if resp.StatusCode == http.StatusOK {
 		body, _ := ioutil.ReadAll(resp.Body)
 		err = nil
 		if gjson.Get(string(body), "data").Str == "" {
@@ -455,7 +455,7 @@ func OmniSendGrant(fromAddress string, propertyId int64, amount float64, memo st
 		return "", err
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode == 200 {
+	if resp.StatusCode == http.StatusOK {
 		body, _ := ioutil.ReadAll(resp.Body)
 		err = nil
 		if gjson.Get(string(body), "data").Str == "" {
@@ -477,7 +477,7 @@ func OmniSendRevoke(fromAddress string, propertyId int64, amount float64, memo s
 		return "", err
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode == 200 {
+	if resp.StatusCode == http.StatusOK {
 		body, _ := ioutil.ReadAll(resp.Body)
 		err = nil
 		if gjson.Get(string(body), "data").Str == "" {
@@ -496,7 +496,7 @@ func BtcSignRawTransactionFromJson(data string) (result string, err error) {
 		return "", err
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode == 200 {
+	if resp.StatusCode == http.StatusOK {
 		body, _ := ioutil.ReadAll(resp.Body)
 		err = nil
 		if gjson.Get(string(body), "data").Str == "" {
@@ -515,7 +515,7 @@ func GetMiningInfo() (result string, err error) {
 		return "", err
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode == 200 {
+	if resp.StatusCode == http.StatusOK {
 		body, _ := ioutil.ReadAll(resp.Body)
 		err = nil
 		if gjson.Get(string(body), "data").Str == "" {
@@ -533,7 +533,7 @@ func GetNetworkInfo() (result string, err error) {
 		return "", err
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode == 200 {
+	if resp.StatusCode == http.StatusOK {
 		body, _ := ioutil.ReadAll(resp.Body)
 		err = nil
 		if gjson.Get(string(body), "data").Str == "" {
