@@ -212,7 +212,7 @@ func (client *Client) BtcCreateRawTransaction(fromBitCoinAddress string, outputI
 		return nil, errors.New("minerFee too small")
 	}
 
-	result := conn.HttpListUnspentFromTracker(fromBitCoinAddress)
+	result := conn2tracker.ListUnspent(fromBitCoinAddress)
 	array := gjson.Parse(result).Array()
 	if len(array) == 0 {
 		return nil, errors.New("empty balance")
@@ -283,7 +283,7 @@ func (client *Client) BtcCreateRawTransaction(fromBitCoinAddress string, outputI
 	dataToTracker["inputs"] = inputs
 	dataToTracker["outputs"] = output
 	bytes, err := json.Marshal(dataToTracker)
-	hex := conn.HttpCreateRawTransactionFromTracker(string(bytes))
+	hex := conn2tracker.CreateRawTransaction(string(bytes))
 	if hex == "" {
 		return nil, errors.New("error createRawTransaction")
 	}
@@ -410,7 +410,7 @@ func (client *Client) BtcCreateRawTransactionForUnsendInputTx(fromBitCoinAddress
 	dataToTracker["inputs"] = inputs
 	dataToTracker["outputs"] = output
 	bytes, err := json.Marshal(dataToTracker)
-	hex := conn.HttpCreateRawTransactionFromTracker(string(bytes))
+	hex := conn2tracker.CreateRawTransaction(string(bytes))
 	if hex == "" {
 		return nil, errors.New("error createRawTransaction")
 	}

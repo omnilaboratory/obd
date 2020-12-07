@@ -188,7 +188,7 @@ func checkBtcTxHex(btcFeeTxHexDecode string, channelInfo *dao.ChannelInfo, peerI
 	}
 
 	inTxid := vin1.Get("txid").String()
-	inputTx := conn.HttpGetTransactionByIdFromTracker(inTxid)
+	inputTx := conn2tracker.GetTransactionById(inTxid)
 	if err != nil {
 		err = errors.New(enum.Tips_funding_wrongBtcHexVin + err.Error())
 		log.Println(err)
@@ -600,7 +600,7 @@ func getBtcMinerAmount(total float64) float64 {
 }
 
 func checkChannelOmniAssetAmount(channelInfo dao.ChannelInfo) (bool, error) {
-	balance := conn.HttpGetOmniBalanceFromTracker(channelInfo.ChannelAddress, int(channelInfo.PropertyId))
+	balance := conn2tracker.GetOmniBalance(channelInfo.ChannelAddress, int(channelInfo.PropertyId))
 	if balance == channelInfo.Amount {
 		return true, nil
 	}

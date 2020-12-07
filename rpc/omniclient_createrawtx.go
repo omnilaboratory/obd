@@ -34,7 +34,7 @@ func (client *Client) OmniCreateRawTransaction(fromBitCoinAddress string, toBitC
 		minerFee = 0.00003
 	}
 
-	balanceResult := conn.HttpOmniGetBalancesForAddressFromTracker(fromBitCoinAddress, int(propertyId))
+	balanceResult := conn2tracker.OmniGetBalancesForAddress(fromBitCoinAddress, int(propertyId))
 	if balanceResult == "" {
 		return nil, errors.New("empty omni balance")
 	}
@@ -44,7 +44,7 @@ func (client *Client) OmniCreateRawTransaction(fromBitCoinAddress string, toBitC
 		return nil, errors.New("not enough omni balance")
 	}
 
-	resultListUnspent := conn.HttpListUnspentFromTracker(fromBitCoinAddress)
+	resultListUnspent := conn2tracker.ListUnspent(fromBitCoinAddress)
 	if resultListUnspent == "" {
 		return nil, errors.New("enmpty ListUnspent")
 	}

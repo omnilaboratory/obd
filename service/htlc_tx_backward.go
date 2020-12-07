@@ -125,7 +125,7 @@ func (service *htlcBackwardTxManager) SendRToPreviousNodeAtBobSide(msg bean.Requ
 
 	// endregion
 
-	currBlockHeight := conn.HttpGetBlockCountFromTracker()
+	currBlockHeight := conn2tracker.GetBlockCount()
 
 	htlcTimeOut := latestCommitmentTxInfo.HtlcCltvExpiry
 	maxHeight := latestCommitmentTxInfo.BeginBlockHeight + htlcTimeOut

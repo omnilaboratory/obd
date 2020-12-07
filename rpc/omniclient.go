@@ -229,7 +229,7 @@ func GetBtcMinerAmount(total float64) float64 {
 // https://shimo.im/docs/5w9Fi1c9vm8yp1ly
 //https://bitcoinfees.earn.com/api/v1/fees/recommended
 func (client *Client) GetMinerFee() float64 {
-	price := conn.HttpEstimateSmartFeeFromTracker()
+	price := conn2tracker.EstimateSmartFee()
 	if price == 0 {
 		price = 6
 	} else {

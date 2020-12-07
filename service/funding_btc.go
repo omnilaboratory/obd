@@ -75,7 +75,7 @@ func (service *fundingTransactionManager) BtcFundingCreated(msg bean.RequestMess
 	}
 
 	//check btc funding time
-	result := conn.HttpListReceivedByAddressFromTracker(channelInfo.ChannelAddress)
+	result := conn2tracker.ListReceivedByAddress(channelInfo.ChannelAddress)
 
 	if result != "" {
 		if len(gjson.Parse(result).Array()) > 0 {
@@ -137,7 +137,7 @@ func (service *fundingTransactionManager) BtcFundingCreated(msg bean.RequestMess
 		Reverse().
 		First(latestBtcFundingRequest)
 	if latestBtcFundingRequest.Id > 0 && latestBtcFundingRequest.TxId != fundingTxid {
-		result = conn.HttpTestMemPoolAcceptFromTracker(latestBtcFundingRequest.TxHash)
+		result = conn2tracker.TestMemPoolAccept(latestBtcFundingRequest.TxHash)
 		if result != "" {
 			allowed := gjson.Parse(result).Get("allowed").Bool()
 			if allowed == false {
@@ -637,7 +637,7 @@ func (service *fundingTransactionManager) FundingBtcTxSigned(msg bean.RequestMes
 	}
 
 	//赎回交易签名成功后，广播交易
-	_, err = conn.HttpSendRawTransactionFromTracker(fundingBtcRequest.TxHash)
+	_, err = conn2tracker.SendRawTransaction(fundingBtcRequest.TxHash)
 	if err != nil {
 		if strings.Contains(err.Error(), "Transaction already in block chain") == false {
 			return nil, funder, err

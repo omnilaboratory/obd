@@ -145,7 +145,7 @@ func sendRdTx() {
 
 	for _, node := range nodes {
 		if tool.CheckIsString(&node.TransactionHex) {
-			_, err := conn.HttpSendRawTransactionFromTracker(node.TransactionHex)
+			_, err := conn2tracker.SendRawTransaction(node.TransactionHex)
 			if err == nil {
 				if node.Type == 1 {
 					_ = addHTRD1aTxToWaitDB(node.HtnxIdAndHtnxRdId)

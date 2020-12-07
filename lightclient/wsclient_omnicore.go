@@ -19,7 +19,7 @@ func (client *Client) omniCoreModule(msg bean.RequestMessage) (enum.SendTargetTy
 	switch msg.Type {
 	case enum.MsgType_Core_GetNewAddress_2101:
 		var label = msg.Data
-		address, err := HttpGetNewAddressFromTracker(label)
+		address, err := GetNewAddress(label)
 		if err != nil {
 			data = err.Error()
 		} else {
@@ -29,7 +29,7 @@ func (client *Client) omniCoreModule(msg bean.RequestMessage) (enum.SendTargetTy
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_Core_GetMiningInfo_2102:
-		result, err := HttpGetMiningInfoFromJsonOnTracker()
+		result, err := GetMiningInfo()
 		if err != nil {
 			data = err.Error()
 		} else {
@@ -39,7 +39,7 @@ func (client *Client) omniCoreModule(msg bean.RequestMessage) (enum.SendTargetTy
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_Core_GetNetworkInfo_2103:
-		result, err := HttpGetNetworkInfoFromJsonOnTracker()
+		result, err := GetNetworkInfo()
 		if err != nil {
 			data = err.Error()
 		} else {
@@ -49,7 +49,7 @@ func (client *Client) omniCoreModule(msg bean.RequestMessage) (enum.SendTargetTy
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_Core_Omni_ListProperties_2117:
-		result, err := HttpOmniListPropertiesFromTracker()
+		result, err := OmniListProperties()
 		if err != nil {
 			data = err.Error()
 		} else {
@@ -63,7 +63,7 @@ func (client *Client) omniCoreModule(msg bean.RequestMessage) (enum.SendTargetTy
 		if propertyId == 0 {
 			data = "error propertyId"
 		} else {
-			result, err := HttpOmniGetPropertyFromTracker(propertyId)
+			result, err := OmniGetProperty(propertyId)
 			if err != nil {
 				data = err.Error()
 			} else {
@@ -78,7 +78,7 @@ func (client *Client) omniCoreModule(msg bean.RequestMessage) (enum.SendTargetTy
 		toAddress := gjson.Get(msg.Data, "to_address").String()
 		propertyId := gjson.Get(msg.Data, "property_id").Int()
 		amount := gjson.Get(msg.Data, "amount").Float()
-		result, err := HttpOmniSendOnTracker(fromAddress, toAddress, int(propertyId), amount)
+		result, err := OmniSend(fromAddress, toAddress, int(propertyId), amount)
 		if err != nil {
 			data = err.Error()
 		} else {
@@ -90,7 +90,7 @@ func (client *Client) omniCoreModule(msg bean.RequestMessage) (enum.SendTargetTy
 	case enum.MsgType_Core_Omni_GetTransaction_2118:
 		txid := gjson.Get(msg.Data, "txid").String()
 		if tool.CheckIsString(&txid) {
-			result, err := HttpOmniGetTransactionFromTracker(txid)
+			result, err := OmniGetTransaction(txid)
 			if err != nil {
 				data = err.Error()
 			} else {
@@ -98,14 +98,14 @@ func (client *Client) omniCoreModule(msg bean.RequestMessage) (enum.SendTargetTy
 				status = true
 			}
 		} else {
-			data = "error address"
+			data = "error txid"
 		}
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_Core_ListUnspent_2107:
 		address := gjson.Get(msg.Data, "address").String()
 		if tool.CheckIsString(&address) {
-			data = HttpListUnspentFromTracker(address)
+			data = ListUnspent(address)
 			status = true
 		} else {
 			data = "error address"
@@ -115,7 +115,7 @@ func (client *Client) omniCoreModule(msg bean.RequestMessage) (enum.SendTargetTy
 	case enum.MsgType_Core_BalanceByAddress_2108:
 		address := gjson.Get(msg.Data, "address").String()
 		if tool.CheckIsString(&address) {
-			balance, err := HttpGetBalanceByAddressFromTracker(address)
+			balance, err := GetBalanceByAddress(address)
 			if err != nil {
 				data = err.Error()
 			} else {
@@ -130,7 +130,7 @@ func (client *Client) omniCoreModule(msg bean.RequestMessage) (enum.SendTargetTy
 	case enum.MsgType_Core_Omni_GetBalance_2112:
 		address := gjson.Get(msg.Data, "address").String()
 		if tool.CheckIsAddress(address) {
-			result := HttpOmniGetAllBalancesForAddressFromTracker(address)
+			result := OmniGetAllBalancesByAddress(address)
 			if result == "" {
 				data = "empty result"
 			} else {
@@ -149,7 +149,7 @@ func (client *Client) omniCoreModule(msg bean.RequestMessage) (enum.SendTargetTy
 			if err != nil {
 				data = err.Error()
 			} else {
-				result, err := HttpOmniSendIssuanceFixedOnTracker(reqData.FromAddress, reqData.Ecosystem, reqData.DivisibleType, reqData.Name, reqData.Data, reqData.Amount)
+				result, err := OmniSendIssuanceFixed(reqData.FromAddress, reqData.Ecosystem, reqData.DivisibleType, reqData.Name, reqData.Data, reqData.Amount)
 				if err != nil {
 					data = err.Error()
 				} else {
@@ -169,7 +169,7 @@ func (client *Client) omniCoreModule(msg bean.RequestMessage) (enum.SendTargetTy
 			if err != nil {
 				data = err.Error()
 			} else {
-				result, err := HttpOmniSendIssuanceManagedOnTracker(reqData.FromAddress, reqData.Ecosystem, reqData.DivisibleType, reqData.Name, reqData.Data)
+				result, err := OmniSendIssuanceManaged(reqData.FromAddress, reqData.Ecosystem, reqData.DivisibleType, reqData.Name, reqData.Data)
 				if err != nil {
 					data = err.Error()
 				} else {
@@ -189,7 +189,7 @@ func (client *Client) omniCoreModule(msg bean.RequestMessage) (enum.SendTargetTy
 			if err != nil {
 				data = err.Error()
 			} else {
-				result, err := HttpOmniSendGrantOnTracker(reqData.FromAddress, reqData.PropertyId, reqData.Amount, reqData.Memo)
+				result, err := OmniSendGrant(reqData.FromAddress, reqData.PropertyId, reqData.Amount, reqData.Memo)
 				if err != nil {
 					data = err.Error()
 				} else {
@@ -209,7 +209,7 @@ func (client *Client) omniCoreModule(msg bean.RequestMessage) (enum.SendTargetTy
 			if err != nil {
 				data = err.Error()
 			} else {
-				result, err := HttpOmniSendRevokeOnTracker(reqData.FromAddress, reqData.PropertyId, reqData.Amount, reqData.Memo)
+				result, err := OmniSendRevoke(reqData.FromAddress, reqData.PropertyId, reqData.Amount, reqData.Memo)
 				if err != nil {
 					data = err.Error()
 				} else {
@@ -225,8 +225,8 @@ func (client *Client) omniCoreModule(msg bean.RequestMessage) (enum.SendTargetTy
 	case enum.MsgType_Core_GetTransactionByTxid_2122:
 		txid := gjson.Get(msg.Data, "txid").String()
 		if tool.CheckIsString(&txid) {
-			HttpGetTransactionByIdFromTracker(txid)
-			data = HttpGetTransactionByIdFromTracker(txid)
+			GetTransactionById(txid)
+			data = GetTransactionById(txid)
 			status = true
 		} else {
 			data = "error txid"
@@ -234,7 +234,7 @@ func (client *Client) omniCoreModule(msg bean.RequestMessage) (enum.SendTargetTy
 		client.sendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_Core_SignRawTransaction_2123:
-		result, err := HttpBtcSignRawTransactionFromJsonOnTracker(msg.Data)
+		result, err := BtcSignRawTransactionFromJson(msg.Data)
 		if err != nil {
 			data = err.Error()
 		} else {

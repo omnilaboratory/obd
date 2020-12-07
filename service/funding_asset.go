@@ -44,7 +44,7 @@ func (service *fundingTransactionManager) AssetFundingCreated(msg bean.RequestMe
 		log.Println(err)
 		return nil, false, err
 	}
-	testResult := conn.HttpTestMemPoolAcceptFromTracker(reqData.FundingTxHex)
+	testResult := conn2tracker.TestMemPoolAccept(reqData.FundingTxHex)
 	if testResult == "" {
 		err = errors.New(enum.Tips_common_empty + " funding_tx_hex ")
 		log.Println(err)
@@ -94,7 +94,7 @@ func (service *fundingTransactionManager) AssetFundingCreated(msg bean.RequestMe
 	}
 
 	// if alice launch funding
-	fundingTxHexDecode, err := conn.HttpOmniDecodeTransactionFromTracker(reqData.FundingTxHex)
+	fundingTxHexDecode, err := conn2tracker.OmniDecodeTransaction(reqData.FundingTxHex)
 	if err != nil {
 		err = errors.New(enum.Tips_funding_failDecodeRawTransaction + " : " + err.Error())
 		log.Println(err)
@@ -211,7 +211,7 @@ func (service *fundingTransactionManager) AssetFundingCreated(msg bean.RequestMe
 
 	var commitmentTxInfo *dao.CommitmentTransaction
 
-	unspent := conn.HttpListUnspentFromTracker(channelInfo.ChannelAddress)
+	unspent := conn2tracker.ListUnspent(channelInfo.ChannelAddress)
 	if unspent == "" {
 		return nil, false, errors.New("empty listunspent")
 	}
@@ -412,7 +412,7 @@ func (service *fundingTransactionManager) OnAliceSignC1a(msg bean.RequestMessage
 	}
 
 	// 检测 输出地址，数量是否一致
-	omniDecode, err := conn.HttpOmniDecodeTransactionFromTracker(hex)
+	omniDecode, err := conn2tracker.OmniDecodeTransaction(hex)
 	if err != nil {
 		return nil, err
 	}
@@ -514,7 +514,7 @@ func (service *fundingTransactionManager) BeforeSignAssetFundingCreateAtBobSide(
 		First(fundingTransaction)
 	if fundingTransaction.Id == 0 {
 		fundingTransaction.ChannelId = channelId
-		fundingTxHexDecode, err := conn.HttpOmniDecodeTransactionFromTracker(fundingTxHex)
+		fundingTxHexDecode, err := conn2tracker.OmniDecodeTransaction(fundingTxHex)
 		if err != nil {
 			err = errors.New("TxHex  parse fail " + err.Error())
 			log.Println(err)
@@ -700,7 +700,7 @@ func (service *fundingTransactionManager) AssetFundingSigned(jsonData string, si
 	// 二次签名的验证
 	signedRsmcHex := reqData.SignedAliceRsmcHex
 
-	beforeSignAliceRsmcDecode, err := conn.HttpOmniDecodeTransactionFromTracker(fundingTransaction.FunderRsmcHex)
+	beforeSignAliceRsmcDecode, err := conn2tracker.OmniDecodeTransaction(fundingTransaction.FunderRsmcHex)
 	if err != nil {
 		return nil, err
 	}
@@ -709,7 +709,7 @@ func (service *fundingTransactionManager) AssetFundingSigned(jsonData string, si
 	beforeSignAliceRsmcReferenceaddress := gjson.Get(beforeSignAliceRsmcDecode, "referenceaddress").Str
 	beforeSignAliceRsmcAmount := gjson.Get(beforeSignAliceRsmcDecode, "amount").Float()
 
-	omniDecode, err := conn.HttpOmniDecodeTransactionFromTracker(signedRsmcHex)
+	omniDecode, err := conn2tracker.OmniDecodeTransaction(signedRsmcHex)
 	if err != nil {
 		return nil, err
 	}
@@ -1064,7 +1064,7 @@ func (service *fundingTransactionManager) OnAliceSignedRdAtAliceSide(data string
 		return nil, err
 	}
 
-	result := conn.HttpTestMemPoolAcceptFromTracker(signedRdHex)
+	result := conn2tracker.TestMemPoolAccept(signedRdHex)
 	if result == "" {
 		return nil, errors.New("wrong signedRdHex")
 	}
@@ -1100,7 +1100,7 @@ func (service *fundingTransactionManager) OnAliceSignedRdAtAliceSide(data string
 		return nil, err
 	}
 
-	_, err = conn.HttpSendRawTransactionFromTracker(fundingTransaction.FundingTxHex)
+	_, err = conn2tracker.SendRawTransaction(fundingTransaction.FundingTxHex)
 	if err != nil {
 		err = errors.New("fail to send")
 		log.Println(err)

@@ -2308,7 +2308,7 @@ func htlcPayerCreateCommitmentTx_C3a(tx storm.Node, channelInfo *dao.ChannelInfo
 		newCommitmentTxInfo.HtlcRoutingPacket = requestData.RoutingPacket
 
 		newCommitmentTxInfo.HtlcCltvExpiry = requestData.CltvExpiry
-		newCommitmentTxInfo.BeginBlockHeight = conn.HttpGetBlockCountFromTracker()
+		newCommitmentTxInfo.BeginBlockHeight = conn2tracker.GetBlockCount()
 
 		newCommitmentTxInfo.HtlcTxHex = htlcTxData["hex"].(string)
 		newCommitmentTxInfo.HtlcH = requestData.H
@@ -2492,7 +2492,7 @@ func htlcPayeeCreateCommitmentTx_C3b(tx storm.Node, channelInfo *dao.ChannelInfo
 		allUsedTxidTemp += "," + usedTxid
 		newCommitmentTxInfo.HtlcRoutingPacket = payerData.RoutingPacket
 		newCommitmentTxInfo.HtlcCltvExpiry = payerData.CltvExpiry
-		newCommitmentTxInfo.BeginBlockHeight = conn.HttpGetBlockCountFromTracker()
+		newCommitmentTxInfo.BeginBlockHeight = conn2tracker.GetBlockCount()
 		newCommitmentTxInfo.HtlcTxHex = htlcTxData["hex"].(string)
 
 		signHexData := bean.NeedClientSignTxData{}

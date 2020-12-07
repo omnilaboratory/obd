@@ -46,7 +46,7 @@ func (client *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, 
 				P2PLocalPeerId:  p2PLocalPeerId,
 			}
 			var err error = nil
-			peerId := tool.SignMsgWithSha256([]byte(user.Mnemonic))
+			peerId := tool.GetUserPeerId(user.Mnemonic)
 			if globalWsClientManager.OnlineClientMap[peerId] != nil {
 				err = errors.New("user has logined at other node")
 			} else {
