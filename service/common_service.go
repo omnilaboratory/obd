@@ -590,7 +590,7 @@ func createCommitmentTxHex(dbTx storm.Node, isSender bool, reqData *bean.Request
 }
 
 func GetBtcMinerFundMiniAmount() float64 {
-	out, _ := decimal.NewFromFloat(rpcClient.GetMinerFee()).Add(decimal.NewFromFloat(2 * config.GetOmniDustBtc())).Mul(decimal.NewFromFloat(4.0)).Round(8).Float64()
+	out, _ := decimal.NewFromFloat(omnicore.GetMinerFee()).Add(decimal.NewFromFloat(2 * config.GetOmniDustBtc())).Mul(decimal.NewFromFloat(4.0)).Round(8).Float64()
 	return out
 }
 

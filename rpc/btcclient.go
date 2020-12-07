@@ -6,6 +6,7 @@ import (
 	"github.com/omnilaboratory/obd/bean"
 	"github.com/omnilaboratory/obd/config"
 	"github.com/omnilaboratory/obd/conn"
+	"github.com/omnilaboratory/obd/omnicore"
 	"github.com/omnilaboratory/obd/tool"
 	"github.com/shopspring/decimal"
 	"github.com/tidwall/gjson"
@@ -162,7 +163,7 @@ func (client *Client) BtcCreateRawTransaction(fromBitCoinAddress string, outputI
 	}
 
 	if minerFee <= 0 {
-		minerFee = client.GetMinerFee()
+		minerFee = omnicore.GetMinerFee()
 	}
 
 	outTotalAmount := decimal.NewFromFloat(0)

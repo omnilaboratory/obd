@@ -11,7 +11,9 @@ import (
 	"github.com/btcsuite/btcutil"
 	"github.com/omnilaboratory/obd/bean"
 	"github.com/omnilaboratory/obd/config"
+	"github.com/omnilaboratory/obd/conn"
 	"github.com/omnilaboratory/obd/tool"
+	"github.com/shopspring/decimal"
 	"github.com/tidwall/gjson"
 	"log"
 	"strconv"
@@ -188,4 +190,19 @@ func CreateMultiSig(minSignNum int, keys []string) (result string, err error) {
 func DecodeBtcRawTransaction(hex string) (result string, err error) {
 	result = DecodeRawTransaction(hex, tool.GetCoreNet())
 	return result, err
+}
+
+func GetMinerFee() float64 {
+	price := conn2tracker.EstimateSmartFee()
+	if price == 0 {
+		price = 6
+	} else {
+		price = price / 6
+	}
+	if price < 4 {
+		price = 4
+	}
+	txSize := 150 + 68 + 90
+	result, _ := decimal.NewFromFloat(float64(txSize) * price).Div(decimal.NewFromFloat(100000000)).Round(8).Float64()
+	return result
 }

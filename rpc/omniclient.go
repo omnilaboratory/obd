@@ -3,7 +3,6 @@ package rpc
 import (
 	"errors"
 	"github.com/omnilaboratory/obd/bean"
-	"github.com/omnilaboratory/obd/conn"
 	"github.com/omnilaboratory/obd/omnicore"
 	"github.com/omnilaboratory/obd/tool"
 	"github.com/shopspring/decimal"
@@ -217,22 +216,4 @@ func (client *Client) OmniSignRawTransactionForUnsend(hex string, inputItems []b
 	}
 
 	return client.GetTxId(hex), hex, nil
-}
-
-// ins*150 + outs*34 + 10 + 80 = transaction size
-// https://shimo.im/docs/5w9Fi1c9vm8yp1ly
-//https://bitcoinfees.earn.com/api/v1/fees/recommended
-func (client *Client) GetMinerFee() float64 {
-	price := conn2tracker.EstimateSmartFee()
-	if price == 0 {
-		price = 6
-	} else {
-		price = price / 6
-	}
-	if price < 4 {
-		price = 4
-	}
-	txSize := 150 + 68 + 90
-	result, _ := decimal.NewFromFloat(float64(txSize) * price).Div(decimal.NewFromFloat(100000000)).Round(8).Float64()
-	return result
 }
