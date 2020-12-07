@@ -3,6 +3,7 @@ package omnicore
 import (
 	"bytes"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/btcsuite/btcd/txscript"
@@ -166,4 +167,25 @@ func VerifySignatureHex(inputs []bean.RawTxInputItem, redeemHex string) (err err
 		}
 	}
 	return nil
+}
+
+type multiSign struct {
+	Address      string `json:"address"`
+	RedeemScript string `json:"redeemScript"`
+	ScriptPubKey string `json:"scriptPubKey"`
+}
+
+func CreateMultiSig(minSignNum int, keys []string) (result string, err error) {
+	addr, redeemScript, scriptPubKey := CreateMultiSigAddr(keys[0], keys[1], tool.GetCoreNet())
+	sign := multiSign{}
+	sign.Address = addr
+	sign.RedeemScript = redeemScript
+	sign.ScriptPubKey = scriptPubKey
+	marshal, _ := json.Marshal(&sign)
+	return string(marshal), nil
+}
+
+func DecodeBtcRawTransaction(hex string) (result string, err error) {
+	result = DecodeRawTransaction(hex, tool.GetCoreNet())
+	return result, err
 }

@@ -135,7 +135,7 @@ func (service *fundingTransactionManager) AssetFundingCreated(msg bean.RequestMe
 		return nil, false, err
 	}
 
-	fundingAssetTxHexDecode, err := rpcClient.DecodeRawTransaction(reqData.FundingTxHex)
+	fundingAssetTxHexDecode, err := omnicore.DecodeBtcRawTransaction(reqData.FundingTxHex)
 	if err != nil {
 		err = errors.New(enum.Tips_funding_failDecodeRawTransaction + " funding_tx_hex " + err.Error())
 		log.Println(err)
@@ -370,7 +370,7 @@ func (service *fundingTransactionManager) OnAliceSignC1a(msg bean.RequestMessage
 		return nil, err
 	}
 
-	resultDecode, err := rpcClient.DecodeRawTransaction(hex)
+	resultDecode, err := omnicore.DecodeBtcRawTransaction(hex)
 	txid := gjson.Get(resultDecode, "txid").Str
 	inputTxId := gjson.Get(resultDecode, "vin").Array()[0].Get("txid").Str
 
@@ -479,7 +479,7 @@ func (service *fundingTransactionManager) BeforeSignAssetFundingCreateAtBobSide(
 		return nil, err
 	}
 
-	txHexDecode, err := rpcClient.DecodeRawTransaction(fundingTxHex)
+	txHexDecode, err := omnicore.DecodeBtcRawTransaction(fundingTxHex)
 	if err != nil {
 		err = errors.New("TxHex  parse fail " + err.Error())
 		log.Println(err)
@@ -727,7 +727,7 @@ func (service *fundingTransactionManager) AssetFundingSigned(jsonData string, si
 	//endregion
 
 	//region create RD tx for alice
-	multiAddr, err := rpcClient.CreateMultiSig(2, []string{fundingTransaction.RsmcTempAddressPubKey, myPubKey})
+	multiAddr, err := omnicore.CreateMultiSig(2, []string{fundingTransaction.RsmcTempAddressPubKey, myPubKey})
 	if err != nil {
 		return nil, err
 	}

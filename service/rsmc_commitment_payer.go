@@ -7,6 +7,7 @@ import (
 	"github.com/omnilaboratory/obd/bean"
 	"github.com/omnilaboratory/obd/bean/enum"
 	"github.com/omnilaboratory/obd/dao"
+	"github.com/omnilaboratory/obd/omnicore"
 	"github.com/omnilaboratory/obd/tool"
 	"github.com/tidwall/gjson"
 	"log"
@@ -481,7 +482,7 @@ func (this *commitmentTxManager) OnAliceSignedC2bTxAtAliceSide(data string, user
 	bobSignedRsmcHex := aliceSignedRmscTxForC2b.C2bRsmcSignedHex
 
 	//region create RD tx for bob
-	bobMultiAddr, err := rpcClient.CreateMultiSig(2, []string{dataFromP2p352.CurrTempAddressPubKey, myChannelPubKey})
+	bobMultiAddr, err := omnicore.CreateMultiSig(2, []string{dataFromP2p352.CurrTempAddressPubKey, myChannelPubKey})
 	if err != nil {
 		return nil, err
 	}
@@ -728,7 +729,7 @@ func (this *commitmentTxManager) OnAliceSignedC2b_RDTxAtAliceSide(data string, u
 	bobData := bean.AliceSignedC2bTxDataP2p{}
 	bobData.C2aCommitmentTxHash = dataFromP2p352.CommitmentTxHash
 
-	c2bMultiAddr, err := rpcClient.CreateMultiSig(2, []string{bobCurrTempAddressPubKey, myChannelPubKey})
+	c2bMultiAddr, err := omnicore.CreateMultiSig(2, []string{bobCurrTempAddressPubKey, myChannelPubKey})
 	if err != nil {
 		return nil, nil, false, err
 	}

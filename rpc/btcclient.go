@@ -6,7 +6,6 @@ import (
 	"github.com/omnilaboratory/obd/bean"
 	"github.com/omnilaboratory/obd/config"
 	"github.com/omnilaboratory/obd/conn"
-	"github.com/omnilaboratory/obd/omnicore"
 	"github.com/omnilaboratory/obd/tool"
 	"github.com/shopspring/decimal"
 	"github.com/tidwall/gjson"
@@ -25,24 +24,7 @@ func (client *Client) EstimateSmartFee() (feeRate float64) {
 	if err == nil {
 		return gjson.Get(result, "feerate").Float() * 100000
 	}
-	return 2
-}
-
-type multiSign struct {
-	Address      string `json:"address"`
-	RedeemScript string `json:"redeemScript"`
-	ScriptPubKey string `json:"scriptPubKey"`
-}
-
-func (client *Client) CreateMultiSig(minSignNum int, keys []string) (result string, err error) {
-	addr, redeemScript, scriptPubKey := omnicore.CreateMultiSigAddr(keys[0], keys[1], tool.GetCoreNet())
-	sign := multiSign{}
-	sign.Address = addr
-	sign.RedeemScript = redeemScript
-	sign.ScriptPubKey = scriptPubKey
-	marshal, _ := json.Marshal(&sign)
-	return string(marshal), nil
-
+	return 0
 }
 
 func (client *Client) GetTransactionById(txid string) (result string, err error) {
@@ -103,11 +85,6 @@ func (client *Client) SignRawTransactionWithKey(hex string, privkeys []string, p
 
 func (client *Client) SendRawTransaction(hex string) (result string, err error) {
 	return client.send("sendrawtransaction", []interface{}{hex})
-}
-
-func (client *Client) DecodeRawTransaction(hex string) (result string, err error) {
-	result = omnicore.DecodeRawTransaction(hex, tool.GetCoreNet())
-	return result, err
 }
 
 func (client *Client) OmniDecodeTransaction(hex string) (result string, err error) {
@@ -303,111 +280,4 @@ func (client *Client) BtcSignRawTransactionFromJson(dataJson string) (signHex st
 	}
 	signHex = gjson.Get(signHexObj, "hex").String()
 	return signHex, nil
-}
-
-//创建btc的raw交易：输入为未广播的预交易,输出为交易hex，支持单签和多签，如果是单签，就需要后续步骤再签名
-func (client *Client) BtcCreateRawTransactionForUnsendInputTx(fromBitCoinAddress string, inputItems []bean.TransactionInputItem, outputItems []bean.TransactionOutputItem, minerFee float64, sequence int, redeemScript *string) (retMap map[string]interface{}, err error) {
-	if tool.CheckIsAddress(fromBitCoinAddress) == false {
-		return nil, errors.New("fromBitCoinAddress is empty")
-	}
-	if len(outputItems) < 1 {
-		return nil, errors.New("toBitCoinAddress is empty")
-	}
-
-	if minerFee <= config.GetOmniDustBtc() {
-		minerFee = client.GetMinerFee()
-	}
-
-	outAmount := decimal.NewFromFloat(0)
-	for _, item := range outputItems {
-		outAmount = outAmount.Add(decimal.NewFromFloat(item.Amount))
-	}
-
-	if outAmount.LessThan(decimal.NewFromFloat(config.GetOmniDustBtc())) {
-		return nil, errors.New("wrong outAmount")
-	}
-
-	if minerFee < config.GetOmniDustBtc() {
-		return nil, errors.New("minerFee too small")
-	}
-
-	var outTotalCount = 0
-	for _, item := range outputItems {
-		if item.Amount > 0 {
-			outTotalCount++
-		}
-	}
-
-	subMinerFee := 0.0
-	if outTotalCount > 0 {
-		count, _ := decimal.NewFromString(strconv.Itoa(outTotalCount))
-		subMinerFee, _ = decimal.NewFromFloat(minerFee).DivRound(count, 8).Float64()
-	}
-	minerFee = 0
-	for i := 0; i < outTotalCount; i++ {
-		minerFee, _ = decimal.NewFromFloat(minerFee).Add(decimal.NewFromFloat(subMinerFee)).Round(8).Float64()
-	}
-
-	balance := 0.0
-	var inputs []map[string]interface{}
-	for _, item := range inputItems {
-		node := make(map[string]interface{})
-		node["txid"] = item.Txid
-		node["vout"] = item.Vout
-		node["amount"] = item.Amount
-		if sequence > 0 {
-			node["sequence"] = sequence
-		}
-		if tool.CheckIsString(redeemScript) {
-			node["redeemScript"] = *redeemScript
-		}
-		node["scriptPubKey"] = item.ScriptPubKey
-		balance, _ = decimal.NewFromFloat(balance).Add(decimal.NewFromFloat(item.Amount)).Round(8).Float64()
-		inputs = append(inputs, node)
-	}
-	//not enough money
-	if outAmount.GreaterThan(decimal.NewFromFloat(balance)) {
-		return nil, errors.New("not enough balance")
-	}
-
-	//not enough money for minerFee
-	if outAmount.Equal(decimal.NewFromFloat(balance)) {
-		outAmount = outAmount.Sub(decimal.NewFromFloat(minerFee))
-	}
-
-	out, _ := decimal.NewFromFloat(minerFee).Add(outAmount).Round(8).Float64()
-
-	if len(inputs) == 0 || balance < out {
-		return nil, errors.New("not enough balance")
-	}
-	drawback, _ := decimal.NewFromFloat(balance).Sub(decimal.NewFromFloat(out)).Round(8).Float64()
-
-	output := make(map[string]interface{})
-	totalOutAmount := 0.0
-	for _, item := range outputItems {
-		if item.Amount > 0 {
-			tempAmount, _ := decimal.NewFromFloat(item.Amount).Sub(decimal.NewFromFloat(subMinerFee)).Round(8).Float64()
-			output[item.ToBitCoinAddress] = tempAmount
-			totalOutAmount += tempAmount
-		}
-	}
-	if drawback > 0 {
-		output[fromBitCoinAddress] = drawback
-	}
-
-	dataToTracker := make(map[string]interface{})
-	dataToTracker["inputs"] = inputs
-	dataToTracker["outputs"] = output
-	bytes, err := json.Marshal(dataToTracker)
-	hex := conn2tracker.CreateRawTransaction(string(bytes))
-	if hex == "" {
-		return nil, errors.New("error createRawTransaction")
-	}
-
-	retMap = make(map[string]interface{})
-	retMap["hex"] = hex
-	retMap["inputs"] = inputs
-	retMap["total_in_amount"] = balance
-	retMap["total_out_amount"] = totalOutAmount
-	return retMap, nil
 }

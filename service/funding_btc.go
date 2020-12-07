@@ -42,7 +42,7 @@ func (service *fundingTransactionManager) BtcFundingCreated(msg bean.RequestMess
 		return nil, "", err
 	}
 
-	btcFeeTxHexDecode, err := rpcClient.DecodeRawTransaction(reqData.FundingTxHex)
+	btcFeeTxHexDecode, err := omnicore.DecodeBtcRawTransaction(reqData.FundingTxHex)
 	if err != nil {
 		err = errors.New(enum.Tips_funding_failDecodeRawTransaction + " funding_tx_hex: " + err.Error())
 		log.Println(err)
@@ -182,7 +182,7 @@ func (service *fundingTransactionManager) BtcFundingCreated(msg bean.RequestMess
 		}
 
 		// 创建一个btc赎回交易 ，alice首先签名
-		needAliceSignData, err = rpcClient.BtcCreateRawTransactionForUnsendInputTx(
+		needAliceSignData, err = omnicore.BtcCreateRawTransactionForUnsendInputTx(
 			channelInfo.ChannelAddress,
 			[]bean.TransactionInputItem{
 				{
@@ -229,7 +229,7 @@ func (service *fundingTransactionManager) BtcFundingCreated(msg bean.RequestMess
 
 		// 如果在前面的步骤，已经创建了minerFeeRedeemTransaction，但是没有完成签名，需要继续发起签名逻辑
 		if len(minerFeeRedeemTransaction.Txid) == 0 {
-			needAliceSignData, err = rpcClient.BtcCreateRawTransactionForUnsendInputTx(
+			needAliceSignData, err = omnicore.BtcCreateRawTransactionForUnsendInputTx(
 				channelInfo.ChannelAddress,
 				[]bean.TransactionInputItem{
 					{
@@ -312,7 +312,7 @@ func (service *fundingTransactionManager) OnAliceSignBtcFundingMinerFeeRedeemTx(
 		return nil, "", errors.New("empty hex")
 	}
 	hex := gjson.Get(jsonObj, "hex").Str
-	resultDecode, err := rpcClient.DecodeRawTransaction(hex)
+	resultDecode, err := omnicore.DecodeBtcRawTransaction(hex)
 	if err != nil {
 		return nil, "", err
 	}
@@ -468,7 +468,7 @@ func (service *fundingTransactionManager) BeforeSignBtcFundingCreatedAtBobSide(d
 		funder = channelInfo.PeerIdB
 	}
 
-	btcFeeTxHexDecode, err := rpcClient.DecodeRawTransaction(fundingBtcHex)
+	btcFeeTxHexDecode, err := omnicore.DecodeBtcRawTransaction(fundingBtcHex)
 	if err != nil {
 		err = errors.New(enum.Tips_funding_failDecodeRawTransaction + " funding_btc_hex " + err.Error())
 		log.Println(err)
@@ -621,13 +621,13 @@ func (service *fundingTransactionManager) FundingBtcTxSigned(msg bean.RequestMes
 		return node, funder, nil
 	}
 
-	result, err := rpcClient.DecodeRawTransaction(fundingBtcRequest.RedeemHex)
+	result, err := omnicore.DecodeBtcRawTransaction(fundingBtcRequest.RedeemHex)
 	if err != nil {
 		return nil, "", err
 	}
 	minerOutAmount := gjson.Get(result, "vout").Array()[0].Get("value").Float()
 
-	resultDecode, err := rpcClient.DecodeRawTransaction(reqData.SignedMinerRedeemTransactionHex)
+	resultDecode, err := omnicore.DecodeBtcRawTransaction(reqData.SignedMinerRedeemTransactionHex)
 	if err != nil {
 		return nil, "", err
 	}

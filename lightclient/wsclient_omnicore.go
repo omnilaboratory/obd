@@ -5,6 +5,7 @@ import (
 	"github.com/omnilaboratory/obd/bean"
 	"github.com/omnilaboratory/obd/bean/enum"
 	. "github.com/omnilaboratory/obd/conn"
+	"github.com/omnilaboratory/obd/omnicore"
 	"github.com/omnilaboratory/obd/rpc"
 	"github.com/omnilaboratory/obd/tool"
 
@@ -273,7 +274,7 @@ func (client *Client) omniCoreModule(msg bean.RequestMessage) (enum.SendTargetTy
 		if err != nil {
 			data = "error data: " + err.Error()
 		} else {
-			result, err := rpcClient.CreateMultiSig(reqData.MiniSignCount, reqData.PubKeys)
+			result, err := omnicore.CreateMultiSig(reqData.MiniSignCount, reqData.PubKeys)
 			if err == nil {
 				parse := gjson.Parse(string(result))
 				node := make(map[string]interface{})

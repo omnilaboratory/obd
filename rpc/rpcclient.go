@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/omnilaboratory/obd/bean"
 	"github.com/omnilaboratory/obd/config"
+	"github.com/omnilaboratory/obd/omnicore"
 	"github.com/tidwall/gjson"
 	"io/ioutil"
 	"log"
@@ -199,7 +200,7 @@ func (client *Client) CheckMultiSign(sendedInput bool, hex string, step int) (pa
 	if len(hex) == 0 {
 		return false, errors.New("Empty hex")
 	}
-	result, err := client.DecodeRawTransaction(hex)
+	result, err := omnicore.DecodeBtcRawTransaction(hex)
 	vins := gjson.Get(result, "vin").Array()
 	for i := 0; i < len(vins); i++ {
 		asm := vins[i].Get("scriptSig").Get("asm").Str
@@ -219,7 +220,7 @@ func (client *Client) CheckMultiSign(sendedInput bool, hex string, step int) (pa
 }
 
 func (client *Client) GetTxId(hex string) string {
-	testResult, err := client.DecodeRawTransaction(hex)
+	testResult, err := omnicore.DecodeBtcRawTransaction(hex)
 	if err == nil {
 		return gjson.Parse(testResult).Get("txid").Str
 	}

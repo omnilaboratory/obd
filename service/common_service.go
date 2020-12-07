@@ -79,7 +79,7 @@ func createCommitmentTx(owner string, channelInfo *dao.ChannelInfo, fundingTrans
 
 	//output to rsmc
 	commitmentTxInfo.RSMCTempAddressPubKey = outputBean.RsmcTempPubKey
-	multiAddr, err := rpcClient.CreateMultiSig(2, []string{commitmentTxInfo.RSMCTempAddressPubKey, outputBean.OppositeSideChannelPubKey})
+	multiAddr, err := omnicore.CreateMultiSig(2, []string{commitmentTxInfo.RSMCTempAddressPubKey, outputBean.OppositeSideChannelPubKey})
 	if err != nil {
 		return nil, err
 	}
@@ -89,7 +89,7 @@ func createCommitmentTx(owner string, channelInfo *dao.ChannelInfo, fundingTrans
 
 	if tool.CheckIsString(&outputBean.HtlcTempPubKey) {
 		commitmentTxInfo.HTLCTempAddressPubKey = outputBean.HtlcTempPubKey
-		multiAddr, err := rpcClient.CreateMultiSig(2, []string{commitmentTxInfo.HTLCTempAddressPubKey, outputBean.OppositeSideChannelPubKey})
+		multiAddr, err := omnicore.CreateMultiSig(2, []string{commitmentTxInfo.HTLCTempAddressPubKey, outputBean.OppositeSideChannelPubKey})
 		if err != nil {
 			return nil, err
 		}
@@ -196,7 +196,7 @@ func checkBtcTxHex(btcFeeTxHexDecode string, channelInfo *dao.ChannelInfo, peerI
 
 	jsonInputTxDecode := gjson.Parse(inputTx)
 	flag := false
-	inputHexDecode, err := rpcClient.DecodeRawTransaction(jsonInputTxDecode.Get("hex").String())
+	inputHexDecode, err := omnicore.DecodeBtcRawTransaction(jsonInputTxDecode.Get("hex").String())
 	if err != nil {
 		err = errors.New(enum.Tips_funding_wrongBtcHexVin + err.Error())
 		log.Println(err)
@@ -287,7 +287,7 @@ func checkOmniTxHex(fundingTxHexDecode string, channelInfo *dao.ChannelInfo, use
 
 //从未广播的交易hash数据中解析出他的输出，以此作为下个交易的输入
 func getInputsForNextTxByParseTxHashVout(hex string, toAddress, scriptPubKey, redeemScript string) (inputs []bean.TransactionInputItem, err error) {
-	result, err := rpcClient.DecodeRawTransaction(hex)
+	result, err := omnicore.DecodeBtcRawTransaction(hex)
 	if err != nil {
 		return nil, err
 	}
@@ -431,7 +431,7 @@ func saveHTD1bTx(tx storm.Node, signedHtlcHex string, signedHtd1bHex string, lat
 }
 
 func createMultiSig(pubkey1 string, pubkey2 string) (multiAddress, redeemScript, scriptPubKey string, err error) {
-	aliceRsmcMultiAddr, err := rpcClient.CreateMultiSig(2, []string{pubkey1, pubkey2})
+	aliceRsmcMultiAddr, err := omnicore.CreateMultiSig(2, []string{pubkey1, pubkey2})
 	if err != nil {
 		return "", "", "", err
 	}
@@ -637,7 +637,7 @@ func GetAddressListUnspent(tx storm.Node, channelInfo dao.ChannelInfo) (listUnsp
 }
 
 func getOutputFromHex(hex string, toAddress string) *dao.ChannelAddressListUnspent {
-	result, err := rpcClient.DecodeRawTransaction(hex)
+	result, err := omnicore.DecodeBtcRawTransaction(hex)
 	if err != nil {
 		return nil
 	}

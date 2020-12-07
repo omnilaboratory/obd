@@ -10,6 +10,7 @@ import (
 	"github.com/omnilaboratory/obd/config"
 	"github.com/omnilaboratory/obd/conn"
 	"github.com/omnilaboratory/obd/dao"
+	"github.com/omnilaboratory/obd/omnicore"
 	"github.com/omnilaboratory/obd/tool"
 	trackerBean "github.com/omnilaboratory/obd/tracker/bean"
 	"github.com/tidwall/gjson"
@@ -604,7 +605,7 @@ func createHed1a(tx storm.Node, signedHed1aHex string, channelInfo dao.ChannelIn
 			payeeChannelAddress = channelInfo.AddressA
 			payeePeerId = channelInfo.PeerIdA
 		}
-		decodeHed1aHex, err := rpcClient.DecodeRawTransaction(signedHed1aHex)
+		decodeHed1aHex, err := omnicore.DecodeBtcRawTransaction(signedHed1aHex)
 		if err != nil {
 			return err
 		}

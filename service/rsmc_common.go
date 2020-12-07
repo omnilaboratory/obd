@@ -171,11 +171,11 @@ func updateCurrCommitmentTxRawBR(tx storm.Node, id int64, firstSignedBrHex strin
 
 func compareBR(hex1 string, hex2 string) (bool, string) {
 
-	hex1Decode, err := rpcClient.DecodeRawTransaction(hex1)
+	hex1Decode, err := omnicore.DecodeBtcRawTransaction(hex1)
 	if err != nil {
 		return false, ""
 	}
-	hex2Decode, err := rpcClient.DecodeRawTransaction(hex2)
+	hex2Decode, err := omnicore.DecodeBtcRawTransaction(hex2)
 	if err != nil {
 		return false, ""
 	}

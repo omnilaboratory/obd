@@ -8,6 +8,7 @@ import (
 	"github.com/omnilaboratory/obd/bean"
 	"github.com/omnilaboratory/obd/bean/enum"
 	"github.com/omnilaboratory/obd/dao"
+	"github.com/omnilaboratory/obd/omnicore"
 	"github.com/omnilaboratory/obd/tool"
 	"github.com/tidwall/gjson"
 	"log"
@@ -994,7 +995,7 @@ func (service *htlcCloseTxManager) OnAliceSignedCxb(msg bean.RequestMessage, use
 	bobSignedRsmcHex := aliceSignedData.C4bRsmcCompleteSignedHex
 
 	//region create RD tx for bob
-	bobMultiAddr, err := rpcClient.CreateMultiSig(2, []string{dataFromP2p50P.CloseeCurrRsmcTempAddressPubKey, myChannelPubKey})
+	bobMultiAddr, err := omnicore.CreateMultiSig(2, []string{dataFromP2p50P.CloseeCurrRsmcTempAddressPubKey, myChannelPubKey})
 	if err != nil {
 		return nil, err
 	}
@@ -1249,7 +1250,7 @@ func (service *htlcCloseTxManager) OnAliceSignedCxbBubTx(msg bean.RequestMessage
 	bobData := bean.AliceSignedC4bTxDataP2p{}
 	bobData.C4aCommitmentTxHash = dataFromP2p50P.CloserCommitmentTxHash
 
-	c2bMultiAddr, err := rpcClient.CreateMultiSig(2, []string{bobCurrTempAddressPubKey, myChannelPubKey})
+	c2bMultiAddr, err := omnicore.CreateMultiSig(2, []string{bobCurrTempAddressPubKey, myChannelPubKey})
 	if err != nil {
 		return nil, nil, err
 	}

@@ -10,6 +10,7 @@ import (
 	"github.com/omnilaboratory/obd/config"
 	"github.com/omnilaboratory/obd/conn"
 	"github.com/omnilaboratory/obd/dao"
+	"github.com/omnilaboratory/obd/omnicore"
 	"github.com/omnilaboratory/obd/tool"
 	"github.com/tidwall/gjson"
 	"log"
@@ -115,7 +116,7 @@ func (this *channelManager) BobCheckChannelAddressExist(jsonData string, user *b
 	}
 
 	channelInfo.PubKeyB = reqData.FundingPubKey
-	multiSig, err := rpcClient.CreateMultiSig(2, []string{channelInfo.PubKeyA, channelInfo.PubKeyB})
+	multiSig, err := omnicore.CreateMultiSig(2, []string{channelInfo.PubKeyA, channelInfo.PubKeyB})
 	if err != nil {
 		log.Println(err)
 		return false, err
@@ -184,7 +185,7 @@ func (this *channelManager) BobAcceptChannel(msg bean.RequestMessage, user *bean
 		channelInfo.PubKeyB = reqData.FundingPubKey
 		channelInfo.FundeeAddressIndex = reqData.FundeeAddressIndex
 		channelInfo.AddressB = bobFundingAddress
-		multiSig, err := rpcClient.CreateMultiSig(2, []string{channelInfo.PubKeyA, channelInfo.PubKeyB})
+		multiSig, err := omnicore.CreateMultiSig(2, []string{channelInfo.PubKeyA, channelInfo.PubKeyB})
 		if err != nil {
 			log.Println(err)
 			return nil, err

@@ -8,6 +8,7 @@ import (
 	"github.com/omnilaboratory/obd/bean"
 	"github.com/omnilaboratory/obd/bean/enum"
 	"github.com/omnilaboratory/obd/dao"
+	"github.com/omnilaboratory/obd/omnicore"
 	"github.com/omnilaboratory/obd/tool"
 	"github.com/tidwall/gjson"
 	"log"
@@ -224,7 +225,7 @@ func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction
 		aliceRsmcTxId = rpcClient.GetTxId(signedRsmcHex)
 
 		// region 根据alice的临时地址+bob的通道address,获取alice2+bob的多签地址，并得到AliceSignedRsmcHex签名后的交易的input，为创建alice的RD和bob的BR做准备
-		c2aRsmcMultiAddr, err := rpcClient.CreateMultiSig(2, []string{c2aDataJson.CurrTempAddressPubKey, currNodeChannelPubKey})
+		c2aRsmcMultiAddr, err := omnicore.CreateMultiSig(2, []string{c2aDataJson.CurrTempAddressPubKey, currNodeChannelPubKey})
 		if err != nil {
 			return nil, false, err
 		}
