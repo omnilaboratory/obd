@@ -165,6 +165,5 @@ func VerifySignatureHex(inputs []bean.RawTxInputItem, redeemHex string) (err err
 			return err
 		}
 	}
-
 	return nil
 }

@@ -12,7 +12,6 @@ import (
 	"github.com/omnilaboratory/obd/conn"
 	"github.com/omnilaboratory/obd/dao"
 	"github.com/omnilaboratory/obd/omnicore"
-	"github.com/omnilaboratory/obd/rpc"
 	"github.com/omnilaboratory/obd/tool"
 	trackerBean "github.com/omnilaboratory/obd/tracker/bean"
 	"github.com/shopspring/decimal"
@@ -934,7 +933,7 @@ func (service *htlcForwardTxManager) BobSignedAddHtlcAtBobSide(jsonData string, 
 	//region 1、验证C3a的Rsmc的签名
 	var c3aRsmcTxId, c3aSignedRsmcHex string
 	var c3aRsmcMultiAddress, c3aRsmcRedeemScript, c3aRsmcMultiAddressScriptPubKey string
-	var c3aRsmcOutputs []rpc.TransactionInputItem
+	var c3aRsmcOutputs []bean.TransactionInputItem
 	if tool.CheckIsString(&payerRequestAddHtlc.C3aRsmcPartialSignedData.Hex) {
 		c3aSignedRsmcHex = requestData.C3aCompleteSignedRsmcHex
 		c3aRsmcTxId = rpcClient.GetTxId(c3aSignedRsmcHex)
@@ -1509,7 +1508,7 @@ func (service *htlcForwardTxManager) OnAliceSignC3bAtAliceSide(msg bean.RequestM
 	needBobSignData.C3bCompleteSignedHtlcHex = c3bSignedHtlcHex
 	//endregion
 
-	var bobRsmcOutputs []rpc.TransactionInputItem
+	var bobRsmcOutputs []bean.TransactionInputItem
 	if bobRsmcHexIsExist {
 
 		//region 4 c3b Rsmc rd

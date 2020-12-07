@@ -8,7 +8,6 @@ import (
 	"github.com/omnilaboratory/obd/bean"
 	"github.com/omnilaboratory/obd/bean/enum"
 	"github.com/omnilaboratory/obd/dao"
-	"github.com/omnilaboratory/obd/rpc"
 	"github.com/omnilaboratory/obd/tool"
 	"github.com/tidwall/gjson"
 	"log"
@@ -575,7 +574,7 @@ func (service *htlcCloseTxManager) OnBobSignCloseHtlcRequest(msg bean.RequestMes
 	// 签名对方传过来的rsmcHex
 	var signedRsmcHex, aliceRsmcTxId string
 	var aliceRsmcMultiAddress, aliceRsmcRedeemScript, aliceRsmcMultiAddressScriptPubKey string
-	var aliceRsmcOutputs []rpc.TransactionInputItem
+	var aliceRsmcOutputs []bean.TransactionInputItem
 	if tool.CheckIsString(&dataFrom49POfP2p.RsmcPartialSignedData.Hex) {
 		signedRsmcHex = reqData.C4aRsmcCompleteSignedHex
 		if pass, _ := rpcClient.CheckMultiSign(true, signedRsmcHex, 2); pass == false {

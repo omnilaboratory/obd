@@ -3,7 +3,6 @@ package rpc
 import (
 	"errors"
 	"github.com/omnilaboratory/obd/bean"
-	"github.com/omnilaboratory/obd/config"
 	"github.com/omnilaboratory/obd/conn"
 	"github.com/omnilaboratory/obd/omnicore"
 	"github.com/omnilaboratory/obd/tool"
@@ -192,7 +191,7 @@ func (client *Client) omniCreateRawtxReference(rawtx string, destination string)
 	return client.send("omni_createrawtx_reference", []interface{}{rawtx, destination})
 }
 
-func (client *Client) OmniSignRawTransactionForUnsend(hex string, inputItems []TransactionInputItem, privKey string) (string, string, error) {
+func (client *Client) OmniSignRawTransactionForUnsend(hex string, inputItems []bean.TransactionInputItem, privKey string) (string, string, error) {
 
 	var inputs []map[string]interface{}
 	var items []bean.RawTxInputItem
@@ -218,11 +217,6 @@ func (client *Client) OmniSignRawTransactionForUnsend(hex string, inputItems []T
 	}
 
 	return client.GetTxId(hex), hex, nil
-}
-
-func GetBtcMinerAmount(total float64) float64 {
-	out, _ := decimal.NewFromFloat(total).Div(decimal.NewFromFloat(4.0)).Sub(decimal.NewFromFloat(config.GetOmniDustBtc())).Round(8).Float64()
-	return out
 }
 
 // ins*150 + outs*34 + 10 + 80 = transaction size

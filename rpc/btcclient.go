@@ -3,6 +3,7 @@ package rpc
 import (
 	"encoding/json"
 	"errors"
+	"github.com/omnilaboratory/obd/bean"
 	"github.com/omnilaboratory/obd/config"
 	"github.com/omnilaboratory/obd/conn"
 	"github.com/omnilaboratory/obd/omnicore"
@@ -114,7 +115,7 @@ func (client *Client) OmniDecodeTransaction(hex string) (result string, err erro
 	return result, err
 }
 
-func (client *Client) OmniDecodeTransactionWithPrevTxs(hex string, prevtxs []TransactionInputItem) (result string, err error) {
+func (client *Client) OmniDecodeTransactionWithPrevTxs(hex string, prevtxs []bean.TransactionInputItem) (result string, err error) {
 	result, err = client.send("omni_decodetransaction", []interface{}{hex, prevtxs})
 	return result, err
 }
@@ -174,20 +175,8 @@ func (client *Client) ImportPrivKey(privkey string) (result string, err error) {
 	return client.send("importprivkey", []interface{}{privkey, "", false})
 }
 
-type TransactionOutputItem struct {
-	ToBitCoinAddress string
-	Amount           float64
-}
-type TransactionInputItem struct {
-	Txid         string  `json:"txid"`
-	ScriptPubKey string  `json:"scriptPubKey"`
-	RedeemScript string  `json:"redeem_script"`
-	Vout         uint32  `json:"vout"`
-	Amount       float64 `json:"value"`
-}
-
 // create a raw transaction and no sign , not send to the network,get the hash of signature
-func (client *Client) BtcCreateRawTransaction(fromBitCoinAddress string, outputItems []TransactionOutputItem, minerFee float64, sequence int, redeemScript *string) (retMap map[string]interface{}, err error) {
+func (client *Client) BtcCreateRawTransaction(fromBitCoinAddress string, outputItems []bean.TransactionOutputItem, minerFee float64, sequence int, redeemScript *string) (retMap map[string]interface{}, err error) {
 	if tool.CheckIsAddress(fromBitCoinAddress) == false {
 		return nil, errors.New("fromBitCoinAddress is empty")
 	}
@@ -317,7 +306,7 @@ func (client *Client) BtcSignRawTransactionFromJson(dataJson string) (signHex st
 }
 
 //创建btc的raw交易：输入为未广播的预交易,输出为交易hex，支持单签和多签，如果是单签，就需要后续步骤再签名
-func (client *Client) BtcCreateRawTransactionForUnsendInputTx(fromBitCoinAddress string, inputItems []TransactionInputItem, outputItems []TransactionOutputItem, minerFee float64, sequence int, redeemScript *string) (retMap map[string]interface{}, err error) {
+func (client *Client) BtcCreateRawTransactionForUnsendInputTx(fromBitCoinAddress string, inputItems []bean.TransactionInputItem, outputItems []bean.TransactionOutputItem, minerFee float64, sequence int, redeemScript *string) (retMap map[string]interface{}, err error) {
 	if tool.CheckIsAddress(fromBitCoinAddress) == false {
 		return nil, errors.New("fromBitCoinAddress is empty")
 	}

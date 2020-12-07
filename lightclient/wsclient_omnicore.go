@@ -252,7 +252,7 @@ func (client *Client) omniCoreModule(msg bean.RequestMessage) (enum.SendTargetTy
 			if tool.CheckIsString(&sendInfo.FromAddress) &&
 				tool.CheckIsString(&sendInfo.ToAddress) &&
 				sendInfo.Amount > 0 {
-				resp, err := rpcClient.BtcCreateRawTransaction(sendInfo.FromAddress, []rpc.TransactionOutputItem{{sendInfo.ToAddress, sendInfo.Amount}}, sendInfo.MinerFee, 0, nil)
+				resp, err := rpcClient.BtcCreateRawTransaction(sendInfo.FromAddress, []bean.TransactionOutputItem{{sendInfo.ToAddress, sendInfo.Amount}}, sendInfo.MinerFee, 0, nil)
 				if err != nil {
 					data = err.Error()
 				} else {

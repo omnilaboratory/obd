@@ -8,7 +8,6 @@ import (
 	"github.com/omnilaboratory/obd/bean"
 	"github.com/omnilaboratory/obd/bean/enum"
 	"github.com/omnilaboratory/obd/dao"
-	"github.com/omnilaboratory/obd/rpc"
 	"github.com/omnilaboratory/obd/tool"
 	"github.com/tidwall/gjson"
 	"log"
@@ -211,7 +210,7 @@ func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction
 
 	//region 1、验证签名后的C2a的Rsmc和ToBob hex
 	var signedRsmcHex, aliceRsmcTxId, c2aRsmcMultiAddress, c2aRsmcRedeemScript, c2aRsmcMultiAddressScriptPubKey string
-	var c2aRsmcOutputs []rpc.TransactionInputItem
+	var c2aRsmcOutputs []bean.TransactionInputItem
 	if tool.CheckIsString(&c2aDataJson.RsmcRawData.Hex) {
 		signedRsmcHex = reqData.C2aRsmcSignedHex
 		if pass, _ := rpcClient.CheckMultiSign(true, signedRsmcHex, 2); pass == false {

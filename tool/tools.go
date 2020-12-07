@@ -13,6 +13,7 @@ import (
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/omnilaboratory/obd/bean/enum"
 	"github.com/omnilaboratory/obd/config"
+	"github.com/shopspring/decimal"
 	"golang.org/x/crypto/ripemd160"
 	"io"
 	"log"
@@ -206,4 +207,9 @@ func GetCoreNet() *chaincfg.Params {
 		net = &chaincfg.RegressionNetParams
 	}
 	return net
+}
+
+func GetBtcMinerAmount(total float64) float64 {
+	out, _ := decimal.NewFromFloat(total).Div(decimal.NewFromFloat(4.0)).Sub(decimal.NewFromFloat(config.GetOmniDustBtc())).Round(8).Float64()
+	return out
 }

@@ -11,7 +11,6 @@ import (
 	"github.com/omnilaboratory/obd/conn"
 	"github.com/omnilaboratory/obd/dao"
 	"github.com/omnilaboratory/obd/omnicore"
-	"github.com/omnilaboratory/obd/rpc"
 	"github.com/omnilaboratory/obd/tool"
 	"github.com/shopspring/decimal"
 	"log"
@@ -287,7 +286,7 @@ func checkOmniTxHex(fundingTxHexDecode string, channelInfo *dao.ChannelInfo, use
 }
 
 //从未广播的交易hash数据中解析出他的输出，以此作为下个交易的输入
-func getInputsForNextTxByParseTxHashVout(hex string, toAddress, scriptPubKey, redeemScript string) (inputs []rpc.TransactionInputItem, err error) {
+func getInputsForNextTxByParseTxHashVout(hex string, toAddress, scriptPubKey, redeemScript string) (inputs []bean.TransactionInputItem, err error) {
 	result, err := rpcClient.DecodeRawTransaction(hex)
 	if err != nil {
 		return nil, err
@@ -295,13 +294,13 @@ func getInputsForNextTxByParseTxHashVout(hex string, toAddress, scriptPubKey, re
 	jsonHex := gjson.Parse(result)
 	//log.Println(jsonHex)
 	if jsonHex.Get("vout").IsArray() {
-		inputs = make([]rpc.TransactionInputItem, 0, 0)
+		inputs = make([]bean.TransactionInputItem, 0, 0)
 		for _, item := range jsonHex.Get("vout").Array() {
 			if item.Get("scriptPubKey").Get("addresses").Exists() {
 				addresses := item.Get("scriptPubKey").Get("addresses").Array()
 				for _, address := range addresses {
 					if address.String() == toAddress {
-						node := rpc.TransactionInputItem{}
+						node := bean.TransactionInputItem{}
 						node.Txid = jsonHex.Get("txid").String()
 						node.ScriptPubKey = scriptPubKey
 						node.RedeemScript = redeemScript
@@ -596,7 +595,7 @@ func GetBtcMinerFundMiniAmount() float64 {
 }
 
 func getBtcMinerAmount(total float64) float64 {
-	return rpc.GetBtcMinerAmount(total)
+	return tool.GetBtcMinerAmount(total)
 }
 
 func checkChannelOmniAssetAmount(channelInfo dao.ChannelInfo) (bool, error) {

@@ -10,7 +10,6 @@ import (
 	"github.com/omnilaboratory/obd/conn"
 	"github.com/omnilaboratory/obd/dao"
 	"github.com/omnilaboratory/obd/omnicore"
-	"github.com/omnilaboratory/obd/rpc"
 	"github.com/omnilaboratory/obd/tool"
 	"github.com/tidwall/gjson"
 	"log"
@@ -185,14 +184,14 @@ func (service *fundingTransactionManager) BtcFundingCreated(msg bean.RequestMess
 		// 创建一个btc赎回交易 ，alice首先签名
 		needAliceSignData, err = rpcClient.BtcCreateRawTransactionForUnsendInputTx(
 			channelInfo.ChannelAddress,
-			[]rpc.TransactionInputItem{
+			[]bean.TransactionInputItem{
 				{
 					Txid:         fundingBtcRequest.TxId,
 					Vout:         vout,
 					Amount:       amount,
 					ScriptPubKey: channelInfo.ChannelAddressScriptPubKey},
 			},
-			[]rpc.TransactionOutputItem{
+			[]bean.TransactionOutputItem{
 				{
 					ToBitCoinAddress: redeemToAddress,
 					Amount:           fundingBtcRequest.Amount},
@@ -232,14 +231,14 @@ func (service *fundingTransactionManager) BtcFundingCreated(msg bean.RequestMess
 		if len(minerFeeRedeemTransaction.Txid) == 0 {
 			needAliceSignData, err = rpcClient.BtcCreateRawTransactionForUnsendInputTx(
 				channelInfo.ChannelAddress,
-				[]rpc.TransactionInputItem{
+				[]bean.TransactionInputItem{
 					{
 						Txid:         fundingBtcRequest.TxId,
 						Vout:         vout,
 						Amount:       amount,
 						ScriptPubKey: channelInfo.ChannelAddressScriptPubKey},
 				},
-				[]rpc.TransactionOutputItem{
+				[]bean.TransactionOutputItem{
 					{
 						ToBitCoinAddress: redeemToAddress,
 						Amount:           fundingBtcRequest.Amount},

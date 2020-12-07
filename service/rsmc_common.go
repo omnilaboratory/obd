@@ -9,7 +9,6 @@ import (
 	"github.com/omnilaboratory/obd/bean/enum"
 	"github.com/omnilaboratory/obd/dao"
 	"github.com/omnilaboratory/obd/omnicore"
-	"github.com/omnilaboratory/obd/rpc"
 	"github.com/tidwall/gjson"
 	"log"
 	"time"
@@ -17,7 +16,7 @@ import (
 
 //创建RawBR
 func createCurrCommitmentTxRawBR(tx storm.Node, brType dao.BRType, channelInfo *dao.ChannelInfo,
-	commitmentTx *dao.CommitmentTransaction, inputs []rpc.TransactionInputItem,
+	commitmentTx *dao.CommitmentTransaction, inputs []bean.TransactionInputItem,
 	outputAddress string, user bean.User) (retMap map[string]interface{}, err error) {
 	if len(inputs) == 0 {
 		return nil, nil
@@ -80,7 +79,7 @@ func createCurrCommitmentTxRawBR(tx storm.Node, brType dao.BRType, channelInfo *
 }
 
 func createCurrCommitmentTxPartialSignedBR(tx storm.Node, brType dao.BRType, channelInfo *dao.ChannelInfo,
-	commitmentTx *dao.CommitmentTransaction, inputs []rpc.TransactionInputItem,
+	commitmentTx *dao.CommitmentTransaction, inputs []bean.TransactionInputItem,
 	outputAddress string, brHex string, user bean.User) (err error) {
 	if len(inputs) == 0 {
 		return nil
@@ -112,7 +111,7 @@ func createCurrCommitmentTxPartialSignedBR(tx storm.Node, brType dao.BRType, cha
 }
 
 //创建RawBR obj
-func createRawBR(brType dao.BRType, channelInfo *dao.ChannelInfo, commitmentTx *dao.CommitmentTransaction, inputs []rpc.TransactionInputItem,
+func createRawBR(brType dao.BRType, channelInfo *dao.ChannelInfo, commitmentTx *dao.CommitmentTransaction, inputs []bean.TransactionInputItem,
 	outputAddress string, user bean.User) (retMap bean.NeedClientSignTxData, err error) {
 	if len(inputs) == 0 {
 		return retMap, errors.New("empty inputs")
