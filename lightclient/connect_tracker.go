@@ -2,14 +2,12 @@ package lightclient
 
 import (
 	"encoding/json"
-	"errors"
 	"github.com/asdine/storm"
 	"github.com/asdine/storm/q"
 	"github.com/gorilla/websocket"
 	"github.com/omnilaboratory/obd/bean"
 	"github.com/omnilaboratory/obd/bean/enum"
 	"github.com/omnilaboratory/obd/config"
-	"github.com/omnilaboratory/obd/conn"
 	"github.com/omnilaboratory/obd/dao"
 	"github.com/omnilaboratory/obd/service"
 	"github.com/omnilaboratory/obd/tool"
@@ -40,10 +38,6 @@ func ConnectToTracker(isInit bool) (err error) {
 		service.TrackerChan = make(chan []byte)
 	}
 
-	nodeId := conn2tracker.CheckChainTypeByTracker()
-	if nodeId == 0 {
-		return errors.New("fail to login tracker")
-	}
 	if isReset {
 		if isInit == false {
 			SynData()

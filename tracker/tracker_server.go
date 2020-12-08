@@ -61,8 +61,8 @@ func main() {
 		WriteTimeout:   cfg.WriteTimeout,
 		MaxHeaderBytes: 1 << 20,
 	}
-	service.Start(service.ChannelService.BtcChainType)
+	service.Start(cfg.ChainNode_Type)
 
-	log.Println("tracker " + tool.GetTrackerNodeId() + " start at port: " + strconv.Itoa(cfg.TrackerServerPort) + " in " + service.ChannelService.BtcChainType)
+	log.Println("tracker " + tool.GetTrackerNodeId() + " start at port: " + strconv.Itoa(cfg.TrackerServerPort) + " in " + cfg.ChainNode_Type)
 	log.Fatal(server.ListenAndServe())
 }

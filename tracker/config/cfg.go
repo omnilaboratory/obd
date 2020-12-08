@@ -3,6 +3,7 @@ package cfg
 import (
 	"flag"
 	"log"
+	"strings"
 	"testing"
 	"time"
 
@@ -29,8 +30,13 @@ func init() {
 
 	Cfg, err := ini.Load(*configPath)
 	if err != nil {
-		log.Println(err)
-		return
+		if strings.Contains(err.Error(), "open tracker/config/conf.ini") {
+			Cfg, err = ini.Load("config/conf.ini")
+			if err != nil {
+				log.Println(err)
+				return
+			}
+		}
 	}
 
 	section, err := Cfg.GetSection("server")

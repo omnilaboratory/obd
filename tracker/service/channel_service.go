@@ -16,8 +16,7 @@ import (
 )
 
 type channelManager struct {
-	mu           sync.Mutex
-	BtcChainType string
+	mu sync.Mutex
 }
 
 var ChannelService channelManager

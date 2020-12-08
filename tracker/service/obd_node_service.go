@@ -36,45 +36,6 @@ type obdNodeAccountManager struct {
 
 var NodeAccountService obdNodeAccountManager
 
-func (this *obdNodeAccountManager) InitNodeAndCheckChainType(context *gin.Context) {
-	nodeId := context.Query("nodeId")
-	chainType := context.Query("chainType")
-	if tool.CheckIsString(&nodeId) == false {
-		context.JSON(http.StatusInternalServerError, gin.H{
-			"msg": "error nodeId",
-		})
-		return
-	}
-	if tool.CheckIsString(&chainType) == false {
-		context.JSON(http.StatusInternalServerError, gin.H{
-			"msg": "error chainType",
-		})
-		return
-	}
-	if chainType != ChannelService.BtcChainType {
-		context.JSON(http.StatusInternalServerError, gin.H{
-			"msg": "wrong chainType",
-		})
-		return
-	}
-
-	info := &dao.ObdNodeInfo{}
-	_ = db.Select(q.Eq("NodeId", nodeId)).First(info)
-	info.LatestLoginAt = time.Now()
-	info.IsOnline = true
-	if info.Id == 0 {
-		info.NodeId = nodeId
-		_ = db.Save(info)
-	} else {
-		_ = db.Update(info)
-	}
-	retData := make(map[string]interface{})
-	retData["id"] = info.Id
-	context.JSON(http.StatusOK, gin.H{
-		"data": retData,
-	})
-}
-
 func (this *obdNodeAccountManager) login(obdClient *ObdNode, msgData string) (retData interface{}, err error) {
 	reqData := &bean.ObdNodeLoginRequest{}
 	err = json.Unmarshal([]byte(msgData), reqData)

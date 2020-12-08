@@ -8,6 +8,7 @@ import (
 	"github.com/omnilaboratory/obd/bean/enum"
 	"github.com/omnilaboratory/obd/tool"
 	"github.com/omnilaboratory/obd/tracker/bean"
+	"github.com/omnilaboratory/obd/tracker/config"
 	"github.com/tidwall/gjson"
 	"log"
 	"strings"
@@ -163,7 +164,7 @@ func (endManager *obdNodeManager) TrackerStart() {
 		case newConn := <-endManager.Connected:
 			endManager.ClientsMap[newConn] = true
 			endManager.ObdNodeMap[newConn.Id] = newConn
-			newConn.sendMsgBackToSender(enum.MsgType_Tracker_Connect_301, true, ChannelService.BtcChainType)
+			newConn.sendMsgBackToSender(enum.MsgType_Tracker_Connect_301, true, cfg.ChainNode_Type)
 		case currConn := <-endManager.Disconnected:
 			if _, ok := endManager.ClientsMap[currConn]; ok {
 				currConn.sendMsgBackToSender(enum.MsgType_Tracker_Connect_301, true, "disconnect from server successfully")

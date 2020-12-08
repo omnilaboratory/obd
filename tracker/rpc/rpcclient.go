@@ -5,8 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/omnilaboratory/obd/bean"
-	"github.com/omnilaboratory/obd/config"
 	"github.com/omnilaboratory/obd/tracker/config"
 	"github.com/tidwall/gjson"
 	"io/ioutil"
@@ -101,21 +99,18 @@ func (client *Client) CheckVersion() error {
 	if err != nil {
 		return err
 	}
-	config.ChainNode_Type = gjson.Get(result, "chain").Str
-
-	bean.CurrObdNodeInfo.ChainNetworkType = config.ChainNode_Type
+	cfg.ChainNode_Type = gjson.Get(result, "chain").Str
 
 	result, err = client.OmniGetInfo()
 	if err != nil {
 		return err
 	}
 
-	bean.CurrObdNodeInfo.OmniCoreVersion = gjson.Get(result, "omnicoreversion").String()
-	bean.CurrObdNodeInfo.BtcCoreVersion = gjson.Get(result, "bitcoincoreversion").String()
-	log.Println("omniCoreVersion: "+bean.CurrObdNodeInfo.OmniCoreVersion+",", "bitcoinCoreVersion: "+bean.CurrObdNodeInfo.BtcCoreVersion)
-	bitcoinCoreVersion := bean.CurrObdNodeInfo.BtcCoreVersion
+	omniCoreVersion := gjson.Get(result, "omnicoreversion").String()
+	btcCoreVersion := gjson.Get(result, "bitcoincoreversion").String()
+	log.Println("omniCoreVersion: "+omniCoreVersion+",", "bitcoinCoreVersion: "+btcCoreVersion)
 
-	infoes := strings.Split(bitcoinCoreVersion, ".")
+	infoes := strings.Split(btcCoreVersion, ".")
 	tempInt, _ := strconv.Atoi(infoes[0])
 	if tempInt >= 0 {
 		return nil
@@ -125,7 +120,7 @@ func (client *Client) CheckVersion() error {
 		return nil
 	}
 
-	return errors.New("error bitcoinCore version " + gjson.Get(result, "bitcoincoreversion").String())
+	return errors.New("error bitcoinCore version " + btcCoreVersion)
 }
 
 func (client *Client) send(method string, params []interface{}) (result string, err error) {

@@ -24,7 +24,7 @@ var (
 	P2P_sourcePort = 4001
 )
 
-func init() {
+func Init() {
 	testing.Init()
 	flag.Parse()
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)

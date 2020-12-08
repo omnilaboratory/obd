@@ -42,8 +42,8 @@ func initObdLog() {
 // gox -os "windows linux darwin" -arch amd64
 // gox -os "linux" -arch amd64
 func main() {
+	config.Init()
 	initObdLog()
-
 	//tracker
 	err := lightclient.ConnectToTracker(true)
 	if err != nil {
