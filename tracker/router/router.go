@@ -35,6 +35,7 @@ func InitRouter() *gin.Engine {
 
 	apiv3 := router.Group("/api/rpc/")
 	{
+		apiv3.GET("getChainNodeType", service.RpcService.GetChainNodeType)
 		apiv3.GET("getBlockCount", service.RpcService.GetBlockCount)
 		apiv3.GET("getOmniBalance", service.RpcService.GetOmniBalance)
 		apiv3.GET("getBalanceByAddress", service.RpcService.GetBalanceByAddress)

@@ -8,6 +8,7 @@ import (
 	"github.com/omnilaboratory/obd/bean"
 	"github.com/omnilaboratory/obd/bean/enum"
 	"github.com/omnilaboratory/obd/config"
+	"github.com/omnilaboratory/obd/conn"
 	"github.com/omnilaboratory/obd/dao"
 	"github.com/omnilaboratory/obd/service"
 	"github.com/omnilaboratory/obd/tool"
@@ -23,7 +24,7 @@ import (
 var conn *websocket.Conn
 var ticker3m *time.Ticker
 
-func ConnectToTracker(isInit bool) (err error) {
+func ConnectToTracker() (err error) {
 
 	u := url.URL{Scheme: "ws", Host: config.TrackerHost, Path: "/ws"}
 	log.Printf("begin to connect to tracker: %s", u.String())
@@ -34,14 +35,17 @@ func ConnectToTracker(isInit bool) (err error) {
 		return err
 	}
 
+	result, err := conn2tracker.GetChainNodeType()
+	if err != nil {
+		return err
+	}
+	config.ChainNode_Type = result
+
 	if service.TrackerChan == nil {
 		service.TrackerChan = make(chan []byte)
 	}
 
 	if isReset {
-		if isInit == false {
-			SynData()
-		}
 		go readDataFromWs()
 	}
 
@@ -102,6 +106,7 @@ func readDataFromWs() {
 					htlcTrackerDealModule(requestMessage)
 				case enum.MsgType_Tracker_Connect_301:
 					config.ChainNode_Type = replyMessage.Result.(string)
+					go SynData()
 				}
 			}
 		}
@@ -307,7 +312,7 @@ func sendMsgToTracker(msg []byte) {
 	//log.Println("send to tracker", string(msg))
 	if conn == nil {
 		isReset = true
-		err := ConnectToTracker(false)
+		err := ConnectToTracker()
 		if err != nil {
 			log.Println(err)
 			return
@@ -338,7 +343,7 @@ func startSchedule() {
 			case t := <-ticker3m.C:
 				if conn == nil {
 					log.Println("reconnect tracker ", t)
-					_ = ConnectToTracker(false)
+					_ = ConnectToTracker()
 				}
 			}
 		}

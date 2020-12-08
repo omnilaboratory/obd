@@ -4,6 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/omnilaboratory/obd/tool"
 	"github.com/omnilaboratory/obd/tracker/bean"
+	"github.com/omnilaboratory/obd/tracker/config"
 	"github.com/omnilaboratory/obd/tracker/rpc"
 	"github.com/tidwall/gjson"
 	"net/http"
@@ -583,5 +584,12 @@ func (manager *rpcManager) GetNetworkInfo(context *gin.Context) {
 	context.JSON(http.StatusOK, gin.H{
 		"msg":  msg,
 		"data": result,
+	})
+}
+
+func (manager *rpcManager) GetChainNodeType(context *gin.Context) {
+	context.JSON(http.StatusOK, gin.H{
+		"msg":  "",
+		"data": cfg.ChainNode_Type,
 	})
 }

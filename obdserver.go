@@ -45,7 +45,7 @@ func main() {
 	config.Init()
 	initObdLog()
 	//tracker
-	err := lightclient.ConnectToTracker(true)
+	err := lightclient.ConnectToTracker()
 	if err != nil {
 		log.Println(err)
 		log.Println("because fail to connect to tracker, obd fail to start")
@@ -72,13 +72,10 @@ func main() {
 
 	service.Start()
 
-	//synData to tracker
-	go lightclient.SynData()
-
 	// Timer
 	service.ScheduleService.StartSchedule()
 
-	log.Println("obd " + tool.GetObdNodeId() + " start  in " + config.ChainNode_Type)
+	log.Println("obd " + tool.GetObdNodeId() + " start in " + config.ChainNode_Type)
 	log.Println("wsAddress: " + bean.CurrObdNodeInfo.WebsocketLink)
 	log.Fatal(server.ListenAndServe())
 }
