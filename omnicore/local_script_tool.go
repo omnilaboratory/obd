@@ -10,13 +10,13 @@ import (
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
 	"github.com/omnilaboratory/obd/bean"
-	"github.com/omnilaboratory/obd/config"
 	"github.com/omnilaboratory/obd/conn"
 	"github.com/omnilaboratory/obd/tool"
 	"github.com/shopspring/decimal"
 	"github.com/tidwall/gjson"
 	"log"
 	"strconv"
+	"strings"
 )
 
 func VerifyOmniTxHex(hex string, propertyId int64, amount float64, toAddress string, propertyDivisible bool) (pass bool, err error) {
@@ -35,7 +35,7 @@ func VerifyOmniTxHex(hex string, propertyId int64, amount float64, toAddress str
 		}
 
 		value := item.Get("value").Float()
-		if value <= config.GetOmniDustBtc() {
+		if value <= tool.GetOmniDustBtc() {
 			addresses := item.Get("scriptPubKey").Get("addresses").Array()
 			for _, address := range addresses {
 				if address.Str == toAddress {
@@ -65,7 +65,7 @@ func VerifyOmniTxHexOutAddress(hex string, toAddress string) (pass bool, err err
 	for _, item := range vouts {
 
 		value := item.Get("value").Float()
-		if value <= config.GetOmniDustBtc() {
+		if value <= tool.GetOmniDustBtc() {
 			addresses := item.Get("scriptPubKey").Get("addresses").Array()
 			for _, address := range addresses {
 				if address.Str == toAddress {
@@ -205,4 +205,35 @@ func GetMinerFee() float64 {
 	txSize := 150 + 68 + 90
 	result, _ := decimal.NewFromFloat(float64(txSize) * price).Div(decimal.NewFromFloat(100000000)).Round(8).Float64()
 	return result
+}
+
+func GetTxId(hex string) string {
+	testResult, err := DecodeBtcRawTransaction(hex)
+	if err == nil {
+		return gjson.Parse(testResult).Get("txid").Str
+	}
+	return ""
+}
+
+func CheckMultiSign(hex string, step int) (pass bool, err error) {
+	if len(hex) == 0 {
+		return false, errors.New("Empty hex")
+	}
+	result, err := DecodeBtcRawTransaction(hex)
+	vins := gjson.Get(result, "vin").Array()
+	for i := 0; i < len(vins); i++ {
+		asm := vins[i].Get("scriptSig").Get("asm").Str
+		asmArr := strings.Split(asm, " ")
+		if step == 1 {
+			if len(asmArr) != 4 || (asmArr[1] == "0" && asmArr[2] == "0") {
+				return false, errors.New("err sign")
+			}
+		}
+		if step == 2 {
+			if len(asmArr) != 4 || asmArr[1] == "0" || asmArr[2] == "0" {
+				return false, errors.New("err sign")
+			}
+		}
+	}
+	return true, nil
 }

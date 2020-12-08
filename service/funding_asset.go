@@ -245,8 +245,7 @@ func (service *fundingTransactionManager) AssetFundingCreated(msg bean.RequestMe
 		commitmentTxInfo.RSMCTempAddressIndex = reqData.TempAddressIndex
 
 		if commitmentTxInfo.AmountToRSMC > 0 {
-			c1aTxData, usedTxid, err = rpcClient.OmniCreateRawTransactionUseSingleInput(
-				int(commitmentTxInfo.TxType),
+			c1aTxData, usedTxid, err = omnicore.OmniCreateRawTransactionUseSingleInput(
 				unspent,
 				channelInfo.ChannelAddress,
 				commitmentTxInfo.RSMCMultiAddress,
@@ -288,8 +287,7 @@ func (service *fundingTransactionManager) AssetFundingCreated(msg bean.RequestMe
 		// 如果没有完成alice对C1a的签名
 		if len(commitmentTxInfo.RSMCTxid) == 0 {
 			if commitmentTxInfo.AmountToRSMC > 0 {
-				c1aTxData, usedTxid, err = rpcClient.OmniCreateRawTransactionUseSingleInput(
-					int(commitmentTxInfo.TxType),
+				c1aTxData, usedTxid, err = omnicore.OmniCreateRawTransactionUseSingleInput(
 					unspent,
 					channelInfo.ChannelAddress,
 					commitmentTxInfo.RSMCMultiAddress,
@@ -307,7 +305,7 @@ func (service *fundingTransactionManager) AssetFundingCreated(msg bean.RequestMe
 			}
 		} else {
 			var inputs []map[string]interface{}
-			node, err := rpcClient.GetInputInfo(channelInfo.ChannelAddress, commitmentTxInfo.RsmcInputTxid, channelInfo.ChannelAddressRedeemScript)
+			node, err := omnicore.GetInputInfo(channelInfo.ChannelAddress, commitmentTxInfo.RsmcInputTxid, channelInfo.ChannelAddressRedeemScript)
 			if err != nil {
 				return nil, false, err
 			}
@@ -365,7 +363,7 @@ func (service *fundingTransactionManager) OnAliceSignC1a(msg bean.RequestMessage
 		return nil, errors.New(enum.Tips_common_wrong + "hex")
 	}
 
-	_, err = rpcClient.CheckMultiSign(true, hex, 1)
+	_, err = omnicore.CheckMultiSign(hex, 1)
 	if err != nil {
 		return nil, err
 	}
@@ -633,7 +631,7 @@ func (service *fundingTransactionManager) AssetFundingSigned(jsonData string, si
 		return nil, errors.New(enum.Tips_common_empty + "signed_alice_rsmc_hex")
 	}
 
-	_, err = rpcClient.CheckMultiSign(true, reqData.SignedAliceRsmcHex, 2)
+	_, err = omnicore.CheckMultiSign(reqData.SignedAliceRsmcHex, 2)
 	if err != nil {
 		return nil, err
 	}
@@ -746,7 +744,7 @@ func (service *fundingTransactionManager) AssetFundingSigned(jsonData string, si
 		outputAddress = channelInfo.AddressB
 	}
 
-	aliceRdHexDataMap, err := rpcClient.OmniCreateRawTransactionUseUnsendInput(
+	aliceRdHexDataMap, err := omnicore.OmniCreateRawTransactionUseUnsendInput(
 		aliceRsmcMultiAddress,
 		inputs,
 		outputAddress,
@@ -846,7 +844,7 @@ func (service *fundingTransactionManager) OnBobSignedRDAndBR(data string, user *
 	if tool.CheckIsString(&rdSignedHex) == false {
 		return nil, nil, errors.New(enum.Tips_common_wrong + " rd_signed_hex")
 	}
-	_, err = rpcClient.CheckMultiSign(false, rdSignedHex, 1)
+	_, err = omnicore.CheckMultiSign(rdSignedHex, 1)
 	if err != nil {
 		return nil, nil, errors.New(enum.Tips_common_wrong + "rd_signed_hex")
 	}
@@ -856,7 +854,7 @@ func (service *fundingTransactionManager) OnBobSignedRDAndBR(data string, user *
 		return nil, nil, errors.New(enum.Tips_common_wrong + " br_signed_hex")
 	}
 
-	_, err = rpcClient.CheckMultiSign(false, brSignedHex, 1)
+	_, err = omnicore.CheckMultiSign(brSignedHex, 1)
 	if err != nil {
 		return nil, nil, errors.New(enum.Tips_common_wrong + "br_signed_hex")
 	}
@@ -975,7 +973,7 @@ func (service *fundingTransactionManager) OnAliceSignedRdAtAliceSide(data string
 	channelId := signedRD.ChannelId
 
 	signedRdHex := signedRD.RdSignedHex
-	_, err = rpcClient.CheckMultiSign(false, signedRdHex, 2)
+	_, err = omnicore.CheckMultiSign(signedRdHex, 2)
 	if err != nil {
 		return nil, errors.New(enum.Tips_common_wrong + "rd_signed_hex")
 	}
@@ -1036,7 +1034,7 @@ func (service *fundingTransactionManager) OnAliceSignedRdAtAliceSide(data string
 		return nil, err
 	}
 
-	commitmentTxInfo.RSMCTxid = rpcClient.GetTxId(rsmcSignedHex)
+	commitmentTxInfo.RSMCTxid = omnicore.GetTxId(rsmcSignedHex)
 	commitmentTxInfo.RSMCTxHex = rsmcSignedHex
 
 	commitmentTxInfo.CurrState = dao.TxInfoState_CreateAndSign

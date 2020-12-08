@@ -37,7 +37,7 @@ func (client *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, 
 
 		if client.User != nil {
 			data = loginRetData(*client)
-			client.sendToMyself(msg.Type, true, data)
+			client.SendToMyself(msg.Type, true, data)
 			sendType = enum.SendTargetType_SendToSomeone
 		} else {
 			user := bean.User{
@@ -58,10 +58,10 @@ func (client *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, 
 				service.OnlineUserMap[user.PeerId] = &user
 				data = loginRetData(*client)
 				status = true
-				client.sendToMyself(msg.Type, status, data)
+				client.SendToMyself(msg.Type, status, data)
 				sendType = enum.SendTargetType_SendToExceptMe
 			} else {
-				client.sendToMyself(msg.Type, status, err.Error())
+				client.SendToMyself(msg.Type, status, err.Error())
 				sendType = enum.SendTargetType_SendToSomeone
 			}
 		}
@@ -69,7 +69,7 @@ func (client *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, 
 		if client.User != nil {
 			data = client.User.PeerId + " logout"
 			status = true
-			client.sendToMyself(msg.Type, status, "logout success")
+			client.SendToMyself(msg.Type, status, "logout success")
 			if client.User != nil {
 				delete(globalWsClientManager.OnlineClientMap, client.User.PeerId)
 				delete(service.OnlineUserMap, client.User.PeerId)
@@ -77,7 +77,7 @@ func (client *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, 
 			sendType = enum.SendTargetType_SendToExceptMe
 			client.User = nil
 		} else {
-			client.sendToMyself(msg.Type, status, "please login")
+			client.SendToMyself(msg.Type, status, "please login")
 			sendType = enum.SendTargetType_SendToSomeone
 		}
 	case enum.MsgType_p2p_ConnectPeer_2003:
@@ -93,7 +93,7 @@ func (client *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, 
 				data = localP2PAddress
 			}
 		}
-		client.sendToMyself(msg.Type, status, data)
+		client.SendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_GetObdNodeInfo_2005:
 		bytes, err := json.Marshal(bean.CurrObdNodeInfo)
@@ -103,20 +103,20 @@ func (client *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, 
 			status = true
 			data = string(bytes)
 		}
-		client.sendToMyself(msg.Type, true, data)
+		client.SendToMyself(msg.Type, true, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_GetMiniBtcFundAmount_2006:
 		fee := service.GetBtcMinerFundMiniAmount()
 		data = tool.FloatToString(fee, 8)
-		client.sendToMyself(msg.Type, true, data)
+		client.SendToMyself(msg.Type, true, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_HeartBeat_2007:
-		client.sendToMyself(msg.Type, true, data)
+		client.SendToMyself(msg.Type, true, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	// Process GetMnemonic
 	case enum.MsgType_GetMnemonic_2004:
 		if client.User != nil { // The user already login.
-			client.sendToMyself(msg.Type, true, "already login")
+			client.SendToMyself(msg.Type, true, "already login")
 			sendType = enum.SendTargetType_SendToSomeone
 		} else {
 			// get Mnemonic
@@ -127,7 +127,7 @@ func (client *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, 
 			} else {
 				data = err.Error()
 			}
-			client.sendToMyself(msg.Type, status, data)
+			client.SendToMyself(msg.Type, status, data)
 			sendType = enum.SendTargetType_SendToSomeone
 		}
 	}

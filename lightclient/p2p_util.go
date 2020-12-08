@@ -17,11 +17,8 @@ import (
 	"github.com/omnilaboratory/obd/config"
 	"github.com/omnilaboratory/obd/service"
 	"github.com/omnilaboratory/obd/tool"
-	"github.com/tidwall/gjson"
-	"io/ioutil"
 	"log"
 	"math/rand"
-	"net/http"
 	"strings"
 )
 
@@ -195,19 +192,4 @@ func sendP2PMsg(remoteP2PPeerId string, msg string) error {
 		_ = channel.rw.Flush()
 	}
 	return nil
-}
-
-func httpGetNodeInfoByP2pAddressFromTracker(p2pAddress string) (id int) {
-	url := "http://" + config.TrackerHost + "/api/v1/getNodeInfoByP2pAddress?p2pAddress=" + p2pAddress
-	log.Println(url)
-	resp, err := http.Get(url)
-	if err != nil {
-		return 0
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode == 200 {
-		body, _ := ioutil.ReadAll(resp.Body)
-		return int(gjson.Get(string(body), "data").Get("id").Int())
-	}
-	return 0
 }

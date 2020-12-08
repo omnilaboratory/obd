@@ -4,9 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/omnilaboratory/obd/bean"
-	"github.com/omnilaboratory/obd/config"
-	"github.com/omnilaboratory/obd/conn"
-	"github.com/omnilaboratory/obd/omnicore"
 	"github.com/omnilaboratory/obd/tool"
 	"github.com/shopspring/decimal"
 	"github.com/tidwall/gjson"
@@ -151,115 +148,6 @@ func (client *Client) GetAddressInfo(address string) (result string, err error) 
 
 func (client *Client) ImportPrivKey(privkey string) (result string, err error) {
 	return client.send("importprivkey", []interface{}{privkey, "", false})
-}
-
-// create a raw transaction and no sign , not send to the network,get the hash of signature
-func (client *Client) BtcCreateRawTransaction(fromBitCoinAddress string, outputItems []bean.TransactionOutputItem, minerFee float64, sequence int, redeemScript *string) (retMap map[string]interface{}, err error) {
-	if tool.CheckIsAddress(fromBitCoinAddress) == false {
-		return nil, errors.New("fromBitCoinAddress is empty")
-	}
-	if len(outputItems) < 1 {
-		return nil, errors.New("toBitCoinAddress is empty")
-	}
-
-	if minerFee <= 0 {
-		minerFee = omnicore.GetMinerFee()
-	}
-
-	outTotalAmount := decimal.NewFromFloat(0)
-	for _, item := range outputItems {
-		outTotalAmount = outTotalAmount.Add(decimal.NewFromFloat(item.Amount))
-	}
-
-	if outTotalAmount.LessThan(decimal.NewFromFloat(config.GetOmniDustBtc())) {
-		return nil, errors.New("wrong outTotalAmount")
-	}
-
-	if minerFee < config.GetOmniDustBtc() {
-		return nil, errors.New("minerFee too small")
-	}
-
-	result := conn2tracker.ListUnspent(fromBitCoinAddress)
-	array := gjson.Parse(result).Array()
-	if len(array) == 0 {
-		return nil, errors.New("empty balance")
-	}
-
-	out, _ := outTotalAmount.Round(8).Float64()
-
-	balance := 0.0
-	inputs := make([]map[string]interface{}, 0)
-	for _, item := range array {
-		node := make(map[string]interface{})
-		node["txid"] = item.Get("txid").String()
-		node["vout"] = item.Get("vout").Int()
-		node["amount"] = item.Get("amount").Float()
-		if redeemScript != nil {
-			node["redeemScript"] = *redeemScript
-		} else {
-			if item.Get("redeemScript").Exists() {
-				node["redeemScript"] = item.Get("redeemScript")
-			}
-		}
-		if sequence > 0 {
-			node["sequence"] = sequence
-		}
-		node["scriptPubKey"] = item.Get("scriptPubKey").String()
-		inputs = append(inputs, node)
-		balance, _ = decimal.NewFromFloat(balance).Add(decimal.NewFromFloat(item.Get("amount").Float())).Round(8).Float64()
-		if balance > out {
-			break
-		}
-	}
-
-	if len(inputs) == 0 || balance < out {
-		return nil, errors.New("not enough balance")
-	}
-
-	minerFeeAndOut, _ := decimal.NewFromFloat(minerFee).Add(outTotalAmount).Round(8).Float64()
-
-	subMinerFee := 0.0
-	if balance <= minerFeeAndOut {
-		needLessFee, _ := decimal.NewFromFloat(minerFeeAndOut).Sub(decimal.NewFromFloat(balance)).Round(8).Float64()
-		if needLessFee > 0 {
-			var outTotalCount = 0
-			for _, item := range outputItems {
-				if item.Amount > 0 {
-					outTotalCount++
-				}
-			}
-			if outTotalCount > 0 {
-				count, _ := decimal.NewFromString(strconv.Itoa(outTotalCount))
-				subMinerFee, _ = decimal.NewFromFloat(minerFee).DivRound(count, 8).Float64()
-			}
-		}
-	}
-
-	drawback, _ := decimal.NewFromFloat(balance).Sub(decimal.NewFromFloat(minerFeeAndOut)).Round(8).Float64()
-	output := make(map[string]interface{})
-	for _, item := range outputItems {
-		if item.Amount > 0 {
-			output[item.ToBitCoinAddress], _ = decimal.NewFromFloat(item.Amount).Sub(decimal.NewFromFloat(subMinerFee)).Round(8).Float64()
-		}
-	}
-	if drawback > 0 {
-		output[fromBitCoinAddress] = drawback
-	}
-
-	dataToTracker := make(map[string]interface{})
-	dataToTracker["inputs"] = inputs
-	dataToTracker["outputs"] = output
-	bytes, err := json.Marshal(dataToTracker)
-	hex := conn2tracker.CreateRawTransaction(string(bytes))
-	if hex == "" {
-		return nil, errors.New("error createRawTransaction")
-	}
-
-	retMap = make(map[string]interface{})
-	retMap["hex"] = hex
-	retMap["inputs"] = inputs
-	retMap["total_in_amount"] = balance
-	return retMap, nil
 }
 
 type NeedSignData struct {

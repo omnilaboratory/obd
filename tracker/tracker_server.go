@@ -2,10 +2,10 @@ package main
 
 import (
 	"github.com/lestrrat-go/file-rotatelogs"
-	"github.com/omnilaboratory/obd/config"
-	"github.com/omnilaboratory/obd/rpc"
 	"github.com/omnilaboratory/obd/tool"
-	"github.com/omnilaboratory/obd/tracker"
+	"github.com/omnilaboratory/obd/tracker/config"
+	"github.com/omnilaboratory/obd/tracker/router"
+	"github.com/omnilaboratory/obd/tracker/rpc"
 	"github.com/omnilaboratory/obd/tracker/service"
 	"io"
 	"log"
@@ -48,21 +48,21 @@ func main() {
 		return
 	}
 
-	routersInit := tracker.InitRouter()
+	routersInit := router.InitRouter()
 	if routersInit == nil {
 		log.Println("fail to start tracker")
 		return
 	}
-	addr := ":" + strconv.Itoa(config.TrackerServerPort)
+	addr := ":" + strconv.Itoa(cfg.TrackerServerPort)
 	server := &http.Server{
 		Addr:           addr,
 		Handler:        routersInit,
-		ReadTimeout:    config.ReadTimeout,
-		WriteTimeout:   config.WriteTimeout,
+		ReadTimeout:    cfg.ReadTimeout,
+		WriteTimeout:   cfg.WriteTimeout,
 		MaxHeaderBytes: 1 << 20,
 	}
 	service.Start(service.ChannelService.BtcChainType)
 
-	log.Println("tracker " + tool.GetTrackerNodeId() + " start at port: " + strconv.Itoa(config.TrackerServerPort) + " in " + service.ChannelService.BtcChainType)
+	log.Println("tracker " + tool.GetTrackerNodeId() + " start at port: " + strconv.Itoa(cfg.TrackerServerPort) + " in " + service.ChannelService.BtcChainType)
 	log.Fatal(server.ListenAndServe())
 }

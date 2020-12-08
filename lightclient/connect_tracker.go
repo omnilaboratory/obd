@@ -9,14 +9,13 @@ import (
 	"github.com/omnilaboratory/obd/bean"
 	"github.com/omnilaboratory/obd/bean/enum"
 	"github.com/omnilaboratory/obd/config"
+	"github.com/omnilaboratory/obd/conn"
 	"github.com/omnilaboratory/obd/dao"
 	"github.com/omnilaboratory/obd/service"
 	"github.com/omnilaboratory/obd/tool"
 	trackerBean "github.com/omnilaboratory/obd/tracker/bean"
-	"github.com/tidwall/gjson"
 	"io/ioutil"
 	"log"
-	"net/http"
 	"net/url"
 	"reflect"
 	"strings"
@@ -41,7 +40,7 @@ func ConnectToTracker(isInit bool) (err error) {
 		service.TrackerChan = make(chan []byte)
 	}
 
-	nodeId := httpCheckChainTypeByTracker()
+	nodeId := conn2tracker.CheckChainTypeByTracker()
 	if nodeId == 0 {
 		return errors.New("fail to login tracker")
 	}
@@ -142,21 +141,6 @@ func SynData() {
 	updateP2pAddressLogin()
 	sycUserInfos()
 	sycChannelInfos()
-}
-
-func httpCheckChainTypeByTracker() (nodeId int) {
-	bean.CurrObdNodeInfo.TrackerNodeId = tool.GetObdNodeId()
-	url := "http://" + config.TrackerHost + "/api/v1/checkChainType?nodeId=" + tool.GetObdNodeId() + "&chainType=" + config.ChainNode_Type
-	resp, err := http.Get(url)
-	if err != nil {
-		return 0
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode == 200 {
-		body, _ := ioutil.ReadAll(resp.Body)
-		return int(gjson.Get(string(body), "data").Get("id").Int())
-	}
-	return 0
 }
 
 func updateP2pAddressLogin() {

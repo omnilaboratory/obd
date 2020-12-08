@@ -13,6 +13,7 @@ import (
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/omnilaboratory/obd/bean/enum"
 	"github.com/omnilaboratory/obd/config"
+	"github.com/omnilaboratory/obd/tracker/config"
 	"github.com/shopspring/decimal"
 	"golang.org/x/crypto/ripemd160"
 	"io"
@@ -191,7 +192,7 @@ func GetObdNodeId() string {
 
 // get tracker node id
 func GetTrackerNodeId() string {
-	source := GetMacAddrs() + ":" + strconv.Itoa(config.TrackerServerPort)
+	source := GetMacAddrs() + ":" + strconv.Itoa(cfg.TrackerServerPort)
 	return SignMsgWithSha256([]byte(source))
 }
 
@@ -210,6 +211,14 @@ func GetCoreNet() *chaincfg.Params {
 }
 
 func GetBtcMinerAmount(total float64) float64 {
-	out, _ := decimal.NewFromFloat(total).Div(decimal.NewFromFloat(4.0)).Sub(decimal.NewFromFloat(config.GetOmniDustBtc())).Round(8).Float64()
+	out, _ := decimal.NewFromFloat(total).Div(decimal.NewFromFloat(4.0)).Sub(decimal.NewFromFloat(GetOmniDustBtc())).Round(8).Float64()
 	return out
+}
+
+func GetHtlcFee() float64 {
+	return 0.00001
+}
+
+func GetOmniDustBtc() float64 {
+	return 0.00000546
 }

@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"github.com/omnilaboratory/obd/bean"
 	"github.com/omnilaboratory/obd/config"
-	"github.com/omnilaboratory/obd/omnicore"
+	"github.com/omnilaboratory/obd/tracker/config"
 	"github.com/tidwall/gjson"
 	"io/ioutil"
 	"log"
@@ -21,9 +21,9 @@ var connConfig *ConnConfig
 
 func init() {
 	connConfig = &ConnConfig{
-		Host: config.ChainNode_Host,
-		User: config.ChainNode_User,
-		Pass: config.ChainNode_Pass,
+		Host: cfg.ChainNode_Host,
+		User: cfg.ChainNode_User,
+		Pass: cfg.ChainNode_Pass,
 	}
 }
 
@@ -194,35 +194,4 @@ func (client *Client) send(method string, params []interface{}) (result string, 
 		return "", err
 	}
 	return gjson.Parse(string(res)).String(), nil
-}
-
-func (client *Client) CheckMultiSign(sendedInput bool, hex string, step int) (pass bool, err error) {
-	if len(hex) == 0 {
-		return false, errors.New("Empty hex")
-	}
-	result, err := omnicore.DecodeBtcRawTransaction(hex)
-	vins := gjson.Get(result, "vin").Array()
-	for i := 0; i < len(vins); i++ {
-		asm := vins[i].Get("scriptSig").Get("asm").Str
-		asmArr := strings.Split(asm, " ")
-		if step == 1 {
-			if len(asmArr) != 4 || (asmArr[1] == "0" && asmArr[2] == "0") {
-				return false, errors.New("err sign")
-			}
-		}
-		if step == 2 {
-			if len(asmArr) != 4 || asmArr[1] == "0" || asmArr[2] == "0" {
-				return false, errors.New("err sign")
-			}
-		}
-	}
-	return true, nil
-}
-
-func (client *Client) GetTxId(hex string) string {
-	testResult, err := omnicore.DecodeBtcRawTransaction(hex)
-	if err == nil {
-		return gjson.Parse(testResult).Get("txid").Str
-	}
-	return ""
 }

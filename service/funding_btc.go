@@ -325,12 +325,12 @@ func (service *fundingTransactionManager) OnAliceSignBtcFundingMinerFeeRedeemTx(
 		return nil, "", errors.New("not found the temp data, please send -100340 again")
 	}
 
-	_, err = rpcClient.CheckMultiSign(false, hex, 1)
+	_, err = omnicore.CheckMultiSign(hex, 1)
 	if err != nil {
 		return nil, "", err
 	}
 
-	txid := rpcClient.GetTxId(hex)
+	txid := omnicore.GetTxId(hex)
 	if len(txid) == 0 {
 		return nil, "", errors.New("fail to test the hex")
 	}
@@ -549,7 +549,7 @@ func (service *fundingTransactionManager) FundingBtcTxSigned(msg bean.RequestMes
 			return nil, "", err
 		}
 
-		_, err = rpcClient.CheckMultiSign(false, reqData.SignedMinerRedeemTransactionHex, 2)
+		_, err = omnicore.CheckMultiSign(reqData.SignedMinerRedeemTransactionHex, 2)
 		if err != nil {
 			return nil, "", err
 		}
@@ -773,7 +773,7 @@ func checkHexOutputAddressFromOmniDecode(hexDecode string, toAddress string) str
 	if err != nil {
 		return ""
 	}
-	return rpcClient.GetTxId(hexDecode)
+	return omnicore.GetTxId(hexDecode)
 }
 
 func (service *fundingTransactionManager) BtcFundingAllItem(user bean.User) (node []dao.FundingBtcRequest, err error) {

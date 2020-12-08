@@ -7,7 +7,6 @@ import (
 	"github.com/omnilaboratory/obd/bean/enum"
 	"github.com/omnilaboratory/obd/conn"
 	"github.com/omnilaboratory/obd/dao"
-	"github.com/omnilaboratory/obd/rpc"
 	"github.com/omnilaboratory/obd/tool"
 	"log"
 	"time"
@@ -21,7 +20,6 @@ func Start() {
 	if err != nil {
 		log.Println(err)
 	}
-	rpcClient = rpc.NewClient()
 }
 
 func addRDTxToWaitDB(lastRevocableDeliveryTx *dao.RevocableDeliveryTransaction) (err error) {

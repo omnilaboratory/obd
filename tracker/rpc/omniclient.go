@@ -2,8 +2,6 @@ package rpc
 
 import (
 	"errors"
-	"github.com/omnilaboratory/obd/bean"
-	"github.com/omnilaboratory/obd/omnicore"
 	"github.com/omnilaboratory/obd/tool"
 	"github.com/shopspring/decimal"
 	"github.com/tidwall/gjson"
@@ -188,32 +186,4 @@ func (client *Client) omniCreateRawtxChange(rawtx string, prevtxs []map[string]i
 }
 func (client *Client) omniCreateRawtxReference(rawtx string, destination string) (result string, err error) {
 	return client.send("omni_createrawtx_reference", []interface{}{rawtx, destination})
-}
-
-func (client *Client) OmniSignRawTransactionForUnsend(hex string, inputItems []bean.TransactionInputItem, privKey string) (string, string, error) {
-
-	var inputs []map[string]interface{}
-	var items []bean.RawTxInputItem
-
-	for _, item := range inputItems {
-		node := make(map[string]interface{})
-		node["txid"] = item.Txid
-		node["vout"] = item.Vout
-		node["amount"] = item.Amount
-		node["scriptPubKey"] = item.ScriptPubKey
-		node["redeemScript"] = item.RedeemScript
-
-		inputItem := bean.RawTxInputItem{}
-		inputItem.ScriptPubKey = item.ScriptPubKey
-		inputItem.RedeemScript = item.RedeemScript
-		items = append(items, inputItem)
-
-		inputs = append(inputs, node)
-	}
-	hex, err := omnicore.SignRawHex(items, hex, privKey)
-	if err != nil {
-		return "", hex, err
-	}
-
-	return client.GetTxId(hex), hex, nil
 }

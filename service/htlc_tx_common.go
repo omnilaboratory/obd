@@ -134,7 +134,7 @@ func createHT1aForAlice(channelInfo dao.ChannelInfo, aliceDataJson bean.CreateHt
 		return nil, err
 	}
 	aliceHt1aMultiAddress := gjson.Get(aliceHt1aMultiAddr, "address").String()
-	aliceHt1aTxData, err := rpcClient.OmniCreateRawTransactionUseUnsendInput(
+	aliceHt1aTxData, err := omnicore.OmniCreateRawTransactionUseUnsendInput(
 		aliceHtlcMultiAddress,
 		htlcInputs,
 		aliceHt1aMultiAddress,
@@ -180,7 +180,7 @@ func saveHT1aForAlice(tx storm.Node, channelInfo dao.ChannelInfo, commitmentTran
 	}
 	htlcTimeoutTx.InputTxid = payerHt1aInputsFromHtlc[0].Txid
 
-	htlcTimeoutTx.RSMCTxid = rpcClient.GetTxId(signedHtlaHex)
+	htlcTimeoutTx.RSMCTxid = omnicore.GetTxId(signedHtlaHex)
 	htlcTimeoutTx.RSMCTxHex = signedHtlaHex
 	htlcTimeoutTx.SignAt = time.Now()
 	htlcTimeoutTx.CurrState = dao.TxInfoState_CreateAndSign
@@ -214,7 +214,7 @@ func createHtlcLockByHForBobAtPayeeSide(channelInfo dao.ChannelInfo, aliceDataJs
 		return nil, err
 	}
 	htlcLockByHMultiAddress := gjson.Get(htlcLockByHMultiAddr, "address").String()
-	hlockHexData, err := rpcClient.OmniCreateRawTransactionUseUnsendInput(
+	hlockHexData, err := omnicore.OmniCreateRawTransactionUseUnsendInput(
 		aliceHtlcMultiAddress,
 		htlcInputs,
 		htlcLockByHMultiAddress,
@@ -262,7 +262,7 @@ func saveHtlcLockByHTxAtPayerSide(tx storm.Node, channelInfo dao.ChannelInfo,
 		return nil, err
 	}
 
-	hlockTx.Txid = rpcClient.GetTxId(signedHLockHex)
+	hlockTx.Txid = omnicore.GetTxId(signedHLockHex)
 	hlockTx.TxHex = signedHLockHex
 	hlockTx.CreateAt = time.Now()
 	hlockTx.CurrState = dao.TxInfoState_Create
@@ -304,7 +304,7 @@ func saveHtlcHeTxForPayee(tx storm.Node, channelInfo dao.ChannelInfo, commitment
 		log.Println(err)
 		return nil, err
 	}
-	c3bHeTx, err := rpcClient.OmniCreateRawTransactionUseUnsendInput(
+	c3bHeTx, err := omnicore.OmniCreateRawTransactionUseUnsendInput(
 		c3bHlockMultiAddress,
 		c3bHlocOutputs,
 		c3bHeMultiAddress,
@@ -364,7 +364,7 @@ func updateHtlcHeTxForPayee(tx storm.Node, channelInfo dao.ChannelInfo, commitme
 	if he1b.Id == 0 {
 		return errors.New("Not found he1b in the database")
 	}
-	he1b.RSMCTxid = rpcClient.GetTxId(signedHex)
+	he1b.RSMCTxid = omnicore.GetTxId(signedHex)
 	he1b.RSMCTxHex = signedHex
 	he1b.CurrState = dao.TxInfoState_Create
 	err = tx.Update(he1b)
@@ -397,7 +397,7 @@ func createHtlcLockByHForBobAtPayerSide(channelInfo dao.ChannelInfo, bobDataJson
 		return txData, err
 	}
 	htlcLockByHMultiAddress := gjson.Get(htlcLockByHMultiAddr, "address").String()
-	hlockTx, err := rpcClient.OmniCreateRawTransactionUseUnsendInput(
+	hlockTx, err := omnicore.OmniCreateRawTransactionUseUnsendInput(
 		bobHtlcMultiAddress,
 		htlcInputs,
 		htlcLockByHMultiAddress,
@@ -437,7 +437,7 @@ func saveHtlcLockByHForBobAtPayeeSide(tx storm.Node, channelInfo dao.ChannelInfo
 		return nil, err
 	}
 
-	hlock.Txid = rpcClient.GetTxId(signedHLockHex)
+	hlock.Txid = omnicore.GetTxId(signedHLockHex)
 	hlock.TxHex = signedHLockHex
 	hlock.CreateAt = time.Now()
 	hlock.CurrState = dao.TxInfoState_Create
@@ -485,7 +485,7 @@ func saveHtRD1a(tx storm.Node, aliceHt1aRDhex string, latestCommitmentTransactio
 			log.Println(err)
 			return nil, err
 		}
-		htrd.Txid = rpcClient.GetTxId(aliceHt1aRDhex)
+		htrd.Txid = omnicore.GetTxId(aliceHt1aRDhex)
 		htrd.TxHex = aliceHt1aRDhex
 		htrd.SignAt = time.Now()
 		htrd.CurrState = dao.TxInfoState_CreateAndSign

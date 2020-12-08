@@ -37,7 +37,7 @@ func createCurrCommitmentTxRawBR(tx storm.Node, brType dao.BRType, channelInfo *
 			return nil, err
 		}
 		if breachRemedyTransaction.Amount > 0 {
-			retMap, err = rpcClient.OmniCreateRawTransactionUseUnsendInput(
+			retMap, err = omnicore.OmniCreateRawTransactionUseUnsendInput(
 				commitmentTx.RSMCMultiAddress,
 				inputs,
 				outputAddress,
@@ -58,7 +58,7 @@ func createCurrCommitmentTxRawBR(tx storm.Node, brType dao.BRType, channelInfo *
 			retMap["br_id"] = breachRemedyTransaction.Id
 		}
 	} else {
-		retMap, err = rpcClient.OmniCreateRawTransactionUseUnsendInput(
+		retMap, err = omnicore.OmniCreateRawTransactionUseUnsendInput(
 			commitmentTx.RSMCMultiAddress,
 			inputs,
 			outputAddress,
@@ -102,7 +102,7 @@ func createCurrCommitmentTxPartialSignedBR(tx storm.Node, brType dao.BRType, cha
 		if breachRemedyTransaction.Amount > 0 {
 			breachRemedyTransaction.OutAddress = outputAddress
 			breachRemedyTransaction.BrTxHex = brHex
-			breachRemedyTransaction.Txid = rpcClient.GetTxId(brHex)
+			breachRemedyTransaction.Txid = omnicore.GetTxId(brHex)
 			breachRemedyTransaction.CurrState = dao.TxInfoState_Create
 			_ = tx.Save(breachRemedyTransaction)
 		}
@@ -123,7 +123,7 @@ func createRawBR(brType dao.BRType, channelInfo *dao.ChannelInfo, commitmentTx *
 		return retMap, err
 	}
 	if breachRemedyTransaction.Amount > 0 {
-		brTxData, err := rpcClient.OmniCreateRawTransactionUseUnsendInput(
+		brTxData, err := omnicore.OmniCreateRawTransactionUseUnsendInput(
 			commitmentTx.RSMCMultiAddress,
 			inputs,
 			outputAddress,
@@ -221,7 +221,7 @@ func signLastBR(tx storm.Node, brType dao.BRType, channelInfo dao.ChannelInfo, u
 			return nil
 		}
 
-		signedBRTxid, signedBRHex, err := rpcClient.OmniSignRawTransactionForUnsend(lastBreachRemedyTransaction.BrTxHex, inputs, lastTempAddressPrivateKey)
+		signedBRTxid, signedBRHex, err := omnicore.OmniSignRawTransactionForUnsend(lastBreachRemedyTransaction.BrTxHex, inputs, lastTempAddressPrivateKey)
 		if err != nil {
 			return errors.New(fmt.Sprintf(enum.Tips_common_failToSign, "breachRemedyTransaction"))
 		}

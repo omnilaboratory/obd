@@ -60,7 +60,7 @@ func (client *Client) Read() {
 		err = json.Unmarshal(dataReq, &temp)
 		if err != nil {
 			log.Println(err)
-			client.sendToMyself(enum.MsgType_Error_0, false, "error json format")
+			client.SendToMyself(enum.MsgType_Error_0, false, "error json format")
 			continue
 		}
 		temp = nil
@@ -68,7 +68,7 @@ func (client *Client) Read() {
 		jsonParse := gjson.Parse(string(dataReq))
 		if jsonParse.Value() == nil || jsonParse.Exists() == false || jsonParse.IsObject() == false {
 			log.Println("wrong json input")
-			client.sendToMyself(enum.MsgType_Error_0, false, "wrong json input")
+			client.SendToMyself(enum.MsgType_Error_0, false, "wrong json input")
 			continue
 		}
 
@@ -76,7 +76,7 @@ func (client *Client) Read() {
 		if enum.CheckExist(msg.Type) == false {
 			data := "not exist the msg type"
 			log.Println(data)
-			client.sendToMyself(msg.Type, false, data)
+			client.SendToMyself(msg.Type, false, data)
 			continue
 		}
 
@@ -94,7 +94,7 @@ func (client *Client) Read() {
 			_, err = findUserOnLine(msg)
 			if err != nil {
 				if tool.CheckIsString(&msg.RecipientNodePeerId) == false {
-					client.sendToMyself(msg.Type, false, fmt.Sprintf(enum.Tips_user_notExistOrOnline, msg.RecipientUserPeerId))
+					client.SendToMyself(msg.Type, false, fmt.Sprintf(enum.Tips_user_notExistOrOnline, msg.RecipientUserPeerId))
 					continue
 				}
 			}
@@ -127,7 +127,7 @@ func (client *Client) Read() {
 		if needLogin {
 			//not login
 			if client.User == nil {
-				client.sendToMyself(msg.Type, false, "please login")
+				client.SendToMyself(msg.Type, false, "please login")
 				continue
 			} else { // already login
 
@@ -154,20 +154,20 @@ func (client *Client) Read() {
 					msg.Type == enum.MsgType_HTLC_Close_SendCloseSigned_50 ||
 					msg.Type == enum.MsgType_Atomic_SendSwap_80 || msg.Type == enum.MsgType_Atomic_SendSwapAccept_81 {
 					if tool.CheckIsString(&msg.RecipientUserPeerId) == false {
-						client.sendToMyself(msg.Type, false, enum.Tips_common_empty+" recipient_user_peer_id")
+						client.SendToMyself(msg.Type, false, enum.Tips_common_empty+" recipient_user_peer_id")
 						continue
 					}
 					if tool.CheckIsString(&msg.RecipientNodePeerId) == false {
-						client.sendToMyself(msg.Type, false, enum.Tips_common_empty+"error recipient_node_peer_id")
+						client.SendToMyself(msg.Type, false, enum.Tips_common_empty+"error recipient_node_peer_id")
 						continue
 					}
 					if p2pChannelMap[msg.RecipientNodePeerId] == nil {
-						client.sendToMyself(msg.Type, false, fmt.Sprintf(enum.Tips_common_errorObdPeerId, msg.RecipientNodePeerId))
+						client.SendToMyself(msg.Type, false, fmt.Sprintf(enum.Tips_common_errorObdPeerId, msg.RecipientNodePeerId))
 						continue
 					}
 
 					if _, err = findUserOnLine(msg); err != nil {
-						client.sendToMyself(msg.Type, false, err.Error())
+						client.SendToMyself(msg.Type, false, err.Error())
 						continue
 					}
 				}
@@ -284,7 +284,7 @@ func (client *Client) Read() {
 		if status == false && len(dataOut) == 0 && sendType == enum.SendTargetType_SendToNone {
 			data := "the msg type has no module"
 			log.Println(data)
-			client.sendToMyself(msg.Type, false, data)
+			client.SendToMyself(msg.Type, false, data)
 			continue
 		}
 
@@ -352,7 +352,7 @@ func getP2PReplyObj(data string, msgType enum.MsgType, status bool, fromId, toCl
 	return jsonMessage
 }
 
-func (client *Client) sendToMyself(msgType enum.MsgType, status bool, data string) {
+func (client *Client) SendToMyself(msgType enum.MsgType, status bool, data string) {
 	jsonMessage := getReplyObj(data, msgType, status, client, client)
 	client.SendChannel <- jsonMessage
 }

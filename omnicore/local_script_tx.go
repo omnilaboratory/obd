@@ -22,7 +22,7 @@ func BtcCreateRawTransactionForUnsendInputTx(fromBitCoinAddress string, inputIte
 		return nil, errors.New("toBitCoinAddress is empty")
 	}
 
-	if minerFee <= config.GetOmniDustBtc() {
+	if minerFee <= tool.GetOmniDustBtc() {
 		minerFee = GetMinerFee()
 	}
 
@@ -31,11 +31,11 @@ func BtcCreateRawTransactionForUnsendInputTx(fromBitCoinAddress string, inputIte
 		outAmount = outAmount.Add(decimal.NewFromFloat(item.Amount))
 	}
 
-	if outAmount.LessThan(decimal.NewFromFloat(config.GetOmniDustBtc())) {
+	if outAmount.LessThan(decimal.NewFromFloat(tool.GetOmniDustBtc())) {
 		return nil, errors.New("wrong outAmount")
 	}
 
-	if minerFee < config.GetOmniDustBtc() {
+	if minerFee < tool.GetOmniDustBtc() {
 		return nil, errors.New("minerFee too small")
 	}
 
@@ -138,11 +138,11 @@ func BtcCreateRawTransaction(fromBitCoinAddress string, outputItems []bean.Trans
 		outTotalAmount = outTotalAmount.Add(decimal.NewFromFloat(item.Amount))
 	}
 
-	if outTotalAmount.LessThan(decimal.NewFromFloat(config.GetOmniDustBtc())) {
+	if outTotalAmount.LessThan(decimal.NewFromFloat(tool.GetOmniDustBtc())) {
 		return nil, errors.New("wrong outTotalAmount")
 	}
 
-	if minerFee < config.GetOmniDustBtc() {
+	if minerFee < tool.GetOmniDustBtc() {
 		return nil, errors.New("minerFee too small")
 	}
 
@@ -230,18 +230,18 @@ func BtcCreateRawTransaction(fromBitCoinAddress string, outputItems []bean.Trans
 }
 
 // From channelAddress to temp multi address, to Create CommitmentTx
-func OmniCreateRawTransactionUseSingleInput(txType int, resultListUnspent string, fromBitCoinAddress string, toBitCoinAddress string, propertyId int64, amount float64, minerFee float64, sequence int, redeemScript *string, usedTxid string) (retMap map[string]interface{}, currUseTxid string, err error) {
+func OmniCreateRawTransactionUseSingleInput(resultListUnspent string, fromBitCoinAddress string, toBitCoinAddress string, propertyId int64, amount float64, minerFee float64, sequence int, redeemScript *string, usedTxid string) (retMap map[string]interface{}, currUseTxid string, err error) {
 	if tool.CheckIsAddress(fromBitCoinAddress) == false {
 		return nil, "", errors.New("fromBitCoinAddress is empty")
 	}
 	if tool.CheckIsAddress(toBitCoinAddress) == false {
 		return nil, "", errors.New("toBitCoinAddress is empty")
 	}
-	if amount < config.GetOmniDustBtc() {
+	if amount < tool.GetOmniDustBtc() {
 		return nil, "", errors.New("wrong amount")
 	}
 
-	pMoney := config.GetOmniDustBtc()
+	pMoney := tool.GetOmniDustBtc()
 
 	arrayListUnspent := gjson.Parse(resultListUnspent).Array()
 
@@ -299,11 +299,11 @@ func OmniCreateRawTransactionUseRestInput(txType int, resultListUnspent string, 
 	if tool.CheckIsAddress(toBitCoinAddress) == false {
 		return nil, errors.New("toBitCoinAddress is empty")
 	}
-	if amount < config.GetOmniDustBtc() {
+	if amount < tool.GetOmniDustBtc() {
 		return nil, errors.New("wrong amount")
 	}
 
-	pMoney := config.GetOmniDustBtc()
+	pMoney := tool.GetOmniDustBtc()
 
 	arrayListUnspent := gjson.Parse(resultListUnspent).Array()
 	inputs := make([]map[string]interface{}, 0, 0)
@@ -356,10 +356,10 @@ func OmniCreateRawTransactionUseUnsendInput(fromBitCoinAddress string, inputItem
 		return nil, errors.New("inputItems is empty")
 	}
 
-	if amount < config.GetOmniDustBtc() {
+	if amount < tool.GetOmniDustBtc() {
 		return nil, errors.New("wrong amount")
 	}
-	pMoney := config.GetOmniDustBtc()
+	pMoney := tool.GetOmniDustBtc()
 
 	inputs := make([]map[string]interface{}, 0, 0)
 	for _, item := range inputItems {
@@ -426,7 +426,7 @@ func OmniCreateRawTransaction(fromBitCoinAddress string, toBitCoinAddress string
 	if tool.CheckIsAddress(toBitCoinAddress) == false {
 		return nil, errors.New("toBitCoinAddress is empty")
 	}
-	if amount < config.GetOmniDustBtc() {
+	if amount < tool.GetOmniDustBtc() {
 		return nil, errors.New("wrong amount")
 	}
 
@@ -435,8 +435,8 @@ func OmniCreateRawTransaction(fromBitCoinAddress string, toBitCoinAddress string
 		return nil, err
 	}
 
-	pMoney := config.GetOmniDustBtc()
-	if minerFee < config.GetOmniDustBtc() {
+	pMoney := tool.GetOmniDustBtc()
+	if minerFee < tool.GetOmniDustBtc() {
 		minerFee = 0.00003
 	}
 
@@ -528,4 +528,32 @@ func createOmniRawTransaction(balance, out, amount, minerFee float64, propertyId
 	retMap["hex"] = TxToHex(change)
 	retMap["inputs"] = inputs
 	return retMap, nil
+}
+
+func OmniSignRawTransactionForUnsend(hex string, inputItems []bean.TransactionInputItem, privKey string) (string, string, error) {
+
+	var inputs []map[string]interface{}
+	var items []bean.RawTxInputItem
+
+	for _, item := range inputItems {
+		node := make(map[string]interface{})
+		node["txid"] = item.Txid
+		node["vout"] = item.Vout
+		node["amount"] = item.Amount
+		node["scriptPubKey"] = item.ScriptPubKey
+		node["redeemScript"] = item.RedeemScript
+
+		inputItem := bean.RawTxInputItem{}
+		inputItem.ScriptPubKey = item.ScriptPubKey
+		inputItem.RedeemScript = item.RedeemScript
+		items = append(items, inputItem)
+
+		inputs = append(inputs, node)
+	}
+	hex, err := SignRawHex(items, hex, privKey)
+	if err != nil {
+		return "", hex, err
+	}
+
+	return GetTxId(hex), hex, nil
 }

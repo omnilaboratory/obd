@@ -38,7 +38,7 @@ func (client *Client) commitmentTxModule(msg bean.RequestMessage) (enum.SendTarg
 			}
 		}
 		msg.Type = enum.MsgType_CommitmentTx_SendCommitmentTransactionCreated_351
-		client.sendToMyself(msg.Type, status, data)
+		client.SendToMyself(msg.Type, status, data)
 	case enum.MsgType_ClientSign_CommitmentTx_AliceSignC2a_360:
 		toAlice, retData, err := service.CommitmentTxService.OnAliceSignC2aRawTxAtAliceSide(msg, client.User)
 		if err != nil {
@@ -73,7 +73,7 @@ func (client *Client) commitmentTxModule(msg bean.RequestMessage) (enum.SendTarg
 		}
 
 		msg.Type = enum.MsgType_ClientSign_CommitmentTx_AliceSignC2a_360
-		client.sendToMyself(msg.Type, status, data)
+		client.SendToMyself(msg.Type, status, data)
 	case enum.MsgType_CommitmentTx_ItemsByChanId_3200:
 		nodes, count, err := service.CommitmentTxService.GetItemsByChannelId(msg.Data, client.User)
 		if err != nil {
@@ -91,7 +91,7 @@ func (client *Client) commitmentTxModule(msg bean.RequestMessage) (enum.SendTarg
 				status = true
 			}
 		}
-		client.sendToMyself(msg.Type, status, data)
+		client.SendToMyself(msg.Type, status, data)
 	case enum.MsgType_CommitmentTx_ItemById_3201:
 		id, err := strconv.Atoi(msg.Data)
 		if err != nil {
@@ -111,7 +111,7 @@ func (client *Client) commitmentTxModule(msg bean.RequestMessage) (enum.SendTarg
 				}
 			}
 		}
-		client.sendToMyself(msg.Type, status, data)
+		client.SendToMyself(msg.Type, status, data)
 	case enum.MsgType_CommitmentTx_Count_3202:
 		count, err := service.CommitmentTxService.TotalCount(msg.Data, *client.User)
 		if err != nil {
@@ -120,7 +120,7 @@ func (client *Client) commitmentTxModule(msg bean.RequestMessage) (enum.SendTarg
 			data = strconv.Itoa(count)
 			status = true
 		}
-		client.sendToMyself(msg.Type, status, data)
+		client.SendToMyself(msg.Type, status, data)
 	case enum.MsgType_CommitmentTx_LatestCommitmentTxByChanId_3203:
 		node, err := service.CommitmentTxService.GetLatestCommitmentTxByChannelId(msg.Data, client.User)
 		if err != nil {
@@ -134,7 +134,7 @@ func (client *Client) commitmentTxModule(msg bean.RequestMessage) (enum.SendTarg
 				status = true
 			}
 		}
-		client.sendToMyself(msg.Type, status, data)
+		client.SendToMyself(msg.Type, status, data)
 	case enum.MsgType_CommitmentTx_LatestRDByChanId_3204:
 		node, err := service.CommitmentTxService.GetLatestRDTxByChannelId(msg.Data, client.User)
 		if err != nil {
@@ -148,7 +148,7 @@ func (client *Client) commitmentTxModule(msg bean.RequestMessage) (enum.SendTarg
 				status = true
 			}
 		}
-		client.sendToMyself(msg.Type, status, data)
+		client.SendToMyself(msg.Type, status, data)
 	case enum.MsgType_CommitmentTx_LatestBRByChanId_3205:
 		node, err := service.CommitmentTxService.GetLatestBRTxByChannelId(msg.Data, client.User)
 		if err != nil {
@@ -162,7 +162,7 @@ func (client *Client) commitmentTxModule(msg bean.RequestMessage) (enum.SendTarg
 				status = true
 			}
 		}
-		client.sendToMyself(msg.Type, status, data)
+		client.SendToMyself(msg.Type, status, data)
 	case enum.MsgType_CommitmentTx_DelItemByChanId_3209:
 		err := service.CommitmentTxService.DelItemByChannelId(msg.Data, client.User)
 		if err != nil {
@@ -171,7 +171,7 @@ func (client *Client) commitmentTxModule(msg bean.RequestMessage) (enum.SendTarg
 			data = "success"
 			status = true
 		}
-		client.sendToMyself(msg.Type, status, data)
+		client.SendToMyself(msg.Type, status, data)
 	case enum.MsgType_CommitmentTx_SendSomeCommitmentById_3206:
 		node, err := service.CommitmentTxService.SendSomeCommitmentById(msg.Data, client.User)
 		if err != nil {
@@ -185,7 +185,7 @@ func (client *Client) commitmentTxModule(msg bean.RequestMessage) (enum.SendTarg
 				status = true
 			}
 		}
-		client.sendToMyself(msg.Type, status, data)
+		client.SendToMyself(msg.Type, status, data)
 	case enum.MsgType_CommitmentTx_AllRDByChanId_3207:
 		node, err := service.CommitmentTxService.GetAllRDByChannelId(msg.Data, client.User)
 		if err != nil {
@@ -199,7 +199,7 @@ func (client *Client) commitmentTxModule(msg bean.RequestMessage) (enum.SendTarg
 				status = true
 			}
 		}
-		client.sendToMyself(msg.Type, status, data)
+		client.SendToMyself(msg.Type, status, data)
 	case enum.MsgType_CommitmentTx_AllBRByChanId_3208:
 		node, err := service.CommitmentTxService.GetAllBRByChannelId(msg.Data, client.User)
 		if err != nil {
@@ -213,7 +213,7 @@ func (client *Client) commitmentTxModule(msg bean.RequestMessage) (enum.SendTarg
 				status = true
 			}
 		}
-		client.sendToMyself(msg.Type, status, data)
+		client.SendToMyself(msg.Type, status, data)
 	case enum.MsgType_ClientSign_CommitmentTx_AliceSignC2b_362:
 		node, err := service.CommitmentTxService.OnAliceSignedC2bTxAtAliceSide(msg.Data, client.User)
 		if err != nil {
@@ -227,7 +227,7 @@ func (client *Client) commitmentTxModule(msg bean.RequestMessage) (enum.SendTarg
 				status = true
 			}
 		}
-		client.sendToMyself(msg.Type, status, data)
+		client.SendToMyself(msg.Type, status, data)
 	case enum.MsgType_ClientSign_CommitmentTx_AliceSignC2b_Rd_363:
 		aliceData, bobData, _, err := service.CommitmentTxService.OnAliceSignedC2b_RDTxAtAliceSide(msg.Data, client.User)
 		if err != nil {
@@ -258,7 +258,7 @@ func (client *Client) commitmentTxModule(msg bean.RequestMessage) (enum.SendTarg
 			}
 		}
 		msg.Type = enum.MsgType_ClientSign_CommitmentTx_AliceSignC2b_Rd_363
-		client.sendToMyself(msg.Type, status, data)
+		client.SendToMyself(msg.Type, status, data)
 	}
 	return sendType, []byte(data), status
 }
@@ -291,7 +291,7 @@ func (client *Client) commitmentTxSignModule(msg bean.RequestMessage) (enum.Send
 			}
 		}
 		msg.Type = enum.MsgType_CommitmentTxSigned_SendRevokeAndAcknowledgeCommitmentTransaction_352
-		client.sendToMyself(msg.Type, status, data)
+		client.SendToMyself(msg.Type, status, data)
 
 	case enum.MsgType_ClientSign_CommitmentTx_BobSignC2b_361:
 		toBobData, retData, err := service.CommitmentTxSignedService.OnBobSignC2bTransactionAtBobSide(msg.Data, client.User)
@@ -326,7 +326,7 @@ func (client *Client) commitmentTxSignModule(msg bean.RequestMessage) (enum.Send
 			}
 		}
 		msg.Type = enum.MsgType_ClientSign_CommitmentTx_BobSignC2b_361
-		client.sendToMyself(msg.Type, status, data)
+		client.SendToMyself(msg.Type, status, data)
 	case enum.MsgType_ClientSign_CommitmentTx_BobSignC2b_Rd_364:
 		retData, err := service.CommitmentTxSignedService.BobSignC2b_RdAtBobSide(msg.Data, client.User)
 		if err != nil {
@@ -340,7 +340,7 @@ func (client *Client) commitmentTxSignModule(msg bean.RequestMessage) (enum.Send
 				status = true
 			}
 		}
-		client.sendToMyself(msg.Type, status, data)
+		client.SendToMyself(msg.Type, status, data)
 	}
 	return sendType, []byte(data), status
 }

@@ -420,7 +420,7 @@ func saveHTD1bTx(tx storm.Node, signedHtlcHex string, signedHtd1bHex string, lat
 	htlcTimeoutDeliveryTx.Timeout = htlcTimeOut
 	htlcTimeoutDeliveryTx.CreateAt = time.Now()
 
-	htlcTimeoutDeliveryTx.Txid = rpcClient.GetTxId(signedHtd1bHex)
+	htlcTimeoutDeliveryTx.Txid = omnicore.GetTxId(signedHtd1bHex)
 	htlcTimeoutDeliveryTx.TxHex = signedHtd1bHex
 	err = tx.Save(htlcTimeoutDeliveryTx)
 	if err != nil {
@@ -508,8 +508,7 @@ func createCommitmentTxHex(dbTx storm.Node, isSender bool, reqData *bean.Request
 	rawTx = dao.CommitmentTxRawTx{}
 	usedTxidTemp := ""
 	if commitmentTxInfo.AmountToRSMC > 0 {
-		rsmcTxData, usedTxid, err := rpcClient.OmniCreateRawTransactionUseSingleInput(
-			int(commitmentTxInfo.TxType),
+		rsmcTxData, usedTxid, err := omnicore.OmniCreateRawTransactionUseSingleInput(
 			listUnspent,
 			channelInfo.ChannelAddress,
 			commitmentTxInfo.RSMCMultiAddress,
@@ -537,7 +536,7 @@ func createCommitmentTxHex(dbTx storm.Node, isSender bool, reqData *bean.Request
 
 	//create to Counterparty tx
 	if commitmentTxInfo.AmountToCounterparty > 0 {
-		toBobTxData, err := rpcClient.OmniCreateRawTransactionUseRestInput(
+		toBobTxData, err := omnicore.OmniCreateRawTransactionUseRestInput(
 			int(commitmentTxInfo.TxType),
 			listUnspent,
 			channelInfo.ChannelAddress,
@@ -590,7 +589,7 @@ func createCommitmentTxHex(dbTx storm.Node, isSender bool, reqData *bean.Request
 }
 
 func GetBtcMinerFundMiniAmount() float64 {
-	out, _ := decimal.NewFromFloat(omnicore.GetMinerFee()).Add(decimal.NewFromFloat(2 * config.GetOmniDustBtc())).Mul(decimal.NewFromFloat(4.0)).Round(8).Float64()
+	out, _ := decimal.NewFromFloat(omnicore.GetMinerFee()).Add(decimal.NewFromFloat(2 * tool.GetOmniDustBtc())).Mul(decimal.NewFromFloat(4.0)).Round(8).Float64()
 	return out
 }
 

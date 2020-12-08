@@ -214,7 +214,7 @@ func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction
 	var c2aRsmcOutputs []bean.TransactionInputItem
 	if tool.CheckIsString(&c2aDataJson.RsmcRawData.Hex) {
 		signedRsmcHex = reqData.C2aRsmcSignedHex
-		if pass, _ := rpcClient.CheckMultiSign(true, signedRsmcHex, 2); pass == false {
+		if pass, _ := omnicore.CheckMultiSign(signedRsmcHex, 2); pass == false {
 			return nil, false, errors.New(fmt.Sprintf(enum.Tips_common_failToSign, "c2a_rsmc_signed_hex"))
 		}
 
@@ -222,7 +222,7 @@ func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction
 			return nil, false, errors.New(fmt.Sprintf(enum.Tips_common_failToSign, "c2a_rsmc_signed_hex"))
 		}
 
-		aliceRsmcTxId = rpcClient.GetTxId(signedRsmcHex)
+		aliceRsmcTxId = omnicore.GetTxId(signedRsmcHex)
 
 		// region 根据alice的临时地址+bob的通道address,获取alice2+bob的多签地址，并得到AliceSignedRsmcHex签名后的交易的input，为创建alice的RD和bob的BR做准备
 		c2aRsmcMultiAddr, err := omnicore.CreateMultiSig(2, []string{c2aDataJson.CurrTempAddressPubKey, currNodeChannelPubKey})
@@ -245,7 +245,7 @@ func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction
 	// region 2、签名 ToCounterpartyTxHex
 	signedToCounterpartyTxHex := reqData.C2aCounterpartySignedHex
 	if tool.CheckIsString(&c2aDataJson.CounterpartyRawData.Hex) {
-		if pass, _ := rpcClient.CheckMultiSign(true, signedToCounterpartyTxHex, 2); pass == false {
+		if pass, _ := omnicore.CheckMultiSign(signedToCounterpartyTxHex, 2); pass == false {
 			return nil, false, errors.New(fmt.Sprintf(enum.Tips_common_failToSign, "to_counterparty_tx_hex"))
 		}
 
@@ -348,7 +348,7 @@ func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction
 		c2aRdOutputAddress = channelInfo.AddressB
 	}
 	if len(c2aRsmcOutputs) > 0 {
-		c2aRdTx, err := rpcClient.OmniCreateRawTransactionUseUnsendInput(
+		c2aRdTx, err := omnicore.OmniCreateRawTransactionUseUnsendInput(
 			c2aRsmcMultiAddress,
 			c2aRsmcOutputs,
 			c2aRdOutputAddress,
@@ -469,7 +469,7 @@ func (this *commitmentTxSignedManager) OnBobSignC2bTransactionAtBobSide(data str
 	}
 
 	if tool.CheckIsString(&p2pData.C2bRsmcTxData.Hex) {
-		if pass, _ := rpcClient.CheckMultiSign(true, signedDataForC2b.C2bRsmcSignedHex, 1); pass == false {
+		if pass, _ := omnicore.CheckMultiSign(signedDataForC2b.C2bRsmcSignedHex, 1); pass == false {
 			err = errors.New(enum.Tips_common_wrong + "signed c2b_rsmc_signed_hex")
 			log.Println(err)
 			return nil, nil, err
@@ -477,7 +477,7 @@ func (this *commitmentTxSignedManager) OnBobSignC2bTransactionAtBobSide(data str
 	}
 
 	if tool.CheckIsString(&p2pData.C2bCounterpartyTxData.Hex) {
-		if pass, _ := rpcClient.CheckMultiSign(true, signedDataForC2b.C2bCounterpartySignedHex, 1); pass == false {
+		if pass, _ := omnicore.CheckMultiSign(signedDataForC2b.C2bCounterpartySignedHex, 1); pass == false {
 			err = errors.New(enum.Tips_common_wrong + "signed c2b_counterparty_signed_hex")
 			log.Println(err)
 			return nil, nil, err
@@ -485,7 +485,7 @@ func (this *commitmentTxSignedManager) OnBobSignC2bTransactionAtBobSide(data str
 	}
 
 	if tool.CheckIsString(&p2pData.C2aRdTxData.Hex) {
-		if pass, _ := rpcClient.CheckMultiSign(false, signedDataForC2b.C2aRdSignedHex, 1); pass == false {
+		if pass, _ := omnicore.CheckMultiSign(signedDataForC2b.C2aRdSignedHex, 1); pass == false {
 			err = errors.New(enum.Tips_common_wrong + "signed c2a_rd_signed_hex")
 			log.Println(err)
 			return nil, nil, err
@@ -493,7 +493,7 @@ func (this *commitmentTxSignedManager) OnBobSignC2bTransactionAtBobSide(data str
 	}
 
 	if tool.CheckIsString(&signedDataForC2b.C2aBrSignedHex) {
-		if pass, _ := rpcClient.CheckMultiSign(false, signedDataForC2b.C2aBrSignedHex, 1); pass == false {
+		if pass, _ := omnicore.CheckMultiSign(signedDataForC2b.C2aBrSignedHex, 1); pass == false {
 			err = errors.New(enum.Tips_common_wrong + "c2a_br_signed_hex")
 			log.Println(err)
 			return nil, nil, err
@@ -513,12 +513,12 @@ func (this *commitmentTxSignedManager) OnBobSignC2bTransactionAtBobSide(data str
 
 	if len(signedDataForC2b.C2bRsmcSignedHex) > 0 {
 		latestCommitmentTxInfo.RSMCTxHex = signedDataForC2b.C2bRsmcSignedHex
-		latestCommitmentTxInfo.RSMCTxid = rpcClient.GetTxId(signedDataForC2b.C2bRsmcSignedHex)
+		latestCommitmentTxInfo.RSMCTxid = omnicore.GetTxId(signedDataForC2b.C2bRsmcSignedHex)
 	}
 
 	if len(signedDataForC2b.C2bCounterpartySignedHex) > 0 {
 		latestCommitmentTxInfo.ToCounterpartyTxHex = signedDataForC2b.C2bCounterpartySignedHex
-		latestCommitmentTxInfo.ToCounterpartyTxid = rpcClient.GetTxId(signedDataForC2b.C2bCounterpartySignedHex)
+		latestCommitmentTxInfo.ToCounterpartyTxid = omnicore.GetTxId(signedDataForC2b.C2bCounterpartySignedHex)
 	}
 
 	if len(signedDataForC2b.C2aBrSignedHex) > 0 {
@@ -606,7 +606,7 @@ func (this *commitmentTxSignedManager) BobSignC2b_RdAtBobSide(data string, user 
 	}
 
 	if tool.CheckIsString(&dataFrom353.C2bRdPartialData.Hex) {
-		if pass, _ := rpcClient.CheckMultiSign(false, bobSignedRdTxForC2b.C2bRdSignedHex, 2); pass == false {
+		if pass, _ := omnicore.CheckMultiSign(bobSignedRdTxForC2b.C2bRdSignedHex, 2); pass == false {
 			err = errors.New(enum.Tips_common_wrong + "signed c2b_rd_signed_hex")
 			log.Println(err)
 			return nil, err
@@ -657,7 +657,7 @@ func (this *commitmentTxSignedManager) BobSignC2b_RdAtBobSide(data string, user 
 
 	if tool.CheckIsString(&signedRsmcHex) {
 		latestCommitmentTxInfo.RSMCTxHex = signedRsmcHex
-		latestCommitmentTxInfo.RSMCTxid = rpcClient.GetTxId(signedRsmcHex)
+		latestCommitmentTxInfo.RSMCTxid = omnicore.GetTxId(signedRsmcHex)
 		err = saveRdTx(tx, channelInfo, signedRsmcHex, c2bSignedRdHex, latestCommitmentTxInfo, myChannelAddress, user)
 		if err != nil {
 			return nil, err
@@ -666,7 +666,7 @@ func (this *commitmentTxSignedManager) BobSignC2b_RdAtBobSide(data string, user 
 
 	if tool.CheckIsString(&signedToCounterpartyTxHex) {
 		latestCommitmentTxInfo.ToCounterpartyTxHex = signedToCounterpartyTxHex
-		latestCommitmentTxInfo.ToCounterpartyTxid = rpcClient.GetTxId(signedToCounterpartyTxHex)
+		latestCommitmentTxInfo.ToCounterpartyTxid = omnicore.GetTxId(signedToCounterpartyTxHex)
 	}
 
 	latestCommitmentTxInfo.CurrState = dao.TxInfoState_CreateAndSign
