@@ -234,7 +234,7 @@ func signLastBR(tx storm.Node, brType dao.BRType, channelInfo dao.ChannelInfo, u
 	return nil
 }
 
-func checkBobRemcData(rsmcHex, toAddress string, commitmentTransaction *dao.CommitmentTransaction) error {
+func checkBobRsmcData(rsmcHex, toAddress string, commitmentTransaction *dao.CommitmentTransaction) error {
 	_, err := omnicore.VerifyOmniTxHex(rsmcHex, commitmentTransaction.PropertyId, commitmentTransaction.AmountToCounterparty, toAddress, true)
 	if err != nil {
 		return err

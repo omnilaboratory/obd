@@ -743,7 +743,7 @@ func (this *commitmentTxManager) OnAliceSignedC2b_RDTxAtAliceSide(data string, u
 		if pass, _ := omnicore.CheckMultiSign(c2bSignedRsmcHex, 2); pass == false {
 			return nil, nil, false, errors.New(enum.Tips_common_wrong + "c2b_rsmc_tx_data_hex")
 		}
-		err = checkBobRemcData(c2bSignedRsmcHex, c2bRsmcMultiAddress, latestCommitmentTxInfo)
+		err = checkBobRsmcData(c2bSignedRsmcHex, c2bRsmcMultiAddress, latestCommitmentTxInfo)
 		if err != nil {
 			return nil, nil, false, err
 		}

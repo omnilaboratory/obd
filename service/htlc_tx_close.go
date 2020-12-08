@@ -1264,7 +1264,7 @@ func (service *htlcCloseTxManager) OnAliceSignedCxbBubTx(msg bean.RequestMessage
 		if pass, _ := omnicore.CheckMultiSign(cnbSignedRsmcHex, 2); pass == false {
 			return nil, nil, errors.New(enum.Tips_common_wrong + "c4b_rsmc_tx_data_hex")
 		}
-		err = checkBobRemcData(cnbSignedRsmcHex, cnbRsmcMultiAddress, latestCommitmentTxInfo)
+		err = checkBobRsmcData(cnbSignedRsmcHex, cnbRsmcMultiAddress, latestCommitmentTxInfo)
 		if err != nil {
 			return nil, nil, err
 		}
