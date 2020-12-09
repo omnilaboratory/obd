@@ -3,7 +3,7 @@
     - [Architecture](Architecture.md) 
     - [Developers](OBD-README.md) 
     - [Features and Roadmap](features.md)
-    - [Nodes in Testnet](nodes-in-testnet.md)
+    - [Nodes and Trackers in Testnet](nodes-in-testnet.md)
     - [Communities](communities.md)
     - [Bug Bounty Program](bug-bounty-program.md)
 
