@@ -63,6 +63,6 @@ func main() {
 	}
 	service.Start(cfg.ChainNode_Type)
 
-	log.Println("tracker " + tool.GetTrackerNodeId() + " start at port: " + strconv.Itoa(cfg.TrackerServerPort) + " in " + cfg.ChainNode_Type)
+	log.Println("tracker " + service.GetTrackerNodeId() + " start at port: " + strconv.Itoa(cfg.TrackerServerPort) + " in " + cfg.ChainNode_Type)
 	log.Fatal(server.ListenAndServe())
 }

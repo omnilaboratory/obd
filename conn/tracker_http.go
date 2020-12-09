@@ -544,7 +544,6 @@ func GetNetworkInfo() (result string, err error) {
 }
 func GetChainNodeType() (result string, err error) {
 	url := "http://" + config.TrackerHost + "/api/rpc/getChainNodeType"
-	log.Println(url)
 	resp, err := http.Get(url)
 	if err != nil {
 		return "", err

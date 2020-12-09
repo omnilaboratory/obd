@@ -117,7 +117,7 @@ func (service *htlcBackwardTxManager) SendRToPreviousNodeAtBobSide(msg bean.Requ
 		return nil, err
 	}
 
-	_, err = tool.GetPubKeyFromWifAndCheck(reqData.R, latestCommitmentTxInfo.HtlcH)
+	_, err = omnicore.GetPubKeyFromWifAndCheck(reqData.R, latestCommitmentTxInfo.HtlcH)
 	if err != nil {
 		return nil, errors.New(enum.Tips_htlc_wrongRForH)
 	}
@@ -276,7 +276,7 @@ func (service *htlcBackwardTxManager) OnGetHeSubTxDataAtAliceObdAtAliceSide(msg 
 	if err != nil {
 		return nil, err
 	}
-	if _, err = tool.GetPubKeyFromWifAndCheck(dataFrom45P.R, latestCommitmentTx.HtlcH); err != nil {
+	if _, err = omnicore.GetPubKeyFromWifAndCheck(dataFrom45P.R, latestCommitmentTx.HtlcH); err != nil {
 		return nil, errors.New(enum.Tips_htlc_wrongRForH)
 	}
 	tx.Commit()

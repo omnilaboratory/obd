@@ -2,21 +2,16 @@ package tool
 
 import (
 	"crypto/md5"
-	"crypto/rand"
 	"crypto/sha256"
-	"encoding/base64"
 	"encoding/hex"
 	"errors"
 	"fmt"
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcutil"
 	"github.com/btcsuite/btcutil/base58"
-	"github.com/omnilaboratory/obd/bean/enum"
 	"github.com/omnilaboratory/obd/config"
-	"github.com/omnilaboratory/obd/tracker/config"
 	"github.com/shopspring/decimal"
 	"golang.org/x/crypto/ripemd160"
-	"io"
 	"log"
 	"net"
 	"os"
@@ -84,21 +79,7 @@ func GetAddressFromPubKey(pubKey string) (address string, err error) {
 		log.Println(err)
 		return "", errors.New("invalid pubKey")
 	}
-
-	// main MainNetParams
-	var net *chaincfg.Params
-	if strings.Contains(config.ChainNode_Type, "main") {
-		net = &chaincfg.MainNetParams
-	}
-	// test TestNet3Params
-	if strings.Contains(config.ChainNode_Type, "test") {
-		net = &chaincfg.TestNet3Params
-	}
-	// reg RegressionNetParams
-	if strings.Contains(config.ChainNode_Type, "reg") {
-		net = &chaincfg.RegressionNetParams
-	}
-
+	net := GetCoreNet()
 	netAddr, err := btcutil.NewAddressPubKey(serializedPubKey, net)
 	if err != nil {
 		log.Println(err)
@@ -108,34 +89,6 @@ func GetAddressFromPubKey(pubKey string) (address string, err error) {
 	address = netAddr.EncodeAddress()
 
 	return address, nil
-}
-
-func GetPubKeyFromWifAndCheck(privKeyHex string, pubKey string) (pubKeyFromWif string, err error) {
-	if CheckIsString(&privKeyHex) == false {
-		return "", errors.New(enum.Tips_common_empty + "private key")
-	}
-	if CheckIsString(&pubKey) == false {
-		return "", errors.New(enum.Tips_common_empty + "pubKey")
-	}
-
-	wif, err := btcutil.DecodeWIF(privKeyHex)
-	if err != nil {
-		return "", errors.New(enum.Tips_common_wrong + "private key")
-	}
-	pubKeyFromWif = hex.EncodeToString(wif.PrivKey.PubKey().SerializeCompressed())
-	if pubKeyFromWif != pubKey {
-		return "", errors.New(fmt.Sprintf(enum.Tips_rsmc_notPairPrivAndPubKey, privKeyHex, pubKey))
-	}
-	return pubKeyFromWif, nil
-}
-
-func RandBytes(size int) (string, error) {
-	arr := make([]byte, size)
-	if _, err := io.ReadFull(rand.Reader, arr); err != nil {
-		return "", err
-	}
-	log.Println(arr)
-	return base64.StdEncoding.EncodeToString(arr), nil
 }
 
 // 判断文件夹是否存在,如果不存在，则创建
@@ -188,12 +141,6 @@ func GetUserPeerId(mnemonic string) string {
 func GetObdNodeId() string {
 	source := GetMacAddrs() + ":" + strconv.Itoa(config.ServerPort)
 	return SignMsgWithSha256([]byte(source)) + config.ChainNode_Type
-}
-
-// get tracker node id
-func GetTrackerNodeId() string {
-	source := GetMacAddrs() + ":" + strconv.Itoa(cfg.TrackerServerPort)
-	return SignMsgWithSha256([]byte(source))
 }
 
 func GetCoreNet() *chaincfg.Params {

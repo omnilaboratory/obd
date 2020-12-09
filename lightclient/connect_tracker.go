@@ -31,7 +31,7 @@ func ConnectToTracker() (err error) {
 
 	conn, _, err = websocket.DefaultDialer.Dial(u.String(), nil)
 	if err != nil {
-		log.Println("error ================ fail to dial tracker:", err)
+		log.Println("fail to dial tracker:", err)
 		return err
 	}
 
@@ -137,6 +137,7 @@ func readDataFromWs() {
 }
 
 func SynData() {
+	log.Println("synData to tracker")
 	updateP2pAddressLogin()
 	sycUserInfos()
 	sycChannelInfos()

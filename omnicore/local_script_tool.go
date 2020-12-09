@@ -5,11 +5,13 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/btcsuite/btcd/txscript"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
 	"github.com/omnilaboratory/obd/bean"
+	"github.com/omnilaboratory/obd/bean/enum"
 	"github.com/omnilaboratory/obd/conn"
 	"github.com/omnilaboratory/obd/tool"
 	"github.com/shopspring/decimal"
@@ -236,4 +238,23 @@ func CheckMultiSign(hex string, step int) (pass bool, err error) {
 		}
 	}
 	return true, nil
+}
+
+func GetPubKeyFromWifAndCheck(privKeyHex string, pubKey string) (pubKeyFromWif string, err error) {
+	if tool.CheckIsString(&privKeyHex) == false {
+		return "", errors.New(enum.Tips_common_empty + "private key")
+	}
+	if tool.CheckIsString(&pubKey) == false {
+		return "", errors.New(enum.Tips_common_empty + "pubKey")
+	}
+
+	wif, err := btcutil.DecodeWIF(privKeyHex)
+	if err != nil {
+		return "", errors.New(enum.Tips_common_wrong + "private key")
+	}
+	pubKeyFromWif = hex.EncodeToString(wif.PrivKey.PubKey().SerializeCompressed())
+	if pubKeyFromWif != pubKey {
+		return "", errors.New(fmt.Sprintf(enum.Tips_rsmc_notPairPrivAndPubKey, privKeyHex, pubKey))
+	}
+	return pubKeyFromWif, nil
 }

@@ -135,6 +135,7 @@ func addHTDnxTxToWaitDB(txInfo *dao.HTLCTimeoutDeliveryTxB) (err error) {
 }
 
 func sendRdTx() {
+	log.Println("sendRdTx")
 	var nodes []dao.RDTxWaitingSend
 	err := obdGlobalDB.Select(q.Eq("IsEnable", true)).Find(&nodes)
 	if err != nil {

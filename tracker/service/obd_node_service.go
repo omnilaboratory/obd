@@ -61,7 +61,7 @@ func (this *obdNodeAccountManager) login(obdClient *ObdNode, msgData string) (re
 	}
 	obdClient.Id = reqData.NodeId
 	obdClient.IsLogin = true
-	loginLog := &dao.ObdNodeLoginLog{LoginIp: obdClient.Socket.RemoteAddr().String(), LoginTime: time.Now()}
+	loginLog := &dao.ObdNodeLoginLog{ObdId: reqData.NodeId, LoginIp: obdClient.Socket.RemoteAddr().String(), LoginTime: time.Now()}
 	_ = db.Save(loginLog)
 
 	retData = "login successfully"

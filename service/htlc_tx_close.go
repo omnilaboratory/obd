@@ -134,11 +134,11 @@ func (service *htlcCloseTxManager) RequestCloseHtlc(msg bean.RequestMessage, use
 
 	ht1aOrHe1b := dao.HTLCTimeoutTxForAAndExecutionForB{}
 	if latestCommitmentTxInfo.TxType == dao.CommitmentTransactionType_Htlc {
-		_, err = tool.GetPubKeyFromWifAndCheck(reqData.LastRsmcTempAddressPrivateKey, latestCommitmentTxInfo.RSMCTempAddressPubKey)
+		_, err = omnicore.GetPubKeyFromWifAndCheck(reqData.LastRsmcTempAddressPrivateKey, latestCommitmentTxInfo.RSMCTempAddressPubKey)
 		if err != nil {
 			return nil, false, err
 		}
-		_, err = tool.GetPubKeyFromWifAndCheck(reqData.LastHtlcTempAddressPrivateKey, latestCommitmentTxInfo.HTLCTempAddressPubKey)
+		_, err = omnicore.GetPubKeyFromWifAndCheck(reqData.LastHtlcTempAddressPrivateKey, latestCommitmentTxInfo.HTLCTempAddressPubKey)
 		if err != nil {
 			return nil, false, err
 		}
@@ -165,11 +165,11 @@ func (service *htlcCloseTxManager) RequestCloseHtlc(msg bean.RequestMessage, use
 			log.Println(err)
 			return nil, false, err
 		}
-		_, err = tool.GetPubKeyFromWifAndCheck(reqData.LastRsmcTempAddressPrivateKey, lastCommitmentTxInfo.RSMCTempAddressPubKey)
+		_, err = omnicore.GetPubKeyFromWifAndCheck(reqData.LastRsmcTempAddressPrivateKey, lastCommitmentTxInfo.RSMCTempAddressPubKey)
 		if err != nil {
 			return nil, false, err
 		}
-		_, err = tool.GetPubKeyFromWifAndCheck(reqData.LastHtlcTempAddressPrivateKey, lastCommitmentTxInfo.HTLCTempAddressPubKey)
+		_, err = omnicore.GetPubKeyFromWifAndCheck(reqData.LastHtlcTempAddressPrivateKey, lastCommitmentTxInfo.HTLCTempAddressPubKey)
 		if err != nil {
 			return nil, false, err
 		}
@@ -190,7 +190,7 @@ func (service *htlcCloseTxManager) RequestCloseHtlc(msg bean.RequestMessage, use
 
 	dataTo49P := bean.AliceRequestCloseHtlcCurrTxOfP2p{}
 	if ht1aOrHe1b.Id > 0 {
-		_, err = tool.GetPubKeyFromWifAndCheck(reqData.LastHtlcTempAddressForHtnxPrivateKey, ht1aOrHe1b.RSMCTempAddressPubKey)
+		_, err = omnicore.GetPubKeyFromWifAndCheck(reqData.LastHtlcTempAddressForHtnxPrivateKey, ht1aOrHe1b.RSMCTempAddressPubKey)
 		if err != nil {
 			return nil, false, err
 		}
@@ -493,11 +493,11 @@ func (service *htlcCloseTxManager) OnBobSignCloseHtlcRequest(msg bean.RequestMes
 
 	he1b := dao.HTLCTimeoutTxForAAndExecutionForB{}
 	if latestCommitmentTxInfo.TxType == dao.CommitmentTransactionType_Htlc {
-		_, err = tool.GetPubKeyFromWifAndCheck(reqData.LastRsmcTempAddressPrivateKey, latestCommitmentTxInfo.RSMCTempAddressPubKey)
+		_, err = omnicore.GetPubKeyFromWifAndCheck(reqData.LastRsmcTempAddressPrivateKey, latestCommitmentTxInfo.RSMCTempAddressPubKey)
 		if err != nil {
 			return nil, errors.New(fmt.Sprintf(enum.Tips_rsmc_wrongPrivateKeyForLast, reqData.LastRsmcTempAddressPrivateKey, latestCommitmentTxInfo.RSMCTempAddressPubKey))
 		}
-		_, err = tool.GetPubKeyFromWifAndCheck(reqData.LastHtlcTempAddressPrivateKey, latestCommitmentTxInfo.HTLCTempAddressPubKey)
+		_, err = omnicore.GetPubKeyFromWifAndCheck(reqData.LastHtlcTempAddressPrivateKey, latestCommitmentTxInfo.HTLCTempAddressPubKey)
 		if err != nil {
 			return nil, err
 		}
@@ -521,11 +521,11 @@ func (service *htlcCloseTxManager) OnBobSignCloseHtlcRequest(msg bean.RequestMes
 		if err != nil {
 			return nil, err
 		}
-		_, err = tool.GetPubKeyFromWifAndCheck(reqData.LastRsmcTempAddressPrivateKey, lastCommitTxInfo.RSMCTempAddressPubKey)
+		_, err = omnicore.GetPubKeyFromWifAndCheck(reqData.LastRsmcTempAddressPrivateKey, lastCommitTxInfo.RSMCTempAddressPubKey)
 		if err != nil {
 			return nil, err
 		}
-		_, err = tool.GetPubKeyFromWifAndCheck(reqData.LastHtlcTempAddressPrivateKey, lastCommitTxInfo.HTLCTempAddressPubKey)
+		_, err = omnicore.GetPubKeyFromWifAndCheck(reqData.LastHtlcTempAddressPrivateKey, lastCommitTxInfo.HTLCTempAddressPubKey)
 		if err != nil {
 			return nil, err
 		}
@@ -550,7 +550,7 @@ func (service *htlcCloseTxManager) OnBobSignCloseHtlcRequest(msg bean.RequestMes
 
 	dataSendTo50P := bean.CloseeSignCloseHtlcTxOfP2p{}
 	if he1b.Id > 0 {
-		_, err = tool.GetPubKeyFromWifAndCheck(reqData.LastHtlcTempAddressForHtnxPrivateKey, he1b.RSMCTempAddressPubKey)
+		_, err = omnicore.GetPubKeyFromWifAndCheck(reqData.LastHtlcTempAddressForHtnxPrivateKey, he1b.RSMCTempAddressPubKey)
 		if err != nil {
 			return nil, err
 		}

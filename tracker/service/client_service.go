@@ -11,13 +11,20 @@ import (
 	"github.com/omnilaboratory/obd/tracker/config"
 	"github.com/tidwall/gjson"
 	"log"
+	"strconv"
 	"strings"
 )
 
 var tracker *ObdNode
 
 func init() {
-	tracker = &ObdNode{Id: tool.GetTrackerNodeId()}
+	tracker = &ObdNode{Id: GetTrackerNodeId()}
+}
+
+// get tracker node id
+func GetTrackerNodeId() string {
+	source := tool.GetMacAddrs() + ":" + strconv.Itoa(cfg.TrackerServerPort)
+	return tool.SignMsgWithSha256([]byte(source))
 }
 
 type ObdNode struct {
@@ -46,14 +53,14 @@ func (this *ObdNode) Read() {
 	defer func() {
 		ObdNodeManager.Disconnected <- this
 		_ = this.Socket.Close()
-		log.Println("socket closed after reading...")
+		log.Println("socket closed")
 	}()
 
 	for {
 		_, dataReq, err := this.Socket.ReadMessage()
 		if err != nil {
 			log.Println(err)
-			break
+			return
 		}
 		log.Println("get data from client: ", string(dataReq))
 		reqDataJson := gjson.Parse(string(dataReq))
@@ -124,6 +131,7 @@ func (this *ObdNode) Write() {
 			err := this.Socket.WriteMessage(websocket.TextMessage, data)
 			if err != nil {
 				log.Println("fail to send data ", string(data))
+				return
 			} else {
 				log.Println("send data", string(data))
 			}
