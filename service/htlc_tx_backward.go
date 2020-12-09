@@ -22,9 +22,7 @@ import (
 )
 
 type htlcBackwardTxManager struct {
-	operationFlag              sync.Mutex
-	tempDataSendTo45PAtBobSide map[string]bean.NeedAliceSignHerdTxOfC3bP2p
-	tempDataFrom45PAtAliceSide map[string]bean.NeedAliceSignHerdTxOfC3bP2p
+	operationFlag sync.Mutex
 }
 
 // HTLC Reverse pass the R (Preimage R)
@@ -216,12 +214,18 @@ func (service *htlcBackwardTxManager) SendRToPreviousNodeAtBobSide(msg bean.Requ
 	dataSendTo45P.C3bHtlcHebrRawData = c3bHeBrRawData
 
 	_ = tx.Update(latestCommitmentTxInfo)
-	_ = tx.Commit()
 
-	if service.tempDataSendTo45PAtBobSide == nil {
-		service.tempDataSendTo45PAtBobSide = make(map[string]bean.NeedAliceSignHerdTxOfC3bP2p)
+	cacheDataForTx := &dao.CacheDataForTx{}
+	cacheDataForTx.KeyName = user.PeerId + "_htlcBack_" + channelInfo.ChannelId
+	_ = tx.Select(q.Eq("KeyName", cacheDataForTx.KeyName)).First(cacheDataForTx)
+	if cacheDataForTx.Id != 0 {
+		_ = tx.DeleteStruct(cacheDataForTx)
 	}
-	service.tempDataSendTo45PAtBobSide[user.PeerId+"_"+channelInfo.ChannelId] = dataSendTo45P
+	bytes, _ := json.Marshal(&dataSendTo45P)
+	cacheDataForTx.Data = bytes
+	_ = tx.Save(cacheDataForTx)
+
+	_ = tx.Commit()
 
 	log.Println("htlc step 13 end", time.Now())
 	return dataNeedBobSign, nil
@@ -236,7 +240,15 @@ func (service *htlcBackwardTxManager) OnBobSignedHeRdAtBobSide(msg bean.RequestM
 	if tool.CheckIsString(&bobSignedData.ChannelId) == false {
 		return nil, errors.New("error channel_id")
 	}
-	dataSendTo45P := service.tempDataSendTo45PAtBobSide[user.PeerId+"_"+bobSignedData.ChannelId]
+
+	cacheDataForTx := &dao.CacheDataForTx{}
+	_ = user.Db.Select(q.Eq("KeyName", user.PeerId+"_htlcBack_"+bobSignedData.ChannelId)).First(cacheDataForTx)
+	if cacheDataForTx.Id == 0 {
+		return nil, errors.New("error channel_id")
+	}
+
+	dataSendTo45P := &bean.NeedAliceSignHerdTxOfC3bP2p{}
+	_ = json.Unmarshal(cacheDataForTx.Data, dataSendTo45P)
 	if len(dataSendTo45P.ChannelId) == 0 {
 		return nil, errors.New("error channel_id")
 	}
@@ -246,7 +258,8 @@ func (service *htlcBackwardTxManager) OnBobSignedHeRdAtBobSide(msg bean.RequestM
 	}
 
 	dataSendTo45P.C3bHtlcHerdPartialSignedData.Hex = bobSignedData.C3bHtlcHerdPartialSignedHex
-	service.tempDataSendTo45PAtBobSide[user.PeerId+"_"+bobSignedData.ChannelId] = dataSendTo45P
+	_ = user.Db.Update(dataSendTo45P)
+
 	log.Println("htlc step 14 end", time.Now())
 	return dataSendTo45P, nil
 }
@@ -279,7 +292,6 @@ func (service *htlcBackwardTxManager) OnGetHeSubTxDataAtAliceObdAtAliceSide(msg 
 	if _, err = omnicore.GetPubKeyFromWifAndCheck(dataFrom45P.R, latestCommitmentTx.HtlcH); err != nil {
 		return nil, errors.New(enum.Tips_htlc_wrongRForH)
 	}
-	tx.Commit()
 
 	if tool.CheckIsString(&dataFrom45P.C3bHtlcTempAddressForHePubKey) == false {
 		return nil, errors.New(enum.Tips_common_empty + "c3b_htlc_temp_address_for_he_pub_key")
@@ -289,10 +301,18 @@ func (service *htlcBackwardTxManager) OnGetHeSubTxDataAtAliceObdAtAliceSide(msg 
 		return nil, errors.New(enum.Tips_common_empty + "he_complete_signed_hex")
 	}
 
-	if service.tempDataFrom45PAtAliceSide == nil {
-		service.tempDataFrom45PAtAliceSide = make(map[string]bean.NeedAliceSignHerdTxOfC3bP2p)
+	cacheDataForTx := &dao.CacheDataForTx{}
+	cacheDataForTx.KeyName = user.PeerId + "_htlcBack_" + dataFrom45P.ChannelId
+	_ = tx.Select(q.Eq("KeyName", cacheDataForTx.KeyName)).First(cacheDataForTx)
+	if cacheDataForTx.Id != 0 {
+		_ = tx.DeleteStruct(cacheDataForTx)
 	}
-	service.tempDataFrom45PAtAliceSide[user.PeerId+"_"+dataFrom45P.ChannelId] = dataFrom45P
+	bytes, _ := json.Marshal(&dataFrom45P)
+	cacheDataForTx.Data = bytes
+	_ = tx.Save(cacheDataForTx)
+
+	_ = tx.Commit()
+
 	log.Println("htlc step 15 end", time.Now())
 	return dataFrom45P, nil
 }
@@ -307,7 +327,14 @@ func (service *htlcBackwardTxManager) OnAliceSignedHeRdAtAliceSide(msg bean.Requ
 		return nil, nil, errors.New("error channel_id")
 	}
 
-	dataFrom45P := service.tempDataFrom45PAtAliceSide[user.PeerId+"_"+herdSignedResult.ChannelId]
+	cacheDataForTx := &dao.CacheDataForTx{}
+	_ = user.Db.Select(q.Eq("KeyName", user.PeerId+"_htlcBack_"+herdSignedResult.ChannelId)).First(cacheDataForTx)
+	if cacheDataForTx.Id == 0 {
+		return nil, nil, errors.New("error channel_id")
+	}
+
+	dataFrom45P := &bean.NeedAliceSignHerdTxOfC3bP2p{}
+	_ = json.Unmarshal(cacheDataForTx.Data, dataFrom45P)
 	if len(dataFrom45P.ChannelId) == 0 {
 		return nil, nil, errors.New("error channel_id")
 	}
