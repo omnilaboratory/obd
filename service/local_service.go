@@ -9,6 +9,7 @@ import (
 	"github.com/omnilaboratory/obd/dao"
 	"github.com/omnilaboratory/obd/tool"
 	"log"
+	"strings"
 	"time"
 )
 
@@ -151,6 +152,11 @@ func sendRdTx() {
 				}
 				_ = obdGlobalDB.UpdateField(&node, "IsEnable", false)
 				_ = obdGlobalDB.UpdateField(&node, "FinishAt", time.Now())
+			} else {
+				if strings.Contains(err.Error(), "Code: -25,Msg: Missing inputs") {
+					_ = obdGlobalDB.UpdateField(&node, "IsEnable", false)
+					_ = obdGlobalDB.UpdateField(&node, "FinishAt", time.Now())
+				}
 			}
 		}
 	}
