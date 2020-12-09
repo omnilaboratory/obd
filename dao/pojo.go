@@ -192,26 +192,26 @@ type CommitmentTransaction struct {
 	RSMCTxHex                    string  `json:"rsmc_tx_hex"`
 	RSMCTxid                     string  `json:"rsmc_txid"`
 	//To CounterParty
-	ToCounterpartyTxHex            string  `json:"to_counterparty_tx_hex"`
-	ToCounterpartyTxid             string  `json:"to_counterparty_txid"`
-	AmountToCounterparty           float64 `json:"amount_to_counterparty"`               //amount to bob(if Cna) or alice(if Cnb)
-	FromCounterpartySideForMeTxHex string  `json:"from_counterparty_side_for_me_tx_hex"` //对方给自己的转账部分，防止对方不广播此交易
+	ToCounterpartyTxHex            string  `json:"to_counterparty_tx_hex,omitempty"`
+	ToCounterpartyTxid             string  `json:"to_counterparty_txid,omitempty"`
+	AmountToCounterparty           float64 `json:"amount_to_counterparty,omitempty"`               //amount to bob(if Cna) or alice(if Cnb)
+	FromCounterpartySideForMeTxHex string  `json:"from_counterparty_side_for_me_tx_hex,omitempty"` //对方给自己的转账部分，防止对方不广播此交易
 	//htlc
-	HtlcRoutingPacket            string  `json:"htlc_routing_packet"` //借道Path
-	HtlcCltvExpiry               int     `json:"htlc_cltv_expiry"`    //借道的最大超时 分钟为单位
-	BeginBlockHeight             int     `json:"begin_block_height"`  //借道时的区块高度
-	HTLCTempAddressIndex         int     `json:"htlc_temp_address_index"`
-	HTLCTempAddressPubKey        string  `json:"htlc_temp_address_pub_key"` //alice for htlc or bob for htlc
-	HTLCMultiAddress             string  `json:"htlc_multi_address"`        //output aliceTempHtlc&bob  or alice&bobTempHtlc  multiAddr
-	HTLCRedeemScript             string  `json:"htlc_redeem_script"`
-	HTLCMultiAddressScriptPubKey string  `json:"htlc_multi_address_script_pub_key"`
-	AmountToHtlc                 float64 `json:"amount_to_htlc"`
-	HtlcTxHex                    string  `json:"htlc_tx_hex"`
-	HTLCTxid                     string  `json:"htlc_txid"`
-	HtlcMemo                     string  `json:"htlc_memo"`
-	HtlcH                        string  `json:"htlc_h"`
-	HtlcR                        string  `json:"htlc_r"`
-	HtlcSender                   string  `json:"htlc_sender"`
+	HtlcRoutingPacket            string  `json:"htlc_routing_packet,omitempty"`        //借道Path
+	HtlcCltvExpiry               int     `json:"htlc_cltv_expiry,omitempty,omitempty"` //借道的最大超时 分钟为单位
+	BeginBlockHeight             int     `json:"begin_block_height,omitempty"`         //借道时的区块高度
+	HTLCTempAddressIndex         int     `json:"htlc_temp_address_index,omitempty"`
+	HTLCTempAddressPubKey        string  `json:"htlc_temp_address_pub_key,omitempty"` //alice for htlc or bob for htlc
+	HTLCMultiAddress             string  `json:"htlc_multi_address,omitempty"`        //output aliceTempHtlc&bob  or alice&bobTempHtlc  multiAddr
+	HTLCRedeemScript             string  `json:"htlc_redeem_script,omitempty"`
+	HTLCMultiAddressScriptPubKey string  `json:"htlc_multi_address_script_pub_key,omitempty"`
+	AmountToHtlc                 float64 `json:"amount_to_htlc,omitempty"`
+	HtlcTxHex                    string  `json:"htlc_tx_hex,omitempty"`
+	HTLCTxid                     string  `json:"htlc_txid,omitempty"`
+	HtlcMemo                     string  `json:"htlc_memo,omitempty"`
+	HtlcH                        string  `json:"htlc_h,omitempty"`
+	HtlcR                        string  `json:"htlc_r,omitempty"`
+	HtlcSender                   string  `json:"htlc_sender,omitempty"`
 
 	CurrState    TxInfoState `json:"curr_state"`
 	CreateBy     string      `json:"create_by"`
