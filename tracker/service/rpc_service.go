@@ -229,9 +229,10 @@ func (manager *rpcManager) OmniDecodeTransaction(context *gin.Context) {
 		"data": result,
 	})
 }
+
 func (manager *rpcManager) OmniListTransactions(context *gin.Context) {
 	address := context.Query("address")
-	result, err := rpc.NewClient().OmniListTransactions(address, 100, 1)
+	result, err := rpc.NewClient().OmniListTransactions(address, 100, 0)
 	msg := ""
 	if err != nil {
 		result = ""

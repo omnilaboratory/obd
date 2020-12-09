@@ -253,7 +253,7 @@ func OmniListTransactions(address string) (result string, err error) {
 	if tool.CheckIsAddress(address) == false {
 		return "", errors.New("error address")
 	}
-	url := "http://" + config.TrackerHost + "/api/rpc/OmniListTransactions?address=" + address
+	url := "http://" + config.TrackerHost + "/api/rpc/omniListTransactions?address=" + address
 	log.Println(url)
 	resp, err := http.Get(url)
 	if err != nil {
