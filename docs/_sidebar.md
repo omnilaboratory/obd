@@ -19,6 +19,7 @@
     - [Advanced topics](advanced.md) 
 
 - Operational Guide
+    - [Benchmark](benchmark.md) 
     - [Operational Safety Guidelines](safety-guidelines.md) 
     - [Static Channel Backup](static-channel-backup.md) 
 
