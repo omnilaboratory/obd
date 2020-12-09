@@ -159,6 +159,10 @@ func checkRsmcAndSendBR(db storm.Node) {
 								}
 							}
 						}
+						channelInfo.CurrState = dao.ChannelState_Close
+						channelInfo.CloseAt = time.Now()
+						_ = db.Update(&channelInfo)
+						sendChannelStateToTracker(channelInfo, dao.CommitmentTransaction{})
 					}
 				}
 			}

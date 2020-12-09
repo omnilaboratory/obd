@@ -62,11 +62,12 @@ func (manager *channelManager) updateChannelInfo(obdClient *ObdNode, msgData str
 			channelInfo.PropertyId = item.PropertyId
 			if channelInfo.CurrState != 21 {
 				channelInfo.CurrState = item.CurrState
+				channelInfo.PeerIdA = item.PeerIdA
+				channelInfo.PeerIdB = item.PeerIdB
+				channelInfo.AmountA = item.AmountA
+				channelInfo.AmountB = item.AmountB
 			}
-			channelInfo.PeerIdA = item.PeerIdA
-			channelInfo.PeerIdB = item.PeerIdB
-			channelInfo.AmountA = item.AmountA
-			channelInfo.AmountB = item.AmountB
+
 			if item.IsAlice {
 				channelInfo.ObdNodeIdA = obdClient.Id
 			} else {
