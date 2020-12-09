@@ -208,6 +208,7 @@ type CommitmentTransaction struct {
 	AmountToHtlc                 float64 `json:"amount_to_htlc"`
 	HtlcTxHex                    string  `json:"htlc_tx_hex"`
 	HTLCTxid                     string  `json:"htlc_txid"`
+	HtlcMemo                     string  `json:"htlc_memo"`
 	HtlcH                        string  `json:"htlc_h"`
 	HtlcR                        string  `json:"htlc_r"`
 	HtlcSender                   string  `json:"htlc_sender"`

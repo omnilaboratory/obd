@@ -433,7 +433,7 @@ func (service *htlcForwardTxManager) AliceAddHtlcAtAliceSide(msg bean.RequestMes
 
 	latestCommitmentTx, _ := getLatestCommitmentTxUseDbTx(tx, channelInfo.ChannelId, user.PeerId)
 	if latestCommitmentTx.Id > 0 && latestCommitmentTx.CurrState == dao.TxInfoState_Init {
-		tx.DeleteStruct(latestCommitmentTx)
+		_ = tx.DeleteStruct(latestCommitmentTx)
 	}
 	latestCommitmentTx, _ = getLatestCommitmentTxUseDbTx(tx, channelInfo.ChannelId, user.PeerId)
 
@@ -2308,6 +2308,7 @@ func htlcPayerCreateCommitmentTx_C3a(tx storm.Node, channelInfo *dao.ChannelInfo
 		newCommitmentTxInfo.BeginBlockHeight = conn2tracker.GetBlockCount()
 
 		newCommitmentTxInfo.HtlcTxHex = htlcTxData["hex"].(string)
+		newCommitmentTxInfo.HtlcMemo = requestData.Memo
 		newCommitmentTxInfo.HtlcH = requestData.H
 		if aliceIsPayer {
 			newCommitmentTxInfo.HtlcSender = channelInfo.PeerIdA
@@ -2368,7 +2369,7 @@ func htlcPayerCreateCommitmentTx_C3a(tx storm.Node, channelInfo *dao.ChannelInfo
 	}
 
 	rawTx.CommitmentTxId = newCommitmentTxInfo.Id
-	tx.Save(&rawTx)
+	_ = tx.Save(&rawTx)
 
 	bytes, err := json.Marshal(newCommitmentTxInfo)
 	msgHash := tool.SignMsgWithSha256(bytes)
@@ -2489,6 +2490,7 @@ func htlcPayeeCreateCommitmentTx_C3b(tx storm.Node, channelInfo *dao.ChannelInfo
 		newCommitmentTxInfo.HtlcCltvExpiry = payerData.CltvExpiry
 		newCommitmentTxInfo.BeginBlockHeight = conn2tracker.GetBlockCount()
 		newCommitmentTxInfo.HtlcTxHex = htlcTxData["hex"].(string)
+		newCommitmentTxInfo.HtlcMemo = payerData.Memo
 
 		signHexData := bean.NeedClientSignTxData{}
 		signHexData.Hex = newCommitmentTxInfo.HtlcTxHex
@@ -2547,7 +2549,7 @@ func htlcPayeeCreateCommitmentTx_C3b(tx storm.Node, channelInfo *dao.ChannelInfo
 		return nil, rawTx, err
 	}
 	rawTx.CommitmentTxId = newCommitmentTxInfo.Id
-	tx.Save(&rawTx)
+	_ = tx.Save(&rawTx)
 
 	bytes, err := json.Marshal(newCommitmentTxInfo)
 	msgHash := tool.SignMsgWithSha256(bytes)
