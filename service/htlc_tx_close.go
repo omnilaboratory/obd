@@ -1243,9 +1243,6 @@ func (service *htlcCloseTxManager) OnAliceSignedCxbBubTx(msg bean.RequestMessage
 	channelInfo.CurrState = dao.ChannelState_CanUse
 	_ = tx.Update(channelInfo)
 
-	//返回给alice的数据
-	aliceData["latest_commitment_tx_info"] = latestCommitmentTxInfo
-
 	//处理对方的数据
 	bobData := bean.AliceSignedC4bTxDataP2p{}
 	bobData.C4aCommitmentTxHash = dataFromP2p50P.CloserCommitmentTxHash
@@ -1320,6 +1317,8 @@ func (service *htlcCloseTxManager) OnAliceSignedCxbBubTx(msg bean.RequestMessage
 
 	bobData.C4bCounterpartyCompleteSignedHex = c2bToCounterpartyTxHex
 	bobData.ChannelId = channelId
+	//返回给alice的数据
+	aliceData["latest_commitment_tx_info"] = latestCommitmentTxInfo
 
 	log.Println("htlc close step 8 end", time.Now())
 	return aliceData, bobData, nil
