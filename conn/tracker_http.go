@@ -559,3 +559,34 @@ func GetChainNodeType() (result string, err error) {
 	}
 	return "", errors.New("error result")
 }
+
+func GetChannelState(channelId string) (flag int) {
+	url := "http://" + config.TrackerHost + "/api/v1/getChannelState?channelId=" + channelId
+	log.Println(url)
+	resp, err := http.Get(url)
+	if err != nil {
+		return 0
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode == 200 {
+		body, _ := ioutil.ReadAll(resp.Body)
+		return int(gjson.Get(string(body), "data").Get("state").Int())
+	}
+	return 0
+}
+
+func GetUserState(userId string) (flag int) {
+	url := "http://" + config.TrackerHost + "/api/v1/getUserState?userId=" + userId
+	log.Println(url)
+	resp, err := http.Get(url)
+	if err != nil {
+		return 0
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode == 200 {
+		body, _ := ioutil.ReadAll(resp.Body)
+		log.Println(string(body))
+		return int(gjson.Get(string(body), "data").Get("state").Int())
+	}
+	return 0
+}

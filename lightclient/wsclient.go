@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/omnilaboratory/obd/bean"
 	"github.com/omnilaboratory/obd/bean/enum"
-	"github.com/omnilaboratory/obd/service"
 	"github.com/omnilaboratory/obd/tool"
 	"log"
 	"strings"
@@ -42,7 +41,6 @@ func (client *Client) Write() {
 
 func (client *Client) Read() {
 	defer func() {
-		_ = service.UserService.UserLogout(client.User)
 		globalWsClientManager.Disconnected <- client
 	}()
 
@@ -50,7 +48,7 @@ func (client *Client) Read() {
 		_, dataReq, err := client.Socket.ReadMessage()
 		if err != nil {
 			log.Println(err)
-			break
+			return
 		}
 
 		var msg bean.RequestMessage

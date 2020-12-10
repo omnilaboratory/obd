@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/omnilaboratory/obd/bean"
 	"github.com/omnilaboratory/obd/bean/enum"
+	"github.com/omnilaboratory/obd/conn"
 	"github.com/omnilaboratory/obd/service"
 	"github.com/omnilaboratory/obd/tool"
 	"log"
@@ -39,7 +40,7 @@ func (clientManager *clientManager) Start() {
 				RecipientUserPeerId: client.Id,
 				Data:                "welcome to you."})
 			log.Println(fmt.Sprintf("a new socket %s has connected.", client.Id))
-			clientManager.sendToSomeConn(jsonMessage, client)
+			client.SendChannel <- jsonMessage
 
 		case client := <-clientManager.Disconnected:
 			if _, ok := clientManager.ClientsMap[client]; ok {
@@ -62,19 +63,12 @@ func (clientManager *clientManager) Start() {
 func (clientManager *clientManager) cleanConn(client *Client) {
 	delete(clientManager.ClientsMap, client)
 	if client.User != nil {
+		_ = service.UserService.UserLogout(client.User)
 		delete(clientManager.OnlineClientMap, client.User.PeerId)
 		delete(service.OnlineUserMap, client.User.PeerId)
 		client.User = nil
 	}
 	close(client.SendChannel)
-}
-
-func (clientManager *clientManager) sendToSomeConn(message []byte, myself *Client) {
-	for client := range clientManager.ClientsMap {
-		if client == myself {
-			client.SendChannel <- message
-		}
-	}
 }
 
 func findUserOnLine(msg bean.RequestMessage) (*Client, error) {
@@ -85,11 +79,10 @@ func findUserOnLine(msg bean.RequestMessage) (*Client, error) {
 		}
 
 		if msg.RecipientNodePeerId != p2PLocalPeerId {
-			if service.HttpGetUserStateFromTracker(msg.RecipientUserPeerId) > 0 {
+			if conn2tracker.GetUserState(msg.RecipientUserPeerId) > 0 {
 				return nil, nil
 			}
 		}
-
 	}
 	return nil, errors.New(fmt.Sprintf(enum.Tips_user_notExistOrOnline, msg.RecipientUserPeerId))
 }

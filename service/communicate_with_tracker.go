@@ -3,13 +3,9 @@ package service
 import (
 	"encoding/json"
 	"github.com/omnilaboratory/obd/bean/enum"
-	"github.com/omnilaboratory/obd/config"
 	"github.com/omnilaboratory/obd/dao"
 	"github.com/omnilaboratory/obd/tracker/bean"
 	"github.com/tidwall/gjson"
-	"io/ioutil"
-	"log"
-	"net/http"
 	"strings"
 )
 
@@ -41,53 +37,6 @@ func sendChannelStateToTracker(channelInfo dao.ChannelInfo, commitmentTx dao.Com
 	nodes := make([]bean.ChannelInfoRequest, 0)
 	nodes = append(nodes, infoRequest)
 	sendMsgToTracker(enum.MsgType_Tracker_UpdateChannelInfo_350, nodes)
-}
-
-func HttpGetHtlcStateFromTracker(path string, h string) (flag int) {
-	url := "http://" + config.TrackerHost + "/api/v1/getHtlcTxState?path=" + path + "&h=" + h
-	log.Println(url)
-	resp, err := http.Get(url)
-	if err != nil {
-		return 0
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode == 200 {
-		body, _ := ioutil.ReadAll(resp.Body)
-		log.Println(string(body))
-		return int(gjson.Get(string(body), "data").Get("flag").Int())
-	}
-	return 0
-}
-
-func HttpGetChannelStateFromTracker(channelId string) (flag int) {
-	url := "http://" + config.TrackerHost + "/api/v1/getChannelState?channelId=" + channelId
-	log.Println(url)
-	resp, err := http.Get(url)
-	if err != nil {
-		return 0
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode == 200 {
-		body, _ := ioutil.ReadAll(resp.Body)
-		return int(gjson.Get(string(body), "data").Get("state").Int())
-	}
-	return 0
-}
-
-func HttpGetUserStateFromTracker(userId string) (flag int) {
-	url := "http://" + config.TrackerHost + "/api/v1/getUserState?userId=" + userId
-	log.Println(url)
-	resp, err := http.Get(url)
-	if err != nil {
-		return 0
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode == 200 {
-		body, _ := ioutil.ReadAll(resp.Body)
-		log.Println(string(body))
-		return int(gjson.Get(string(body), "data").Get("state").Int())
-	}
-	return 0
 }
 
 func noticeTrackerUserLogin(user dao.User) {

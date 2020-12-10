@@ -28,7 +28,7 @@ func findUserIsOnline(nodePeerId, userPeerId string) error {
 			return nil
 		}
 		if nodePeerId != P2PLocalPeerId {
-			if HttpGetUserStateFromTracker(userPeerId) > 0 {
+			if conn2tracker.GetUserState(userPeerId) > 0 {
 				return nil
 			}
 		}

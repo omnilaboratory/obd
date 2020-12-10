@@ -169,7 +169,7 @@ func (service *fundingTransactionManager) AssetFundingCreated(msg bean.RequestMe
 	}
 
 	if needCreateC1a {
-		flag := HttpGetChannelStateFromTracker(fundingTransaction.ChannelId)
+		flag := conn2tracker.GetChannelState(fundingTransaction.ChannelId)
 		if flag != 0 && flag != int(dao.ChannelState_WaitFundAsset) {
 			err = errors.New(enum.Tips_funding_needChangeFundTx)
 			log.Println(err)
