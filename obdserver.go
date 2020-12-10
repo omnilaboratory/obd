@@ -59,7 +59,7 @@ func main() {
 		return
 	}
 
-	routersInit := lightclient.InitRouter(nil)
+	routersInit := lightclient.InitRouter()
 	addr := ":" + strconv.Itoa(config.ServerPort)
 	server := &http.Server{
 		Addr:           addr,

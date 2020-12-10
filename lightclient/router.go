@@ -6,13 +6,12 @@ import (
 	"github.com/omnilaboratory/obd/bean"
 	"github.com/omnilaboratory/obd/config"
 	"github.com/satori/go.uuid"
-	"google.golang.org/grpc"
 	"log"
 	"net/http"
 	"strconv"
 )
 
-func InitRouter(conn *grpc.ClientConn) *gin.Engine {
+func InitRouter() *gin.Engine {
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.New()
 	router.Use(gin.Logger())
