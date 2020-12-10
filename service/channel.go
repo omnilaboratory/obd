@@ -728,7 +728,7 @@ func (this *channelManager) ForceCloseChannel(msg bean.RequestMessage, user *bea
 
 	// 当前是处于htlc的状态，且是获取到H
 	if channelInfo.CurrState == dao.ChannelState_HtlcTx {
-		_, err = this.CloseHtlcChannelSigned(tx, channelInfo, latestCommitmentTx, *user)
+		err = this.CloseHtlcChannelSigned(tx, latestCommitmentTx, *user)
 		if err != nil {
 			return nil, err
 		}
@@ -901,7 +901,7 @@ func (this *channelManager) AfterBobSignCloseChannelAtAliceSide(jsonData string,
 
 	// 当前是处于htlc的状态，且是获取到H
 	if channelInfo.CurrState == dao.ChannelState_HtlcTx {
-		_, err = this.CloseHtlcChannelSigned(tx, channelInfo, latestCommitmentTx, user)
+		err = this.CloseHtlcChannelSigned(tx, latestCommitmentTx, user)
 		if err != nil {
 			return nil, err
 		}
@@ -992,7 +992,7 @@ func (this *channelManager) AfterBobSignCloseChannelAtAliceSide(jsonData string,
 }
 
 //  htlc  when getH close channel
-func (this *channelManager) CloseHtlcChannelSigned(tx storm.Node, channelInfo *dao.ChannelInfo, latestCommitmentTx *dao.CommitmentTransaction, user bean.User) (outData interface{}, err error) {
+func (this *channelManager) CloseHtlcChannelSigned(tx storm.Node, latestCommitmentTx *dao.CommitmentTransaction, user bean.User) (err error) {
 	// 提现操作的发起者
 	closeOpStarter := user.PeerId
 
@@ -1001,14 +1001,14 @@ func (this *channelManager) CloseHtlcChannelSigned(tx storm.Node, channelInfo *d
 		commitmentTxid, err := conn2tracker.SendRawTransaction(latestCommitmentTx.RSMCTxHex)
 		if err != nil {
 			log.Println(err)
-			return nil, err
+			return err
 		}
 		log.Println(commitmentTxid)
 	}
 
 	latestRsmcRD := &dao.RevocableDeliveryTransaction{}
 	err = tx.Select(
-		q.Eq("ChannelId", channelInfo.ChannelId),
+		q.Eq("ChannelId", latestCommitmentTx.ChannelId),
 		q.Eq("CommitmentTxId", latestCommitmentTx.Id),
 		q.Eq("RDType", 0),
 		q.Eq("Owner", closeOpStarter)).
@@ -1016,23 +1016,14 @@ func (this *channelManager) CloseHtlcChannelSigned(tx storm.Node, channelInfo *d
 		First(latestRsmcRD)
 	if err != nil {
 		log.Println(err)
-		return nil, err
-	}
-
-	_, err = conn2tracker.SendRawTransaction(latestRsmcRD.TxHex)
-	if err != nil {
-		log.Println(err)
-		msg := err.Error()
-		if strings.Contains(msg, "non-BIP68-final (code 64)") == false {
-			return nil, err
-		}
+		return err
 	}
 
 	if tool.CheckIsString(&latestCommitmentTx.ToCounterpartyTxHex) {
 		commitmentTxidToBob, err := conn2tracker.SendRawTransaction(latestCommitmentTx.ToCounterpartyTxHex)
 		if err != nil {
 			log.Println(err)
-			return nil, err
+			return err
 		}
 		log.Println(commitmentTxidToBob)
 	}
@@ -1042,7 +1033,7 @@ func (this *channelManager) CloseHtlcChannelSigned(tx storm.Node, channelInfo *d
 		commitmentTxidToHtlc, err := conn2tracker.SendRawTransaction(latestCommitmentTx.HtlcTxHex)
 		if err != nil {
 			log.Println(err)
-			return nil, err
+			return err
 		}
 		log.Println(commitmentTxidToHtlc)
 	}
@@ -1054,7 +1045,7 @@ func (this *channelManager) CloseHtlcChannelSigned(tx storm.Node, channelInfo *d
 	if latestCommitmentTx.HtlcSender == closeOpStarter {
 		ht1a := &dao.HTLCTimeoutTxForAAndExecutionForB{}
 		err = tx.Select(
-			q.Eq("ChannelId", channelInfo.ChannelId),
+			q.Eq("ChannelId", latestCommitmentTx.ChannelId),
 			q.Eq("CommitmentTxId", latestCommitmentTx.Id),
 			q.Eq("Owner", closeOpStarter),
 			q.Eq("CurrState", dao.TxInfoState_CreateAndSign)).
@@ -1077,7 +1068,7 @@ func (this *channelManager) CloseHtlcChannelSigned(tx storm.Node, channelInfo *d
 							log.Println(err)
 							msg := err.Error()
 							if strings.Contains(msg, "non-BIP68-final (code 64)") == false {
-								return nil, err
+								return err
 							}
 						}
 						_ = addRDTxToWaitDB(htrd)
@@ -1090,7 +1081,7 @@ func (this *channelManager) CloseHtlcChannelSigned(tx storm.Node, channelInfo *d
 					log.Println(err)
 					msg := err.Error()
 					if strings.Contains(msg, "non-BIP68-final (code 64)") == false {
-						return nil, err
+						return err
 					}
 					_ = addHT1aTxToWaitDB(ht1a, htrd)
 				}
@@ -1110,7 +1101,7 @@ func (this *channelManager) CloseHtlcChannelSigned(tx storm.Node, channelInfo *d
 				log.Println(err)
 				msg := err.Error()
 				if strings.Contains(msg, "non-BIP68-final (code 64)") == false {
-					return nil, err
+					return err
 				}
 			}
 			_ = addHTDnxTxToWaitDB(htdnx)
@@ -1126,20 +1117,20 @@ func (this *channelManager) CloseHtlcChannelSigned(tx storm.Node, channelInfo *d
 	latestCommitmentTx.SendAt = time.Now()
 	err = tx.Update(latestCommitmentTx)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	latestRsmcRD.CurrState = dao.TxInfoState_SendHex
 	latestRsmcRD.SendAt = time.Now()
 	err = tx.Update(latestRsmcRD)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	err = addRDTxToWaitDB(latestRsmcRD)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	//endregion
-	return channelInfo, nil
+	return nil
 }

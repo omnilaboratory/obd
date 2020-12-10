@@ -13,7 +13,6 @@ import (
 	"github.com/tidwall/gjson"
 	"log"
 	"strconv"
-	"strings"
 	"sync"
 	"time"
 
@@ -821,74 +820,85 @@ func (this *commitmentTxManager) SendSomeCommitmentById(data string, user *bean.
 	if err != nil || commitmentTransaction.Id == 0 {
 		return nil, err
 	}
-	if commitmentTransaction.CurrState != dao.TxInfoState_CreateAndSign {
+	if commitmentTransaction.CurrState != dao.TxInfoState_CreateAndSign && commitmentTransaction.CurrState != dao.TxInfoState_Htlc_GetR {
 		return nil, errors.New("wrong commitment state")
 	}
 
+	channelInfo := &dao.ChannelInfo{}
+	err = tx.One("ChannelId", commitmentTransaction.ChannelId, channelInfo)
+	if err != nil || channelInfo.Id == 0 {
+		return nil, err
+	}
+	if channelInfo.CurrState == dao.ChannelState_Close {
+		return nil, errors.New("channel has been closed before by someone")
+	}
+
+	transactionsStr, err := conn2tracker.OmniListTransactions(channelInfo.ChannelAddress)
+	if err != nil || transactionsStr == "" {
+		return nil, err
+	}
+
 	//region 广播承诺交易 最近的rsmc的资产分配交易 因为是omni资产，承诺交易被拆分成了两个独立的交易
-	if tool.CheckIsString(&commitmentTransaction.RSMCTxHex) {
-		commitmentTxid, err := conn2tracker.SendRawTransaction(commitmentTransaction.RSMCTxHex)
+	if commitmentTransaction.TxType == dao.CommitmentTransactionType_Rsmc {
+		if tool.CheckIsString(&commitmentTransaction.RSMCTxHex) {
+			commitmentTxid, err := conn2tracker.SendRawTransaction(commitmentTransaction.RSMCTxHex)
+			if err != nil {
+				log.Println(err)
+				return nil, err
+			}
+			log.Println(commitmentTxid)
+		}
+		if tool.CheckIsString(&commitmentTransaction.ToCounterpartyTxHex) {
+			commitmentTxidToBob, err := conn2tracker.SendRawTransaction(commitmentTransaction.ToCounterpartyTxHex)
+			if err != nil {
+				log.Println(err)
+				return nil, err
+			}
+			log.Println(commitmentTxidToBob)
+		}
+		//endregion
+
+		//region 广播RD
+		latestRevocableDeliveryTx := &dao.RevocableDeliveryTransaction{}
+		err = tx.Select(
+			q.Eq("ChannelId", commitmentTransaction.ChannelId),
+			q.Eq("CommitmentTxId", commitmentTransaction.Id),
+			q.Eq("Owner", user.PeerId)).
+			OrderBy("CreateAt").Reverse().
+			First(latestRevocableDeliveryTx)
 		if err != nil {
 			log.Println(err)
 			return nil, err
 		}
-		log.Println(commitmentTxid)
-	}
-	if tool.CheckIsString(&commitmentTransaction.ToCounterpartyTxHex) {
-		commitmentTxidToBob, err := conn2tracker.SendRawTransaction(commitmentTransaction.ToCounterpartyTxHex)
+		//endregion
+
+		// region update state
+		commitmentTransaction.CurrState = dao.TxInfoState_SendHex
+		commitmentTransaction.SendAt = time.Now()
+		err = tx.Update(commitmentTransaction)
 		if err != nil {
-			log.Println(err)
 			return nil, err
 		}
-		log.Println(commitmentTxidToBob)
-	}
-	//endregion
 
-	//region 广播RD
-	latestRevocableDeliveryTx := &dao.RevocableDeliveryTransaction{}
-	err = tx.Select(
-		q.Eq("ChannelId", commitmentTransaction.ChannelId),
-		q.Eq("CommitmentTxId", commitmentTransaction.Id),
-		q.Eq("Owner", user.PeerId)).
-		OrderBy("CreateAt").Reverse().
-		First(latestRevocableDeliveryTx)
-	if err != nil {
-		log.Println(err)
-		return nil, err
-	}
+		latestRevocableDeliveryTx.CurrState = dao.TxInfoState_SendHex
+		latestRevocableDeliveryTx.SendAt = time.Now()
+		err = tx.Update(latestRevocableDeliveryTx)
+		if err != nil {
+			return nil, err
+		}
 
-	_, err = conn2tracker.SendRawTransaction(latestRevocableDeliveryTx.TxHex)
-	if err != nil {
-		log.Println(err)
-		msg := err.Error()
-		//如果omnicore返回的信息里面包含了non-BIP68-final (code 64)， 则说明因为需要等待1000个区块高度，广播是对的
-		if strings.Contains(msg, "non-BIP68-final (code 64)") == false &&
-			strings.Contains(msg, "Code: -25,Msg: Missing inputs") == false {
+		err = addRDTxToWaitDB(latestRevocableDeliveryTx)
+		if err != nil {
+			return nil, err
+		}
+		//endregion
+	} else {
+		err = ChannelService.CloseHtlcChannelSigned(tx, commitmentTransaction, *user)
+		if err != nil {
 			return nil, err
 		}
 	}
-	//endregion
-
-	// region update state
-	commitmentTransaction.CurrState = dao.TxInfoState_SendHex
-	commitmentTransaction.SendAt = time.Now()
-	err = tx.Update(commitmentTransaction)
-	if err != nil {
-		return nil, err
-	}
-
-	latestRevocableDeliveryTx.CurrState = dao.TxInfoState_SendHex
-	latestRevocableDeliveryTx.SendAt = time.Now()
-	err = tx.Update(latestRevocableDeliveryTx)
-	if err != nil {
-		return nil, err
-	}
-
-	err = addRDTxToWaitDB(latestRevocableDeliveryTx)
-	if err != nil {
-		return nil, err
-	}
-	//endregion
+	_ = tx.Commit()
 
 	return nil, nil
 }

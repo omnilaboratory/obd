@@ -111,7 +111,7 @@ func checkRsmcAndSendBR(db storm.Node) {
 							if rsmcBreachRemedy != nil && rsmcBreachRemedy.Id > 0 {
 								txid, err = conn2tracker.SendRawTransaction(rsmcBreachRemedy.BrTxHex)
 								if err == nil {
-									log.Println("timer send rsmcBr BreachRemedyTransaction id: ", rsmcBreachRemedy.Id, txid)
+									log.Println("timer send rsmcBr BreachRemedyTransaction id:", rsmcBreachRemedy.Id, txid)
 									rsmcBreachRemedy.CurrState = dao.TxInfoState_SendHex
 									rsmcBreachRemedy.SendAt = time.Now()
 									_ = db.Update(rsmcBreachRemedy)
@@ -126,8 +126,8 @@ func checkRsmcAndSendBR(db storm.Node) {
 									q.Eq("CommitmentTxId", rsmcBreachRemedy.CommitmentTxId)).First(htlcBreachRemedy)
 								if htlcBreachRemedy.Id > 0 {
 									txid, err = conn2tracker.SendRawTransaction(htlcBreachRemedy.BrTxHex)
-									if err != nil {
-										log.Println("timer send htlcBr BreachRemedyTransaction id: ", htlcBreachRemedy.Id, txid)
+									if err == nil {
+										log.Println("timer send htlcBr BreachRemedyTransaction id:", htlcBreachRemedy.Id, txid)
 										htlcBreachRemedy.CurrState = dao.TxInfoState_SendHex
 										htlcBreachRemedy.SendAt = time.Now()
 										_ = db.Update(htlcBreachRemedy)
@@ -146,7 +146,7 @@ func checkRsmcAndSendBR(db storm.Node) {
 										q.Eq("CommitmentTxId", sentRsmcBreachRemedy.CommitmentTxId)).First(htBreachRemedy)
 									if htBreachRemedy.Id > 0 {
 										txid, err = conn2tracker.SendRawTransaction(htBreachRemedy.BrTxHex)
-										if err != nil {
+										if err == nil {
 											log.Println("timer send htBr BreachRemedyTransaction id: ", htBreachRemedy.Id, txid)
 											htBreachRemedy.CurrState = dao.TxInfoState_SendHex
 											htBreachRemedy.SendAt = time.Now()
