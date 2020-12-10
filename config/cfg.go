@@ -13,8 +13,8 @@ var (
 	//Cfg               *ini.File
 	configPath   = flag.String("configPath", "config/conf.ini", "Config file path")
 	ServerPort   = 60020
-	ReadTimeout  = 5 * time.Second
-	WriteTimeout = 10 * time.Second
+	ReadTimeout  = 60 * time.Second
+	WriteTimeout = 60 * time.Second
 
 	TrackerHost = "localhost:60060"
 

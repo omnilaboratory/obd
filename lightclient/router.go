@@ -39,6 +39,6 @@ func wsClientConnect(c *gin.Context) {
 		SendChannel: make(chan []byte)}
 
 	go client.Write()
+	go client.Read()
 	globalWsClientManager.Connected <- client
-	client.Read()
 }

@@ -21,8 +21,6 @@ type commitmentTxSignedManager struct {
 	operationFlag sync.Mutex
 }
 
-//var tempP2pData_353 map[string]bean.AliceSignedC2bTxDataP2p
-
 var CommitmentTxSignedService commitmentTxSignedManager
 
 // step 3 协议号：351 bob所在的obd接收到了alice的转账申请 提送110351

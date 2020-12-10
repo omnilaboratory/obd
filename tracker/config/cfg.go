@@ -13,8 +13,8 @@ import (
 var (
 	//Cfg               *ini.File
 	configPath        = flag.String("trackerConfigPath", "tracker/config/conf.ini", "Config file path")
-	ReadTimeout       = 5 * time.Second
-	WriteTimeout      = 10 * time.Second
+	ReadTimeout       = 60 * time.Second
+	WriteTimeout      = 60 * time.Second
 	TrackerServerPort = 60060
 
 	ChainNode_Type = "test"

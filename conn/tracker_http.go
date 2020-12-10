@@ -60,24 +60,6 @@ func ListReceivedByAddress(address string) (result string) {
 	return ""
 }
 
-func ImportAddress(address string) (result string) {
-	if tool.CheckIsAddress(address) == false {
-		return ""
-	}
-	url := "http://" + config.TrackerHost + "/api/rpc/importAddress?address=" + address
-	log.Println(url)
-	resp, err := http.Get(url)
-	if err != nil {
-		return ""
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode == http.StatusOK {
-		body, _ := ioutil.ReadAll(resp.Body)
-		return gjson.Get(string(body), "data").Str
-	}
-	return ""
-}
-
 func GetTransactionById(txid string) (result string) {
 	url := "http://" + config.TrackerHost + "/api/rpc/getTransactionById?txid=" + txid
 	log.Println(url)
