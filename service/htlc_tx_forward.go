@@ -227,7 +227,7 @@ func (service *htlcForwardTxManager) PayerRequestFindPath(msgData string, user b
 		cacheDataForTx.KeyName = user.PeerId + "_" + pathRequest.H
 		bytes, _ := json.Marshal(requestFindPathInfo)
 		cacheDataForTx.Data = bytes
-		user.Db.Save(cacheDataForTx)
+		_ = user.Db.Save(cacheDataForTx)
 
 		sendMsgToTracker(enum.MsgType_Tracker_GetHtlcPath_351, pathRequest)
 		return make(map[string]interface{}), requestFindPathInfo.IsPrivate, nil
@@ -344,7 +344,7 @@ func (service *htlcForwardTxManager) GetResponseFromTrackerOfPayerRequestFindPat
 	retData["next_node_peerId"] = nextNodePeerId
 	retData["memo"] = requestFindPathInfo.Description
 
-	user.Db.DeleteStruct(cacheDataForTx)
+	_ = user.Db.DeleteStruct(cacheDataForTx)
 
 	return retData, nil
 }
@@ -732,9 +732,9 @@ func (service *htlcForwardTxManager) BeforeBobSignAddHtlcRequestAtBobSide_40(msg
 
 	cacheDataForTx := &dao.CacheDataForTx{}
 	cacheDataForTx.KeyName = requestAddHtlc.PayerCommitmentTxHash
-	tx.Select(q.Eq("KeyName", cacheDataForTx.KeyName)).First(cacheDataForTx)
+	_ = tx.Select(q.Eq("KeyName", cacheDataForTx.KeyName)).First(cacheDataForTx)
 	if cacheDataForTx.Id != 0 {
-		tx.DeleteStruct(cacheDataForTx)
+		_ = tx.DeleteStruct(cacheDataForTx)
 	}
 	cacheDataForTx.Data = []byte(msgData)
 	_ = tx.Save(cacheDataForTx)
@@ -2024,7 +2024,7 @@ func (service *htlcForwardTxManager) OnBobSignedC3bSubTxAtBobSide(msg bean.Reque
 		return nil, err
 	}
 
-	tx.Commit()
+	_ = tx.Commit()
 
 	needBobSignData := bean.NeedBobSignHtlcHeTxOfC3b{}
 	needBobSignData.ChannelId = jsonObj.ChannelId
