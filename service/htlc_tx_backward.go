@@ -128,7 +128,7 @@ func (service *htlcBackwardTxManager) SendRToPreviousNodeAtBobSide(msg bean.Requ
 
 	htlcTimeOut := latestCommitmentTxInfo.HtlcCltvExpiry
 	maxHeight := latestCommitmentTxInfo.BeginBlockHeight + htlcTimeOut
-	if strings.Contains(config.ChainNode_Type, "main") {
+	if strings.Contains(config.ChainNodeType, "main") {
 		if currBlockHeight > maxHeight {
 			return nil, errors.New(enum.Tips_htlc_timeOut)
 		}

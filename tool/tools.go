@@ -133,25 +133,25 @@ func GetMacAddrs() (macAddrs string) {
 }
 
 func GetUserPeerId(mnemonic string) string {
-	source := mnemonic + "@" + GetMacAddrs() + ":" + strconv.Itoa(config.ServerPort) + "in" + config.ChainNode_Type
+	source := mnemonic + "@" + GetMacAddrs() + ":" + strconv.Itoa(config.ServerPort) + "in" + config.ChainNodeType
 	return SignMsgWithSha256([]byte(source))
 }
 
 // get obd node id
 func GetObdNodeId() string {
 	source := GetMacAddrs() + ":" + strconv.Itoa(config.ServerPort)
-	return SignMsgWithSha256([]byte(source)) + config.ChainNode_Type
+	return SignMsgWithSha256([]byte(source)) + config.ChainNodeType
 }
 
 func GetCoreNet() *chaincfg.Params {
 	chainNet := &chaincfg.MainNetParams
-	if strings.Contains(config.ChainNode_Type, "main") {
+	if strings.Contains(config.ChainNodeType, "main") {
 		chainNet = &chaincfg.MainNetParams
 	}
-	if strings.Contains(config.ChainNode_Type, "test") {
+	if strings.Contains(config.ChainNodeType, "test") {
 		chainNet = &chaincfg.TestNet3Params
 	}
-	if strings.Contains(config.ChainNode_Type, "reg") {
+	if strings.Contains(config.ChainNodeType, "reg") {
 		chainNet = &chaincfg.RegressionNetParams
 	}
 	return chainNet

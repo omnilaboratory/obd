@@ -54,13 +54,13 @@ func (service *htlcForwardTxManager) CreateHtlcInvoice(msg bean.RequestMessage) 
 
 	addr := ""
 	//obbc,obtb,obcrt
-	if strings.Contains(config.ChainNode_Type, "main") {
+	if strings.Contains(config.ChainNodeType, "main") {
 		addr = "obbc"
 	}
-	if strings.Contains(config.ChainNode_Type, "test") {
+	if strings.Contains(config.ChainNodeType, "test") {
 		addr = "obtb"
 	}
-	if strings.Contains(config.ChainNode_Type, "reg") {
+	if strings.Contains(config.ChainNodeType, "reg") {
 		addr = "obcrt"
 	}
 	if requestData.Amount < tool.GetOmniDustBtc() {

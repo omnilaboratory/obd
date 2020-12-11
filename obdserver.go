@@ -74,7 +74,7 @@ func main() {
 	// Timer
 	service.ScheduleService.StartSchedule()
 
-	log.Println("obd " + tool.GetObdNodeId() + " start in " + config.ChainNode_Type)
+	log.Println("obd " + tool.GetObdNodeId() + " start in " + config.ChainNodeType)
 	log.Println("wsAddress: " + bean.CurrObdNodeInfo.WebsocketLink)
 	log.Fatal(server.ListenAndServe())
 }

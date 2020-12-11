@@ -21,7 +21,7 @@ var (
 
 	TrackerHost = "localhost:60060"
 
-	ChainNode_Type = "test1"
+	ChainNodeType = "test"
 	//P2P
 	P2P_hostIp     = "127.0.0.1"
 	P2P_sourcePort = 4001

@@ -39,7 +39,7 @@ func ConnectToTracker() (err error) {
 	if err != nil {
 		return err
 	}
-	config.ChainNode_Type = result
+	config.ChainNodeType = result
 
 	if service.TrackerChan == nil {
 		service.TrackerChan = make(chan []byte)
@@ -105,7 +105,7 @@ func readDataFromWs() {
 					}
 					htlcTrackerDealModule(requestMessage)
 				case enum.MsgType_Tracker_Connect_301:
-					config.ChainNode_Type = replyMessage.Result.(string)
+					config.ChainNodeType = replyMessage.Result.(string)
 					go SynData()
 				}
 			}
@@ -180,7 +180,7 @@ func sycUserInfos() {
 
 //同步通道信息
 func sycChannelInfos() {
-	_dir := "dbdata" + config.ChainNode_Type
+	_dir := "dbdata" + config.ChainNodeType
 	files, _ := ioutil.ReadDir(_dir)
 
 	dbNames := make([]string, 0)

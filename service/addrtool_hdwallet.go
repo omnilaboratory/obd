@@ -45,13 +45,13 @@ func (service *hdWalletManager) GetAddressByIndex(user *bean.User, index uint32)
 
 func getWalletObj(addrIndexExtKey *bip32.Key, wallet *Wallet) (err error) {
 	net := &chaincfg.MainNetParams
-	if strings.Contains(config.ChainNode_Type, "main") {
+	if strings.Contains(config.ChainNodeType, "main") {
 		net = &chaincfg.MainNetParams
 	}
-	if strings.Contains(config.ChainNode_Type, "test") {
+	if strings.Contains(config.ChainNodeType, "test") {
 		net = &chaincfg.TestNet3Params
 	}
-	if strings.Contains(config.ChainNode_Type, "reg") {
+	if strings.Contains(config.ChainNodeType, "reg") {
 		net = &chaincfg.RegressionNetParams
 	}
 
@@ -109,7 +109,7 @@ func (service *hdWalletManager) CreateChangeExtKey(mnemonic string) (changeExtKe
 	purposeExtKey, _ := masterKey.NewChildKey(bip32.FirstHardenedChild + 44)
 	//m/purpose'/cointype'
 	coinType := 0
-	if strings.Contains(config.ChainNode_Type, "main") == false {
+	if strings.Contains(config.ChainNodeType, "main") == false {
 		coinType = 1
 	}
 
