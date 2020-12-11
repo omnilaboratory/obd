@@ -238,6 +238,10 @@ func (manager *rpcManager) OmniListTransactions(context *gin.Context) {
 		result = ""
 		msg = err.Error()
 	}
+	if result == "[]" {
+		result = ""
+		msg = "no tx"
+	}
 	context.JSON(http.StatusOK, gin.H{
 		"msg":  msg,
 		"data": result,

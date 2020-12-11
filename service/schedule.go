@@ -83,22 +83,10 @@ func checkRsmcAndSendBR(db storm.Node) {
 					}
 					balance := gjson.Get(result, "balance").Float()
 
-					transactionsStr := ""
-					//当余额为零时，可能是有人广播了，或者是最初的omni充值没有确认
-					if balance == 0 {
-						//如果是omni充值还没有被确认，就不要去检测br了
-						transactionsStr, err = conn2tracker.OmniListTransactions(channelInfo.ChannelAddress)
-						if transactionsStr == "[]" {
-							continue
-						}
-					}
-
 					if balance < channelInfo.Amount {
-						if transactionsStr == "[]" {
-							transactionsStr, err = conn2tracker.OmniListTransactions(channelInfo.ChannelAddress)
-							if err != nil {
-								continue
-							}
+						transactionsStr, err := conn2tracker.OmniListTransactions(channelInfo.ChannelAddress)
+						if transactionsStr == "" {
+							continue
 						}
 						transactions := gjson.Parse(transactionsStr).Array()
 						for _, item := range transactions {

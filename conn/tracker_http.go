@@ -236,7 +236,6 @@ func OmniListTransactions(address string) (result string, err error) {
 		return "", errors.New("error address")
 	}
 	url := "http://" + config.TrackerHost + "/api/rpc/omniListTransactions?address=" + address
-	log.Println(url)
 	resp, err := http.Get(url)
 	if err != nil {
 		return "", err
