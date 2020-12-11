@@ -15,6 +15,7 @@ func loginRetData(client Client) string {
 	retData["userPeerId"] = client.User.PeerId
 	retData["nodePeerId"] = client.User.P2PLocalPeerId
 	retData["nodeAddress"] = client.User.P2PLocalAddress
+	retData["htlc_fee_rate"] = tool.GetHtlcFee()
 	bytes, _ := json.Marshal(retData)
 	return string(bytes)
 }

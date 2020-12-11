@@ -282,8 +282,6 @@ func getPrivateChannelForHtlc(requestData *bean.HtlcRequestFindPath, user bean.U
 	if len(retData) == 0 {
 		return nil, true, errors.New(enum.Tips_htlc_noPrivatePath)
 	}
-	retData["fee_rate"] = tool.GetHtlcFee()
-
 	return retData, true, nil
 }
 
@@ -345,8 +343,6 @@ func (service *htlcForwardTxManager) GetResponseFromTrackerOfPayerRequestFindPat
 	retData["min_cltv_expiry"] = arrLength
 	retData["next_node_peerId"] = nextNodePeerId
 	retData["memo"] = requestFindPathInfo.Description
-	retData["fee_rate"] = tool.GetHtlcFee()
-
 	_ = user.Db.DeleteStruct(cacheDataForTx)
 
 	return retData, nil
