@@ -18,6 +18,7 @@ require (
 	github.com/ethereum/go-ethereum v1.9.14
 	github.com/fastly/go-utils v0.0.0-20180712184237-d95a45783239 // indirect
 	github.com/gin-gonic/gin v1.6.3
+	github.com/go-delve/delve v1.5.1 // indirect
 	github.com/go-ini/ini v1.56.0
 	github.com/gorilla/websocket v1.4.2
 	github.com/jehiah/go-strftime v0.0.0-20171201141054-1d33003b3869 // indirect

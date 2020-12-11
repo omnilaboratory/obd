@@ -88,13 +88,13 @@ func checkRsmcAndSendBR(db storm.Node) {
 					if balance == 0 {
 						//如果是omni充值还没有被确认，就不要去检测br了
 						transactionsStr, err = conn2tracker.OmniListTransactions(channelInfo.ChannelAddress)
-						if err != nil {
+						if transactionsStr == "[]" {
 							continue
 						}
 					}
 
 					if balance < channelInfo.Amount {
-						if transactionsStr == "" {
+						if transactionsStr == "[]" {
 							transactionsStr, err = conn2tracker.OmniListTransactions(channelInfo.ChannelAddress)
 							if err != nil {
 								continue
@@ -172,6 +172,7 @@ func checkRsmcAndSendBR(db storm.Node) {
 								}
 							}
 						}
+						log.Println(transactionsStr)
 						channelInfo.CurrState = dao.ChannelState_Close
 						channelInfo.CloseAt = time.Now()
 						_ = db.Update(&channelInfo)

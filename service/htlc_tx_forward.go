@@ -514,7 +514,6 @@ func (service *htlcForwardTxManager) AliceAddHtlcAtAliceSide(msg bean.RequestMes
 		htlcRequestInfo.CreateBy = user.PeerId
 		_ = tx.Save(htlcRequestInfo)
 
-		totalStep := len(channelIds)
 		latestCommitmentTx, rawTx, err = htlcPayerCreateCommitmentTx_C3a(tx, channelInfo, *requestData, totalStep, currStep, latestCommitmentTx, user)
 		if err != nil {
 			log.Println(err)
@@ -534,7 +533,7 @@ func (service *htlcForwardTxManager) AliceAddHtlcAtAliceSide(msg bean.RequestMes
 		if requestData.CurrHtlcTempAddressForHt1aPubKey != htlcRequestInfo.CurrHtlcTempAddressForHt1aPubKey {
 			return nil, false, errors.New(fmt.Sprintf(enum.Tips_rsmc_notSameValueWhenCreate, requestData.CurrHtlcTempAddressForHt1aPubKey, htlcRequestInfo.CurrHtlcTempAddressForHt1aPubKey))
 		}
-		tx.Select(q.Eq("CommitmentTxId", latestCommitmentTx.Id)).First(&rawTx)
+		_ = tx.Select(q.Eq("CommitmentTxId", latestCommitmentTx.Id)).First(&rawTx)
 		if rawTx.Id == 0 {
 			return nil, false, errors.New("not found rawTx")
 		}
@@ -2772,7 +2771,7 @@ func checkHexAndUpdateC3bOn42Protocal(tx storm.Node, jsonObj bean.NeedBobSignHtl
 	}
 
 	latestCommitmentTx.HtlcTxHex = signedHtlcHex
-	latestCommitmentTx.HTLCTxid = omnicore.GetTxId(signedRsmcHex)
+	latestCommitmentTx.HTLCTxid = omnicore.GetTxId(signedHtlcHex)
 	//endregion
 
 	//region 4、rsmc Rd
