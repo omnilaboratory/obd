@@ -16,6 +16,9 @@ var (
 	ReadTimeout  = 60 * time.Second
 	WriteTimeout = 60 * time.Second
 
+	HtlcFeeRate = 0.0001
+	HtlcMaxFee  = 0.01
+
 	TrackerHost = "localhost:60060"
 
 	ChainNode_Type = "test1"
@@ -43,6 +46,14 @@ func Init() {
 	ServerPort = section.Key("port").MustInt(60020)
 	ReadTimeout = time.Duration(section.Key("readTimeout").MustInt(5)) * time.Second
 	WriteTimeout = time.Duration(section.Key("writeTimeout").MustInt(5)) * time.Second
+
+	htlcNode, err := Cfg.GetSection("htlc")
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	HtlcFeeRate = htlcNode.Key("feeRate").MustFloat64(0.0001)
+	HtlcMaxFee = htlcNode.Key("maxFee").MustFloat64(0.01)
 
 	p2pNode, err := Cfg.GetSection("p2p")
 	if err != nil {

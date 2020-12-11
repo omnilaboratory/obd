@@ -17,6 +17,8 @@ var (
 	WriteTimeout      = 60 * time.Second
 	TrackerServerPort = 60060
 
+	HtlcFeeRate = 0.0001
+
 	ChainNode_Type = "test"
 	ChainNode_Host = "62.234.216.108:18332"
 	ChainNode_User = "omniwallet"
@@ -45,6 +47,13 @@ func init() {
 		return
 	}
 	TrackerServerPort = section.Key("port").MustInt(60060)
+
+	htlcNode, err := Cfg.GetSection("htlc")
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	HtlcFeeRate = htlcNode.Key("feeRate").MustFloat64(0.0001)
 
 	chainNode, err := Cfg.GetSection("chainNode")
 	if err != nil {

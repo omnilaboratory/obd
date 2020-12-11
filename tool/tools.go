@@ -144,26 +144,22 @@ func GetObdNodeId() string {
 }
 
 func GetCoreNet() *chaincfg.Params {
-	net := &chaincfg.MainNetParams
+	chainNet := &chaincfg.MainNetParams
 	if strings.Contains(config.ChainNode_Type, "main") {
-		net = &chaincfg.MainNetParams
+		chainNet = &chaincfg.MainNetParams
 	}
 	if strings.Contains(config.ChainNode_Type, "test") {
-		net = &chaincfg.TestNet3Params
+		chainNet = &chaincfg.TestNet3Params
 	}
 	if strings.Contains(config.ChainNode_Type, "reg") {
-		net = &chaincfg.RegressionNetParams
+		chainNet = &chaincfg.RegressionNetParams
 	}
-	return net
+	return chainNet
 }
 
 func GetBtcMinerAmount(total float64) float64 {
 	out, _ := decimal.NewFromFloat(total).Div(decimal.NewFromFloat(4.0)).Sub(decimal.NewFromFloat(GetOmniDustBtc())).Round(8).Float64()
 	return out
-}
-
-func GetHtlcFee() float64 {
-	return 0.0001
 }
 
 func GetOmniDustBtc() float64 {

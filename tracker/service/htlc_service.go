@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/omnilaboratory/obd/tool"
 	"github.com/omnilaboratory/obd/tracker/bean"
+	"github.com/omnilaboratory/obd/tracker/config"
 	"github.com/omnilaboratory/obd/tracker/dao"
 	"github.com/shopspring/decimal"
 	"log"
@@ -189,7 +190,7 @@ func (manager *htlcManager) createChannelNetwork(payerObdNodeId, realPayerPeerId
 	}
 
 	if currNode.Level > 0 {
-		amount, _ = decimal.NewFromFloat(amount).Mul(decimal.NewFromFloat(1 + tool.GetHtlcFee()*float64(currNode.Level))).Round(8).Float64()
+		amount, _ = decimal.NewFromFloat(amount).Mul(decimal.NewFromFloat(1 + cfg.HtlcFeeRate*float64(currNode.Level))).Round(8).Float64()
 	}
 
 	currNodeIndex := 0

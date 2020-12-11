@@ -5,6 +5,7 @@ import (
 	"errors"
 	"github.com/omnilaboratory/obd/bean"
 	"github.com/omnilaboratory/obd/bean/enum"
+	"github.com/omnilaboratory/obd/config"
 	"github.com/omnilaboratory/obd/service"
 	"github.com/omnilaboratory/obd/tool"
 	"github.com/tidwall/gjson"
@@ -15,7 +16,8 @@ func loginRetData(client Client) string {
 	retData["userPeerId"] = client.User.PeerId
 	retData["nodePeerId"] = client.User.P2PLocalPeerId
 	retData["nodeAddress"] = client.User.P2PLocalAddress
-	retData["htlc_fee_rate"] = tool.GetHtlcFee()
+	retData["htlc_fee_rate"] = config.HtlcFeeRate
+	retData["htlc_max_fee"] = config.HtlcMaxFee
 	bytes, _ := json.Marshal(retData)
 	return string(bytes)
 }

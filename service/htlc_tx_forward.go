@@ -406,7 +406,11 @@ func (service *htlcForwardTxManager) AliceAddHtlcAtAliceSide(msg bean.RequestMes
 		return nil, false, errors.New(enum.Tips_common_newTxMsg)
 	}
 
-	tempAmount, _ := decimal.NewFromFloat(requestData.AmountToPayee).Mul(decimal.NewFromFloat(1 + tool.GetHtlcFee()*float64(totalStep-currStep-1))).Round(8).Float64()
+	tempAmount, _ := decimal.NewFromFloat(requestData.AmountToPayee).Mul(decimal.NewFromFloat(1 + config.HtlcFeeRate*float64(totalStep-currStep-1))).Round(8).Float64()
+	maxAmount, _ := decimal.NewFromFloat(requestData.AmountToPayee).Add(decimal.NewFromFloat(config.HtlcMaxFee)).Round(8).Float64()
+	if tempAmount > maxAmount {
+		tempAmount = maxAmount
+	}
 	if requestData.Amount < tempAmount {
 		return nil, false, errors.New(fmt.Sprintf("The amount in transaction must be more than %.8f", tempAmount))
 	}
@@ -2401,7 +2405,6 @@ func htlcPayeeCreateCommitmentTx_C3b(tx storm.Node, channelInfo *dao.ChannelInfo
 	// htlc的资产分配方案
 	var outputBean = commitmentTxOutputBean{}
 	decimal.DivisionPrecision = 8
-	//amountAndFee, _ := decimal.NewFromFloat(payerData.Amount).Mul(decimal.NewFromFloat((1 + tool.GetHtlcFee()*float64(totalStep-(currStep+1))))).Round(8).Float64()
 	outputBean.RsmcTempPubKey = reqData.CurrRsmcTempAddressPubKey
 	outputBean.HtlcTempPubKey = reqData.CurrHtlcTempAddressPubKey
 
