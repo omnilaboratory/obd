@@ -206,6 +206,7 @@ type CommitmentTransaction struct {
 	HTLCRedeemScript             string  `json:"htlc_redeem_script,omitempty"`
 	HTLCMultiAddressScriptPubKey string  `json:"htlc_multi_address_script_pub_key,omitempty"`
 	AmountToHtlc                 float64 `json:"amount_to_htlc,omitempty"`
+	HtlcAmountToPayee            float64 `json:"htlc_amount_to_payee"`
 	HtlcTxHex                    string  `json:"htlc_tx_hex,omitempty"`
 	HTLCTxid                     string  `json:"htlc_txid,omitempty"`
 	HtlcMemo                     string  `json:"htlc_memo,omitempty"`

@@ -380,6 +380,10 @@ func (service *htlcForwardTxManager) AliceAddHtlcAtAliceSide(msg bean.RequestMes
 		return nil, false, errors.New(enum.Tips_common_empty + "routing_packet")
 	}
 
+	if requestData.AmountToPayee < tool.GetOmniDustBtc() {
+		return nil, false, errors.New(fmt.Sprintf("The amount_to_payee in transaction must be more than %.8f", tool.GetOmniDustBtc()))
+	}
+
 	channelIds := strings.Split(requestData.RoutingPacket, ",")
 	totalStep := len(channelIds)
 	var channelInfo *dao.ChannelInfo
@@ -400,6 +404,11 @@ func (service *htlcForwardTxManager) AliceAddHtlcAtAliceSide(msg bean.RequestMes
 
 	if channelInfo.CurrState == dao.ChannelState_NewTx {
 		return nil, false, errors.New(enum.Tips_common_newTxMsg)
+	}
+
+	tempAmount, _ := decimal.NewFromFloat(requestData.AmountToPayee).Mul(decimal.NewFromFloat(1 + tool.GetHtlcFee()*float64(totalStep-currStep-1))).Round(8).Float64()
+	if requestData.Amount < tempAmount {
+		return nil, false, errors.New(fmt.Sprintf("The amount in transaction must be more than %.8f", tempAmount))
 	}
 
 	fundingTransaction := getFundingTransactionByChannelId(tx, channelInfo.ChannelId, user.PeerId)
@@ -543,6 +552,7 @@ func (service *htlcForwardTxManager) AliceAddHtlcAtAliceSide(msg bean.RequestMes
 	c3aP2pData.ChannelId = channelInfo.ChannelId
 	c3aP2pData.H = requestData.H
 	c3aP2pData.Amount = requestData.Amount
+	c3aP2pData.AmountToPayee = requestData.AmountToPayee
 	c3aP2pData.Memo = requestData.Memo
 	c3aP2pData.CltvExpiry = requestData.CltvExpiry
 	c3aP2pData.LastTempAddressPrivateKey = requestData.LastTempAddressPrivateKey
@@ -2300,6 +2310,7 @@ func htlcPayerCreateCommitmentTx_C3a(tx storm.Node, channelInfo *dao.ChannelInfo
 		}
 		allUsedTxidTemp += "," + usedTxid
 		newCommitmentTxInfo.HtlcRoutingPacket = requestData.RoutingPacket
+		newCommitmentTxInfo.HtlcAmountToPayee = requestData.AmountToPayee
 
 		newCommitmentTxInfo.HtlcCltvExpiry = requestData.CltvExpiry
 		newCommitmentTxInfo.BeginBlockHeight = conn2tracker.GetBlockCount()
@@ -2474,6 +2485,7 @@ func htlcPayeeCreateCommitmentTx_C3b(tx storm.Node, channelInfo *dao.ChannelInfo
 		}
 		allUsedTxidTemp += "," + usedTxid
 		newCommitmentTxInfo.HtlcRoutingPacket = payerData.RoutingPacket
+		newCommitmentTxInfo.HtlcAmountToPayee = payerData.AmountToPayee
 		newCommitmentTxInfo.HtlcCltvExpiry = payerData.CltvExpiry
 		newCommitmentTxInfo.BeginBlockHeight = conn2tracker.GetBlockCount()
 		newCommitmentTxInfo.HtlcTxHex = htlcTxData["hex"].(string)

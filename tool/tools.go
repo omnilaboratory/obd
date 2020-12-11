@@ -163,7 +163,7 @@ func GetBtcMinerAmount(total float64) float64 {
 }
 
 func GetHtlcFee() float64 {
-	return 0.00001
+	return 0.0001
 }
 
 func GetOmniDustBtc() float64 {

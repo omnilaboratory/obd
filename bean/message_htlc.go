@@ -28,6 +28,7 @@ type HtlcRequestFindPath struct {
 //type 消息 --100040: Alice请求创建htlc交易
 type CreateHtlcTxForC3a struct {
 	Amount                           float64 `json:"amount"`
+	AmountToPayee                    float64 `json:"amount_to_payee"`
 	Memo                             string  `json:"memo"`
 	H                                string  `json:"h"`
 	CltvExpiry                       int     `json:"cltv_expiry"` //发起者设定的总的等待的区块个数
@@ -72,6 +73,7 @@ type AliceSignedHtlcDataForC3aResult struct {
 type CreateHtlcTxForC3aOfP2p struct {
 	ChannelId                        string               `json:"channel_id"` //the global channel id.
 	Amount                           float64              `json:"amount"`
+	AmountToPayee                    float64              `json:"amount_to_payee"`
 	Memo                             string               `json:"memo"`
 	H                                string               `json:"h"`
 	CltvExpiry                       int                  `json:"cltv_expiry"` //发起者设定的总的等待的区块个数
