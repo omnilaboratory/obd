@@ -75,7 +75,7 @@ func routerOfP2PNode(msg bean.RequestMessage, data string, client *Client) (retD
 			return string(retData), nil
 		} else {
 			if needNoticeAlice {
-				client.sendToMyself(enum.MsgType_CommitmentTxSigned_RecvRevokeAndAcknowledgeCommitmentTransaction_352, true, string(err.Error()))
+				client.SendToMyself(enum.MsgType_CommitmentTxSigned_RecvRevokeAndAcknowledgeCommitmentTransaction_352, true, string(err.Error()))
 			}
 		}
 		defaultErr = err

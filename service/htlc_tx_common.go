@@ -6,6 +6,7 @@ import (
 	"github.com/asdine/storm/q"
 	"github.com/omnilaboratory/obd/bean"
 	"github.com/omnilaboratory/obd/dao"
+	"github.com/omnilaboratory/obd/omnicore"
 	"github.com/tidwall/gjson"
 	"log"
 	"time"
@@ -33,7 +34,7 @@ func createHtlcHLockTxObj(tx storm.Node, owner string, channelInfo dao.ChannelIn
 	henxTx.InputTxid = commitmentTxInfo.HTLCTxid
 
 	henxTx.PayeeChannelPubKey = outputBean["otherSideChannelPubKey"].(string)
-	multiAddr, err := rpcClient.CreateMultiSig(2, []string{h, henxTx.PayeeChannelPubKey})
+	multiAddr, err := omnicore.CreateMultiSig(2, []string{h, henxTx.PayeeChannelPubKey})
 	if err != nil {
 		return nil, err
 	}
@@ -69,7 +70,7 @@ func createHtlcTimeoutTxObj(tx storm.Node, owner string, channelInfo dao.Channel
 
 	//output to rsmc
 	htlcTimeoutTx.RSMCTempAddressPubKey = outputBean.RsmcTempPubKey
-	multiAddr, err := rpcClient.CreateMultiSig(2, []string{htlcTimeoutTx.RSMCTempAddressPubKey, outputBean.OppositeSideChannelPubKey})
+	multiAddr, err := omnicore.CreateMultiSig(2, []string{htlcTimeoutTx.RSMCTempAddressPubKey, outputBean.OppositeSideChannelPubKey})
 	if err != nil {
 		return nil, err
 	}
@@ -114,7 +115,7 @@ func createHtlcRDTxObj(owner string, channelInfo *dao.ChannelInfo, htlcTimeoutTx
 //为alice生成HT1a
 func createHT1aForAlice(channelInfo dao.ChannelInfo, aliceDataJson bean.CreateHtlcTxForC3aOfP2p, signedHtlcHex string,
 	bobChannelPubKey string, propertyId int64, amountToHtlc float64, htlcTimeOut int) (*bean.NeedClientSignTxData, error) {
-	aliceHtlcMultiAddr, err := rpcClient.CreateMultiSig(2, []string{aliceDataJson.CurrHtlcTempAddressPubKey, bobChannelPubKey})
+	aliceHtlcMultiAddr, err := omnicore.CreateMultiSig(2, []string{aliceDataJson.CurrHtlcTempAddressPubKey, bobChannelPubKey})
 	if err != nil {
 		return nil, err
 	}
@@ -128,12 +129,12 @@ func createHT1aForAlice(channelInfo dao.ChannelInfo, aliceDataJson bean.CreateHt
 		return nil, err
 	}
 
-	aliceHt1aMultiAddr, err := rpcClient.CreateMultiSig(2, []string{aliceDataJson.CurrHtlcTempAddressForHt1aPubKey, bobChannelPubKey})
+	aliceHt1aMultiAddr, err := omnicore.CreateMultiSig(2, []string{aliceDataJson.CurrHtlcTempAddressForHt1aPubKey, bobChannelPubKey})
 	if err != nil {
 		return nil, err
 	}
 	aliceHt1aMultiAddress := gjson.Get(aliceHt1aMultiAddr, "address").String()
-	aliceHt1aTxData, err := rpcClient.OmniCreateRawTransactionUseUnsendInput(
+	aliceHt1aTxData, err := omnicore.OmniCreateRawTransactionUseUnsendInput(
 		aliceHtlcMultiAddress,
 		htlcInputs,
 		aliceHt1aMultiAddress,
@@ -179,7 +180,7 @@ func saveHT1aForAlice(tx storm.Node, channelInfo dao.ChannelInfo, commitmentTran
 	}
 	htlcTimeoutTx.InputTxid = payerHt1aInputsFromHtlc[0].Txid
 
-	htlcTimeoutTx.RSMCTxid = rpcClient.GetTxId(signedHtlaHex)
+	htlcTimeoutTx.RSMCTxid = omnicore.GetTxId(signedHtlaHex)
 	htlcTimeoutTx.RSMCTxHex = signedHtlaHex
 	htlcTimeoutTx.SignAt = time.Now()
 	htlcTimeoutTx.CurrState = dao.TxInfoState_CreateAndSign
@@ -194,7 +195,7 @@ func saveHT1aForAlice(tx storm.Node, channelInfo dao.ChannelInfo, commitmentTran
 // 收款方在41号协议用签名完成toHtlc的Hex，就用这个完整交易Hex，构建C3a方的Hlock交易
 func createHtlcLockByHForBobAtPayeeSide(channelInfo dao.ChannelInfo, aliceDataJson bean.CreateHtlcTxForC3aOfP2p, signedHtlcHex string,
 	bobChannelPubKey string, propertyId int64, amountToHtlc float64) (*bean.NeedClientSignTxData, error) {
-	aliceHtlcMultiAddr, err := rpcClient.CreateMultiSig(2, []string{aliceDataJson.CurrHtlcTempAddressPubKey, bobChannelPubKey})
+	aliceHtlcMultiAddr, err := omnicore.CreateMultiSig(2, []string{aliceDataJson.CurrHtlcTempAddressPubKey, bobChannelPubKey})
 	if err != nil {
 		return nil, err
 	}
@@ -208,12 +209,12 @@ func createHtlcLockByHForBobAtPayeeSide(channelInfo dao.ChannelInfo, aliceDataJs
 		return nil, err
 	}
 
-	htlcLockByHMultiAddr, err := rpcClient.CreateMultiSig(2, []string{aliceDataJson.H, bobChannelPubKey})
+	htlcLockByHMultiAddr, err := omnicore.CreateMultiSig(2, []string{aliceDataJson.H, bobChannelPubKey})
 	if err != nil {
 		return nil, err
 	}
 	htlcLockByHMultiAddress := gjson.Get(htlcLockByHMultiAddr, "address").String()
-	hlockHexData, err := rpcClient.OmniCreateRawTransactionUseUnsendInput(
+	hlockHexData, err := omnicore.OmniCreateRawTransactionUseUnsendInput(
 		aliceHtlcMultiAddress,
 		htlcInputs,
 		htlcLockByHMultiAddress,
@@ -261,7 +262,7 @@ func saveHtlcLockByHTxAtPayerSide(tx storm.Node, channelInfo dao.ChannelInfo,
 		return nil, err
 	}
 
-	hlockTx.Txid = rpcClient.GetTxId(signedHLockHex)
+	hlockTx.Txid = omnicore.GetTxId(signedHLockHex)
 	hlockTx.TxHex = signedHLockHex
 	hlockTx.CreateAt = time.Now()
 	hlockTx.CurrState = dao.TxInfoState_Create
@@ -303,7 +304,7 @@ func saveHtlcHeTxForPayee(tx storm.Node, channelInfo dao.ChannelInfo, commitment
 		log.Println(err)
 		return nil, err
 	}
-	c3bHeTx, err := rpcClient.OmniCreateRawTransactionUseUnsendInput(
+	c3bHeTx, err := omnicore.OmniCreateRawTransactionUseUnsendInput(
 		c3bHlockMultiAddress,
 		c3bHlocOutputs,
 		c3bHeMultiAddress,
@@ -363,7 +364,7 @@ func updateHtlcHeTxForPayee(tx storm.Node, channelInfo dao.ChannelInfo, commitme
 	if he1b.Id == 0 {
 		return errors.New("Not found he1b in the database")
 	}
-	he1b.RSMCTxid = rpcClient.GetTxId(signedHex)
+	he1b.RSMCTxid = omnicore.GetTxId(signedHex)
 	he1b.RSMCTxHex = signedHex
 	he1b.CurrState = dao.TxInfoState_Create
 	err = tx.Update(he1b)
@@ -377,7 +378,7 @@ func updateHtlcHeTxForPayee(tx storm.Node, channelInfo dao.ChannelInfo, commitme
 // 付款方在42号协议，用签名完成toHtlc的Hex，就用这个完整交易Hex，构建C3b方的Hlock交易
 func createHtlcLockByHForBobAtPayerSide(channelInfo dao.ChannelInfo, bobDataJson bean.NeedAliceSignHtlcTxOfC3bP2p, signedHtlcHex string, h string, payeeChannelPubKey string,
 	aliceChannelPubKey string, propertyId int64, amountToHtlc float64) (txData bean.NeedClientSignTxData, err error) {
-	bobHtlcMultiAddr, err := rpcClient.CreateMultiSig(2, []string{bobDataJson.PayeeCurrHtlcTempAddressPubKey, aliceChannelPubKey})
+	bobHtlcMultiAddr, err := omnicore.CreateMultiSig(2, []string{bobDataJson.PayeeCurrHtlcTempAddressPubKey, aliceChannelPubKey})
 	if err != nil {
 		return txData, err
 	}
@@ -391,12 +392,12 @@ func createHtlcLockByHForBobAtPayerSide(channelInfo dao.ChannelInfo, bobDataJson
 		return txData, err
 	}
 
-	htlcLockByHMultiAddr, err := rpcClient.CreateMultiSig(2, []string{h, payeeChannelPubKey})
+	htlcLockByHMultiAddr, err := omnicore.CreateMultiSig(2, []string{h, payeeChannelPubKey})
 	if err != nil {
 		return txData, err
 	}
 	htlcLockByHMultiAddress := gjson.Get(htlcLockByHMultiAddr, "address").String()
-	hlockTx, err := rpcClient.OmniCreateRawTransactionUseUnsendInput(
+	hlockTx, err := omnicore.OmniCreateRawTransactionUseUnsendInput(
 		bobHtlcMultiAddress,
 		htlcInputs,
 		htlcLockByHMultiAddress,
@@ -436,7 +437,7 @@ func saveHtlcLockByHForBobAtPayeeSide(tx storm.Node, channelInfo dao.ChannelInfo
 		return nil, err
 	}
 
-	hlock.Txid = rpcClient.GetTxId(signedHLockHex)
+	hlock.Txid = omnicore.GetTxId(signedHLockHex)
 	hlock.TxHex = signedHLockHex
 	hlock.CreateAt = time.Now()
 	hlock.CurrState = dao.TxInfoState_Create
@@ -484,7 +485,7 @@ func saveHtRD1a(tx storm.Node, aliceHt1aRDhex string, latestCommitmentTransactio
 			log.Println(err)
 			return nil, err
 		}
-		htrd.Txid = rpcClient.GetTxId(aliceHt1aRDhex)
+		htrd.Txid = omnicore.GetTxId(aliceHt1aRDhex)
 		htrd.TxHex = aliceHt1aRDhex
 		htrd.SignAt = time.Now()
 		htrd.CurrState = dao.TxInfoState_CreateAndSign

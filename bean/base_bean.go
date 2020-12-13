@@ -22,3 +22,16 @@ type User struct {
 	CurrAddrIndex   int       `json:"curr_addr_index"`
 	Db              *storm.DB //db
 }
+
+type TransactionInputItem struct {
+	Txid         string  `json:"txid"`
+	ScriptPubKey string  `json:"scriptPubKey"`
+	RedeemScript string  `json:"redeem_script"`
+	Vout         uint32  `json:"vout"`
+	Amount       float64 `json:"value"`
+}
+
+type TransactionOutputItem struct {
+	ToBitCoinAddress string
+	Amount           float64
+}

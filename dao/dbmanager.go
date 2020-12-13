@@ -17,7 +17,7 @@ var DBService dbManager
 
 func (manager dbManager) GetGlobalDB() (*storm.DB, error) {
 	if DBService.Db == nil {
-		_dir := "dbdata" + config.ChainNode_Type
+		_dir := "dbdata" + config.ChainNodeType
 		_ = tool.PathExistsAndCreate(_dir)
 		db, e := storm.Open(_dir + "/" + config.DBname)
 		if e != nil {
@@ -30,7 +30,7 @@ func (manager dbManager) GetGlobalDB() (*storm.DB, error) {
 }
 
 func (manager dbManager) GetUserDB(peerId string) (*storm.DB, error) {
-	_dir := "dbdata" + config.ChainNode_Type
+	_dir := "dbdata" + config.ChainNodeType
 	_ = tool.PathExistsAndCreate(_dir)
 
 	db, e := storm.Open(_dir + "/user_" + peerId + ".db")

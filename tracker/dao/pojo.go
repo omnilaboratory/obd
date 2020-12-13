@@ -19,6 +19,7 @@ type ObdNodeInfo struct {
 //ObdNodeLoginLog
 type ObdNodeLoginLog struct {
 	Id        int       `storm:"id,increment" json:"id"`
+	ObdId     string    `json:"obd_id"`
 	LoginIp   string    `json:"login_ip"`
 	LoginTime time.Time `json:"login_time"`
 }

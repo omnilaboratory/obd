@@ -2,9 +2,10 @@ package service
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/omnilaboratory/obd/rpc"
 	"github.com/omnilaboratory/obd/tool"
 	"github.com/omnilaboratory/obd/tracker/bean"
+	"github.com/omnilaboratory/obd/tracker/config"
+	"github.com/omnilaboratory/obd/tracker/rpc"
 	"github.com/tidwall/gjson"
 	"net/http"
 	"strconv"
@@ -228,13 +229,18 @@ func (manager *rpcManager) OmniDecodeTransaction(context *gin.Context) {
 		"data": result,
 	})
 }
+
 func (manager *rpcManager) OmniListTransactions(context *gin.Context) {
 	address := context.Query("address")
-	result, err := rpc.NewClient().OmniListTransactions(address, 100, 1)
+	result, err := rpc.NewClient().OmniListTransactions(address, 100, 0)
 	msg := ""
 	if err != nil {
 		result = ""
 		msg = err.Error()
+	}
+	if result == "[]" {
+		result = ""
+		msg = "no tx"
 	}
 	context.JSON(http.StatusOK, gin.H{
 		"msg":  msg,
@@ -583,5 +589,12 @@ func (manager *rpcManager) GetNetworkInfo(context *gin.Context) {
 	context.JSON(http.StatusOK, gin.H{
 		"msg":  msg,
 		"data": result,
+	})
+}
+
+func (manager *rpcManager) GetChainNodeType(context *gin.Context) {
+	context.JSON(http.StatusOK, gin.H{
+		"msg":  "",
+		"data": cfg.ChainNode_Type,
 	})
 }

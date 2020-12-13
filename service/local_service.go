@@ -7,9 +7,9 @@ import (
 	"github.com/omnilaboratory/obd/bean/enum"
 	"github.com/omnilaboratory/obd/conn"
 	"github.com/omnilaboratory/obd/dao"
-	"github.com/omnilaboratory/obd/rpc"
 	"github.com/omnilaboratory/obd/tool"
 	"log"
+	"strings"
 	"time"
 )
 
@@ -21,7 +21,6 @@ func Start() {
 	if err != nil {
 		log.Println(err)
 	}
-	rpcClient = rpc.NewClient()
 }
 
 func addRDTxToWaitDB(lastRevocableDeliveryTx *dao.RevocableDeliveryTransaction) (err error) {
@@ -137,6 +136,7 @@ func addHTDnxTxToWaitDB(txInfo *dao.HTLCTimeoutDeliveryTxB) (err error) {
 }
 
 func sendRdTx() {
+	log.Println("sendRdTx")
 	var nodes []dao.RDTxWaitingSend
 	err := obdGlobalDB.Select(q.Eq("IsEnable", true)).Find(&nodes)
 	if err != nil {
@@ -145,13 +145,18 @@ func sendRdTx() {
 
 	for _, node := range nodes {
 		if tool.CheckIsString(&node.TransactionHex) {
-			_, err := conn.HttpSendRawTransactionFromTracker(node.TransactionHex)
+			_, err := conn2tracker.SendRawTransaction(node.TransactionHex)
 			if err == nil {
 				if node.Type == 1 {
 					_ = addHTRD1aTxToWaitDB(node.HtnxIdAndHtnxRdId)
 				}
 				_ = obdGlobalDB.UpdateField(&node, "IsEnable", false)
 				_ = obdGlobalDB.UpdateField(&node, "FinishAt", time.Now())
+			} else {
+				if strings.Contains(err.Error(), "Code: -25,Msg: Missing inputs") {
+					_ = obdGlobalDB.UpdateField(&node, "IsEnable", false)
+					_ = obdGlobalDB.UpdateField(&node, "FinishAt", time.Now())
+				}
 			}
 		}
 	}

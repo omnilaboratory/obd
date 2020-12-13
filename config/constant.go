@@ -20,10 +20,6 @@ const (
 	TrackerDbName = "trackerServer.db"
 )
 
-func GetHtlcFee() float64 {
-	return 0.00001
-}
-
 var minerFeePricePerByte = 0.0
 var successGetMinerFeePriceAt time.Time
 
@@ -56,8 +52,4 @@ func GetMinMinerFee(ins int) float64 {
 	txSize := ins*150 + 68 + 90
 	result, _ := decimal.NewFromFloat(float64(txSize) * 3.5).Div(decimal.NewFromFloat(100000000)).Round(8).Float64()
 	return result
-}
-
-func GetOmniDustBtc() float64 {
-	return 0.00000546
 }

@@ -3,17 +3,22 @@ package omnicore
 import (
 	"bytes"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/btcsuite/btcd/txscript"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
 	"github.com/omnilaboratory/obd/bean"
-	"github.com/omnilaboratory/obd/config"
+	"github.com/omnilaboratory/obd/bean/enum"
+	"github.com/omnilaboratory/obd/conn"
 	"github.com/omnilaboratory/obd/tool"
+	"github.com/shopspring/decimal"
 	"github.com/tidwall/gjson"
 	"log"
 	"strconv"
+	"strings"
 )
 
 func VerifyOmniTxHex(hex string, propertyId int64, amount float64, toAddress string, propertyDivisible bool) (pass bool, err error) {
@@ -32,7 +37,7 @@ func VerifyOmniTxHex(hex string, propertyId int64, amount float64, toAddress str
 		}
 
 		value := item.Get("value").Float()
-		if value <= config.GetOmniDustBtc() {
+		if value <= tool.GetOmniDustBtc() {
 			addresses := item.Get("scriptPubKey").Get("addresses").Array()
 			for _, address := range addresses {
 				if address.Str == toAddress {
@@ -62,7 +67,7 @@ func VerifyOmniTxHexOutAddress(hex string, toAddress string) (pass bool, err err
 	for _, item := range vouts {
 
 		value := item.Get("value").Float()
-		if value <= config.GetOmniDustBtc() {
+		if value <= tool.GetOmniDustBtc() {
 			addresses := item.Get("scriptPubKey").Get("addresses").Array()
 			for _, address := range addresses {
 				if address.Str == toAddress {
@@ -165,6 +170,91 @@ func VerifySignatureHex(inputs []bean.RawTxInputItem, redeemHex string) (err err
 			return err
 		}
 	}
-
 	return nil
+}
+
+type multiSign struct {
+	Address      string `json:"address"`
+	RedeemScript string `json:"redeemScript"`
+	ScriptPubKey string `json:"scriptPubKey"`
+}
+
+func CreateMultiSig(minSignNum int, keys []string) (result string, err error) {
+	addr, redeemScript, scriptPubKey := CreateMultiSigAddr(keys[0], keys[1], tool.GetCoreNet())
+	sign := multiSign{}
+	sign.Address = addr
+	sign.RedeemScript = redeemScript
+	sign.ScriptPubKey = scriptPubKey
+	marshal, _ := json.Marshal(&sign)
+	return string(marshal), nil
+}
+
+func DecodeBtcRawTransaction(hex string) (result string, err error) {
+	result = DecodeRawTransaction(hex, tool.GetCoreNet())
+	return result, err
+}
+
+func GetMinerFee() float64 {
+	price := conn2tracker.EstimateSmartFee()
+	if price == 0 {
+		price = 6
+	} else {
+		price = price / 6
+	}
+	if price < 4 {
+		price = 4
+	}
+	txSize := 150 + 68 + 90
+	result, _ := decimal.NewFromFloat(float64(txSize) * price).Div(decimal.NewFromFloat(100000000)).Round(8).Float64()
+	return result
+}
+
+func GetTxId(hex string) string {
+	testResult, err := DecodeBtcRawTransaction(hex)
+	if err == nil {
+		return gjson.Parse(testResult).Get("txid").Str
+	}
+	return ""
+}
+
+func CheckMultiSign(hex string, step int) (pass bool, err error) {
+	if len(hex) == 0 {
+		return false, errors.New("Empty hex")
+	}
+	result, err := DecodeBtcRawTransaction(hex)
+	vins := gjson.Get(result, "vin").Array()
+	for i := 0; i < len(vins); i++ {
+		asm := vins[i].Get("scriptSig").Get("asm").Str
+		asmArr := strings.Split(asm, " ")
+		if step == 1 {
+			if len(asmArr) != 4 || (asmArr[1] == "0" && asmArr[2] == "0") {
+				return false, errors.New("err sign")
+			}
+		}
+		if step == 2 {
+			if len(asmArr) != 4 || asmArr[1] == "0" || asmArr[2] == "0" {
+				return false, errors.New("err sign")
+			}
+		}
+	}
+	return true, nil
+}
+
+func GetPubKeyFromWifAndCheck(privKeyHex string, pubKey string) (pubKeyFromWif string, err error) {
+	if tool.CheckIsString(&privKeyHex) == false {
+		return "", errors.New(enum.Tips_common_empty + "private key")
+	}
+	if tool.CheckIsString(&pubKey) == false {
+		return "", errors.New(enum.Tips_common_empty + "pubKey")
+	}
+
+	wif, err := btcutil.DecodeWIF(privKeyHex)
+	if err != nil {
+		return "", errors.New(enum.Tips_common_wrong + "private key")
+	}
+	pubKeyFromWif = hex.EncodeToString(wif.PrivKey.PubKey().SerializeCompressed())
+	if pubKeyFromWif != pubKey {
+		return "", errors.New(fmt.Sprintf(enum.Tips_rsmc_notPairPrivAndPubKey, privKeyHex, pubKey))
+	}
+	return pubKeyFromWif, nil
 }

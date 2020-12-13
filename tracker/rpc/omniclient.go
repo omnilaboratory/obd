@@ -2,10 +2,6 @@ package rpc
 
 import (
 	"errors"
-	"github.com/omnilaboratory/obd/bean"
-	"github.com/omnilaboratory/obd/config"
-	"github.com/omnilaboratory/obd/conn"
-	"github.com/omnilaboratory/obd/omnicore"
 	"github.com/omnilaboratory/obd/tool"
 	"github.com/shopspring/decimal"
 	"github.com/tidwall/gjson"
@@ -190,55 +186,4 @@ func (client *Client) omniCreateRawtxChange(rawtx string, prevtxs []map[string]i
 }
 func (client *Client) omniCreateRawtxReference(rawtx string, destination string) (result string, err error) {
 	return client.send("omni_createrawtx_reference", []interface{}{rawtx, destination})
-}
-
-func (client *Client) OmniSignRawTransactionForUnsend(hex string, inputItems []TransactionInputItem, privKey string) (string, string, error) {
-
-	var inputs []map[string]interface{}
-	var items []bean.RawTxInputItem
-
-	for _, item := range inputItems {
-		node := make(map[string]interface{})
-		node["txid"] = item.Txid
-		node["vout"] = item.Vout
-		node["amount"] = item.Amount
-		node["scriptPubKey"] = item.ScriptPubKey
-		node["redeemScript"] = item.RedeemScript
-
-		inputItem := bean.RawTxInputItem{}
-		inputItem.ScriptPubKey = item.ScriptPubKey
-		inputItem.RedeemScript = item.RedeemScript
-		items = append(items, inputItem)
-
-		inputs = append(inputs, node)
-	}
-	hex, err := omnicore.SignRawHex(items, hex, privKey)
-	if err != nil {
-		return "", hex, err
-	}
-
-	return client.GetTxId(hex), hex, nil
-}
-
-func GetBtcMinerAmount(total float64) float64 {
-	out, _ := decimal.NewFromFloat(total).Div(decimal.NewFromFloat(4.0)).Sub(decimal.NewFromFloat(config.GetOmniDustBtc())).Round(8).Float64()
-	return out
-}
-
-// ins*150 + outs*34 + 10 + 80 = transaction size
-// https://shimo.im/docs/5w9Fi1c9vm8yp1ly
-//https://bitcoinfees.earn.com/api/v1/fees/recommended
-func (client *Client) GetMinerFee() float64 {
-	price := conn.HttpEstimateSmartFeeFromTracker()
-	if price == 0 {
-		price = 6
-	} else {
-		price = price / 6
-	}
-	if price < 4 {
-		price = 4
-	}
-	txSize := 150 + 68 + 90
-	result, _ := decimal.NewFromFloat(float64(txSize) * price).Div(decimal.NewFromFloat(100000000)).Round(8).Float64()
-	return result
 }

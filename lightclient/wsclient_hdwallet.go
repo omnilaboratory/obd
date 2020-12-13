@@ -21,7 +21,7 @@ func (client *Client) hdWalletModule(msg bean.RequestMessage) (enum.SendTargetTy
 			data = mnemonic
 			status = true
 		}
-		client.sendToMyself(msg.Type, status, data)
+		client.SendToMyself(msg.Type, status, data)
 
 	case enum.MsgType_Mnemonic_CreateAddress_3000:
 		wallet, err := service.HDWalletService.CreateNewAddress(client.User)
@@ -37,7 +37,7 @@ func (client *Client) hdWalletModule(msg bean.RequestMessage) (enum.SendTargetTy
 			}
 			status = true
 		}
-		client.sendToMyself(msg.Type, status, data)
+		client.SendToMyself(msg.Type, status, data)
 
 	case enum.MsgType_Mnemonic_GetAddressByIndex_3001:
 		index, err := strconv.Atoi(msg.Data)
@@ -57,7 +57,7 @@ func (client *Client) hdWalletModule(msg bean.RequestMessage) (enum.SendTargetTy
 				}
 			}
 		}
-		client.sendToMyself(msg.Type, status, data)
+		client.SendToMyself(msg.Type, status, data)
 
 	default:
 		sendType = enum.SendTargetType_SendToNone

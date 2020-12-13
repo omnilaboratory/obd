@@ -5,10 +5,11 @@ import (
 	"errors"
 	"github.com/asdine/storm/q"
 	"github.com/gin-gonic/gin"
-	"github.com/omnilaboratory/obd/config"
 	"github.com/omnilaboratory/obd/tool"
 	"github.com/omnilaboratory/obd/tracker/bean"
+	"github.com/omnilaboratory/obd/tracker/config"
 	"github.com/omnilaboratory/obd/tracker/dao"
+	"github.com/shopspring/decimal"
 	"log"
 	"net/http"
 	"strings"
@@ -54,7 +55,7 @@ func (manager *htlcManager) getPath(obdClient *ObdNode, msgData string) (path in
 	if tool.CheckIsString(&pathRequest.PayeePeerId) == false {
 		return "", errors.New("wrong SendeePeerId")
 	}
-	if pathRequest.Amount < config.GetOmniDustBtc() {
+	if pathRequest.Amount < tool.GetOmniDustBtc() {
 		return "", errors.New("wrong amount")
 	}
 
@@ -189,7 +190,7 @@ func (manager *htlcManager) createChannelNetwork(payerObdNodeId, realPayerPeerId
 	}
 
 	if currNode.Level > 0 {
-		amount += config.GetHtlcFee()
+		amount, _ = decimal.NewFromFloat(amount).Mul(decimal.NewFromFloat(1 + cfg.HtlcFeeRate*float64(currNode.Level))).Round(8).Float64()
 	}
 
 	currNodeIndex := 0

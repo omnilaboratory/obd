@@ -11,7 +11,6 @@ import (
 	"github.com/omnilaboratory/obd/conn"
 	"github.com/omnilaboratory/obd/dao"
 	"github.com/omnilaboratory/obd/omnicore"
-	"github.com/omnilaboratory/obd/rpc"
 	"github.com/omnilaboratory/obd/tool"
 	"github.com/shopspring/decimal"
 	"log"
@@ -29,7 +28,7 @@ func findUserIsOnline(nodePeerId, userPeerId string) error {
 			return nil
 		}
 		if nodePeerId != P2PLocalPeerId {
-			if HttpGetUserStateFromTracker(userPeerId) > 0 {
+			if conn2tracker.GetUserState(userPeerId) > 0 {
 				return nil
 			}
 		}
@@ -80,7 +79,7 @@ func createCommitmentTx(owner string, channelInfo *dao.ChannelInfo, fundingTrans
 
 	//output to rsmc
 	commitmentTxInfo.RSMCTempAddressPubKey = outputBean.RsmcTempPubKey
-	multiAddr, err := rpcClient.CreateMultiSig(2, []string{commitmentTxInfo.RSMCTempAddressPubKey, outputBean.OppositeSideChannelPubKey})
+	multiAddr, err := omnicore.CreateMultiSig(2, []string{commitmentTxInfo.RSMCTempAddressPubKey, outputBean.OppositeSideChannelPubKey})
 	if err != nil {
 		return nil, err
 	}
@@ -90,7 +89,7 @@ func createCommitmentTx(owner string, channelInfo *dao.ChannelInfo, fundingTrans
 
 	if tool.CheckIsString(&outputBean.HtlcTempPubKey) {
 		commitmentTxInfo.HTLCTempAddressPubKey = outputBean.HtlcTempPubKey
-		multiAddr, err := rpcClient.CreateMultiSig(2, []string{commitmentTxInfo.HTLCTempAddressPubKey, outputBean.OppositeSideChannelPubKey})
+		multiAddr, err := omnicore.CreateMultiSig(2, []string{commitmentTxInfo.HTLCTempAddressPubKey, outputBean.OppositeSideChannelPubKey})
 		if err != nil {
 			return nil, err
 		}
@@ -188,7 +187,7 @@ func checkBtcTxHex(btcFeeTxHexDecode string, channelInfo *dao.ChannelInfo, peerI
 	}
 
 	inTxid := vin1.Get("txid").String()
-	inputTx := conn.HttpGetTransactionByIdFromTracker(inTxid)
+	inputTx := conn2tracker.GetTransactionById(inTxid)
 	if err != nil {
 		err = errors.New(enum.Tips_funding_wrongBtcHexVin + err.Error())
 		log.Println(err)
@@ -197,7 +196,7 @@ func checkBtcTxHex(btcFeeTxHexDecode string, channelInfo *dao.ChannelInfo, peerI
 
 	jsonInputTxDecode := gjson.Parse(inputTx)
 	flag := false
-	inputHexDecode, err := rpcClient.DecodeRawTransaction(jsonInputTxDecode.Get("hex").String())
+	inputHexDecode, err := omnicore.DecodeBtcRawTransaction(jsonInputTxDecode.Get("hex").String())
 	if err != nil {
 		err = errors.New(enum.Tips_funding_wrongBtcHexVin + err.Error())
 		log.Println(err)
@@ -287,21 +286,21 @@ func checkOmniTxHex(fundingTxHexDecode string, channelInfo *dao.ChannelInfo, use
 }
 
 //从未广播的交易hash数据中解析出他的输出，以此作为下个交易的输入
-func getInputsForNextTxByParseTxHashVout(hex string, toAddress, scriptPubKey, redeemScript string) (inputs []rpc.TransactionInputItem, err error) {
-	result, err := rpcClient.DecodeRawTransaction(hex)
+func getInputsForNextTxByParseTxHashVout(hex string, toAddress, scriptPubKey, redeemScript string) (inputs []bean.TransactionInputItem, err error) {
+	result, err := omnicore.DecodeBtcRawTransaction(hex)
 	if err != nil {
 		return nil, err
 	}
 	jsonHex := gjson.Parse(result)
 	//log.Println(jsonHex)
 	if jsonHex.Get("vout").IsArray() {
-		inputs = make([]rpc.TransactionInputItem, 0, 0)
+		inputs = make([]bean.TransactionInputItem, 0, 0)
 		for _, item := range jsonHex.Get("vout").Array() {
 			if item.Get("scriptPubKey").Get("addresses").Exists() {
 				addresses := item.Get("scriptPubKey").Get("addresses").Array()
 				for _, address := range addresses {
 					if address.String() == toAddress {
-						node := rpc.TransactionInputItem{}
+						node := bean.TransactionInputItem{}
 						node.Txid = jsonHex.Get("txid").String()
 						node.ScriptPubKey = scriptPubKey
 						node.RedeemScript = redeemScript
@@ -421,7 +420,7 @@ func saveHTD1bTx(tx storm.Node, signedHtlcHex string, signedHtd1bHex string, lat
 	htlcTimeoutDeliveryTx.Timeout = htlcTimeOut
 	htlcTimeoutDeliveryTx.CreateAt = time.Now()
 
-	htlcTimeoutDeliveryTx.Txid = rpcClient.GetTxId(signedHtd1bHex)
+	htlcTimeoutDeliveryTx.Txid = omnicore.GetTxId(signedHtd1bHex)
 	htlcTimeoutDeliveryTx.TxHex = signedHtd1bHex
 	err = tx.Save(htlcTimeoutDeliveryTx)
 	if err != nil {
@@ -432,7 +431,7 @@ func saveHTD1bTx(tx storm.Node, signedHtlcHex string, signedHtd1bHex string, lat
 }
 
 func createMultiSig(pubkey1 string, pubkey2 string) (multiAddress, redeemScript, scriptPubKey string, err error) {
-	aliceRsmcMultiAddr, err := rpcClient.CreateMultiSig(2, []string{pubkey1, pubkey2})
+	aliceRsmcMultiAddr, err := omnicore.CreateMultiSig(2, []string{pubkey1, pubkey2})
 	if err != nil {
 		return "", "", "", err
 	}
@@ -509,8 +508,7 @@ func createCommitmentTxHex(dbTx storm.Node, isSender bool, reqData *bean.Request
 	rawTx = dao.CommitmentTxRawTx{}
 	usedTxidTemp := ""
 	if commitmentTxInfo.AmountToRSMC > 0 {
-		rsmcTxData, usedTxid, err := rpcClient.OmniCreateRawTransactionUseSingleInput(
-			int(commitmentTxInfo.TxType),
+		rsmcTxData, usedTxid, err := omnicore.OmniCreateRawTransactionUseSingleInput(
 			listUnspent,
 			channelInfo.ChannelAddress,
 			commitmentTxInfo.RSMCMultiAddress,
@@ -538,7 +536,7 @@ func createCommitmentTxHex(dbTx storm.Node, isSender bool, reqData *bean.Request
 
 	//create to Counterparty tx
 	if commitmentTxInfo.AmountToCounterparty > 0 {
-		toBobTxData, err := rpcClient.OmniCreateRawTransactionUseRestInput(
+		toBobTxData, err := omnicore.OmniCreateRawTransactionUseRestInput(
 			int(commitmentTxInfo.TxType),
 			listUnspent,
 			channelInfo.ChannelAddress,
@@ -591,16 +589,16 @@ func createCommitmentTxHex(dbTx storm.Node, isSender bool, reqData *bean.Request
 }
 
 func GetBtcMinerFundMiniAmount() float64 {
-	out, _ := decimal.NewFromFloat(rpcClient.GetMinerFee()).Add(decimal.NewFromFloat(2 * config.GetOmniDustBtc())).Mul(decimal.NewFromFloat(4.0)).Round(8).Float64()
+	out, _ := decimal.NewFromFloat(omnicore.GetMinerFee()).Add(decimal.NewFromFloat(2 * tool.GetOmniDustBtc())).Mul(decimal.NewFromFloat(4.0)).Round(8).Float64()
 	return out
 }
 
 func getBtcMinerAmount(total float64) float64 {
-	return rpc.GetBtcMinerAmount(total)
+	return tool.GetBtcMinerAmount(total)
 }
 
 func checkChannelOmniAssetAmount(channelInfo dao.ChannelInfo) (bool, error) {
-	balance := conn.HttpGetOmniBalanceFromTracker(channelInfo.ChannelAddress, int(channelInfo.PropertyId))
+	balance := conn2tracker.GetOmniBalance(channelInfo.ChannelAddress, int(channelInfo.PropertyId))
 	if balance == channelInfo.Amount {
 		return true, nil
 	}
@@ -638,7 +636,7 @@ func GetAddressListUnspent(tx storm.Node, channelInfo dao.ChannelInfo) (listUnsp
 }
 
 func getOutputFromHex(hex string, toAddress string) *dao.ChannelAddressListUnspent {
-	result, err := rpcClient.DecodeRawTransaction(hex)
+	result, err := omnicore.DecodeBtcRawTransaction(hex)
 	if err != nil {
 		return nil
 	}

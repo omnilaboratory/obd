@@ -32,7 +32,7 @@ func htlcTrackerDealModule(msg bean.RequestMessage) {
 				status = true
 			}
 		}
-		client.sendToMyself(enum.MsgType_HTLC_FindPath_401, status, data)
+		client.SendToMyself(enum.MsgType_HTLC_FindPath_401, status, data)
 	}
 }
 
@@ -57,14 +57,14 @@ func (client *Client) htlcHModule(msg bean.RequestMessage) (enum.SendTargetType,
 				data = respond.(string)
 			}
 		}
-		client.sendToMyself(msg.Type, status, data)
+		client.SendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_HTLC_FindPath_401:
 		tempClientMap[client.User.PeerId] = client
 		respond, isPrivate, err := service.HtlcForwardTxService.PayerRequestFindPath(msg.Data, *client.User)
 		if err != nil {
 			data = err.Error()
-			client.sendToMyself(msg.Type, status, data)
+			client.SendToMyself(msg.Type, status, data)
 		} else {
 			if isPrivate {
 				bytes, err := json.Marshal(respond)
@@ -74,7 +74,7 @@ func (client *Client) htlcHModule(msg bean.RequestMessage) (enum.SendTargetType,
 					data = string(bytes)
 					status = true
 				}
-				client.sendToMyself(msg.Type, status, data)
+				client.SendToMyself(msg.Type, status, data)
 			} else {
 				status = true
 			}
@@ -105,7 +105,7 @@ func (client *Client) htlcHModule(msg bean.RequestMessage) (enum.SendTargetType,
 			}
 		}
 		msg.Type = enum.MsgType_HTLC_SendAddHTLC_40
-		client.sendToMyself(msg.Type, status, data)
+		client.SendToMyself(msg.Type, status, data)
 
 	case enum.MsgType_HTLC_ClientSign_Alice_C3a_100:
 		toAlice, toBob, err := service.HtlcForwardTxService.OnAliceSignedC3aAtAliceSide(msg, *client.User)
@@ -140,7 +140,7 @@ func (client *Client) htlcHModule(msg bean.RequestMessage) (enum.SendTargetType,
 			}
 		}
 		msg.Type = enum.MsgType_HTLC_ClientSign_Alice_C3a_100
-		client.sendToMyself(msg.Type, status, data)
+		client.SendToMyself(msg.Type, status, data)
 
 	case enum.MsgType_HTLC_SendAddHTLCSigned_41:
 		returnData, err := service.HtlcForwardTxService.BobSignedAddHtlcAtBobSide(msg.Data, *client.User)
@@ -155,7 +155,7 @@ func (client *Client) htlcHModule(msg bean.RequestMessage) (enum.SendTargetType,
 				status = true
 			}
 		}
-		client.sendToMyself(msg.Type, status, data)
+		client.SendToMyself(msg.Type, status, data)
 	case enum.MsgType_HTLC_ClientSign_Bob_C3b_101:
 		toAlice, toBob, err := service.HtlcForwardTxService.OnBobSignedC3bAtBobSide(msg, *client.User)
 		if err != nil {
@@ -187,7 +187,7 @@ func (client *Client) htlcHModule(msg bean.RequestMessage) (enum.SendTargetType,
 			}
 		}
 		msg.Type = enum.MsgType_HTLC_ClientSign_Bob_C3b_101
-		client.sendToMyself(msg.Type, status, data)
+		client.SendToMyself(msg.Type, status, data)
 	case enum.MsgType_HTLC_ClientSign_Alice_C3b_102:
 		returnData, err := service.HtlcForwardTxService.OnAliceSignC3bAtAliceSide(msg, *client.User)
 		if err != nil {
@@ -201,7 +201,7 @@ func (client *Client) htlcHModule(msg bean.RequestMessage) (enum.SendTargetType,
 				status = true
 			}
 		}
-		client.sendToMyself(msg.Type, status, data)
+		client.SendToMyself(msg.Type, status, data)
 	case enum.MsgType_HTLC_ClientSign_Alice_C3bSub_103:
 		toAlice, toBob, err := service.HtlcForwardTxService.OnAliceSignedC3bSubTxAtAliceSide(msg, *client.User)
 		if err != nil {
@@ -234,7 +234,7 @@ func (client *Client) htlcHModule(msg bean.RequestMessage) (enum.SendTargetType,
 			}
 		}
 		msg.Type = enum.MsgType_HTLC_ClientSign_Alice_C3bSub_103
-		client.sendToMyself(msg.Type, status, data)
+		client.SendToMyself(msg.Type, status, data)
 	case enum.MsgType_HTLC_ClientSign_Bob_C3bSub_104:
 		returnData, err := service.HtlcForwardTxService.OnBobSignedC3bSubTxAtBobSide(msg, *client.User)
 		if err != nil {
@@ -248,7 +248,7 @@ func (client *Client) htlcHModule(msg bean.RequestMessage) (enum.SendTargetType,
 				status = true
 			}
 		}
-		client.sendToMyself(msg.Type, status, data)
+		client.SendToMyself(msg.Type, status, data)
 	case enum.MsgType_HTLC_ClientSign_Alice_He_105:
 		toAlice, toBob, err := service.HtlcForwardTxService.OnBobSignHtRdAtBobSide_42(msg.Data, *client.User)
 		if err != nil {
@@ -280,7 +280,7 @@ func (client *Client) htlcHModule(msg bean.RequestMessage) (enum.SendTargetType,
 			}
 		}
 		msg.Type = enum.MsgType_HTLC_ClientSign_Alice_He_105
-		client.sendToMyself(msg.Type, status, data)
+		client.SendToMyself(msg.Type, status, data)
 	}
 	return sendType, []byte(data), status
 }
@@ -304,7 +304,7 @@ func (client *Client) htlcQueryModule(msg bean.RequestMessage) (enum.SendTargetT
 				status = true
 			}
 		}
-		client.sendToMyself(msg.Type, status, data)
+		client.SendToMyself(msg.Type, status, data)
 	case enum.MsgType_Htlc_GetHT1aOrHE1bBySomeCommitmentId_3251:
 		respond, err := service.HtlcQueryTxManager.GetHT1aOrHE1bBySomeCommitmentId(msg.Data, *client.User)
 		if err != nil {
@@ -318,7 +318,7 @@ func (client *Client) htlcQueryModule(msg bean.RequestMessage) (enum.SendTargetT
 				status = true
 			}
 		}
-		client.sendToMyself(msg.Type, status, data)
+		client.SendToMyself(msg.Type, status, data)
 	default:
 		sendType = enum.SendTargetType_SendToNone
 	}
@@ -344,7 +344,7 @@ func (client *Client) htlcTxModule(msg bean.RequestMessage) (enum.SendTargetType
 				status = true
 			}
 		}
-		client.sendToMyself(msg.Type, status, data)
+		client.SendToMyself(msg.Type, status, data)
 	case enum.MsgType_HTLC_ClientSign_Bob_HeSub_106:
 		respond, err := service.HtlcBackwardTxService.OnBobSignedHeRdAtBobSide(msg, *client.User)
 		if err != nil {
@@ -365,7 +365,7 @@ func (client *Client) htlcTxModule(msg bean.RequestMessage) (enum.SendTargetType
 			}
 		}
 		msg.Type = enum.MsgType_HTLC_ClientSign_Bob_HeSub_106
-		client.sendToMyself(msg.Type, status, data)
+		client.SendToMyself(msg.Type, status, data)
 	case enum.MsgType_HTLC_ClientSign_Alice_HeSub_46:
 		toAlice, toBob, err := service.HtlcBackwardTxService.OnAliceSignedHeRdAtAliceSide(msg, *client.User)
 		if err != nil {
@@ -396,7 +396,7 @@ func (client *Client) htlcTxModule(msg bean.RequestMessage) (enum.SendTargetType
 
 		}
 		msg.Type = enum.MsgType_HTLC_ClientSign_Alice_HeSub_46
-		client.sendToMyself(msg.Type, status, data)
+		client.SendToMyself(msg.Type, status, data)
 	}
 	return sendType, []byte(data), status
 }
@@ -429,7 +429,7 @@ func (client *Client) htlcCloseModule(msg bean.RequestMessage) (enum.SendTargetT
 			}
 		}
 		msg.Type = enum.MsgType_HTLC_Close_SendRequestCloseCurrTx_49
-		client.sendToMyself(msg.Type, status, data)
+		client.SendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_HTLC_Close_ClientSign_Alice_C4a_110:
 		toAlice, toBob, err := service.HtlcCloseTxService.OnAliceSignedCxa(msg, *client.User)
@@ -463,7 +463,7 @@ func (client *Client) htlcCloseModule(msg bean.RequestMessage) (enum.SendTargetT
 			}
 		}
 		msg.Type = enum.MsgType_HTLC_Close_ClientSign_Alice_C4a_110
-		client.sendToMyself(msg.Type, status, data)
+		client.SendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 
 	case enum.MsgType_HTLC_Close_SendCloseSigned_50:
@@ -479,7 +479,7 @@ func (client *Client) htlcCloseModule(msg bean.RequestMessage) (enum.SendTargetT
 				status = true
 			}
 		}
-		client.sendToMyself(msg.Type, status, data)
+		client.SendToMyself(msg.Type, status, data)
 	case enum.MsgType_HTLC_Close_ClientSign_Bob_C4b_111:
 		toAlice, toBob, err := service.HtlcCloseTxService.OnBobSignedCxb(msg, *client.User)
 		if err != nil {
@@ -511,7 +511,7 @@ func (client *Client) htlcCloseModule(msg bean.RequestMessage) (enum.SendTargetT
 			}
 		}
 		msg.Type = enum.MsgType_HTLC_Close_ClientSign_Bob_C4b_111
-		client.sendToMyself(msg.Type, status, data)
+		client.SendToMyself(msg.Type, status, data)
 	case enum.MsgType_HTLC_Close_ClientSign_Alice_C4b_112:
 		toAlice, err := service.HtlcCloseTxService.OnAliceSignedCxb(msg, *client.User)
 		if err != nil {
@@ -525,7 +525,7 @@ func (client *Client) htlcCloseModule(msg bean.RequestMessage) (enum.SendTargetT
 				status = true
 			}
 		}
-		client.sendToMyself(msg.Type, status, data)
+		client.SendToMyself(msg.Type, status, data)
 	case enum.MsgType_HTLC_Close_ClientSign_Alice_C4bSub_113:
 		toAlice, toBob, err := service.HtlcCloseTxService.OnAliceSignedCxbBubTx(msg, *client.User)
 		if err != nil {
@@ -558,7 +558,7 @@ func (client *Client) htlcCloseModule(msg bean.RequestMessage) (enum.SendTargetT
 			}
 		}
 		msg.Type = enum.MsgType_HTLC_Close_ClientSign_Alice_C4bSub_113
-		client.sendToMyself(msg.Type, status, data)
+		client.SendToMyself(msg.Type, status, data)
 	case enum.MsgType_HTLC_Close_ClientSign_Bob_C4bSubResult_114:
 		toBob, err := service.HtlcCloseTxService.OnBobSignedCxbSubTx(msg, *client.User)
 		if err != nil {
@@ -572,7 +572,7 @@ func (client *Client) htlcCloseModule(msg bean.RequestMessage) (enum.SendTargetT
 				status = true
 			}
 		}
-		client.sendToMyself(msg.Type, status, data)
+		client.SendToMyself(msg.Type, status, data)
 	}
 	return sendType, []byte(data), status
 }
@@ -601,7 +601,7 @@ func (client *Client) atomicSwapModule(msg bean.RequestMessage) (enum.SendTarget
 			}
 		}
 		msg.Type = enum.MsgType_Atomic_SendSwap_80
-		client.sendToMyself(msg.Type, status, data)
+		client.SendToMyself(msg.Type, status, data)
 		break
 	case enum.MsgType_Atomic_SendSwapAccept_81:
 		outData, err := service.AtomicSwapService.AtomicSwapAccepted(msg, *client.User)
@@ -623,7 +623,7 @@ func (client *Client) atomicSwapModule(msg bean.RequestMessage) (enum.SendTarget
 			}
 		}
 		msg.Type = enum.MsgType_Atomic_SendSwapAccept_81
-		client.sendToMyself(msg.Type, status, data)
+		client.SendToMyself(msg.Type, status, data)
 		break
 	}
 	return sendType, []byte(data), status

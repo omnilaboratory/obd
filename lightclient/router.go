@@ -6,21 +6,20 @@ import (
 	"github.com/omnilaboratory/obd/bean"
 	"github.com/omnilaboratory/obd/config"
 	"github.com/satori/go.uuid"
-	"google.golang.org/grpc"
 	"log"
 	"net/http"
 	"strconv"
 )
 
-func InitRouter(conn *grpc.ClientConn) *gin.Engine {
+func InitRouter() *gin.Engine {
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.New()
 	router.Use(gin.Logger())
 	router.Use(gin.Recovery())
 
 	go globalWsClientManager.Start()
-	bean.CurrObdNodeInfo.WebsocketLink = "ws://" + config.P2P_hostIp + ":" + strconv.Itoa(config.ServerPort) + "/ws" + config.ChainNode_Type
-	router.GET("/ws"+config.ChainNode_Type, wsClientConnect)
+	bean.CurrObdNodeInfo.WebsocketLink = "ws://" + config.P2P_hostIp + ":" + strconv.Itoa(config.ServerPort) + "/ws" + config.ChainNodeType
+	router.GET("/ws"+config.ChainNodeType, wsClientConnect)
 
 	return router
 
@@ -40,6 +39,6 @@ func wsClientConnect(c *gin.Context) {
 		SendChannel: make(chan []byte)}
 
 	go client.Write()
+	go client.Read()
 	globalWsClientManager.Connected <- client
-	client.Read()
 }

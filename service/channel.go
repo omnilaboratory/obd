@@ -10,6 +10,7 @@ import (
 	"github.com/omnilaboratory/obd/config"
 	"github.com/omnilaboratory/obd/conn"
 	"github.com/omnilaboratory/obd/dao"
+	"github.com/omnilaboratory/obd/omnicore"
 	"github.com/omnilaboratory/obd/tool"
 	"github.com/tidwall/gjson"
 	"log"
@@ -115,7 +116,7 @@ func (this *channelManager) BobCheckChannelAddressExist(jsonData string, user *b
 	}
 
 	channelInfo.PubKeyB = reqData.FundingPubKey
-	multiSig, err := rpcClient.CreateMultiSig(2, []string{channelInfo.PubKeyA, channelInfo.PubKeyB})
+	multiSig, err := omnicore.CreateMultiSig(2, []string{channelInfo.PubKeyA, channelInfo.PubKeyB})
 	if err != nil {
 		log.Println(err)
 		return false, err
@@ -123,7 +124,7 @@ func (this *channelManager) BobCheckChannelAddressExist(jsonData string, user *b
 	channelAddress := gjson.Get(multiSig, "address").String()
 
 	existAddress := false
-	result := conn.HttpListReceivedByAddressFromTracker(channelAddress)
+	result := conn2tracker.ListReceivedByAddress(channelAddress)
 	if result != "" {
 		array := gjson.Parse(result).Array()
 		if len(array) > 0 {
@@ -184,7 +185,7 @@ func (this *channelManager) BobAcceptChannel(msg bean.RequestMessage, user *bean
 		channelInfo.PubKeyB = reqData.FundingPubKey
 		channelInfo.FundeeAddressIndex = reqData.FundeeAddressIndex
 		channelInfo.AddressB = bobFundingAddress
-		multiSig, err := rpcClient.CreateMultiSig(2, []string{channelInfo.PubKeyA, channelInfo.PubKeyB})
+		multiSig, err := omnicore.CreateMultiSig(2, []string{channelInfo.PubKeyA, channelInfo.PubKeyB})
 		if err != nil {
 			log.Println(err)
 			return nil, err
@@ -193,7 +194,7 @@ func (this *channelManager) BobAcceptChannel(msg bean.RequestMessage, user *bean
 		channelAddress := gjson.Get(multiSig, "address").String()
 
 		existAddress := false
-		result := conn.HttpListReceivedByAddressFromTracker(channelAddress)
+		result := conn2tracker.ListReceivedByAddress(channelAddress)
 		if result != "" {
 			array := gjson.Parse(result).Array()
 			if len(array) > 0 {
@@ -357,7 +358,7 @@ func (this *channelManager) AllItem(jsonData string, user bean.User) (data *page
 			item.BtcFundingTimes = 3
 			if item.CurrState <= dao.ChannelState_WaitFundAsset {
 				item.BtcFundingTimes = 0
-				result := conn.HttpListReceivedByAddressFromTracker(info.ChannelAddress)
+				result := conn2tracker.ListReceivedByAddress(info.ChannelAddress)
 				if result != "" {
 					if len(gjson.Parse(result).Array()) > 0 {
 						btcFundingTimes := len(gjson.Parse(result).Array()[0].Get("txids").Array())
@@ -452,88 +453,6 @@ func (this *channelManager) GetChannelInfoById(jsonData string, user bean.User) 
 			q.Eq("PeerIdB", user.PeerId))).
 		First(info)
 	return info, err
-}
-
-//请求关闭通道
-func (this *channelManager) RequestCloseChannel(msg bean.RequestMessage, user *bean.User) (interface{}, error) {
-	channelId, err := getChannelIdFromJson(msg.Data)
-	if err != nil {
-		log.Println(err)
-		return nil, err
-	}
-
-	tx, err := user.Db.Begin(true)
-	if err != nil {
-		log.Println(err)
-		return nil, err
-	}
-	defer tx.Rollback()
-
-	channelInfo := &dao.ChannelInfo{}
-	err = tx.Select(
-		q.Eq("ChannelId", channelId)).
-		First(channelInfo)
-	if err != nil {
-		log.Println(err)
-		return nil, err
-	}
-
-	if channelInfo.CurrState != dao.ChannelState_CanUse && channelInfo.CurrState != dao.ChannelState_HtlcTx {
-		return nil, errors.New("wrong channel state " + strconv.Itoa(int(channelInfo.CurrState)))
-	}
-
-	targetUser := channelInfo.PeerIdB
-	if user.PeerId == channelInfo.PeerIdB {
-		targetUser = channelInfo.PeerIdA
-	}
-
-	if targetUser != msg.RecipientUserPeerId {
-		return nil, errors.New("wrong targetUser " + msg.RecipientUserPeerId)
-	}
-
-	lastCommitmentTx, err := getLatestCommitmentTxUseDbTx(tx, channelInfo.ChannelId, user.PeerId)
-	if err != nil {
-		log.Println(err)
-		return nil, err
-	}
-
-	if lastCommitmentTx.CurrState != dao.TxInfoState_Htlc_GetH && lastCommitmentTx.CurrState != dao.TxInfoState_CreateAndSign {
-		return nil, errors.New("latest commitment tx state is wrong")
-	}
-
-	if channelInfo.CurrState == dao.ChannelState_HtlcTx {
-		flag := HttpGetHtlcStateFromTracker(lastCommitmentTx.HtlcRoutingPacket, lastCommitmentTx.HtlcH)
-		if flag == 1 {
-			return nil, errors.New("R is backward")
-		}
-	}
-
-	closeChannel := &dao.CloseChannel{}
-	closeChannel.ChannelId = channelId
-	closeChannel.Owner = user.PeerId
-	closeChannel.CurrState = 0
-	_ = tx.Select(
-		q.Eq("ChannelId", closeChannel.ChannelId),
-		q.Eq("Owner", closeChannel.Owner),
-		q.Eq("CurrState", closeChannel.CurrState)).
-		Find(closeChannel)
-
-	if closeChannel.Id == 0 {
-		closeChannel.CreateAt = time.Now()
-		dataBytes, _ := json.Marshal(closeChannel)
-		closeChannel.RequestHex = tool.SignMsgWithSha256(dataBytes)
-		err = tx.Save(closeChannel)
-		if err != nil {
-			log.Println(err)
-			return nil, err
-		}
-	}
-	_ = tx.Commit()
-
-	toData := make(map[string]interface{})
-	toData["channel_id"] = channelId
-	toData["close_channel_hash"] = closeChannel.RequestHex
-	return toData, nil
 }
 
 //关闭通道的请求到达对方节点obd
@@ -727,7 +646,7 @@ func (this *channelManager) ForceCloseChannel(msg bean.RequestMessage, user *bea
 
 	// 当前是处于htlc的状态，且是获取到H
 	if channelInfo.CurrState == dao.ChannelState_HtlcTx {
-		_, err = this.CloseHtlcChannelSigned(tx, channelInfo, latestCommitmentTx, *user)
+		err = this.CloseHtlcChannelSigned(tx, latestCommitmentTx, *user)
 		if err != nil {
 			return nil, err
 		}
@@ -745,7 +664,7 @@ func (this *channelManager) ForceCloseChannel(msg bean.RequestMessage, user *bea
 
 		//region 广播承诺交易 最近的rsmc的资产分配交易 因为是omni资产，承诺交易被拆分成了两个独立的交易
 		if tool.CheckIsString(&latestCommitmentTx.RSMCTxHex) {
-			commitmentTxid, err := conn.HttpSendRawTransactionFromTracker(latestCommitmentTx.RSMCTxHex)
+			commitmentTxid, err := conn2tracker.SendRawTransaction(latestCommitmentTx.RSMCTxHex)
 			if err != nil {
 				log.Println(err)
 				return nil, err
@@ -753,7 +672,7 @@ func (this *channelManager) ForceCloseChannel(msg bean.RequestMessage, user *bea
 			log.Println(commitmentTxid)
 		}
 		if tool.CheckIsString(&latestCommitmentTx.ToCounterpartyTxHex) {
-			commitmentTxidToBob, err := conn.HttpSendRawTransactionFromTracker(latestCommitmentTx.ToCounterpartyTxHex)
+			commitmentTxidToBob, err := conn2tracker.SendRawTransaction(latestCommitmentTx.ToCounterpartyTxHex)
 			if err != nil {
 				log.Println(err)
 				return nil, err
@@ -772,7 +691,7 @@ func (this *channelManager) ForceCloseChannel(msg bean.RequestMessage, user *bea
 			First(latestRevocableDeliveryTx)
 
 		if latestRevocableDeliveryTx.Id > 0 {
-			_, err = conn.HttpSendRawTransactionFromTracker(latestRevocableDeliveryTx.TxHex)
+			_, err = conn2tracker.SendRawTransaction(latestRevocableDeliveryTx.TxHex)
 			if err != nil {
 				log.Println(err)
 				msg := err.Error()
@@ -900,14 +819,14 @@ func (this *channelManager) AfterBobSignCloseChannelAtAliceSide(jsonData string,
 
 	// 当前是处于htlc的状态，且是获取到H
 	if channelInfo.CurrState == dao.ChannelState_HtlcTx {
-		_, err = this.CloseHtlcChannelSigned(tx, channelInfo, latestCommitmentTx, user)
+		err = this.CloseHtlcChannelSigned(tx, latestCommitmentTx, user)
 		if err != nil {
 			return nil, err
 		}
 	} else {
 		//region 广播承诺交易 最近的rsmc的资产分配交易 因为是omni资产，承诺交易被拆分成了两个独立的交易
 		if tool.CheckIsString(&latestCommitmentTx.RSMCTxHex) {
-			commitmentTxid, err := conn.HttpSendRawTransactionFromTracker(latestCommitmentTx.RSMCTxHex)
+			commitmentTxid, err := conn2tracker.SendRawTransaction(latestCommitmentTx.RSMCTxHex)
 			if err != nil {
 				log.Println(err)
 				return nil, err
@@ -915,7 +834,7 @@ func (this *channelManager) AfterBobSignCloseChannelAtAliceSide(jsonData string,
 			log.Println(commitmentTxid)
 		}
 		if tool.CheckIsString(&latestCommitmentTx.ToCounterpartyTxHex) {
-			commitmentTxidToBob, err := conn.HttpSendRawTransactionFromTracker(latestCommitmentTx.ToCounterpartyTxHex)
+			commitmentTxidToBob, err := conn2tracker.SendRawTransaction(latestCommitmentTx.ToCounterpartyTxHex)
 			if err != nil {
 				log.Println(err)
 				return nil, err
@@ -936,7 +855,7 @@ func (this *channelManager) AfterBobSignCloseChannelAtAliceSide(jsonData string,
 			return nil, err
 		}
 
-		_, err = conn.HttpSendRawTransactionFromTracker(latestRevocableDeliveryTx.TxHex)
+		_, err = conn2tracker.SendRawTransaction(latestRevocableDeliveryTx.TxHex)
 		if err != nil {
 			log.Println(err)
 			msg := err.Error()
@@ -991,23 +910,23 @@ func (this *channelManager) AfterBobSignCloseChannelAtAliceSide(jsonData string,
 }
 
 //  htlc  when getH close channel
-func (this *channelManager) CloseHtlcChannelSigned(tx storm.Node, channelInfo *dao.ChannelInfo, latestCommitmentTx *dao.CommitmentTransaction, user bean.User) (outData interface{}, err error) {
+func (this *channelManager) CloseHtlcChannelSigned(tx storm.Node, latestCommitmentTx *dao.CommitmentTransaction, user bean.User) (err error) {
 	// 提现操作的发起者
 	closeOpStarter := user.PeerId
 
 	//region 广播主承诺交易 三笔
 	if tool.CheckIsString(&latestCommitmentTx.RSMCTxHex) {
-		commitmentTxid, err := conn.HttpSendRawTransactionFromTracker(latestCommitmentTx.RSMCTxHex)
+		commitmentTxid, err := conn2tracker.SendRawTransaction(latestCommitmentTx.RSMCTxHex)
 		if err != nil {
 			log.Println(err)
-			return nil, err
+			return err
 		}
 		log.Println(commitmentTxid)
 	}
 
 	latestRsmcRD := &dao.RevocableDeliveryTransaction{}
 	err = tx.Select(
-		q.Eq("ChannelId", channelInfo.ChannelId),
+		q.Eq("ChannelId", latestCommitmentTx.ChannelId),
 		q.Eq("CommitmentTxId", latestCommitmentTx.Id),
 		q.Eq("RDType", 0),
 		q.Eq("Owner", closeOpStarter)).
@@ -1015,33 +934,24 @@ func (this *channelManager) CloseHtlcChannelSigned(tx storm.Node, channelInfo *d
 		First(latestRsmcRD)
 	if err != nil {
 		log.Println(err)
-		return nil, err
-	}
-
-	_, err = conn.HttpSendRawTransactionFromTracker(latestRsmcRD.TxHex)
-	if err != nil {
-		log.Println(err)
-		msg := err.Error()
-		if strings.Contains(msg, "non-BIP68-final (code 64)") == false {
-			return nil, err
-		}
+		return err
 	}
 
 	if tool.CheckIsString(&latestCommitmentTx.ToCounterpartyTxHex) {
-		commitmentTxidToBob, err := conn.HttpSendRawTransactionFromTracker(latestCommitmentTx.ToCounterpartyTxHex)
+		commitmentTxidToBob, err := conn2tracker.SendRawTransaction(latestCommitmentTx.ToCounterpartyTxHex)
 		if err != nil {
 			log.Println(err)
-			return nil, err
+			return err
 		}
 		log.Println(commitmentTxidToBob)
 	}
 
 	// htlc部分
 	if tool.CheckIsString(&latestCommitmentTx.HtlcTxHex) {
-		commitmentTxidToHtlc, err := conn.HttpSendRawTransactionFromTracker(latestCommitmentTx.HtlcTxHex)
+		commitmentTxidToHtlc, err := conn2tracker.SendRawTransaction(latestCommitmentTx.HtlcTxHex)
 		if err != nil {
 			log.Println(err)
-			return nil, err
+			return err
 		}
 		log.Println(commitmentTxidToHtlc)
 	}
@@ -1053,7 +963,7 @@ func (this *channelManager) CloseHtlcChannelSigned(tx storm.Node, channelInfo *d
 	if latestCommitmentTx.HtlcSender == closeOpStarter {
 		ht1a := &dao.HTLCTimeoutTxForAAndExecutionForB{}
 		err = tx.Select(
-			q.Eq("ChannelId", channelInfo.ChannelId),
+			q.Eq("ChannelId", latestCommitmentTx.ChannelId),
 			q.Eq("CommitmentTxId", latestCommitmentTx.Id),
 			q.Eq("Owner", closeOpStarter),
 			q.Eq("CurrState", dao.TxInfoState_CreateAndSign)).
@@ -1068,15 +978,15 @@ func (this *channelManager) CloseHtlcChannelSigned(tx storm.Node, channelInfo *d
 				First(htrd)
 			if htrd.Id > 0 && tool.CheckIsString(&ht1a.RSMCTxHex) {
 				//广播alice的ht1a
-				_, err = conn.HttpSendRawTransactionFromTracker(ht1a.RSMCTxHex)
+				_, err = conn2tracker.SendRawTransaction(ht1a.RSMCTxHex)
 				if err == nil { //如果已经超时 比如alice的3天超时，bob得到R后的交易的无等待锁定
 					if tool.CheckIsString(&htrd.TxHex) {
-						_, err = conn.HttpSendRawTransactionFromTracker(htrd.TxHex)
+						_, err = conn2tracker.SendRawTransaction(htrd.TxHex)
 						if err != nil {
 							log.Println(err)
 							msg := err.Error()
 							if strings.Contains(msg, "non-BIP68-final (code 64)") == false {
-								return nil, err
+								return err
 							}
 						}
 						_ = addRDTxToWaitDB(htrd)
@@ -1089,7 +999,7 @@ func (this *channelManager) CloseHtlcChannelSigned(tx storm.Node, channelInfo *d
 					log.Println(err)
 					msg := err.Error()
 					if strings.Contains(msg, "non-BIP68-final (code 64)") == false {
-						return nil, err
+						return err
 					}
 					_ = addHT1aTxToWaitDB(ht1a, htrd)
 				}
@@ -1104,12 +1014,12 @@ func (this *channelManager) CloseHtlcChannelSigned(tx storm.Node, channelInfo *d
 			q.Eq("Owner", closeOpStarter)).
 			First(htdnx)
 		if htdnx.Id > 0 && tool.CheckIsString(&htdnx.TxHex) {
-			_, err = conn.HttpSendRawTransactionFromTracker(htdnx.TxHex)
+			_, err = conn2tracker.SendRawTransaction(htdnx.TxHex)
 			if err != nil {
 				log.Println(err)
 				msg := err.Error()
 				if strings.Contains(msg, "non-BIP68-final (code 64)") == false {
-					return nil, err
+					return err
 				}
 			}
 			_ = addHTDnxTxToWaitDB(htdnx)
@@ -1125,20 +1035,20 @@ func (this *channelManager) CloseHtlcChannelSigned(tx storm.Node, channelInfo *d
 	latestCommitmentTx.SendAt = time.Now()
 	err = tx.Update(latestCommitmentTx)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	latestRsmcRD.CurrState = dao.TxInfoState_SendHex
 	latestRsmcRD.SendAt = time.Now()
 	err = tx.Update(latestRsmcRD)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	err = addRDTxToWaitDB(latestRsmcRD)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	//endregion
-	return channelInfo, nil
+	return nil
 }

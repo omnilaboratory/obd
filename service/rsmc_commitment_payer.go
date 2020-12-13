@@ -6,12 +6,13 @@ import (
 	"fmt"
 	"github.com/omnilaboratory/obd/bean"
 	"github.com/omnilaboratory/obd/bean/enum"
+	"github.com/omnilaboratory/obd/conn"
 	"github.com/omnilaboratory/obd/dao"
+	"github.com/omnilaboratory/obd/omnicore"
 	"github.com/omnilaboratory/obd/tool"
 	"github.com/tidwall/gjson"
 	"log"
 	"strconv"
-	"strings"
 	"sync"
 	"time"
 
@@ -122,7 +123,7 @@ func (this *commitmentTxManager) CommitmentTransactionCreated(msg bean.RequestMe
 			return nil, false, errors.New(enum.Tips_rsmc_notEnoughBalance)
 		}
 
-		if _, err = tool.GetPubKeyFromWifAndCheck(reqData.LastTempAddressPrivateKey, latestCommitmentTxInfo.RSMCTempAddressPubKey); err != nil {
+		if _, err = omnicore.GetPubKeyFromWifAndCheck(reqData.LastTempAddressPrivateKey, latestCommitmentTxInfo.RSMCTempAddressPubKey); err != nil {
 			return nil, false, errors.New(fmt.Sprintf(enum.Tips_rsmc_wrongPrivateKeyForLast, reqData.LastTempAddressPrivateKey, latestCommitmentTxInfo.RSMCTempAddressPubKey))
 		}
 	} else {
@@ -131,7 +132,7 @@ func (this *commitmentTxManager) CommitmentTransactionCreated(msg bean.RequestMe
 		}
 		lastCommitmentTx := &dao.CommitmentTransaction{}
 		_ = tx.One("Id", latestCommitmentTxInfo.LastCommitmentTxId, lastCommitmentTx)
-		if _, err = tool.GetPubKeyFromWifAndCheck(reqData.LastTempAddressPrivateKey, lastCommitmentTx.RSMCTempAddressPubKey); err != nil {
+		if _, err = omnicore.GetPubKeyFromWifAndCheck(reqData.LastTempAddressPrivateKey, lastCommitmentTx.RSMCTempAddressPubKey); err != nil {
 			return nil, false, err
 		}
 	}
@@ -244,7 +245,7 @@ func (this *commitmentTxManager) OnAliceSignC2aRawTxAtAliceSide(msg bean.Request
 	}
 
 	if tool.CheckIsString(&signedDataForC2a.RsmcSignedHex) {
-		if pass, _ := rpcClient.CheckMultiSign(true, signedDataForC2a.RsmcSignedHex, 1); pass == false {
+		if pass, _ := omnicore.CheckMultiSign(signedDataForC2a.RsmcSignedHex, 1); pass == false {
 			err = errors.New(enum.Tips_common_wrong + "rsmc_signed_hex")
 			log.Println(err)
 			return nil, nil, err
@@ -257,7 +258,7 @@ func (this *commitmentTxManager) OnAliceSignC2aRawTxAtAliceSide(msg bean.Request
 		return nil, nil, err
 	}
 
-	if pass, _ := rpcClient.CheckMultiSign(true, signedDataForC2a.CounterpartySignedHex, 1); pass == false {
+	if pass, _ := omnicore.CheckMultiSign(signedDataForC2a.CounterpartySignedHex, 1); pass == false {
 		err = errors.New(enum.Tips_common_wrong + "counterparty_signed_hex")
 		log.Println(err)
 		return nil, nil, err
@@ -271,13 +272,13 @@ func (this *commitmentTxManager) OnAliceSignC2aRawTxAtAliceSide(msg bean.Request
 	if len(latestCommitmentTxInfo.RSMCTxHex) > 0 {
 		//封装好的签名数据，给bob的客户端签名使用
 		latestCommitmentTxInfo.RSMCTxHex = signedDataForC2a.RsmcSignedHex
-		latestCommitmentTxInfo.RSMCTxid = rpcClient.GetTxId(signedDataForC2a.RsmcSignedHex)
+		latestCommitmentTxInfo.RSMCTxid = omnicore.GetTxId(signedDataForC2a.RsmcSignedHex)
 	}
 
 	if len(latestCommitmentTxInfo.ToCounterpartyTxHex) > 0 {
 		//封装好的签名数据，给bob的客户端签名使用
 		latestCommitmentTxInfo.ToCounterpartyTxHex = signedDataForC2a.CounterpartySignedHex
-		latestCommitmentTxInfo.ToCounterpartyTxid = rpcClient.GetTxId(signedDataForC2a.CounterpartySignedHex)
+		latestCommitmentTxInfo.ToCounterpartyTxid = omnicore.GetTxId(signedDataForC2a.CounterpartySignedHex)
 	}
 	latestCommitmentTxInfo.CurrState = dao.TxInfoState_Create
 	_ = tx.Update(latestCommitmentTxInfo)
@@ -397,7 +398,7 @@ func (this *commitmentTxManager) OnAliceSignedC2bTxAtAliceSide(data string, user
 	}
 
 	if tool.CheckIsString(&dataFromP2p352.C2bRsmcTxData.Hex) {
-		if pass, _ := rpcClient.CheckMultiSign(true, aliceSignedRmscTxForC2b.C2bRsmcSignedHex, 2); pass == false {
+		if pass, _ := omnicore.CheckMultiSign(aliceSignedRmscTxForC2b.C2bRsmcSignedHex, 2); pass == false {
 			err = errors.New(enum.Tips_common_wrong + "signed c2b_rsmc_signed_hex")
 			log.Println(err)
 			return nil, err
@@ -410,7 +411,7 @@ func (this *commitmentTxManager) OnAliceSignedC2bTxAtAliceSide(data string, user
 	dataFromP2p352.C2bRsmcTxData.Hex = aliceSignedRmscTxForC2b.C2bRsmcSignedHex
 
 	if tool.CheckIsString(&dataFromP2p352.C2bCounterpartyTxData.Hex) {
-		if pass, _ := rpcClient.CheckMultiSign(true, aliceSignedRmscTxForC2b.C2bCounterpartySignedHex, 2); pass == false {
+		if pass, _ := omnicore.CheckMultiSign(aliceSignedRmscTxForC2b.C2bCounterpartySignedHex, 2); pass == false {
 			err = errors.New(enum.Tips_common_wrong + "signed c2b_counterparty_signed_hex")
 			log.Println(err)
 			return nil, err
@@ -423,7 +424,7 @@ func (this *commitmentTxManager) OnAliceSignedC2bTxAtAliceSide(data string, user
 	dataFromP2p352.C2bCounterpartyTxData.Hex = aliceSignedRmscTxForC2b.C2bCounterpartySignedHex
 
 	if tool.CheckIsString(&dataFromP2p352.C2aRdTxData.Hex) {
-		if pass, _ := rpcClient.CheckMultiSign(false, aliceSignedRmscTxForC2b.C2aRdSignedHex, 2); pass == false {
+		if pass, _ := omnicore.CheckMultiSign(aliceSignedRmscTxForC2b.C2aRdSignedHex, 2); pass == false {
 			err = errors.New(enum.Tips_common_wrong + "signed c2a_rd_signed_hex")
 			log.Println(err)
 			return nil, err
@@ -481,7 +482,7 @@ func (this *commitmentTxManager) OnAliceSignedC2bTxAtAliceSide(data string, user
 	bobSignedRsmcHex := aliceSignedRmscTxForC2b.C2bRsmcSignedHex
 
 	//region create RD tx for bob
-	bobMultiAddr, err := rpcClient.CreateMultiSig(2, []string{dataFromP2p352.CurrTempAddressPubKey, myChannelPubKey})
+	bobMultiAddr, err := omnicore.CreateMultiSig(2, []string{dataFromP2p352.CurrTempAddressPubKey, myChannelPubKey})
 	if err != nil {
 		return nil, err
 	}
@@ -500,7 +501,7 @@ func (this *commitmentTxManager) OnAliceSignedC2bTxAtAliceSide(data string, user
 	}
 
 	if tool.CheckIsString(&bobSignedRsmcHex) {
-		c2bRdHexData, err := rpcClient.OmniCreateRawTransactionUseUnsendInput(
+		c2bRdHexData, err := omnicore.OmniCreateRawTransactionUseUnsendInput(
 			c2bRsmcMultiAddress,
 			c2bRsmcOutputs,
 			partnerChannelAddress,
@@ -524,7 +525,7 @@ func (this *commitmentTxManager) OnAliceSignedC2bTxAtAliceSide(data string, user
 		//endregion create RD tx for bob
 
 		//region 根据对对方的Rsmc签名，生成惩罚对方，自己获益BR
-		bobRsmcTxid := rpcClient.GetTxId(dataFromP2p352.C2bRsmcTxData.Hex)
+		bobRsmcTxid := omnicore.GetTxId(dataFromP2p352.C2bRsmcTxData.Hex)
 
 		bobCommitmentTx := &dao.CommitmentTransaction{}
 		bobCommitmentTx.Id = latestCommitmentTxInfo.Id
@@ -623,28 +624,28 @@ func (this *commitmentTxManager) OnAliceSignedC2b_RDTxAtAliceSide(data string, u
 
 	var c2aSignedRsmcHex = dataFromP2p352.C2aSignedRsmcHex
 	if tool.CheckIsString(&c2aSignedRsmcHex) {
-		if pass, _ := rpcClient.CheckMultiSign(true, c2aSignedRsmcHex, 2); pass == false {
+		if pass, _ := omnicore.CheckMultiSign(c2aSignedRsmcHex, 2); pass == false {
 			return nil, nil, false, errors.New(enum.Tips_common_wrong + "c2a_signed_rsmc_hex")
 		}
 	}
 
 	var signedToCounterpartyHex = dataFromP2p352.C2aSignedToCounterpartyTxHex
 	if tool.CheckIsString(&signedToCounterpartyHex) {
-		if pass, _ := rpcClient.CheckMultiSign(true, signedToCounterpartyHex, 2); pass == false {
+		if pass, _ := omnicore.CheckMultiSign(signedToCounterpartyHex, 2); pass == false {
 			return nil, nil, false, errors.New(enum.Tips_common_wrong + "c2a_signed_to_counterparty_tx_hex")
 		}
 	}
 
 	var aliceRdHex = dataFromP2p352.C2aRdTxData.Hex
 	if tool.CheckIsString(&aliceRdHex) {
-		if pass, _ := rpcClient.CheckMultiSign(false, aliceRdHex, 2); pass == false {
+		if pass, _ := omnicore.CheckMultiSign(aliceRdHex, 2); pass == false {
 			return nil, nil, false, errors.New(enum.Tips_common_wrong + "c2a_rd_signed_hex")
 		}
 	}
 
 	var bobRsmcHex = dataFromP2p352.C2bRsmcTxData.Hex
 	if tool.CheckIsString(&bobRsmcHex) {
-		if pass, _ := rpcClient.CheckMultiSign(true, bobRsmcHex, 2); pass == false {
+		if pass, _ := omnicore.CheckMultiSign(bobRsmcHex, 2); pass == false {
 			return nil, nil, false, errors.New(enum.Tips_common_wrong + "c2b_rsmc_signed_hex")
 		}
 	}
@@ -658,7 +659,7 @@ func (this *commitmentTxManager) OnAliceSignedC2b_RDTxAtAliceSide(data string, u
 
 	var c2bToCounterpartyTxHex = dataFromP2p352.C2bCounterpartyTxData.Hex
 	if len(c2bToCounterpartyTxHex) > 0 {
-		if pass, _ := rpcClient.CheckMultiSign(true, c2bToCounterpartyTxHex, 2); pass == false {
+		if pass, _ := omnicore.CheckMultiSign(c2bToCounterpartyTxHex, 2); pass == false {
 			return nil, nil, false, errors.New(enum.Tips_common_wrong + "c2b_counterparty_tx_data_hex")
 		}
 	}
@@ -689,7 +690,7 @@ func (this *commitmentTxManager) OnAliceSignedC2b_RDTxAtAliceSide(data string, u
 
 	if tool.CheckIsString(&c2aSignedRsmcHex) {
 		latestCommitmentTxInfo.RSMCTxHex = c2aSignedRsmcHex
-		latestCommitmentTxInfo.RSMCTxid = rpcClient.GetTxId(c2aSignedRsmcHex)
+		latestCommitmentTxInfo.RSMCTxid = omnicore.GetTxId(c2aSignedRsmcHex)
 
 		// 保存Rd交易
 		err = saveRdTx(tx, channelInfo, c2aSignedRsmcHex, aliceRdHex, latestCommitmentTxInfo, myChannelAddress, user)
@@ -703,7 +704,7 @@ func (this *commitmentTxManager) OnAliceSignedC2b_RDTxAtAliceSide(data string, u
 
 	if tool.CheckIsString(&signedToCounterpartyHex) {
 		latestCommitmentTxInfo.ToCounterpartyTxHex = signedToCounterpartyHex
-		latestCommitmentTxInfo.ToCounterpartyTxid = rpcClient.GetTxId(signedToCounterpartyHex)
+		latestCommitmentTxInfo.ToCounterpartyTxid = omnicore.GetTxId(signedToCounterpartyHex)
 	}
 
 	//重新生成交易id
@@ -728,7 +729,7 @@ func (this *commitmentTxManager) OnAliceSignedC2b_RDTxAtAliceSide(data string, u
 	bobData := bean.AliceSignedC2bTxDataP2p{}
 	bobData.C2aCommitmentTxHash = dataFromP2p352.CommitmentTxHash
 
-	c2bMultiAddr, err := rpcClient.CreateMultiSig(2, []string{bobCurrTempAddressPubKey, myChannelPubKey})
+	c2bMultiAddr, err := omnicore.CreateMultiSig(2, []string{bobCurrTempAddressPubKey, myChannelPubKey})
 	if err != nil {
 		return nil, nil, false, err
 	}
@@ -738,10 +739,10 @@ func (this *commitmentTxManager) OnAliceSignedC2b_RDTxAtAliceSide(data string, u
 	//签名对方传过来的rsmcHex
 	c2bSignedRsmcHex := dataFromP2p352.C2bRsmcTxData.Hex
 	if len(c2bSignedRsmcHex) > 0 {
-		if pass, _ := rpcClient.CheckMultiSign(true, c2bSignedRsmcHex, 2); pass == false {
+		if pass, _ := omnicore.CheckMultiSign(c2bSignedRsmcHex, 2); pass == false {
 			return nil, nil, false, errors.New(enum.Tips_common_wrong + "c2b_rsmc_tx_data_hex")
 		}
-		err = checkBobRemcData(c2bSignedRsmcHex, c2bRsmcMultiAddress, latestCommitmentTxInfo)
+		err = checkBobRsmcData(c2bSignedRsmcHex, c2bRsmcMultiAddress, latestCommitmentTxInfo)
 		if err != nil {
 			return nil, nil, false, err
 		}
@@ -761,7 +762,7 @@ func (this *commitmentTxManager) OnAliceSignedC2b_RDTxAtAliceSide(data string, u
 	}
 
 	if len(c2bRsmcOutputs) > 0 {
-		c2bRdHexData, err := rpcClient.OmniCreateRawTransactionUseUnsendInput(
+		c2bRdHexData, err := omnicore.OmniCreateRawTransactionUseUnsendInput(
 			c2bRsmcMultiAddress,
 			c2bRsmcOutputs,
 			partnerChannelAddress,
@@ -819,74 +820,85 @@ func (this *commitmentTxManager) SendSomeCommitmentById(data string, user *bean.
 	if err != nil || commitmentTransaction.Id == 0 {
 		return nil, err
 	}
-	if commitmentTransaction.CurrState != dao.TxInfoState_CreateAndSign {
+	if commitmentTransaction.CurrState != dao.TxInfoState_CreateAndSign && commitmentTransaction.CurrState != dao.TxInfoState_Htlc_GetR {
 		return nil, errors.New("wrong commitment state")
 	}
 
+	channelInfo := &dao.ChannelInfo{}
+	err = tx.One("ChannelId", commitmentTransaction.ChannelId, channelInfo)
+	if err != nil || channelInfo.Id == 0 {
+		return nil, err
+	}
+	if channelInfo.CurrState == dao.ChannelState_Close {
+		return nil, errors.New("channel has been closed before by someone")
+	}
+
+	transactionsStr, err := conn2tracker.OmniListTransactions(channelInfo.ChannelAddress)
+	if err != nil || transactionsStr == "" {
+		return nil, err
+	}
+
 	//region 广播承诺交易 最近的rsmc的资产分配交易 因为是omni资产，承诺交易被拆分成了两个独立的交易
-	if tool.CheckIsString(&commitmentTransaction.RSMCTxHex) {
-		commitmentTxid, err := rpcClient.SendRawTransaction(commitmentTransaction.RSMCTxHex)
+	if commitmentTransaction.TxType == dao.CommitmentTransactionType_Rsmc {
+		if tool.CheckIsString(&commitmentTransaction.RSMCTxHex) {
+			commitmentTxid, err := conn2tracker.SendRawTransaction(commitmentTransaction.RSMCTxHex)
+			if err != nil {
+				log.Println(err)
+				return nil, err
+			}
+			log.Println(commitmentTxid)
+		}
+		if tool.CheckIsString(&commitmentTransaction.ToCounterpartyTxHex) {
+			commitmentTxidToBob, err := conn2tracker.SendRawTransaction(commitmentTransaction.ToCounterpartyTxHex)
+			if err != nil {
+				log.Println(err)
+				return nil, err
+			}
+			log.Println(commitmentTxidToBob)
+		}
+		//endregion
+
+		//region 广播RD
+		latestRevocableDeliveryTx := &dao.RevocableDeliveryTransaction{}
+		err = tx.Select(
+			q.Eq("ChannelId", commitmentTransaction.ChannelId),
+			q.Eq("CommitmentTxId", commitmentTransaction.Id),
+			q.Eq("Owner", user.PeerId)).
+			OrderBy("CreateAt").Reverse().
+			First(latestRevocableDeliveryTx)
 		if err != nil {
 			log.Println(err)
 			return nil, err
 		}
-		log.Println(commitmentTxid)
-	}
-	if tool.CheckIsString(&commitmentTransaction.ToCounterpartyTxHex) {
-		commitmentTxidToBob, err := rpcClient.SendRawTransaction(commitmentTransaction.ToCounterpartyTxHex)
+		//endregion
+
+		// region update state
+		commitmentTransaction.CurrState = dao.TxInfoState_SendHex
+		commitmentTransaction.SendAt = time.Now()
+		err = tx.Update(commitmentTransaction)
 		if err != nil {
-			log.Println(err)
 			return nil, err
 		}
-		log.Println(commitmentTxidToBob)
-	}
-	//endregion
 
-	//region 广播RD
-	latestRevocableDeliveryTx := &dao.RevocableDeliveryTransaction{}
-	err = tx.Select(
-		q.Eq("ChannelId", commitmentTransaction.ChannelId),
-		q.Eq("CommitmentTxId", commitmentTransaction.Id),
-		q.Eq("Owner", user.PeerId)).
-		OrderBy("CreateAt").Reverse().
-		First(latestRevocableDeliveryTx)
-	if err != nil {
-		log.Println(err)
-		return nil, err
-	}
+		latestRevocableDeliveryTx.CurrState = dao.TxInfoState_SendHex
+		latestRevocableDeliveryTx.SendAt = time.Now()
+		err = tx.Update(latestRevocableDeliveryTx)
+		if err != nil {
+			return nil, err
+		}
 
-	_, err = rpcClient.SendRawTransaction(latestRevocableDeliveryTx.TxHex)
-	if err != nil {
-		log.Println(err)
-		msg := err.Error()
-		//如果omnicore返回的信息里面包含了non-BIP68-final (code 64)， 则说明因为需要等待1000个区块高度，广播是对的
-		if strings.Contains(msg, "non-BIP68-final (code 64)") == false &&
-			strings.Contains(msg, "Code: -25,Msg: Missing inputs") == false {
+		err = addRDTxToWaitDB(latestRevocableDeliveryTx)
+		if err != nil {
+			return nil, err
+		}
+		//endregion
+	} else {
+		err = ChannelService.CloseHtlcChannelSigned(tx, commitmentTransaction, *user)
+		if err != nil {
 			return nil, err
 		}
 	}
-	//endregion
-
-	// region update state
-	commitmentTransaction.CurrState = dao.TxInfoState_SendHex
-	commitmentTransaction.SendAt = time.Now()
-	err = tx.Update(commitmentTransaction)
-	if err != nil {
-		return nil, err
-	}
-
-	latestRevocableDeliveryTx.CurrState = dao.TxInfoState_SendHex
-	latestRevocableDeliveryTx.SendAt = time.Now()
-	err = tx.Update(latestRevocableDeliveryTx)
-	if err != nil {
-		return nil, err
-	}
-
-	err = addRDTxToWaitDB(latestRevocableDeliveryTx)
-	if err != nil {
-		return nil, err
-	}
-	//endregion
+	_ = tx.Commit()
 
 	return nil, nil
 }

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"github.com/asdine/storm/q"
 	"github.com/omnilaboratory/obd/bean"
+	"github.com/omnilaboratory/obd/conn"
 	"github.com/omnilaboratory/obd/dao"
 	"github.com/omnilaboratory/obd/tool"
 	"log"
@@ -55,7 +56,7 @@ func (this *atomicSwapManager) AtomicSwap(msg bean.RequestMessage, user bean.Use
 		return nil, errors.New("error channel_id_from")
 	}
 
-	_, err = rpcClient.OmniGetProperty(reqData.PropertySent)
+	_, err = conn2tracker.OmniGetProperty(reqData.PropertySent)
 	if err != nil {
 		log.Println(err)
 		return nil, errors.New("error property_sent")
@@ -77,7 +78,7 @@ func (this *atomicSwapManager) AtomicSwap(msg bean.RequestMessage, user bean.Use
 		return nil, errors.New("error channel_id_to")
 	}
 
-	_, err = rpcClient.OmniGetProperty(reqData.PropertyReceived)
+	_, err = conn2tracker.OmniGetProperty(reqData.PropertyReceived)
 	if err != nil {
 		log.Println(err)
 		return nil, errors.New("error property_received")
@@ -90,7 +91,7 @@ func (this *atomicSwapManager) AtomicSwap(msg bean.RequestMessage, user bean.Use
 		return nil, errors.New("error transaction_id")
 	}
 
-	flag := HttpGetChannelStateFromTracker(reqData.ChannelIdTo)
+	flag := conn2tracker.GetChannelState(reqData.ChannelIdTo)
 	if flag == 0 {
 		return nil, errors.New("not found this channel_id_to")
 	}
@@ -205,7 +206,7 @@ func (this *atomicSwapManager) AtomicSwapAccepted(msg bean.RequestMessage, user 
 		return nil, errors.New("error channel_id_from")
 	}
 
-	_, err = rpcClient.OmniGetProperty(reqData.PropertySent)
+	_, err = conn2tracker.OmniGetProperty(reqData.PropertySent)
 	if err != nil {
 		log.Println(err)
 		return nil, errors.New("error property_sent")
@@ -227,7 +228,7 @@ func (this *atomicSwapManager) AtomicSwapAccepted(msg bean.RequestMessage, user 
 		return nil, errors.New("error channel_id_to")
 	}
 
-	_, err = rpcClient.OmniGetProperty(reqData.PropertyReceived)
+	_, err = conn2tracker.OmniGetProperty(reqData.PropertyReceived)
 	if err != nil {
 		log.Println(err)
 		return nil, errors.New("error property_received")
@@ -255,7 +256,7 @@ func (this *atomicSwapManager) AtomicSwapAccepted(msg bean.RequestMessage, user 
 		return nil, errors.New("error target_transaction_id")
 	}
 
-	flag := HttpGetChannelStateFromTracker(reqData.ChannelIdTo)
+	flag := conn2tracker.GetChannelState(reqData.ChannelIdTo)
 	if flag == 0 {
 		return nil, errors.New("not found this channel_id_to")
 	}

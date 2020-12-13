@@ -1,29 +1,21 @@
-package tracker
+package router
 
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
-	"github.com/omnilaboratory/obd/rpc"
 	"github.com/omnilaboratory/obd/tracker/service"
 	"github.com/satori/go.uuid"
-	"github.com/tidwall/gjson"
-	"log"
 	"net/http"
 	"strings"
 )
 
 func InitRouter() *gin.Engine {
-	gin.SetMode(gin.DebugMode)
+	gin.SetMode(gin.ReleaseMode)
 	router := gin.New()
 	router.Use(gin.Logger())
 	router.Use(gin.Recovery())
 	router.Use(cors())
-	err := getBtcChainInfo()
-	if err != nil {
-		log.Println(err)
-		return nil
-	}
 	go service.ObdNodeManager.TrackerStart()
 	router.GET("/ws", wsClientConnect)
 
@@ -31,9 +23,7 @@ func InitRouter() *gin.Engine {
 	{
 		apiv1.GET("GetHtlcCurrState", service.HtlcService.GetHtlcCurrState)
 		apiv1.GET("getChannelState", service.ChannelService.GetChannelState)
-		apiv1.GET("checkChainType", service.NodeAccountService.InitNodeAndCheckChainType)
 		apiv1.GET("getUserState", service.NodeAccountService.GetUserState)
-		apiv1.GET("getNodeDbId", service.NodeAccountService.GetNodeDbIdByNodeId)
 		apiv1.GET("getNodeInfoByP2pAddress", service.NodeAccountService.GetNodeInfoByP2pAddress)
 	}
 	apiv2 := router.Group("/api/common/")
@@ -45,6 +35,7 @@ func InitRouter() *gin.Engine {
 
 	apiv3 := router.Group("/api/rpc/")
 	{
+		apiv3.GET("getChainNodeType", service.RpcService.GetChainNodeType)
 		apiv3.GET("getBlockCount", service.RpcService.GetBlockCount)
 		apiv3.GET("getOmniBalance", service.RpcService.GetOmniBalance)
 		apiv3.GET("getBalanceByAddress", service.RpcService.GetBalanceByAddress)
@@ -75,15 +66,6 @@ func InitRouter() *gin.Engine {
 	}
 
 	return router
-}
-
-func getBtcChainInfo() (err error) {
-	result, err := rpc.NewClient().GetBlockChainInfo()
-	if err != nil {
-		return err
-	}
-	service.ChannelService.BtcChainType = gjson.Get(result, "chain").Str
-	return nil
 }
 
 //跨域

@@ -10,6 +10,7 @@ import (
 	"github.com/omnilaboratory/obd/config"
 	"github.com/omnilaboratory/obd/conn"
 	"github.com/omnilaboratory/obd/dao"
+	"github.com/omnilaboratory/obd/omnicore"
 	"github.com/omnilaboratory/obd/tool"
 	trackerBean "github.com/omnilaboratory/obd/tracker/bean"
 	"github.com/tidwall/gjson"
@@ -21,9 +22,7 @@ import (
 )
 
 type htlcBackwardTxManager struct {
-	operationFlag              sync.Mutex
-	tempDataSendTo45PAtBobSide map[string]bean.NeedAliceSignHerdTxOfC3bP2p
-	tempDataFrom45PAtAliceSide map[string]bean.NeedAliceSignHerdTxOfC3bP2p
+	operationFlag sync.Mutex
 }
 
 // HTLC Reverse pass the R (Preimage R)
@@ -116,7 +115,7 @@ func (service *htlcBackwardTxManager) SendRToPreviousNodeAtBobSide(msg bean.Requ
 		return nil, err
 	}
 
-	_, err = tool.GetPubKeyFromWifAndCheck(reqData.R, latestCommitmentTxInfo.HtlcH)
+	_, err = omnicore.GetPubKeyFromWifAndCheck(reqData.R, latestCommitmentTxInfo.HtlcH)
 	if err != nil {
 		return nil, errors.New(enum.Tips_htlc_wrongRForH)
 	}
@@ -125,11 +124,11 @@ func (service *htlcBackwardTxManager) SendRToPreviousNodeAtBobSide(msg bean.Requ
 
 	// endregion
 
-	currBlockHeight := conn.HttpGetBlockCountFromTracker()
+	currBlockHeight := conn2tracker.GetBlockCount()
 
 	htlcTimeOut := latestCommitmentTxInfo.HtlcCltvExpiry
 	maxHeight := latestCommitmentTxInfo.BeginBlockHeight + htlcTimeOut
-	if strings.Contains(config.ChainNode_Type, "main") {
+	if strings.Contains(config.ChainNodeType, "main") {
 		if currBlockHeight > maxHeight {
 			return nil, errors.New(enum.Tips_htlc_timeOut)
 		}
@@ -156,7 +155,7 @@ func (service *htlcBackwardTxManager) SendRToPreviousNodeAtBobSide(msg bean.Requ
 		log.Println(err)
 		return nil, err
 	}
-	heRdTx, err := rpcClient.OmniCreateRawTransactionUseUnsendInput(
+	heRdTx, err := omnicore.OmniCreateRawTransactionUseUnsendInput(
 		he1b.RSMCMultiAddress,
 		heOutputs,
 		payeeChannelAddress,
@@ -191,7 +190,7 @@ func (service *htlcBackwardTxManager) SendRToPreviousNodeAtBobSide(msg bean.Requ
 	//endregion
 
 	//region 2  he的br
-	heBrTx, err := rpcClient.OmniCreateRawTransactionUseUnsendInput(
+	heBrTx, err := omnicore.OmniCreateRawTransactionUseUnsendInput(
 		he1b.RSMCMultiAddress,
 		heOutputs,
 		payerChannelAddress,
@@ -215,12 +214,18 @@ func (service *htlcBackwardTxManager) SendRToPreviousNodeAtBobSide(msg bean.Requ
 	dataSendTo45P.C3bHtlcHebrRawData = c3bHeBrRawData
 
 	_ = tx.Update(latestCommitmentTxInfo)
-	_ = tx.Commit()
 
-	if service.tempDataSendTo45PAtBobSide == nil {
-		service.tempDataSendTo45PAtBobSide = make(map[string]bean.NeedAliceSignHerdTxOfC3bP2p)
+	cacheDataForTx := &dao.CacheDataForTx{}
+	cacheDataForTx.KeyName = user.PeerId + "_htlcBack_" + channelInfo.ChannelId
+	_ = tx.Select(q.Eq("KeyName", cacheDataForTx.KeyName)).First(cacheDataForTx)
+	if cacheDataForTx.Id != 0 {
+		_ = tx.DeleteStruct(cacheDataForTx)
 	}
-	service.tempDataSendTo45PAtBobSide[user.PeerId+"_"+channelInfo.ChannelId] = dataSendTo45P
+	bytes, _ := json.Marshal(&dataSendTo45P)
+	cacheDataForTx.Data = bytes
+	_ = tx.Save(cacheDataForTx)
+
+	_ = tx.Commit()
 
 	log.Println("htlc step 13 end", time.Now())
 	return dataNeedBobSign, nil
@@ -235,17 +240,26 @@ func (service *htlcBackwardTxManager) OnBobSignedHeRdAtBobSide(msg bean.RequestM
 	if tool.CheckIsString(&bobSignedData.ChannelId) == false {
 		return nil, errors.New("error channel_id")
 	}
-	dataSendTo45P := service.tempDataSendTo45PAtBobSide[user.PeerId+"_"+bobSignedData.ChannelId]
+
+	cacheDataForTx := &dao.CacheDataForTx{}
+	_ = user.Db.Select(q.Eq("KeyName", user.PeerId+"_htlcBack_"+bobSignedData.ChannelId)).First(cacheDataForTx)
+	if cacheDataForTx.Id == 0 {
+		return nil, errors.New("error channel_id")
+	}
+
+	dataSendTo45P := &bean.NeedAliceSignHerdTxOfC3bP2p{}
+	_ = json.Unmarshal(cacheDataForTx.Data, dataSendTo45P)
 	if len(dataSendTo45P.ChannelId) == 0 {
 		return nil, errors.New("error channel_id")
 	}
 
-	if pass, _ := rpcClient.CheckMultiSign(false, bobSignedData.C3bHtlcHerdPartialSignedHex, 1); pass == false {
+	if pass, _ := omnicore.CheckMultiSign(bobSignedData.C3bHtlcHerdPartialSignedHex, 1); pass == false {
 		return nil, errors.New("error sign c3b_htlc_herd_partial_signed_hex")
 	}
 
 	dataSendTo45P.C3bHtlcHerdPartialSignedData.Hex = bobSignedData.C3bHtlcHerdPartialSignedHex
-	service.tempDataSendTo45PAtBobSide[user.PeerId+"_"+bobSignedData.ChannelId] = dataSendTo45P
+	_ = user.Db.Update(dataSendTo45P)
+
 	log.Println("htlc step 14 end", time.Now())
 	return dataSendTo45P, nil
 }
@@ -275,10 +289,9 @@ func (service *htlcBackwardTxManager) OnGetHeSubTxDataAtAliceObdAtAliceSide(msg 
 	if err != nil {
 		return nil, err
 	}
-	if _, err = tool.GetPubKeyFromWifAndCheck(dataFrom45P.R, latestCommitmentTx.HtlcH); err != nil {
+	if _, err = omnicore.GetPubKeyFromWifAndCheck(dataFrom45P.R, latestCommitmentTx.HtlcH); err != nil {
 		return nil, errors.New(enum.Tips_htlc_wrongRForH)
 	}
-	tx.Commit()
 
 	if tool.CheckIsString(&dataFrom45P.C3bHtlcTempAddressForHePubKey) == false {
 		return nil, errors.New(enum.Tips_common_empty + "c3b_htlc_temp_address_for_he_pub_key")
@@ -288,10 +301,18 @@ func (service *htlcBackwardTxManager) OnGetHeSubTxDataAtAliceObdAtAliceSide(msg 
 		return nil, errors.New(enum.Tips_common_empty + "he_complete_signed_hex")
 	}
 
-	if service.tempDataFrom45PAtAliceSide == nil {
-		service.tempDataFrom45PAtAliceSide = make(map[string]bean.NeedAliceSignHerdTxOfC3bP2p)
+	cacheDataForTx := &dao.CacheDataForTx{}
+	cacheDataForTx.KeyName = user.PeerId + "_htlcBack_" + dataFrom45P.ChannelId
+	_ = tx.Select(q.Eq("KeyName", cacheDataForTx.KeyName)).First(cacheDataForTx)
+	if cacheDataForTx.Id != 0 {
+		_ = tx.DeleteStruct(cacheDataForTx)
 	}
-	service.tempDataFrom45PAtAliceSide[user.PeerId+"_"+dataFrom45P.ChannelId] = dataFrom45P
+	bytes, _ := json.Marshal(&dataFrom45P)
+	cacheDataForTx.Data = bytes
+	_ = tx.Save(cacheDataForTx)
+
+	_ = tx.Commit()
+
 	log.Println("htlc step 15 end", time.Now())
 	return dataFrom45P, nil
 }
@@ -306,17 +327,24 @@ func (service *htlcBackwardTxManager) OnAliceSignedHeRdAtAliceSide(msg bean.Requ
 		return nil, nil, errors.New("error channel_id")
 	}
 
-	dataFrom45P := service.tempDataFrom45PAtAliceSide[user.PeerId+"_"+herdSignedResult.ChannelId]
+	cacheDataForTx := &dao.CacheDataForTx{}
+	_ = user.Db.Select(q.Eq("KeyName", user.PeerId+"_htlcBack_"+herdSignedResult.ChannelId)).First(cacheDataForTx)
+	if cacheDataForTx.Id == 0 {
+		return nil, nil, errors.New("error channel_id")
+	}
+
+	dataFrom45P := &bean.NeedAliceSignHerdTxOfC3bP2p{}
+	_ = json.Unmarshal(cacheDataForTx.Data, dataFrom45P)
 	if len(dataFrom45P.ChannelId) == 0 {
 		return nil, nil, errors.New("error channel_id")
 	}
 
-	if pass, _ := rpcClient.CheckMultiSign(false, herdSignedResult.C3bHtlcHerdCompleteSignedHex, 2); pass == false {
+	if pass, _ := omnicore.CheckMultiSign(herdSignedResult.C3bHtlcHerdCompleteSignedHex, 2); pass == false {
 		return nil, nil, errors.New("error sign c3b_htlc_herd_complete_signed_hex")
 	}
 	dataFrom45P.C3bHtlcHerdPartialSignedData.Hex = herdSignedResult.C3bHtlcHerdCompleteSignedHex
 
-	if pass, _ := rpcClient.CheckMultiSign(false, herdSignedResult.C3bHtlcHebrPartialSignedHex, 1); pass == false {
+	if pass, _ := omnicore.CheckMultiSign(herdSignedResult.C3bHtlcHebrPartialSignedHex, 1); pass == false {
 		return nil, nil, errors.New("error sign c3b_htlc_hebr_partial_signed_hex")
 	}
 	dataFrom45P.C3bHtlcHebrRawData.Hex = herdSignedResult.C3bHtlcHebrPartialSignedHex
@@ -410,7 +438,7 @@ func (service *htlcBackwardTxManager) OnGetHeRdDataAtBobObd(msg string, user bea
 		return nil, errors.New("error channel_id")
 	}
 
-	if pass, _ := rpcClient.CheckMultiSign(false, dataFrom46P.C3bHtlcHerdCompleteSignedHex, 2); pass == false {
+	if pass, _ := omnicore.CheckMultiSign(dataFrom46P.C3bHtlcHerdCompleteSignedHex, 2); pass == false {
 		return nil, errors.New("error sign c3b_htlc_herd_complete_signed_hex")
 	}
 
@@ -481,7 +509,7 @@ func signHe1bAtPayeeSide_at45(tx storm.Node, channelInfo dao.ChannelInfo, commit
 		return nil, err
 	}
 
-	txId, signedHex, err := rpcClient.OmniSignRawTransactionForUnsend(he1b.RSMCTxHex, hlockOutputs, reqData.R)
+	txId, signedHex, err := omnicore.OmniSignRawTransactionForUnsend(he1b.RSMCTxHex, hlockOutputs, reqData.R)
 	if err != nil {
 		return nil, err
 	}
@@ -523,7 +551,7 @@ func createHerd1bAtPayeeSide(tx storm.Node, channelInfo dao.ChannelInfo, he1b *d
 
 	//input
 	herd.InputTxHex = he1b.RSMCTxHex
-	herd.InputTxid = rpcClient.GetTxId(he1b.RSMCTxHex)
+	herd.InputTxid = omnicore.GetTxId(he1b.RSMCTxHex)
 	herd.InputVout = 0
 	herd.InputAmount = he1b.RSMCOutAmount
 	//output
@@ -567,7 +595,7 @@ func updateHerd1bAtPayeeSide(tx storm.Node, channelInfo dao.ChannelInfo, commitm
 	}
 
 	herd.TxHex = herdHex
-	herd.Txid = rpcClient.GetTxId(herdHex)
+	herd.Txid = omnicore.GetTxId(herdHex)
 	herd.CurrState = dao.TxInfoState_CreateAndSign
 
 	herd.CreateBy = user.PeerId
@@ -604,7 +632,7 @@ func createHed1a(tx storm.Node, signedHed1aHex string, channelInfo dao.ChannelIn
 			payeeChannelAddress = channelInfo.AddressA
 			payeePeerId = channelInfo.PeerIdA
 		}
-		decodeHed1aHex, err := rpcClient.DecodeRawTransaction(signedHed1aHex)
+		decodeHed1aHex, err := omnicore.DecodeBtcRawTransaction(signedHed1aHex)
 		if err != nil {
 			return err
 		}
@@ -665,7 +693,7 @@ func signHed1a(tx storm.Node, channelInfo dao.ChannelInfo, commitmentTxInfo dao.
 			return err
 		}
 
-		txId, hex, err := rpcClient.OmniSignRawTransactionForUnsend(hed1a.TxHex, inputs, commitmentTxInfo.HtlcR)
+		txId, hex, err := omnicore.OmniSignRawTransactionForUnsend(hed1a.TxHex, inputs, commitmentTxInfo.HtlcR)
 		if err != nil {
 			return err
 		}

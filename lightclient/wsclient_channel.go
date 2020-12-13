@@ -42,7 +42,7 @@ func (client *Client) channelModule(msg bean.RequestMessage) (enum.SendTargetTyp
 		}
 
 		msg.Type = enum.MsgType_SendChannelOpen_32
-		client.sendToMyself(msg.Type, status, data)
+		client.SendToMyself(msg.Type, status, data)
 
 	case enum.MsgType_ChannelOpen_AllItem_3150:
 		pageData, err := service.ChannelService.AllItem(msg.Data, *client.User)
@@ -57,7 +57,7 @@ func (client *Client) channelModule(msg bean.RequestMessage) (enum.SendTargetTyp
 				status = true
 			}
 		}
-		client.sendToMyself(msg.Type, status, data)
+		client.SendToMyself(msg.Type, status, data)
 
 	case enum.MsgType_ChannelOpen_ItemByTempId_3151:
 		node, err := service.ChannelService.GetChannelByTemporaryChanId(msg.Data, *client.User)
@@ -72,7 +72,7 @@ func (client *Client) channelModule(msg bean.RequestMessage) (enum.SendTargetTyp
 				status = true
 			}
 		}
-		client.sendToMyself(msg.Type, status, data)
+		client.SendToMyself(msg.Type, status, data)
 
 	case enum.MsgType_ChannelOpen_Count_3152:
 		node, err := service.ChannelService.TotalCount(*client.User)
@@ -82,7 +82,7 @@ func (client *Client) channelModule(msg bean.RequestMessage) (enum.SendTargetTyp
 			data = strconv.Itoa(node)
 			status = true
 		}
-		client.sendToMyself(msg.Type, status, data)
+		client.SendToMyself(msg.Type, status, data)
 
 	case enum.MsgType_ChannelOpen_DelItemByTempId_3153:
 		node, err := service.ChannelService.DelChannelByTemporaryChanId(msg.Data, *client.User)
@@ -97,7 +97,7 @@ func (client *Client) channelModule(msg bean.RequestMessage) (enum.SendTargetTyp
 				status = true
 			}
 		}
-		client.sendToMyself(msg.Type, status, data)
+		client.SendToMyself(msg.Type, status, data)
 
 	case enum.MsgType_GetChannelInfoByChannelId_3154:
 		node, err := service.ChannelService.GetChannelInfoByChannelId(msg.Data, *client.User)
@@ -112,7 +112,7 @@ func (client *Client) channelModule(msg bean.RequestMessage) (enum.SendTargetTyp
 				status = true
 			}
 		}
-		client.sendToMyself(msg.Type, status, data)
+		client.SendToMyself(msg.Type, status, data)
 
 	case enum.MsgType_GetChannelInfoByDbId_3155:
 		node, err := service.ChannelService.GetChannelInfoById(msg.Data, *client.User)
@@ -127,7 +127,7 @@ func (client *Client) channelModule(msg bean.RequestMessage) (enum.SendTargetTyp
 				status = true
 			}
 		}
-		client.sendToMyself(msg.Type, status, data)
+		client.SendToMyself(msg.Type, status, data)
 
 	case enum.MsgType_CheckChannelAddessExist_3156:
 		node, err := service.ChannelService.BobCheckChannelAddressExist(msg.Data, client.User)
@@ -142,7 +142,7 @@ func (client *Client) channelModule(msg bean.RequestMessage) (enum.SendTargetTyp
 				status = true
 			}
 		}
-		client.sendToMyself(msg.Type, status, data)
+		client.SendToMyself(msg.Type, status, data)
 
 	//get acceptChannelReq from fundee then send to funder
 	case enum.MsgType_SendChannelAccept_33:
@@ -165,7 +165,7 @@ func (client *Client) channelModule(msg bean.RequestMessage) (enum.SendTargetTyp
 			}
 		}
 		msg.Type = enum.MsgType_SendChannelAccept_33
-		client.sendToMyself(msg.Type, status, data)
+		client.SendToMyself(msg.Type, status, data)
 
 	case enum.MsgType_SendCloseChannelRequest_38:
 		node, err := service.ChannelService.ForceCloseChannel(msg, client.User)
@@ -185,7 +185,7 @@ func (client *Client) channelModule(msg bean.RequestMessage) (enum.SendTargetTyp
 		//	_ = client.sendDataToP2PUser(msg, status, data)
 		//}
 		//msg.Type = enum.MsgType_SendCloseChannelRequest_38
-		client.sendToMyself(msg.Type, status, data)
+		client.SendToMyself(msg.Type, status, data)
 
 	case enum.MsgType_SendCloseChannelSign_39:
 		node, err := service.ChannelService.SignCloseChannel(msg, *client.User)
@@ -207,7 +207,7 @@ func (client *Client) channelModule(msg bean.RequestMessage) (enum.SendTargetTyp
 			}
 		}
 		msg.Type = enum.MsgType_SendCloseChannelSign_39
-		client.sendToMyself(msg.Type, status, data)
+		client.SendToMyself(msg.Type, status, data)
 
 	default:
 		sendType = enum.SendTargetType_SendToNone

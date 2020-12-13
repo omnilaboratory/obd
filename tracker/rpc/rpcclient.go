@@ -5,8 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/omnilaboratory/obd/bean"
-	"github.com/omnilaboratory/obd/config"
+	"github.com/omnilaboratory/obd/tracker/config"
 	"github.com/tidwall/gjson"
 	"io/ioutil"
 	"log"
@@ -20,9 +19,9 @@ var connConfig *ConnConfig
 
 func init() {
 	connConfig = &ConnConfig{
-		Host: config.ChainNode_Host,
-		User: config.ChainNode_User,
-		Pass: config.ChainNode_Pass,
+		Host: cfg.ChainNode_Host,
+		User: cfg.ChainNode_User,
+		Pass: cfg.ChainNode_Pass,
 	}
 }
 
@@ -100,21 +99,18 @@ func (client *Client) CheckVersion() error {
 	if err != nil {
 		return err
 	}
-	config.ChainNode_Type = gjson.Get(result, "chain").Str
-
-	bean.CurrObdNodeInfo.ChainNetworkType = config.ChainNode_Type
+	cfg.ChainNode_Type = gjson.Get(result, "chain").Str
 
 	result, err = client.OmniGetInfo()
 	if err != nil {
 		return err
 	}
 
-	bean.CurrObdNodeInfo.OmniCoreVersion = gjson.Get(result, "omnicoreversion").String()
-	bean.CurrObdNodeInfo.BtcCoreVersion = gjson.Get(result, "bitcoincoreversion").String()
-	log.Println("omniCoreVersion: "+bean.CurrObdNodeInfo.OmniCoreVersion+",", "bitcoinCoreVersion: "+bean.CurrObdNodeInfo.BtcCoreVersion)
-	bitcoinCoreVersion := bean.CurrObdNodeInfo.BtcCoreVersion
+	omniCoreVersion := gjson.Get(result, "omnicoreversion").String()
+	btcCoreVersion := gjson.Get(result, "bitcoincoreversion").String()
+	log.Println("omniCoreVersion: "+omniCoreVersion+",", "bitcoinCoreVersion: "+btcCoreVersion)
 
-	infoes := strings.Split(bitcoinCoreVersion, ".")
+	infoes := strings.Split(btcCoreVersion, ".")
 	tempInt, _ := strconv.Atoi(infoes[0])
 	if tempInt >= 0 {
 		return nil
@@ -124,11 +120,10 @@ func (client *Client) CheckVersion() error {
 		return nil
 	}
 
-	return errors.New("error bitcoinCore version " + gjson.Get(result, "bitcoincoreversion").String())
+	return errors.New("error bitcoinCore version " + btcCoreVersion)
 }
 
 func (client *Client) send(method string, params []interface{}) (result string, err error) {
-	log.Println(method)
 	rawParams := make([]json.RawMessage, 0, len(params))
 	for _, item := range params {
 		marshaledParam, err := json.Marshal(item)
@@ -193,35 +188,4 @@ func (client *Client) send(method string, params []interface{}) (result string, 
 		return "", err
 	}
 	return gjson.Parse(string(res)).String(), nil
-}
-
-func (client *Client) CheckMultiSign(sendedInput bool, hex string, step int) (pass bool, err error) {
-	if len(hex) == 0 {
-		return false, errors.New("Empty hex")
-	}
-	result, err := client.DecodeRawTransaction(hex)
-	vins := gjson.Get(result, "vin").Array()
-	for i := 0; i < len(vins); i++ {
-		asm := vins[i].Get("scriptSig").Get("asm").Str
-		asmArr := strings.Split(asm, " ")
-		if step == 1 {
-			if len(asmArr) != 4 || (asmArr[1] == "0" && asmArr[2] == "0") {
-				return false, errors.New("err sign")
-			}
-		}
-		if step == 2 {
-			if len(asmArr) != 4 || asmArr[1] == "0" || asmArr[2] == "0" {
-				return false, errors.New("err sign")
-			}
-		}
-	}
-	return true, nil
-}
-
-func (client *Client) GetTxId(hex string) string {
-	testResult, err := client.DecodeRawTransaction(hex)
-	if err == nil {
-		return gjson.Parse(testResult).Get("txid").Str
-	}
-	return ""
 }

@@ -9,7 +9,6 @@ import (
 	"github.com/omnilaboratory/obd/bean/enum"
 	"github.com/omnilaboratory/obd/dao"
 	"github.com/omnilaboratory/obd/omnicore"
-	"github.com/omnilaboratory/obd/rpc"
 	"github.com/tidwall/gjson"
 	"log"
 	"time"
@@ -17,7 +16,7 @@ import (
 
 //创建RawBR
 func createCurrCommitmentTxRawBR(tx storm.Node, brType dao.BRType, channelInfo *dao.ChannelInfo,
-	commitmentTx *dao.CommitmentTransaction, inputs []rpc.TransactionInputItem,
+	commitmentTx *dao.CommitmentTransaction, inputs []bean.TransactionInputItem,
 	outputAddress string, user bean.User) (retMap map[string]interface{}, err error) {
 	if len(inputs) == 0 {
 		return nil, nil
@@ -38,7 +37,7 @@ func createCurrCommitmentTxRawBR(tx storm.Node, brType dao.BRType, channelInfo *
 			return nil, err
 		}
 		if breachRemedyTransaction.Amount > 0 {
-			retMap, err = rpcClient.OmniCreateRawTransactionUseUnsendInput(
+			retMap, err = omnicore.OmniCreateRawTransactionUseUnsendInput(
 				commitmentTx.RSMCMultiAddress,
 				inputs,
 				outputAddress,
@@ -59,7 +58,7 @@ func createCurrCommitmentTxRawBR(tx storm.Node, brType dao.BRType, channelInfo *
 			retMap["br_id"] = breachRemedyTransaction.Id
 		}
 	} else {
-		retMap, err = rpcClient.OmniCreateRawTransactionUseUnsendInput(
+		retMap, err = omnicore.OmniCreateRawTransactionUseUnsendInput(
 			commitmentTx.RSMCMultiAddress,
 			inputs,
 			outputAddress,
@@ -80,7 +79,7 @@ func createCurrCommitmentTxRawBR(tx storm.Node, brType dao.BRType, channelInfo *
 }
 
 func createCurrCommitmentTxPartialSignedBR(tx storm.Node, brType dao.BRType, channelInfo *dao.ChannelInfo,
-	commitmentTx *dao.CommitmentTransaction, inputs []rpc.TransactionInputItem,
+	commitmentTx *dao.CommitmentTransaction, inputs []bean.TransactionInputItem,
 	outputAddress string, brHex string, user bean.User) (err error) {
 	if len(inputs) == 0 {
 		return nil
@@ -103,7 +102,7 @@ func createCurrCommitmentTxPartialSignedBR(tx storm.Node, brType dao.BRType, cha
 		if breachRemedyTransaction.Amount > 0 {
 			breachRemedyTransaction.OutAddress = outputAddress
 			breachRemedyTransaction.BrTxHex = brHex
-			breachRemedyTransaction.Txid = rpcClient.GetTxId(brHex)
+			breachRemedyTransaction.Txid = omnicore.GetTxId(brHex)
 			breachRemedyTransaction.CurrState = dao.TxInfoState_Create
 			_ = tx.Save(breachRemedyTransaction)
 		}
@@ -112,7 +111,7 @@ func createCurrCommitmentTxPartialSignedBR(tx storm.Node, brType dao.BRType, cha
 }
 
 //创建RawBR obj
-func createRawBR(brType dao.BRType, channelInfo *dao.ChannelInfo, commitmentTx *dao.CommitmentTransaction, inputs []rpc.TransactionInputItem,
+func createRawBR(brType dao.BRType, channelInfo *dao.ChannelInfo, commitmentTx *dao.CommitmentTransaction, inputs []bean.TransactionInputItem,
 	outputAddress string, user bean.User) (retMap bean.NeedClientSignTxData, err error) {
 	if len(inputs) == 0 {
 		return retMap, errors.New("empty inputs")
@@ -124,7 +123,7 @@ func createRawBR(brType dao.BRType, channelInfo *dao.ChannelInfo, commitmentTx *
 		return retMap, err
 	}
 	if breachRemedyTransaction.Amount > 0 {
-		brTxData, err := rpcClient.OmniCreateRawTransactionUseUnsendInput(
+		brTxData, err := omnicore.OmniCreateRawTransactionUseUnsendInput(
 			commitmentTx.RSMCMultiAddress,
 			inputs,
 			outputAddress,
@@ -172,11 +171,11 @@ func updateCurrCommitmentTxRawBR(tx storm.Node, id int64, firstSignedBrHex strin
 
 func compareBR(hex1 string, hex2 string) (bool, string) {
 
-	hex1Decode, err := rpcClient.DecodeRawTransaction(hex1)
+	hex1Decode, err := omnicore.DecodeBtcRawTransaction(hex1)
 	if err != nil {
 		return false, ""
 	}
-	hex2Decode, err := rpcClient.DecodeRawTransaction(hex2)
+	hex2Decode, err := omnicore.DecodeBtcRawTransaction(hex2)
 	if err != nil {
 		return false, ""
 	}
@@ -222,7 +221,7 @@ func signLastBR(tx storm.Node, brType dao.BRType, channelInfo dao.ChannelInfo, u
 			return nil
 		}
 
-		signedBRTxid, signedBRHex, err := rpcClient.OmniSignRawTransactionForUnsend(lastBreachRemedyTransaction.BrTxHex, inputs, lastTempAddressPrivateKey)
+		signedBRTxid, signedBRHex, err := omnicore.OmniSignRawTransactionForUnsend(lastBreachRemedyTransaction.BrTxHex, inputs, lastTempAddressPrivateKey)
 		if err != nil {
 			return errors.New(fmt.Sprintf(enum.Tips_common_failToSign, "breachRemedyTransaction"))
 		}
@@ -235,7 +234,7 @@ func signLastBR(tx storm.Node, brType dao.BRType, channelInfo dao.ChannelInfo, u
 	return nil
 }
 
-func checkBobRemcData(rsmcHex, toAddress string, commitmentTransaction *dao.CommitmentTransaction) error {
+func checkBobRsmcData(rsmcHex, toAddress string, commitmentTransaction *dao.CommitmentTransaction) error {
 	_, err := omnicore.VerifyOmniTxHex(rsmcHex, commitmentTransaction.PropertyId, commitmentTransaction.AmountToCounterparty, toAddress, true)
 	if err != nil {
 		return err

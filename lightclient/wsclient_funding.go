@@ -39,7 +39,7 @@ func (client *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.Se
 			}
 		}
 		msg.Type = enum.MsgType_FundingCreate_SendBtcFundingCreated_340
-		client.sendToMyself(msg.Type, status, data)
+		client.SendToMyself(msg.Type, status, data)
 	case enum.MsgType_ClientSign_Duplex_BtcFundingMinerRDTx_341:
 		node, _, err := service.FundingTransactionService.OnAliceSignBtcFundingMinerFeeRedeemTx(msg.Data, client.User)
 		if err != nil {
@@ -62,7 +62,7 @@ func (client *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.Se
 			}
 		}
 		msg.Type = enum.MsgType_ClientSign_Duplex_BtcFundingMinerRDTx_341
-		client.sendToMyself(msg.Type, status, data)
+		client.SendToMyself(msg.Type, status, data)
 	case enum.MsgType_FundingCreate_Btc_AllItem_3104:
 		node, err := service.FundingTransactionService.BtcFundingAllItem(*client.User)
 		if err != nil {
@@ -76,7 +76,7 @@ func (client *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.Se
 				status = true
 			}
 		}
-		client.sendToMyself(msg.Type, status, data)
+		client.SendToMyself(msg.Type, status, data)
 
 	case enum.MsgType_FundingCreate_Btc_ItemById_3105:
 		id, err := strconv.Atoi(msg.Data)
@@ -96,7 +96,7 @@ func (client *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.Se
 				status = true
 			}
 		}
-		client.sendToMyself(msg.Type, status, data)
+		client.SendToMyself(msg.Type, status, data)
 
 	case enum.MsgType_FundingCreate_Btc_ItemByTempChannelId_3106:
 		node, err := service.FundingTransactionService.BtcFundingItemByTempChannelId(msg.Data, *client.User)
@@ -111,7 +111,7 @@ func (client *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.Se
 				status = true
 			}
 		}
-		client.sendToMyself(msg.Type, status, data)
+		client.SendToMyself(msg.Type, status, data)
 
 	case enum.MsgType_FundingCreate_Btc_ItemByChannelId_3111:
 		node, err := service.FundingTransactionService.BtcFundingItemByChannelId(msg.Data, *client.User)
@@ -126,7 +126,7 @@ func (client *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.Se
 				status = true
 			}
 		}
-		client.sendToMyself(msg.Type, status, data)
+		client.SendToMyself(msg.Type, status, data)
 
 	case enum.MsgType_FundingCreate_Btc_RDAllItem_3107:
 		node, err := service.FundingTransactionService.BtcFundingRDAllItem(*client.User)
@@ -141,7 +141,7 @@ func (client *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.Se
 				status = true
 			}
 		}
-		client.sendToMyself(msg.Type, status, data)
+		client.SendToMyself(msg.Type, status, data)
 
 	case enum.MsgType_FundingCreate_Btc_ItemRDById_3108:
 		id, err := strconv.Atoi(msg.Data)
@@ -161,7 +161,7 @@ func (client *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.Se
 				status = true
 			}
 		}
-		client.sendToMyself(msg.Type, status, data)
+		client.SendToMyself(msg.Type, status, data)
 
 	case enum.MsgType_FundingCreate_Btc_ItemRDByTempChannelId_3109:
 		node, err := service.FundingTransactionService.BtcFundingItemRDByTempChannelId(msg.Data, *client.User)
@@ -176,7 +176,7 @@ func (client *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.Se
 				status = true
 			}
 		}
-		client.sendToMyself(msg.Type, status, data)
+		client.SendToMyself(msg.Type, status, data)
 
 	case enum.MsgType_FundingCreate_Btc_ItemRDByTempChannelIdAndTxId_3110:
 		node, err := service.FundingTransactionService.BtcFundingItemRDByTempChannelIdAndFundingTxid(msg.Data, *client.User)
@@ -191,7 +191,7 @@ func (client *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.Se
 				status = true
 			}
 		}
-		client.sendToMyself(msg.Type, status, data)
+		client.SendToMyself(msg.Type, status, data)
 
 	case enum.MsgType_FundingCreate_SendAssetFundingCreated_34:
 		node, needSign, err := service.FundingTransactionService.AssetFundingCreated(msg, client.User)
@@ -215,7 +215,7 @@ func (client *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.Se
 			}
 		}
 		msg.Type = enum.MsgType_FundingCreate_SendAssetFundingCreated_34
-		client.sendToMyself(msg.Type, status, data)
+		client.SendToMyself(msg.Type, status, data)
 
 	case enum.MsgType_ClientSign_AssetFunding_AliceSignC1a_1034:
 		node, err := service.FundingTransactionService.OnAliceSignC1a(msg, client.User)
@@ -237,7 +237,7 @@ func (client *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.Se
 			}
 		}
 		msg.Type = enum.MsgType_ClientSign_AssetFunding_AliceSignC1a_1034
-		client.sendToMyself(msg.Type, status, data)
+		client.SendToMyself(msg.Type, status, data)
 	case enum.MsgType_ClientSign_AssetFunding_AliceSignRD_1134:
 		node, err := service.FundingTransactionService.OnAliceSignedRdAtAliceSide(msg.Data, client.User)
 		if err != nil {
@@ -251,7 +251,7 @@ func (client *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.Se
 				status = true
 			}
 		}
-		client.sendToMyself(msg.Type, status, data)
+		client.SendToMyself(msg.Type, status, data)
 
 	case enum.MsgType_FundingCreate_Asset_AllItem_3100:
 		node, err := service.FundingTransactionService.AssetFundingAllItem(*client.User)
@@ -266,7 +266,7 @@ func (client *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.Se
 				status = true
 			}
 		}
-		client.sendToMyself(msg.Type, status, data)
+		client.SendToMyself(msg.Type, status, data)
 
 	case enum.MsgType_FundingCreate_Asset_ItemById_3101:
 		id, err := strconv.Atoi(msg.Data)
@@ -287,7 +287,7 @@ func (client *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.Se
 				}
 			}
 		}
-		client.sendToMyself(msg.Type, status, data)
+		client.SendToMyself(msg.Type, status, data)
 
 	case enum.MsgType_FundingCreate_Asset_ItemByChannelId_3102:
 		node, err := service.FundingTransactionService.AssetFundingItemByChannelId(msg.Data, *client.User)
@@ -302,7 +302,7 @@ func (client *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.Se
 				status = true
 			}
 		}
-		client.sendToMyself(msg.Type, status, data)
+		client.SendToMyself(msg.Type, status, data)
 
 	case enum.MsgType_FundingCreate_Asset_Count_3103:
 		count, err := service.FundingTransactionService.AssetFundingTotalCount(*client.User)
@@ -312,7 +312,7 @@ func (client *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.Se
 			data = strconv.Itoa(count)
 			status = true
 		}
-		client.sendToMyself(msg.Type, status, data)
+		client.SendToMyself(msg.Type, status, data)
 
 	default:
 		sendType = enum.SendTargetType_SendToNone
@@ -353,7 +353,7 @@ func (client *Client) fundingSignModule(msg bean.RequestMessage) (enum.SendTarge
 			}
 		}
 		msg.Type = enum.MsgType_FundingSign_SendBtcSign_350
-		client.sendToMyself(msg.Type, status, data)
+		client.SendToMyself(msg.Type, status, data)
 	case enum.MsgType_FundingSign_SendAssetFundingSigned_35: //get openChannelReq from funder then send to fundee  create a funding tx
 		node, err := service.FundingTransactionService.AssetFundingSigned(msg.Data, client.User)
 		if err != nil {
@@ -369,7 +369,7 @@ func (client *Client) fundingSignModule(msg bean.RequestMessage) (enum.SendTarge
 			status = true
 		}
 		msg.Type = enum.MsgType_FundingSign_SendAssetFundingSigned_35
-		client.sendToMyself(msg.Type, status, data)
+		client.SendToMyself(msg.Type, status, data)
 	case enum.MsgType_ClientSign_AssetFunding_RdAndBr_1035:
 		aliceData, bobData, err := service.FundingTransactionService.OnBobSignedRDAndBR(msg.Data, client.User)
 		if err != nil {
@@ -402,7 +402,7 @@ func (client *Client) fundingSignModule(msg bean.RequestMessage) (enum.SendTarge
 			}
 		}
 		msg.Type = enum.MsgType_ClientSign_AssetFunding_RdAndBr_1035
-		client.sendToMyself(msg.Type, status, data)
+		client.SendToMyself(msg.Type, status, data)
 	default:
 		sendType = enum.SendTargetType_SendToNone
 	}
