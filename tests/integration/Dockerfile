@@ -11,6 +11,7 @@ COPY omnicore_connection.py .
 COPY runner.py .
 COPY test.py .
 COPY bitcoin.conf .
+COPY conf.tracker.ini .
 
 ENV OMNI_BOLT_ALICE=omnibolt_alice:60020
 ENV OMNI_BOLT_BOB=omnibolt_bob:60020

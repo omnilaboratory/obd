@@ -13,7 +13,7 @@ services:
             - ${PWD}/conf.ini.alice:/go/conf.ini
         build: 
             context: ./omnibolt
-            dockerfile: Dockerfile
+            dockerfile: omnibolt.Dockerfile
         depends_on:
             - omnicore
         expose: 
@@ -26,7 +26,7 @@ services:
             - ${PWD}/conf.ini.bob:/go/conf.ini
         build: 
             context: ./omnibolt
-            dockerfile: Dockerfile
+            dockerfile: omnibolt.Dockerfile
 
         expose:
             - 60060
