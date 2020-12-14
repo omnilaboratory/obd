@@ -181,6 +181,9 @@ type multiSign struct {
 
 func CreateMultiSig(minSignNum int, keys []string) (result string, err error) {
 	addr, redeemScript, scriptPubKey := CreateMultiSigAddr(keys[0], keys[1], tool.GetCoreNet())
+	if addr == "" {
+		return "", errors.New("fail to create")
+	}
 	sign := multiSign{}
 	sign.Address = addr
 	sign.RedeemScript = redeemScript

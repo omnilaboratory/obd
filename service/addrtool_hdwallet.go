@@ -4,7 +4,6 @@ import (
 	"encoding/hex"
 	"errors"
 	"github.com/btcsuite/btcd/btcec"
-	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcutil"
 	"github.com/omnilaboratory/obd/bean"
 	"github.com/omnilaboratory/obd/config"
@@ -44,17 +43,7 @@ func (service *hdWalletManager) GetAddressByIndex(user *bean.User, index uint32)
 }
 
 func getWalletObj(addrIndexExtKey *bip32.Key, wallet *Wallet) (err error) {
-	net := &chaincfg.MainNetParams
-	if strings.Contains(config.ChainNodeType, "main") {
-		net = &chaincfg.MainNetParams
-	}
-	if strings.Contains(config.ChainNodeType, "test") {
-		net = &chaincfg.TestNet3Params
-	}
-	if strings.Contains(config.ChainNodeType, "reg") {
-		net = &chaincfg.RegressionNetParams
-	}
-
+	net := tool.GetCoreNet()
 	hash160Bytes := btcutil.Hash160(addrIndexExtKey.PublicKey().Key)
 	addr, err := btcutil.NewAddressPubKeyHash(hash160Bytes, net)
 	if err != nil {

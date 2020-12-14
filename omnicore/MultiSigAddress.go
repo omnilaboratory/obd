@@ -12,13 +12,18 @@ func CreateMultiSigAddr(addr1_pubkey_str string, addr2_pubkey_str string, defaul
 	addr1_pubkey_byte_arr, _ := hex.DecodeString(addr1_pubkey_str)
 	addr2_pubkey_byte_arr, _ := hex.DecodeString(addr2_pubkey_str)
 
-	address1_pubkey, _ := btcutil.NewAddressPubKey(addr1_pubkey_byte_arr, defaultNet)
-	address2_pubkey, _ := btcutil.NewAddressPubKey(addr2_pubkey_byte_arr, defaultNet)
-	//fmt.Println(address1_pubkey.EncodeAddress())
-	//fmt.Println(address2_pubkey.EncodeAddress())
-
-	pkScript, _ := txscript.MultiSigScript([]*btcutil.AddressPubKey{address1_pubkey, address2_pubkey}, 2)
-
+	address1_pubkey, err := btcutil.NewAddressPubKey(addr1_pubkey_byte_arr, defaultNet)
+	if err != nil {
+		return "", "", ""
+	}
+	address2_pubkey, err := btcutil.NewAddressPubKey(addr2_pubkey_byte_arr, defaultNet)
+	if err != nil {
+		return "", "", ""
+	}
+	pkScript, err := txscript.MultiSigScript([]*btcutil.AddressPubKey{address1_pubkey, address2_pubkey}, 2)
+	if err != nil {
+		return "", "", ""
+	}
 	scriptAddr, _ := btcutil.NewAddressScriptHash(pkScript, defaultNet)
 
 	scriptPubKey := hex.EncodeToString(scriptAddr.ScriptAddress())

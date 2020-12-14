@@ -18,6 +18,7 @@ func loginRetData(client Client) string {
 	retData["nodeAddress"] = client.User.P2PLocalAddress
 	retData["htlc_fee_rate"] = config.HtlcFeeRate
 	retData["htlc_max_fee"] = config.HtlcMaxFee
+	retData["chain_node_type"] = config.ChainNodeType
 	bytes, _ := json.Marshal(retData)
 	return string(bytes)
 }
