@@ -136,7 +136,10 @@ $ ./obdserver
 ```
 
 By default, the configuration file `./config/conf.ini` will be loaded. 
-To override this set the optional `--configFile <path>` program argument.
+To override this set the optional `--configPath <path>` program argument:
+```
+$ ./obdserver --configPath "/config/conf.ini"  
+```
 
 The terminal displays:
 ```
