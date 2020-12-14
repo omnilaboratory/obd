@@ -99,7 +99,7 @@ func (this *commitmentTxManager) CommitmentTransactionCreated(msg bean.RequestMe
 	}
 
 	if latestCommitmentTxInfo.CurrState == dao.TxInfoState_Init {
-		tx.DeleteStruct(latestCommitmentTxInfo)
+		_ = tx.DeleteStruct(latestCommitmentTxInfo)
 		latestCommitmentTxInfo, err = getLatestCommitmentTxUseDbTx(tx, reqData.ChannelId, creator.PeerId)
 		if err != nil {
 			return nil, false, errors.New(enum.Tips_channel_notFoundLatestCommitmentTx)
@@ -234,7 +234,7 @@ func (this *commitmentTxManager) OnAliceSignC2aRawTxAtAliceSide(msg bean.Request
 	defer tx.Rollback()
 
 	cacheDataForTx := &dao.CacheDataForTx{}
-	tx.Select(q.Eq("KeyName", user.PeerId+"_"+signedDataForC2a.ChannelId)).First(cacheDataForTx)
+	_ = tx.Select(q.Eq("KeyName", user.PeerId+"_"+signedDataForC2a.ChannelId)).First(cacheDataForTx)
 	if cacheDataForTx.Id == 0 {
 		return nil, nil, errors.New(enum.Tips_common_wrong + "channel_id")
 	}
