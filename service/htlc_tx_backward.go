@@ -30,8 +30,9 @@ var HtlcBackwardTxService htlcBackwardTxManager
 
 // step 1 bob -100045 收款方收到R，发送R到obd进行验证
 func (service *htlcBackwardTxManager) SendRToPreviousNodeAtBobSide(msg bean.RequestMessage, user bean.User) (retData interface{}, err error) {
-
-	log.Println("htlc step 13 begin", time.Now())
+	totalDurationClient += time.Now().Sub(beginTime).Milliseconds()
+	beginTime = time.Now()
+	log.Println("totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
 
 	if tool.CheckIsString(&msg.Data) == false {
 		return nil, errors.New(enum.Tips_common_empty + "msg data")
@@ -226,14 +227,19 @@ func (service *htlcBackwardTxManager) SendRToPreviousNodeAtBobSide(msg bean.Requ
 	_ = tx.Save(cacheDataForTx)
 
 	_ = tx.Commit()
+	totalDurationObd += time.Now().Sub(beginTime).Milliseconds()
+	beginTime = time.Now()
+	log.Println("totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
 
-	log.Println("htlc step 13 end", time.Now())
 	return dataNeedBobSign, nil
 }
 
 // step 2 bob -100106 bob签名HeRd的结果 推送45号协议
 func (service *htlcBackwardTxManager) OnBobSignedHeRdAtBobSide(msg bean.RequestMessage, user bean.User) (retData interface{}, err error) {
-	log.Println("htlc step 14 begin", time.Now())
+	totalDurationClient += time.Now().Sub(beginTime).Milliseconds()
+	beginTime = time.Now()
+	log.Println("totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
+
 	bobSignedData := bean.BobSignHerdForC3b{}
 	_ = json.Unmarshal([]byte(msg.Data), &bobSignedData)
 
@@ -260,13 +266,19 @@ func (service *htlcBackwardTxManager) OnBobSignedHeRdAtBobSide(msg bean.RequestM
 	dataSendTo45P.C3bHtlcHerdPartialSignedData.Hex = bobSignedData.C3bHtlcHerdPartialSignedHex
 	_ = user.Db.Update(dataSendTo45P)
 
-	log.Println("htlc step 14 end", time.Now())
+	totalDurationObd += time.Now().Sub(beginTime).Milliseconds()
+	beginTime = time.Now()
+	log.Println("totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
+
 	return dataSendTo45P, nil
 }
 
 // step 3 alice p2p -45 推送待签名的herd
 func (service *htlcBackwardTxManager) OnGetHeSubTxDataAtAliceObdAtAliceSide(msg string, user bean.User) (retData interface{}, err error) {
-	log.Println("htlc step 15 begin", time.Now())
+	totalDurationClient += time.Now().Sub(beginTime).Milliseconds()
+	beginTime = time.Now()
+	log.Println("totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
+
 	dataFrom45P := bean.NeedAliceSignHerdTxOfC3bP2p{}
 	_ = json.Unmarshal([]byte(msg), &dataFrom45P)
 
@@ -312,14 +324,19 @@ func (service *htlcBackwardTxManager) OnGetHeSubTxDataAtAliceObdAtAliceSide(msg 
 	_ = tx.Save(cacheDataForTx)
 
 	_ = tx.Commit()
+	totalDurationObd += time.Now().Sub(beginTime).Milliseconds()
+	beginTime = time.Now()
+	log.Println("totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
 
-	log.Println("htlc step 15 end", time.Now())
 	return dataFrom45P, nil
 }
 
 // step 4 alice  -46 Alice完成herd签名 保存hebr 推送46 herd
 func (service *htlcBackwardTxManager) OnAliceSignedHeRdAtAliceSide(msg bean.RequestMessage, user bean.User) (toAlice, toBob interface{}, err error) {
-	log.Println("htlc step 16 begin", time.Now())
+	totalDurationClient += time.Now().Sub(beginTime).Milliseconds()
+	beginTime = time.Now()
+	log.Println("totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
+
 	herdSignedResult := bean.AliceSignHerdTxOfC3e{}
 	_ = json.Unmarshal([]byte(msg.Data), &herdSignedResult)
 
@@ -421,16 +438,22 @@ func (service *htlcBackwardTxManager) OnAliceSignedHeRdAtAliceSide(msg bean.Requ
 	}
 
 	latestCommitment.CurrState = dao.TxInfoState_Htlc_GetR
-	tx.Update(latestCommitment)
+	_ = tx.Update(latestCommitment)
+	_ = tx.Commit()
 
-	tx.Commit()
-	log.Println("htlc step 16 end", time.Now())
+	totalDurationObd += time.Now().Sub(beginTime).Milliseconds()
+	beginTime = time.Now()
+	log.Println("totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
+
 	return latestCommitment, dataTo46P, nil
 }
 
 // step 5 bob  -110046 bob保存herd
 func (service *htlcBackwardTxManager) OnGetHeRdDataAtBobObd(msg string, user bean.User) (retData interface{}, err error) {
-	log.Println("htlc step 17 begin", time.Now())
+	totalDurationClient += time.Now().Sub(beginTime).Milliseconds()
+	beginTime = time.Now()
+	log.Println("totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
+
 	dataFrom46P := bean.AliceSignedHerdTxOfC3bP2p{}
 	_ = json.Unmarshal([]byte(msg), &dataFrom46P)
 
@@ -480,7 +503,10 @@ func (service *htlcBackwardTxManager) OnGetHeRdDataAtBobObd(msg string, user bea
 		txStateRequest.CurrChannelId = channelInfo.ChannelId
 		sendMsgToTracker(enum.MsgType_Tracker_UpdateHtlcTxState_352, txStateRequest)
 	}
-	log.Println("htlc step 17 end", time.Now())
+	totalDurationObd += time.Now().Sub(beginTime).Milliseconds()
+	beginTime = time.Now()
+	log.Println("totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
+
 	return latestCommitment, nil
 }
 

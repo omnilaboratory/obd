@@ -221,7 +221,7 @@ func (service *htlcForwardTxManager) PayerRequestFindPath(msgData string, user b
 		cacheDataForTx.KeyName = user.PeerId + "_" + pathRequest.H
 		err = user.Db.Select(q.Eq("KeyName", cacheDataForTx.KeyName)).First(cacheDataForTx)
 		if cacheDataForTx.Id != 0 {
-			user.Db.DeleteStruct(cacheDataForTx)
+			_ = user.Db.DeleteStruct(cacheDataForTx)
 		}
 
 		cacheDataForTx.KeyName = user.PeerId + "_" + pathRequest.H
@@ -348,9 +348,15 @@ func (service *htlcForwardTxManager) GetResponseFromTrackerOfPayerRequestFindPat
 	return retData, nil
 }
 
+var totalDurationObd int64
+var beginTime time.Time
+var totalDurationClient int64
+
 // step 1 alice -100040协议的alice方的逻辑 alice start a htlc as payer
 func (service *htlcForwardTxManager) AliceAddHtlcAtAliceSide(msg bean.RequestMessage, user bean.User) (data interface{}, needSign bool, err error) {
-	log.Println("htlc step 1 begin", time.Now())
+	beginTime = time.Now()
+	totalDurationObd = 0
+	totalDurationClient = 0
 	if tool.CheckIsString(&msg.Data) == false {
 		return nil, false, errors.New(enum.Tips_common_empty + "msg data")
 	}
@@ -415,19 +421,19 @@ func (service *htlcForwardTxManager) AliceAddHtlcAtAliceSide(msg bean.RequestMes
 		return nil, false, errors.New(fmt.Sprintf("The amount in transaction must be more than %.8f", tempAmount))
 	}
 
-	fundingTransaction := getFundingTransactionByChannelId(tx, channelInfo.ChannelId, user.PeerId)
-	duration := time.Now().Sub(fundingTransaction.CreateAt)
-	if duration > time.Minute*30 {
-		pass, err := checkChannelOmniAssetAmount(*channelInfo)
-		if err != nil {
-			return nil, false, err
-		}
-		if pass == false {
-			err = errors.New(enum.Tips_rsmc_broadcastedChannel)
-			log.Println(err)
-			return nil, false, err
-		}
-	}
+	//fundingTransaction := getFundingTransactionByChannelId(tx, channelInfo.ChannelId, user.PeerId)
+	//duration := time.Now().Sub(fundingTransaction.CreateAt)
+	//if duration > time.Minute*30 {
+	//	pass, err := checkChannelOmniAssetAmount(*channelInfo)
+	//	if err != nil {
+	//		return nil, false, err
+	//	}
+	//	if pass == false {
+	//		err = errors.New(enum.Tips_rsmc_broadcastedChannel)
+	//		log.Println(err)
+	//		return nil, false, err
+	//	}
+	//}
 
 	if requestData.CltvExpiry < (totalStep - currStep) {
 		requestData.CltvExpiry = totalStep - currStep
@@ -590,11 +596,11 @@ func (service *htlcForwardTxManager) AliceAddHtlcAtAliceSide(msg bean.RequestMes
 		bytes, _ := json.Marshal(c3aP2pData)
 		cacheDataForTx.Data = bytes
 		_ = tx.Save(cacheDataForTx)
-
 		_ = tx.Commit()
 
-		log.Println("htlc step 1 end", time.Now())
-
+		totalDurationObd += time.Now().Sub(beginTime).Milliseconds()
+		beginTime = time.Now()
+		log.Println("totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
 		return txForC3a, true, nil
 	}
 	_ = tx.Commit()
@@ -603,7 +609,9 @@ func (service *htlcForwardTxManager) AliceAddHtlcAtAliceSide(msg bean.RequestMes
 
 // step 2 alice -100100 Alice对C3a的部分签名结果
 func (service *htlcForwardTxManager) OnAliceSignedC3aAtAliceSide(msg bean.RequestMessage, user bean.User) (toAlice, toBob interface{}, err error) {
-	log.Println("htlc step 2 begin", time.Now())
+	totalDurationClient = time.Now().Sub(beginTime).Milliseconds()
+	beginTime = time.Now()
+	log.Println("totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
 	if tool.CheckIsString(&msg.Data) == false {
 		err = errors.New(enum.Tips_common_empty + "msg.data")
 		log.Println(err)
@@ -711,13 +719,18 @@ func (service *htlcForwardTxManager) OnAliceSignedC3aAtAliceSide(msg bean.Reques
 	toAliceResult := bean.AliceSignedHtlcDataForC3aResult{}
 	toAliceResult.ChannelId = dataTo40P.ChannelId
 	toAliceResult.CommitmentTxHash = dataTo40P.PayerCommitmentTxHash
-	log.Println("htlc step 2 end", time.Now())
+
+	totalDurationObd += time.Now().Sub(beginTime).Milliseconds()
+	beginTime = time.Now()
+	log.Println("totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
 	return toAliceResult, dataTo40P, nil
 }
 
 // step 3 bob -40号协议 缓存来自40号协议的信息 推送110040消息，需要bob对C3a的交易进行签名
 func (service *htlcForwardTxManager) BeforeBobSignAddHtlcRequestAtBobSide_40(msgData string, user bean.User) (data interface{}, err error) {
-	log.Println("htlc step 3 begin", time.Now())
+	totalDurationClient += time.Now().Sub(beginTime).Milliseconds()
+	beginTime = time.Now()
+	log.Println("totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
 	requestAddHtlc := &bean.CreateHtlcTxForC3aOfP2p{}
 	_ = json.Unmarshal([]byte(msgData), requestAddHtlc)
 	channelId := requestAddHtlc.ChannelId
@@ -764,13 +777,19 @@ func (service *htlcForwardTxManager) BeforeBobSignAddHtlcRequestAtBobSide_40(msg
 	toBobData.C3aRsmcPartialSignedData = requestAddHtlc.C3aRsmcPartialSignedData
 	toBobData.C3aCounterpartyPartialSignedData = requestAddHtlc.C3aCounterpartyPartialSignedData
 	toBobData.C3aHtlcPartialSignedData = requestAddHtlc.C3aHtlcPartialSignedData
-	log.Println("htlc step 3 end", time.Now())
+
+	totalDurationObd += time.Now().Sub(beginTime).Milliseconds()
+	beginTime = time.Now()
+	log.Println("totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
 	return toBobData, nil
 }
 
 // step 4 bob 响应-100041号协议，创建C3a的Rsmc的Rd和Br，toHtlc的Br，Ht1a，Hlock，以及C3b的toB，toRsmc，toHtlc
 func (service *htlcForwardTxManager) BobSignedAddHtlcAtBobSide(jsonData string, user bean.User) (returnData interface{}, err error) {
-	log.Println("htlc step 4 begin", time.Now())
+
+	totalDurationClient += time.Now().Sub(beginTime).Milliseconds()
+	beginTime = time.Now()
+	log.Println("totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
 	if tool.CheckIsString(&jsonData) == false {
 		err := errors.New(enum.Tips_common_empty + "msg data")
 		log.Println(err)
@@ -1055,7 +1074,6 @@ func (service *htlcForwardTxManager) BobSignedAddHtlcAtBobSide(jsonData string, 
 	}
 
 	if len(c3aRsmcOutputs) > 0 {
-
 		//region 6、根据alice C3a的Rsmc输出，创建对应的BR,为下一个交易做准备，create BR2b tx  for bob
 		tempC3aRsmc := &dao.CommitmentTransaction{}
 		tempC3aRsmc.Id = latestCommitmentTxInfo.Id
@@ -1162,13 +1180,18 @@ func (service *htlcForwardTxManager) BobSignedAddHtlcAtBobSide(jsonData string, 
 	}
 	service.tempDataSendTo41PAtBobSide[user.PeerId+"_"+channelInfo.ChannelId] = toAliceDataOf41P
 	_ = tx.Commit()
-	log.Println("htlc step 4 end", time.Now())
+
+	totalDurationObd += time.Now().Sub(beginTime).Milliseconds()
+	beginTime = time.Now()
+	log.Println("totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
 	return needBobSignData, nil
 }
 
 // step 5 bob -100101 bob完成对C3b的签名，构建41号协议的消息体，推送41号协议
 func (service *htlcForwardTxManager) OnBobSignedC3bAtBobSide(msg bean.RequestMessage, user bean.User) (toAlice, toBob interface{}, err error) {
-	log.Println("htlc step 5 begin", time.Now())
+	totalDurationClient += time.Now().Sub(beginTime).Milliseconds()
+	beginTime = time.Now()
+	log.Println("totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
 	c3bResult := bean.BobSignedHtlcTxOfC3b{}
 	err = json.Unmarshal([]byte(msg.Data), &c3bResult)
 	if err != nil {
@@ -1344,13 +1367,21 @@ func (service *htlcForwardTxManager) OnBobSignedC3bAtBobSide(msg bean.RequestMes
 	toBobData := bean.BobSignedHtlcTxOfC3bResult{}
 	toBobData.ChannelId = channelInfo.ChannelId
 	toBobData.CommitmentTxHash = latestCommitmentTxInfo.CurrHash
-	log.Println("htlc step 5 end", time.Now())
+
+	totalDurationObd += time.Now().Sub(beginTime).Milliseconds()
+	beginTime = time.Now()
+	log.Println("totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
 	return toAliceDataOfP2p, toBobData, nil
 }
 
 // step 6 alice p2p 41号协议，构建需要alice签名的数据，缓存41号协议的数据， 推送（110041）信息给alice签名
 func (service *htlcForwardTxManager) AfterBobSignAddHtlcAtAliceSide_41(msgData string, user bean.User) (data interface{}, needNoticeBob bool, err error) {
-	log.Println("htlc step 6 begin", time.Now())
+
+	totalDurationClient += time.Now().Sub(beginTime).Milliseconds()
+	beginTime = time.Now()
+
+	log.Println("totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
+
 	dataFromBob := bean.NeedAliceSignHtlcTxOfC3bP2p{}
 	_ = json.Unmarshal([]byte(msgData), &dataFromBob)
 
@@ -1407,13 +1438,19 @@ func (service *htlcForwardTxManager) AfterBobSignAddHtlcAtAliceSide_41(msgData s
 		service.tempDataFrom41PAtAliceSide = make(map[string]bean.NeedAliceSignHtlcTxOfC3bP2p)
 	}
 	service.tempDataFrom41PAtAliceSide[user.PeerId+"_"+channelId] = dataFromBob
-	log.Println("htlc step 6 end", time.Now())
+	totalDurationObd += time.Now().Sub(beginTime).Milliseconds()
+	beginTime = time.Now()
+	log.Println("totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
+
 	return needAliceSignHtlcTxOfC3b, false, nil
 }
 
 // step 7 alice 响应100102号协议，根据C3b的签名结果创建C3b的rmsc的rd，br，htlc的br，htd，hlock，以及创建C3a的htrd和htbr
 func (service *htlcForwardTxManager) OnAliceSignC3bAtAliceSide(msg bean.RequestMessage, user bean.User) (interface{}, error) {
-	log.Println("htlc step 7 begin", time.Now())
+	totalDurationClient += time.Now().Sub(beginTime).Milliseconds()
+	beginTime = time.Now()
+	log.Println("totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
+
 	aliceSignedC3b := bean.AliceSignedHtlcTxOfC3bResult{}
 	_ = json.Unmarshal([]byte(msg.Data), &aliceSignedC3b)
 
@@ -1754,13 +1791,22 @@ func (service *htlcForwardTxManager) OnAliceSignC3bAtAliceSide(msg bean.RequestM
 	}
 	service.tempDataSendTo42PAtAliceSide[user.PeerId+"_"+channelId] = needBobSignData
 	_ = tx.Commit()
-	log.Println("htlc step 7 end", time.Now())
+
+	totalDurationObd += time.Now().Sub(beginTime).Milliseconds()
+	beginTime = time.Now()
+	log.Println("totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
+
 	return needAliceSignData, nil
 }
 
 // step 8 alice 响应 100103号协议，更新alice的承诺交易，推送42号p2p协议
 func (service *htlcForwardTxManager) OnAliceSignedC3bSubTxAtAliceSide(msg bean.RequestMessage, user bean.User) (toAlice, toBob interface{}, err error) {
-	log.Println("htlc step 8 begin", time.Now())
+
+	totalDurationClient += time.Now().Sub(beginTime).Milliseconds()
+	beginTime = time.Now()
+
+	log.Println("totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
+
 	aliceSignedC3b := bean.AliceSignedHtlcSubTxOfC3b{}
 	_ = json.Unmarshal([]byte(msg.Data), &aliceSignedC3b)
 
@@ -1932,13 +1978,21 @@ func (service *htlcForwardTxManager) OnAliceSignedC3bSubTxAtAliceSide(msg bean.R
 	toAliceData := bean.AliceSignedHtlcSubTxOfC3bResult{}
 	toAliceData.ChannelId = commitmentTx.ChannelId
 	toAliceData.CommitmentTxId = commitmentTx.CurrHash
-	log.Println("htlc step 8 end", time.Now())
+
+	totalDurationObd += time.Now().Sub(beginTime).Milliseconds()
+	beginTime = time.Now()
+	log.Println("totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
+
 	return toAliceData, needBobSignData, nil
 }
 
 // step 9 bob 响应 42号协议 构造需要bob签名的数据，缓存来自42号协议的数据 推送110042
 func (service *htlcForwardTxManager) OnGetNeedBobSignC3bSubTxAtBobSide(msgData string, user bean.User) (interface{}, error) {
-	log.Println("htlc step 9 begin", time.Now())
+
+	totalDurationClient += time.Now().Sub(beginTime).Milliseconds()
+	beginTime = time.Now()
+	log.Println("totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
+
 	c3bCacheData := bean.NeedBobSignHtlcSubTxOfC3bP2p{}
 	_ = json.Unmarshal([]byte(msgData), &c3bCacheData)
 
@@ -1955,13 +2009,19 @@ func (service *htlcForwardTxManager) OnGetNeedBobSignC3bSubTxAtBobSide(msgData s
 	needBobSign.C3bRsmcRdPartialData = c3bCacheData.C3bRsmcRdPartialData
 	needBobSign.C3bHtlcHlockPartialData = c3bCacheData.C3bHtlcHlockPartialData
 	needBobSign.C3bHtlcHtdPartialData = c3bCacheData.C3bHtlcHtdPartialData
-	log.Println("htlc step 9 end", time.Now())
+	totalDurationObd += time.Now().Sub(beginTime).Milliseconds()
+	beginTime = time.Now()
+	log.Println("totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
+
 	return needBobSign, nil
 }
 
 // step 10 bob 响应100104:缓存签名的结果，生成hlock的 he让bob继续签名
 func (service *htlcForwardTxManager) OnBobSignedC3bSubTxAtBobSide(msg bean.RequestMessage, user bean.User) (interface{}, error) {
-	log.Println("htlc step 10 begin", time.Now())
+	totalDurationClient += time.Now().Sub(beginTime).Milliseconds()
+	beginTime = time.Now()
+	log.Println("totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
+
 	jsonObj := bean.BobSignedHtlcSubTxOfC3b{}
 	_ = json.Unmarshal([]byte(msg.Data), &jsonObj)
 
@@ -2045,13 +2105,19 @@ func (service *htlcForwardTxManager) OnBobSignedC3bSubTxAtBobSide(msg bean.Reque
 	needBobSignData.C3bHtlcHlockHeRawData = *c3bHeRawData
 	needBobSignData.PayerPeerId = c3bCacheData.PayerPeerId
 	needBobSignData.PayerNodeAddress = c3bCacheData.PayerNodeAddress
-	log.Println("htlc step 10 end", time.Now())
+	totalDurationObd += time.Now().Sub(beginTime).Milliseconds()
+	beginTime = time.Now()
+	log.Println("totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
+
 	return needBobSignData, nil
 }
 
 // step 11 bob 响应100105:收款方完成Hlock的he的部分签名，更新C3b的信息，最后推送43给alice和推送正向H的创建htlc的结果
 func (service *htlcForwardTxManager) OnBobSignHtRdAtBobSide_42(msgData string, user bean.User) (toAlice, toBob interface{}, err error) {
-	log.Println("htlc step 11 begin", time.Now())
+	totalDurationClient += time.Now().Sub(beginTime).Milliseconds()
+	beginTime = time.Now()
+	log.Println("totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
+
 	jsonObj := bean.BobSignedHtlcHeTxOfC3b{}
 	_ = json.Unmarshal([]byte(msgData), &jsonObj)
 
@@ -2149,13 +2215,20 @@ func (service *htlcForwardTxManager) OnBobSignHtRdAtBobSide_42(msgData string, u
 
 	key := user.PeerId + "_" + channelInfo.ChannelId
 	delete(service.tempDataFrom42PAtBobSide, key)
-	log.Println("htlc step 11 end", time.Now())
+
+	totalDurationObd += time.Now().Sub(beginTime).Milliseconds()
+	beginTime = time.Now()
+	log.Println("totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
+
 	return c3aRetData, latestCommitmentTx, nil
 }
 
 // step 12 响应43号协议: 保存htrd和hed 推送110043给Alice
 func (service *htlcForwardTxManager) OnGetHtrdTxDataFromBobAtAliceSide_43(msgData string, user bean.User) (data interface{}, err error) {
-	log.Println("htlc step 12 begin", time.Now())
+	totalDurationClient += time.Now().Sub(beginTime).Milliseconds()
+	beginTime = time.Now()
+	log.Println("totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
+
 	c3aHtrdData := bean.C3aSignedHerdTxOfC3bP2p{}
 	_ = json.Unmarshal([]byte(msgData), &c3aHtrdData)
 
@@ -2214,14 +2287,18 @@ func (service *htlcForwardTxManager) OnGetHtrdTxDataFromBobAtAliceSide_43(msgDat
 
 	key := user.PeerId + "_" + channelInfo.ChannelId
 	cacheDataForTx := &dao.CacheDataForTx{}
-	tx.Select(q.Eq("KeyName", key)).First(cacheDataForTx)
+	_ = tx.Select(q.Eq("KeyName", key)).First(cacheDataForTx)
 	if cacheDataForTx.Id != 0 {
 		_ = tx.DeleteStruct(cacheDataForTx)
 	}
 	delete(service.tempDataFrom41PAtAliceSide, key)
 	delete(service.tempDataSendTo42PAtAliceSide, key)
 	_ = tx.Commit()
-	log.Println("htlc step 12 end", time.Now())
+
+	totalDurationObd += time.Now().Sub(beginTime).Milliseconds()
+	beginTime = time.Now()
+	log.Println("totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
+
 	return latestCommitmentTx, nil
 }
 
@@ -2473,7 +2550,6 @@ func htlcPayeeCreateCommitmentTx_C3b(tx storm.Node, channelInfo *dao.ChannelInfo
 		signHexData.PubKeyB = channelInfo.PubKeyB
 		rawTx.RsmcRawTxData = signHexData
 	}
-
 	// htlc
 	if newCommitmentTxInfo.AmountToHtlc > 0 {
 		htlcTxData, usedTxid, err := omnicore.OmniCreateRawTransactionUseSingleInput(
@@ -2511,7 +2587,6 @@ func htlcPayeeCreateCommitmentTx_C3b(tx storm.Node, channelInfo *dao.ChannelInfo
 			newCommitmentTxInfo.HtlcSender = channelInfo.PeerIdB
 		}
 	}
-
 	//create for other side tx
 	if newCommitmentTxInfo.AmountToCounterparty > 0 {
 		toBobTxData, err := omnicore.OmniCreateRawTransactionUseRestInput(
@@ -2563,6 +2638,7 @@ func htlcPayeeCreateCommitmentTx_C3b(tx storm.Node, channelInfo *dao.ChannelInfo
 		log.Println(err)
 		return nil, rawTx, err
 	}
+
 	return newCommitmentTxInfo, rawTx, nil
 }
 

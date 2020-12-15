@@ -36,7 +36,7 @@ func sendChannelStateToTracker(channelInfo dao.ChannelInfo, commitmentTx dao.Com
 	}
 	nodes := make([]bean.ChannelInfoRequest, 0)
 	nodes = append(nodes, infoRequest)
-	sendMsgToTracker(enum.MsgType_Tracker_UpdateChannelInfo_350, nodes)
+	go sendMsgToTracker(enum.MsgType_Tracker_UpdateChannelInfo_350, nodes)
 }
 
 func noticeTrackerUserLogin(user dao.User) {

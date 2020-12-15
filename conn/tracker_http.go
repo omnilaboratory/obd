@@ -15,6 +15,7 @@ import (
 
 func GetBlockCount() (flag int) {
 	url := "http://" + config.TrackerHost + "/api/rpc/getBlockCount"
+	log.Println(url)
 	resp, err := http.Get(url)
 	if err != nil {
 		return 0
@@ -29,6 +30,7 @@ func GetBlockCount() (flag int) {
 
 func GetOmniBalance(address string, propertyId int) (balance float64) {
 	url := "http://" + config.TrackerHost + "/api/rpc/getOmniBalance?address=" + address + "&propertyId=" + strconv.Itoa(propertyId)
+	log.Println(url)
 	resp, err := http.Get(url)
 	if err != nil {
 		return 0
