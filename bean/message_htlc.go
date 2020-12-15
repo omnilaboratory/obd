@@ -27,6 +27,7 @@ type HtlcRequestFindPath struct {
 
 //type 消息 --100040: Alice请求创建htlc交易
 type CreateHtlcTxForC3a struct {
+	IsPayInvoice                     bool    `json:"is_pay_invoice"`
 	Amount                           float64 `json:"amount"`
 	AmountToPayee                    float64 `json:"amount_to_payee"`
 	Memo                             string  `json:"memo"`
@@ -72,6 +73,7 @@ type AliceSignedHtlcDataForC3aResult struct {
 //type p2p消息 --40 Alice新增htlc交易C3a的请求，p2p推给bob
 type CreateHtlcTxForC3aOfP2p struct {
 	ChannelId                        string               `json:"channel_id"` //the global channel id.
+	IsPayInvoice                     bool                 `json:"is_pay_invoice"`
 	Amount                           float64              `json:"amount"`
 	AmountToPayee                    float64              `json:"amount_to_payee"`
 	Memo                             string               `json:"memo"`
@@ -92,6 +94,7 @@ type CreateHtlcTxForC3aOfP2p struct {
 
 //type obd推送 --110040 obd主动推送alice的C3a的信息给bob的客户端
 type CreateHtlcTxForC3aToBob struct {
+	IsPayInvoice                     bool                 `json:"is_pay_invoice"`
 	ChannelId                        string               `json:"channel_id"`
 	H                                string               `json:"h"`
 	PayerCommitmentTxHash            string               `json:"payer_commitment_tx_hash"`

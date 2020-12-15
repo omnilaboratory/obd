@@ -554,6 +554,7 @@ func (service *htlcForwardTxManager) AliceAddHtlcAtAliceSide(msg bean.RequestMes
 	c3aP2pData := &bean.CreateHtlcTxForC3aOfP2p{}
 	c3aP2pData.RoutingPacket = requestData.RoutingPacket
 	c3aP2pData.ChannelId = channelInfo.ChannelId
+	c3aP2pData.IsPayInvoice = requestData.IsPayInvoice
 	c3aP2pData.H = requestData.H
 	c3aP2pData.Amount = requestData.Amount
 	c3aP2pData.AmountToPayee = requestData.AmountToPayee
@@ -755,6 +756,7 @@ func (service *htlcForwardTxManager) BeforeBobSignAddHtlcRequestAtBobSide_40(msg
 
 	toBobData := bean.CreateHtlcTxForC3aToBob{}
 	toBobData.ChannelId = requestAddHtlc.ChannelId
+	toBobData.IsPayInvoice = requestAddHtlc.IsPayInvoice
 	toBobData.H = requestAddHtlc.H
 	toBobData.PayerCommitmentTxHash = requestAddHtlc.PayerCommitmentTxHash
 	toBobData.PayerPeerId = requestAddHtlc.PayerPeerId
