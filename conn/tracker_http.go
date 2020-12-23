@@ -13,19 +13,31 @@ import (
 	"time"
 )
 
+var cacheBlock int
+var cacheBlockTime time.Time
+
 func GetBlockCount() (flag int) {
-	url := "http://" + config.TrackerHost + "/api/rpc/getBlockCount"
-	log.Println(url)
-	resp, err := http.Get(url)
-	if err != nil {
-		return 0
+	if cacheBlockTime.IsZero() == false {
+		if time.Now().Sub(cacheBlockTime).Minutes() > 1 {
+			cacheBlock = 0
+		}
 	}
-	defer resp.Body.Close()
-	if resp.StatusCode == http.StatusOK {
-		body, _ := ioutil.ReadAll(resp.Body)
-		return int(gjson.Get(string(body), "data").Int())
+	if cacheBlock == 0 {
+		url := "http://" + config.TrackerHost + "/api/rpc/getBlockCount"
+		log.Println(url)
+		resp, err := http.Get(url)
+		if err != nil {
+			cacheBlock = 0
+		}
+		defer resp.Body.Close()
+		if resp.StatusCode == http.StatusOK {
+			body, _ := ioutil.ReadAll(resp.Body)
+			cacheBlock = int(gjson.Get(string(body), "data").Int())
+			cacheBlockTime = time.Now()
+		}
 	}
-	return 0
+
+	return cacheBlock
 }
 
 func GetOmniBalance(address string, propertyId int) (balance float64) {

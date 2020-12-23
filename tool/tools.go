@@ -138,7 +138,7 @@ func GetUserPeerId(mnemonic string) string {
 }
 
 // get obd node id
-func GetObdNodeId() string {
+func GetNodeId() string {
 	source := GetMacAddrs() + ":" + strconv.Itoa(config.ServerPort)
 	return SignMsgWithSha256([]byte(source)) + config.ChainNodeType
 }

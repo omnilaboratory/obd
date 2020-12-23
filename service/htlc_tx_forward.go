@@ -214,7 +214,7 @@ func (service *htlcForwardTxManager) PayerRequestFindPath(msgData string, user b
 		pathRequest.PropertyId = requestFindPathInfo.PropertyId
 		pathRequest.Amount = requestFindPathInfo.Amount
 		pathRequest.RealPayerPeerId = user.PeerId
-		pathRequest.PayerObdNodeId = tool.GetObdNodeId()
+		pathRequest.PayerObdNodeId = tool.GetNodeId()
 		pathRequest.PayeePeerId = requestFindPathInfo.RecipientUserPeerId
 
 		cacheDataForTx := &dao.CacheDataForTx{}

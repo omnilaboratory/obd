@@ -38,7 +38,7 @@ var p2pChannelMap map[string]*P2PChannel
 
 func generatePrivateKey() (crypto.PrivKey, error) {
 	if privateKey == nil {
-		nodeId := int64(binary.BigEndian.Uint64([]byte(tool.GetObdNodeId())))
+		nodeId := int64(binary.BigEndian.Uint64([]byte(tool.GetNodeId())))
 		r := rand.New(rand.NewSource(nodeId))
 		prvKey, _, err := crypto.GenerateECDSAKeyPair(r)
 		if err != nil {

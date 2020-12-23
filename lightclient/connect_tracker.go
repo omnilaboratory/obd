@@ -147,7 +147,7 @@ func updateP2pAddressLogin() {
 	info := make(map[string]interface{})
 	info["type"] = enum.MsgType_Tracker_NodeLogin_303
 	nodeLoginInfo := &trackerBean.ObdNodeLoginRequest{}
-	nodeLoginInfo.NodeId = tool.GetObdNodeId()
+	nodeLoginInfo.NodeId = tool.GetNodeId()
 	nodeLoginInfo.P2PAddress = localServerDest
 	info["data"] = nodeLoginInfo
 	bytes, err := json.Marshal(info)
