@@ -11,6 +11,7 @@ import (
 	"github.com/omnilaboratory/obd/omnicore"
 	"github.com/tidwall/gjson"
 	"log"
+	"strconv"
 	"time"
 )
 
@@ -144,7 +145,7 @@ func createRawBR(brType dao.BRType, channelInfo *dao.ChannelInfo, commitmentTx *
 		return c2bBrRawData, nil
 	}
 
-	return retMap, errors.New("fail to create")
+	return retMap, errors.New("fail to createRawBR brType " + strconv.Itoa(int(brType)))
 }
 
 // 第一次签名完成，更新RawBR
