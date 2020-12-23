@@ -8,3 +8,9 @@
 /obd_windows_amd64.exe
 /dbdatatest/user_b4b840dc594602809b45625f4c883386aacf40661f6330298ade16913c33dec1.db.lock
 /dbdatatest/user_cb87bb062fbca60644c17941b4e06502a71218548e19c46f0b4576b2b53b4056.db.lock
+/obd.iml
+/obd_linux_amd64
+/tracker/tracker_darwin_amd64
+/tracker/tracker_linux_amd64
+/tracker/tracker_windows_amd64.exe
+/dbdatatest/user_945e772bd80f806039f8f9d15930b0715d7d45bd8cf9ebd0b5a9d22566ea22e2.db.lock

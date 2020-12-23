@@ -34,7 +34,7 @@ var HtlcCloseTxService htlcCloseTxManager
 func (service *htlcCloseTxManager) RequestCloseHtlc(msg bean.RequestMessage, user bean.User) (data interface{}, needSign bool, err error) {
 	totalDurationClient += time.Now().Sub(beginTime).Milliseconds()
 	beginTime = time.Now()
-	log.Println("totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
+	log.Println("close step 1 ", "totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
 
 	if tool.CheckIsString(&msg.Data) == false {
 		return nil, false, errors.New(enum.Tips_common_empty + "msg data")
@@ -255,7 +255,7 @@ func (service *htlcCloseTxManager) RequestCloseHtlc(msg bean.RequestMessage, use
 		service.tempDataSendTo49PAtAliceSide[user.PeerId+"_"+dataTo49P.ChannelId] = dataTo49P
 		totalDurationObd += time.Now().Sub(beginTime).Milliseconds()
 		beginTime = time.Now()
-		log.Println("totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
+		log.Println("close step 1 ", "totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
 
 		return retSignData, true, nil
 	}
@@ -267,7 +267,7 @@ func (service *htlcCloseTxManager) RequestCloseHtlc(msg bean.RequestMessage, use
 func (service *htlcCloseTxManager) OnAliceSignedCxa(msg bean.RequestMessage, user bean.User) (toALice, toBob interface{}, err error) {
 	totalDurationClient += time.Now().Sub(beginTime).Milliseconds()
 	beginTime = time.Now()
-	log.Println("totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
+	log.Println("close step 2 ", "totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
 
 	if tool.CheckIsString(&msg.Data) == false {
 		err = errors.New(enum.Tips_common_empty + "msg.data")
@@ -344,7 +344,7 @@ func (service *htlcCloseTxManager) OnAliceSignedCxa(msg bean.RequestMessage, use
 
 	totalDurationObd += time.Now().Sub(beginTime).Milliseconds()
 	beginTime = time.Now()
-	log.Println("totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
+	log.Println("close step 2 ", "totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
 
 	return toAliceResult, p2pData, nil
 }
@@ -353,7 +353,7 @@ func (service *htlcCloseTxManager) OnAliceSignedCxa(msg bean.RequestMessage, use
 func (service *htlcCloseTxManager) OnObdOfBobGet49PData(data string, user bean.User) (toBob interface{}, err error) {
 	totalDurationClient += time.Now().Sub(beginTime).Milliseconds()
 	beginTime = time.Now()
-	log.Println("totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
+	log.Println("close step 3 ", "totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
 
 	closeHtlcTxOfP2p := bean.AliceRequestCloseHtlcCurrTxOfP2p{}
 	_ = json.Unmarshal([]byte(data), &closeHtlcTxOfP2p)
@@ -398,7 +398,7 @@ func (service *htlcCloseTxManager) OnObdOfBobGet49PData(data string, user bean.U
 	closeHtlcTxOfWs.SenderPeerId = closeHtlcTxOfP2p.SenderPeerId
 	totalDurationObd += time.Now().Sub(beginTime).Milliseconds()
 	beginTime = time.Now()
-	log.Println("totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
+	log.Println("close step 3 ", "totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
 
 	return closeHtlcTxOfWs, nil
 }
@@ -407,7 +407,7 @@ func (service *htlcCloseTxManager) OnObdOfBobGet49PData(data string, user bean.U
 func (service *htlcCloseTxManager) OnBobSignCloseHtlcRequest(msg bean.RequestMessage, user bean.User) (toBob interface{}, err error) {
 	totalDurationClient += time.Now().Sub(beginTime).Milliseconds()
 	beginTime = time.Now()
-	log.Println("totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
+	log.Println("close step 4 ", "totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
 
 	if tool.CheckIsString(&msg.Data) == false {
 		return nil, errors.New(enum.Tips_common_empty + "msg data")
@@ -763,7 +763,7 @@ func (service *htlcCloseTxManager) OnBobSignCloseHtlcRequest(msg bean.RequestMes
 
 	totalDurationObd += time.Now().Sub(beginTime).Milliseconds()
 	beginTime = time.Now()
-	log.Println("totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
+	log.Println("close step 4 ", "totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
 
 	return dataSendToBob, nil
 }
@@ -772,7 +772,7 @@ func (service *htlcCloseTxManager) OnBobSignCloseHtlcRequest(msg bean.RequestMes
 func (service *htlcCloseTxManager) OnBobSignedCxb(msg bean.RequestMessage, user bean.User) (toAlice, toBob interface{}, err error) {
 	totalDurationClient += time.Now().Sub(beginTime).Milliseconds()
 	beginTime = time.Now()
-	log.Println("totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
+	log.Println("close step 5 ", "totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
 
 	if tool.CheckIsString(&msg.Data) == false {
 		err = errors.New(enum.Tips_common_empty + "msg.data")
@@ -883,7 +883,7 @@ func (service *htlcCloseTxManager) OnBobSignedCxb(msg bean.RequestMessage, user 
 
 	totalDurationObd += time.Now().Sub(beginTime).Milliseconds()
 	beginTime = time.Now()
-	log.Println("totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
+	log.Println("close step 5 ", "totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
 
 	return p2pData, toBobData, nil
 }
@@ -892,7 +892,7 @@ func (service *htlcCloseTxManager) OnBobSignedCxb(msg bean.RequestMessage, user 
 func (service *htlcCloseTxManager) OnObdOfAliceGet50PData(data string, user bean.User) (toAlice interface{}, needNoticeBob bool, err error) {
 	totalDurationClient += time.Now().Sub(beginTime).Milliseconds()
 	beginTime = time.Now()
-	log.Println("totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
+	log.Println("close step 6 ", "totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
 
 	dataFrom50P := bean.CloseeSignCloseHtlcTxOfP2p{}
 	_ = json.Unmarshal([]byte(data), &dataFrom50P)
@@ -940,7 +940,7 @@ func (service *htlcCloseTxManager) OnObdOfAliceGet50PData(data string, user bean
 
 	totalDurationObd += time.Now().Sub(beginTime).Milliseconds()
 	beginTime = time.Now()
-	log.Println("totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
+	log.Println("close step 6 ", "totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
 
 	return needAliceSignData, false, nil
 }
@@ -949,7 +949,7 @@ func (service *htlcCloseTxManager) OnObdOfAliceGet50PData(data string, user bean
 func (service *htlcCloseTxManager) OnAliceSignedCxb(msg bean.RequestMessage, user bean.User) (toAlice interface{}, err error) {
 	totalDurationClient += time.Now().Sub(beginTime).Milliseconds()
 	beginTime = time.Now()
-	log.Println("totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
+	log.Println("close step 7 ", "totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
 
 	aliceSignedData := bean.AliceSignedRsmcTxForC4b{}
 	_ = json.Unmarshal([]byte(msg.Data), &aliceSignedData)
@@ -1111,7 +1111,7 @@ func (service *htlcCloseTxManager) OnAliceSignedCxb(msg bean.RequestMessage, use
 
 	totalDurationObd += time.Now().Sub(beginTime).Milliseconds()
 	beginTime = time.Now()
-	log.Println("totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
+	log.Println("close step 7 ", "totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
 
 	return needAliceSignRdTxForC4b, nil
 }
@@ -1120,7 +1120,7 @@ func (service *htlcCloseTxManager) OnAliceSignedCxb(msg bean.RequestMessage, use
 func (service *htlcCloseTxManager) OnAliceSignedCxbBubTx(msg bean.RequestMessage, user bean.User) (toAlice, toBob interface{}, err error) {
 	totalDurationClient += time.Now().Sub(beginTime).Milliseconds()
 	beginTime = time.Now()
-	log.Println("totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
+	log.Println("close step 8 ", "totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
 
 	aliceSignedRdTxForCnb := bean.AliceSignedRdTxForC4b{}
 	_ = json.Unmarshal([]byte(msg.Data), &aliceSignedRdTxForCnb)
@@ -1370,7 +1370,7 @@ func (service *htlcCloseTxManager) OnAliceSignedCxbBubTx(msg bean.RequestMessage
 
 	totalDurationObd += time.Now().Sub(beginTime).Milliseconds()
 	beginTime = time.Now()
-	log.Println("totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
+	log.Println("close step 8 ", "totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
 
 	return aliceData, bobData, nil
 }
@@ -1379,7 +1379,7 @@ func (service *htlcCloseTxManager) OnAliceSignedCxbBubTx(msg bean.RequestMessage
 func (service *htlcCloseTxManager) OnObdOfBobGet51PData(data string, user bean.User) (toBob interface{}, err error) {
 	totalDurationClient += time.Now().Sub(beginTime).Milliseconds()
 	beginTime = time.Now()
-	log.Println("totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
+	log.Println("close step 9 ", "totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
 
 	dataFrom51P := bean.AliceSignedC4bTxDataP2p{}
 	err = json.Unmarshal([]byte(data), &dataFrom51P)
@@ -1397,7 +1397,7 @@ func (service *htlcCloseTxManager) OnObdOfBobGet51PData(data string, user bean.U
 	needBobSignRdTxData.C4bRdPartialSignedData = dataFrom51P.C4bRdPartialSignedData
 	totalDurationObd += time.Now().Sub(beginTime).Milliseconds()
 	beginTime = time.Now()
-	log.Println("totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
+	log.Println("close step 9 ", "totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
 
 	return needBobSignRdTxData, nil
 }
@@ -1406,7 +1406,7 @@ func (service *htlcCloseTxManager) OnObdOfBobGet51PData(data string, user bean.U
 func (service *htlcCloseTxManager) OnBobSignedCxbSubTx(msg bean.RequestMessage, user bean.User) (toBob interface{}, err error) {
 	totalDurationClient += time.Now().Sub(beginTime).Milliseconds()
 	beginTime = time.Now()
-	log.Println("totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
+	log.Println("close step 10 ", "totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
 
 	bobSignedRdData := bean.BobSignedRdTxForC4b{}
 	_ = json.Unmarshal([]byte(msg.Data), &bobSignedRdData)
@@ -1505,6 +1505,6 @@ func (service *htlcCloseTxManager) OnBobSignedCxbSubTx(msg bean.RequestMessage, 
 
 	totalDurationObd += time.Now().Sub(beginTime).Milliseconds()
 	beginTime = time.Now()
-	log.Println("totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
+	log.Println("close step 10 ", "totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
 	return latestCommitmentTxInfo, nil
 }

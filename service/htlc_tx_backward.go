@@ -32,7 +32,7 @@ var HtlcBackwardTxService htlcBackwardTxManager
 func (service *htlcBackwardTxManager) SendRToPreviousNodeAtBobSide(msg bean.RequestMessage, user bean.User) (retData interface{}, err error) {
 	totalDurationClient += time.Now().Sub(beginTime).Milliseconds()
 	beginTime = time.Now()
-	log.Println("totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
+	log.Println("back step 1 ", "totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
 
 	if tool.CheckIsString(&msg.Data) == false {
 		return nil, errors.New(enum.Tips_common_empty + "msg data")
@@ -229,7 +229,7 @@ func (service *htlcBackwardTxManager) SendRToPreviousNodeAtBobSide(msg bean.Requ
 	_ = tx.Commit()
 	totalDurationObd += time.Now().Sub(beginTime).Milliseconds()
 	beginTime = time.Now()
-	log.Println("totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
+	log.Println("back step 1 ", "totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
 
 	return dataNeedBobSign, nil
 }
@@ -238,7 +238,7 @@ func (service *htlcBackwardTxManager) SendRToPreviousNodeAtBobSide(msg bean.Requ
 func (service *htlcBackwardTxManager) OnBobSignedHeRdAtBobSide(msg bean.RequestMessage, user bean.User) (retData interface{}, err error) {
 	totalDurationClient += time.Now().Sub(beginTime).Milliseconds()
 	beginTime = time.Now()
-	log.Println("totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
+	log.Println("back step 2 ", "totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
 
 	bobSignedData := bean.BobSignHerdForC3b{}
 	_ = json.Unmarshal([]byte(msg.Data), &bobSignedData)
@@ -268,7 +268,7 @@ func (service *htlcBackwardTxManager) OnBobSignedHeRdAtBobSide(msg bean.RequestM
 
 	totalDurationObd += time.Now().Sub(beginTime).Milliseconds()
 	beginTime = time.Now()
-	log.Println("totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
+	log.Println("back step 2 ", "totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
 
 	return dataSendTo45P, nil
 }
@@ -277,7 +277,7 @@ func (service *htlcBackwardTxManager) OnBobSignedHeRdAtBobSide(msg bean.RequestM
 func (service *htlcBackwardTxManager) OnGetHeSubTxDataAtAliceObdAtAliceSide(msg string, user bean.User) (retData interface{}, err error) {
 	totalDurationClient += time.Now().Sub(beginTime).Milliseconds()
 	beginTime = time.Now()
-	log.Println("totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
+	log.Println("back step 3 ", "totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
 
 	dataFrom45P := bean.NeedAliceSignHerdTxOfC3bP2p{}
 	_ = json.Unmarshal([]byte(msg), &dataFrom45P)
@@ -326,7 +326,7 @@ func (service *htlcBackwardTxManager) OnGetHeSubTxDataAtAliceObdAtAliceSide(msg 
 	_ = tx.Commit()
 	totalDurationObd += time.Now().Sub(beginTime).Milliseconds()
 	beginTime = time.Now()
-	log.Println("totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
+	log.Println("back step 3 ", "totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
 
 	return dataFrom45P, nil
 }
@@ -335,7 +335,7 @@ func (service *htlcBackwardTxManager) OnGetHeSubTxDataAtAliceObdAtAliceSide(msg 
 func (service *htlcBackwardTxManager) OnAliceSignedHeRdAtAliceSide(msg bean.RequestMessage, user bean.User) (toAlice, toBob interface{}, err error) {
 	totalDurationClient += time.Now().Sub(beginTime).Milliseconds()
 	beginTime = time.Now()
-	log.Println("totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
+	log.Println("back step 4 ", "totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
 
 	herdSignedResult := bean.AliceSignHerdTxOfC3e{}
 	_ = json.Unmarshal([]byte(msg.Data), &herdSignedResult)
@@ -443,7 +443,7 @@ func (service *htlcBackwardTxManager) OnAliceSignedHeRdAtAliceSide(msg bean.Requ
 
 	totalDurationObd += time.Now().Sub(beginTime).Milliseconds()
 	beginTime = time.Now()
-	log.Println("totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
+	log.Println("back step 4 ", "totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
 
 	return latestCommitment, dataTo46P, nil
 }
@@ -452,7 +452,7 @@ func (service *htlcBackwardTxManager) OnAliceSignedHeRdAtAliceSide(msg bean.Requ
 func (service *htlcBackwardTxManager) OnGetHeRdDataAtBobObd(msg string, user bean.User) (retData interface{}, err error) {
 	totalDurationClient += time.Now().Sub(beginTime).Milliseconds()
 	beginTime = time.Now()
-	log.Println("totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
+	log.Println("back step 5 ", "totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
 
 	dataFrom46P := bean.AliceSignedHerdTxOfC3bP2p{}
 	_ = json.Unmarshal([]byte(msg), &dataFrom46P)
@@ -505,7 +505,7 @@ func (service *htlcBackwardTxManager) OnGetHeRdDataAtBobObd(msg string, user bea
 	}
 	totalDurationObd += time.Now().Sub(beginTime).Milliseconds()
 	beginTime = time.Now()
-	log.Println("totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
+	log.Println("back step 5 ", "totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
 
 	return latestCommitment, nil
 }
