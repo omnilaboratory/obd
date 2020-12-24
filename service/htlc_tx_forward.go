@@ -66,9 +66,9 @@ func (service *htlcForwardTxManager) CreateHtlcInvoice(msg bean.RequestMessage) 
 	if requestData.Amount < tool.GetOmniDustBtc() {
 		return nil, errors.New(enum.Tips_common_wrong + "amount")
 	} else {
-		requestData.Amount *= 100000000
-		temp := int(requestData.Amount)
-		addr += strconv.Itoa(temp) + "s"
+		mul := decimal.NewFromFloat(requestData.Amount).Mul(decimal.NewFromInt(100000000))
+		temp := mul.IntPart()
+		addr += strconv.Itoa(int(temp)) + "s"
 	}
 
 	addr += "1"
