@@ -461,6 +461,10 @@ func (service *htlcForwardTxManager) AliceAddHtlcAtAliceSide(msg bean.RequestMes
 			if err != nil {
 				return nil, false, errors.New(fmt.Sprintf(enum.Tips_rsmc_wrongPrivateKeyForLast, requestData.LastTempAddressPrivateKey, latestCommitmentTx.RSMCTempAddressPubKey))
 			}
+
+			if requestData.Amount > latestCommitmentTx.AmountToRSMC {
+				return nil, false, errors.New("wrong amount")
+			}
 		}
 		if latestCommitmentTx.CurrState == dao.TxInfoState_Create {
 			if latestCommitmentTx.TxType != dao.CommitmentTransactionType_Htlc {
@@ -485,6 +489,7 @@ func (service *htlcForwardTxManager) AliceAddHtlcAtAliceSide(msg bean.RequestMes
 			}
 		}
 	}
+
 	if tool.CheckIsString(&requestData.CurrRsmcTempAddressPubKey) == false {
 		err = errors.New(enum.Tips_common_empty + "curr_rsmc_temp_address_pub_key")
 		log.Println(err)
