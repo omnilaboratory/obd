@@ -3,6 +3,7 @@ package config
 import (
 	"flag"
 	"log"
+	"strings"
 	"testing"
 	"time"
 
@@ -25,6 +26,7 @@ var (
 	//P2P
 	P2P_hostIp     = "127.0.0.1"
 	P2P_sourcePort = 4001
+	BootstrapPeers addrList
 )
 
 func Init() {
@@ -62,6 +64,8 @@ func Init() {
 	}
 	P2P_hostIp = p2pNode.Key("hostIp").String()
 	P2P_sourcePort = p2pNode.Key("sourcePort").MustInt()
+	bootstrapPeers := p2pNode.Key("bootstrapPeers").MustString("/ip4/127.0.0.1/tcp/6000/p2p/QmYpXLVdgZAorLUSnHdhjJrZWR7dpYe5JRepxiD64ZA4vY")
+	BootstrapPeers, _ = StringsToAddrs(strings.Split(bootstrapPeers, ","))
 
 	//tracker
 	tracker, err := Cfg.GetSection("tracker")

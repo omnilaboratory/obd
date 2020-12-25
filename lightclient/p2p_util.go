@@ -12,6 +12,7 @@ import (
 	"github.com/libp2p/go-libp2p-core/network"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/libp2p/go-libp2p-core/peerstore"
+	dht "github.com/libp2p/go-libp2p-kad-dht"
 	"github.com/multiformats/go-multiaddr"
 	"github.com/omnilaboratory/obd/bean"
 	"github.com/omnilaboratory/obd/config"
@@ -20,6 +21,7 @@ import (
 	"log"
 	"math/rand"
 	"strings"
+	"sync"
 )
 
 type P2PChannel struct {
@@ -55,13 +57,15 @@ func StartP2PServer() (err error) {
 	if err != nil {
 		return err
 	}
+
 	// 0.0.0.0 will listen on any interface device.
 	sourceMultiAddr, _ := multiaddr.NewMultiaddr(fmt.Sprintf("/ip4/0.0.0.0/tcp/%d", config.P2P_sourcePort))
 
+	ctx := context.Background()
 	// libp2p.New constructs a new libp2p Host.
 	// Other options can be added here.
 	host, err := libp2p.New(
-		context.Background(),
+		ctx,
 		libp2p.ListenAddrs(sourceMultiAddr),
 		libp2p.Identity(prvKey),
 	)
@@ -82,6 +86,37 @@ func StartP2PServer() (err error) {
 		Address:        localServerDest,
 	}
 	host.SetStreamHandler(pid, handleStream)
+
+	log.Println("create dht obj")
+	kademliaDHT, _ := dht.New(ctx, host, dht.Mode(dht.ModeAuto))
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+
+	err = kademliaDHT.Bootstrap(ctx)
+	if err != nil {
+		log.Println(err)
+	}
+
+	log.Println("announce self to bootstrap node")
+	var wg sync.WaitGroup
+	for _, peerAddr := range config.BootstrapPeers {
+		peerInfo, _ := peer.AddrInfoFromP2pAddr(peerAddr)
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			log.Println("connecting to ", peerInfo.ID)
+			err = host.Connect(ctx, *peerInfo)
+			if err != nil {
+				log.Println(err, peerInfo)
+			} else {
+				log.Println("connected bootstrap node ", *peerInfo)
+			}
+		}()
+	}
+	wg.Wait()
+
 	return nil
 }
 
