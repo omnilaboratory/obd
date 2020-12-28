@@ -12,6 +12,7 @@ import (
 	"github.com/libp2p/go-libp2p-core/network"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/libp2p/go-libp2p-core/peerstore"
+	discovery "github.com/libp2p/go-libp2p-discovery"
 	dht "github.com/libp2p/go-libp2p-kad-dht"
 	"github.com/multiformats/go-multiaddr"
 	"github.com/omnilaboratory/obd/bean"
@@ -31,7 +32,7 @@ type P2PChannel struct {
 	rw             *bufio.ReadWriter
 }
 
-const pid = "/chat/1.0.0"
+const pid = "tracker/1.0.1"
 
 var localServerDest string
 var p2PLocalPeerId string
@@ -78,6 +79,7 @@ func StartP2PServer() (err error) {
 	service.P2PLocalPeerId = p2PLocalPeerId
 
 	localServerDest = fmt.Sprintf("/ip4/%s/tcp/%v/p2p/%s", config.P2P_hostIp, config.P2P_sourcePort, host.ID().Pretty())
+	log.Println("local p2p address", localServerDest)
 	bean.CurrObdNodeInfo.P2pAddress = localServerDest
 
 	//把自己也作为终点放进去，阻止自己连接自己
@@ -116,6 +118,10 @@ func StartP2PServer() (err error) {
 		}()
 	}
 	wg.Wait()
+
+	log.Println("Advertise self")
+	routingDiscovery := discovery.NewRoutingDiscovery(kademliaDHT)
+	discovery.Advertise(ctx, routingDiscovery, pid)
 
 	return nil
 }

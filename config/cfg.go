@@ -64,7 +64,7 @@ func Init() {
 	}
 	P2P_hostIp = p2pNode.Key("hostIp").String()
 	P2P_sourcePort = p2pNode.Key("sourcePort").MustInt()
-	bootstrapPeers := p2pNode.Key("bootstrapPeers").MustString("/ip4/127.0.0.1/tcp/6000/p2p/QmYpXLVdgZAorLUSnHdhjJrZWR7dpYe5JRepxiD64ZA4vY")
+	bootstrapPeers := p2pNode.Key("bootstrapPeers").MustString("/ip4/127.0.0.1/tcp/60800/p2p/QmScuAstCT1BhJrfjGfjL2nfP2xhhDgyr8DX12grDSvdSP")
 	BootstrapPeers, _ = StringsToAddrs(strings.Split(bootstrapPeers, ","))
 
 	//tracker
