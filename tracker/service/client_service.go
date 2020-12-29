@@ -23,8 +23,8 @@ func init() {
 
 // get tracker node id
 func GetTrackerNodeId() string {
-	source := tool.GetMacAddrs() + ":" + strconv.Itoa(cfg.TrackerServerPort)
-	return tool.SignMsgWithSha256([]byte(source))
+	source := "tracker:" + tool.GetMacAddrs() + ":" + strconv.Itoa(cfg.TrackerServerPort)
+	return tool.SignMsgWithSha256([]byte(source)) + cfg.ChainNode_Type
 }
 
 type ObdNode struct {

@@ -89,7 +89,7 @@ func (client *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, 
 		if remoteNodeAddress.Exists() == false {
 			data = errors.New("remote_node_address not exist").Error()
 		} else {
-			localP2PAddress, err := connP2PServer(remoteNodeAddress.Str)
+			localP2PAddress, err := connP2PNode(remoteNodeAddress.Str)
 			if err != nil {
 				data = err.Error()
 			} else {

@@ -2,6 +2,8 @@ package service
 
 import (
 	"context"
+	"encoding/binary"
+	"fmt"
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/libp2p/go-libp2p-core/host"
@@ -19,30 +21,24 @@ import (
 	"time"
 )
 
-var protocolID = "tracker/1.0.1"
-var rendezvousString = "tracker/1.0.1"
+const obdProtocolID = "obd/otherTracker/1.0.1"
+const obdRendezvousString = "obd meet at tracker"
+const trackerRendezvousString = "tracker meet here"
+
 var ctx = context.Background()
 var routingDiscovery *discovery.RoutingDiscovery
 var hostNode host.Host
 
-func handleStream(stream network.Stream) {
-	log.Println("Got a new stream!")
-
-	// Create a buffer stream for non blocking read and write.
-	//rw := bufio.NewReadWriter(bufio.NewReader(stream), bufio.NewWriter(stream))
-}
 func StartP2PNode() {
 
-	// libp2p.New constructs a new libp2p Host.
-	// Other options can be added here.
-	sourceMultiAddr, _ := ma.NewMultiaddr("/ip4/0.0.0.0/tcp/" + strconv.Itoa(cfg.P2P_sourcePort))
-
-	r := rand.New(rand.NewSource(int64(cfg.P2P_sourcePort)))
+	nodeId := int64(binary.BigEndian.Uint64([]byte(GetTrackerNodeId())))
+	r := rand.New(rand.NewSource(nodeId))
 	prvKey, _, err := crypto.GenerateECDSAKeyPair(r)
 	if err != nil {
 		panic(err)
 	}
 
+	sourceMultiAddr, _ := ma.NewMultiaddr("/ip4/0.0.0.0/tcp/" + strconv.Itoa(cfg.P2P_sourcePort))
 	hostNode, err = libp2p.New(
 		ctx,
 		libp2p.ListenAddrs(sourceMultiAddr),
@@ -52,7 +48,8 @@ func StartP2PNode() {
 	if err != nil {
 		panic(err)
 	}
-	log.Println("This node: ", hostNode.ID().Pretty(), " ", hostNode.Addrs())
+	cfg.P2pLocalAddress = fmt.Sprintf("/ip4/%s/tcp/%v/p2p/%s", cfg.P2P_hostIp, cfg.P2P_sourcePort, hostNode.ID().Pretty())
+	log.Println("local p2p node address: ", cfg.P2pLocalAddress)
 
 	kademliaDHT, _ := dht.New(ctx, hostNode, dht.Mode(dht.ModeAutoServer))
 
@@ -65,12 +62,17 @@ func StartP2PNode() {
 		log.Println(err)
 	}
 
+	needAnnounceSelf := false
 	if len(cfg.BootstrapPeers) > 0 {
 		var wg sync.WaitGroup
 		for _, peerAddr := range cfg.BootstrapPeers {
-			log.Println("peerAddr is: ", peerAddr)
 			peerInfo, _ := peer.AddrInfoFromP2pAddr(peerAddr)
+			if peerInfo.ID == hostNode.ID() {
+				continue
+			}
+			log.Println("peerAddr is: ", peerAddr)
 			wg.Add(1)
+			needAnnounceSelf = true
 			go func() {
 				defer wg.Done()
 				log.Println("链接bootstrap节点", *peerInfo)
@@ -84,8 +86,11 @@ func StartP2PNode() {
 		}
 		wg.Wait()
 	}
-
 	routingDiscovery = discovery.NewRoutingDiscovery(kademliaDHT)
+	if needAnnounceSelf {
+		log.Println("announce self")
+		discovery.Advertise(ctx, routingDiscovery, trackerRendezvousString)
+	}
 	startSchedule()
 }
 
@@ -105,7 +110,7 @@ func startSchedule() {
 }
 
 func scanNodes() {
-	peerChan, err := routingDiscovery.FindPeers(ctx, rendezvousString)
+	peerChan, err := routingDiscovery.FindPeers(ctx, obdRendezvousString)
 	if err != nil {
 		panic(err)
 	}
@@ -114,17 +119,24 @@ func scanNodes() {
 			continue
 		}
 
-		// 找到peer，然后将开始建立通信通道
-		log.Println("开始建立连接", peer.ID, peer.Addrs)
-		stream, err := hostNode.NewStream(ctx, peer.ID, protocol.ID(protocolID))
-
-		// 如果建立成功
+		log.Println("begin to connect ", peer.ID, peer.Addrs)
+		err = hostNode.Connect(ctx, peer)
 		if err == nil {
-			stream.Write([]byte("hello peer,ping"))
-			handleStream(stream)
-			log.Println("连接成功 ", peer.ID)
-		} else {
-			log.Println(err)
+			stream, err := hostNode.NewStream(ctx, peer.ID, protocol.ID(obdProtocolID))
+			if err == nil {
+				stream.Write([]byte("hello peer,ping"))
+				handleStream(stream)
+				log.Println("connect successfully ", peer.ID)
+			} else {
+				log.Println(err)
+			}
 		}
 	}
+}
+
+func handleStream(stream network.Stream) {
+	log.Println("Got a new stream!")
+
+	// Create a buffer stream for non blocking read and write.
+	//rw := bufio.NewReadWriter(bufio.NewReader(stream), bufio.NewWriter(stream))
 }

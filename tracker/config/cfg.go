@@ -33,8 +33,10 @@ var (
 
 	HtlcFeeRate = 0.0001
 
-	P2P_sourcePort = 60801
-	BootstrapPeers addrList
+	P2P_hostIp      = "127.0.0.1"
+	P2P_sourcePort  = 60801
+	BootstrapPeers  addrList
+	P2pLocalAddress = ""
 
 	ChainNode_Type = "test"
 	ChainNode_Host = "62.234.216.108:18332"
@@ -77,6 +79,8 @@ func init() {
 		log.Println(err)
 		return
 	}
+
+	P2P_hostIp = p2pNode.Key("localHostIp").MustString("127.0.0.1")
 	P2P_sourcePort = p2pNode.Key("sourcePort").MustInt(60801)
 	bootstrapPeers := p2pNode.Key("bootstrapPeers").MustString("")
 	BootstrapPeers, _ = StringsToAddrs(strings.Split(bootstrapPeers, ","))

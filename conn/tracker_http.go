@@ -536,22 +536,22 @@ func GetNetworkInfo() (result string, err error) {
 	}
 	return "", errors.New("error result")
 }
-func GetChainNodeType() (result string, err error) {
+func GetChainNodeType() (chainNodeType, trackerP2pAddress string, err error) {
 	url := "http://" + config.TrackerHost + "/api/rpc/getChainNodeType"
 	resp, err := http.Get(url)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode == http.StatusOK {
 		body, _ := ioutil.ReadAll(resp.Body)
 		err = nil
-		if gjson.Get(string(body), "data").Str == "" {
+		if gjson.Get(string(body), "chainNodeType").Str == "" {
 			err = errors.New(gjson.Get(string(body), "msg").Str)
 		}
-		return gjson.Get(string(body), "data").Str, err
+		return gjson.Get(string(body), "chainNodeType").Str, gjson.Get(string(body), "trackerP2pAddress").Str, err
 	}
-	return "", errors.New("error result")
+	return "", "", errors.New("error result")
 }
 
 func GetChannelState(channelId string) (flag int) {

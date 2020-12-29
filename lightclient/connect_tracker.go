@@ -35,11 +35,12 @@ func ConnectToTracker() (err error) {
 		return err
 	}
 
-	result, err := conn2tracker.GetChainNodeType()
+	chainNodeType, trackerP2pAddress, err := conn2tracker.GetChainNodeType()
 	if err != nil {
 		return err
 	}
-	config.ChainNodeType = result
+	config.ChainNodeType = chainNodeType
+	config.BootstrapPeers, _ = config.StringsToAddrs(strings.Split(trackerP2pAddress, ","))
 
 	if service.TrackerChan == nil {
 		service.TrackerChan = make(chan []byte)
@@ -147,7 +148,7 @@ func updateP2pAddressLogin() {
 	info := make(map[string]interface{})
 	info["type"] = enum.MsgType_Tracker_NodeLogin_303
 	nodeLoginInfo := &trackerBean.ObdNodeLoginRequest{}
-	nodeLoginInfo.NodeId = tool.GetNodeId()
+	nodeLoginInfo.NodeId = tool.GetObdNodeId()
 	nodeLoginInfo.P2PAddress = localServerDest
 	info["data"] = nodeLoginInfo
 	bytes, err := json.Marshal(info)

@@ -163,11 +163,6 @@ func (client *Client) Read() {
 						client.SendToMyself(msg.Type, false, fmt.Sprintf(enum.Tips_common_errorObdPeerId, msg.RecipientNodePeerId))
 						continue
 					}
-
-					if _, err = findUserOnLine(msg); err != nil {
-						client.SendToMyself(msg.Type, false, err.Error())
-						continue
-					}
 				}
 
 				for {
