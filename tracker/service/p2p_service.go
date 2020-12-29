@@ -20,7 +20,7 @@ import (
 	"time"
 )
 
-const obdProtocolID = "obd/betweenObd/1.0.1"
+const protocolIdForScanObd = "obd/forScanObd/1.0.1"
 const obdRendezvousString = "obd meet at tracker"
 const trackerRendezvousString = "tracker meet here"
 
@@ -125,7 +125,7 @@ func scanNodes() {
 		log.Println("begin to connect ", peer.ID, peer.Addrs)
 		err = hostNode.Connect(ctx, peer)
 		if err == nil {
-			stream, err := hostNode.NewStream(ctx, peer.ID, obdProtocolID)
+			stream, err := hostNode.NewStream(ctx, peer.ID, protocolIdForScanObd)
 			if err == nil {
 				stream.Write([]byte("hello peer,ping"))
 				handleStream(stream)
@@ -138,7 +138,7 @@ func scanNodes() {
 }
 
 func handleStream(stream network.Stream) {
-	log.Println("Got a new stream!")
+	log.Println("begin scan obd channel")
 
 	// Create a buffer stream for non blocking read and write.
 	//rw := bufio.NewReadWriter(bufio.NewReader(stream), bufio.NewWriter(stream))

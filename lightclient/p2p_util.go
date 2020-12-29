@@ -35,6 +35,7 @@ type P2PChannel struct {
 
 const obdRendezvousString = "obd meet at tracker"
 const protocolIdForBetweenObd = "obd/betweenObd/1.0.1"
+const protocolIdForScanObd = "obd/forScanObd/1.0.1"
 
 var hostNode host.Host
 
@@ -93,6 +94,7 @@ func StartP2PNode() (err error) {
 		IsLocalChannel: true,
 		Address:        localServerDest,
 	}
+	hostNode.SetStreamHandler(protocolIdForScanObd, handleScanStream)
 	hostNode.SetStreamHandler(protocolIdForBetweenObd, handleStream)
 
 	kademliaDHT, _ := dht.New(ctx, hostNode, dht.Mode(dht.ModeAuto))
@@ -175,6 +177,12 @@ func handleStream(s network.Stream) {
 			rw := addP2PChannel(s)
 			go readData(s, rw)
 		}
+	}
+}
+
+func handleScanStream(s network.Stream) {
+	if s != nil {
+		log.Println("scan channel data request from tracker", s.Conn().RemotePeer().Pretty())
 	}
 }
 func readData(s network.Stream, rw *bufio.ReadWriter) {
