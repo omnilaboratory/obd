@@ -5,38 +5,37 @@ services:
         image:
             johng12345/omnicore:latest
         volumes:
-            - ${PWD}/bitcoin.conf:/root/bitcoin.conf
+            - ${PWD}/tests/integration/bitcoin.conf:/root/bitcoin.conf
         expose:
             - "18444"
+
     omnibolt_alice:
         volumes:
-            - ${PWD}/conf.ini.alice:/go/conf.ini
+            - ${PWD}/tests/integration/conf.ini.alice:/obd/conf.ini
         build: 
-            context: ./omnibolt
-            dockerfile: omnibolt.Dockerfile
+            context: ../..
+            dockerfile: ./tests/integration/omnibolt.Dockerfile
         depends_on:
             - omnicore
-        expose: 
-            - 60061
+        expose:
             - 4002
             - 60021
 
     omnibolt_bob:
         volumes:
-            - ${PWD}/conf.ini.bob:/go/conf.ini
+            - ${PWD}/tests/integration/conf.ini.bob:/obd/conf.ini
         build: 
-            context: ./omnibolt
-            dockerfile: omnibolt.Dockerfile
+            context: ../..
+            dockerfile: ./tests/integration/omnibolt.Dockerfile
 
         expose:
-            - 60060
             - 4001
             - 60020
         depends_on:
             - omnicore
     omnitest:
         build: 
-            context: ./omnitest
+            context: .
             dockerfile: Dockerfile
         depends_on: 
             - omnibolt_bob

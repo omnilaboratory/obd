@@ -3,6 +3,8 @@ package config
 import (
 	"flag"
 	"log"
+	"net"
+	"strings"
 	"testing"
 	"time"
 
@@ -27,6 +29,15 @@ var (
 	P2P_sourcePort = 4001
 	BootstrapPeers addrList
 )
+
+func parseHostname(hostname string) string {
+	P2pHostIps, err := net.LookupIP(hostname)
+	if err != nil {
+		panic("Can't parse hostname")
+	}
+
+	return P2pHostIps[0].String()
+}
 
 func Init() {
 	testing.Init()
@@ -61,7 +72,8 @@ func Init() {
 		log.Println(err)
 		return
 	}
-	P2P_hostIp = p2pNode.Key("hostIp").String()
+
+	P2P_hostIp = parseHostname(p2pNode.Key("hostIp").String())
 	P2P_sourcePort = p2pNode.Key("sourcePort").MustInt()
 
 	//tracker
@@ -73,5 +85,9 @@ func Init() {
 	if len(tracker.Key("host").String()) == 0 {
 		panic("empty tracker host")
 	}
-	TrackerHost = tracker.Key("host").MustString("localhost:60060")
+
+	RawTrackerHost := tracker.Key("host").MustString("localhost:60060")
+	RawHostIP := strings.Split(RawTrackerHost, ":")
+	ParseHostname := parseHostname(RawHostIP[0])
+	TrackerHost = ParseHostname + ":" + RawHostIP[1]
 }

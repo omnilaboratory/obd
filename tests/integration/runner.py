@@ -47,7 +47,7 @@ class TestRunner:
         omnicore_connection.mine_bitcoin(20, address_miner)
 
         omnicore_connection.mine_bitcoin(20, address_miner)
-        grant_amount = 999999999999999
+        grant_amount = "100000.00000000"
 
         omnicore_connection.omni_sendgrant(
             address_master_funder,

@@ -1,7 +1,6 @@
 package rpc
 
 import (
-	"encoding/json"
 	"errors"
 	"github.com/omnilaboratory/obd/bean"
 	"github.com/omnilaboratory/obd/tool"
@@ -156,13 +155,7 @@ type NeedSignData struct {
 	Inputs []map[string]interface{} `json:"inputs"`
 }
 
-func (client *Client) BtcSignRawTransactionFromJson(dataJson string) (signHex string, err error) {
-	inputData := &NeedSignData{}
-	err = json.Unmarshal([]byte(dataJson), inputData)
-	if err != nil {
-		return "", err
-	}
-
+func (client *Client) BtcSignRawTransactionFromJson(inputData *NeedSignData) (signHex string, err error) {
 	signHexObj, err := client.SignRawTransactionWithKey(inputData.Hex, []string{inputData.Prvkey}, inputData.Inputs, "ALL")
 	if err != nil {
 		return "", err

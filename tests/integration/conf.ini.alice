@@ -8,6 +8,9 @@ writeTimeout = 30
 hostIp = omnibolt_alice
 sourcePort = 4001
 
+[htlc]
+feeRate = 0.0001
+maxFee = 0.01
+
 [tracker]
-hostIp = localhost
-port = 60060
+host = 127.0.0.1:60060

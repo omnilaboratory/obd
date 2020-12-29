@@ -1,6 +1,7 @@
 package conn2tracker
 
 import (
+	"bytes"
 	"errors"
 	"github.com/omnilaboratory/obd/config"
 	"github.com/omnilaboratory/obd/tool"
@@ -482,9 +483,12 @@ func OmniSendRevoke(fromAddress string, propertyId int64, amount float64, memo s
 }
 
 func BtcSignRawTransactionFromJson(data string) (result string, err error) {
-	url := "http://" + config.TrackerHost + "/api/rpc/btcSignRawTransactionFromJson?data=" + data
+	url := "http://" + config.TrackerHost + "/api/rpc/btcSignRawTransactionFromJson?data="
 	log.Println(url)
-	resp, err := http.Get(url)
+	client := &http.Client{}
+	req, _ := http.NewRequest("POST", url, bytes.NewBuffer([]byte(data)))
+	req.Header.Set("Content-type", "application/json")
+	resp, err := client.Do(req)
 	if err != nil {
 		return "", err
 	}

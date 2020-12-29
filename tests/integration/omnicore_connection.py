@@ -40,8 +40,9 @@ class OmnicoreConnection:
         omnicore-cli -regtest omni_listproperties
 
         """
+        is_divisible = 2
         return self._bitcoin_connection.omni_sendissuancemanaged(
-            funder_address, 2, 1, 0, "Companies", "Bitcoin Mining", "Qunatum", "a", "a"
+            funder_address, 2, is_divisible, 0, "Companies", "Bitcoin Mining", "Qunatum", "a", "a"
         )
 
     def list_omnicore_properties(self):

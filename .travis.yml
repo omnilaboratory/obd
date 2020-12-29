@@ -1,0 +1,7 @@
+language: ruby
+
+services:
+  - docker
+
+script:
+  - docker-compose -f ./tests/integration/docker-compose.yml up --build --exit-code-from omnitest omnitest

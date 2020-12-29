@@ -17,4 +17,6 @@ ENV OMNI_BOLT_ALICE=omnibolt_alice:60020
 ENV OMNI_BOLT_BOB=omnibolt_bob:60020
 ENV BITCOIN_CONF=/test/bitcoin.conf
 
-ENTRYPOINT [ "python3.9", "-m", "pytest", "test.py" ]
+COPY test_entrypoint.sh /test/test_entrypoint.sh
+
+ENTRYPOINT [ "/test/test_entrypoint.sh"  ]

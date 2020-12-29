@@ -4,6 +4,7 @@ import (
 	"flag"
 	ma "github.com/multiformats/go-multiaddr"
 	"log"
+	"net"
 	"strings"
 	"testing"
 	"time"
@@ -43,6 +44,15 @@ var (
 	ChainNode_User = "omniwallet"
 	ChainNode_Pass = "cB3]iL2@eZ1?cB2?"
 )
+
+func parseHostname(hostname string) string {
+	P2pHostIps, err := net.LookupIP(hostname)
+	if err != nil {
+		panic("Can't parse hostname")
+	}
+
+	return P2pHostIps[0].String()
+}
 
 func init() {
 	testing.Init()
@@ -90,7 +100,10 @@ func init() {
 		log.Println(err)
 		return
 	}
-	ChainNode_Host = chainNode.Key("host").String()
+
+	RawHostIP := strings.Split(chainNode.Key("host").String(), ":")
+	ParseHostname := parseHostname(RawHostIP[0])
+	ChainNode_Host = ParseHostname + ":" + RawHostIP[1]
 	ChainNode_User = chainNode.Key("user").String()
 	ChainNode_Pass = chainNode.Key("pass").String()
 	if len(ChainNode_Host) == 0 {
