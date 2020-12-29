@@ -1,6 +1,7 @@
 package service
 
 import (
+	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"github.com/omnilaboratory/obd/tool"
 	"github.com/omnilaboratory/obd/tracker/bean"
@@ -428,9 +429,20 @@ func (manager *rpcManager) OmniSendRevoke(context *gin.Context) {
 	})
 }
 func (manager *rpcManager) BtcSignRawTransactionFromJson(context *gin.Context) {
-	data := context.Query("data")
-	result, err := rpc.NewClient().BtcSignRawTransactionFromJson(data)
+	inputData := &rpc.NeedSignData{}
+	decoder := json.NewDecoder(context.Request.Body)
+	err := decoder.Decode(&inputData)
+	var result string
 	msg := ""
+
+	if err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{
+			"msg": err.Error(),
+		})
+		return
+	}
+
+	result, err = rpc.NewClient().BtcSignRawTransactionFromJson(inputData)
 	if err != nil {
 		result = ""
 		msg = err.Error()

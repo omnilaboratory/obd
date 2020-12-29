@@ -60,7 +60,7 @@ func InitRouter() *gin.Engine {
 		apiv3.GET("omniSendIssuanceManaged", service.RpcService.OmniSendIssuanceManaged)
 		apiv3.GET("omniSendGrant", service.RpcService.OmniSendGrant)
 		apiv3.GET("omniSendRevoke", service.RpcService.OmniSendRevoke)
-		apiv3.GET("btcSignRawTransactionFromJson", service.RpcService.BtcSignRawTransactionFromJson)
+		apiv3.POST("btcSignRawTransactionFromJson", service.RpcService.BtcSignRawTransactionFromJson)
 		apiv3.GET("getMiningInfo", service.RpcService.GetMiningInfo)
 		apiv3.GET("getNetworkInfo", service.RpcService.GetNetworkInfo)
 	}
