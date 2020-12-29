@@ -69,17 +69,16 @@ func StartP2PNode() {
 			if peerInfo.ID == hostNode.ID() {
 				continue
 			}
-			log.Println("peerAddr is: ", peerAddr)
+			log.Println("connecting to bootstrap node: ", peerAddr)
 			wg.Add(1)
 			needAnnounceSelf = true
 			go func() {
 				defer wg.Done()
-				log.Println("链接bootstrap节点", *peerInfo)
 				err = hostNode.Connect(ctx, *peerInfo)
 				if err != nil {
 					log.Println(err, peerInfo)
 				} else {
-					log.Println("链接到了bootstrap节点:", *peerInfo)
+					log.Println("connect to bootstrap node ", *peerInfo)
 				}
 			}()
 		}
