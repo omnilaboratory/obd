@@ -33,7 +33,7 @@ type P2PChannel struct {
 	rw             *bufio.ReadWriter
 }
 
-const protocolIdForToOtherTracker = "obd/otherTracker/1.0.1"
+const obdRendezvousString = "obd meet at tracker"
 const protocolIdForBetweenObd = "obd/betweenObd/1.0.1"
 
 var hostNode host.Host
@@ -57,7 +57,9 @@ func generatePrivateKey() (crypto.PrivKey, error) {
 	return privateKey, nil
 }
 
-func StartP2PServer() (err error) {
+func StartP2PNode() (err error) {
+
+	log.Println("start to p2p node")
 	prvKey, err := generatePrivateKey()
 	if err != nil {
 		return err
@@ -93,7 +95,6 @@ func StartP2PServer() (err error) {
 	}
 	hostNode.SetStreamHandler(protocolIdForBetweenObd, handleStream)
 
-	log.Println("create dht obj")
 	kademliaDHT, _ := dht.New(ctx, hostNode, dht.Mode(dht.ModeAuto))
 	if err != nil {
 		log.Println(err)
@@ -105,14 +106,12 @@ func StartP2PServer() (err error) {
 		log.Println(err)
 	}
 
-	log.Println("connect to bootstrap node")
 	var wg sync.WaitGroup
 	for _, peerAddr := range config.BootstrapPeers {
 		peerInfo, _ := peer.AddrInfoFromP2pAddr(peerAddr)
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			log.Println("connecting to ", peerInfo.ID)
 			err = hostNode.Connect(ctx, *peerInfo)
 			if err != nil {
 				log.Println(err, peerInfo)
@@ -123,9 +122,8 @@ func StartP2PServer() (err error) {
 	}
 	wg.Wait()
 
-	log.Println("announce self")
 	routingDiscovery := discovery.NewRoutingDiscovery(kademliaDHT)
-	discovery.Advertise(ctx, routingDiscovery, protocolIdForToOtherTracker)
+	discovery.Advertise(ctx, routingDiscovery, obdRendezvousString)
 
 	return nil
 }

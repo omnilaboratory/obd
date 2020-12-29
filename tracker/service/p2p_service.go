@@ -9,7 +9,6 @@ import (
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/network"
 	"github.com/libp2p/go-libp2p-core/peer"
-	"github.com/libp2p/go-libp2p-core/protocol"
 	discovery "github.com/libp2p/go-libp2p-discovery"
 	dht "github.com/libp2p/go-libp2p-kad-dht"
 	ma "github.com/multiformats/go-multiaddr"
@@ -21,7 +20,7 @@ import (
 	"time"
 )
 
-const obdProtocolID = "obd/otherTracker/1.0.1"
+const obdProtocolID = "obd/betweenObd/1.0.1"
 const obdRendezvousString = "obd meet at tracker"
 const trackerRendezvousString = "tracker meet here"
 
@@ -119,10 +118,15 @@ func scanNodes() {
 			continue
 		}
 
+		//和tracker直接连接的obd，不需要同步数据
+		if obdNodeOfOnlineMap[peer.ID.Pretty()] != nil {
+			continue
+		}
+
 		log.Println("begin to connect ", peer.ID, peer.Addrs)
 		err = hostNode.Connect(ctx, peer)
 		if err == nil {
-			stream, err := hostNode.NewStream(ctx, peer.ID, protocol.ID(obdProtocolID))
+			stream, err := hostNode.NewStream(ctx, peer.ID, obdProtocolID)
 			if err == nil {
 				stream.Write([]byte("hello peer,ping"))
 				handleStream(stream)

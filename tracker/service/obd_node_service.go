@@ -12,12 +12,14 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 )
 
 //普通在线用户
 var userOfOnlineMap map[string]dao.UserInfo
+var obdNodeOfOnlineMap = make(map[string]*dao.ObdNodeInfo)
 
 var db *storm.DB
 
@@ -59,10 +61,15 @@ func (this *obdNodeAccountManager) login(obdClient *ObdNode, msgData string) (re
 		info.IsOnline = true
 		_ = db.Update(info)
 	}
+
 	obdClient.Id = reqData.NodeId
 	obdClient.IsLogin = true
 	loginLog := &dao.ObdNodeLoginLog{ObdId: reqData.NodeId, LoginIp: obdClient.Socket.RemoteAddr().String(), LoginTime: time.Now()}
 	_ = db.Save(loginLog)
+
+	split := strings.Split(reqData.P2PAddress, "/")
+	p2PPeerId := split[len(split)-1]
+	obdNodeOfOnlineMap[p2PPeerId] = info
 
 	retData = "login successfully"
 	return retData, err

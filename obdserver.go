@@ -51,14 +51,6 @@ func main() {
 		return
 	}
 
-	//StartP2PServer
-	err = lightclient.StartP2PServer()
-	if err != nil {
-		log.Println(err)
-		log.Println("because fail to start P2PServer, obd fail to start")
-		return
-	}
-
 	routersInit := lightclient.InitRouter()
 	addr := ":" + strconv.Itoa(config.ServerPort)
 	server := &http.Server{
