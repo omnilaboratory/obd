@@ -39,6 +39,7 @@ const protocolIdForBetweenObd = "obd/betweenObd/1.0.1"
 const protocolIdForScanObd = "obd/forScanObd/1.0.1"
 
 var hostNode host.Host
+var relayNode string
 
 var localServerDest string
 var p2PLocalPeerId string
@@ -115,13 +116,18 @@ func StartP2PNode() (err error) {
 	for _, peerAddr := range config.BootstrapPeers {
 		peerInfo, _ := peer.AddrInfoFromP2pAddr(peerAddr)
 		wg.Add(1)
+
 		go func() {
 			defer wg.Done()
 			err = hostNode.Connect(ctx, *peerInfo)
+
 			if err != nil {
 				log.Println(err, peerInfo)
 			} else {
 				log.Println("connected to bootstrap node ", *peerInfo)
+				if len(relayNode) == 0 {
+					relayNode = peerInfo.ID.Pretty()
+				}
 			}
 		}()
 	}
@@ -161,8 +167,7 @@ func connP2PNode(dest string) (string, error) {
 		return " Remote peer has been connected", nil
 	}
 
-	relayNode := "QmWp5amgedYDc1Feay1sn2Q1dWvePtKAzwCnzCattH2xLR"
-	relayaddr, err := multiaddr.NewMultiaddr("/p2p/" + relayNode + "/p2p-circuit/p2p/" + destHostPeerInfo.ID.Pretty())
+	relayAddr, err := multiaddr.NewMultiaddr("/p2p/" + relayNode + "/p2p-circuit/p2p/" + destHostPeerInfo.ID.Pretty())
 	if err != nil {
 		log.Println(err)
 		return "", err
@@ -170,14 +175,14 @@ func connP2PNode(dest string) (string, error) {
 	hostNode.Network().(*swarm.Swarm).Backoff().Clear(destHostPeerInfo.ID)
 	peerRelayInfo := peer.AddrInfo{
 		ID:    destHostPeerInfo.ID,
-		Addrs: []multiaddr.Multiaddr{relayaddr},
+		Addrs: []multiaddr.Multiaddr{relayAddr},
 	}
 
 	if err := hostNode.Connect(ctx, peerRelayInfo); err != nil {
 		log.Println(err)
 		return "", err
 	} else {
-		log.Println("Connection established with RELAY node:", relayaddr)
+		log.Println("Connection established with RELAY node:", relayAddr)
 	}
 
 	hostNode.Peerstore().AddAddrs(destHostPeerInfo.ID, destHostPeerInfo.Addrs, peerstore.PermanentAddrTTL)
