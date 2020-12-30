@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"github.com/libp2p/go-libp2p"
+	circuit "github.com/libp2p/go-libp2p-circuit"
 	"github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/network"
@@ -42,7 +43,7 @@ func StartP2PNode() {
 		ctx,
 		libp2p.ListenAddrs(sourceMultiAddr),
 		libp2p.Identity(prvKey),
-		libp2p.EnableRelay(),
+		libp2p.EnableRelay(circuit.OptHop),
 	)
 	if err != nil {
 		panic(err)
@@ -50,7 +51,7 @@ func StartP2PNode() {
 	cfg.P2pLocalAddress = fmt.Sprintf("/ip4/%s/tcp/%v/p2p/%s", cfg.P2P_hostIp, cfg.P2P_sourcePort, hostNode.ID().Pretty())
 	log.Println("local p2p node address: ", cfg.P2pLocalAddress)
 
-	kademliaDHT, _ := dht.New(ctx, hostNode, dht.Mode(dht.ModeAutoServer))
+	kademliaDHT, _ := dht.New(ctx, hostNode, dht.Mode(dht.ModeServer))
 
 	if err != nil {
 		panic(err)

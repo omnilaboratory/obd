@@ -76,6 +76,7 @@ func StartP2PNode() (err error) {
 	hostNode, err = libp2p.New(
 		ctx,
 		libp2p.ListenAddrs(sourceMultiAddr),
+		libp2p.EnableRelay(),
 		libp2p.Identity(prvKey),
 	)
 	if err != nil {
@@ -173,6 +174,7 @@ func connP2PNode(dest string) (string, error) {
 
 	if err := hostNode.Connect(ctx, peerRelayInfo); err != nil {
 		log.Println(err)
+		return "", err
 	} else {
 		log.Println("Connection established with RELAY node:", relayaddr)
 	}
