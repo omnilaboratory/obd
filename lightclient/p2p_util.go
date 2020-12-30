@@ -99,7 +99,8 @@ func StartP2PNode() (err error) {
 	hostNode.SetStreamHandler(protocolIdForScanObd, handleScanStream)
 	hostNode.SetStreamHandler(protocolIdForBetweenObd, handleStream)
 
-	kademliaDHT, _ := dht.New(ctx, hostNode, dht.Mode(dht.ModeAutoServer))
+	//kademliaDHT, _ := dht.New(ctx, hostNode, dht.Mode(dht.ModeAutoServer))
+	kademliaDHT, _ := dht.New(ctx, hostNode)
 	if err != nil {
 		log.Println(err)
 		return err
