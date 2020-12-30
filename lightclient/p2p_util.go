@@ -15,6 +15,7 @@ import (
 	"github.com/libp2p/go-libp2p-core/peerstore"
 	discovery "github.com/libp2p/go-libp2p-discovery"
 	dht "github.com/libp2p/go-libp2p-kad-dht"
+	swarm "github.com/libp2p/go-libp2p-swarm"
 	"github.com/multiformats/go-multiaddr"
 	"github.com/omnilaboratory/obd/bean"
 	"github.com/omnilaboratory/obd/config"
@@ -97,7 +98,7 @@ func StartP2PNode() (err error) {
 	hostNode.SetStreamHandler(protocolIdForScanObd, handleScanStream)
 	hostNode.SetStreamHandler(protocolIdForBetweenObd, handleStream)
 
-	kademliaDHT, _ := dht.New(ctx, hostNode, dht.Mode(dht.ModeAuto))
+	kademliaDHT, _ := dht.New(ctx, hostNode, dht.Mode(dht.ModeAutoServer))
 	if err != nil {
 		log.Println(err)
 		return err
@@ -135,6 +136,7 @@ func connP2PNode(dest string) (string, error) {
 		log.Println("wrong dest address")
 		return "", errors.New("wrong dest address")
 	}
+	ctx := context.Background()
 
 	destMaddr, err := multiaddr.NewMultiaddr(dest)
 	if err != nil {
@@ -155,6 +157,24 @@ func connP2PNode(dest string) (string, error) {
 	if p2pChannelMap[destHostPeerInfo.ID.Pretty()] != nil {
 		log.Println("Remote peer has been connected")
 		return " Remote peer has been connected", nil
+	}
+
+	relayNode := "QmWp5amgedYDc1Feay1sn2Q1dWvePtKAzwCnzCattH2xLR"
+	relayaddr, err := multiaddr.NewMultiaddr("/p2p/" + relayNode + "/p2p-circuit/p2p/" + destHostPeerInfo.ID.Pretty())
+	if err != nil {
+		log.Println(err)
+		return "", err
+	}
+	hostNode.Network().(*swarm.Swarm).Backoff().Clear(destHostPeerInfo.ID)
+	peerRelayInfo := peer.AddrInfo{
+		ID:    destHostPeerInfo.ID,
+		Addrs: []multiaddr.Multiaddr{relayaddr},
+	}
+
+	if err := hostNode.Connect(ctx, peerRelayInfo); err != nil {
+		log.Println(err)
+	} else {
+		log.Println("Connection established with RELAY node:", relayaddr)
 	}
 
 	hostNode.Peerstore().AddAddrs(destHostPeerInfo.ID, destHostPeerInfo.Addrs, peerstore.PermanentAddrTTL)
