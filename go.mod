@@ -48,4 +48,5 @@ require (
 	gopkg.in/ini.v1 v1.56.0 // indirect
 	gopkg.in/yaml.v2 v2.3.0 // indirect
 	launchpad.net/gocheck v0.0.0-20140225173054-000000000087 // indirect
+	github.com/mitchellh/go-homedir v1.1.0
 )
