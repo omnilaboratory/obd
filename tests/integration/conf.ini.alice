@@ -4,6 +4,7 @@ port = 60020
 readTimeout = 30
 writeTimeout = 30
 
+
 [p2p]
 hostIp = omnibolt_alice
 sourcePort = 4001
