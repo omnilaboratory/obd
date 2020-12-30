@@ -24,7 +24,7 @@ var (
 	ChainNodeType = "test"
 	//P2P
 	P2P_hostIp     = "127.0.0.1"
-	P2P_sourcePort = 4001
+	P2P_sourcePort = 60801
 	BootstrapPeers addrList
 )
 
@@ -45,8 +45,8 @@ func Init() {
 		return
 	}
 	ServerPort = section.Key("port").MustInt(60020)
-	ReadTimeout = time.Duration(section.Key("readTimeout").MustInt(5)) * time.Second
-	WriteTimeout = time.Duration(section.Key("writeTimeout").MustInt(5)) * time.Second
+	ReadTimeout = time.Duration(section.Key("readTimeout").MustInt(60)) * time.Second
+	WriteTimeout = time.Duration(section.Key("writeTimeout").MustInt(60)) * time.Second
 
 	htlcNode, err := Cfg.GetSection("htlc")
 	if err != nil {
@@ -69,9 +69,6 @@ func Init() {
 	if err != nil {
 		log.Println(err)
 		return
-	}
-	if len(tracker.Key("host").String()) == 0 {
-		panic("empty tracker host")
 	}
 	TrackerHost = tracker.Key("host").MustString("localhost:60060")
 }
