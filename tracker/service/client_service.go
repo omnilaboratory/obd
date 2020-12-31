@@ -28,10 +28,11 @@ func GetTrackerNodeId() string {
 }
 
 type ObdNode struct {
-	Id          string
-	Socket      *websocket.Conn
-	SendChannel chan []byte
-	IsLogin     bool
+	Id           string
+	ObdP2pNodeId string
+	Socket       *websocket.Conn
+	SendChannel  chan []byte
+	IsLogin      bool
 }
 
 func (this *ObdNode) sendMsgBackToSender(msgType enum.MsgType, status bool, data string) {

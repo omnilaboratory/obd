@@ -24,7 +24,7 @@ var (
 	ChainNodeType = "test"
 	//P2P
 	P2P_hostIp     = "127.0.0.1"
-	P2P_sourcePort = 60801
+	P2P_sourcePort = 4001
 	BootstrapPeers addrList
 )
 

@@ -208,9 +208,25 @@ func handleStream(s network.Stream) {
 	}
 }
 
-func handleScanStream(s network.Stream) {
-	if s != nil {
-		log.Println("scan channel data request from tracker", s.Conn().RemotePeer().Pretty())
+func handleScanStream(stream network.Stream) {
+	if stream != nil {
+		log.Println("scan channel data request from tracker", stream.Conn().RemotePeer().Pretty())
+		arr := make([]bean.UserInfoToTracker, 0)
+		for _, item := range globalWsClientManager.OnlineClientMap {
+			if item.User != nil {
+				arr = append(arr, bean.UserInfoToTracker{ObdId: tool.GetObdNodeId(), UserPeerId: item.User.PeerId, P2pNodeId: item.User.P2PLocalPeerId})
+			}
+		}
+		if len(arr) > 0 {
+			marshal, _ := json.Marshal(arr)
+			msg := string(marshal) + "~"
+			rw := bufio.NewReadWriter(bufio.NewReader(stream), bufio.NewWriter(stream))
+			_, err := rw.WriteString(msg)
+			if err == nil {
+				_ = rw.Flush()
+			}
+		}
+		_ = stream.Close()
 	}
 }
 func readData(s network.Stream, rw *bufio.ReadWriter) {

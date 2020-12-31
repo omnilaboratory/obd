@@ -1,8 +1,10 @@
 package service
 
 import (
+	"bufio"
 	"context"
 	"encoding/binary"
+	"encoding/json"
 	"fmt"
 	"github.com/libp2p/go-libp2p"
 	circuit "github.com/libp2p/go-libp2p-circuit"
@@ -13,10 +15,12 @@ import (
 	discovery "github.com/libp2p/go-libp2p-discovery"
 	dht "github.com/libp2p/go-libp2p-kad-dht"
 	ma "github.com/multiformats/go-multiaddr"
+	"github.com/omnilaboratory/obd/bean"
 	cfg "github.com/omnilaboratory/obd/tracker/config"
 	"log"
 	"math/rand"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 )
@@ -128,19 +132,37 @@ func scanNodes() {
 		if err == nil {
 			stream, err := hostNode.NewStream(ctx, peer.ID, protocolIdForScanObd)
 			if err == nil {
-				stream.Write([]byte("hello peer,ping"))
-				handleStream(stream)
-				log.Println("connect successfully ", peer.ID)
-			} else {
-				log.Println(err)
+				go handleStream(stream)
 			}
+		} else {
+			//obd离线，需要更新用户的状态
+			NodeAccountService.usersLogoutWhenObdLogout(peer.ID.Pretty())
 		}
 	}
 }
 
 func handleStream(stream network.Stream) {
 	log.Println("begin scan obd channel")
+	rw := bufio.NewReadWriter(bufio.NewReader(stream), bufio.NewWriter(stream))
+	str, err := rw.ReadString('~')
+	if err != nil {
+		return
+	}
+	log.Println(str)
 
-	// Create a buffer stream for non blocking read and write.
-	//rw := bufio.NewReadWriter(bufio.NewReader(stream), bufio.NewWriter(stream))
+	if str == "" {
+		return
+	}
+	if str != "" {
+		str = strings.TrimSuffix(str, "~")
+		reqData := &[]bean.UserInfoToTracker{}
+		err := json.Unmarshal([]byte(str), reqData)
+		if err == nil {
+			log.Println(reqData)
+			for _, item := range *reqData {
+				NodeAccountService.updateUserInfo(item.P2pNodeId, item.ObdId, item.UserPeerId)
+			}
+		}
+	}
+	_ = stream.Close()
 }

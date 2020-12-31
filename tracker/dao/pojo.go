@@ -25,10 +25,11 @@ type ObdNodeLoginLog struct {
 }
 
 type UserInfo struct {
-	Id        int       `storm:"id,increment" json:"id"`
-	ObdNodeId string    `json:"obd_node_id"`
-	IsOnline  bool      `json:"is_online"`
-	OfflineAt time.Time `json:"offline_at"`
+	Id           int       `storm:"id,increment" json:"id"`
+	ObdP2pNodeId string    `json:"obd_p2p_node_id"`
+	ObdNodeId    string    `json:"obd_node_id"`
+	IsOnline     bool      `json:"is_online"`
+	OfflineAt    time.Time `json:"offline_at"`
 	bean.ObdNodeUserLoginRequest
 }
 type ChannelInfo struct {

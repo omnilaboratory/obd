@@ -64,12 +64,14 @@ func (this *obdNodeAccountManager) login(obdClient *ObdNode, msgData string) (re
 
 	obdClient.Id = reqData.NodeId
 	obdClient.IsLogin = true
+
 	loginLog := &dao.ObdNodeLoginLog{ObdId: reqData.NodeId, LoginIp: obdClient.Socket.RemoteAddr().String(), LoginTime: time.Now()}
 	_ = db.Save(loginLog)
 
 	split := strings.Split(reqData.P2PAddress, "/")
 	p2PPeerId := split[len(split)-1]
 	obdNodeOfOnlineMap[p2PPeerId] = info
+	obdClient.ObdP2pNodeId = p2PPeerId
 
 	retData = "login successfully"
 	return retData, err
@@ -121,11 +123,19 @@ func (this *obdNodeAccountManager) userLogin(obdClient *ObdNode, msgData string)
 	if tool.CheckIsString(&reqData.UserId) == false {
 		return nil, errors.New("error node_id")
 	}
+	return this.updateUserInfo(obdClient.ObdP2pNodeId, obdClient.Id, reqData.UserId)
+}
+
+func (this *obdNodeAccountManager) updateUserInfo(obdP2pNodeId, obdClientId, userId string) (retData interface{}, err error) {
+	this.mu.Lock()
+	defer this.mu.Unlock()
+
 	info := &dao.UserInfo{}
-	_ = db.Select(q.Eq("ObdNodeId", obdClient.Id), q.Eq("UserId", reqData.UserId)).First(info)
+	_ = db.Select(q.Eq("ObdNodeId", obdClientId), q.Eq("UserId", userId)).First(info)
+	info.ObdP2pNodeId = obdP2pNodeId
 	if info.Id == 0 {
-		info.UserId = reqData.UserId
-		info.ObdNodeId = obdClient.Id
+		info.UserId = userId
+		info.ObdNodeId = obdClientId
 		info.IsOnline = true
 		_ = db.Save(info)
 	} else {
@@ -134,10 +144,28 @@ func (this *obdNodeAccountManager) userLogin(obdClient *ObdNode, msgData string)
 			_ = db.Update(info)
 		}
 	}
-
 	userOfOnlineMap[info.UserId] = *info
 	retData = "login successfully"
 	return retData, err
+}
+
+func (this *obdNodeAccountManager) usersLogoutWhenObdLogout(obdP2pNodeId string) {
+	this.mu.Lock()
+	defer this.mu.Unlock()
+
+	infoes := &[]dao.UserInfo{}
+	err := db.Select(q.Eq("ObdP2pNodeId", obdP2pNodeId), q.Eq("IsOnline", true)).Find(infoes)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	for _, item := range *infoes {
+		item.OfflineAt = time.Now()
+		_ = db.Update(item)
+		item.IsOnline = false
+		_ = db.UpdateField(item, "IsOnline", item.IsOnline)
+		delete(userOfOnlineMap, item.UserId)
+	}
 }
 
 func (this *obdNodeAccountManager) updateUsers(obdClient *ObdNode, msgData string) (err error) {
