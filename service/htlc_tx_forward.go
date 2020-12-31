@@ -733,7 +733,9 @@ func (service *htlcForwardTxManager) OnAliceSignedC3aAtAliceSide(msg bean.Reques
 
 // step 3 bob -40号协议 缓存来自40号协议的信息 推送110040消息，需要bob对C3a的交易进行签名
 func (service *htlcForwardTxManager) BeforeBobSignAddHtlcRequestAtBobSide_40(msgData string, user bean.User) (data interface{}, err error) {
-	totalDurationClient += time.Now().Sub(beginTime).Milliseconds()
+	if totalDurationClient > 0 {
+		totalDurationClient += time.Now().Sub(beginTime).Milliseconds()
+	}
 	beginTime = time.Now()
 	log.Println("step 3 ", "totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
 	requestAddHtlc := &bean.CreateHtlcTxForC3aOfP2p{}
