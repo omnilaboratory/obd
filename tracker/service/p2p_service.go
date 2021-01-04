@@ -72,13 +72,13 @@ func StartP2PNode() {
 func startSchedule() {
 	announceSelf()
 	go func() {
-		ticker := time.NewTicker(1 * time.Minute)
+		ticker := time.NewTicker(30 * time.Second)
 		defer ticker.Stop()
 
 		for {
 			select {
 			case t := <-ticker.C:
-				log.Println("timer 1m", t)
+				log.Println("timer 30s", t)
 				announceSelf()
 				scanNodes()
 			}
