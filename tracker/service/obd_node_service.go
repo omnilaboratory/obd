@@ -38,7 +38,7 @@ type obdNodeAccountManager struct {
 
 var NodeAccountService obdNodeAccountManager
 
-func (this *obdNodeAccountManager) login(obdClient *ObdNode, msgData string) (retData interface{}, err error) {
+func (service *obdNodeAccountManager) login(obdClient *ObdNode, msgData string) (retData interface{}, err error) {
 	reqData := &bean.ObdNodeLoginRequest{}
 	err = json.Unmarshal([]byte(msgData), reqData)
 	if err != nil {
@@ -69,15 +69,15 @@ func (this *obdNodeAccountManager) login(obdClient *ObdNode, msgData string) (re
 	_ = db.Save(loginLog)
 
 	split := strings.Split(reqData.P2PAddress, "/")
-	p2PPeerId := split[len(split)-1]
-	obdOnlineNodesMap[p2PPeerId] = info
-	obdClient.ObdP2pNodeId = p2PPeerId
+	p2PNodeId := split[len(split)-1]
+	obdOnlineNodesMap[p2PNodeId] = info
+	obdClient.ObdP2pNodeId = p2PNodeId
 
 	retData = "login successfully"
 	return retData, err
 }
 
-func (this *obdNodeAccountManager) logout(obdClient *ObdNode) (err error) {
+func (service *obdNodeAccountManager) logout(obdClient *ObdNode) (err error) {
 	if obdClient.IsLogin == false {
 		return nil
 	}
@@ -111,7 +111,7 @@ func (this *obdNodeAccountManager) logout(obdClient *ObdNode) (err error) {
 	return err
 }
 
-func (this *obdNodeAccountManager) userLogin(obdClient *ObdNode, msgData string) (retData interface{}, err error) {
+func (service *obdNodeAccountManager) userLogin(obdClient *ObdNode, msgData string) (retData interface{}, err error) {
 	if obdClient.IsLogin == false {
 		return nil, errors.New("obd need to login first")
 	}
@@ -123,12 +123,12 @@ func (this *obdNodeAccountManager) userLogin(obdClient *ObdNode, msgData string)
 	if tool.CheckIsString(&reqData.UserId) == false {
 		return nil, errors.New("error node_id")
 	}
-	return this.updateUserInfo(obdClient.ObdP2pNodeId, obdClient.Id, reqData.UserId)
+	return service.updateUserInfo(obdClient.ObdP2pNodeId, obdClient.Id, reqData.UserId)
 }
 
-func (this *obdNodeAccountManager) updateUserInfo(obdP2pNodeId, obdClientId, userId string) (retData interface{}, err error) {
-	this.mu.Lock()
-	defer this.mu.Unlock()
+func (service *obdNodeAccountManager) updateUserInfo(obdP2pNodeId, obdClientId, userId string) (retData interface{}, err error) {
+	service.mu.Lock()
+	defer service.mu.Unlock()
 
 	info := &dao.UserInfo{}
 	_ = db.Select(q.Eq("ObdNodeId", obdClientId), q.Eq("UserId", userId)).First(info)
@@ -149,7 +149,7 @@ func (this *obdNodeAccountManager) updateUserInfo(obdP2pNodeId, obdClientId, use
 	return retData, err
 }
 
-func (this *obdNodeAccountManager) updateUsers(obdClient *ObdNode, msgData string) (err error) {
+func (service *obdNodeAccountManager) updateUsers(obdClient *ObdNode, msgData string) (err error) {
 	if tool.CheckIsString(&msgData) == false {
 		return errors.New("wrong inputData")
 	}
@@ -180,7 +180,7 @@ func (this *obdNodeAccountManager) updateUsers(obdClient *ObdNode, msgData strin
 	return err
 }
 
-func (this *obdNodeAccountManager) userLogout(obdClient *ObdNode, msgData string) (err error) {
+func (service *obdNodeAccountManager) userLogout(obdClient *ObdNode, msgData string) (err error) {
 	if obdClient.IsLogin == false {
 		return errors.New("obd need to login first")
 	}
@@ -207,7 +207,7 @@ func (this *obdNodeAccountManager) userLogout(obdClient *ObdNode, msgData string
 	return err
 }
 
-func (this *obdNodeAccountManager) GetNodeInfoByP2pAddress(context *gin.Context) {
+func (service *obdNodeAccountManager) GetNodeInfoByP2pAddress(context *gin.Context) {
 	p2pAddress := context.Query("p2pAddress")
 	if tool.CheckIsString(&p2pAddress) == false {
 		context.JSON(http.StatusInternalServerError, gin.H{
@@ -232,7 +232,7 @@ func (this *obdNodeAccountManager) GetNodeInfoByP2pAddress(context *gin.Context)
 	})
 }
 
-func (this *obdNodeAccountManager) GetUserState(context *gin.Context) {
+func (service *obdNodeAccountManager) GetUserState(context *gin.Context) {
 	reqData := &bean.ObdNodeUserLoginRequest{}
 	reqData.UserId = context.Query("userId")
 	if tool.CheckIsString(&reqData.UserId) == false {
@@ -261,7 +261,7 @@ func (this *obdNodeAccountManager) GetUserState(context *gin.Context) {
 	})
 }
 
-func (this *obdNodeAccountManager) GetAllUsers(context *gin.Context) {
+func (service *obdNodeAccountManager) GetAllUsers(context *gin.Context) {
 	pageNumStr := context.Query("pageNum")
 	pageNum, _ := strconv.Atoi(pageNumStr)
 	if pageNum <= 0 {
@@ -294,7 +294,7 @@ func (this *obdNodeAccountManager) GetAllUsers(context *gin.Context) {
 		"pageSize":   pageSize,
 	})
 }
-func (this *obdNodeAccountManager) GetAllObdNodes(context *gin.Context) {
+func (service *obdNodeAccountManager) GetAllObdNodes(context *gin.Context) {
 	pageNumStr := context.Query("pageNum")
 	pageNum, _ := strconv.Atoi(pageNumStr)
 	if pageNum <= 0 {

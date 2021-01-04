@@ -59,7 +59,7 @@ func (manager *htlcManager) getPath(obdClient *ObdNode, msgData string) (path in
 		return "", errors.New("wrong amount")
 	}
 
-	manager.createChannelNetwork(pathRequest.PayerObdNodeId, pathRequest.RealPayerPeerId, pathRequest.PayeePeerId, pathRequest.PropertyId, pathRequest.Amount, nil, true)
+	manager.createChannelNetwork(obdClient.ObdP2pNodeId, pathRequest.RealPayerPeerId, pathRequest.PayeePeerId, pathRequest.PropertyId, pathRequest.Amount, nil, true)
 	resultIndex := -1
 	minLength := 99
 	for index, node := range manager.openList {
