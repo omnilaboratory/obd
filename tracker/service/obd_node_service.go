@@ -149,25 +149,6 @@ func (this *obdNodeAccountManager) updateUserInfo(obdP2pNodeId, obdClientId, use
 	return retData, err
 }
 
-func (this *obdNodeAccountManager) usersLogoutWhenObdLogout(obdP2pNodeId string) {
-	this.mu.Lock()
-	defer this.mu.Unlock()
-
-	infoes := &[]dao.UserInfo{}
-	err := db.Select(q.Eq("ObdP2pNodeId", obdP2pNodeId), q.Eq("IsOnline", true)).Find(infoes)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	for _, item := range *infoes {
-		item.OfflineAt = time.Now()
-		_ = db.Update(item)
-		item.IsOnline = false
-		_ = db.UpdateField(item, "IsOnline", item.IsOnline)
-		delete(userOfOnlineMap, item.UserId)
-	}
-}
-
 func (this *obdNodeAccountManager) updateUsers(obdClient *ObdNode, msgData string) (err error) {
 	if tool.CheckIsString(&msgData) == false {
 		return errors.New("wrong inputData")
@@ -265,7 +246,15 @@ func (this *obdNodeAccountManager) GetUserState(context *gin.Context) {
 	retData["state"] = 0
 	if _, ok := userOfOnlineMap[reqData.UserId]; ok == true {
 		retData["state"] = 1
+	} else {
+		for _, item := range userOnlineOfOtherObdMap {
+			if strings.Contains(item, reqData.UserId) {
+				retData["state"] = 1
+				break
+			}
+		}
 	}
+
 	context.JSON(http.StatusOK, gin.H{
 		"msg":  "GetUserState",
 		"data": retData,

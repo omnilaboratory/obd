@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"context"
 	"encoding/binary"
-	"encoding/json"
 	"fmt"
 	"github.com/libp2p/go-libp2p"
 	circuit "github.com/libp2p/go-libp2p-circuit"
@@ -15,7 +14,6 @@ import (
 	discovery "github.com/libp2p/go-libp2p-discovery"
 	dht "github.com/libp2p/go-libp2p-kad-dht"
 	ma "github.com/multiformats/go-multiaddr"
-	"github.com/omnilaboratory/obd/bean"
 	cfg "github.com/omnilaboratory/obd/tracker/config"
 	"log"
 	"math/rand"
@@ -135,11 +133,12 @@ func scanNodes() {
 				go handleStream(stream)
 			}
 		} else {
-			//obd离线，需要更新用户的状态
-			NodeAccountService.usersLogoutWhenObdLogout(peer.ID.Pretty())
+			delete(userOnlineOfOtherObdMap, peer.ID.Pretty())
 		}
 	}
 }
+
+var userOnlineOfOtherObdMap = make(map[string]string)
 
 func handleStream(stream network.Stream) {
 	log.Println("begin scan obd channel")
@@ -155,14 +154,7 @@ func handleStream(stream network.Stream) {
 	}
 	if str != "" {
 		str = strings.TrimSuffix(str, "~")
-		reqData := &[]bean.UserInfoToTracker{}
-		err := json.Unmarshal([]byte(str), reqData)
-		if err == nil {
-			log.Println(reqData)
-			for _, item := range *reqData {
-				NodeAccountService.updateUserInfo(item.P2pNodeId, item.ObdId, item.UserPeerId)
-			}
-		}
+		userOnlineOfOtherObdMap[stream.Conn().RemotePeer().Pretty()] = str
 	}
 	_ = stream.Close()
 }

@@ -214,7 +214,7 @@ func handleScanStream(stream network.Stream) {
 		arr := make([]bean.UserInfoToTracker, 0)
 		for _, item := range globalWsClientManager.OnlineClientMap {
 			if item.User != nil {
-				arr = append(arr, bean.UserInfoToTracker{ObdId: tool.GetObdNodeId(), UserPeerId: item.User.PeerId, P2pNodeId: item.User.P2PLocalPeerId})
+				arr = append(arr, bean.UserInfoToTracker{UserId: item.User.PeerId, P2pNodeAddress: item.User.P2PLocalAddress})
 			}
 		}
 		if len(arr) > 0 {
