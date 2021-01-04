@@ -1506,5 +1506,7 @@ func (service *htlcCloseTxManager) OnBobSignedCxbSubTx(msg bean.RequestMessage, 
 	totalDurationObd += time.Now().Sub(beginTime).Milliseconds()
 	beginTime = time.Now()
 	log.Println("close step 10 ", "totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
+	totalDurationObd = 0
+	totalDurationClient = 0
 	return latestCommitmentTxInfo, nil
 }

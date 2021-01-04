@@ -71,7 +71,6 @@ func StartP2PNode() (err error) {
 	// 0.0.0.0 will listen on any interface device.
 	sourceMultiAddr, _ := multiaddr.NewMultiaddr(fmt.Sprintf("/ip4/0.0.0.0/tcp/%d", config.P2P_sourcePort))
 
-	ctx := context.Background()
 	// libp2p.New constructs a new libp2p Host.
 	// Other options can be added here.
 	hostNode, err = libp2p.New(
@@ -133,10 +132,62 @@ func StartP2PNode() (err error) {
 	}
 	wg.Wait()
 
-	routingDiscovery := discovery.NewRoutingDiscovery(kademliaDHT)
+	routingDiscovery = discovery.NewRoutingDiscovery(kademliaDHT)
 	discovery.Advertise(ctx, routingDiscovery, obdRendezvousString)
 
 	return nil
+}
+
+var routingDiscovery *discovery.RoutingDiscovery
+var ctx = context.Background()
+
+func scanAndConnNode(nodeId string) error {
+	peerChan, err := routingDiscovery.FindPeers(context.Background(), obdRendezvousString)
+	if err != nil {
+		return err
+	}
+	for node := range peerChan {
+		if node.ID == hostNode.ID() {
+			continue
+		}
+		if node.ID.Pretty() == nodeId {
+			if p2pChannelMap[node.ID.Pretty()] != nil {
+				log.Println("Remote peer has been connected")
+				return nil
+			}
+
+			relayAddr, err := multiaddr.NewMultiaddr("/p2p/" + relayNode + "/p2p-circuit/p2p/" + node.ID.Pretty())
+			if err != nil {
+				log.Println(err)
+				return err
+			}
+			hostNode.Network().(*swarm.Swarm).Backoff().Clear(node.ID)
+			peerRelayInfo := peer.AddrInfo{
+				ID:    node.ID,
+				Addrs: []multiaddr.Multiaddr{relayAddr},
+			}
+
+			if err := hostNode.Connect(ctx, peerRelayInfo); err != nil {
+				log.Println(err)
+				return err
+			} else {
+				log.Println("Connection established with RELAY node:", relayAddr)
+			}
+
+			hostNode.Peerstore().AddAddrs(node.ID, node.Addrs, peerstore.PermanentAddrTTL)
+
+			stream, err := hostNode.NewStream(ctx, node.ID, protocolIdForBetweenObd)
+			if err != nil {
+				log.Println(err)
+				return err
+			}
+
+			rw := addP2PChannel(stream)
+			go readData(stream, rw)
+			return nil
+		}
+	}
+	return errors.New("find no node")
 }
 
 func connP2PNode(dest string) (string, error) {
@@ -144,7 +195,6 @@ func connP2PNode(dest string) (string, error) {
 		log.Println("wrong dest address")
 		return "", errors.New("wrong dest address")
 	}
-	ctx := context.Background()
 
 	destMaddr, err := multiaddr.NewMultiaddr(dest)
 	if err != nil {

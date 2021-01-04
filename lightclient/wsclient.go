@@ -160,8 +160,11 @@ func (client *Client) Read() {
 						continue
 					}
 					if p2pChannelMap[msg.RecipientNodePeerId] == nil {
-						client.SendToMyself(msg.Type, false, fmt.Sprintf(enum.Tips_common_errorObdPeerId, msg.RecipientNodePeerId))
-						continue
+						err = scanAndConnNode(msg.RecipientNodePeerId)
+						if err != nil {
+							client.SendToMyself(msg.Type, false, fmt.Sprintf(enum.Tips_common_errorObdPeerId, msg.RecipientNodePeerId))
+							continue
+						}
 					}
 				}
 

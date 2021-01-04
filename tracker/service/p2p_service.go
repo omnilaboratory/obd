@@ -64,7 +64,29 @@ func StartP2PNode() {
 	if err != nil {
 		log.Println(err)
 	}
+	routingDiscovery = discovery.NewRoutingDiscovery(kademliaDHT)
 
+	startSchedule()
+}
+
+func startSchedule() {
+	announceSelf()
+	go func() {
+		ticker := time.NewTicker(1 * time.Minute)
+		defer ticker.Stop()
+
+		for {
+			select {
+			case t := <-ticker.C:
+				log.Println("timer 1m", t)
+				announceSelf()
+				scanNodes()
+			}
+		}
+	}()
+}
+
+func announceSelf() {
 	needAnnounceSelf := false
 	if len(cfg.BootstrapPeers) > 0 {
 		var wg sync.WaitGroup
@@ -78,7 +100,7 @@ func StartP2PNode() {
 			needAnnounceSelf = true
 			go func() {
 				defer wg.Done()
-				err = hostNode.Connect(ctx, *peerInfo)
+				err := hostNode.Connect(ctx, *peerInfo)
 				if err != nil {
 					log.Println(err, peerInfo)
 				} else {
@@ -88,27 +110,11 @@ func StartP2PNode() {
 		}
 		wg.Wait()
 	}
-	routingDiscovery = discovery.NewRoutingDiscovery(kademliaDHT)
+
 	if needAnnounceSelf {
 		log.Println("announce self")
 		discovery.Advertise(ctx, routingDiscovery, trackerRendezvousString)
 	}
-	startSchedule()
-}
-
-func startSchedule() {
-	go func() {
-		ticker := time.NewTicker(1 * time.Minute)
-		defer ticker.Stop()
-
-		for {
-			select {
-			case t := <-ticker.C:
-				log.Println("timer 1m", t)
-				scanNodes()
-			}
-		}
-	}()
 }
 
 func scanNodes() {
@@ -157,6 +163,7 @@ func handleStream(stream network.Stream) {
 		data := make(map[string]string)
 		err = json.Unmarshal([]byte(str), &data)
 		if err == nil {
+			userOnlineOfOtherObdMap[stream.Conn().RemotePeer().Pretty()] = data["userInfo"]
 			if _, ok := data["userInfo"]; ok == true {
 				log.Println(data["userInfo"])
 				userOnlineOfOtherObdMap[stream.Conn().RemotePeer().Pretty()] = data["userInfo"]
