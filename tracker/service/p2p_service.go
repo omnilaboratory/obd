@@ -54,7 +54,7 @@ func StartP2PNode() {
 	cfg.P2pLocalAddress = fmt.Sprintf("/ip4/%s/tcp/%v/p2p/%s", cfg.P2P_hostIp, cfg.P2P_sourcePort, hostNode.ID().Pretty())
 	log.Println("local p2p node address: ", cfg.P2pLocalAddress)
 
-	kademliaDHT, _ := dht.New(ctx, hostNode, dht.Mode(dht.ModeServer))
+	kademliaDHT, err := dht.New(ctx, hostNode, dht.Mode(dht.ModeServer))
 
 	if err != nil {
 		panic(err)
@@ -122,25 +122,25 @@ func scanNodes() {
 	if err != nil {
 		panic(err)
 	}
-	for peer := range peerChan {
-		if peer.ID == hostNode.ID() {
+	for node := range peerChan {
+		if node.ID == hostNode.ID() {
 			continue
 		}
 
 		//和tracker直接连接的obd，不需要同步数据
-		if obdOnlineNodesMap[peer.ID.Pretty()] != nil {
+		if obdOnlineNodesMap[node.ID.Pretty()] != nil {
 			continue
 		}
 
-		log.Println("begin to connect ", peer.ID, peer.Addrs)
-		err = hostNode.Connect(ctx, peer)
+		log.Println("begin to connect ", node.ID, node.Addrs)
+		err = hostNode.Connect(ctx, node)
 		if err == nil {
-			stream, err := hostNode.NewStream(ctx, peer.ID, protocolIdForScanObd)
+			stream, err := hostNode.NewStream(ctx, node.ID, protocolIdForScanObd)
 			if err == nil {
 				go handleStream(stream)
 			}
 		} else {
-			delete(userOnlineOfOtherObdMap, peer.ID.Pretty())
+			delete(userOnlineOfOtherObdMap, node.ID.Pretty())
 		}
 	}
 }
