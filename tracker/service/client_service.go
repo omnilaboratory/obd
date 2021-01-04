@@ -87,7 +87,7 @@ func (this *ObdNode) Read() {
 		case enum.MsgType_Tracker_UserLogout_305:
 			_ = NodeAccountService.userLogout(this, msgData)
 		case enum.MsgType_Tracker_UpdateChannelInfo_350:
-			_ = ChannelService.updateChannelInfo(this, msgData)
+			_ = ChannelService.updateChannelInfo(this.ObdP2pNodeId, msgData)
 		case enum.MsgType_Tracker_GetHtlcPath_351:
 			path, err := HtlcService.getPath(this, msgData)
 			sendDataBackToSender(this, msgType, path, err)

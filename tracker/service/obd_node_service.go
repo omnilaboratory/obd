@@ -19,7 +19,7 @@ import (
 
 //普通在线用户
 var userOfOnlineMap map[string]dao.UserInfo
-var obdNodeOfOnlineMap = make(map[string]*dao.ObdNodeInfo)
+var obdOnlineNodesMap = make(map[string]*dao.ObdNodeInfo)
 
 var db *storm.DB
 
@@ -70,7 +70,7 @@ func (this *obdNodeAccountManager) login(obdClient *ObdNode, msgData string) (re
 
 	split := strings.Split(reqData.P2PAddress, "/")
 	p2PPeerId := split[len(split)-1]
-	obdNodeOfOnlineMap[p2PPeerId] = info
+	obdOnlineNodesMap[p2PPeerId] = info
 	obdClient.ObdP2pNodeId = p2PPeerId
 
 	retData = "login successfully"

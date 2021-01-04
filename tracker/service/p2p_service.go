@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"encoding/binary"
+	"encoding/json"
 	"fmt"
 	"github.com/libp2p/go-libp2p"
 	circuit "github.com/libp2p/go-libp2p-circuit"
@@ -121,7 +122,7 @@ func scanNodes() {
 		}
 
 		//和tracker直接连接的obd，不需要同步数据
-		if obdNodeOfOnlineMap[peer.ID.Pretty()] != nil {
+		if obdOnlineNodesMap[peer.ID.Pretty()] != nil {
 			continue
 		}
 
@@ -147,14 +148,25 @@ func handleStream(stream network.Stream) {
 	if err != nil {
 		return
 	}
-	log.Println(str)
 
 	if str == "" {
 		return
 	}
 	if str != "" {
 		str = strings.TrimSuffix(str, "~")
-		userOnlineOfOtherObdMap[stream.Conn().RemotePeer().Pretty()] = str
+		data := make(map[string]string)
+		err = json.Unmarshal([]byte(str), &data)
+		if err == nil {
+			if _, ok := data["userInfo"]; ok == true {
+				log.Println(data["userInfo"])
+				userOnlineOfOtherObdMap[stream.Conn().RemotePeer().Pretty()] = data["userInfo"]
+			}
+			//channel
+			if _, ok := data["channelInfo"]; ok == true {
+				log.Println(data["channelInfo"])
+				_ = ChannelService.updateChannelInfo(data["obdP2pNodeId"], data["channelInfo"])
+			}
+		}
 	}
 	_ = stream.Close()
 }

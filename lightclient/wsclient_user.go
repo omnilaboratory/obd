@@ -47,7 +47,7 @@ func (client *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, 
 			user := bean.User{
 				Mnemonic:        mnemonic,
 				P2PLocalAddress: localServerDest,
-				P2PLocalPeerId:  p2PLocalPeerId,
+				P2PLocalPeerId:  p2PLocalNodeId,
 			}
 			var err error = nil
 			peerId := tool.GetUserPeerId(user.Mnemonic)

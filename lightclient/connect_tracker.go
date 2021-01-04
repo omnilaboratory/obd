@@ -185,6 +185,19 @@ func sycUserInfos() {
 
 //同步通道信息
 func sycChannelInfos() {
+	nodes := getChannelInfos()
+	if len(nodes) > 0 {
+		info := make(map[string]interface{})
+		info["type"] = enum.MsgType_Tracker_UpdateChannelInfo_350
+		info["data"] = nodes
+		bytes, err := json.Marshal(info)
+		if err == nil {
+			sendMsgToTracker(bytes)
+		}
+	}
+}
+
+func getChannelInfos() []trackerBean.ChannelInfoRequest {
 	_dir := "dbdata" + config.ChainNodeType
 	files, _ := ioutil.ReadDir(_dir)
 
@@ -263,15 +276,7 @@ func sycChannelInfos() {
 			_ = db.Close()
 		}
 	}
-	if len(nodes) > 0 {
-		info := make(map[string]interface{})
-		info["type"] = enum.MsgType_Tracker_UpdateChannelInfo_350
-		info["data"] = nodes
-		bytes, err := json.Marshal(info)
-		if err == nil {
-			sendMsgToTracker(bytes)
-		}
-	}
+	return nodes
 }
 
 func checkChannel(db storm.Node, nodes []trackerBean.ChannelInfoRequest) {

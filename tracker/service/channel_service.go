@@ -21,7 +21,7 @@ type channelManager struct {
 
 var ChannelService channelManager
 
-func (manager *channelManager) updateChannelInfo(obdClient *ObdNode, msgData string) (err error) {
+func (manager *channelManager) updateChannelInfo(obdP2pNodeId string, msgData string) (err error) {
 	manager.mu.Lock()
 	defer manager.mu.Unlock()
 
@@ -52,11 +52,12 @@ func (manager *channelManager) updateChannelInfo(obdClient *ObdNode, msgData str
 			channelInfo.AmountA = item.AmountA
 			channelInfo.AmountB = item.AmountB
 			if item.IsAlice {
-				channelInfo.ObdNodeIdA = obdClient.Id
+				channelInfo.ObdNodeIdA = obdP2pNodeId
 			} else {
-				channelInfo.ObdNodeIdB = obdClient.Id
+				channelInfo.ObdNodeIdB = obdP2pNodeId
 			}
 			channelInfo.CreateAt = time.Now()
+			channelInfo.LatestEditAt = time.Now()
 			_ = db.Save(channelInfo)
 		} else {
 			channelInfo.PropertyId = item.PropertyId
@@ -69,10 +70,11 @@ func (manager *channelManager) updateChannelInfo(obdClient *ObdNode, msgData str
 			}
 
 			if item.IsAlice {
-				channelInfo.ObdNodeIdA = obdClient.Id
+				channelInfo.ObdNodeIdA = obdP2pNodeId
 			} else {
-				channelInfo.ObdNodeIdB = obdClient.Id
+				channelInfo.ObdNodeIdB = obdP2pNodeId
 			}
+			channelInfo.LatestEditAt = time.Now()
 			_ = db.Update(channelInfo)
 		}
 	}
