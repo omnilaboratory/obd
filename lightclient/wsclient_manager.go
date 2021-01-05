@@ -64,6 +64,7 @@ func (clientManager *clientManager) cleanConn(client *Client) {
 	delete(clientManager.ClientsMap, client)
 	if client.User != nil {
 		_ = service.UserService.UserLogout(client.User)
+		sendInfoOnUserOnline(client.User.PeerId)
 		delete(clientManager.OnlineClientMap, client.User.PeerId)
 		delete(service.OnlineUserMap, client.User.PeerId)
 		client.User = nil
@@ -79,7 +80,7 @@ func findUserOnLine(msg bean.RequestMessage) (*Client, error) {
 		}
 
 		if msg.RecipientNodePeerId != p2PLocalNodeId {
-			if conn2tracker.GetUserState(msg.RecipientUserPeerId) > 0 {
+			if conn2tracker.GetUserState(msg.RecipientNodePeerId, msg.RecipientUserPeerId) > 0 {
 				return nil, nil
 			}
 		}

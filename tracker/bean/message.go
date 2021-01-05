@@ -27,7 +27,8 @@ type ObdNodeLoginRequest struct {
 
 //节点的用户登录
 type ObdNodeUserLoginRequest struct {
-	UserId string `json:"user_id"`
+	UserId    string `json:"user_id"`
+	P2pNodeId string `json:"p2p_node_id"`
 }
 
 //更新通道

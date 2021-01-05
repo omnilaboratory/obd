@@ -25,6 +25,7 @@ import (
 )
 
 const protocolIdForScanObd = "obd/forScanObd/1.0.1"
+const protocolIdForUserOffline = "tracker/userState/1.0.1"
 const obdRendezvousString = "obd meet at tracker"
 const trackerRendezvousString = "tracker meet here"
 
@@ -51,6 +52,9 @@ func StartP2PNode() {
 	if err != nil {
 		panic(err)
 	}
+
+	hostNode.SetStreamHandler(protocolIdForUserOffline, handleUserStateStream)
+
 	cfg.P2pLocalAddress = fmt.Sprintf("/ip4/%s/tcp/%v/p2p/%s", cfg.P2P_hostIp, cfg.P2P_sourcePort, hostNode.ID().Pretty())
 	log.Println("local p2p node address: ", cfg.P2pLocalAddress)
 
@@ -71,6 +75,7 @@ func StartP2PNode() {
 
 func startSchedule() {
 	announceSelf()
+	scanNodes()
 	go func() {
 		ticker := time.NewTicker(30 * time.Second)
 		defer ticker.Stop()
@@ -137,7 +142,7 @@ func scanNodes() {
 		if err == nil {
 			stream, err := hostNode.NewStream(ctx, node.ID, protocolIdForScanObd)
 			if err == nil {
-				go handleStream(stream)
+				go handleScanStream(stream)
 			}
 		} else {
 			delete(userOnlineOfOtherObdMap, node.ID.Pretty())
@@ -145,9 +150,9 @@ func scanNodes() {
 	}
 }
 
-var userOnlineOfOtherObdMap = make(map[string]string)
+var userOnlineOfOtherObdMap = make(map[string]map[string]string)
 
-func handleStream(stream network.Stream) {
+func handleScanStream(stream network.Stream) {
 	log.Println("begin scan obd channel")
 	rw := bufio.NewReadWriter(bufio.NewReader(stream), bufio.NewWriter(stream))
 	str, err := rw.ReadString('~')
@@ -163,15 +168,54 @@ func handleStream(stream network.Stream) {
 		data := make(map[string]string)
 		err = json.Unmarshal([]byte(str), &data)
 		if err == nil {
-			userOnlineOfOtherObdMap[stream.Conn().RemotePeer().Pretty()] = data["userInfo"]
+			//online user
+			delete(userOnlineOfOtherObdMap, stream.Conn().RemotePeer().Pretty())
 			if _, ok := data["userInfo"]; ok == true {
 				log.Println(data["userInfo"])
-				userOnlineOfOtherObdMap[stream.Conn().RemotePeer().Pretty()] = data["userInfo"]
+				userInfo := make(map[string]string)
+				err = json.Unmarshal([]byte(data["userInfo"]), &userInfo)
+				if err == nil {
+					userOnlineOfOtherObdMap[stream.Conn().RemotePeer().Pretty()] = userInfo
+				}
 			}
 			//channel
 			if _, ok := data["channelInfo"]; ok == true {
 				log.Println(data["channelInfo"])
 				_ = ChannelService.updateChannelInfo(data["obdP2pNodeId"], data["channelInfo"])
+			}
+		}
+	}
+	_ = stream.Close()
+}
+
+func handleUserStateStream(stream network.Stream) {
+	rw := bufio.NewReadWriter(bufio.NewReader(stream), bufio.NewWriter(stream))
+	str, err := rw.ReadString('~')
+	if err != nil {
+		return
+	}
+	if str == "" {
+		return
+	}
+	if str != "" {
+		str = strings.TrimSuffix(str, "~")
+		log.Println("handleUserStateStream", str)
+		params := strings.Split(str, "_")
+		if len(params) > 1 {
+			if _, ok := userOnlineOfOtherObdMap[params[0]]; ok == true {
+				if _, ok = userOnlineOfOtherObdMap[params[0]][params[1]]; ok == true {
+					delete(userOnlineOfOtherObdMap[params[0]], params[1])
+				} else {
+					if userOnlineOfOtherObdMap[params[0]] == nil {
+						userOnlineOfOtherObdMap[params[0]] = make(map[string]string)
+					}
+					userOnlineOfOtherObdMap[params[0]][params[1]] = params[2]
+				}
+			} else {
+				if userOnlineOfOtherObdMap[params[0]] == nil {
+					userOnlineOfOtherObdMap[params[0]] = make(map[string]string)
+				}
+				userOnlineOfOtherObdMap[params[0]][params[1]] = params[2]
 			}
 		}
 	}

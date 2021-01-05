@@ -39,6 +39,7 @@ const protocolIdForBetweenObd = "obd/betweenObd/1.0.1"
 const protocolIdForScanObd = "obd/forScanObd/1.0.1"
 
 var hostNode host.Host
+var kademliaDHT *dht.IpfsDHT
 var relayNode string
 
 var localServerDest string
@@ -96,10 +97,10 @@ func StartP2PNode() (err error) {
 		IsLocalChannel: true,
 		Address:        localServerDest,
 	}
-	hostNode.SetStreamHandler(protocolIdForScanObd, handleScanStream)
+	hostNode.SetStreamHandler(protocolIdForScanObd, handleTrackerScanStream)
 	hostNode.SetStreamHandler(protocolIdForBetweenObd, handleStream)
 
-	kademliaDHT, err := dht.New(ctx, hostNode)
+	kademliaDHT, err = dht.New(ctx, hostNode)
 	if err != nil {
 		log.Println(err)
 		return err
@@ -151,13 +152,13 @@ func scanAndConnNode(nodeId string) error {
 			continue
 		}
 		if node.ID.Pretty() == nodeId {
-			return connSomeNode(&node)
+			return connSomeNode(node)
 		}
 	}
 	return errors.New("find no node")
 }
 
-func connSomeNode(node *peer.AddrInfo) error {
+func connSomeNode(node peer.AddrInfo) error {
 	if p2pChannelMap[node.ID.Pretty()] != nil {
 		log.Println("Remote peer has been connected")
 		return nil
@@ -200,17 +201,23 @@ func connP2PNode(dest string) (string, error) {
 		return "", errors.New("wrong dest address")
 	}
 
-	destMaddr, err := multiaddr.NewMultiaddr(dest)
+	_, err := multiaddr.NewMultiaddr(dest)
 	if err != nil {
 		log.Println(err)
 		return "", err
 	}
 
-	destHostPeerInfo, err := peer.AddrInfoFromP2pAddr(destMaddr)
-	if err != nil {
-		log.Println(err)
-		return "", err
-	}
+	//destHostPeerInfo, err := peer.AddrInfoFromP2pAddr(destMaddr)
+	//if err != nil {
+	//	log.Println(err)
+	//	return "", err
+	//}
+
+	split := strings.Split(dest, "/")
+	p2PNodeId := split[len(split)-1]
+
+	findID, err := peer.Decode(p2PNodeId)
+	destHostPeerInfo, err := kademliaDHT.FindPeer(ctx, findID)
 
 	if destHostPeerInfo.ID == hostNode.ID() {
 		return "", errors.New("wrong dest address")
@@ -229,17 +236,18 @@ func handleStream(s network.Stream) {
 	}
 }
 
-func handleScanStream(stream network.Stream) {
-	if stream != nil {
-		log.Println("scan channel data request from tracker", stream.Conn().RemotePeer().Pretty())
+var trackerNodeIdMap = make(map[string]bool)
 
-		users := make([]bean.UserInfoToTracker, 0)
+func handleTrackerScanStream(stream network.Stream) {
+	if stream != nil {
+		log.Println("request to scan channel and online user info from tracker", stream.Conn().RemotePeer().Pretty())
+
+		users := make(map[string]string)
 		for _, item := range globalWsClientManager.OnlineClientMap {
 			if item.User != nil {
-				users = append(users, bean.UserInfoToTracker{UserId: item.User.PeerId, P2pNodeAddress: item.User.P2PLocalAddress})
+				users[item.User.PeerId] = item.User.P2PLocalAddress
 			}
 		}
-
 		flag := false
 		info := make(map[string]string)
 		info["obdP2pNodeId"] = p2PLocalNodeId
@@ -265,7 +273,7 @@ func handleScanStream(stream network.Stream) {
 				_ = rw.Flush()
 			}
 		}
-
+		trackerNodeIdMap[stream.Conn().RemotePeer().Pretty()] = true
 		_ = stream.Close()
 	}
 }
@@ -322,4 +330,22 @@ func sendP2PMsg(remoteP2PPeerId string, msg string) error {
 		_ = channel.rw.Flush()
 	}
 	return nil
+}
+
+func sendInfoOnUserOnline(userId string) {
+	for key, _ := range trackerNodeIdMap {
+		findID, err := peer.Decode(key)
+		if err == nil {
+			findPeer, err := kademliaDHT.FindPeer(ctx, findID)
+			if err == nil {
+				stream, err := hostNode.NewStream(ctx, findPeer.ID, "tracker/userState/1.0.1")
+				if err == nil {
+					rw := bufio.NewReadWriter(bufio.NewReader(stream), bufio.NewWriter(stream))
+					_, _ = rw.WriteString(hostNode.ID().Pretty() + "_" + userId + "_" + localServerDest + "~")
+					err = rw.Flush()
+					log.Println(err)
+				}
+			}
+		}
+	}
 }

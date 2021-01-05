@@ -221,65 +221,21 @@ func getChannelInfos() []trackerBean.ChannelInfoRequest {
 	for _, peerId := range userPeerIds {
 		client, _ := globalWsClientManager.OnlineClientMap[peerId]
 		if client != nil {
-			checkChannel(client.User.Db, nodes)
+			nodes = checkChannel(client.User.Db, nodes)
 		}
 	}
 
 	for _, dbName := range dbNames {
 		db, err := storm.Open(_dir + "/" + dbName)
 		if err == nil {
-			checkChannel(db, nodes)
-			_ = db.Close()
-		}
-	}
-
-	for _, dbName := range dbNames {
-		db, err := storm.Open(_dir + "/" + dbName)
-		if err == nil {
-			var channelInfos []dao.ChannelInfo
-			err = db.Select(
-				q.Eq("IsPrivate", false),
-				q.Or(
-					q.Eq("CurrState", dao.ChannelState_CanUse),
-					q.Eq("CurrState", dao.ChannelState_Close),
-					q.Eq("CurrState", dao.ChannelState_HtlcTx))).Find(&channelInfos)
-			if err == nil {
-				for _, channelInfo := range channelInfos {
-					if len(channelInfo.ChannelId) > 0 && channelInfo.IsPrivate == false {
-						if channelInfo.CurrState == dao.ChannelState_CanUse || channelInfo.CurrState == dao.ChannelState_Close || channelInfo.CurrState == dao.ChannelState_HtlcTx {
-							commitmentTransaction := dao.CommitmentTransaction{}
-							err = db.Select(q.Eq("ChannelId", channelInfo.ChannelId)).OrderBy("CreateAt").Reverse().First(&commitmentTransaction)
-							if err == nil {
-								request := trackerBean.ChannelInfoRequest{}
-								request.ChannelId = channelInfo.ChannelId
-								request.PropertyId = channelInfo.PropertyId
-								request.PeerIdA = channelInfo.PeerIdA
-								request.PeerIdB = channelInfo.PeerIdB
-								request.CurrState = channelInfo.CurrState
-								request.AmountA = commitmentTransaction.AmountToRSMC
-								request.AmountB = commitmentTransaction.AmountToCounterparty
-								request.IsAlice = false
-								if commitmentTransaction.Owner == channelInfo.PeerIdA {
-									request.IsAlice = true
-									request.AmountA = commitmentTransaction.AmountToRSMC
-									request.AmountB = commitmentTransaction.AmountToCounterparty
-								} else {
-									request.AmountB = commitmentTransaction.AmountToRSMC
-									request.AmountA = commitmentTransaction.AmountToCounterparty
-								}
-								nodes = append(nodes, request)
-							}
-						}
-					}
-				}
-			}
+			nodes = checkChannel(db, nodes)
 			_ = db.Close()
 		}
 	}
 	return nodes
 }
 
-func checkChannel(db storm.Node, nodes []trackerBean.ChannelInfoRequest) {
+func checkChannel(db storm.Node, nodes []trackerBean.ChannelInfoRequest) []trackerBean.ChannelInfoRequest {
 	var channelInfos []dao.ChannelInfo
 	err := db.Select(
 		q.Eq("IsPrivate", false),
@@ -317,6 +273,7 @@ func checkChannel(db storm.Node, nodes []trackerBean.ChannelInfoRequest) {
 			}
 		}
 	}
+	return nodes
 }
 
 func sendMsgToTracker(msg []byte) {

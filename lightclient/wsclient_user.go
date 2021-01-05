@@ -33,6 +33,7 @@ func (client *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, 
 		if client.User != nil {
 			if client.User.Mnemonic != mnemonic {
 				_ = service.UserService.UserLogout(client.User)
+				sendInfoOnUserOnline(client.User.PeerId)
 				delete(globalWsClientManager.OnlineClientMap, client.User.PeerId)
 				delete(service.OnlineUserMap, client.User.PeerId)
 				client.User = nil
@@ -55,6 +56,9 @@ func (client *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, 
 				err = errors.New("user has logined at other node")
 			} else {
 				err = service.UserService.UserLogin(&user)
+				if err == nil {
+					sendInfoOnUserOnline(user.PeerId)
+				}
 			}
 			if err == nil {
 				client.User = &user

@@ -569,8 +569,8 @@ func GetChannelState(channelId string) (flag int) {
 	return 0
 }
 
-func GetUserState(userId string) (flag int) {
-	url := "http://" + config.TrackerHost + "/api/v1/getUserState?userId=" + userId
+func GetUserState(p2pNodeId, userId string) (flag int) {
+	url := "http://" + config.TrackerHost + "/api/v1/getUserState?userId=" + userId + "&p2pNodeId=" + p2pNodeId
 	log.Println(url)
 	resp, err := http.Get(url)
 	if err != nil {

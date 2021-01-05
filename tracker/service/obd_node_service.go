@@ -204,6 +204,7 @@ func (service *obdNodeAccountManager) userLogout(obdClient *ObdNode, msgData str
 	err = db.UpdateField(info, "IsOnline", info.IsOnline)
 
 	delete(userOfOnlineMap, info.UserId)
+
 	return err
 }
 
@@ -235,6 +236,7 @@ func (service *obdNodeAccountManager) GetNodeInfoByP2pAddress(context *gin.Conte
 func (service *obdNodeAccountManager) GetUserState(context *gin.Context) {
 	reqData := &bean.ObdNodeUserLoginRequest{}
 	reqData.UserId = context.Query("userId")
+	reqData.P2pNodeId = context.Query("p2pNodeId")
 	if tool.CheckIsString(&reqData.UserId) == false {
 		context.JSON(http.StatusInternalServerError, gin.H{
 			"msg": "error userId",
@@ -247,10 +249,9 @@ func (service *obdNodeAccountManager) GetUserState(context *gin.Context) {
 	if _, ok := userOfOnlineMap[reqData.UserId]; ok == true {
 		retData["state"] = 1
 	} else {
-		for _, item := range userOnlineOfOtherObdMap {
-			if strings.Contains(item, reqData.UserId) {
+		if _, ok := userOnlineOfOtherObdMap[reqData.P2pNodeId]; ok == true {
+			if _, ok := userOnlineOfOtherObdMap[reqData.P2pNodeId][reqData.UserId]; ok == true {
 				retData["state"] = 1
-				break
 			}
 		}
 	}
