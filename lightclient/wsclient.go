@@ -91,10 +91,8 @@ func (client *Client) Read() {
 		if tool.CheckIsString(&msg.RecipientUserPeerId) {
 			_, err = findUserOnLine(msg)
 			if err != nil {
-				if tool.CheckIsString(&msg.RecipientNodePeerId) == false {
-					client.SendToMyself(msg.Type, false, fmt.Sprintf(enum.Tips_user_notExistOrOnline, msg.RecipientUserPeerId))
-					continue
-				}
+				client.SendToMyself(msg.Type, false, fmt.Sprintf(enum.Tips_user_notExistOrOnline, msg.RecipientUserPeerId))
+				continue
 			}
 		}
 		msg.Data = jsonParse.Get("data").String()
