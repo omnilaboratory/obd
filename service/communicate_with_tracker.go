@@ -2,9 +2,10 @@ package service
 
 import (
 	"encoding/json"
+	"github.com/omnilaboratory/obd/bean"
 	"github.com/omnilaboratory/obd/bean/enum"
 	"github.com/omnilaboratory/obd/dao"
-	"github.com/omnilaboratory/obd/tracker/bean"
+	trackerBean "github.com/omnilaboratory/obd/tracker/bean"
 	"github.com/tidwall/gjson"
 	"strings"
 )
@@ -53,7 +54,7 @@ func noticeTrackerUserLogout(user dao.User) {
 
 func sendMsgToTracker(msgType enum.MsgType, data interface{}) {
 
-	message := bean.RequestMessage{}
+	message := trackerBean.RequestMessage{}
 	message.Type = msgType
 
 	dataBytes, _ := json.Marshal(data)

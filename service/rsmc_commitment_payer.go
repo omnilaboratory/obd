@@ -62,7 +62,7 @@ func (this *commitmentTxManager) CommitmentTransactionCreated(msg bean.RequestMe
 		return nil, false, err
 	}
 
-	if channelInfo.CurrState == dao.ChannelState_NewTx {
+	if channelInfo.CurrState == bean.ChannelState_NewTx {
 		return nil, false, errors.New(enum.Tips_common_newTxMsg)
 	}
 
@@ -80,7 +80,7 @@ func (this *commitmentTxManager) CommitmentTransactionCreated(msg bean.RequestMe
 		}
 	}
 
-	if channelInfo.CurrState < dao.ChannelState_NewTx {
+	if channelInfo.CurrState < bean.ChannelState_NewTx {
 		return nil, false, errors.New("do not finish funding")
 	}
 
@@ -349,7 +349,7 @@ func (this *commitmentTxManager) OnGetBobC2bPartialSignTxAtAliceSide(msg bean.Re
 		}
 	}
 
-	channelInfo.CurrState = dao.ChannelState_NewTx
+	channelInfo.CurrState = bean.ChannelState_NewTx
 	_ = tx.Update(channelInfo)
 
 	cacheDataForTx = &dao.CacheDataForTx{}
@@ -719,7 +719,7 @@ func (this *commitmentTxManager) OnAliceSignedC2b_RDTxAtAliceSide(data string, u
 		_ = tx.Update(lastCommitmentTxInfo)
 	}
 
-	channelInfo.CurrState = dao.ChannelState_CanUse
+	channelInfo.CurrState = bean.ChannelState_CanUse
 	_ = tx.Update(channelInfo)
 
 	//返回给alice的数据
@@ -829,7 +829,7 @@ func (this *commitmentTxManager) SendSomeCommitmentById(data string, user *bean.
 	if err != nil || channelInfo.Id == 0 {
 		return nil, err
 	}
-	if channelInfo.CurrState == dao.ChannelState_Close {
+	if channelInfo.CurrState == bean.ChannelState_Close {
 		return nil, errors.New("channel has been closed before by someone")
 	}
 

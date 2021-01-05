@@ -249,7 +249,7 @@ func getPrivateChannelForHtlc(requestData *bean.HtlcRequestFindPath, user bean.U
 	err = tx.Select(
 		q.Eq("PropertyId", requestData.PropertyId),
 		q.Eq("IsPrivate", true),
-		q.Eq("CurrState", dao.ChannelState_CanUse),
+		q.Eq("CurrState", bean.ChannelState_CanUse),
 		q.Or(
 			q.And(
 				q.Eq("PeerIdB", requestData.RecipientUserPeerId),
@@ -319,7 +319,7 @@ func (service *htlcForwardTxManager) GetResponseFromTrackerOfPayerRequestFindPat
 	currChannelInfo := dao.ChannelInfo{}
 	err = user.Db.Select(
 		q.Eq("ChannelId", splitArr[0]),
-		q.Eq("CurrState", dao.ChannelState_CanUse),
+		q.Eq("CurrState", bean.ChannelState_CanUse),
 		q.Or(
 			q.Eq("PeerIdA", user.PeerId),
 			q.Eq("PeerIdB", user.PeerId))).First(&currChannelInfo)
@@ -408,7 +408,7 @@ func (service *htlcForwardTxManager) AliceAddHtlcAtAliceSide(msg bean.RequestMes
 		return nil, false, errors.New(enum.Tips_htlc_noChanneFromRountingPacket)
 	}
 
-	if channelInfo.CurrState == dao.ChannelState_NewTx {
+	if channelInfo.CurrState == bean.ChannelState_NewTx {
 		return nil, false, errors.New(enum.Tips_common_newTxMsg)
 	}
 
@@ -439,7 +439,7 @@ func (service *htlcForwardTxManager) AliceAddHtlcAtAliceSide(msg bean.RequestMes
 		requestData.CltvExpiry = totalStep - currStep
 	}
 
-	if channelInfo.CurrState < dao.ChannelState_NewTx {
+	if channelInfo.CurrState < bean.ChannelState_NewTx {
 		return nil, false, errors.New("do not finish funding")
 	}
 
@@ -760,7 +760,7 @@ func (service *htlcForwardTxManager) BeforeBobSignAddHtlcRequestAtBobSide_40(msg
 		return nil, errors.New("not found channel info")
 	}
 
-	channelInfo.CurrState = dao.ChannelState_NewTx
+	channelInfo.CurrState = bean.ChannelState_NewTx
 	_ = tx.Update(channelInfo)
 
 	cacheDataForTx := &dao.CacheDataForTx{}
@@ -902,7 +902,7 @@ func (service *htlcForwardTxManager) BobSignedAddHtlcAtBobSide(jsonData string, 
 		return nil, errors.New(enum.Tips_htlc_noChanneFromRountingPacket)
 	}
 
-	if channelInfo.CurrState < dao.ChannelState_NewTx {
+	if channelInfo.CurrState < bean.ChannelState_NewTx {
 		return nil, errors.New("do not finish funding")
 	}
 
@@ -1179,7 +1179,7 @@ func (service *htlcForwardTxManager) BobSignedAddHtlcAtBobSide(jsonData string, 
 	toAliceDataOf41P.C3aHtlcTempAddressForHtPubKey = payerRequestAddHtlc.CurrHtlcTempAddressForHt1aPubKey
 	//endregion
 
-	channelInfo.CurrState = dao.ChannelState_HtlcTx
+	channelInfo.CurrState = bean.ChannelState_HtlcTx
 	_ = tx.Update(channelInfo)
 
 	if service.tempDataSendTo41PAtBobSide == nil {
@@ -2215,7 +2215,7 @@ func (service *htlcForwardTxManager) OnBobSignHtRdAtBobSide_42(msgData string, u
 		_ = updateHtlcHeTxForPayee(tx, *channelInfo, latestCommitmentTx, jsonObj.C3bHtlcHlockHePartialSignedHex)
 	}
 
-	channelInfo.CurrState = dao.ChannelState_HtlcTx
+	channelInfo.CurrState = bean.ChannelState_HtlcTx
 	_ = tx.Update(channelInfo)
 
 	_ = tx.Commit()
@@ -2286,7 +2286,7 @@ func (service *htlcForwardTxManager) OnGetHtrdTxDataFromBobAtAliceSide_43(msgDat
 	latestCommitmentTx.CurrState = dao.TxInfoState_Htlc_GetH
 	_ = tx.Update(latestCommitmentTx)
 
-	channelInfo.CurrState = dao.ChannelState_HtlcTx
+	channelInfo.CurrState = bean.ChannelState_HtlcTx
 	_ = tx.Update(&channelInfo)
 
 	//同步通道信息到tracker

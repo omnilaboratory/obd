@@ -64,7 +64,7 @@ func (clientManager *clientManager) cleanConn(client *Client) {
 	delete(clientManager.ClientsMap, client)
 	if client.User != nil {
 		_ = service.UserService.UserLogout(client.User)
-		sendInfoOnUserOnline(client.User.PeerId)
+		sendInfoOnUserStateChange(client.User.PeerId)
 		delete(clientManager.OnlineClientMap, client.User.PeerId)
 		delete(service.OnlineUserMap, client.User.PeerId)
 		client.User = nil

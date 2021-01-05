@@ -81,7 +81,7 @@ func (service *fundingTransactionManager) AssetFundingCreated(msg bean.RequestMe
 		return nil, false, err
 	}
 
-	if channelInfo.CurrState != dao.ChannelState_WaitFundAsset {
+	if channelInfo.CurrState != bean.ChannelState_WaitFundAsset {
 		err = errors.New(enum.Tips_funding_notFundAssetState)
 		log.Println(err)
 		return nil, false, err
@@ -170,7 +170,7 @@ func (service *fundingTransactionManager) AssetFundingCreated(msg bean.RequestMe
 
 	if needCreateC1a {
 		flag := conn2tracker.GetChannelState(fundingTransaction.ChannelId)
-		if flag != 0 && flag != int(dao.ChannelState_WaitFundAsset) {
+		if flag != 0 && flag != int(bean.ChannelState_WaitFundAsset) {
 			err = errors.New(enum.Tips_funding_needChangeFundTx)
 			log.Println(err)
 			return nil, false, err
@@ -465,7 +465,7 @@ func (service *fundingTransactionManager) BeforeSignAssetFundingCreateAtBobSide(
 	channelInfo := &dao.ChannelInfo{}
 	err = tx.Select(
 		q.Eq("TemporaryChannelId", temporaryChannelId),
-		q.Eq("CurrState", dao.ChannelState_WaitFundAsset),
+		q.Eq("CurrState", bean.ChannelState_WaitFundAsset),
 		q.Or(
 			q.Eq("PeerIdA", user.PeerId),
 			q.Eq("PeerIdB", user.PeerId))).
@@ -646,7 +646,7 @@ func (service *fundingTransactionManager) AssetFundingSigned(jsonData string, si
 	channelInfo := &dao.ChannelInfo{}
 	err = tx.Select(
 		q.Eq("TemporaryChannelId", reqData.TemporaryChannelId),
-		q.Eq("CurrState", dao.ChannelState_WaitFundAsset),
+		q.Eq("CurrState", bean.ChannelState_WaitFundAsset),
 		q.Or(
 			q.Eq("PeerIdA", signer.PeerId),
 			q.Eq("PeerIdB", signer.PeerId)),
@@ -878,7 +878,7 @@ func (service *fundingTransactionManager) OnBobSignedRDAndBR(data string, user *
 	channelInfo := &dao.ChannelInfo{}
 	err = tx.Select(
 		q.Eq("TemporaryChannelId", temporaryChannelId),
-		q.Eq("CurrState", dao.ChannelState_WaitFundAsset),
+		q.Eq("CurrState", bean.ChannelState_WaitFundAsset),
 		q.Or(
 			q.Eq("PeerIdA", user.PeerId),
 			q.Eq("PeerIdB", user.PeerId)),
@@ -887,7 +887,7 @@ func (service *fundingTransactionManager) OnBobSignedRDAndBR(data string, user *
 		return nil, nil, err
 	}
 
-	channelInfo.CurrState = dao.ChannelState_CanUse
+	channelInfo.CurrState = bean.ChannelState_CanUse
 
 	err = tx.Update(channelInfo)
 	if err != nil {
@@ -991,7 +991,7 @@ func (service *fundingTransactionManager) OnAliceSignedRdAtAliceSide(data string
 	channelInfo := &dao.ChannelInfo{}
 	err = tx.Select(
 		q.Eq("ChannelId", channelId),
-		q.Eq("CurrState", dao.ChannelState_WaitFundAsset),
+		q.Eq("CurrState", bean.ChannelState_WaitFundAsset),
 		q.Or(
 			q.Eq("PeerIdA", user.PeerId),
 			q.Eq("PeerIdB", user.PeerId))).
@@ -1091,7 +1091,7 @@ func (service *fundingTransactionManager) OnAliceSignedRdAtAliceSide(data string
 		return nil, err
 	}
 
-	channelInfo.CurrState = dao.ChannelState_CanUse
+	channelInfo.CurrState = bean.ChannelState_CanUse
 	err = tx.Update(channelInfo)
 	if err != nil {
 		log.Println(err)

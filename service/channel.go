@@ -55,7 +55,7 @@ func (this *channelManager) AliceOpenChannel(msg bean.RequestMessage, user *bean
 	channelInfo.PeerIdB = msg.RecipientUserPeerId
 	channelInfo.PubKeyA = reqData.FundingPubKey
 	channelInfo.AddressA = openChannelInfo.FundingAddress
-	channelInfo.CurrState = dao.ChannelState_Create
+	channelInfo.CurrState = bean.ChannelState_Create
 	channelInfo.CreateAt = time.Now()
 	channelInfo.CreateBy = user.PeerId
 
@@ -81,7 +81,7 @@ func (this *channelManager) BeforeBobOpenChannelAtBobSide(msg string, user *bean
 	channelInfo.PeerIdB = user.PeerId
 	channelInfo.PubKeyA = aliceOpenChannelInfo.FundingPubKey
 	channelInfo.AddressA = aliceOpenChannelInfo.FundingAddress
-	channelInfo.CurrState = dao.ChannelState_Create
+	channelInfo.CurrState = bean.ChannelState_Create
 	channelInfo.CreateAt = time.Now()
 	channelInfo.CreateBy = user.PeerId
 	err = user.Db.Save(channelInfo)
@@ -104,7 +104,7 @@ func (this *channelManager) BobCheckChannelAddressExist(jsonData string, user *b
 	err = user.Db.Select(
 		q.Eq("TemporaryChannelId", reqData.TemporaryChannelId),
 		q.Eq("PeerIdB", user.PeerId),
-		q.Eq("CurrState", dao.ChannelState_Create)).
+		q.Eq("CurrState", bean.ChannelState_Create)).
 		First(channelInfo)
 	if err != nil {
 		log.Println(err)
@@ -166,7 +166,7 @@ func (this *channelManager) BobAcceptChannel(msg bean.RequestMessage, user *bean
 	err = user.Db.Select(
 		q.Eq("TemporaryChannelId", reqData.TemporaryChannelId),
 		q.Eq("PeerIdB", user.PeerId),
-		q.Eq("CurrState", dao.ChannelState_Create)).
+		q.Eq("CurrState", bean.ChannelState_Create)).
 		First(channelInfo)
 	if err != nil {
 		log.Println(err)
@@ -210,12 +210,12 @@ func (this *channelManager) BobAcceptChannel(msg bean.RequestMessage, user *bean
 			channelInfo.ChannelAddress = gjson.Get(multiSig, "address").String()
 			channelInfo.ChannelAddressRedeemScript = gjson.Get(multiSig, "redeemScript").String()
 			channelInfo.ChannelAddressScriptPubKey = gjson.Get(multiSig, "scriptPubKey").String()
-			channelInfo.CurrState = dao.ChannelState_WaitFundAsset
+			channelInfo.CurrState = bean.ChannelState_WaitFundAsset
 		} else {
 			return nil, errors.New(enum.Tips_channel_changePubkeyForChannel + reqData.FundingPubKey)
 		}
 	} else {
-		channelInfo.CurrState = dao.ChannelState_OpenChannelRefuse
+		channelInfo.CurrState = bean.ChannelState_OpenChannelRefuse
 		channelInfo.RefuseReason = user.PeerId + " do not agree with it"
 	}
 
@@ -241,22 +241,22 @@ func (this *channelManager) AfterBobAcceptChannelAtAliceSide(jsonData string, us
 		q.Eq("TemporaryChannelId", bobChannelInfo.TemporaryChannelId),
 		q.Eq("PeerIdA", user.PeerId),
 		q.Eq("PeerIdB", bobChannelInfo.PeerIdB),
-		q.Eq("CurrState", dao.ChannelState_Create)).
+		q.Eq("CurrState", bean.ChannelState_Create)).
 		First(channelInfo)
 	if err != nil {
 		log.Println(err)
 		return nil, errors.New(enum.Tips_channel_notFoundChannelInCreate + bobChannelInfo.TemporaryChannelId)
 	}
 
-	if bobChannelInfo.CurrState == dao.ChannelState_WaitFundAsset {
+	if bobChannelInfo.CurrState == bean.ChannelState_WaitFundAsset {
 		channelInfo.PubKeyB = bobChannelInfo.PubKeyB
 		channelInfo.AddressB = bobChannelInfo.AddressB
 		channelInfo.ChannelAddress = bobChannelInfo.ChannelAddress
 		channelInfo.ChannelAddressRedeemScript = bobChannelInfo.ChannelAddressRedeemScript
 		channelInfo.ChannelAddressScriptPubKey = bobChannelInfo.ChannelAddressScriptPubKey
-		channelInfo.CurrState = dao.ChannelState_WaitFundAsset
+		channelInfo.CurrState = bean.ChannelState_WaitFundAsset
 	} else {
-		channelInfo.CurrState = dao.ChannelState_OpenChannelRefuse
+		channelInfo.CurrState = bean.ChannelState_OpenChannelRefuse
 		channelInfo.RefuseReason = bobChannelInfo.RefuseReason
 	}
 	channelInfo.AcceptAt = time.Now()
@@ -269,21 +269,21 @@ func (this *channelManager) AfterBobAcceptChannelAtAliceSide(jsonData string, us
 }
 
 type ChannelVO struct {
-	TemporaryChannelId string           `json:"temporary_channel_id"`
-	IsPrivate          bool             `json:"is_private"`
-	ChannelId          string           `json:"channel_id"`
-	ChannelAddress     string           `json:"channel_address"`
-	PropertyId         int64            `json:"property_id"`
-	CurrState          dao.ChannelState `json:"curr_state"`
-	PeerIdA            string           `json:"peer_ida"`
-	PeerIdB            string           `json:"peer_idb"`
-	BtcFundingTimes    int              `json:"btc_funding_times"`
-	BtcAmount          float64          `json:"btc_amount"`
-	AssetAmount        float64          `json:"asset_amount"`
-	BalanceA           float64          `json:"balance_a"`
-	BalanceB           float64          `json:"balance_b"`
-	BalanceHtlc        float64          `json:"balance_htlc"`
-	CreateAt           time.Time        `json:"create_at"`
+	TemporaryChannelId string            `json:"temporary_channel_id"`
+	IsPrivate          bool              `json:"is_private"`
+	ChannelId          string            `json:"channel_id"`
+	ChannelAddress     string            `json:"channel_address"`
+	PropertyId         int64             `json:"property_id"`
+	CurrState          bean.ChannelState `json:"curr_state"`
+	PeerIdA            string            `json:"peer_ida"`
+	PeerIdB            string            `json:"peer_idb"`
+	BtcFundingTimes    int               `json:"btc_funding_times"`
+	BtcAmount          float64           `json:"btc_amount"`
+	AssetAmount        float64           `json:"asset_amount"`
+	BalanceA           float64           `json:"balance_a"`
+	BalanceB           float64           `json:"balance_b"`
+	BalanceHtlc        float64           `json:"balance_htlc"`
+	CreateAt           time.Time         `json:"create_at"`
 }
 
 type pageVO struct {
@@ -356,7 +356,7 @@ func (this *channelManager) AllItem(jsonData string, user bean.User) (data *page
 			item.PeerIdB = info.PeerIdB
 			item.CreateAt = info.CreateAt
 			item.BtcFundingTimes = 3
-			if item.CurrState <= dao.ChannelState_WaitFundAsset {
+			if item.CurrState <= bean.ChannelState_WaitFundAsset {
 				item.BtcFundingTimes = 0
 				result := conn2tracker.ListReceivedByAddress(info.ChannelAddress)
 				if result != "" {
@@ -370,7 +370,7 @@ func (this *channelManager) AllItem(jsonData string, user bean.User) (data *page
 				}
 			}
 
-			if info.CurrState >= dao.ChannelState_CanUse {
+			if info.CurrState >= bean.ChannelState_CanUse {
 				commitmentTxInfo, _ := getLatestCommitmentTxUseDbTx(tx, info.ChannelId, user.PeerId)
 				if commitmentTxInfo.Id > 0 {
 					item.BalanceA = commitmentTxInfo.AmountToRSMC
@@ -476,7 +476,7 @@ func (this *channelManager) BeforeBobSignCloseChannelAtBobSide(data string, user
 		return nil, err
 	}
 
-	if channelInfo.CurrState != dao.ChannelState_CanUse && channelInfo.CurrState != dao.ChannelState_HtlcTx {
+	if channelInfo.CurrState != bean.ChannelState_CanUse && channelInfo.CurrState != bean.ChannelState_HtlcTx {
 		return nil, errors.New("wrong channel state " + strconv.Itoa(int(channelInfo.CurrState)))
 	}
 
@@ -554,7 +554,7 @@ func (this *channelManager) SignCloseChannel(msg bean.RequestMessage, user bean.
 		return nil, err
 	}
 
-	if channelInfo.CurrState != dao.ChannelState_CanUse && channelInfo.CurrState != dao.ChannelState_HtlcTx {
+	if channelInfo.CurrState != bean.ChannelState_CanUse && channelInfo.CurrState != bean.ChannelState_HtlcTx {
 		return nil, errors.New("wrong channel state " + strconv.Itoa(int(channelInfo.CurrState)))
 	}
 
@@ -582,7 +582,7 @@ func (this *channelManager) SignCloseChannel(msg bean.RequestMessage, user bean.
 	_ = tx.Update(closeChannelStarterData)
 
 	if reqData.Approval {
-		channelInfo.CurrState = dao.ChannelState_Close
+		channelInfo.CurrState = bean.ChannelState_Close
 		channelInfo.CloseAt = time.Now()
 		err = tx.Update(channelInfo)
 		if err != nil {
@@ -645,7 +645,7 @@ func (this *channelManager) ForceCloseChannel(msg bean.RequestMessage, user *bea
 	}
 
 	// 当前是处于htlc的状态，且是获取到H
-	if channelInfo.CurrState == dao.ChannelState_HtlcTx {
+	if channelInfo.CurrState == bean.ChannelState_HtlcTx {
 		err = this.CloseHtlcChannelSigned(tx, latestCommitmentTx, *user)
 		if err != nil {
 			return nil, err
@@ -725,7 +725,7 @@ func (this *channelManager) ForceCloseChannel(msg bean.RequestMessage, user *bea
 		//endregion
 	}
 
-	channelInfo.CurrState = dao.ChannelState_Close
+	channelInfo.CurrState = bean.ChannelState_Close
 	channelInfo.CloseAt = time.Now()
 	err = tx.Update(channelInfo)
 	if err != nil {
@@ -818,7 +818,7 @@ func (this *channelManager) AfterBobSignCloseChannelAtAliceSide(jsonData string,
 	}
 
 	// 当前是处于htlc的状态，且是获取到H
-	if channelInfo.CurrState == dao.ChannelState_HtlcTx {
+	if channelInfo.CurrState == bean.ChannelState_HtlcTx {
 		err = this.CloseHtlcChannelSigned(tx, latestCommitmentTx, user)
 		if err != nil {
 			return nil, err
@@ -888,7 +888,7 @@ func (this *channelManager) AfterBobSignCloseChannelAtAliceSide(jsonData string,
 		//endregion
 	}
 
-	channelInfo.CurrState = dao.ChannelState_Close
+	channelInfo.CurrState = bean.ChannelState_Close
 	channelInfo.CloseAt = time.Now()
 	err = tx.Update(channelInfo)
 	if err != nil {

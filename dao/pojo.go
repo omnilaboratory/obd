@@ -22,41 +22,29 @@ type UserLoginLog struct {
 	LogoutAt time.Time `json:"logout_at"`
 }
 
-type ChannelState int
-
-const (
-	ChannelState_Create            ChannelState = 10
-	ChannelState_WaitFundAsset     ChannelState = 11
-	ChannelState_NewTx             ChannelState = 12
-	ChannelState_CanUse            ChannelState = 20
-	ChannelState_Close             ChannelState = 21
-	ChannelState_HtlcTx            ChannelState = 22
-	ChannelState_OpenChannelRefuse ChannelState = 30
-)
-
 type ChannelInfo struct {
 	bean.RequestOpenChannel
-	Id                         int          `storm:"id,increment" json:"id"`
-	ChannelId                  string       `json:"channel_id"`
-	PeerIdA                    string       `storm:"index" json:"peer_id_a"`
-	PubKeyA                    string       `json:"pub_key_a"`
-	AddressA                   string       `json:"address_a"`
-	PeerIdB                    string       `storm:"index" json:"peer_id_b"`
-	PubKeyB                    string       `json:"pub_key_b"`
-	FundeeAddressIndex         int          `json:"fundee_address_index"`
-	AddressB                   string       `json:"address_b"`
-	ChannelAddress             string       `json:"channel_address"`
-	ChannelAddressRedeemScript string       `json:"channel_address_redeem_script"`
-	ChannelAddressScriptPubKey string       `json:"channel_address_script_pub_key"`
-	PropertyId                 int64        `json:"property_id"`
-	Amount                     float64      `json:"amount"`
-	BtcAmount                  float64      `json:"btc_amount"`
-	CurrState                  ChannelState `json:"curr_state"`
-	RefuseReason               string       `json:"refuse_reason"`
-	CreateBy                   string       `json:"create_by"`
-	CreateAt                   time.Time    `json:"create_at"`
-	AcceptAt                   time.Time    `json:"accept_at"`
-	CloseAt                    time.Time    `json:"close_at"`
+	Id                         int               `storm:"id,increment" json:"id"`
+	ChannelId                  string            `json:"channel_id"`
+	PeerIdA                    string            `storm:"index" json:"peer_id_a"`
+	PubKeyA                    string            `json:"pub_key_a"`
+	AddressA                   string            `json:"address_a"`
+	PeerIdB                    string            `storm:"index" json:"peer_id_b"`
+	PubKeyB                    string            `json:"pub_key_b"`
+	FundeeAddressIndex         int               `json:"fundee_address_index"`
+	AddressB                   string            `json:"address_b"`
+	ChannelAddress             string            `json:"channel_address"`
+	ChannelAddressRedeemScript string            `json:"channel_address_redeem_script"`
+	ChannelAddressScriptPubKey string            `json:"channel_address_script_pub_key"`
+	PropertyId                 int64             `json:"property_id"`
+	Amount                     float64           `json:"amount"`
+	BtcAmount                  float64           `json:"btc_amount"`
+	CurrState                  bean.ChannelState `json:"curr_state"`
+	RefuseReason               string            `json:"refuse_reason"`
+	CreateBy                   string            `json:"create_by"`
+	CreateAt                   time.Time         `json:"create_at"`
+	AcceptAt                   time.Time         `json:"accept_at"`
+	CloseAt                    time.Time         `json:"close_at"`
 }
 
 type ChannelBtcListUnspent struct {

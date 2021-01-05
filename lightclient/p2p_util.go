@@ -332,16 +332,35 @@ func sendP2PMsg(remoteP2PPeerId string, msg string) error {
 	return nil
 }
 
-func sendInfoOnUserOnline(userId string) {
+func sendInfoOnUserStateChange(userId string) {
 	for key, _ := range trackerNodeIdMap {
 		findID, err := peer.Decode(key)
 		if err == nil {
 			findPeer, err := kademliaDHT.FindPeer(ctx, findID)
 			if err == nil {
-				stream, err := hostNode.NewStream(ctx, findPeer.ID, "tracker/userState/1.0.1")
+				stream, err := hostNode.NewStream(ctx, findPeer.ID, bean.ProtocolIdForUserState)
 				if err == nil {
 					rw := bufio.NewReadWriter(bufio.NewReader(stream), bufio.NewWriter(stream))
 					_, _ = rw.WriteString(hostNode.ID().Pretty() + "_" + userId + "_" + localServerDest + "~")
+					err = rw.Flush()
+					log.Println(err)
+				}
+			}
+		}
+	}
+}
+
+func sendChannelInfoToIndirectTracker(msg string) {
+	log.Println("sendChannelInfoToIndirectTracker", msg)
+	for key, _ := range trackerNodeIdMap {
+		findID, err := peer.Decode(key)
+		if err == nil {
+			findPeer, err := kademliaDHT.FindPeer(ctx, findID)
+			if err == nil {
+				stream, err := hostNode.NewStream(ctx, findPeer.ID, bean.ProtocolIdForChannelInfoChange)
+				if err == nil {
+					rw := bufio.NewReadWriter(bufio.NewReader(stream), bufio.NewWriter(stream))
+					_, _ = rw.WriteString(msg + "~")
 					err = rw.Flush()
 					log.Println(err)
 				}

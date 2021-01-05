@@ -5,6 +5,7 @@ import (
 	"errors"
 	"github.com/asdine/storm/q"
 	"github.com/gin-gonic/gin"
+	cbean "github.com/omnilaboratory/obd/bean"
 	"github.com/omnilaboratory/obd/tool"
 	"github.com/omnilaboratory/obd/tracker/bean"
 	"github.com/omnilaboratory/obd/tracker/dao"
@@ -28,7 +29,7 @@ func (manager *channelManager) updateChannelInfo(obdP2pNodeId string, msgData st
 	if tool.CheckIsString(&msgData) == false {
 		return errors.New("wrong inputData")
 	}
-	channelInfos := make([]bean.ChannelInfoRequest, 0)
+	channelInfos := make([]cbean.ChannelInfoRequest, 0)
 	err = json.Unmarshal([]byte(msgData), &channelInfos)
 	if err != nil {
 		log.Println(err)

@@ -13,6 +13,7 @@ import (
 	"github.com/omnilaboratory/obd/service"
 	"github.com/omnilaboratory/obd/tool"
 	trackerBean "github.com/omnilaboratory/obd/tracker/bean"
+	"github.com/tidwall/gjson"
 	"io/ioutil"
 	"log"
 	"net/url"
@@ -151,7 +152,7 @@ func SynData() {
 func updateP2pAddressLogin() {
 	info := make(map[string]interface{})
 	info["type"] = enum.MsgType_Tracker_NodeLogin_303
-	nodeLoginInfo := &trackerBean.ObdNodeLoginRequest{}
+	nodeLoginInfo := &bean.ObdNodeLoginRequest{}
 	nodeLoginInfo.NodeId = tool.GetObdNodeId()
 	nodeLoginInfo.P2PAddress = localServerDest
 	info["data"] = nodeLoginInfo
@@ -165,9 +166,9 @@ func updateP2pAddressLogin() {
 
 func sycUserInfos() {
 
-	nodes := make([]trackerBean.ObdNodeUserLoginRequest, 0)
+	nodes := make([]bean.ObdNodeUserLoginRequest, 0)
 	for userId, _ := range globalWsClientManager.OnlineClientMap {
-		user := trackerBean.ObdNodeUserLoginRequest{}
+		user := bean.ObdNodeUserLoginRequest{}
 		user.UserId = userId
 		nodes = append(nodes, user)
 	}
@@ -197,7 +198,7 @@ func sycChannelInfos() {
 	}
 }
 
-func getChannelInfos() []trackerBean.ChannelInfoRequest {
+func getChannelInfos() []bean.ChannelInfoRequest {
 	_dir := "dbdata" + config.ChainNodeType
 	files, _ := ioutil.ReadDir(_dir)
 
@@ -216,7 +217,7 @@ func getChannelInfos() []trackerBean.ChannelInfoRequest {
 		}
 	}
 
-	nodes := make([]trackerBean.ChannelInfoRequest, 0)
+	nodes := make([]bean.ChannelInfoRequest, 0)
 
 	for _, peerId := range userPeerIds {
 		client, _ := globalWsClientManager.OnlineClientMap[peerId]
@@ -235,22 +236,22 @@ func getChannelInfos() []trackerBean.ChannelInfoRequest {
 	return nodes
 }
 
-func checkChannel(db storm.Node, nodes []trackerBean.ChannelInfoRequest) []trackerBean.ChannelInfoRequest {
+func checkChannel(db storm.Node, nodes []bean.ChannelInfoRequest) []bean.ChannelInfoRequest {
 	var channelInfos []dao.ChannelInfo
 	err := db.Select(
 		q.Eq("IsPrivate", false),
 		q.Or(
-			q.Eq("CurrState", dao.ChannelState_CanUse),
-			q.Eq("CurrState", dao.ChannelState_Close),
-			q.Eq("CurrState", dao.ChannelState_HtlcTx))).Find(&channelInfos)
+			q.Eq("CurrState", bean.ChannelState_CanUse),
+			q.Eq("CurrState", bean.ChannelState_Close),
+			q.Eq("CurrState", bean.ChannelState_HtlcTx))).Find(&channelInfos)
 	if err == nil {
 		for _, channelInfo := range channelInfos {
 			if len(channelInfo.ChannelId) > 0 && channelInfo.IsPrivate == false {
-				if channelInfo.CurrState == dao.ChannelState_CanUse || channelInfo.CurrState == dao.ChannelState_Close || channelInfo.CurrState == dao.ChannelState_HtlcTx {
+				if channelInfo.CurrState == bean.ChannelState_CanUse || channelInfo.CurrState == bean.ChannelState_Close || channelInfo.CurrState == bean.ChannelState_HtlcTx {
 					commitmentTransaction := dao.CommitmentTransaction{}
 					err = db.Select(q.Eq("ChannelId", channelInfo.ChannelId)).OrderBy("CreateAt").Reverse().First(&commitmentTransaction)
 					if err == nil {
-						request := trackerBean.ChannelInfoRequest{}
+						request := bean.ChannelInfoRequest{}
 						request.ChannelId = channelInfo.ChannelId
 						request.PropertyId = channelInfo.PropertyId
 						request.PeerIdA = channelInfo.PeerIdA
@@ -299,6 +300,18 @@ func startSchedule() {
 			select {
 			case msg := <-service.TrackerChan:
 				sendMsgToTracker(msg)
+				msgType := gjson.Parse(string(msg)).Get("type").Int()
+				if msgType == 350 {
+					message := &trackerBean.RequestMessage{}
+					err := json.Unmarshal(msg, message)
+					if err == nil {
+						marshal, err := json.Marshal(message.Data)
+						if err == nil {
+							log.Println(string(marshal))
+							sendChannelInfoToIndirectTracker(string(marshal))
+						}
+					}
+				}
 			}
 		}
 	}()

@@ -15,6 +15,7 @@ import (
 	discovery "github.com/libp2p/go-libp2p-discovery"
 	dht "github.com/libp2p/go-libp2p-kad-dht"
 	ma "github.com/multiformats/go-multiaddr"
+	"github.com/omnilaboratory/obd/bean"
 	cfg "github.com/omnilaboratory/obd/tracker/config"
 	"log"
 	"math/rand"
@@ -25,7 +26,6 @@ import (
 )
 
 const protocolIdForScanObd = "obd/forScanObd/1.0.1"
-const protocolIdForUserOffline = "tracker/userState/1.0.1"
 const obdRendezvousString = "obd meet at tracker"
 const trackerRendezvousString = "tracker meet here"
 
@@ -53,7 +53,8 @@ func StartP2PNode() {
 		panic(err)
 	}
 
-	hostNode.SetStreamHandler(protocolIdForUserOffline, handleUserStateStream)
+	hostNode.SetStreamHandler(bean.ProtocolIdForUserState, handleUserStateStream)
+	hostNode.SetStreamHandler(bean.ProtocolIdForChannelInfoChange, handleChannelStream)
 
 	cfg.P2pLocalAddress = fmt.Sprintf("/ip4/%s/tcp/%v/p2p/%s", cfg.P2P_hostIp, cfg.P2P_sourcePort, hostNode.ID().Pretty())
 	log.Println("local p2p node address: ", cfg.P2pLocalAddress)
@@ -83,7 +84,7 @@ func startSchedule() {
 		for {
 			select {
 			case t := <-ticker.C:
-				log.Println("timer 30s", t)
+				log.Println("timer 3m", t)
 				announceSelf()
 				scanNodes()
 			}
@@ -217,6 +218,25 @@ func handleUserStateStream(stream network.Stream) {
 				}
 				userOnlineOfOtherObdMap[params[0]][params[1]] = params[2]
 			}
+		}
+	}
+	_ = stream.Close()
+}
+
+func handleChannelStream(stream network.Stream) {
+	rw := bufio.NewReadWriter(bufio.NewReader(stream), bufio.NewWriter(stream))
+	str, err := rw.ReadString('~')
+	if err != nil {
+		return
+	}
+	if str == "" {
+		return
+	}
+	if str != "" {
+		str = strings.TrimSuffix(str, "~")
+		log.Println("handleChannelStream", str)
+		if len(str) > 0 {
+			ChannelService.updateChannelInfo(stream.Conn().RemotePeer().Pretty(), str)
 		}
 	}
 	_ = stream.Close()

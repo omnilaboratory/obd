@@ -37,7 +37,7 @@ func findUserIsOnline(nodePeerId, userPeerId string) error {
 }
 
 func checkBtcFundFinish(tx storm.Node, channel dao.ChannelInfo, isFundOmni bool) error {
-	if channel.CurrState > dao.ChannelState_WaitFundAsset {
+	if channel.CurrState > bean.ChannelState_WaitFundAsset {
 		return nil
 	}
 
@@ -338,8 +338,8 @@ func getChannelInfoByChannelId(tx storm.Node, channelId string, userPeerId strin
 			q.Eq("PeerIdA", userPeerId),
 			q.Eq("PeerIdB", userPeerId)),
 		q.Or(
-			q.Eq("CurrState", dao.ChannelState_CanUse),
-			q.Eq("CurrState", dao.ChannelState_NewTx))).
+			q.Eq("CurrState", bean.ChannelState_CanUse),
+			q.Eq("CurrState", bean.ChannelState_NewTx))).
 		First(channelInfo)
 	if err != nil {
 		return nil

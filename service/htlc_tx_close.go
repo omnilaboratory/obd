@@ -90,8 +90,8 @@ func (service *htlcCloseTxManager) RequestCloseHtlc(msg bean.RequestMessage, use
 		return nil, false, err
 	}
 
-	if channelInfo.CurrState != dao.ChannelState_HtlcTx {
-		return nil, false, errors.New(fmt.Sprintf(enum.Tips_htlc_wrongChannelState, channelInfo.CurrState, dao.ChannelState_HtlcTx))
+	if channelInfo.CurrState != bean.ChannelState_HtlcTx {
+		return nil, false, errors.New(fmt.Sprintf(enum.Tips_htlc_wrongChannelState, channelInfo.CurrState, bean.ChannelState_HtlcTx))
 	}
 
 	targetUser := channelInfo.PeerIdB
@@ -379,7 +379,7 @@ func (service *htlcCloseTxManager) OnObdOfBobGet49PData(data string, user bean.U
 		return nil, errors.New("not found channelInfo at targetSide")
 	}
 
-	channelInfo.CurrState = dao.ChannelState_NewTx
+	channelInfo.CurrState = bean.ChannelState_NewTx
 	_ = tx.Update(channelInfo)
 
 	senderPeerId := channelInfo.PeerIdA
@@ -742,7 +742,7 @@ func (service *htlcCloseTxManager) OnBobSignCloseHtlcRequest(msg bean.RequestMes
 	}
 	//endregion create RD tx for alice
 
-	channelInfo.CurrState = dao.ChannelState_NewTx
+	channelInfo.CurrState = bean.ChannelState_NewTx
 	_ = tx.Update(channelInfo)
 
 	_ = messageService.updateMsgStateUseTx(tx, message)
@@ -916,11 +916,11 @@ func (service *htlcCloseTxManager) OnObdOfAliceGet50PData(data string, user bean
 		return nil, false, err
 	}
 
-	if channelInfo.CurrState != dao.ChannelState_HtlcTx {
-		return nil, false, errors.New(fmt.Sprintf(enum.Tips_htlc_wrongChannelState, channelInfo.CurrState, dao.ChannelState_HtlcTx))
+	if channelInfo.CurrState != bean.ChannelState_HtlcTx {
+		return nil, false, errors.New(fmt.Sprintf(enum.Tips_htlc_wrongChannelState, channelInfo.CurrState, bean.ChannelState_HtlcTx))
 	}
 
-	channelInfo.CurrState = dao.ChannelState_NewTx
+	channelInfo.CurrState = bean.ChannelState_NewTx
 	_ = tx.Update(channelInfo)
 
 	_ = tx.Commit()
@@ -1288,7 +1288,7 @@ func (service *htlcCloseTxManager) OnAliceSignedCxbBubTx(msg bean.RequestMessage
 		_ = tx.Update(lastCommitmentTxInfo)
 	}
 
-	channelInfo.CurrState = dao.ChannelState_CanUse
+	channelInfo.CurrState = bean.ChannelState_CanUse
 	_ = tx.Update(channelInfo)
 
 	//处理对方的数据
@@ -1495,7 +1495,7 @@ func (service *htlcCloseTxManager) OnBobSignedCxbSubTx(msg bean.RequestMessage, 
 	payeeRevokeAndAcknowledgeCommitment.Approval = true
 	_ = tx.Save(payeeRevokeAndAcknowledgeCommitment)
 
-	channelInfo.CurrState = dao.ChannelState_CanUse
+	channelInfo.CurrState = bean.ChannelState_CanUse
 	_ = tx.Update(channelInfo)
 
 	_ = tx.Commit()
