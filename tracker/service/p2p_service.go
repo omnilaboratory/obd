@@ -30,6 +30,7 @@ const obdRendezvousString = "obd meet at tracker"
 const trackerRendezvousString = "tracker meet here"
 
 var ctx = context.Background()
+var kademliaDHT *dht.IpfsDHT
 var routingDiscovery *discovery.RoutingDiscovery
 var hostNode host.Host
 
@@ -39,7 +40,8 @@ func StartP2PNode() {
 	r := rand.New(rand.NewSource(nodeId))
 	prvKey, _, err := crypto.GenerateECDSAKeyPair(r)
 	if err != nil {
-		panic(err)
+		log.Println(err)
+		return
 	}
 
 	sourceMultiAddr, _ := ma.NewMultiaddr("/ip4/0.0.0.0/tcp/" + strconv.Itoa(cfg.P2P_sourcePort))
@@ -50,7 +52,8 @@ func StartP2PNode() {
 		libp2p.EnableRelay(circuit.OptHop),
 	)
 	if err != nil {
-		panic(err)
+		log.Println(err)
+		return
 	}
 
 	hostNode.SetStreamHandler(bean.ProtocolIdForUserState, handleUserStateStream)
@@ -59,15 +62,17 @@ func StartP2PNode() {
 	cfg.P2pLocalAddress = fmt.Sprintf("/ip4/%s/tcp/%v/p2p/%s", cfg.P2P_hostIp, cfg.P2P_sourcePort, hostNode.ID().Pretty())
 	log.Println("local p2p node address: ", cfg.P2pLocalAddress)
 
-	kademliaDHT, err := dht.New(ctx, hostNode, dht.Mode(dht.ModeServer))
+	kademliaDHT, err = dht.New(ctx, hostNode, dht.Mode(dht.ModeServer))
 
 	if err != nil {
-		panic(err)
+		log.Println(err)
+		return
 	}
 
 	err = kademliaDHT.Bootstrap(ctx)
 	if err != nil {
 		log.Println(err)
+		return
 	}
 	routingDiscovery = discovery.NewRoutingDiscovery(kademliaDHT)
 
@@ -235,8 +240,43 @@ func handleChannelStream(stream network.Stream) {
 		str = strings.TrimSuffix(str, "~")
 		log.Println("handleChannelStream", str)
 		if len(str) > 0 {
-			ChannelService.updateChannelInfo(stream.Conn().RemotePeer().Pretty(), str)
+			_ = ChannelService.updateChannelInfo(stream.Conn().RemotePeer().Pretty(), str)
 		}
 	}
 	_ = stream.Close()
+}
+
+func sendChannelLockInfoToObd(channelId, userId, obdP2pNodeId string) bool {
+	findID, err := peer.Decode(obdP2pNodeId)
+	if err == nil {
+		findPeer, err := kademliaDHT.FindPeer(ctx, findID)
+		if err == nil {
+			stream, err := hostNode.NewStream(ctx, findPeer.ID, bean.ProtocolIdForLockChannel)
+			if err == nil {
+				rw := bufio.NewReadWriter(bufio.NewReader(stream), bufio.NewWriter(stream))
+				request := bean.TrackerLockChannelRequest{UserId: userId, ChannelId: channelId}
+				marshal, _ := json.Marshal(request)
+
+				_, _ = rw.WriteString(string(marshal) + "~")
+				err = rw.Flush()
+				if err == nil {
+					str, err := rw.ReadString('~')
+					if err != nil {
+						return false
+					}
+					if str == "" {
+						return false
+					}
+					if str != "" {
+						str = strings.TrimSuffix(str, "~")
+						log.Println("OnSendChannelLockInfoToObd", str)
+						return true
+					}
+				}
+
+				_ = stream.Close()
+			}
+		}
+	}
+	return false
 }

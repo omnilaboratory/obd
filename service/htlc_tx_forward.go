@@ -640,7 +640,7 @@ func (service *htlcForwardTxManager) OnAliceSignedC3aAtAliceSide(msg bean.Reques
 	defer tx.Rollback()
 
 	cacheDataForTx := &dao.CacheDataForTx{}
-	tx.Select(q.Eq("KeyName", user.PeerId+"_"+signedDataForC3a.ChannelId)).First(cacheDataForTx)
+	_ = tx.Select(q.Eq("KeyName", user.PeerId+"_"+signedDataForC3a.ChannelId)).First(cacheDataForTx)
 	if cacheDataForTx.Id == 0 {
 		return nil, nil, errors.New(enum.Tips_common_wrong + "channel_id")
 	}

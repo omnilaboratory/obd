@@ -99,6 +99,7 @@ func StartP2PNode() (err error) {
 	}
 	hostNode.SetStreamHandler(protocolIdForScanObd, handleTrackerScanStream)
 	hostNode.SetStreamHandler(protocolIdForBetweenObd, handleStream)
+	hostNode.SetStreamHandler(bean.ProtocolIdForLockChannel, handleLockChannelStream)
 
 	kademliaDHT, err = dht.New(ctx, hostNode)
 	if err != nil {
@@ -219,6 +220,10 @@ func connP2PNode(dest string) (string, error) {
 	findID, err := peer.Decode(p2PNodeId)
 	destHostPeerInfo, err := kademliaDHT.FindPeer(ctx, findID)
 
+	if err != nil {
+		return "", err
+	}
+
 	if destHostPeerInfo.ID == hostNode.ID() {
 		return "", errors.New("wrong dest address")
 	}
@@ -333,7 +338,7 @@ func sendP2PMsg(remoteP2PPeerId string, msg string) error {
 }
 
 func sendInfoOnUserStateChange(userId string) {
-	for key, _ := range trackerNodeIdMap {
+	for key := range trackerNodeIdMap {
 		findID, err := peer.Decode(key)
 		if err == nil {
 			findPeer, err := kademliaDHT.FindPeer(ctx, findID)
@@ -352,7 +357,7 @@ func sendInfoOnUserStateChange(userId string) {
 
 func sendChannelInfoToIndirectTracker(msg string) {
 	log.Println("sendChannelInfoToIndirectTracker", msg)
-	for key, _ := range trackerNodeIdMap {
+	for key := range trackerNodeIdMap {
 		findID, err := peer.Decode(key)
 		if err == nil {
 			findPeer, err := kademliaDHT.FindPeer(ctx, findID)
@@ -366,5 +371,27 @@ func sendChannelInfoToIndirectTracker(msg string) {
 				}
 			}
 		}
+	}
+}
+
+func handleLockChannelStream(stream network.Stream) {
+	rw := bufio.NewReadWriter(bufio.NewReader(stream), bufio.NewWriter(stream))
+	str, err := rw.ReadString('~')
+	if err != nil {
+		return
+	}
+	if str == "" {
+		return
+	}
+	if str != "" {
+		str = strings.TrimSuffix(str, "~")
+		request := &bean.TrackerLockChannelRequest{}
+		_ = json.Unmarshal([]byte(str), request)
+
+		//request.UserId
+		log.Println("OnHandleLockChannelStream", str)
+
+		_, _ = rw.WriteString(str + "~")
+		err = rw.Flush()
 	}
 }

@@ -13,6 +13,7 @@ const (
 
 	ProtocolIdForUserState         = "tracker/userState/1.0.1"
 	ProtocolIdForChannelInfoChange = "tracker/channelInfo/1.0.1"
+	ProtocolIdForLockChannel       = "tracker/lockChannel/1.0.1"
 )
 
 //更新通道
@@ -37,4 +38,10 @@ type ObdNodeLoginRequest struct {
 type ObdNodeUserLoginRequest struct {
 	UserId    string `json:"user_id"`
 	P2pNodeId string `json:"p2p_node_id"`
+}
+
+//节点的用户登录
+type TrackerLockChannelRequest struct {
+	UserId    string `json:"user_id"`
+	ChannelId string `json:"channel_id"`
 }
