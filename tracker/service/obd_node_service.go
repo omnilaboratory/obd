@@ -262,6 +262,19 @@ func (service *obdNodeAccountManager) GetUserState(context *gin.Context) {
 	})
 }
 
+func getUserState(obdP2pNodeId, userId string) bool {
+	if _, ok := userOfOnlineMap[userId]; ok == true {
+		return true
+	} else {
+		if _, ok := userOnlineOfOtherObdMap[obdP2pNodeId]; ok == true {
+			if _, ok := userOnlineOfOtherObdMap[obdP2pNodeId][userId]; ok == true {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 func (service *obdNodeAccountManager) GetAllUsers(context *gin.Context) {
 	pageNumStr := context.Query("pageNum")
 	pageNum, _ := strconv.Atoi(pageNumStr)

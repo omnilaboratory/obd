@@ -118,5 +118,5 @@ func wsClientConnect(c *gin.Context) {
 		SendChannel: make(chan []byte)}
 	service.ObdNodeManager.Connected <- newClient
 	go newClient.Write()
-	newClient.Read()
+	go newClient.Read()
 }

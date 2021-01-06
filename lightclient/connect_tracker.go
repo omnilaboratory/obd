@@ -222,21 +222,23 @@ func getChannelInfos() []bean.ChannelInfoRequest {
 	for _, peerId := range userPeerIds {
 		client, _ := globalWsClientManager.OnlineClientMap[peerId]
 		if client != nil {
-			nodes = checkChannel(client.User.Db, nodes)
+			nodes = checkChannel(peerId, client.User.Db, nodes)
 		}
 	}
 
 	for _, dbName := range dbNames {
 		db, err := storm.Open(_dir + "/" + dbName)
 		if err == nil {
-			nodes = checkChannel(db, nodes)
+			userId := strings.TrimLeft(dbName, "user_")
+			userId = strings.TrimRight(userId, ".db")
+			nodes = checkChannel(userId, db, nodes)
 			_ = db.Close()
 		}
 	}
 	return nodes
 }
 
-func checkChannel(db storm.Node, nodes []bean.ChannelInfoRequest) []bean.ChannelInfoRequest {
+func checkChannel(userId string, db storm.Node, nodes []bean.ChannelInfoRequest) []bean.ChannelInfoRequest {
 	var channelInfos []dao.ChannelInfo
 	err := db.Select(
 		q.Eq("IsPrivate", false),
@@ -246,32 +248,35 @@ func checkChannel(db storm.Node, nodes []bean.ChannelInfoRequest) []bean.Channel
 			q.Eq("CurrState", bean.ChannelState_HtlcTx))).Find(&channelInfos)
 	if err == nil {
 		for _, channelInfo := range channelInfos {
-			if len(channelInfo.ChannelId) > 0 && channelInfo.IsPrivate == false {
-				if channelInfo.CurrState == bean.ChannelState_CanUse || channelInfo.CurrState == bean.ChannelState_Close || channelInfo.CurrState == bean.ChannelState_HtlcTx {
-					commitmentTransaction := dao.CommitmentTransaction{}
-					err = db.Select(q.Eq("ChannelId", channelInfo.ChannelId)).OrderBy("CreateAt").Reverse().First(&commitmentTransaction)
-					if err == nil {
-						request := bean.ChannelInfoRequest{}
-						request.ChannelId = channelInfo.ChannelId
-						request.PropertyId = channelInfo.PropertyId
-						request.PeerIdA = channelInfo.PeerIdA
-						request.PeerIdB = channelInfo.PeerIdB
-						request.CurrState = channelInfo.CurrState
-						request.AmountA = commitmentTransaction.AmountToRSMC
-						request.AmountB = commitmentTransaction.AmountToCounterparty
-						request.IsAlice = false
-						if commitmentTransaction.Owner == channelInfo.PeerIdA {
-							request.IsAlice = true
-							request.AmountA = commitmentTransaction.AmountToRSMC
-							request.AmountB = commitmentTransaction.AmountToCounterparty
-						} else {
-							request.AmountB = commitmentTransaction.AmountToRSMC
-							request.AmountA = commitmentTransaction.AmountToCounterparty
-						}
-						nodes = append(nodes, request)
-					}
+			commitmentTransaction := dao.CommitmentTransaction{}
+			err = db.Select(q.Eq("ChannelId", channelInfo.ChannelId)).OrderBy("CreateAt").Reverse().First(&commitmentTransaction)
+			request := bean.ChannelInfoRequest{}
+			request.ChannelId = channelInfo.ChannelId
+			request.PropertyId = channelInfo.PropertyId
+			request.PeerIdA = channelInfo.PeerIdA
+			request.PeerIdB = channelInfo.PeerIdB
+			request.CurrState = channelInfo.CurrState
+			if commitmentTransaction.Id > 0 {
+				request.AmountA = commitmentTransaction.AmountToRSMC
+				request.AmountB = commitmentTransaction.AmountToCounterparty
+				request.IsAlice = false
+				if commitmentTransaction.Owner == channelInfo.PeerIdA {
+					request.IsAlice = true
+					request.AmountA = commitmentTransaction.AmountToRSMC
+					request.AmountB = commitmentTransaction.AmountToCounterparty
+				} else {
+					request.AmountB = commitmentTransaction.AmountToRSMC
+					request.AmountA = commitmentTransaction.AmountToCounterparty
+				}
+			} else {
+				request.AmountA = channelInfo.Amount
+				request.AmountB = 0
+				request.IsAlice = false
+				if channelInfo.FunderPeerId == userId {
+					request.IsAlice = true
 				}
 			}
+			nodes = append(nodes, request)
 		}
 	}
 	return nodes
@@ -307,7 +312,6 @@ func startSchedule() {
 					if err == nil {
 						marshal, err := json.Marshal(message.Data)
 						if err == nil {
-							log.Println(string(marshal))
 							sendChannelInfoToIndirectTracker(string(marshal))
 						}
 					}
