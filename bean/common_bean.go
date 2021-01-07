@@ -9,11 +9,13 @@ const (
 	ChannelState_CanUse            ChannelState = 20
 	ChannelState_Close             ChannelState = 21
 	ChannelState_HtlcTx            ChannelState = 22
+	ChannelState_LockByTracker     ChannelState = 23
 	ChannelState_OpenChannelRefuse ChannelState = 30
 
 	ProtocolIdForUserState         = "tracker/userState/1.0.1"
 	ProtocolIdForChannelInfoChange = "tracker/channelInfo/1.0.1"
 	ProtocolIdForLockChannel       = "tracker/lockChannel/1.0.1"
+	ProtocolIdForUnlockChannel     = "tracker/lockChannel/1.0.2"
 )
 
 //更新通道

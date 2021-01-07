@@ -238,6 +238,54 @@ func getChannelInfos() []bean.ChannelInfoRequest {
 	return nodes
 }
 
+func lockChannel(userId, channelId string) (err error) {
+	var userDb *storm.DB
+	value, exists := globalWsClientManager.OnlineClientMap[userId]
+	if exists && value.User.Db != nil {
+		userDb = value.User.Db
+	} else {
+		_dir := "dbdata" + config.ChainNodeType
+		userDb, err = storm.Open(_dir + "/" + "user_" + userId + ".db")
+	}
+	var channelInfo dao.ChannelInfo
+	if userDb != nil {
+		err = userDb.Select(
+			q.Eq("IsPrivate", false),
+			q.Eq("CurrState", bean.ChannelState_CanUse),
+			q.Eq("ChannelId", channelId)).First(&channelInfo)
+		if err == nil {
+			return userDb.UpdateField(&channelInfo, "CurrState", bean.ChannelState_LockByTracker)
+		}
+	}
+	return nil
+}
+
+func unlockChannel(userId, channelId string) (err error) {
+	var userDb *storm.DB
+	value, exists := globalWsClientManager.OnlineClientMap[userId]
+	dbIsOnOpen := false
+	if exists && value.User.Db != nil {
+		userDb = value.User.Db
+		dbIsOnOpen = true
+	} else {
+		_dir := "dbdata" + config.ChainNodeType
+		userDb, err = storm.Open(_dir + "/" + "user_" + userId + ".db")
+	}
+	var channelInfo dao.ChannelInfo
+	if userDb != nil {
+		err = userDb.Select(
+			q.Eq("CurrState", bean.ChannelState_LockByTracker),
+			q.Eq("ChannelId", channelId)).First(&channelInfo)
+		if err == nil {
+			return userDb.UpdateField(&channelInfo, "CurrState", bean.ChannelState_CanUse)
+		}
+		if dbIsOnOpen == false {
+			_ = userDb.Close()
+		}
+	}
+	return nil
+}
+
 func checkChannel(userId string, db storm.Node, nodes []bean.ChannelInfoRequest) []bean.ChannelInfoRequest {
 	var channelInfos []dao.ChannelInfo
 	err := db.Select(

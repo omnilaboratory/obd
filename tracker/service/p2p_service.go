@@ -6,6 +6,7 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
+	"github.com/asdine/storm/q"
 	"github.com/libp2p/go-libp2p"
 	circuit "github.com/libp2p/go-libp2p-circuit"
 	"github.com/libp2p/go-libp2p-core/crypto"
@@ -17,6 +18,7 @@ import (
 	ma "github.com/multiformats/go-multiaddr"
 	"github.com/omnilaboratory/obd/bean"
 	cfg "github.com/omnilaboratory/obd/tracker/config"
+	"github.com/omnilaboratory/obd/tracker/dao"
 	"log"
 	"math/rand"
 	"strconv"
@@ -92,6 +94,19 @@ func startSchedule() {
 				log.Println("timer 1m", t)
 				announceSelf()
 				scanNodes()
+			}
+		}
+	}()
+
+	go func() {
+		ticker := time.NewTicker(2 * time.Minute)
+		defer ticker.Stop()
+
+		for {
+			select {
+			case t := <-ticker.C:
+				log.Println("timer 2m", t)
+				updateLockChannel()
 			}
 		}
 	}()
@@ -270,10 +285,91 @@ func sendChannelLockInfoToObd(channelId, userId, obdP2pNodeId string) bool {
 					if str != "" {
 						str = strings.TrimSuffix(str, "~")
 						log.Println("OnSendChannelLockInfoToObd", str)
-						return true
+						if str == "1" {
+							return true
+						}
 					}
 				}
+				_ = stream.Close()
+			}
+		}
+	}
+	return false
+}
 
+func updateLockChannel() {
+	var infos []dao.LockHtlcPath
+	now := time.Now().Add(-2 * time.Minute)
+	_ = db.Select(q.Or(q.Eq("CurrState", 0), q.Eq("CurrState", 1)), q.Lt("CreateAt", now)).Find(&infos)
+	for _, item := range infos {
+		paths := item.Path
+		index := len(paths) - 1
+		channelId := paths[index]
+		channelInfo := &dao.ChannelInfo{}
+
+		if item.CurrState == 0 {
+			// get anc check First channel, whether the path is invalid
+			err := db.Select(q.Eq("ChannelId", channelId)).First(channelInfo)
+			if err == nil {
+				if channelInfo.CurrState == bean.ChannelState_LockByTracker {
+					item.CurrState = 1
+					_ = db.Update(&item)
+				}
+			}
+		}
+
+		notifyObdFinish := true
+		for index = len(paths) - 1; index >= 0; index-- {
+			channelId = paths[index]
+			err := db.Select(q.Eq("ChannelId", channelId)).First(channelInfo)
+			if err == nil {
+				if sendChannelUnlockInfoToObd(channelInfo.ChannelId, channelInfo.PeerIdA, channelInfo.ObdNodeIdA) &&
+					sendChannelUnlockInfoToObd(channelInfo.ChannelId, channelInfo.PeerIdB, channelInfo.ObdNodeIdB) {
+					channelInfo.CurrState = bean.ChannelState_CanUse
+					_ = db.Update(channelInfo)
+				} else {
+					notifyObdFinish = false
+				}
+			}
+		}
+		if notifyObdFinish {
+			item.CurrState = 2
+			_ = db.Update(&item)
+		}
+	}
+}
+
+func sendChannelUnlockInfoToObd(channelId, userId, obdP2pNodeId string) bool {
+	if len(obdP2pNodeId) == 0 {
+		return false
+	}
+	findID, err := peer.Decode(obdP2pNodeId)
+	if err == nil {
+		findPeer, err := kademliaDHT.FindPeer(ctx, findID)
+		if err == nil {
+			stream, err := hostNode.NewStream(ctx, findPeer.ID, bean.ProtocolIdForUnlockChannel)
+			if err == nil {
+				rw := bufio.NewReadWriter(bufio.NewReader(stream), bufio.NewWriter(stream))
+				request := bean.TrackerLockChannelRequest{UserId: userId, ChannelId: channelId}
+				marshal, _ := json.Marshal(request)
+
+				_, _ = rw.WriteString(string(marshal) + "~")
+				err = rw.Flush()
+				if err == nil {
+					str, err := rw.ReadString('~')
+					if err != nil {
+						return false
+					}
+					if str == "" {
+						return false
+					}
+					if str != "" {
+						str = strings.TrimSuffix(str, "~")
+						if str == "1" {
+							return true
+						}
+					}
+				}
 				_ = stream.Close()
 			}
 		}

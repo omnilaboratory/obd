@@ -100,6 +100,7 @@ func StartP2PNode() (err error) {
 	hostNode.SetStreamHandler(protocolIdForScanObd, handleTrackerScanStream)
 	hostNode.SetStreamHandler(protocolIdForBetweenObd, handleStream)
 	hostNode.SetStreamHandler(bean.ProtocolIdForLockChannel, handleLockChannelStream)
+	hostNode.SetStreamHandler(bean.ProtocolIdForUnlockChannel, handleUnlockChannelStream)
 
 	kademliaDHT, err = dht.New(ctx, hostNode)
 	if err != nil {
@@ -387,11 +388,37 @@ func handleLockChannelStream(stream network.Stream) {
 		str = strings.TrimSuffix(str, "~")
 		request := &bean.TrackerLockChannelRequest{}
 		_ = json.Unmarshal([]byte(str), request)
-
+		err = lockChannel(request.UserId, request.ChannelId)
+		result := "1"
+		if err != nil {
+			result = "0"
+		}
 		//request.UserId
-		log.Println("OnHandleLockChannelStream", str)
+		_, _ = rw.WriteString(result + "~")
+		_ = rw.Flush()
+	}
+}
 
-		_, _ = rw.WriteString(str + "~")
-		err = rw.Flush()
+func handleUnlockChannelStream(stream network.Stream) {
+	rw := bufio.NewReadWriter(bufio.NewReader(stream), bufio.NewWriter(stream))
+	str, err := rw.ReadString('~')
+	if err != nil {
+		return
+	}
+	if str == "" {
+		return
+	}
+	if str != "" {
+		str = strings.TrimSuffix(str, "~")
+		request := &bean.TrackerLockChannelRequest{}
+		_ = json.Unmarshal([]byte(str), request)
+		err = unlockChannel(request.UserId, request.ChannelId)
+		result := "1"
+		if err != nil {
+			result = "0"
+		}
+		//request.UserId
+		_, _ = rw.WriteString(result + "~")
+		_ = rw.Flush()
 	}
 }

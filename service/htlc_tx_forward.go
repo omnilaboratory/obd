@@ -319,7 +319,7 @@ func (service *htlcForwardTxManager) GetResponseFromTrackerOfPayerRequestFindPat
 	currChannelInfo := dao.ChannelInfo{}
 	err = user.Db.Select(
 		q.Eq("ChannelId", splitArr[0]),
-		q.Eq("CurrState", bean.ChannelState_CanUse),
+		q.Eq("CurrState", bean.ChannelState_LockByTracker),
 		q.Or(
 			q.Eq("PeerIdA", user.PeerId),
 			q.Eq("PeerIdB", user.PeerId))).First(&currChannelInfo)
@@ -395,7 +395,7 @@ func (service *htlcForwardTxManager) AliceAddHtlcAtAliceSide(msg bean.RequestMes
 	var channelInfo *dao.ChannelInfo
 	var currStep = 0
 	for index, channelId := range channelIds {
-		temp := getChannelInfoByChannelId(tx, channelId, user.PeerId)
+		temp := getLockChannelForHtlc(tx, channelId, user.PeerId)
 		if temp != nil {
 			if temp.PeerIdA == msg.RecipientUserPeerId || temp.PeerIdB == msg.RecipientUserPeerId {
 				channelInfo = temp
@@ -749,13 +749,7 @@ func (service *htlcForwardTxManager) BeforeBobSignAddHtlcRequestAtBobSide_40(msg
 	}
 	defer tx.Rollback()
 
-	channelInfo := &dao.ChannelInfo{}
-	err = tx.Select(
-		q.Eq("ChannelId", channelId),
-		q.Or(
-			q.Eq("PeerIdA", user.PeerId),
-			q.Eq("PeerIdB", user.PeerId))).
-		First(channelInfo)
+	channelInfo := getLockChannelForHtlc(tx, channelId, user.PeerId)
 	if channelInfo.Id == 0 {
 		return nil, errors.New("not found channel info")
 	}

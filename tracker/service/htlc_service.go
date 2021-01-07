@@ -95,25 +95,37 @@ func (manager *htlcManager) getPathIndex() int {
 	}
 	if resultIndex != -1 {
 		channelIdArr := strings.Split(manager.openList[resultIndex].ChannelIds, ",")
-		locaResult := true
+		lockResult := true
 		for _, item := range channelIdArr {
 			channelInfo := &dao.ChannelInfo{}
 			err := db.Select(q.Eq("ChannelId", item), q.Eq("CurrState", cbean.ChannelState_CanUse)).First(channelInfo)
 			if err == nil {
 				if len(channelInfo.ObdNodeIdA) > 0 && sendChannelLockInfoToObd(channelInfo.ChannelId, channelInfo.PeerIdA, channelInfo.ObdNodeIdA) == false {
-					locaResult = false
+					lockResult = false
 					break
 				}
 
 				if len(channelInfo.ObdNodeIdB) > 0 && sendChannelLockInfoToObd(channelInfo.ChannelId, channelInfo.PeerIdB, channelInfo.ObdNodeIdB) == false {
-					locaResult = false
+					lockResult = false
 					break
 				}
 			}
 		}
-		if locaResult == false {
+		if lockResult == false {
 			manager.openList = append(manager.openList[:resultIndex], manager.openList[resultIndex+1:]...)
-			resultIndex = manager.getPathIndex()
+			return manager.getPathIndex()
+		} else {
+			for _, item := range channelIdArr {
+				channelInfo := &dao.ChannelInfo{}
+				err := db.Select(q.Eq("ChannelId", item), q.Eq("CurrState", cbean.ChannelState_CanUse)).First(channelInfo)
+				if err == nil {
+					channelInfo.CurrState = cbean.ChannelState_LockByTracker
+					channelInfo.LatestEditAt = time.Now()
+					_ = db.Update(channelInfo)
+				}
+			}
+			htlcPath := dao.LockHtlcPath{Path: channelIdArr, CurrState: 0, CreateAt: time.Now()}
+			_ = db.Save(&htlcPath)
 		}
 	}
 	return resultIndex
