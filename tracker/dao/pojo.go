@@ -52,3 +52,10 @@ type HtlcTxInfo struct {
 	CreateAt time.Time `json:"create_at"`
 	bean.UpdateHtlcTxStateRequest
 }
+
+type LockHtlcPath struct {
+	Id        int       `storm:"id,increment" json:"id"`
+	Path      []string  `json:"path"`
+	CurrState int       `json:"curr_state"` // 0 创建，1，标记作废，2 标记通知完成
+	CreateAt  time.Time `json:"create_at"`
+}

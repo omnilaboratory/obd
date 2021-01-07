@@ -61,18 +61,8 @@ func (manager *htlcManager) getPath(obdClient *ObdNode, msgData string) (path in
 	}
 
 	manager.createChannelNetwork(pathRequest.RealPayerPeerId, pathRequest.PayeePeerId, pathRequest.PropertyId, pathRequest.Amount, nil, true)
-	resultIndex := -1
-	minLength := 99
-	for index, node := range manager.openList {
-		if node.IsTarget {
-			log.Println(node.ChannelIds)
-			tempLength := len(strings.Split(node.ChannelIds, ","))
-			if tempLength < minLength {
-				resultIndex = index
-				minLength = tempLength
-			}
-		}
-	}
+	resultIndex := manager.getPathIndex()
+
 	retNode := make(map[string]interface{})
 	retNode["senderPeerId"] = pathRequest.RealPayerPeerId
 	retNode["h"] = pathRequest.H
@@ -88,6 +78,57 @@ func (manager *htlcManager) getPath(obdClient *ObdNode, msgData string) (path in
 		retNode["path"] = path
 	}
 	return retNode, nil
+}
+
+func (manager *htlcManager) getPathIndex() int {
+	resultIndex := -1
+	minLength := 99
+	for index, node := range manager.openList {
+		if node.IsTarget {
+			log.Println(node.ChannelIds)
+			tempLength := len(strings.Split(node.ChannelIds, ","))
+			if tempLength < minLength {
+				resultIndex = index
+				minLength = tempLength
+			}
+		}
+	}
+	if resultIndex != -1 {
+		channelIdArr := strings.Split(manager.openList[resultIndex].ChannelIds, ",")
+		lockResult := true
+		for _, item := range channelIdArr {
+			channelInfo := &dao.ChannelInfo{}
+			err := db.Select(q.Eq("ChannelId", item), q.Eq("CurrState", cbean.ChannelState_CanUse)).First(channelInfo)
+			if err == nil {
+				if len(channelInfo.ObdNodeIdA) > 0 && sendChannelLockInfoToObd(channelInfo.ChannelId, channelInfo.PeerIdA, channelInfo.ObdNodeIdA) == false {
+					lockResult = false
+					break
+				}
+
+				if len(channelInfo.ObdNodeIdB) > 0 && sendChannelLockInfoToObd(channelInfo.ChannelId, channelInfo.PeerIdB, channelInfo.ObdNodeIdB) == false {
+					lockResult = false
+					break
+				}
+			}
+		}
+		if lockResult == false {
+			manager.openList = append(manager.openList[:resultIndex], manager.openList[resultIndex+1:]...)
+			return manager.getPathIndex()
+		} else {
+			for _, item := range channelIdArr {
+				channelInfo := &dao.ChannelInfo{}
+				err := db.Select(q.Eq("ChannelId", item), q.Eq("CurrState", cbean.ChannelState_CanUse)).First(channelInfo)
+				if err == nil {
+					channelInfo.CurrState = cbean.ChannelState_LockByTracker
+					channelInfo.LatestEditAt = time.Now()
+					_ = db.Update(channelInfo)
+				}
+			}
+			htlcPath := dao.LockHtlcPath{Path: channelIdArr, CurrState: 0, CreateAt: time.Now()}
+			_ = db.Save(&htlcPath)
+		}
+	}
+	return resultIndex
 }
 
 func (manager *htlcManager) updateHtlcInfo(obdClient *ObdNode, msgData string) (err error) {
