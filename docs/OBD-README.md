@@ -181,7 +181,7 @@ The first message is to sign up as `Alice`. input the following request into the
 
 ```json
 {
-	"type":101
+	"type":-102004
 }
 ```
 
@@ -191,7 +191,7 @@ In the `Message Log` pannel, displays the response message from OBD:
 
 ```json
 {
-    "type":101,
+    "type":-102004,
     "status":true,
     "from":"c2215a60-8b81-439f-8cb3-11ba51691076",
     "to":"c2215a60-8b81-439f-8cb3-11ba51691076",
@@ -205,7 +205,7 @@ Then go to login as `Alice`. input the following message and press `SEND`:
 
 ```json
 {
-    "type":1,
+    "type":-102001,
     "data":{
         "mnemonic":"two ribbon knee leaf easy pottery hobby pony mule test bridge liar sand mirror decline gasp focus this park undo rough cricket portion ignore"
     }
@@ -218,7 +218,7 @@ In the `Message Log` pannel, displays the response message from OBD:
 
 ```json
 {
-    "type":1,
+    "type":-102001,
     "status":true,
     "from":"7da8d2441e0ad67040a274902f1965ee1a5c3fdd86f1ddc3280eda5230e006f2",
     "to":"all",
@@ -246,7 +246,7 @@ Websocket request:
 
 ```
 {
-	"type":101
+	"type":-102004
 }
 ```
 
@@ -254,7 +254,7 @@ OBD responses:
 
 ```json
 {
-    "type":101,
+    "type":-102004,
     "status":true,
     "from":"c2215a60-8b81-439f-8cb3-11ba51691076",
     "to":"c2215a60-8b81-439f-8cb3-11ba51691076",
@@ -268,7 +268,7 @@ Websocket request:
 
 ```
 {
-	"type":101
+	"type":-102004
 }
 ```
 
@@ -276,7 +276,7 @@ OBD responses:
 
 ```json
 {
-    "type":101,
+    "type":-102004,
     "status":true,
     "from":"cec4e1db-ef38-4508-a9bf-8c5976df1916",
     "to":"cec4e1db-ef38-4508-a9bf-8c5976df1916",
@@ -292,7 +292,7 @@ Websocket request:
 
 ```json
 {
-	"type":1,
+	"type":-102001,
     "data":{
         "mnemonic":"two ribbon knee leaf easy pottery hobby pony mule test bridge liar sand mirror decline gasp focus this park undo rough cricket portion ignore"
     }
@@ -303,7 +303,7 @@ OBD responses:
 
 ```json
 {
-    "type":1,
+    "type":-102001,
     "status":true,
     "from":"7da8d2441e0ad67040a274902f1965ee1a5c3fdd86f1ddc3280eda5230e006f2",
     "to":"all",
@@ -317,7 +317,7 @@ Websocket request:
 
 ```json
 {
-    "type":1,
+    "type":-102001,
     "data":{
         "mnemonic":"outer exhibit burger screen onion dog ensure net depth scan steel field pizza group veteran doctor rhythm inch dawn rotate gravity index modify utility"
     }
@@ -328,7 +328,7 @@ OBD responses:
 
 ```json
 {
-    "type":1,
+    "type":-102001,
     "status":true,
     "from":"f38e72f6bf69c69ad1cdc0040550bafb86d5c4d35bd04542fcf5fc5ecb2135be",
     "to":"all",

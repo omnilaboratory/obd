@@ -11,8 +11,8 @@ Following steps will assist you to build your first lightning wallet, and the co
 * [Step 3: login using mnemonic words](#step-3-login-using-mnemonic-words)
 * [Step 4: connect another user](#step-4-connect-another-user)
 * [Step 5: open channel](#step-5-open-channel)
-* [Step 6: create invoice](#step-6-create-an-invoice)
-* [Step 7: pay invoice](#step-7-pay-an-invoice)
+* [Step 6: create invoice](#step-6-create-invoice)
+* [Step 7: pay invoice](#step-7-pay-invoice)
   
 
 ## Step 1: connect to an OBD node
@@ -218,6 +218,7 @@ info.amount      = 'amount';
 info.h           = 'hash of r';
 info.expiry_time = 'expiry time';
 info.description = 'a memo';
+info.is_private  = true or false;
 
 // SDK API
 addInvoice(info, function(e) {
