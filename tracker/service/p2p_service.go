@@ -94,18 +94,6 @@ func startSchedule() {
 				log.Println("timer 1m", t)
 				announceSelf()
 				scanNodes()
-			}
-		}
-	}()
-
-	go func() {
-		ticker := time.NewTicker(2 * time.Minute)
-		defer ticker.Stop()
-
-		for {
-			select {
-			case t := <-ticker.C:
-				log.Println("timer 2m", t)
 				updateLockChannel()
 			}
 		}

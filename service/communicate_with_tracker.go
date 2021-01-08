@@ -41,21 +41,18 @@ func sendChannelStateToTracker(channelInfo dao.ChannelInfo, commitmentTx dao.Com
 }
 
 func noticeTrackerUserLogin(user dao.User) {
-	loginRequest := bean.ObdNodeUserLoginRequest{}
-	loginRequest.UserId = user.PeerId
+	loginRequest := bean.ObdNodeUserLoginRequest{UserId: user.PeerId}
 	sendMsgToTracker(enum.MsgType_Tracker_UserLogin_304, loginRequest)
 }
 
 func noticeTrackerUserLogout(user dao.User) {
-	loginRequest := bean.ObdNodeUserLoginRequest{}
-	loginRequest.UserId = user.PeerId
+	loginRequest := bean.ObdNodeUserLoginRequest{UserId: user.PeerId}
 	sendMsgToTracker(enum.MsgType_Tracker_UserLogout_305, loginRequest)
 }
 
 func sendMsgToTracker(msgType enum.MsgType, data interface{}) {
 
-	message := trackerBean.RequestMessage{}
-	message.Type = msgType
+	message := trackerBean.RequestMessage{Type: msgType}
 
 	dataBytes, _ := json.Marshal(data)
 	dataStr := string(dataBytes)
