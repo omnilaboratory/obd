@@ -303,6 +303,11 @@ func updateLockChannel() {
 					item.CurrState = 1
 					_ = db.Update(&item)
 				}
+				if channelInfo.CurrState != bean.ChannelState_LockByTracker {
+					item.CurrState = 2
+					_ = db.Update(&item)
+					return
+				}
 			}
 		}
 
