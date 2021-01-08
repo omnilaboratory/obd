@@ -191,6 +191,16 @@ func (service *htlcForwardTxManager) PayerRequestFindPath(msgData string, user b
 		}
 	}
 
+	cacheDataForTx := &dao.CacheDataForTx{}
+	keyName := user.PeerId + "_" + requestFindPathInfo.H
+	err = user.Db.Select(q.Eq("KeyName", keyName)).First(cacheDataForTx)
+	if cacheDataForTx.Id != 0 {
+		now := time.Now().Add(-2 * time.Minute)
+		if cacheDataForTx.IsFinish && cacheDataForTx.CreateAt.After(now) {
+			return nil, false, errors.New("request too fast")
+		}
+	}
+
 	if requestFindPathInfo.RecipientUserPeerId == user.PeerId && requestFindPathInfo.RecipientNodePeerId == user.P2PLocalPeerId {
 		return nil, requestFindPathInfo.IsPrivate, errors.New("recipient_user_peer_id can not be yourself")
 	}
@@ -217,13 +227,14 @@ func (service *htlcForwardTxManager) PayerRequestFindPath(msgData string, user b
 		pathRequest.PayerObdNodeId = tool.GetObdNodeId()
 		pathRequest.PayeePeerId = requestFindPathInfo.RecipientUserPeerId
 
-		cacheDataForTx := &dao.CacheDataForTx{}
 		cacheDataForTx.KeyName = user.PeerId + "_" + pathRequest.H
 		err = user.Db.Select(q.Eq("KeyName", cacheDataForTx.KeyName)).First(cacheDataForTx)
 		if cacheDataForTx.Id != 0 {
 			_ = user.Db.DeleteStruct(cacheDataForTx)
 		}
 
+		cacheDataForTx.CreateAt = time.Now()
+		cacheDataForTx.IsFinish = false
 		cacheDataForTx.KeyName = user.PeerId + "_" + pathRequest.H
 		bytes, _ := json.Marshal(requestFindPathInfo)
 		cacheDataForTx.Data = bytes
@@ -343,7 +354,8 @@ func (service *htlcForwardTxManager) GetResponseFromTrackerOfPayerRequestFindPat
 	retData["min_cltv_expiry"] = arrLength
 	retData["next_node_peerId"] = nextNodePeerId
 	retData["memo"] = requestFindPathInfo.Description
-	_ = user.Db.DeleteStruct(cacheDataForTx)
+
+	_ = user.Db.UpdateField(cacheDataForTx, "IsFinish", true)
 
 	return retData, nil
 }
@@ -2292,6 +2304,13 @@ func (service *htlcForwardTxManager) OnGetHtrdTxDataFromBobAtAliceSide_43(msgDat
 	if cacheDataForTx.Id != 0 {
 		_ = tx.DeleteStruct(cacheDataForTx)
 	}
+
+	key = user.PeerId + "_" + latestCommitmentTx.HtlcH
+	_ = tx.Select(q.Eq("KeyName", key)).First(cacheDataForTx)
+	if cacheDataForTx.Id != 0 {
+		_ = tx.DeleteStruct(cacheDataForTx)
+	}
+
 	delete(service.tempDataFrom41PAtAliceSide, key)
 	delete(service.tempDataSendTo42PAtAliceSide, key)
 	_ = tx.Commit()

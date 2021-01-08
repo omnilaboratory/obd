@@ -318,7 +318,9 @@ type AtomicSwapAcceptedInfo struct {
 }
 
 type CacheDataForTx struct {
-	Id      int    `storm:"id,increment" json:"id" `
-	KeyName string `json:"key_name"`
-	Data    []byte `json:"data"`
+	Id       int       `storm:"id,increment" json:"id" `
+	KeyName  string    `json:"key_name"`
+	Data     []byte    `json:"data"`
+	IsFinish bool      `json:"is_finish"`
+	CreateAt time.Time `json:"create_at"`
 }
