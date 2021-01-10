@@ -11,8 +11,8 @@ Following steps will assist you to build your first lightning wallet, and the co
 * [Step 3: login using mnemonic words](#step-3-login-using-mnemonic-words)
 * [Step 4: connect another user](#step-4-connect-another-user)
 * [Step 5: open channel](#step-5-open-channel)
-* [Step 6: create invoice](#step-6-create-an-invoice)
-* [Step 7: pay invoice](#step-7-pay-an-invoice)
+* [Step 6: create invoice](#step-6-create-invoice)
+* [Step 7: pay invoice](#step-7-pay-invoice)
   
 
 ## Step 1: connect to an OBD node
@@ -218,6 +218,7 @@ info.amount      = 'amount';
 info.h           = 'hash of r';
 info.expiry_time = 'expiry time';
 info.description = 'a memo';
+info.is_private  = true or false;
 
 // SDK API
 addInvoice(info, function(e) {
@@ -276,30 +277,17 @@ Interested user shall read the [inside steps of paying an invoice](https://omnil
 
 ```js
 let myUserID   = 'user id of currently logged in';
-let channel_id = 'channel_id';
+let channel_id = 'the channel id';
+let invoice    = 'an invoice';
 
-// Step 1: HTLCFindPath
-let info     = new HTLCFindPathInfo();
-info.invoice = 'invoice';
+// SDK API
+let resp       = await payInvoice(myUserID, channel_id, invoice);
 
-let e        = await HTLCFindPath(info);
-let path     = e.routing_packet;
-
-if (channel_id != path) {
-    // Using new channel to process this htlc.
-    channel_id = path;
-}
-
-saveHTLCPathData(e);
-
-// Step 2: addHTLC
-payInvoiceStep2(e, myUserID, channel_id);
-
-// Step 3: HTLCSigned from Bob
+// Your code to process the callback data.
 ... ...
 ```
 
-Full example in GUI-tool is [payInvoice](https://github.com/omnilaboratory/DebuggingTool/blob/master/js/common.js) function.
+Full example in GUI-tool is [sdkPayInvoice](https://github.com/omnilaboratory/DebuggingTool/blob/master/js/common.js) function.
 
 ## Remark
 

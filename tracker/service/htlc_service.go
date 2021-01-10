@@ -5,6 +5,7 @@ import (
 	"errors"
 	"github.com/asdine/storm/q"
 	"github.com/gin-gonic/gin"
+	cbean "github.com/omnilaboratory/obd/bean"
 	"github.com/omnilaboratory/obd/tool"
 	"github.com/omnilaboratory/obd/tracker/bean"
 	"github.com/omnilaboratory/obd/tracker/config"
@@ -59,19 +60,9 @@ func (manager *htlcManager) getPath(obdClient *ObdNode, msgData string) (path in
 		return "", errors.New("wrong amount")
 	}
 
-	manager.createChannelNetwork(pathRequest.PayerObdNodeId, pathRequest.RealPayerPeerId, pathRequest.PayeePeerId, pathRequest.PropertyId, pathRequest.Amount, nil, true)
-	resultIndex := -1
-	minLength := 99
-	for index, node := range manager.openList {
-		if node.IsTarget {
-			log.Println(node.ChannelIds)
-			tempLength := len(strings.Split(node.ChannelIds, ","))
-			if tempLength < minLength {
-				resultIndex = index
-				minLength = tempLength
-			}
-		}
-	}
+	manager.createChannelNetwork(pathRequest.RealPayerPeerId, pathRequest.PayeePeerId, pathRequest.PropertyId, pathRequest.Amount, nil, true)
+	resultIndex := manager.getPathIndex()
+
 	retNode := make(map[string]interface{})
 	retNode["senderPeerId"] = pathRequest.RealPayerPeerId
 	retNode["h"] = pathRequest.H
@@ -87,6 +78,57 @@ func (manager *htlcManager) getPath(obdClient *ObdNode, msgData string) (path in
 		retNode["path"] = path
 	}
 	return retNode, nil
+}
+
+func (manager *htlcManager) getPathIndex() int {
+	resultIndex := -1
+	minLength := 99
+	for index, node := range manager.openList {
+		if node.IsTarget {
+			log.Println(node.ChannelIds)
+			tempLength := len(strings.Split(node.ChannelIds, ","))
+			if tempLength < minLength {
+				resultIndex = index
+				minLength = tempLength
+			}
+		}
+	}
+	if resultIndex != -1 {
+		channelIdArr := strings.Split(manager.openList[resultIndex].ChannelIds, ",")
+		lockResult := true
+		for _, item := range channelIdArr {
+			channelInfo := &dao.ChannelInfo{}
+			err := db.Select(q.Eq("ChannelId", item), q.Eq("CurrState", cbean.ChannelState_CanUse)).First(channelInfo)
+			if err == nil {
+				if len(channelInfo.ObdNodeIdA) > 0 && sendChannelLockInfoToObd(channelInfo.ChannelId, channelInfo.PeerIdA, channelInfo.ObdNodeIdA) == false {
+					lockResult = false
+					break
+				}
+
+				if len(channelInfo.ObdNodeIdB) > 0 && sendChannelLockInfoToObd(channelInfo.ChannelId, channelInfo.PeerIdB, channelInfo.ObdNodeIdB) == false {
+					lockResult = false
+					break
+				}
+			}
+		}
+		if lockResult == false {
+			manager.openList = append(manager.openList[:resultIndex], manager.openList[resultIndex+1:]...)
+			return manager.getPathIndex()
+		} else {
+			for _, item := range channelIdArr {
+				channelInfo := &dao.ChannelInfo{}
+				err := db.Select(q.Eq("ChannelId", item), q.Eq("CurrState", cbean.ChannelState_CanUse)).First(channelInfo)
+				if err == nil {
+					channelInfo.CurrState = cbean.ChannelState_LockByTracker
+					channelInfo.LatestEditAt = time.Now()
+					_ = db.Update(channelInfo)
+				}
+			}
+			htlcPath := dao.LockHtlcPath{Path: channelIdArr, CurrState: 0, CreateAt: time.Now()}
+			_ = db.Save(&htlcPath)
+		}
+	}
+	return resultIndex
 }
 
 func (manager *htlcManager) updateHtlcInfo(obdClient *ObdNode, msgData string) (err error) {
@@ -165,7 +207,7 @@ func (manager *htlcManager) GetHtlcCurrState(context *gin.Context) {
 	})
 }
 
-func (manager *htlcManager) createChannelNetwork(payerObdNodeId, realPayerPeerId, currPayeePeerId string, propertyId int64, amount float64, currNode *graphEdge, isBegin bool) {
+func (manager *htlcManager) createChannelNetwork(realPayerPeerId, currPayeePeerId string, propertyId int64, amount float64, currNode *graphEdge, isBegin bool) {
 	if isBegin {
 		manager.openList = make([]*graphEdge, 0)
 		realPayeeEdge := &graphEdge{
@@ -211,29 +253,26 @@ func (manager *htlcManager) createChannelNetwork(payerObdNodeId, realPayerPeerId
 
 	var nodes []dao.ChannelInfo
 	err := errors.New("no channel")
-	if isBegin {
-		err = db.Select(
-			q.Eq("PropertyId", propertyId),
-			q.Eq("CurrState", 20),
-			q.Or(
-				q.Eq("PeerIdB", currPayeePeerId),
-				q.Eq("PeerIdA", currPayeePeerId)),
-			q.Or(
-				q.Eq("ObdNodeIdA", payerObdNodeId),
-				q.Eq("ObdNodeIdB", payerObdNodeId))).OrderBy("Id").Reverse().
-			Find(&nodes)
-	} else {
-		err = db.Select(
-			q.Eq("PropertyId", propertyId),
-			q.Eq("CurrState", 20),
-			q.Or(
-				q.Eq("PeerIdB", currPayeePeerId),
-				q.Eq("PeerIdA", currPayeePeerId))).OrderBy("Id").Reverse().
-			Find(&nodes)
-	}
+
+	err = db.Select(
+		q.Eq("PropertyId", propertyId),
+		q.Eq("CurrState", cbean.ChannelState_CanUse),
+		q.Or(
+			q.Eq("PeerIdB", currPayeePeerId),
+			q.Eq("PeerIdA", currPayeePeerId))).OrderBy("Id").Reverse().
+		Find(&nodes)
 
 	if err == nil {
 		for _, item := range nodes {
+
+			// check userOnline
+			if getUserState(item.ObdNodeIdA, item.PeerIdA) == false {
+				continue
+			}
+			if getUserState(item.ObdNodeIdB, item.PeerIdB) == false {
+				continue
+			}
+
 			interSender := item.PeerIdA
 			leftAmount := item.AmountA
 			if item.PeerIdA == currPayeePeerId {
@@ -256,11 +295,11 @@ func (manager *htlcManager) createChannelNetwork(payerObdNodeId, realPayerPeerId
 					PathIndexArr:    pathIndexArr,
 					Level:           currNode.Level + 1,
 					IsRoot:          false,
+					IsTarget:        false,
+					CurrNodePeerId:  interSender,
+					ChannelId:       item.ChannelId,
+					ChannelIds:      channelIds,
 				}
-				newEdge.ChannelIds = channelIds
-				newEdge.ChannelId = item.ChannelId
-				newEdge.CurrNodePeerId = interSender
-				newEdge.IsTarget = false
 				manager.openList = append(manager.openList, &newEdge)
 
 				if interSender == realPayerPeerId {
@@ -268,7 +307,7 @@ func (manager *htlcManager) createChannelNetwork(payerObdNodeId, realPayerPeerId
 					newEdge.PathPeerIds += "," + newEdge.CurrNodePeerId
 				} else {
 					if newEdge.Level < 6 {
-						manager.createChannelNetwork("", realPayerPeerId, interSender, propertyId, amount, &newEdge, false)
+						manager.createChannelNetwork(realPayerPeerId, interSender, propertyId, amount, &newEdge, false)
 					}
 				}
 			}

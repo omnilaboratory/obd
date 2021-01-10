@@ -2,7 +2,7 @@
 
 ## Overview
 
-The static channel cackup data loss protection system howto. 
+The static channel backup data loss protection system howto. 
 
 ## Recovering Data Corruption or Loss 
 

@@ -2,7 +2,6 @@ package bean
 
 import (
 	"github.com/omnilaboratory/obd/bean/enum"
-	"github.com/omnilaboratory/obd/dao"
 )
 
 type RequestMessage struct {
@@ -17,29 +16,6 @@ type ReplyMessage struct {
 	From   string       `json:"from"`
 	To     string       `json:"to"`
 	Result interface{}  `json:"result"`
-}
-
-//节点登录
-type ObdNodeLoginRequest struct {
-	NodeId     string `json:"node_id"`
-	P2PAddress string `json:"p2p_address"`
-}
-
-//节点的用户登录
-type ObdNodeUserLoginRequest struct {
-	UserId string `json:"user_id"`
-}
-
-//更新通道
-type ChannelInfoRequest struct {
-	ChannelId  string           `json:"channel_id"`
-	PropertyId int64            `json:"property_id"`
-	CurrState  dao.ChannelState `json:"curr_state"`
-	IsAlice    bool             `json:"is_alice"` //是否是alice方的节点
-	PeerIdA    string           `json:"peer_ida"`
-	PeerIdB    string           `json:"peer_idb"`
-	AmountA    float64          `json:"amount_a"`
-	AmountB    float64          `json:"amount_b"`
 }
 
 //请求获取htlc的path

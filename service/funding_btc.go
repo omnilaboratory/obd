@@ -69,7 +69,7 @@ func (service *fundingTransactionManager) BtcFundingCreated(msg bean.RequestMess
 		return nil, "", errors.New(enum.Tips_funding_notFoundChannelByTempId + reqData.TemporaryChannelId)
 	}
 
-	if channelInfo.CurrState != dao.ChannelState_WaitFundAsset {
+	if channelInfo.CurrState != bean.ChannelState_WaitFundAsset {
 		return nil, "", errors.New(enum.Tips_funding_notFundBtcState)
 	}
 
@@ -355,7 +355,7 @@ func (service *fundingTransactionManager) OnAliceSignBtcFundingMinerFeeRedeemTx(
 		return nil, "", errors.New(enum.Tips_funding_notFoundChannelByTempId + fundingBtcOfP2p.TemporaryChannelId)
 	}
 
-	if channelInfo.CurrState != dao.ChannelState_WaitFundAsset {
+	if channelInfo.CurrState != bean.ChannelState_WaitFundAsset {
 		return nil, "", errors.New(enum.Tips_funding_notFundBtcState)
 	}
 
@@ -452,7 +452,7 @@ func (service *fundingTransactionManager) BeforeSignBtcFundingCreatedAtBobSide(d
 	channelInfo := &dao.ChannelInfo{}
 	err = tx.Select(
 		q.Eq("TemporaryChannelId", temporaryChannelId),
-		q.Eq("CurrState", dao.ChannelState_WaitFundAsset),
+		q.Eq("CurrState", bean.ChannelState_WaitFundAsset),
 		q.Or(
 			q.Eq("PeerIdA", user.PeerId),
 			q.Eq("PeerIdB", user.PeerId))).
@@ -576,7 +576,7 @@ func (service *fundingTransactionManager) FundingBtcTxSigned(msg bean.RequestMes
 		return nil, "", errors.New(enum.Tips_funding_notFoundChannelByTempId + reqData.TemporaryChannelId)
 	}
 
-	if channelInfo.CurrState != dao.ChannelState_WaitFundAsset {
+	if channelInfo.CurrState != bean.ChannelState_WaitFundAsset {
 		return nil, "", errors.New(enum.Tips_funding_notFundAssetState)
 	}
 
@@ -702,7 +702,7 @@ func (service *fundingTransactionManager) AfterBobSignBtcFundingAtAliceSide(data
 	channelInfo := &dao.ChannelInfo{}
 	err = tx.Select(
 		q.Eq("TemporaryChannelId", temporaryChannelId),
-		q.Eq("CurrState", dao.ChannelState_WaitFundAsset),
+		q.Eq("CurrState", bean.ChannelState_WaitFundAsset),
 		q.Or(
 			q.Eq("PeerIdA", user.PeerId),
 			q.Eq("PeerIdB", user.PeerId))).

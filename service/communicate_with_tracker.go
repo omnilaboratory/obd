@@ -2,9 +2,10 @@ package service
 
 import (
 	"encoding/json"
+	"github.com/omnilaboratory/obd/bean"
 	"github.com/omnilaboratory/obd/bean/enum"
 	"github.com/omnilaboratory/obd/dao"
-	"github.com/omnilaboratory/obd/tracker/bean"
+	trackerBean "github.com/omnilaboratory/obd/tracker/bean"
 	"github.com/tidwall/gjson"
 	"strings"
 )
@@ -40,21 +41,18 @@ func sendChannelStateToTracker(channelInfo dao.ChannelInfo, commitmentTx dao.Com
 }
 
 func noticeTrackerUserLogin(user dao.User) {
-	loginRequest := bean.ObdNodeUserLoginRequest{}
-	loginRequest.UserId = user.PeerId
+	loginRequest := bean.ObdNodeUserLoginRequest{UserId: user.PeerId}
 	sendMsgToTracker(enum.MsgType_Tracker_UserLogin_304, loginRequest)
 }
 
 func noticeTrackerUserLogout(user dao.User) {
-	loginRequest := bean.ObdNodeUserLoginRequest{}
-	loginRequest.UserId = user.PeerId
+	loginRequest := bean.ObdNodeUserLoginRequest{UserId: user.PeerId}
 	sendMsgToTracker(enum.MsgType_Tracker_UserLogout_305, loginRequest)
 }
 
 func sendMsgToTracker(msgType enum.MsgType, data interface{}) {
 
-	message := bean.RequestMessage{}
-	message.Type = msgType
+	message := trackerBean.RequestMessage{Type: msgType}
 
 	dataBytes, _ := json.Marshal(data)
 	dataStr := string(dataBytes)

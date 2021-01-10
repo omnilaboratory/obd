@@ -56,8 +56,8 @@ func Init() {
 		return
 	}
 	ServerPort = section.Key("port").MustInt(60020)
-	ReadTimeout = time.Duration(section.Key("readTimeout").MustInt(5)) * time.Second
-	WriteTimeout = time.Duration(section.Key("writeTimeout").MustInt(5)) * time.Second
+	ReadTimeout = time.Duration(section.Key("readTimeout").MustInt(60)) * time.Second
+	WriteTimeout = time.Duration(section.Key("writeTimeout").MustInt(60)) * time.Second
 
 	htlcNode, err := Cfg.GetSection("htlc")
 	if err != nil {
@@ -82,6 +82,7 @@ func Init() {
 		log.Println(err)
 		return
 	}
+
 	if len(tracker.Key("host").String()) == 0 {
 		panic("empty tracker host")
 	}
@@ -90,4 +91,5 @@ func Init() {
 	RawHostIP := strings.Split(RawTrackerHost, ":")
 	ParseHostname := parseHostname(RawHostIP[0])
 	TrackerHost = ParseHostname + ":" + RawHostIP[1]
+
 }

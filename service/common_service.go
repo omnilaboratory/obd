@@ -27,8 +27,8 @@ func findUserIsOnline(nodePeerId, userPeerId string) error {
 		if exists && value != nil {
 			return nil
 		}
-		if nodePeerId != P2PLocalPeerId {
-			if conn2tracker.GetUserState(userPeerId) > 0 {
+		if nodePeerId != P2PLocalNodeId {
+			if conn2tracker.GetUserState(nodePeerId, userPeerId) > 0 {
 				return nil
 			}
 		}
@@ -37,7 +37,7 @@ func findUserIsOnline(nodePeerId, userPeerId string) error {
 }
 
 func checkBtcFundFinish(tx storm.Node, channel dao.ChannelInfo, isFundOmni bool) error {
-	if channel.CurrState > dao.ChannelState_WaitFundAsset {
+	if channel.CurrState > bean.ChannelState_WaitFundAsset {
 		return nil
 	}
 
@@ -338,8 +338,24 @@ func getChannelInfoByChannelId(tx storm.Node, channelId string, userPeerId strin
 			q.Eq("PeerIdA", userPeerId),
 			q.Eq("PeerIdB", userPeerId)),
 		q.Or(
-			q.Eq("CurrState", dao.ChannelState_CanUse),
-			q.Eq("CurrState", dao.ChannelState_NewTx))).
+			q.Eq("CurrState", bean.ChannelState_CanUse),
+			q.Eq("CurrState", bean.ChannelState_LockByTracker),
+			q.Eq("CurrState", bean.ChannelState_NewTx))).
+		First(channelInfo)
+	if err != nil {
+		return nil
+	}
+	return channelInfo
+}
+
+func getLockChannelForHtlc(tx storm.Node, channelId string, userPeerId string) (channelInfo *dao.ChannelInfo) {
+	channelInfo = &dao.ChannelInfo{}
+	err := tx.Select(
+		q.Eq("ChannelId", channelId),
+		q.Or(
+			q.Eq("PeerIdA", userPeerId),
+			q.Eq("PeerIdB", userPeerId)),
+		q.Eq("CurrState", bean.ChannelState_LockByTracker)).
 		First(channelInfo)
 	if err != nil {
 		return nil

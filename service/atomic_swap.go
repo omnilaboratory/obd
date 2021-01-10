@@ -64,7 +64,7 @@ func (this *atomicSwapManager) AtomicSwap(msg bean.RequestMessage, user bean.Use
 
 	err = user.Db.Select(
 		q.Eq("ChannelId", reqData.ChannelIdFrom),
-		q.Eq("CurrState", dao.ChannelState_HtlcTx),
+		q.Eq("CurrState", bean.ChannelState_HtlcTx),
 		q.Eq("PropertyId", reqData.PropertySent),
 		q.Or(
 			q.Eq("PeerIdA", user.PeerId),
@@ -214,7 +214,7 @@ func (this *atomicSwapManager) AtomicSwapAccepted(msg bean.RequestMessage, user 
 
 	err = user.Db.Select(
 		q.Eq("ChannelId", reqData.ChannelIdFrom),
-		q.Eq("CurrState", dao.ChannelState_HtlcTx),
+		q.Eq("CurrState", bean.ChannelState_HtlcTx),
 		q.Eq("PropertyId", reqData.PropertySent),
 		q.Or(
 			q.Eq("PeerIdA", user.PeerId),

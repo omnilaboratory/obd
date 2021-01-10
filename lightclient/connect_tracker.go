@@ -13,6 +13,7 @@ import (
 	"github.com/omnilaboratory/obd/service"
 	"github.com/omnilaboratory/obd/tool"
 	trackerBean "github.com/omnilaboratory/obd/tracker/bean"
+	"github.com/tidwall/gjson"
 	"io/ioutil"
 	"log"
 	"net/url"
@@ -151,7 +152,7 @@ func SynData() {
 func updateP2pAddressLogin() {
 	info := make(map[string]interface{})
 	info["type"] = enum.MsgType_Tracker_NodeLogin_303
-	nodeLoginInfo := &trackerBean.ObdNodeLoginRequest{}
+	nodeLoginInfo := &bean.ObdNodeLoginRequest{}
 	nodeLoginInfo.NodeId = tool.GetObdNodeId()
 	nodeLoginInfo.P2PAddress = localServerDest
 	info["data"] = nodeLoginInfo
@@ -165,9 +166,9 @@ func updateP2pAddressLogin() {
 
 func sycUserInfos() {
 
-	nodes := make([]trackerBean.ObdNodeUserLoginRequest, 0)
+	nodes := make([]bean.ObdNodeUserLoginRequest, 0)
 	for userId, _ := range globalWsClientManager.OnlineClientMap {
-		user := trackerBean.ObdNodeUserLoginRequest{}
+		user := bean.ObdNodeUserLoginRequest{}
 		user.UserId = userId
 		nodes = append(nodes, user)
 	}
@@ -185,6 +186,19 @@ func sycUserInfos() {
 
 //同步通道信息
 func sycChannelInfos() {
+	nodes := getChannelInfos()
+	if len(nodes) > 0 {
+		info := make(map[string]interface{})
+		info["type"] = enum.MsgType_Tracker_UpdateChannelInfo_350
+		info["data"] = nodes
+		bytes, err := json.Marshal(info)
+		if err == nil {
+			sendMsgToTracker(bytes)
+		}
+	}
+}
+
+func getChannelInfos() []bean.ChannelInfoRequest {
 	_dir := "dbdata" + config.ChainNodeType
 	files, _ := ioutil.ReadDir(_dir)
 
@@ -203,115 +217,117 @@ func sycChannelInfos() {
 		}
 	}
 
-	nodes := make([]trackerBean.ChannelInfoRequest, 0)
+	nodes := make([]bean.ChannelInfoRequest, 0)
 
 	for _, peerId := range userPeerIds {
 		client, _ := globalWsClientManager.OnlineClientMap[peerId]
 		if client != nil {
-			checkChannel(client.User.Db, nodes)
+			nodes = checkChannel(peerId, client.User.Db, nodes)
 		}
 	}
 
 	for _, dbName := range dbNames {
 		db, err := storm.Open(_dir + "/" + dbName)
 		if err == nil {
-			checkChannel(db, nodes)
+			userId := strings.TrimLeft(dbName, "user_")
+			userId = strings.TrimRight(userId, ".db")
+			nodes = checkChannel(userId, db, nodes)
 			_ = db.Close()
 		}
 	}
-
-	for _, dbName := range dbNames {
-		db, err := storm.Open(_dir + "/" + dbName)
-		if err == nil {
-			var channelInfos []dao.ChannelInfo
-			err = db.Select(
-				q.Eq("IsPrivate", false),
-				q.Or(
-					q.Eq("CurrState", dao.ChannelState_CanUse),
-					q.Eq("CurrState", dao.ChannelState_Close),
-					q.Eq("CurrState", dao.ChannelState_HtlcTx))).Find(&channelInfos)
-			if err == nil {
-				for _, channelInfo := range channelInfos {
-					if len(channelInfo.ChannelId) > 0 && channelInfo.IsPrivate == false {
-						if channelInfo.CurrState == dao.ChannelState_CanUse || channelInfo.CurrState == dao.ChannelState_Close || channelInfo.CurrState == dao.ChannelState_HtlcTx {
-							commitmentTransaction := dao.CommitmentTransaction{}
-							err = db.Select(q.Eq("ChannelId", channelInfo.ChannelId)).OrderBy("CreateAt").Reverse().First(&commitmentTransaction)
-							if err == nil {
-								request := trackerBean.ChannelInfoRequest{}
-								request.ChannelId = channelInfo.ChannelId
-								request.PropertyId = channelInfo.PropertyId
-								request.PeerIdA = channelInfo.PeerIdA
-								request.PeerIdB = channelInfo.PeerIdB
-								request.CurrState = channelInfo.CurrState
-								request.AmountA = commitmentTransaction.AmountToRSMC
-								request.AmountB = commitmentTransaction.AmountToCounterparty
-								request.IsAlice = false
-								if commitmentTransaction.Owner == channelInfo.PeerIdA {
-									request.IsAlice = true
-									request.AmountA = commitmentTransaction.AmountToRSMC
-									request.AmountB = commitmentTransaction.AmountToCounterparty
-								} else {
-									request.AmountB = commitmentTransaction.AmountToRSMC
-									request.AmountA = commitmentTransaction.AmountToCounterparty
-								}
-								nodes = append(nodes, request)
-							}
-						}
-					}
-				}
-			}
-			_ = db.Close()
-		}
-	}
-	if len(nodes) > 0 {
-		info := make(map[string]interface{})
-		info["type"] = enum.MsgType_Tracker_UpdateChannelInfo_350
-		info["data"] = nodes
-		bytes, err := json.Marshal(info)
-		if err == nil {
-			sendMsgToTracker(bytes)
-		}
-	}
+	return nodes
 }
 
-func checkChannel(db storm.Node, nodes []trackerBean.ChannelInfoRequest) {
+func lockChannel(userId, channelId string) (err error) {
+	var userDb *storm.DB
+	value, exists := globalWsClientManager.OnlineClientMap[userId]
+	if exists && value.User.Db != nil {
+		userDb = value.User.Db
+	} else {
+		_dir := "dbdata" + config.ChainNodeType
+		userDb, err = storm.Open(_dir + "/" + "user_" + userId + ".db")
+	}
+	var channelInfo dao.ChannelInfo
+	if userDb != nil {
+		err = userDb.Select(
+			q.Eq("IsPrivate", false),
+			q.Eq("CurrState", bean.ChannelState_CanUse),
+			q.Eq("ChannelId", channelId)).First(&channelInfo)
+		if err == nil {
+			return userDb.UpdateField(&channelInfo, "CurrState", bean.ChannelState_LockByTracker)
+		}
+	}
+	return nil
+}
+
+func unlockChannel(userId, channelId string) (err error) {
+	var userDb *storm.DB
+	value, exists := globalWsClientManager.OnlineClientMap[userId]
+	dbIsOnOpen := false
+	if exists && value.User.Db != nil {
+		userDb = value.User.Db
+		dbIsOnOpen = true
+	} else {
+		_dir := "dbdata" + config.ChainNodeType
+		userDb, err = storm.Open(_dir + "/" + "user_" + userId + ".db")
+	}
+	var channelInfo dao.ChannelInfo
+	if userDb != nil {
+		err = userDb.Select(
+			q.Eq("CurrState", bean.ChannelState_LockByTracker),
+			q.Eq("ChannelId", channelId)).First(&channelInfo)
+		if err == nil {
+			return userDb.UpdateField(&channelInfo, "CurrState", bean.ChannelState_CanUse)
+		}
+		if dbIsOnOpen == false {
+			_ = userDb.Close()
+		}
+	}
+	return nil
+}
+
+func checkChannel(userId string, db storm.Node, nodes []bean.ChannelInfoRequest) []bean.ChannelInfoRequest {
 	var channelInfos []dao.ChannelInfo
 	err := db.Select(
 		q.Eq("IsPrivate", false),
 		q.Or(
-			q.Eq("CurrState", dao.ChannelState_CanUse),
-			q.Eq("CurrState", dao.ChannelState_Close),
-			q.Eq("CurrState", dao.ChannelState_HtlcTx))).Find(&channelInfos)
+			q.Eq("CurrState", bean.ChannelState_CanUse),
+			q.Eq("CurrState", bean.ChannelState_Close),
+			q.Eq("CurrState", bean.ChannelState_HtlcTx))).Find(&channelInfos)
 	if err == nil {
 		for _, channelInfo := range channelInfos {
-			if len(channelInfo.ChannelId) > 0 && channelInfo.IsPrivate == false {
-				if channelInfo.CurrState == dao.ChannelState_CanUse || channelInfo.CurrState == dao.ChannelState_Close || channelInfo.CurrState == dao.ChannelState_HtlcTx {
-					commitmentTransaction := dao.CommitmentTransaction{}
-					err = db.Select(q.Eq("ChannelId", channelInfo.ChannelId)).OrderBy("CreateAt").Reverse().First(&commitmentTransaction)
-					if err == nil {
-						request := trackerBean.ChannelInfoRequest{}
-						request.ChannelId = channelInfo.ChannelId
-						request.PropertyId = channelInfo.PropertyId
-						request.PeerIdA = channelInfo.PeerIdA
-						request.PeerIdB = channelInfo.PeerIdB
-						request.CurrState = channelInfo.CurrState
-						request.AmountA = commitmentTransaction.AmountToRSMC
-						request.AmountB = commitmentTransaction.AmountToCounterparty
-						request.IsAlice = false
-						if commitmentTransaction.Owner == channelInfo.PeerIdA {
-							request.IsAlice = true
-							request.AmountA = commitmentTransaction.AmountToRSMC
-							request.AmountB = commitmentTransaction.AmountToCounterparty
-						} else {
-							request.AmountB = commitmentTransaction.AmountToRSMC
-							request.AmountA = commitmentTransaction.AmountToCounterparty
-						}
-						nodes = append(nodes, request)
-					}
+			commitmentTransaction := dao.CommitmentTransaction{}
+			err = db.Select(q.Eq("ChannelId", channelInfo.ChannelId)).OrderBy("CreateAt").Reverse().First(&commitmentTransaction)
+			request := bean.ChannelInfoRequest{}
+			request.ChannelId = channelInfo.ChannelId
+			request.PropertyId = channelInfo.PropertyId
+			request.PeerIdA = channelInfo.PeerIdA
+			request.PeerIdB = channelInfo.PeerIdB
+			request.CurrState = channelInfo.CurrState
+			if commitmentTransaction.Id > 0 {
+				request.AmountA = commitmentTransaction.AmountToRSMC
+				request.AmountB = commitmentTransaction.AmountToCounterparty
+				request.IsAlice = false
+				if commitmentTransaction.Owner == channelInfo.PeerIdA {
+					request.IsAlice = true
+					request.AmountA = commitmentTransaction.AmountToRSMC
+					request.AmountB = commitmentTransaction.AmountToCounterparty
+				} else {
+					request.AmountB = commitmentTransaction.AmountToRSMC
+					request.AmountA = commitmentTransaction.AmountToCounterparty
+				}
+			} else {
+				request.AmountA = channelInfo.Amount
+				request.AmountB = 0
+				request.IsAlice = false
+				if channelInfo.FunderPeerId == userId {
+					request.IsAlice = true
 				}
 			}
+			nodes = append(nodes, request)
 		}
 	}
+	return nodes
 }
 
 func sendMsgToTracker(msg []byte) {
@@ -337,6 +353,17 @@ func startSchedule() {
 			select {
 			case msg := <-service.TrackerChan:
 				sendMsgToTracker(msg)
+				msgType := gjson.Parse(string(msg)).Get("type").Int()
+				if msgType == 350 {
+					message := &trackerBean.RequestMessage{}
+					err := json.Unmarshal(msg, message)
+					if err == nil {
+						marshal, err := json.Marshal(message.Data)
+						if err == nil {
+							sendChannelInfoToIndirectTracker(string(marshal))
+						}
+					}
+				}
 			}
 		}
 	}()

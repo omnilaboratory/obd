@@ -5,6 +5,7 @@ import (
 	"errors"
 	"github.com/asdine/storm/q"
 	"github.com/gin-gonic/gin"
+	cbean "github.com/omnilaboratory/obd/bean"
 	"github.com/omnilaboratory/obd/tool"
 	"github.com/omnilaboratory/obd/tracker/bean"
 	"github.com/omnilaboratory/obd/tracker/dao"
@@ -21,14 +22,14 @@ type channelManager struct {
 
 var ChannelService channelManager
 
-func (manager *channelManager) updateChannelInfo(obdClient *ObdNode, msgData string) (err error) {
+func (manager *channelManager) updateChannelInfo(obdP2pNodeId string, msgData string) (err error) {
 	manager.mu.Lock()
 	defer manager.mu.Unlock()
 
 	if tool.CheckIsString(&msgData) == false {
 		return errors.New("wrong inputData")
 	}
-	channelInfos := make([]bean.ChannelInfoRequest, 0)
+	channelInfos := make([]cbean.ChannelInfoRequest, 0)
 	err = json.Unmarshal([]byte(msgData), &channelInfos)
 	if err != nil {
 		log.Println(err)
@@ -52,11 +53,12 @@ func (manager *channelManager) updateChannelInfo(obdClient *ObdNode, msgData str
 			channelInfo.AmountA = item.AmountA
 			channelInfo.AmountB = item.AmountB
 			if item.IsAlice {
-				channelInfo.ObdNodeIdA = obdClient.Id
+				channelInfo.ObdNodeIdA = obdP2pNodeId
 			} else {
-				channelInfo.ObdNodeIdB = obdClient.Id
+				channelInfo.ObdNodeIdB = obdP2pNodeId
 			}
 			channelInfo.CreateAt = time.Now()
+			channelInfo.LatestEditAt = time.Now()
 			_ = db.Save(channelInfo)
 		} else {
 			channelInfo.PropertyId = item.PropertyId
@@ -69,10 +71,11 @@ func (manager *channelManager) updateChannelInfo(obdClient *ObdNode, msgData str
 			}
 
 			if item.IsAlice {
-				channelInfo.ObdNodeIdA = obdClient.Id
+				channelInfo.ObdNodeIdA = obdP2pNodeId
 			} else {
-				channelInfo.ObdNodeIdB = obdClient.Id
+				channelInfo.ObdNodeIdB = obdP2pNodeId
 			}
+			channelInfo.LatestEditAt = time.Now()
 			_ = db.Update(channelInfo)
 		}
 	}

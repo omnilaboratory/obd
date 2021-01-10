@@ -33,6 +33,7 @@ func (client *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, 
 		if client.User != nil {
 			if client.User.Mnemonic != mnemonic {
 				_ = service.UserService.UserLogout(client.User)
+				sendInfoOnUserStateChange(client.User.PeerId)
 				delete(globalWsClientManager.OnlineClientMap, client.User.PeerId)
 				delete(service.OnlineUserMap, client.User.PeerId)
 				client.User = nil
@@ -47,7 +48,7 @@ func (client *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, 
 			user := bean.User{
 				Mnemonic:        mnemonic,
 				P2PLocalAddress: localServerDest,
-				P2PLocalPeerId:  p2PLocalPeerId,
+				P2PLocalPeerId:  p2PLocalNodeId,
 			}
 			var err error = nil
 			peerId := tool.GetUserPeerId(user.Mnemonic)
@@ -55,6 +56,9 @@ func (client *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, 
 				err = errors.New("user has logined at other node")
 			} else {
 				err = service.UserService.UserLogin(&user)
+				if err == nil {
+					sendInfoOnUserStateChange(user.PeerId)
+				}
 			}
 			if err == nil {
 				client.User = &user

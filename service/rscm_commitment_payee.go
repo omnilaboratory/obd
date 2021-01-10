@@ -43,7 +43,7 @@ func (this *commitmentTxSignedManager) BeforeBobSignCommitmentTransactionAtBobSi
 		return nil, errors.New("not found channelInfo at targetSide")
 	}
 
-	channelInfo.CurrState = dao.ChannelState_NewTx
+	channelInfo.CurrState = bean.ChannelState_NewTx
 	_ = tx.Update(channelInfo)
 
 	senderPeerId := channelInfo.PeerIdA
@@ -122,7 +122,7 @@ func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction
 		return nil, false, err
 	}
 
-	if channelInfo.CurrState < dao.ChannelState_NewTx {
+	if channelInfo.CurrState < bean.ChannelState_NewTx {
 		return nil, false, errors.New("do not finish funding")
 	}
 
@@ -153,8 +153,8 @@ func (this *commitmentTxSignedManager) RevokeAndAcknowledgeCommitmentTransaction
 
 	if reqData.Approval == false {
 
-		if channelInfo.CurrState == dao.ChannelState_NewTx {
-			channelInfo.CurrState = dao.ChannelState_CanUse
+		if channelInfo.CurrState == bean.ChannelState_NewTx {
+			channelInfo.CurrState = bean.ChannelState_CanUse
 			_ = tx.Update(channelInfo)
 		}
 
@@ -688,7 +688,7 @@ func (this *commitmentTxSignedManager) BobSignC2b_RdAtBobSide(data string, user 
 	payeeRevokeAndAcknowledgeCommitment.Approval = true
 	_ = tx.Save(payeeRevokeAndAcknowledgeCommitment)
 
-	channelInfo.CurrState = dao.ChannelState_CanUse
+	channelInfo.CurrState = bean.ChannelState_CanUse
 	_ = tx.Update(channelInfo)
 
 	_ = tx.Commit()

@@ -14,6 +14,6 @@ type commitmentTxOutputBean struct {
 	OppositeSideChannelAddress string
 }
 
-var P2PLocalPeerId string
+var P2PLocalNodeId string
 
 var OnlineUserMap = make(map[string]*bean.User)

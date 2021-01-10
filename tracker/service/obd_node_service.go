@@ -6,8 +6,8 @@ import (
 	"github.com/asdine/storm"
 	"github.com/asdine/storm/q"
 	"github.com/gin-gonic/gin"
+	"github.com/omnilaboratory/obd/bean"
 	"github.com/omnilaboratory/obd/tool"
-	"github.com/omnilaboratory/obd/tracker/bean"
 	"github.com/omnilaboratory/obd/tracker/dao"
 	"log"
 	"net/http"
@@ -19,7 +19,7 @@ import (
 
 //普通在线用户
 var userOfOnlineMap map[string]dao.UserInfo
-var obdNodeOfOnlineMap = make(map[string]*dao.ObdNodeInfo)
+var obdOnlineNodesMap = make(map[string]*dao.ObdNodeInfo)
 
 var db *storm.DB
 
@@ -38,7 +38,7 @@ type obdNodeAccountManager struct {
 
 var NodeAccountService obdNodeAccountManager
 
-func (this *obdNodeAccountManager) login(obdClient *ObdNode, msgData string) (retData interface{}, err error) {
+func (service *obdNodeAccountManager) login(obdClient *ObdNode, msgData string) (retData interface{}, err error) {
 	reqData := &bean.ObdNodeLoginRequest{}
 	err = json.Unmarshal([]byte(msgData), reqData)
 	if err != nil {
@@ -64,18 +64,20 @@ func (this *obdNodeAccountManager) login(obdClient *ObdNode, msgData string) (re
 
 	obdClient.Id = reqData.NodeId
 	obdClient.IsLogin = true
+
 	loginLog := &dao.ObdNodeLoginLog{ObdId: reqData.NodeId, LoginIp: obdClient.Socket.RemoteAddr().String(), LoginTime: time.Now()}
 	_ = db.Save(loginLog)
 
 	split := strings.Split(reqData.P2PAddress, "/")
-	p2PPeerId := split[len(split)-1]
-	obdNodeOfOnlineMap[p2PPeerId] = info
+	p2PNodeId := split[len(split)-1]
+	obdOnlineNodesMap[p2PNodeId] = info
+	obdClient.ObdP2pNodeId = p2PNodeId
 
 	retData = "login successfully"
 	return retData, err
 }
 
-func (this *obdNodeAccountManager) logout(obdClient *ObdNode) (err error) {
+func (service *obdNodeAccountManager) logout(obdClient *ObdNode) (err error) {
 	if obdClient.IsLogin == false {
 		return nil
 	}
@@ -109,7 +111,7 @@ func (this *obdNodeAccountManager) logout(obdClient *ObdNode) (err error) {
 	return err
 }
 
-func (this *obdNodeAccountManager) userLogin(obdClient *ObdNode, msgData string) (retData interface{}, err error) {
+func (service *obdNodeAccountManager) userLogin(obdClient *ObdNode, msgData string) (retData interface{}, err error) {
 	if obdClient.IsLogin == false {
 		return nil, errors.New("obd need to login first")
 	}
@@ -121,11 +123,19 @@ func (this *obdNodeAccountManager) userLogin(obdClient *ObdNode, msgData string)
 	if tool.CheckIsString(&reqData.UserId) == false {
 		return nil, errors.New("error node_id")
 	}
+	return service.updateUserInfo(obdClient.ObdP2pNodeId, obdClient.Id, reqData.UserId)
+}
+
+func (service *obdNodeAccountManager) updateUserInfo(obdP2pNodeId, obdClientId, userId string) (retData interface{}, err error) {
+	service.mu.Lock()
+	defer service.mu.Unlock()
+
 	info := &dao.UserInfo{}
-	_ = db.Select(q.Eq("ObdNodeId", obdClient.Id), q.Eq("UserId", reqData.UserId)).First(info)
+	_ = db.Select(q.Eq("ObdNodeId", obdClientId), q.Eq("UserId", userId)).First(info)
+	info.ObdP2pNodeId = obdP2pNodeId
 	if info.Id == 0 {
-		info.UserId = reqData.UserId
-		info.ObdNodeId = obdClient.Id
+		info.UserId = userId
+		info.ObdNodeId = obdClientId
 		info.IsOnline = true
 		_ = db.Save(info)
 	} else {
@@ -134,13 +144,12 @@ func (this *obdNodeAccountManager) userLogin(obdClient *ObdNode, msgData string)
 			_ = db.Update(info)
 		}
 	}
-
 	userOfOnlineMap[info.UserId] = *info
 	retData = "login successfully"
 	return retData, err
 }
 
-func (this *obdNodeAccountManager) updateUsers(obdClient *ObdNode, msgData string) (err error) {
+func (service *obdNodeAccountManager) updateUsers(obdClient *ObdNode, msgData string) (err error) {
 	if tool.CheckIsString(&msgData) == false {
 		return errors.New("wrong inputData")
 	}
@@ -171,7 +180,7 @@ func (this *obdNodeAccountManager) updateUsers(obdClient *ObdNode, msgData strin
 	return err
 }
 
-func (this *obdNodeAccountManager) userLogout(obdClient *ObdNode, msgData string) (err error) {
+func (service *obdNodeAccountManager) userLogout(obdClient *ObdNode, msgData string) (err error) {
 	if obdClient.IsLogin == false {
 		return errors.New("obd need to login first")
 	}
@@ -195,10 +204,11 @@ func (this *obdNodeAccountManager) userLogout(obdClient *ObdNode, msgData string
 	err = db.UpdateField(info, "IsOnline", info.IsOnline)
 
 	delete(userOfOnlineMap, info.UserId)
+
 	return err
 }
 
-func (this *obdNodeAccountManager) GetNodeInfoByP2pAddress(context *gin.Context) {
+func (service *obdNodeAccountManager) GetNodeInfoByP2pAddress(context *gin.Context) {
 	p2pAddress := context.Query("p2pAddress")
 	if tool.CheckIsString(&p2pAddress) == false {
 		context.JSON(http.StatusInternalServerError, gin.H{
@@ -223,9 +233,10 @@ func (this *obdNodeAccountManager) GetNodeInfoByP2pAddress(context *gin.Context)
 	})
 }
 
-func (this *obdNodeAccountManager) GetUserState(context *gin.Context) {
+func (service *obdNodeAccountManager) GetUserState(context *gin.Context) {
 	reqData := &bean.ObdNodeUserLoginRequest{}
 	reqData.UserId = context.Query("userId")
+	reqData.P2pNodeId = context.Query("p2pNodeId")
 	if tool.CheckIsString(&reqData.UserId) == false {
 		context.JSON(http.StatusInternalServerError, gin.H{
 			"msg": "error userId",
@@ -237,14 +248,34 @@ func (this *obdNodeAccountManager) GetUserState(context *gin.Context) {
 	retData["state"] = 0
 	if _, ok := userOfOnlineMap[reqData.UserId]; ok == true {
 		retData["state"] = 1
+	} else {
+		if _, ok := userOnlineOfOtherObdMap[reqData.P2pNodeId]; ok == true {
+			if _, ok := userOnlineOfOtherObdMap[reqData.P2pNodeId][reqData.UserId]; ok == true {
+				retData["state"] = 1
+			}
+		}
 	}
+
 	context.JSON(http.StatusOK, gin.H{
 		"msg":  "GetUserState",
 		"data": retData,
 	})
 }
 
-func (this *obdNodeAccountManager) GetAllUsers(context *gin.Context) {
+func getUserState(obdP2pNodeId, userId string) bool {
+	if _, ok := userOfOnlineMap[userId]; ok == true {
+		return true
+	} else {
+		if _, ok := userOnlineOfOtherObdMap[obdP2pNodeId]; ok == true {
+			if _, ok := userOnlineOfOtherObdMap[obdP2pNodeId][userId]; ok == true {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func (service *obdNodeAccountManager) GetAllUsers(context *gin.Context) {
 	pageNumStr := context.Query("pageNum")
 	pageNum, _ := strconv.Atoi(pageNumStr)
 	if pageNum <= 0 {
@@ -277,7 +308,7 @@ func (this *obdNodeAccountManager) GetAllUsers(context *gin.Context) {
 		"pageSize":   pageSize,
 	})
 }
-func (this *obdNodeAccountManager) GetAllObdNodes(context *gin.Context) {
+func (service *obdNodeAccountManager) GetAllObdNodes(context *gin.Context) {
 	pageNumStr := context.Query("pageNum")
 	pageNum, _ := strconv.Atoi(pageNumStr)
 	if pageNum <= 0 {

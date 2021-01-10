@@ -3,6 +3,7 @@ package service
 import (
 	"github.com/asdine/storm"
 	"github.com/asdine/storm/q"
+	"github.com/omnilaboratory/obd/bean"
 	"github.com/omnilaboratory/obd/config"
 	"github.com/omnilaboratory/obd/conn"
 	"github.com/omnilaboratory/obd/dao"
@@ -76,7 +77,7 @@ func checkRsmcAndSendBR(db storm.Node) {
 	if err == nil {
 		for _, channelInfo := range channelInfos {
 			if len(channelInfo.ChannelId) > 0 {
-				if channelInfo.CurrState == dao.ChannelState_CanUse || channelInfo.CurrState == dao.ChannelState_HtlcTx {
+				if channelInfo.CurrState == bean.ChannelState_CanUse || channelInfo.CurrState == bean.ChannelState_HtlcTx {
 					result := conn2tracker.OmniGetBalancesForAddress(channelInfo.ChannelAddress, int(channelInfo.PropertyId))
 					if result == "" {
 						continue
@@ -161,7 +162,7 @@ func checkRsmcAndSendBR(db storm.Node) {
 							}
 						}
 						log.Println(transactionsStr)
-						channelInfo.CurrState = dao.ChannelState_Close
+						channelInfo.CurrState = bean.ChannelState_Close
 						channelInfo.CloseAt = time.Now()
 						_ = db.Update(&channelInfo)
 						sendChannelStateToTracker(channelInfo, dao.CommitmentTransaction{})
