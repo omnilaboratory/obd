@@ -350,16 +350,15 @@ func getChannelInfoByChannelId(tx storm.Node, channelId string, userPeerId strin
 
 func getLockChannelForHtlc(tx storm.Node, channelId string, userPeerId string) (channelInfo *dao.ChannelInfo) {
 	channelInfo = &dao.ChannelInfo{}
-	err := tx.Select(
+	_ = tx.Select(
 		q.Eq("ChannelId", channelId),
 		q.Or(
 			q.Eq("PeerIdA", userPeerId),
 			q.Eq("PeerIdB", userPeerId)),
-		q.Eq("CurrState", bean.ChannelState_LockByTracker)).
+		q.Or(
+			q.Eq("CurrState", bean.ChannelState_CanUse),
+			q.Eq("CurrState", bean.ChannelState_LockByTracker))).
 		First(channelInfo)
-	if err != nil {
-		return nil
-	}
 	return channelInfo
 }
 
