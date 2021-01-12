@@ -53,7 +53,7 @@ func (client *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, 
 			var err error = nil
 			peerId := tool.GetUserPeerId(user.Mnemonic)
 			if globalWsClientManager.OnlineClientMap[peerId] != nil {
-				err = errors.New("user has logined at other node")
+				err = errors.New("user has login at other node")
 			} else {
 				err = service.UserService.UserLogin(&user)
 				if err == nil {

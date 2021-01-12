@@ -47,6 +47,8 @@ func main() {
 		log.Println("because get wrong omniCore version, tracker fail to start")
 		return
 	}
+	service.Start(cfg.ChainNode_Type)
+
 	service.StartP2PNode()
 
 	routersInit := router.InitRouter()
@@ -62,7 +64,6 @@ func main() {
 		WriteTimeout:   cfg.WriteTimeout,
 		MaxHeaderBytes: 1 << 20,
 	}
-	service.Start(cfg.ChainNode_Type)
 
 	log.Println("tracker " + service.GetTrackerNodeId() + " start at port: " + strconv.Itoa(cfg.TrackerServerPort) + " in " + cfg.ChainNode_Type)
 	log.Fatal(server.ListenAndServe())
