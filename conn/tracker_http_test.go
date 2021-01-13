@@ -1,0 +1,15 @@
+package conn2tracker
+
+import (
+	"log"
+	"testing"
+)
+
+func TestTestMemPoolAccept(t *testing.T) {
+	hex := "0200000001367d440085ab142c1f5687c6b9376ef48af3041cb33f83516b415cc5c01e6149000000006a473044022031ddff07b3e25a1d3e38f87be339b53aeffad855a55a1f65bdd27d9eccdbf09802205fed031f02c5f3d8da4a9286a8706d6251767b5b32c1118155107cf4bc65bda5012102c57b02d24356e1d31d34d2e3a09f7d68a4bdec6c0556595bb6391ce5d6d4fc66ffffffff02409c00000000000017a9149dcd7d0d1fc9be6b52259f424ff00e7ff49c3a6e87e2161200000000001976a9147a019f584f6a65d114d5f17264c9eb32f763d72c88ac00000000"
+	accept := TestMemPoolAccept(hex)
+	log.Println(accept)
+	transaction, err := SendRawTransaction(hex)
+	log.Println(err)
+	log.Println(transaction)
+}
