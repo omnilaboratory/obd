@@ -484,8 +484,7 @@ func OmniSendRevoke(fromAddress string, propertyId int64, amount float64, memo s
 func BtcSignRawTransactionFromJson(data string) (result string, err error) {
 	data = strings.ReplaceAll(data, "\n", "")
 	data = strings.ReplaceAll(data, " ", "")
-
-	url := "http://" + config.TrackerHost + "/api/rpc/btcSignRawTransactionFromJson?data=" + strings.TrimSpace(data)
+	url := "http://" + config.TrackerHost + "/api/rpc/btcSignRawTransactionFromJson?data=" + data
 	log.Println(url)
 	resp, err := http.Get(url)
 	if err != nil {
