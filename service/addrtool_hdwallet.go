@@ -103,6 +103,8 @@ func (service *hdWalletManager) CreateChangeExtKey(mnemonic string) (changeExtKe
 	}
 
 	coinTypeExtKey, err := purposeExtKey.NewChildKey(bip32.FirstHardenedChild + uint32(coinType))
+	return coinTypeExtKey, err
+
 	//m/purpose'/cointype'/account'
 	accountExtKey, _ := coinTypeExtKey.NewChildKey(bip32.FirstHardenedChild + 0)
 	//m/purpose'/cointype'/account'/change

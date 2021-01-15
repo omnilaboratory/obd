@@ -195,7 +195,7 @@ func (service *htlcForwardTxManager) PayerRequestFindPath(msgData string, user b
 	keyName := user.PeerId + "_" + requestFindPathInfo.H
 	err = user.Db.Select(q.Eq("KeyName", keyName)).First(cacheDataForTx)
 	if cacheDataForTx.Id != 0 {
-		now := time.Now().Add(-2 * time.Minute)
+		now := time.Now().Add(-1 * time.Minute)
 		if cacheDataForTx.IsFinish && cacheDataForTx.CreateAt.After(now) {
 			return nil, false, errors.New("request too fast")
 		}
@@ -744,7 +744,7 @@ func (service *htlcForwardTxManager) OnAliceSignedC3aAtAliceSide(msg bean.Reques
 }
 
 // step 3 bob -40号协议 缓存来自40号协议的信息 推送110040消息，需要bob对C3a的交易进行签名
-func (service *htlcForwardTxManager) BeforeBobSignAddHtlcRequestAtBobSide_40(msgData string, user bean.User) (data interface{}, err error) {
+func (service *htlcForwardTxManager) BeforeBobSignAddHtlcRequestAtBobSide_40(msgData string, user bean.User) (data *bean.CreateHtlcTxForC3aToBob, err error) {
 	if totalDurationClient > 0 {
 		totalDurationClient += time.Now().Sub(beginTime).Milliseconds()
 	}
@@ -780,7 +780,7 @@ func (service *htlcForwardTxManager) BeforeBobSignAddHtlcRequestAtBobSide_40(msg
 
 	_ = tx.Commit()
 
-	toBobData := bean.CreateHtlcTxForC3aToBob{}
+	toBobData := &bean.CreateHtlcTxForC3aToBob{}
 	toBobData.ChannelId = requestAddHtlc.ChannelId
 	toBobData.IsPayInvoice = requestAddHtlc.IsPayInvoice
 	toBobData.H = requestAddHtlc.H
@@ -798,7 +798,7 @@ func (service *htlcForwardTxManager) BeforeBobSignAddHtlcRequestAtBobSide_40(msg
 }
 
 // step 4 bob 响应-100041号协议，创建C3a的Rsmc的Rd和Br，toHtlc的Br，Ht1a，Hlock，以及C3b的toB，toRsmc，toHtlc
-func (service *htlcForwardTxManager) BobSignedAddHtlcAtBobSide(jsonData string, user bean.User) (returnData interface{}, err error) {
+func (service *htlcForwardTxManager) BobSignedAddHtlcAtBobSide(jsonData string, user bean.User) (returnData *bean.NeedBobSignHtlcTxOfC3b, err error) {
 
 	totalDurationClient += time.Now().Sub(beginTime).Milliseconds()
 	beginTime = time.Now()
@@ -867,7 +867,7 @@ func (service *htlcForwardTxManager) BobSignedAddHtlcAtBobSide(jsonData string, 
 
 	channelId := payerRequestAddHtlc.ChannelId
 
-	needBobSignData := bean.NeedBobSignHtlcTxOfC3b{}
+	needBobSignData := &bean.NeedBobSignHtlcTxOfC3b{}
 	needBobSignData.ChannelId = channelId
 
 	toAliceDataOf41P := bean.NeedAliceSignHtlcTxOfC3bP2p{}

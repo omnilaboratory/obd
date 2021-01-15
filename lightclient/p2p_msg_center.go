@@ -3,6 +3,7 @@ package lightclient
 import (
 	"encoding/json"
 	"errors"
+	"github.com/omnilaboratory/obd/agent"
 	"github.com/omnilaboratory/obd/bean"
 	"github.com/omnilaboratory/obd/bean/enum"
 	"github.com/omnilaboratory/obd/service"
@@ -105,6 +106,16 @@ func routerOfP2PNode(msg bean.RequestMessage, data string, client *Client) (retD
 		defaultErr = err
 	case enum.MsgType_HTLC_AddHTLC_40:
 		node, err := service.HtlcForwardTxService.BeforeBobSignAddHtlcRequestAtBobSide_40(data, *client.User)
+		if client.User.IsAgent {
+			//TODO 代理模式的自动化模式
+			signedData, err := agent.BobSignAddHtlcRequestAtBobSide_40(*node, client.User)
+			if err == nil {
+				marshal, _ := json.Marshal(signedData)
+				service.HtlcForwardTxService.BobSignedAddHtlcAtBobSide(string(marshal), *client.User)
+				//TODO bob签名C3b
+				agent.BobSignC3b()
+			}
+		}
 		if err == nil {
 			retData, _ := json.Marshal(node)
 			status = true

@@ -2,6 +2,7 @@ package lightclient
 
 import (
 	"encoding/json"
+	"github.com/omnilaboratory/obd/agent"
 	"github.com/omnilaboratory/obd/bean"
 	"github.com/omnilaboratory/obd/bean/enum"
 	"github.com/omnilaboratory/obd/service"
@@ -82,6 +83,11 @@ func (client *Client) htlcHModule(msg bean.RequestMessage) (enum.SendTargetType,
 		sendType = enum.SendTargetType_SendToSomeone
 
 	case enum.MsgType_HTLC_SendAddHTLC_40:
+
+		if client.User.IsAgent {
+			//agent.BeforeAliceAddHtlcAtAliceSide(&msg, client.User)
+		}
+
 		respond, needSign, err := service.HtlcForwardTxService.AliceAddHtlcAtAliceSide(msg, *client.User)
 		if err != nil {
 			data = err.Error()
@@ -100,6 +106,40 @@ func (client *Client) htlcHModule(msg bean.RequestMessage) (enum.SendTargetType,
 					if err != nil {
 						status = false
 						data = err.Error()
+					}
+				}
+			}
+		}
+
+		if status && needSign {
+			if client.User.IsAgent {
+				//签名完成
+				signedData, err := agent.AliceSignC3aAtAliceSide(respond, client.User)
+				if err == nil {
+					signedDataBytes, _ := json.Marshal(signedData)
+					msg.Data = string(signedDataBytes)
+					log.Println(msg.Data)
+
+					_, toBob, err := service.HtlcForwardTxService.OnAliceSignedC3aAtAliceSide(msg, *client.User)
+					if err != nil {
+						data = err.Error()
+					} else {
+						bytes, err := json.Marshal(toBob)
+						if err != nil {
+							data = err.Error()
+						} else {
+							data = string(bytes)
+							status = true
+						}
+
+						if status {
+							msg.Type = enum.MsgType_HTLC_AddHTLC_40
+							err = client.sendDataToP2PUser(msg, true, data)
+							if err != nil {
+								status = false
+								data = err.Error()
+							}
+						}
 					}
 				}
 			}

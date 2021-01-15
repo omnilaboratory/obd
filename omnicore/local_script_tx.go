@@ -532,23 +532,9 @@ func createOmniRawTransaction(balance, out, amount, minerFee float64, propertyId
 
 func OmniSignRawTransactionForUnsend(hex string, inputItems []bean.TransactionInputItem, privKey string) (string, string, error) {
 
-	var inputs []map[string]interface{}
 	var items []bean.RawTxInputItem
-
 	for _, item := range inputItems {
-		node := make(map[string]interface{})
-		node["txid"] = item.Txid
-		node["vout"] = item.Vout
-		node["amount"] = item.Amount
-		node["scriptPubKey"] = item.ScriptPubKey
-		node["redeemScript"] = item.RedeemScript
-
-		inputItem := bean.RawTxInputItem{}
-		inputItem.ScriptPubKey = item.ScriptPubKey
-		inputItem.RedeemScript = item.RedeemScript
-		items = append(items, inputItem)
-
-		inputs = append(inputs, node)
+		items = append(items, bean.RawTxInputItem{ScriptPubKey: item.ScriptPubKey, RedeemScript: item.RedeemScript})
 	}
 	hex, err := SignRawHex(items, hex, privKey)
 	if err != nil {
