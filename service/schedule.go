@@ -97,7 +97,7 @@ func checkRsmcAndSendBR(db storm.Node) {
 							}
 							rsmcBreachRemedy := &dao.BreachRemedyTransaction{}
 							_ = db.Select(q.Eq("CurrState", dao.TxInfoState_CreateAndSign), q.Eq("InputTxid", txid)).First(rsmcBreachRemedy)
-							if rsmcBreachRemedy != nil && rsmcBreachRemedy.Id > 0 {
+							if rsmcBreachRemedy.Id > 0 {
 								txid, err = conn2tracker.SendRawTransaction(rsmcBreachRemedy.BrTxHex)
 								if err == nil {
 									log.Println("timer send rsmcBr BreachRemedyTransaction id:", rsmcBreachRemedy.Id, txid)
@@ -126,7 +126,7 @@ func checkRsmcAndSendBR(db storm.Node) {
 								// htlc payer方的htbr
 								sentRsmcBreachRemedy := &dao.BreachRemedyTransaction{}
 								_ = db.Select(q.Eq("CurrState", dao.TxInfoState_SendHex), q.Eq("InputTxid", txid)).First(sentRsmcBreachRemedy)
-								if sentRsmcBreachRemedy != nil && sentRsmcBreachRemedy.Id > 0 {
+								if sentRsmcBreachRemedy.Id > 0 {
 									htBreachRemedy := &dao.BreachRemedyTransaction{}
 									_ = db.Select(
 										q.Eq("Type", dao.BRType_Ht1a),

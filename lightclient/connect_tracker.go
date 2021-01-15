@@ -313,8 +313,8 @@ func checkChannel(userId string, db storm.Node, nodes []bean.ChannelInfoRequest)
 					request.AmountA = commitmentTransaction.AmountToRSMC
 					request.AmountB = commitmentTransaction.AmountToCounterparty
 				} else {
-					request.AmountB = commitmentTransaction.AmountToRSMC
 					request.AmountA = commitmentTransaction.AmountToCounterparty
+					request.AmountB = commitmentTransaction.AmountToRSMC
 				}
 			} else {
 				request.AmountA = channelInfo.Amount

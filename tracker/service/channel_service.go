@@ -76,7 +76,14 @@ func (manager *channelManager) updateChannelInfo(obdP2pNodeId string, msgData st
 				channelInfo.ObdNodeIdB = obdP2pNodeId
 			}
 			channelInfo.LatestEditAt = time.Now()
+
 			_ = db.Update(channelInfo)
+			if item.AmountA == 0 {
+				_ = db.UpdateField(channelInfo, "AmountA", 0.0)
+			}
+			if item.AmountB == 0 {
+				err = db.UpdateField(channelInfo, "AmountB", 0.0)
+			}
 		}
 	}
 	return err

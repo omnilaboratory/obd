@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	url2 "net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -482,7 +483,7 @@ func OmniSendRevoke(fromAddress string, propertyId int64, amount float64, memo s
 }
 
 func BtcSignRawTransactionFromJson(data string) (result string, err error) {
-	url := "http://" + config.TrackerHost + "/api/rpc/btcSignRawTransactionFromJson?data=" + data
+	url := "http://" + config.TrackerHost + "/api/rpc/btcSignRawTransactionFromJson?data=" + url2.QueryEscape(data)
 	log.Println(url)
 	resp, err := http.Get(url)
 	if err != nil {

@@ -475,7 +475,7 @@ func (service *htlcForwardTxManager) AliceAddHtlcAtAliceSide(msg bean.RequestMes
 			}
 
 			if requestData.Amount > latestCommitmentTx.AmountToRSMC {
-				return nil, false, errors.New("wrong amount")
+				return nil, false, errors.New("not enough balance ,your balance is " + tool.FloatToString(latestCommitmentTx.AmountToRSMC, 8))
 			}
 		}
 		if latestCommitmentTx.CurrState == dao.TxInfoState_Create {
