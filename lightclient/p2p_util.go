@@ -203,32 +203,40 @@ func connP2PNode(dest string) (string, error) {
 		return "", errors.New("wrong dest address")
 	}
 
+	if strings.Contains(dest, p2PLocalNodeId) {
+		return "", errors.New("do not need connect self")
+	}
+
 	_, err := multiaddr.NewMultiaddr(dest)
 	if err != nil {
 		log.Println(err)
 		return "", err
 	}
 
-	//destHostPeerInfo, err := peer.AddrInfoFromP2pAddr(destMaddr)
-	//if err != nil {
-	//	log.Println(err)
-	//	return "", err
-	//}
-
-	split := strings.Split(dest, "/")
-	p2PNodeId := split[len(split)-1]
-
-	findID, err := peer.Decode(p2PNodeId)
-	destHostPeerInfo, err := kademliaDHT.FindPeer(ctx, findID)
-
+	destMaddr, err := multiaddr.NewMultiaddr(dest)
 	if err != nil {
+		log.Println(err)
 		return "", err
 	}
+
+	destHostPeerInfo, err := peer.AddrInfoFromP2pAddr(destMaddr)
+	if err != nil {
+		log.Println(err)
+		return "", err
+	}
+
+	//split := strings.Split(dest, "/")
+	//p2PNodeId := split[len(split)-1]
+	//findID, err := peer.Decode(p2PNodeId)
+	//destHostPeerInfo, err := kademliaDHT.FindPeer(ctx, findID)
+	//if err != nil {
+	//	return "", err
+	//}
 
 	if destHostPeerInfo.ID == hostNode.ID() {
 		return "", errors.New("wrong dest address")
 	}
-	err = connSomeNode(destHostPeerInfo)
+	err = connSomeNode(*destHostPeerInfo)
 	return localServerDest, err
 }
 
