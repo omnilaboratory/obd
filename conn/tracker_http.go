@@ -392,6 +392,10 @@ func OmniListProperties() (result string, err error) {
 }
 
 func OmniSendIssuanceFixed(fromAddress string, ecosystem int, divisibleType int, name string, data string, amount float64) (result string, err error) {
+	if amount < 1 {
+		return "", errors.New("amount must be more than 1")
+	}
+
 	url := "http://" + config.TrackerHost + "/api/rpc/omniSendIssuanceFixed?fromAddress=" + fromAddress +
 		"&ecosystem=" + strconv.Itoa(ecosystem) +
 		"&divisibleType=" + strconv.Itoa(divisibleType) +
