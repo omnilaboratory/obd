@@ -303,49 +303,6 @@ func (client *Client) Read() {
 	}
 }
 
-func getReplyObj(data string, msgType enum.MsgType, status bool, fromClient, toClient *Client) []byte {
-	var jsonMessage []byte
-
-	fromId := fromClient.Id
-	if fromClient.User != nil {
-		fromId = fromClient.User.PeerId
-	}
-
-	toClientId := "all"
-	if toClient != nil {
-		toClientId = toClient.Id
-		if toClient.User != nil {
-			toClientId = toClient.User.PeerId
-		}
-	}
-
-	if strings.Contains(fromId, "@/") == false {
-		fromId = fromId + "@" + localServerDest
-	}
-
-	parse := gjson.Parse(data)
-	result := parse.Value()
-	if strings.HasPrefix(data, "{") == false && strings.HasPrefix(data, "[") == false {
-		result = data
-	}
-
-	jsonMessage, _ = json.Marshal(&bean.ReplyMessage{Type: msgType, Status: status, From: fromId, To: toClientId, Result: result})
-
-	return jsonMessage
-}
-
-func getP2PReplyObj(data string, msgType enum.MsgType, status bool, fromId, toClientId string) []byte {
-
-	parse := gjson.Parse(data)
-	result := parse.Value()
-	if strings.HasPrefix(data, "{") == false && strings.HasPrefix(data, "[") == false {
-		result = data
-	}
-
-	jsonMessage, _ := json.Marshal(&bean.ReplyMessage{Type: msgType, Status: status, From: fromId, To: toClientId, Result: result})
-	return jsonMessage
-}
-
 func (client *Client) SendToMyself(msgType enum.MsgType, status bool, data string) {
 	jsonMessage := getReplyObj(data, msgType, status, client, client)
 	client.SendChannel <- jsonMessage
@@ -362,7 +319,10 @@ func (client *Client) sendDataToP2PUser(msg bean.RequestMessage, status bool, da
 				itemClient := globalWsClientManager.OnlineClientMap[msg.RecipientUserPeerId]
 				if itemClient != nil && itemClient.User != nil {
 					if status {
-						retData, err := routerOfP2PNode(msg, data, itemClient)
+						retData, isGoOn, err := routerOfP2PNode(msg, data, itemClient)
+						if isGoOn == false {
+							return nil
+						}
 						if err != nil {
 							return err
 						} else {
@@ -407,7 +367,10 @@ func getDataFromP2PSomeone(msg bean.RequestMessage) error {
 				itemClient := globalWsClientManager.OnlineClientMap[msg.RecipientUserPeerId]
 				if itemClient != nil && itemClient.User != nil {
 					//收到数据后，需要对其进行加工
-					retData, err := routerOfP2PNode(msg, msg.Data, itemClient)
+					retData, isGoOn, err := routerOfP2PNode(msg, msg.Data, itemClient)
+					if isGoOn == false {
+						return nil
+					}
 					if err != nil {
 						return err
 					} else {
@@ -433,100 +396,44 @@ func getDataFromP2PSomeone(msg bean.RequestMessage) error {
 	return errors.New(fmt.Sprintf(enum.Tips_user_notExistOrOnline, msg.RecipientUserPeerId))
 }
 
-func p2pMiddleNodeTransferData(msg *bean.RequestMessage, itemClient Client, data string, retData string) string {
-	if msg.Type == enum.MsgType_ChannelOpen_32 {
-		msg.Type = enum.MsgType_RecvChannelOpen_32
+func getReplyObj(data string, msgType enum.MsgType, status bool, fromClient, toClient *Client) []byte {
+	var jsonMessage []byte
+
+	fromId := fromClient.Id
+	if fromClient.User != nil {
+		fromId = fromClient.User.PeerId
 	}
 
-	if msg.Type == enum.MsgType_ChannelAccept_33 {
-		msg.Type = enum.MsgType_RecvChannelAccept_33
+	toClientId := "all"
+	if toClient != nil {
+		toClientId = toClient.Id
+		if toClient.User != nil {
+			toClientId = toClient.User.PeerId
+		}
 	}
 
-	if msg.Type == enum.MsgType_FundingCreate_AssetFundingCreated_34 {
-		msg.Type = enum.MsgType_FundingCreate_RecvAssetFundingCreated_34
+	if strings.Contains(fromId, "@/") == false {
+		fromId = fromId + "@" + localServerDest
 	}
 
-	if msg.Type == enum.MsgType_FundingSign_AssetFundingSigned_35 {
-		msg.Type = enum.MsgType_FundingSign_RecvAssetFundingSigned_35
+	parse := gjson.Parse(data)
+	result := parse.Value()
+	if strings.HasPrefix(data, "{") == false && strings.HasPrefix(data, "[") == false {
+		result = data
 	}
 
-	if msg.Type == enum.MsgType_FundingCreate_BtcFundingCreated_340 {
-		msg.Type = enum.MsgType_FundingCreate_RecvBtcFundingCreated_340
+	jsonMessage, _ = json.Marshal(&bean.ReplyMessage{Type: msgType, Status: status, From: fromId, To: toClientId, Result: result})
+
+	return jsonMessage
+}
+
+func getP2PReplyObj(data string, msgType enum.MsgType, status bool, fromId, toClientId string) []byte {
+	parse := gjson.Parse(data)
+	result := parse.Value()
+	if strings.HasPrefix(data, "{") == false && strings.HasPrefix(data, "[") == false {
+		result = data
 	}
 
-	if msg.Type == enum.MsgType_FundingSign_BtcSign_350 {
-		msg.Type = enum.MsgType_FundingSign_RecvBtcSign_350
-	}
-
-	if msg.Type == enum.MsgType_CommitmentTx_CommitmentTransactionCreated_351 {
-		msg.Type = enum.MsgType_CommitmentTx_RecvCommitmentTransactionCreated_351
-	}
-
-	if msg.Type == enum.MsgType_CloseChannelRequest_38 {
-		msg.Type = enum.MsgType_RecvCloseChannelRequest_38
-	}
-
-	if msg.Type == enum.MsgType_CloseChannelSign_39 {
-		msg.Type = enum.MsgType_RecvCloseChannelSign_39
-	}
-
-	if msg.Type == enum.MsgType_HTLC_AddHTLC_40 {
-		msg.Type = enum.MsgType_HTLC_RecvAddHTLC_40
-	}
-
-	if msg.Type == enum.MsgType_CommitmentTxSigned_ToAliceSign_352 {
-		//发给alice
-		msg.Type = enum.MsgType_CommitmentTxSigned_RecvRevokeAndAcknowledgeCommitmentTransaction_352
-		payerData := gjson.Parse(retData).String()
-		data = payerData
-	}
-
-	//当353处理完成，就改成110353 推送给bob的客户端
-	if msg.Type == enum.MsgType_CommitmentTxSigned_SecondToBobSign_353 {
-		msg.Type = enum.MsgType_ClientSign_BobC2b_Rd_353
-	}
-
-	if msg.Type == enum.MsgType_HTLC_NeedPayerSignC3b_41 {
-		msg.Type = enum.MsgType_HTLC_RecvAddHTLCSigned_41
-	}
-
-	//当42处理完成
-	if msg.Type == enum.MsgType_HTLC_PayeeCreateHTRD1a_42 {
-		msg.Type = enum.MsgType_HTLC_BobSignC3bSubTx_42
-	}
-
-	if msg.Type == enum.MsgType_HTLC_PayerSignHTRD1a_43 {
-		msg.Type = enum.MsgType_HTLC_FinishTransferH_43
-	}
-
-	if msg.Type == enum.MsgType_HTLC_VerifyR_45 {
-		msg.Type = enum.MsgType_HTLC_RecvVerifyR_45
-	}
-
-	//当47处理完成，发送48号协议给收款方
-	if msg.Type == enum.MsgType_HTLC_SendHerdHex_46 {
-		msg.Type = enum.MsgType_HTLC_RecvSignVerifyR_46
-	}
-
-	if msg.Type == enum.MsgType_HTLC_Close_RequestCloseCurrTx_49 {
-		msg.Type = enum.MsgType_HTLC_Close_RecvRequestCloseCurrTx_49
-	}
-
-	if msg.Type == enum.MsgType_HTLC_CloseHtlcRequestSignBR_50 {
-		msg.Type = enum.MsgType_HTLC_RecvCloseSigned_50
-	}
-
-	if msg.Type == enum.MsgType_HTLC_CloseHtlcUpdateCnb_51 {
-		msg.Type = enum.MsgType_HTLC_Close_ClientSign_Bob_C4bSub_51
-	}
-
-	if msg.Type == enum.MsgType_Atomic_Swap_80 {
-		msg.Type = enum.MsgType_Atomic_RecvSwap_80
-	}
-
-	if msg.Type == enum.MsgType_Atomic_SwapAccept_81 {
-		msg.Type = enum.MsgType_Atomic_RecvSwapAccept_81
-	}
-
-	return data
+	jsonMessage, _ := json.Marshal(&bean.ReplyMessage{Type: msgType, Status: status, From: fromId, To: toClientId, Result: result})
+	return jsonMessage
 }

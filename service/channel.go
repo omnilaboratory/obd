@@ -150,15 +150,9 @@ func (this *channelManager) BobAcceptChannel(msg bean.RequestMessage, user *bean
 		return nil, errors.New(enum.Tips_common_wrong + "temporary_channel_id")
 	}
 
-	bobFundingAddress := ""
 	if reqData.Approval {
 		if tool.CheckIsString(&reqData.FundingPubKey) == false {
 			return nil, errors.New(enum.Tips_common_wrong + "funding_pubkey")
-		}
-
-		bobFundingAddress, err = getAddressFromPubKey(reqData.FundingPubKey)
-		if err != nil {
-			return nil, err
 		}
 	}
 
@@ -182,38 +176,11 @@ func (this *channelManager) BobAcceptChannel(msg bean.RequestMessage, user *bean
 	}
 
 	if reqData.Approval {
-		channelInfo.PubKeyB = reqData.FundingPubKey
-		channelInfo.FundeeAddressIndex = reqData.FundeeAddressIndex
-		channelInfo.AddressB = bobFundingAddress
-		multiSig, err := omnicore.CreateMultiSig(2, []string{channelInfo.PubKeyA, channelInfo.PubKeyB})
+		err = createChannelAddress(channelInfo, reqData, user)
 		if err != nil {
-			log.Println(err)
 			return nil, err
 		}
 
-		channelAddress := gjson.Get(multiSig, "address").String()
-
-		existAddress := false
-		result := conn2tracker.ListReceivedByAddress(channelAddress)
-		if result != "" {
-			array := gjson.Parse(result).Array()
-			if len(array) > 0 {
-				existAddress = true
-			}
-		}
-
-		count, _ := user.Db.Select(q.Eq("ChannelAddress", channelAddress)).Count(&dao.ChannelInfo{})
-		if count > 0 {
-			existAddress = true
-		}
-		if existAddress == false {
-			channelInfo.ChannelAddress = gjson.Get(multiSig, "address").String()
-			channelInfo.ChannelAddressRedeemScript = gjson.Get(multiSig, "redeemScript").String()
-			channelInfo.ChannelAddressScriptPubKey = gjson.Get(multiSig, "scriptPubKey").String()
-			channelInfo.CurrState = bean.ChannelState_WaitFundAsset
-		} else {
-			return nil, errors.New(enum.Tips_channel_changePubkeyForChannel + reqData.FundingPubKey)
-		}
 	} else {
 		channelInfo.CurrState = bean.ChannelState_OpenChannelRefuse
 		channelInfo.RefuseReason = user.PeerId + " do not agree with it"
@@ -1050,5 +1017,50 @@ func (this *channelManager) CloseHtlcChannelSigned(tx storm.Node, latestCommitme
 		return err
 	}
 	//endregion
+	return nil
+}
+
+func createChannelAddress(channelInfo *dao.ChannelInfo, reqData *bean.SendSignOpenChannel, user *bean.User) (err error) {
+	bobFundingAddress, _ := getAddressFromPubKey(reqData.FundingPubKey)
+	channelInfo.PubKeyB = reqData.FundingPubKey
+	channelInfo.FundeeAddressIndex = reqData.FundeeAddressIndex
+	channelInfo.AddressB = bobFundingAddress
+	multiSig, err := omnicore.CreateMultiSig(2, []string{channelInfo.PubKeyA, channelInfo.PubKeyB})
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+	channelAddress := gjson.Get(multiSig, "address").String()
+
+	existAddress := false
+	result := conn2tracker.ListReceivedByAddress(channelAddress)
+	if result != "" {
+		array := gjson.Parse(result).Array()
+		if len(array) > 0 {
+			existAddress = true
+		}
+	}
+
+	count, _ := user.Db.Select(q.Eq("ChannelAddress", channelAddress)).Count(&dao.ChannelInfo{})
+	if count > 0 {
+		existAddress = true
+		if user.IsAdmin {
+			address, err := HDWalletService.CreateNewAddress(user)
+			if err != nil {
+				return err
+			}
+			reqData.FundeeAddressIndex = address.Index
+			reqData.FundingPubKey = address.PubKey
+			return createChannelAddress(channelInfo, reqData, user)
+		}
+	}
+	if existAddress == false {
+		channelInfo.ChannelAddress = gjson.Get(multiSig, "address").String()
+		channelInfo.ChannelAddressRedeemScript = gjson.Get(multiSig, "redeemScript").String()
+		channelInfo.ChannelAddressScriptPubKey = gjson.Get(multiSig, "scriptPubKey").String()
+		channelInfo.CurrState = bean.ChannelState_WaitFundAsset
+	} else {
+		return errors.New(enum.Tips_channel_changePubkeyForChannel + reqData.FundingPubKey)
+	}
 	return nil
 }

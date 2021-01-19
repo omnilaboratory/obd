@@ -30,6 +30,13 @@ func (client *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, 
 	switch msg.Type {
 	case enum.MsgType_UserLogin_2001:
 		mnemonic := gjson.Get(msg.Data, "mnemonic").String()
+		isAdmin := gjson.Get(msg.Data, "is_admin").Bool()
+
+		peerId := tool.GetUserPeerId(mnemonic)
+		if isAdmin && globalWsClientManager.OnlineClientMap[peerId] != nil {
+			client.User = globalWsClientManager.OnlineClientMap[peerId].User
+		}
+
 		if client.User != nil {
 			if client.User.Mnemonic != mnemonic {
 				_ = service.UserService.UserLogout(client.User)
@@ -49,9 +56,9 @@ func (client *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, 
 				Mnemonic:        mnemonic,
 				P2PLocalAddress: localServerDest,
 				P2PLocalPeerId:  p2PLocalNodeId,
+				IsAdmin:         isAdmin,
 			}
 			var err error = nil
-			peerId := tool.GetUserPeerId(user.Mnemonic)
 			if globalWsClientManager.OnlineClientMap[peerId] != nil {
 				err = errors.New("user has login at other node")
 			} else {

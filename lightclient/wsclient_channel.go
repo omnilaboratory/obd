@@ -32,17 +32,20 @@ func (client *Client) channelModule(msg bean.RequestMessage) (enum.SendTargetTyp
 			}
 		}
 
+		msg.Type = enum.MsgType_SendChannelOpen_32
+		client.SendToMyself(msg.Type, status, data)
+
 		if status {
 			msg.Type = enum.MsgType_ChannelOpen_32
 			err := client.sendDataToP2PUser(msg, status, data)
 			if err != nil {
 				data = err.Error()
 				status = false
+
+				msg.Type = enum.MsgType_RecvChannelAccept_33
+				client.SendToMyself(msg.Type, status, data)
 			}
 		}
-
-		msg.Type = enum.MsgType_SendChannelOpen_32
-		client.SendToMyself(msg.Type, status, data)
 
 	case enum.MsgType_ChannelOpen_AllItem_3150:
 		pageData, err := service.ChannelService.AllItem(msg.Data, *client.User)
