@@ -30,7 +30,7 @@ func (r *rpcServer) Hello(ctx context.Context,
 
 func startGRPCServer() (string, error) {
 
-	address := "0.0.0.0:50051"
+	address := "localhost:50051"
 	lis, err := net.Listen("tcp", address)
 	if err != nil {
 		log.Fatalf("Error %v", err)
