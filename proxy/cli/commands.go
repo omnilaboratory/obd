@@ -1,9 +1,10 @@
-package client
+package main
 
 import (
 	context "context"
 	fmt "fmt"
 	"log"
+	"os"
 
 	proxy "github.com/omnilaboratory/obd/proxy/pb"
 	"github.com/urfave/cli"
@@ -17,14 +18,14 @@ var HelloCommand = cli.Command{
 	Usage:     "Say Hello to Proxy Mode of OBD",
 	ArgsUsage: "your_name",
 	Description: "Say Hello to Proxy Mode of OBD",
-	Action: hello,
+	Action: cliHello,
 }
 
-func hello(ctx *cli.Context) error {
+func cliHello(ctx *cli.Context) error {
 	
-	client, cleanUp := getClient(ctx)
+	client, cleanUp := getClientConn(ctx)
 	defer cleanUp()
-	
+
 	inputParam := ctx.Args().First()
 
 	var outputInfo string
@@ -47,15 +48,15 @@ func hello(ctx *cli.Context) error {
 	return nil
 }
 
-func getClient(ctx *cli.Context) (proxy.ProxyClient, func()) {
+func getClientConn(ctx *cli.Context) (proxy.ProxyClient, func()) {
 
-	fmt.Println("HelloProxy client ...")
+	fmt.Println("Get client connection ...")
 
 	opts := grpc.WithInsecure()
 	cc, err := grpc.Dial("localhost:50051", opts)
 	if err != nil {
-		log.Fatal(err)
-		// fmt.Printf("unable to connect to RPC server: %v", err)
+		// log.Fatal(err)
+		fmt.Printf("unable to connect to RPC server: %v", err)
 	}
 	// defer cc.Close()
 
@@ -64,4 +65,18 @@ func getClient(ctx *cli.Context) (proxy.ProxyClient, func()) {
 	}
 
 	return proxy.NewProxyClient(cc), cleanUp
+}
+
+func main() {
+	app := cli.NewApp()
+	app.Name = "obdcli"
+	app.Version = "0.0.1-beta"
+	app.Usage = "Control plane for your Omni Bolt Daemon (obd)"
+	app.Commands = []cli.Command{
+		HelloCommand,
+	}
+
+	if err := app.Run(os.Args); err != nil {
+		log.Fatal(err)
+	}
 }

@@ -5,11 +5,9 @@ import (
 	fmt "fmt"
 	"log"
 	"net"
-	"os"
 
 	proxy "github.com/omnilaboratory/obd/proxy/pb"
-	client "github.com/omnilaboratory/obd/proxy/client"
-	"github.com/urfave/cli"
+	"github.com/omnilaboratory/obd/proxy/rpc"
 	grpc "google.golang.org/grpc"
 )
 
@@ -19,7 +17,7 @@ type rpcServer struct {}
 func (r *rpcServer) Hello(ctx context.Context,
 	in *proxy.HelloRequest) (*proxy.HelloResponse, error) {
 
-	resp, err := client.Hello(in.Sayhi)
+	resp, err := rpc.Hello(in.Sayhi)
 	if err != nil {
 		return nil, err
 	}
@@ -27,8 +25,7 @@ func (r *rpcServer) Hello(ctx context.Context,
 	return &proxy.HelloResponse{Resp: resp}, nil
 }
 
-
-func startGRPCServer() (string, error) {
+func startServer() (string, error) {
 
 	address := "localhost:50051"
 	lis, err := net.Listen("tcp", address)
@@ -47,17 +44,5 @@ func startGRPCServer() (string, error) {
 }
 
 func main() {
-	app := cli.NewApp()
-	app.Name = "obdcli"
-	app.Version = "0.0.1-beta"
-	app.Usage = "Control plane for your Omni Bolt Daemon (obd)"
-	app.Commands = []cli.Command{
-		client.HelloCommand,
-	}
-
-	if err := app.Run(os.Args); err != nil {
-		log.Fatal(err)
-	}
-	
-	startGRPCServer()
+	startServer()
 }
