@@ -85,7 +85,8 @@ func VerifyOmniTxHexOutAddress(hex string, toAddress string) (pass bool, err err
 
 //SignRawTransactionWithKey(inputData.Hex, []string{inputData.Prvkey}, inputData.Inputs, "ALL")
 //https://www.thepolyglotdeveloper.com/2018/03/create-sign-bitcoin-transactions-golang/
-func SignRawHex(inputs []bean.RawTxInputItem, redeemHex string, privKey string) (signedHex string, err error) {
+//https://hexang.org/yh/burrow/blob/f9b2b4a10022520712d3711845a26397d3b49fa9/vendor/github.com/btcsuite/btcd/txscript/sign_test.go
+func SignRawHex(inputs []bean.RawTxInputItem, redeemHex string, privKey string, times int) (signedHex string, err error) {
 	redeemHexBytes, _ := hex.DecodeString(redeemHex)
 	redeemTx := wire.MsgTx{}
 	err = redeemTx.Deserialize(bytes.NewReader(redeemHexBytes))
@@ -98,32 +99,31 @@ func SignRawHex(inputs []bean.RawTxInputItem, redeemHex string, privKey string) 
 		log.Println(err)
 	}
 
-	lookupKey := func(a btcutil.Address) (*btcec.PrivateKey, bool, error) {
-		return wif.PrivKey, true, nil
+	lookupKey := func(addr btcutil.Address) (*btcec.PrivateKey, bool, error) {
+		return wif.PrivKey, wif.CompressPubKey, nil
 	}
+	for i := 0; i < times; i++ {
+		for index, txIn := range redeemTx.TxIn {
+			item := inputs[index]
+			redeemScriptBytes, _ := hex.DecodeString(item.RedeemScript)
+			scriptAddr, _ := btcutil.NewAddressScriptHash(redeemScriptBytes, tool.GetCoreNet())
+			inputPkScriptBytes, _ := hex.DecodeString(item.ScriptPubKey)
+			script, err := txscript.SignTxOutput(
+				tool.GetCoreNet(),
+				&redeemTx,
+				index,
+				inputPkScriptBytes,
+				txscript.SigHashAll,
+				txscript.KeyClosure(lookupKey),
+				mkGetScript(map[string][]byte{
+					scriptAddr.EncodeAddress(): redeemScriptBytes}),
+				txIn.SignatureScript)
 
-	for index, _ := range redeemTx.TxIn {
-		item := inputs[index]
-		redeemScriptBytes, _ := hex.DecodeString(item.RedeemScript)
-		scriptAddr, _ := btcutil.NewAddressScriptHash(redeemScriptBytes, tool.GetCoreNet())
-		inputPkScriptBytes, _ := hex.DecodeString(item.ScriptPubKey)
-
-		script, err := txscript.SignTxOutput(
-			tool.GetCoreNet(),
-			&redeemTx,
-			index,
-			inputPkScriptBytes,
-			txscript.SigHashAll,
-			txscript.KeyClosure(lookupKey),
-			mkGetScript(map[string][]byte{
-				scriptAddr.EncodeAddress(): redeemScriptBytes}),
-			redeemTx.TxIn[index].SignatureScript)
-
-		if err != nil {
-			return "", err
+			if err != nil {
+				return "", err
+			}
+			redeemTx.TxIn[index].SignatureScript = script
 		}
-
-		redeemTx.TxIn[index].SignatureScript = script
 	}
 
 	toHex := TxToHex(&redeemTx)

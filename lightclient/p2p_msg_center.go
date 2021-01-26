@@ -61,6 +61,27 @@ func routerOfP2PNode(msg bean.RequestMessage, data string, client *Client) (retD
 		_, err := service.FundingTransactionService.BeforeSignBtcFundingCreatedAtBobSide(data, client.User)
 		if err == nil {
 			status = true
+			if client.User.IsAdmin {
+				signedRedeemTx, err := agent.BobSignFundBtcRedeemTx(data, client.User)
+				if err == nil {
+					newMsg := bean.RequestMessage{}
+					newMsg.Type = enum.MsgType_FundingSign_SendBtcSign_350
+					newMsg.SenderUserPeerId = client.User.PeerId
+					newMsg.SenderNodePeerId = client.User.P2PLocalPeerId
+					newMsg.RecipientUserPeerId = msg.SenderUserPeerId
+					newMsg.RecipientNodePeerId = msg.SenderNodePeerId
+					marshal, _ := json.Marshal(signedRedeemTx)
+					newMsg.Data = string(marshal)
+					signed, _, err := service.FundingTransactionService.FundingBtcTxSigned(newMsg, client.User)
+					if err == nil {
+						newMsg.Type = enum.MsgType_FundingSign_BtcSign_350
+						marshal, _ := json.Marshal(signed)
+						newMsg.Data = string(marshal)
+						_ = client.sendDataToP2PUser(newMsg, true, newMsg.Data)
+						return "", false, nil
+					}
+				}
+			}
 		} else {
 			defaultErr = err
 		}
@@ -75,6 +96,35 @@ func routerOfP2PNode(msg bean.RequestMessage, data string, client *Client) (retD
 		_, err := service.FundingTransactionService.BeforeSignAssetFundingCreateAtBobSide(data, client.User)
 		if err == nil {
 			status = true
+			// todo sign c1a
+			if client.User.IsAdmin {
+				signC1a, err := agent.BobSignC1a(data, client.User)
+				if err == nil {
+					marshal, _ := json.Marshal(signC1a)
+					signed, err := service.FundingTransactionService.AssetFundingSigned(string(marshal), client.User)
+					if err == nil {
+						marshal, _ := json.Marshal(signed)
+						//	todo sign rd and br
+						signedRdAndBrData, err := agent.BobSignRdAndBrOfC1a(string(marshal), client.User)
+						if err == nil {
+							marshal, _ := json.Marshal(signedRdAndBrData)
+							aliceData, _, err := service.FundingTransactionService.OnBobSignedRDAndBR(string(marshal), client.User)
+							if err == nil {
+								newMsg := bean.RequestMessage{}
+								newMsg.Type = enum.MsgType_FundingSign_AssetFundingSigned_35
+								newMsg.SenderUserPeerId = client.User.PeerId
+								newMsg.SenderNodePeerId = client.User.P2PLocalPeerId
+								newMsg.RecipientUserPeerId = msg.SenderUserPeerId
+								newMsg.RecipientNodePeerId = msg.SenderNodePeerId
+								marshal, _ := json.Marshal(aliceData)
+								newMsg.Data = string(marshal)
+								_ = client.sendDataToP2PUser(newMsg, true, newMsg.Data)
+								return "", false, nil
+							}
+						}
+					}
+				}
+			}
 		} else {
 			defaultErr = err
 		}

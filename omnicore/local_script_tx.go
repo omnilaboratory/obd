@@ -152,7 +152,7 @@ func BtcCreateRawTransaction(fromBitCoinAddress string, outputItems []bean.Trans
 		return nil, errors.New("empty balance")
 	}
 
-	out, _ := outTotalAmount.Round(8).Float64()
+	minerFeeAndOut, _ := decimal.NewFromFloat(minerFee).Add(outTotalAmount).Round(8).Float64()
 
 	balance := 0.0
 	inputs := make([]map[string]interface{}, 0)
@@ -174,16 +174,14 @@ func BtcCreateRawTransaction(fromBitCoinAddress string, outputItems []bean.Trans
 		node["scriptPubKey"] = item.Get("scriptPubKey").String()
 		inputs = append(inputs, node)
 		balance, _ = decimal.NewFromFloat(balance).Add(decimal.NewFromFloat(item.Get("amount").Float())).Round(8).Float64()
-		if balance > out {
+		if balance >= minerFeeAndOut {
 			break
 		}
 	}
 
-	if len(inputs) == 0 || balance < out {
+	if len(inputs) == 0 || balance < minerFeeAndOut {
 		return nil, errors.New("not enough balance")
 	}
-
-	minerFeeAndOut, _ := decimal.NewFromFloat(minerFee).Add(outTotalAmount).Round(8).Float64()
 
 	subMinerFee := 0.0
 	if balance <= minerFeeAndOut {
@@ -531,15 +529,14 @@ func createOmniRawTransaction(balance, out, amount, minerFee float64, propertyId
 }
 
 func OmniSignRawTransactionForUnsend(hex string, inputItems []bean.TransactionInputItem, privKey string) (string, string, error) {
-
 	var items []bean.RawTxInputItem
 	for _, item := range inputItems {
 		items = append(items, bean.RawTxInputItem{ScriptPubKey: item.ScriptPubKey, RedeemScript: item.RedeemScript})
 	}
-	hex, err := SignRawHex(items, hex, privKey)
+
+	hex, err := SignRawHex(items, hex, privKey, 2)
 	if err != nil {
 		return "", hex, err
 	}
-
 	return GetTxId(hex), hex, nil
 }

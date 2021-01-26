@@ -167,6 +167,13 @@ type SignAssetFunding struct {
 }
 
 //type: -101035 (funding_signed)
+type NeedSignRdAndBrOfAssetFunding struct {
+	TemporaryChannelId string                 `json:"temporary_channel_id"`
+	AliceRdSignData    map[string]interface{} `json:"alice_rd_sign_data"`
+	AliceBrSignData    map[string]interface{} `json:"alice_br_sign_data"`
+}
+
+//type: -101035 (funding_signed)
 type SignRdAndBrOfAssetFunding struct {
 	TemporaryChannelId string `json:"temporary_channel_id"`
 	BrId               int64  `json:"br_id"`

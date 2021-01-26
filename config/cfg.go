@@ -19,12 +19,12 @@ var (
 	HtlcFeeRate = 0.0001
 	HtlcMaxFee  = 0.01
 
-	TrackerHost = "localhost:60060"
+	TrackerHost = "62.234.216.108:60060"
 
 	ChainNodeType = "test"
 	//P2P
 	P2P_hostIp     = "127.0.0.1"
-	P2P_sourcePort = 4001
+	P2P_port       = 4001
 	BootstrapPeers addrList
 )
 
@@ -62,7 +62,7 @@ func Init() {
 		return
 	}
 	P2P_hostIp = p2pNode.Key("hostIp").String()
-	P2P_sourcePort = p2pNode.Key("sourcePort").MustInt()
+	P2P_port = p2pNode.Key("port").MustInt()
 
 	//tracker
 	tracker, err := Cfg.GetSection("tracker")

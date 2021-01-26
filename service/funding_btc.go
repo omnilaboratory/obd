@@ -203,7 +203,6 @@ func (service *fundingTransactionManager) BtcFundingCreated(msg bean.RequestMess
 			return nil, "", err
 		}
 
-		minerFeeRedeemTransaction := &dao.MinerFeeRedeemTransaction{}
 		minerFeeRedeemTransaction.TemporaryChannelId = reqData.TemporaryChannelId
 		minerFeeRedeemTransaction.FundingTxId = fundingTxid
 		minerFeeRedeemTransaction.Hex = needAliceSignData["hex"].(string)

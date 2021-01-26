@@ -3,10 +3,12 @@ package service
 import (
 	"encoding/hex"
 	"errors"
+	"github.com/asdine/storm/q"
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/btcsuite/btcutil"
 	"github.com/omnilaboratory/obd/bean"
 	"github.com/omnilaboratory/obd/config"
+	"github.com/omnilaboratory/obd/dao"
 	"github.com/omnilaboratory/obd/tool"
 	"github.com/tyler-smith/go-bip32"
 	"github.com/tyler-smith/go-bip39"
@@ -80,6 +82,14 @@ func (service *hdWalletManager) CreateNewAddress(user *bean.User) (wallet *Walle
 	if err != nil {
 		return nil, err
 	}
+
+	var node dao.User
+	_ = user.Db.Select(q.Eq("PeerId", user.PeerId)).First(&node)
+	if node.Id > 0 {
+		node.CurrAddrIndex = user.CurrAddrIndex
+		_ = user.Db.Update(&node)
+	}
+
 	return wallet, nil
 }
 
