@@ -354,7 +354,7 @@ func (service *fundingTransactionManager) AssetFundingCreated(msg bean.RequestMe
 func (service *fundingTransactionManager) OnAliceSignC1a(msg bean.RequestMessage, user *bean.User) (outputData interface{}, err error) {
 
 	if tool.CheckIsString(&msg.Data) == false {
-		return nil, errors.New("empty hex")
+		return nil, errors.New("empty data")
 	}
 	signedC1a := bean.AliceSignC1aOfAssetFunding{}
 	_ = json.Unmarshal([]byte(msg.Data), &signedC1a)

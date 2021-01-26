@@ -8,6 +8,7 @@ import (
 	"github.com/omnilaboratory/obd/bean/enum"
 	"github.com/omnilaboratory/obd/service"
 	"github.com/tidwall/gjson"
+	"log"
 )
 
 func routerOfP2PNode(msg bean.RequestMessage, data string, client *Client) (retData string, isGoOn bool, retErr error) {
@@ -133,7 +134,20 @@ func routerOfP2PNode(msg bean.RequestMessage, data string, client *Client) (retD
 		if err == nil {
 			status = true
 			retData, _ := json.Marshal(node)
-			return string(retData), true, nil
+			if client.User.IsAdmin {
+				signedData, _ := agent.AliceSignRdOfC1a(node, client.User)
+				marshal, _ := json.Marshal(signedData)
+				outData, err := service.FundingTransactionService.OnAliceSignedRdAtAliceSide(string(marshal), client.User)
+				if err != nil {
+					log.Println(err)
+				}
+				msg.Type = enum.MsgType_ClientSign_AssetFunding_AliceSignRD_1134
+				marshal, _ = json.Marshal(outData)
+				client.SendToMyself(msg.Type, true, string(marshal))
+				return "", false, nil
+			} else {
+				return string(retData), true, nil
+			}
 		} else {
 			defaultErr = err
 		}

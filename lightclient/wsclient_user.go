@@ -33,8 +33,10 @@ func (client *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, 
 		isAdmin := gjson.Get(msg.Data, "is_admin").Bool()
 
 		peerId := tool.GetUserPeerId(mnemonic)
-		if isAdmin && globalWsClientManager.OnlineClientMap[peerId] != nil {
-			client.User = globalWsClientManager.OnlineClientMap[peerId].User
+		if globalWsClientManager.OnlineClientMap[peerId] != nil {
+			if globalWsClientManager.OnlineClientMap[peerId].User.IsAdmin {
+				client.User = globalWsClientManager.OnlineClientMap[peerId].User
+			}
 		}
 
 		if client.User != nil {

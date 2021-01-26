@@ -252,10 +252,10 @@ func (client *Client) omniCoreModule(msg bean.RequestMessage) (enum.SendTargetTy
 				tool.CheckIsString(&sendInfo.ToAddress) &&
 				sendInfo.Amount > 0 {
 				resp, err := omnicore.BtcCreateRawTransaction(sendInfo.FromAddress, []bean.TransactionOutputItem{{sendInfo.ToAddress, sendInfo.Amount}}, sendInfo.MinerFee, 0, nil)
-				resp, err = agent.AliceSignFundBtc(msg, resp, client.User)
 				if err != nil {
 					data = err.Error()
 				} else {
+					resp, _ = agent.AliceSignFundBtc(msg, resp, client.User)
 					resp["is_multisig"] = false
 					bytes, _ := json.Marshal(resp)
 					data = string(bytes)
@@ -301,6 +301,7 @@ func (client *Client) omniCoreModule(msg bean.RequestMessage) (enum.SendTargetTy
 				if err != nil {
 					data = err.Error()
 				} else {
+					respNode, _ = agent.AliceSignFundAsset(msg, respNode, client.User)
 					respNode["is_multisig"] = false
 					bytes, _ := json.Marshal(respNode)
 					data = string(bytes)

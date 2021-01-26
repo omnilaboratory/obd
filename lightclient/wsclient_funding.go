@@ -44,7 +44,7 @@ func (client *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.Se
 
 		if status {
 			if client.User.IsAdmin {
-				signedData, err := agent.AliceFirstSignFundBtcRedeemTx(msg, node, client.User)
+				signedData, err := agent.AliceFirstSignFundBtcRedeemTx(node, client.User)
 				if err == nil {
 					marshal, _ := json.Marshal(signedData)
 					msg.Data = string(marshal)
@@ -227,6 +227,10 @@ func (client *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.Se
 		client.SendToMyself(msg.Type, status, data)
 
 	case enum.MsgType_FundingCreate_SendAssetFundingCreated_34:
+
+		if client.User.IsAdmin {
+			agent.AliceCreateTempWalletForC1a(&msg, client.User)
+		}
 		node, needSign, err := service.FundingTransactionService.AssetFundingCreated(msg, client.User)
 		if err != nil {
 			data = err.Error()
@@ -247,8 +251,36 @@ func (client *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.Se
 				}
 			}
 		}
-		msg.Type = enum.MsgType_FundingCreate_SendAssetFundingCreated_34
-		client.SendToMyself(msg.Type, status, data)
+
+		if client.User.IsAdmin && needSign {
+			signedData, err := agent.AliceSignC1a(node, client.User)
+			if err != nil {
+				data = err.Error()
+				status = false
+			}
+			marshal, _ := json.Marshal(signedData)
+			msg.Data = string(marshal)
+			p2pData, err := service.FundingTransactionService.OnAliceSignC1a(msg, client.User)
+			if err != nil {
+				data = err.Error()
+				status = false
+			} else {
+				msg.Type = enum.MsgType_FundingCreate_AssetFundingCreated_34
+				marshal, _ = json.Marshal(p2pData)
+				msg.Data = string(marshal)
+				err = client.sendDataToP2PUser(msg, status, msg.Data)
+				if err != nil {
+					data = err.Error()
+					status = false
+				}
+				if status == false {
+					client.SendToMyself(msg.Type, status, data)
+				}
+			}
+		} else {
+			msg.Type = enum.MsgType_FundingCreate_SendAssetFundingCreated_34
+			client.SendToMyself(msg.Type, status, data)
+		}
 
 	case enum.MsgType_ClientSign_AssetFunding_AliceSignC1a_1034:
 		node, err := service.FundingTransactionService.OnAliceSignC1a(msg, client.User)

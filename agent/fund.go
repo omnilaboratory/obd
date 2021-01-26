@@ -37,7 +37,32 @@ func AliceSignFundBtc(msg bean.RequestMessage, hexData map[string]interface{}, u
 	return signedData, nil
 }
 
-func AliceFirstSignFundBtcRedeemTx(msg bean.RequestMessage, hexData interface{}, user *bean.User) (signedData *bean.NeedClientSignHexData, err error) {
+func AliceSignFundAsset(msg bean.RequestMessage, hexData map[string]interface{}, user *bean.User) (signedData map[string]interface{}, err error) {
+	if user == nil || user.IsAdmin == false {
+		return hexData, nil
+	}
+
+	sendInfo := &bean.FundingAsset{}
+	_ = json.Unmarshal([]byte(msg.Data), sendInfo)
+	channelInfo := dao.ChannelInfo{}
+	user.Db.Select(q.Eq("ChannelAddress", sendInfo.ToAddress), q.Eq("CurrState", bean.ChannelState_WaitFundAsset)).First(&channelInfo)
+	if channelInfo.Id == 0 {
+		return nil, errors.New("not found the channel")
+	}
+	walletInfo, _ := service.HDWalletService.GetAddressByIndex(user, uint32(channelInfo.FunderAddressIndex))
+	hex := hexData["hex"].(string)
+	inputs := hexData["inputs"]
+	_, signedHex, err := omnicore.OmniSignRawTransactionForUnsend(hex, convertBean(inputs), walletInfo.Wif)
+	if err != nil {
+		return nil, err
+	}
+	signedData = hexData
+	signedData["hex"] = signedHex
+
+	return signedData, nil
+}
+
+func AliceFirstSignFundBtcRedeemTx(hexData interface{}, user *bean.User) (signedData *bean.NeedClientSignHexData, err error) {
 	signData := hexData.(bean.NeedClientSignHexData)
 	channelInfo := dao.ChannelInfo{}
 	user.Db.Select(q.Eq("TemporaryChannelId", signData.TemporaryChannelId), q.Eq("CurrState", bean.ChannelState_WaitFundAsset)).First(&channelInfo)
@@ -91,6 +116,39 @@ func BobSignFundBtcRedeemTx(data string, user *bean.User) (resultData *bean.Send
 	resultData.TemporaryChannelId = fundingBtcOfP2p.TemporaryChannelId
 	resultData.Approval = true
 	return resultData, nil
+}
+
+func AliceCreateTempWalletForC1a(msg *bean.RequestMessage, user *bean.User) (err error) {
+	reqData := &bean.SendRequestAssetFunding{}
+	err = json.Unmarshal([]byte(msg.Data), reqData)
+	address, err := service.HDWalletService.CreateNewAddress(user)
+	if err != nil {
+		return err
+	}
+	reqData.TempAddressIndex = address.Index
+	reqData.TempAddressPubKey = address.PubKey
+	marshal, _ := json.Marshal(reqData)
+	msg.Data = string(marshal)
+	return nil
+}
+
+func AliceSignC1a(hexData interface{}, user *bean.User) (signedData *bean.AliceSignC1aOfAssetFunding, err error) {
+	signData := hexData.(bean.NeedClientSignHexData)
+
+	channelInfo := dao.ChannelInfo{}
+	user.Db.Select(q.Eq("TemporaryChannelId", signData.TemporaryChannelId), q.Eq("CurrState", bean.ChannelState_WaitFundAsset)).First(&channelInfo)
+	if channelInfo.Id == 0 {
+		return nil, errors.New("not found the channel")
+	}
+
+	walletInfo, _ := service.HDWalletService.GetAddressByIndex(user, uint32(channelInfo.FunderAddressIndex))
+	_, signedHex, err := omnicore.OmniSignRawTransactionForUnsend(signData.Hex, convertBean(signData.Inputs), walletInfo.Wif)
+	if err != nil {
+		return nil, err
+	}
+	signedData = &bean.AliceSignC1aOfAssetFunding{}
+	signedData.SignedC1aHex = signedHex
+	return signedData, nil
 }
 
 func BobSignC1a(data string, user *bean.User) (resultData *bean.SignAssetFunding, err error) {
@@ -169,4 +227,36 @@ func BobSignRdAndBrOfC1a(data string, user *bean.User) (resultData *bean.SignRdA
 	}
 	resultData.BrSignedHex = hex
 	return resultData, nil
+}
+
+func AliceSignRdOfC1a(hexData map[string]interface{}, user *bean.User) (signedData *bean.AliceSignRDOfAssetFunding, err error) {
+
+	channelId := hexData["channel_id"].(string)
+	channelInfo := dao.ChannelInfo{}
+	user.Db.Select(q.Eq("ChannelId", channelId), q.Eq("CurrState", bean.ChannelState_WaitFundAsset)).First(&channelInfo)
+	if channelInfo.Id == 0 {
+		return nil, errors.New("not found the channel")
+	}
+
+	commitmentTxInfo := &dao.CommitmentTransaction{}
+	err = user.Db.Select(
+		q.Eq("ChannelId", channelId),
+		q.Or(
+			q.Eq("PeerIdA", user.PeerId),
+			q.Eq("PeerIdB", user.PeerId))).
+		OrderBy("CreateAt").Reverse().
+		First(commitmentTxInfo)
+	walletInfo, _ := service.HDWalletService.GetAddressByIndex(user, uint32(commitmentTxInfo.RSMCTempAddressIndex))
+
+	rdHex := hexData["hex"].(string)
+	rdInputs := hexData["inputs"]
+	_, signedHex, err := omnicore.OmniSignRawTransactionForUnsend(rdHex, convertBean(rdInputs), walletInfo.Wif)
+	if err != nil {
+		return nil, err
+	}
+	hexData["Hex"] = signedHex
+	signedData = &bean.AliceSignRDOfAssetFunding{}
+	signedData.ChannelId = channelId
+	signedData.RdSignedHex = signedHex
+	return signedData, nil
 }
