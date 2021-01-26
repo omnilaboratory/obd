@@ -25,7 +25,7 @@ func (r *rpcServer) Hello(ctx context.Context,
 	return &proxy.HelloResponse{Resp: resp}, nil
 }
 
-func startServer() (string, error) {
+func startServer() {
 
 	address := "localhost:50051"
 	lis, err := net.Listen("tcp", address)
@@ -38,9 +38,6 @@ func startServer() (string, error) {
 	proxy.RegisterProxyServer(s, &rpcServer{})
 
 	s.Serve(lis)
-
-	returnMsg := "Starting gRPC server done."
-	return returnMsg, nil
 }
 
 func main() {
