@@ -84,8 +84,8 @@ func (client *Client) htlcHModule(msg bean.RequestMessage) (enum.SendTargetType,
 
 	case enum.MsgType_HTLC_SendAddHTLC_40:
 
-		if client.User.IsAgent {
-			//agent.BeforeAliceAddHtlcAtAliceSide(&msg, client.User)
+		if client.User.IsAdmin {
+			agent.BeforeAliceAddHtlcAtAliceSide(&msg, client.User)
 		}
 
 		respond, needSign, err := service.HtlcForwardTxService.AliceAddHtlcAtAliceSide(msg, *client.User)
@@ -112,7 +112,7 @@ func (client *Client) htlcHModule(msg bean.RequestMessage) (enum.SendTargetType,
 		}
 
 		if status && needSign {
-			if client.User.IsAgent {
+			if client.User.IsAdmin {
 				//签名完成
 				signedData, err := agent.AliceSignC3aAtAliceSide(respond, client.User)
 				if err == nil {

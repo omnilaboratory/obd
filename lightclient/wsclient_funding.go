@@ -2,6 +2,7 @@ package lightclient
 
 import (
 	"encoding/json"
+	"github.com/omnilaboratory/obd/agent"
 	"github.com/omnilaboratory/obd/bean"
 	"github.com/omnilaboratory/obd/bean/enum"
 	"github.com/omnilaboratory/obd/service"
@@ -40,6 +41,38 @@ func (client *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.Se
 		}
 		msg.Type = enum.MsgType_FundingCreate_SendBtcFundingCreated_340
 		client.SendToMyself(msg.Type, status, data)
+
+		if status {
+			if client.User.IsAdmin {
+				signedData, err := agent.AliceFirstSignFundBtcRedeemTx(node, client.User)
+				if err == nil {
+					marshal, _ := json.Marshal(signedData)
+					msg.Data = string(marshal)
+					node, _, err := service.FundingTransactionService.OnAliceSignBtcFundingMinerFeeRedeemTx(msg.Data, client.User)
+					if err == nil {
+						bytes, _ := json.Marshal(node)
+						data = string(bytes)
+						msg.Type = enum.MsgType_FundingCreate_BtcFundingCreated_340
+						err = client.sendDataToP2PUser(msg, status, data)
+						if err != nil {
+							status = false
+							data = err.Error()
+						}
+					} else {
+						status = false
+						data = err.Error()
+					}
+				} else {
+					status = false
+					data = err.Error()
+				}
+				if status == false {
+					msg.Type = enum.MsgType_ClientSign_Duplex_BtcFundingMinerRDTx_341
+					client.SendToMyself(msg.Type, status, data)
+				}
+			}
+		}
+
 	case enum.MsgType_ClientSign_Duplex_BtcFundingMinerRDTx_341:
 		node, _, err := service.FundingTransactionService.OnAliceSignBtcFundingMinerFeeRedeemTx(msg.Data, client.User)
 		if err != nil {
@@ -194,6 +227,10 @@ func (client *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.Se
 		client.SendToMyself(msg.Type, status, data)
 
 	case enum.MsgType_FundingCreate_SendAssetFundingCreated_34:
+
+		if client.User.IsAdmin {
+			agent.AliceCreateTempWalletForC1a(&msg, client.User)
+		}
 		node, needSign, err := service.FundingTransactionService.AssetFundingCreated(msg, client.User)
 		if err != nil {
 			data = err.Error()
@@ -214,8 +251,36 @@ func (client *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.Se
 				}
 			}
 		}
-		msg.Type = enum.MsgType_FundingCreate_SendAssetFundingCreated_34
-		client.SendToMyself(msg.Type, status, data)
+
+		if client.User.IsAdmin && needSign {
+			signedData, err := agent.AliceSignC1a(node, client.User)
+			if err != nil {
+				data = err.Error()
+				status = false
+			}
+			marshal, _ := json.Marshal(signedData)
+			msg.Data = string(marshal)
+			p2pData, err := service.FundingTransactionService.OnAliceSignC1a(msg, client.User)
+			if err != nil {
+				data = err.Error()
+				status = false
+			} else {
+				msg.Type = enum.MsgType_FundingCreate_AssetFundingCreated_34
+				marshal, _ = json.Marshal(p2pData)
+				msg.Data = string(marshal)
+				err = client.sendDataToP2PUser(msg, status, msg.Data)
+				if err != nil {
+					data = err.Error()
+					status = false
+				}
+				if status == false {
+					client.SendToMyself(msg.Type, status, data)
+				}
+			}
+		} else {
+			msg.Type = enum.MsgType_FundingCreate_SendAssetFundingCreated_34
+			client.SendToMyself(msg.Type, status, data)
+		}
 
 	case enum.MsgType_ClientSign_AssetFunding_AliceSignC1a_1034:
 		node, err := service.FundingTransactionService.OnAliceSignC1a(msg, client.User)
@@ -228,16 +293,22 @@ func (client *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.Se
 			} else {
 				data = string(bytes)
 				status = true
-				msg.Type = enum.MsgType_FundingCreate_AssetFundingCreated_34
-				err = client.sendDataToP2PUser(msg, status, data)
-				if err != nil {
-					data = err.Error()
-					status = false
-				}
 			}
 		}
+
 		msg.Type = enum.MsgType_ClientSign_AssetFunding_AliceSignC1a_1034
 		client.SendToMyself(msg.Type, status, data)
+
+		if status {
+			msg.Type = enum.MsgType_FundingCreate_AssetFundingCreated_34
+			err = client.sendDataToP2PUser(msg, status, data)
+			if err != nil {
+				data = err.Error()
+				msg.Type = enum.MsgType_FundingCreate_AssetFundingCreated_34
+				client.SendToMyself(msg.Type, status, data)
+			}
+		}
+
 	case enum.MsgType_ClientSign_AssetFunding_AliceSignRD_1134:
 		node, err := service.FundingTransactionService.OnAliceSignedRdAtAliceSide(msg.Data, client.User)
 		if err != nil {
@@ -338,7 +409,9 @@ func (client *Client) fundingSignModule(msg bean.RequestMessage) (enum.SendTarge
 			}
 		}
 
-		// 在不同意（approval==false）的情况下：
+		msg.Type = enum.MsgType_FundingSign_SendBtcSign_350
+		client.SendToMyself(msg.Type, status, data)
+
 		if tool.CheckIsString(&funder) {
 			if status {
 				msg.Type = enum.MsgType_FundingSign_BtcSign_350
@@ -351,9 +424,10 @@ func (client *Client) fundingSignModule(msg bean.RequestMessage) (enum.SendTarge
 				data = err.Error()
 				status = false
 			}
+			if status == false {
+				client.SendToMyself(msg.Type, status, data)
+			}
 		}
-		msg.Type = enum.MsgType_FundingSign_SendBtcSign_350
-		client.SendToMyself(msg.Type, status, data)
 	case enum.MsgType_FundingSign_SendAssetFundingSigned_35: //get openChannelReq from funder then send to fundee  create a funding tx
 		node, err := service.FundingTransactionService.AssetFundingSigned(msg.Data, client.User)
 		if err != nil {

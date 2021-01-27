@@ -73,7 +73,7 @@ func createCurrCommitmentTxRawBR(tx storm.Node, brType dao.BRType, channelInfo *
 			log.Println(err)
 			return nil, err
 		}
-		retMap["br_id"] = breachRemedyTransaction.Id
+		retMap["br_id"] = int64(breachRemedyTransaction.Id)
 	}
 
 	return retMap, nil

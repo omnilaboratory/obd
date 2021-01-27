@@ -18,7 +18,7 @@ type User struct {
 	PeerId          string    `json:"peer_id"`
 	Mnemonic        string    `json:"mnemonic"`
 	State           UserState `json:"state"`
-	IsAgent         bool      `json:"is_agent"`
+	IsAdmin         bool      `json:"is_admin"`
 	ChangeExtKey    *bip32.Key
 	CurrAddrIndex   int       `json:"curr_addr_index"`
 	Db              *storm.DB //db

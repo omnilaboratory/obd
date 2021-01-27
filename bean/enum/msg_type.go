@@ -139,14 +139,14 @@ const (
 	MsgType_FundingCreate_SendAssetFundingCreated_34 MsgType = -100034
 	// 客户端签名：alice签名C1a
 	MsgType_ClientSign_AssetFunding_AliceSignC1a_1034 MsgType = -101034
-	MsgType_ClientSign_AssetFunding_AliceSignRD_1134  MsgType = -101134
 	MsgType_FundingCreate_AssetFundingCreated_34      MsgType = -34
 	MsgType_FundingCreate_RecvAssetFundingCreated_34  MsgType = -110034
 
-	MsgType_FundingSign_SendAssetFundingSigned_35 MsgType = -100035
-	MsgType_ClientSign_AssetFunding_RdAndBr_1035  MsgType = -101035
-	MsgType_FundingSign_AssetFundingSigned_35     MsgType = -35
-	MsgType_FundingSign_RecvAssetFundingSigned_35 MsgType = -110035
+	MsgType_FundingSign_SendAssetFundingSigned_35    MsgType = -100035
+	MsgType_ClientSign_AssetFunding_RdAndBr_1035     MsgType = -101035
+	MsgType_FundingSign_AssetFundingSigned_35        MsgType = -35
+	MsgType_FundingSign_RecvAssetFundingSigned_35    MsgType = -110035
+	MsgType_ClientSign_AssetFunding_AliceSignRD_1134 MsgType = -101134
 
 	MsgType_CommitmentTx_SendCommitmentTransactionCreated_351                    MsgType = -100351
 	MsgType_CommitmentTx_CommitmentTransactionCreated_351                        MsgType = -351

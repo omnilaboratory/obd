@@ -109,8 +109,7 @@ Any one can be a tracker. Runing a tracker requires a full omnilayer core node, 
 Edit the configure file: `\config\conf.ini`
 ```
 [tracker]
-hostIp = 62.234.216.108 
-port = 60060
+host = 62.234.216.108:60060
 ```
 
 

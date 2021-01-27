@@ -180,13 +180,29 @@ func BobSignC3b() {
 
 func convertBean(inputs interface{}) (result []bean.TransactionInputItem) {
 	result = make([]bean.TransactionInputItem, 0)
-	for _, item := range inputs.([]map[string]interface{}) {
-		temp := bean.TransactionInputItem{
-			ScriptPubKey: item["scriptPubKey"].(string),
-			RedeemScript: item["redeemScript"].(string),
+
+	if arr, ok := inputs.([]map[string]interface{}); ok {
+		for _, item := range arr {
+			temp := bean.TransactionInputItem{
+				ScriptPubKey: item["scriptPubKey"].(string),
+			}
+			if item["redeemScript"] != nil {
+				temp.RedeemScript = item["redeemScript"].(string)
+			}
+			result = append(result, temp)
 		}
-		result = append(result, temp)
+	} else {
+		nodes := inputs.([]interface{})
+		for _, item := range nodes {
+			node := item.(map[string]interface{})
+			temp := bean.TransactionInputItem{
+				ScriptPubKey: node["scriptPubKey"].(string),
+				RedeemScript: node["redeemScript"].(string),
+			}
+			result = append(result, temp)
+		}
 	}
+
 	return result
 }
 

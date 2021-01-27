@@ -354,7 +354,7 @@ func (service *fundingTransactionManager) AssetFundingCreated(msg bean.RequestMe
 func (service *fundingTransactionManager) OnAliceSignC1a(msg bean.RequestMessage, user *bean.User) (outputData interface{}, err error) {
 
 	if tool.CheckIsString(&msg.Data) == false {
-		return nil, errors.New("empty hex")
+		return nil, errors.New("empty data")
 	}
 	signedC1a := bean.AliceSignC1aOfAssetFunding{}
 	_ = json.Unmarshal([]byte(msg.Data), &signedC1a)
@@ -608,15 +608,11 @@ func (service *fundingTransactionManager) BeforeSignAssetFundingCreateAtBobSide(
 		log.Println(err)
 		return nil, err
 	}
-	//node := make(map[string]interface{})
-	//node["temporary_channel_id"] = temporaryChannelId
-	//node["funding_omni_hex"] = fundingTransaction.FundingTxHex
-	//node["c1a_rsmc_hex"] = c1aRemcHex
 	return nil, nil
 }
 
 // 协议号：100035 bob签收这次资产充值交易
-func (service *fundingTransactionManager) AssetFundingSigned(jsonData string, signer *bean.User) (outputData map[string]interface{}, err error) {
+func (service *fundingTransactionManager) AssetFundingSigned(jsonData string, signer *bean.User) (outputData *bean.NeedSignRdAndBrOfAssetFunding, err error) {
 	reqData := &bean.SignAssetFunding{}
 	err = json.Unmarshal([]byte(jsonData), reqData)
 	if err != nil {
@@ -813,11 +809,11 @@ func (service *fundingTransactionManager) AssetFundingSigned(jsonData string, si
 	}
 	tempAssetFundingSignData[signer.PeerId+"_"+reqData.TemporaryChannelId] = node
 
-	outputData = make(map[string]interface{})
-	outputData["temporary_channel_id"] = reqData.TemporaryChannelId
-	outputData["alice_rd_sign_data"] = aliceRdHexDataMap
-	outputData["alice_br_sign_data"] = aliceBrHexDataMap
-
+	outputData = &bean.NeedSignRdAndBrOfAssetFunding{}
+	outputData.TemporaryChannelId = reqData.TemporaryChannelId
+	outputData.AliceRdSignData = aliceRdHexDataMap
+	log.Println(aliceRdHexDataMap)
+	outputData.AliceBrSignData = aliceBrHexDataMap
 	return outputData, nil
 }
 

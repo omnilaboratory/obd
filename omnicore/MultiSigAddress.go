@@ -25,10 +25,8 @@ func CreateMultiSigAddr(addr1_pubkey_str string, addr2_pubkey_str string, defaul
 		return "", "", ""
 	}
 	scriptAddr, _ := btcutil.NewAddressScriptHash(pkScript, defaultNet)
+	scriptPkScript, err := txscript.PayToAddrScript(scriptAddr)
 
-	scriptPubKey := hex.EncodeToString(scriptAddr.ScriptAddress())
-	scriptPubKey = "a914" + scriptPubKey + "87"
-
-	return scriptAddr.EncodeAddress(), hex.EncodeToString(pkScript), scriptPubKey
+	return scriptAddr.EncodeAddress(), hex.EncodeToString(pkScript), hex.EncodeToString(scriptPkScript)
 
 }

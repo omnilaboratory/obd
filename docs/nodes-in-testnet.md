@@ -11,8 +11,7 @@ Some trackers for users who run your own obd nodes. You should edit the configur
 
 ```
 [tracker]
-hostIp = 62.234.216.108 
-port = 60060
+host = 62.234.216.108:60060
 ``` 
 
  

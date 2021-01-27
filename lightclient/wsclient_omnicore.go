@@ -2,6 +2,7 @@ package lightclient
 
 import (
 	"encoding/json"
+	"github.com/omnilaboratory/obd/agent"
 	"github.com/omnilaboratory/obd/bean"
 	"github.com/omnilaboratory/obd/bean/enum"
 	. "github.com/omnilaboratory/obd/conn"
@@ -254,6 +255,7 @@ func (client *Client) omniCoreModule(msg bean.RequestMessage) (enum.SendTargetTy
 				if err != nil {
 					data = err.Error()
 				} else {
+					resp, _ = agent.AliceSignFundBtc(msg, resp, client.User)
 					resp["is_multisig"] = false
 					bytes, _ := json.Marshal(resp)
 					data = string(bytes)
@@ -299,6 +301,7 @@ func (client *Client) omniCoreModule(msg bean.RequestMessage) (enum.SendTargetTy
 				if err != nil {
 					data = err.Error()
 				} else {
+					respNode, _ = agent.AliceSignFundAsset(msg, respNode, client.User)
 					respNode["is_multisig"] = false
 					bytes, _ := json.Marshal(respNode)
 					data = string(bytes)

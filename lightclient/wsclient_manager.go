@@ -61,6 +61,9 @@ func (clientManager *clientManager) Start() {
 }
 
 func (clientManager *clientManager) cleanConn(client *Client) {
+	if client.User != nil && client.User.IsAdmin {
+		return
+	}
 	delete(clientManager.ClientsMap, client)
 	if client.User != nil {
 		_ = service.UserService.UserLogout(client.User)

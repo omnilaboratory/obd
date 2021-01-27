@@ -70,7 +70,7 @@ func StartP2PNode() (err error) {
 	}
 
 	// 0.0.0.0 will listen on any interface device.
-	sourceMultiAddr, _ := multiaddr.NewMultiaddr(fmt.Sprintf("/ip4/0.0.0.0/tcp/%d", config.P2P_sourcePort))
+	sourceMultiAddr, _ := multiaddr.NewMultiaddr(fmt.Sprintf("/ip4/0.0.0.0/tcp/%d", config.P2P_port))
 
 	// libp2p.New constructs a new libp2p Host.
 	// Other options can be added here.
@@ -88,7 +88,7 @@ func StartP2PNode() (err error) {
 	p2PLocalNodeId = hostNode.ID().Pretty()
 	service.P2PLocalNodeId = p2PLocalNodeId
 
-	localServerDest = fmt.Sprintf("/ip4/%s/tcp/%v/p2p/%s", config.P2P_hostIp, config.P2P_sourcePort, hostNode.ID().Pretty())
+	localServerDest = fmt.Sprintf("/ip4/%s/tcp/%v/p2p/%s", config.P2P_hostIp, config.P2P_port, hostNode.ID().Pretty())
 	bean.CurrObdNodeInfo.P2pAddress = localServerDest
 	log.Println("local p2p address", localServerDest)
 
