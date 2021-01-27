@@ -36,9 +36,13 @@ func (client *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, 
 		if globalWsClientManager.OnlineClientMap[peerId] != nil {
 			if globalWsClientManager.OnlineClientMap[peerId].User.IsAdmin {
 				client.User = globalWsClientManager.OnlineClientMap[peerId].User
+			} else {
+				if isAdmin {
+					client.User = globalWsClientManager.OnlineClientMap[peerId].User
+					client.User.IsAdmin = true
+				}
 			}
 		}
-
 		if client.User != nil {
 			if client.User.Mnemonic != mnemonic {
 				_ = service.UserService.UserLogout(client.User)
