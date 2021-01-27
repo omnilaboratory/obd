@@ -29,13 +29,13 @@ func RsmcAliceCreateTx(msg *bean.RequestMessage, user *bean.User) (err error) {
 		}
 		reqData.LastTempAddressPrivateKey = lastWalletInfo.Wif
 	}
-
 	address, err := service.HDWalletService.CreateNewAddress(user)
 	if err != nil {
 		return err
 	}
 	reqData.CurrTempAddressIndex = address.Index
 	reqData.CurrTempAddressPubKey = address.PubKey
-
+	marshal, _ := json.Marshal(reqData)
+	msg.Data = string(marshal)
 	return nil
 }

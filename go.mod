@@ -15,6 +15,7 @@ require (
 	github.com/fastly/go-utils v0.0.0-20180712184237-d95a45783239 // indirect
 	github.com/gin-gonic/gin v1.6.3
 	github.com/go-ini/ini v1.56.0
+	github.com/golang/protobuf v1.4.0
 	github.com/gorilla/websocket v1.4.2
 	github.com/jehiah/go-strftime v0.0.0-20171201141054-1d33003b3869 // indirect
 	github.com/jonboulle/clockwork v0.1.0 // indirect
@@ -34,11 +35,13 @@ require (
 	github.com/tidwall/gjson v1.6.0
 	github.com/tyler-smith/go-bip32 v0.0.0-20170922074101-2c9cfd177564
 	github.com/tyler-smith/go-bip39 v1.0.2
+	github.com/urfave/cli v1.22.1
 	github.com/vmihailenco/msgpack v4.0.4+incompatible // indirect
 	go.etcd.io/bbolt v1.3.4 // indirect
 	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
 	golang.org/x/sys v0.0.0-20201024232916-9f70ab9862d5 // indirect
 	golang.org/x/tools v0.0.0-20201023174141-c8cfbd0f21e6 // indirect
+	google.golang.org/grpc v1.31.1
 	gopkg.in/ini.v1 v1.56.0 // indirect
 	gopkg.in/yaml.v2 v2.3.0 // indirect
 	launchpad.net/gocheck v0.0.0-20140225173054-000000000087 // indirect

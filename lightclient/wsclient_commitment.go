@@ -2,6 +2,7 @@ package lightclient
 
 import (
 	"encoding/json"
+	"github.com/omnilaboratory/obd/agent"
 	"github.com/omnilaboratory/obd/bean"
 	"github.com/omnilaboratory/obd/bean/enum"
 	"github.com/omnilaboratory/obd/service"
@@ -15,6 +16,17 @@ func (client *Client) commitmentTxModule(msg bean.RequestMessage) (enum.SendTarg
 	data := ""
 	switch msg.Type {
 	case enum.MsgType_CommitmentTx_SendCommitmentTransactionCreated_351:
+
+		if client.User.IsAdmin {
+			err := agent.RsmcAliceCreateTx(&msg, client.User)
+			if err != nil {
+				data = err.Error()
+				log.Println(data)
+				msg.Type = enum.MsgType_CommitmentTx_SendCommitmentTransactionCreated_351
+				client.SendToMyself(msg.Type, status, data)
+				break
+			}
+		}
 		retData, needSign, err := service.CommitmentTxService.CommitmentTransactionCreated(msg, client.User)
 		if err != nil {
 			data = err.Error()
