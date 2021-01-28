@@ -50,6 +50,15 @@ func (client *Client) htlcHModule(msg bean.RequestMessage) (enum.SendTargetType,
 		if err != nil {
 			data = err.Error()
 		} else {
+			if client.User.IsAdmin {
+				err := agent.HtlcCreateInvoice(&msg, client.User)
+				if err != nil {
+					data = err.Error()
+					client.SendToMyself(msg.Type, status, data)
+					sendType = enum.SendTargetType_SendToSomeone
+					break
+				}
+			}
 			respond, err := service.HtlcForwardTxService.CreateHtlcInvoice(msg)
 			if err != nil {
 				data = err.Error()
@@ -85,7 +94,7 @@ func (client *Client) htlcHModule(msg bean.RequestMessage) (enum.SendTargetType,
 	case enum.MsgType_HTLC_SendAddHTLC_40:
 
 		if client.User.IsAdmin {
-			agent.BeforeAliceAddHtlcAtAliceSide(&msg, client.User)
+			agent.HtlcBeforeAliceAddHtlcAtAliceSide(&msg, client.User)
 		}
 
 		respond, needSign, err := service.HtlcForwardTxService.AliceAddHtlcAtAliceSide(msg, *client.User)
@@ -114,7 +123,7 @@ func (client *Client) htlcHModule(msg bean.RequestMessage) (enum.SendTargetType,
 		if status && needSign {
 			if client.User.IsAdmin {
 				//签名完成
-				signedData, err := agent.AliceSignC3aAtAliceSide(respond, client.User)
+				signedData, err := agent.HtlcAliceSignC3aAtAliceSide(respond, client.User)
 				if err == nil {
 					signedDataBytes, _ := json.Marshal(signedData)
 					msg.Data = string(signedDataBytes)

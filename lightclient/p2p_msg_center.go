@@ -272,12 +272,12 @@ func routerOfP2PNode(msg bean.RequestMessage, data string, client *Client) (retD
 		node, err := service.HtlcForwardTxService.BeforeBobSignAddHtlcRequestAtBobSide_40(data, *client.User)
 		if client.User.IsAdmin {
 			//TODO 代理模式的自动化模式
-			signedData, err := agent.BobSignAddHtlcRequestAtBobSide_40(*node, client.User)
+			signedData, err := agent.HtlcBobSignAddHtlcRequestAtBobSide_40(*node, client.User)
 			if err == nil {
 				marshal, _ := json.Marshal(signedData)
 				service.HtlcForwardTxService.BobSignedAddHtlcAtBobSide(string(marshal), *client.User)
 				//TODO bob签名C3b
-				agent.BobSignC3b()
+				agent.HtlcBobSignC3b()
 			}
 		}
 		if err == nil {

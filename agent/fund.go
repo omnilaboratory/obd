@@ -18,12 +18,12 @@ func AliceSignFundBtc(msg bean.RequestMessage, hexData map[string]interface{}, u
 
 	sendInfo := &bean.FundingBtc{}
 	_ = json.Unmarshal([]byte(msg.Data), sendInfo)
-	channelInfo := dao.ChannelInfo{}
-	user.Db.Select(q.Eq("ChannelAddress", sendInfo.ToAddress), q.Eq("CurrState", bean.ChannelState_WaitFundAsset)).First(&channelInfo)
-	if channelInfo.Id == 0 {
-		return nil, errors.New("not found the channel")
+
+	walletInfo, err := getChannelWalletInfoByAddress(sendInfo.ToAddress, user)
+	if err != nil {
+		return nil, err
 	}
-	walletInfo, _ := service.HDWalletService.GetAddressByIndex(user, uint32(channelInfo.FunderAddressIndex))
+
 	hex := hexData["hex"].(string)
 	inputs := hexData["inputs"]
 	_, signedHex, err := omnicore.OmniSignRawTransactionForUnsend(hex, convertBean(inputs), walletInfo.Wif)
@@ -44,12 +44,10 @@ func AliceSignFundAsset(msg bean.RequestMessage, hexData map[string]interface{},
 
 	sendInfo := &bean.FundingAsset{}
 	_ = json.Unmarshal([]byte(msg.Data), sendInfo)
-	channelInfo := dao.ChannelInfo{}
-	user.Db.Select(q.Eq("ChannelAddress", sendInfo.ToAddress), q.Eq("CurrState", bean.ChannelState_WaitFundAsset)).First(&channelInfo)
-	if channelInfo.Id == 0 {
-		return nil, errors.New("not found the channel")
+	walletInfo, err := getChannelWalletInfoByAddress(sendInfo.ToAddress, user)
+	if err != nil {
+		return nil, err
 	}
-	walletInfo, _ := service.HDWalletService.GetAddressByIndex(user, uint32(channelInfo.FunderAddressIndex))
 	hex := hexData["hex"].(string)
 	inputs := hexData["inputs"]
 	_, signedHex, err := omnicore.OmniSignRawTransactionForUnsend(hex, convertBean(inputs), walletInfo.Wif)
@@ -70,7 +68,11 @@ func AliceFirstSignFundBtcRedeemTx(hexData interface{}, user *bean.User) (signed
 		return nil, errors.New("not found the channel")
 	}
 
-	walletInfo, _ := service.HDWalletService.GetAddressByIndex(user, uint32(channelInfo.FunderAddressIndex))
+	walletInfo, err := service.HDWalletService.GetAddressByIndex(user, uint32(channelInfo.FunderAddressIndex))
+	if err != nil {
+		return nil, err
+	}
+
 	_, signedHex, err := omnicore.OmniSignRawTransactionForUnsend(signData.Hex, convertBean(signData.Inputs), walletInfo.Wif)
 	if err != nil {
 		return nil, err
@@ -90,23 +92,12 @@ func BobSignFundBtcRedeemTx(data string, user *bean.User) (resultData *bean.Send
 		return nil, err
 	}
 
-	channelInfo := dao.ChannelInfo{}
-	_ = user.Db.Select(q.Eq("TemporaryChannelId", fundingBtcOfP2p.TemporaryChannelId)).First(&channelInfo)
-	if channelInfo.Id == 0 {
-		return nil, errors.New("not found the channel")
-	}
-
-	addressIndex := channelInfo.FunderAddressIndex
-	if channelInfo.PeerIdB == user.PeerId {
-		addressIndex = channelInfo.FundeeAddressIndex
-	}
-
-	channelAddressInfo, err := service.HDWalletService.GetAddressByIndex(user, uint32(addressIndex))
+	walletInfo, err := getChannelWalletInfoByTemplateId(fundingBtcOfP2p.TemporaryChannelId, user)
 	if err != nil {
 		return nil, err
 	}
 
-	_, hex, err := omnicore.OmniSignRawTransactionForUnsend(fundingBtcOfP2p.SignData.Hex, convertBean(fundingBtcOfP2p.SignData.Inputs), channelAddressInfo.Wif)
+	_, hex, err := omnicore.OmniSignRawTransactionForUnsend(fundingBtcOfP2p.SignData.Hex, convertBean(fundingBtcOfP2p.SignData.Inputs), walletInfo.Wif)
 	if err != nil {
 		return nil, err
 	}
@@ -135,13 +126,10 @@ func AliceCreateTempWalletForC1a(msg *bean.RequestMessage, user *bean.User) (err
 func AliceSignC1a(hexData interface{}, user *bean.User) (signedData *bean.AliceSignC1aOfAssetFunding, err error) {
 	signData := hexData.(bean.NeedClientSignHexData)
 
-	channelInfo := dao.ChannelInfo{}
-	user.Db.Select(q.Eq("TemporaryChannelId", signData.TemporaryChannelId), q.Eq("CurrState", bean.ChannelState_WaitFundAsset)).First(&channelInfo)
-	if channelInfo.Id == 0 {
-		return nil, errors.New("not found the channel")
+	walletInfo, err := getChannelWalletInfoByTemplateId(signData.TemporaryChannelId, user)
+	if err != nil {
+		return nil, err
 	}
-
-	walletInfo, _ := service.HDWalletService.GetAddressByIndex(user, uint32(channelInfo.FunderAddressIndex))
 	_, signedHex, err := omnicore.OmniSignRawTransactionForUnsend(signData.Hex, convertBean(signData.Inputs), walletInfo.Wif)
 	if err != nil {
 		return nil, err
@@ -159,18 +147,7 @@ func BobSignC1a(data string, user *bean.User) (resultData *bean.SignAssetFunding
 
 	resultData.TemporaryChannelId = p2pData.TemporaryChannelId
 
-	channelInfo := dao.ChannelInfo{}
-	_ = user.Db.Select(q.Eq("TemporaryChannelId", p2pData.TemporaryChannelId)).First(&channelInfo)
-	if channelInfo.Id == 0 {
-		return nil, errors.New("not found the channel")
-	}
-
-	addressIndex := channelInfo.FunderAddressIndex
-	if channelInfo.PeerIdB == user.PeerId {
-		addressIndex = channelInfo.FundeeAddressIndex
-	}
-
-	channelAddressInfo, err := service.HDWalletService.GetAddressByIndex(user, uint32(addressIndex))
+	channelAddressInfo, err := getChannelWalletInfoByTemplateId(p2pData.TemporaryChannelId, user)
 	if err != nil {
 		return nil, err
 	}
@@ -192,18 +169,7 @@ func BobSignRdAndBrOfC1a(data string, user *bean.User) (resultData *bean.SignRdA
 
 	resultData.TemporaryChannelId = reqData.TemporaryChannelId
 
-	channelInfo := dao.ChannelInfo{}
-	_ = user.Db.Select(q.Eq("TemporaryChannelId", resultData.TemporaryChannelId)).First(&channelInfo)
-	if channelInfo.Id == 0 {
-		return nil, errors.New("not found the channel")
-	}
-
-	addressIndex := channelInfo.FunderAddressIndex
-	if channelInfo.PeerIdB == user.PeerId {
-		addressIndex = channelInfo.FundeeAddressIndex
-	}
-
-	channelAddressInfo, err := service.HDWalletService.GetAddressByIndex(user, uint32(addressIndex))
+	channelAddressInfo, err := getChannelWalletInfoByTemplateId(resultData.TemporaryChannelId, user)
 	if err != nil {
 		return nil, err
 	}
@@ -232,12 +198,6 @@ func BobSignRdAndBrOfC1a(data string, user *bean.User) (resultData *bean.SignRdA
 func AliceSignRdOfC1a(hexData map[string]interface{}, user *bean.User) (signedData *bean.AliceSignRDOfAssetFunding, err error) {
 
 	channelId := hexData["channel_id"].(string)
-	channelInfo := dao.ChannelInfo{}
-	user.Db.Select(q.Eq("ChannelId", channelId), q.Eq("CurrState", bean.ChannelState_WaitFundAsset)).First(&channelInfo)
-	if channelInfo.Id == 0 {
-		return nil, errors.New("not found the channel")
-	}
-
 	commitmentTxInfo := &dao.CommitmentTransaction{}
 	err = user.Db.Select(
 		q.Eq("ChannelId", channelId),

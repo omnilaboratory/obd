@@ -43,29 +43,20 @@ func RsmcAliceCreateTx(msg *bean.RequestMessage, user *bean.User) (err error) {
 
 func RsmcAliceFirstSignC2a(signData interface{}, user *bean.User) (signedDataForC2a *bean.AliceSignedRsmcDataForC2a, err error) {
 	needSignData := signData.(bean.NeedAliceSignRsmcDataForC2a)
-	channelInfo := dao.ChannelInfo{}
-	_ = user.Db.Select(q.Eq("ChannelId", needSignData.ChannelId)).First(&channelInfo)
-	if channelInfo.Id == 0 {
-		return nil, errors.New("not found the channel")
-	}
-	addressIndex := channelInfo.FunderAddressIndex
-	if channelInfo.PeerIdB == user.PeerId {
-		addressIndex = channelInfo.FundeeAddressIndex
-	}
-	channelAddressInfo, err := service.HDWalletService.GetAddressByIndex(user, uint32(addressIndex))
+	channelWalletInfo, err := getChannelWalletInfo(needSignData.ChannelId, user)
 	if err != nil {
 		return nil, err
 	}
 
 	signedDataForC2a = &bean.AliceSignedRsmcDataForC2a{}
-	signedDataForC2a.ChannelId = channelInfo.ChannelId
-	_, hex, err := omnicore.OmniSignRawTransactionForUnsend(needSignData.RsmcRawData.Hex, convertBean(needSignData.RsmcRawData.Inputs), channelAddressInfo.Wif)
+	signedDataForC2a.ChannelId = needSignData.ChannelId
+	_, hex, err := omnicore.OmniSignRawTransactionForUnsend(needSignData.RsmcRawData.Hex, convertBean(needSignData.RsmcRawData.Inputs), channelWalletInfo.Wif)
 	if err != nil {
 		return nil, err
 	}
 	signedDataForC2a.RsmcSignedHex = hex
 
-	_, hex, err = omnicore.OmniSignRawTransactionForUnsend(needSignData.CounterpartyRawData.Hex, convertBean(needSignData.CounterpartyRawData.Inputs), channelAddressInfo.Wif)
+	_, hex, err = omnicore.OmniSignRawTransactionForUnsend(needSignData.CounterpartyRawData.Hex, convertBean(needSignData.CounterpartyRawData.Inputs), channelWalletInfo.Wif)
 	if err != nil {
 		return nil, err
 	}
@@ -75,37 +66,28 @@ func RsmcAliceFirstSignC2a(signData interface{}, user *bean.User) (signedDataFor
 
 func RsmcBobSecondSignC2a(needSignData *bean.PayerRequestCommitmentTxToBobClient, user *bean.User) (signedData *bean.PayeeSendSignCommitmentTx, err error) {
 
-	channelInfo := dao.ChannelInfo{}
-	_ = user.Db.Select(q.Eq("ChannelId", needSignData.ChannelId)).First(&channelInfo)
-	if channelInfo.Id == 0 {
-		return nil, errors.New("not found the channel")
-	}
-	addressIndex := channelInfo.FunderAddressIndex
-	if channelInfo.PeerIdB == user.PeerId {
-		addressIndex = channelInfo.FundeeAddressIndex
-	}
-	channelAddressInfo, err := service.HDWalletService.GetAddressByIndex(user, uint32(addressIndex))
+	channelWalletInfo, err := getChannelWalletInfo(needSignData.ChannelId, user)
 	if err != nil {
 		return nil, err
 	}
 	signedData = &bean.PayeeSendSignCommitmentTx{}
-	signedData.ChannelId = channelInfo.ChannelId
+	signedData.ChannelId = needSignData.ChannelId
 	signedData.MsgHash = needSignData.MsgHash
 	signedData.Approval = true
 
-	_, hex, err := omnicore.OmniSignRawTransactionForUnsend(needSignData.RsmcRawData.Hex, convertBean(needSignData.RsmcRawData.Inputs), channelAddressInfo.Wif)
+	_, hex, err := omnicore.OmniSignRawTransactionForUnsend(needSignData.RsmcRawData.Hex, convertBean(needSignData.RsmcRawData.Inputs), channelWalletInfo.Wif)
 	if err != nil {
 		return nil, err
 	}
 	signedData.C2aRsmcSignedHex = hex
 
-	_, hex, err = omnicore.OmniSignRawTransactionForUnsend(needSignData.CounterpartyRawData.Hex, convertBean(needSignData.CounterpartyRawData.Inputs), channelAddressInfo.Wif)
+	_, hex, err = omnicore.OmniSignRawTransactionForUnsend(needSignData.CounterpartyRawData.Hex, convertBean(needSignData.CounterpartyRawData.Inputs), channelWalletInfo.Wif)
 	if err != nil {
 		return nil, err
 	}
 	signedData.C2aCounterpartySignedHex = hex
 
-	latestCommitmentTx := getLatestCommitmentTx(channelInfo.ChannelId, *user)
+	latestCommitmentTx := getLatestCommitmentTx(needSignData.ChannelId, *user)
 	if latestCommitmentTx.Id > 0 {
 		latestRsmcAddressInfo, _ := service.HDWalletService.GetAddressByIndex(user, uint32(latestCommitmentTx.RSMCTempAddressIndex))
 		signedData.LastTempAddressPrivateKey = latestRsmcAddressInfo.Wif
@@ -125,16 +107,7 @@ func RsmcBobFirstSignC2b(c2bData interface{}, user *bean.User) (signedDataForC2b
 
 	needSignData := c2bData.(bean.NeedBobSignRawDataForC2b)
 
-	channelInfo := dao.ChannelInfo{}
-	_ = user.Db.Select(q.Eq("ChannelId", needSignData.ChannelId)).First(&channelInfo)
-	if channelInfo.Id == 0 {
-		return nil, errors.New("not found the channel")
-	}
-	addressIndex := channelInfo.FunderAddressIndex
-	if channelInfo.PeerIdB == user.PeerId {
-		addressIndex = channelInfo.FundeeAddressIndex
-	}
-	channelAddressInfo, err := service.HDWalletService.GetAddressByIndex(user, uint32(addressIndex))
+	channelWalletInfo, err := getChannelWalletInfo(needSignData.ChannelId, user)
 	if err != nil {
 		return nil, err
 	}
@@ -142,26 +115,26 @@ func RsmcBobFirstSignC2b(c2bData interface{}, user *bean.User) (signedDataForC2b
 	signedDataForC2b = &bean.BobSignedRsmcDataForC2b{}
 	signedDataForC2b.ChannelId = needSignData.ChannelId
 
-	_, hex, err := omnicore.OmniSignRawTransactionForUnsend(needSignData.C2aRdRawData.Hex, convertBean(needSignData.C2aRdRawData.Inputs), channelAddressInfo.Wif)
+	_, hex, err := omnicore.OmniSignRawTransactionForUnsend(needSignData.C2aRdRawData.Hex, convertBean(needSignData.C2aRdRawData.Inputs), channelWalletInfo.Wif)
 	if err != nil {
 		return nil, err
 	}
 	signedDataForC2b.C2aRdSignedHex = hex
 
-	_, hex, err = omnicore.OmniSignRawTransactionForUnsend(needSignData.C2aBrRawData.Hex, convertBean(needSignData.C2aBrRawData.Inputs), channelAddressInfo.Wif)
+	_, hex, err = omnicore.OmniSignRawTransactionForUnsend(needSignData.C2aBrRawData.Hex, convertBean(needSignData.C2aBrRawData.Inputs), channelWalletInfo.Wif)
 	if err != nil {
 		return nil, err
 	}
 	signedDataForC2b.C2aBrSignedHex = hex
 	signedDataForC2b.C2aBrId = int64(needSignData.C2aBrRawData.BrId)
 
-	_, hex, err = omnicore.OmniSignRawTransactionForUnsend(needSignData.C2bRsmcRawData.Hex, convertBean(needSignData.C2bRsmcRawData.Inputs), channelAddressInfo.Wif)
+	_, hex, err = omnicore.OmniSignRawTransactionForUnsend(needSignData.C2bRsmcRawData.Hex, convertBean(needSignData.C2bRsmcRawData.Inputs), channelWalletInfo.Wif)
 	if err != nil {
 		return nil, err
 	}
 	signedDataForC2b.C2bRsmcSignedHex = hex
 
-	_, hex, err = omnicore.OmniSignRawTransactionForUnsend(needSignData.C2bCounterpartyRawData.Hex, convertBean(needSignData.C2bCounterpartyRawData.Inputs), channelAddressInfo.Wif)
+	_, hex, err = omnicore.OmniSignRawTransactionForUnsend(needSignData.C2bCounterpartyRawData.Hex, convertBean(needSignData.C2bCounterpartyRawData.Inputs), channelWalletInfo.Wif)
 	if err != nil {
 		return nil, err
 	}
@@ -174,16 +147,7 @@ func RsmcAliceSignC2b(data interface{}, user *bean.User) (signedData *bean.Alice
 
 	needSignData := data.(bean.NeedAliceSignRsmcTxForC2b)
 
-	channelInfo := dao.ChannelInfo{}
-	_ = user.Db.Select(q.Eq("ChannelId", needSignData.ChannelId)).First(&channelInfo)
-	if channelInfo.Id == 0 {
-		return nil, errors.New("not found the channel")
-	}
-	addressIndex := channelInfo.FunderAddressIndex
-	if channelInfo.PeerIdB == user.PeerId {
-		addressIndex = channelInfo.FundeeAddressIndex
-	}
-	channelAddressInfo, err := service.HDWalletService.GetAddressByIndex(user, uint32(addressIndex))
+	channelWalletInfo, err := getChannelWalletInfo(needSignData.ChannelId, user)
 	if err != nil {
 		return nil, err
 	}
@@ -191,19 +155,19 @@ func RsmcAliceSignC2b(data interface{}, user *bean.User) (signedData *bean.Alice
 	signedData = &bean.AliceSignedRsmcTxForC2b{}
 	signedData.ChannelId = needSignData.ChannelId
 
-	_, hex, err := omnicore.OmniSignRawTransactionForUnsend(needSignData.C2bRsmcPartialData.Hex, convertBean(needSignData.C2bRsmcPartialData.Inputs), channelAddressInfo.Wif)
+	_, hex, err := omnicore.OmniSignRawTransactionForUnsend(needSignData.C2bRsmcPartialData.Hex, convertBean(needSignData.C2bRsmcPartialData.Inputs), channelWalletInfo.Wif)
 	if err != nil {
 		return nil, err
 	}
 	signedData.C2bRsmcSignedHex = hex
 
-	_, hex, err = omnicore.OmniSignRawTransactionForUnsend(needSignData.C2bCounterpartyPartialData.Hex, convertBean(needSignData.C2bCounterpartyPartialData.Inputs), channelAddressInfo.Wif)
+	_, hex, err = omnicore.OmniSignRawTransactionForUnsend(needSignData.C2bCounterpartyPartialData.Hex, convertBean(needSignData.C2bCounterpartyPartialData.Inputs), channelWalletInfo.Wif)
 	if err != nil {
 		return nil, err
 	}
 	signedData.C2bCounterpartySignedHex = hex
 
-	commitmentTransaction := getCurrCommitmentTx(channelInfo.ChannelId, *user)
+	commitmentTransaction := getCurrCommitmentTx(needSignData.ChannelId, *user)
 	tempAddressInfo, _ := service.HDWalletService.GetAddressByIndex(user, uint32(commitmentTransaction.RSMCTempAddressIndex))
 	_, hex, err = omnicore.OmniSignRawTransactionForUnsend(needSignData.C2aRdPartialData.Hex, convertBean(needSignData.C2aRdPartialData.Inputs), tempAddressInfo.Wif)
 	if err != nil {
@@ -218,16 +182,7 @@ func RsmcAliceSignRdOfC2b(data interface{}, user *bean.User) (signedData *bean.A
 
 	needSignData := data.(bean.NeedAliceSignRdTxForC2b)
 
-	channelInfo := dao.ChannelInfo{}
-	_ = user.Db.Select(q.Eq("ChannelId", needSignData.ChannelId)).First(&channelInfo)
-	if channelInfo.Id == 0 {
-		return nil, errors.New("not found the channel")
-	}
-	addressIndex := channelInfo.FunderAddressIndex
-	if channelInfo.PeerIdB == user.PeerId {
-		addressIndex = channelInfo.FundeeAddressIndex
-	}
-	channelAddressInfo, err := service.HDWalletService.GetAddressByIndex(user, uint32(addressIndex))
+	channelWalletInfo, err := getChannelWalletInfo(needSignData.ChannelId, user)
 	if err != nil {
 		return nil, err
 	}
@@ -235,13 +190,13 @@ func RsmcAliceSignRdOfC2b(data interface{}, user *bean.User) (signedData *bean.A
 	signedData = &bean.AliceSignedRdTxForC2b{}
 	signedData.ChannelId = needSignData.ChannelId
 
-	_, hex, err := omnicore.OmniSignRawTransactionForUnsend(needSignData.C2bRdRawData.Hex, convertBean(needSignData.C2bRdRawData.Inputs), channelAddressInfo.Wif)
+	_, hex, err := omnicore.OmniSignRawTransactionForUnsend(needSignData.C2bRdRawData.Hex, convertBean(needSignData.C2bRdRawData.Inputs), channelWalletInfo.Wif)
 	if err != nil {
 		return nil, err
 	}
 	signedData.C2bRdSignedHex = hex
 
-	_, hex, err = omnicore.OmniSignRawTransactionForUnsend(needSignData.C2bBrRawData.Hex, convertBean(needSignData.C2bBrRawData.Inputs), channelAddressInfo.Wif)
+	_, hex, err = omnicore.OmniSignRawTransactionForUnsend(needSignData.C2bBrRawData.Hex, convertBean(needSignData.C2bBrRawData.Inputs), channelWalletInfo.Wif)
 	if err != nil {
 		return nil, err
 	}

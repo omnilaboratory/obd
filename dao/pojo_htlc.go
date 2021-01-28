@@ -4,6 +4,15 @@ import (
 	"time"
 )
 
+type HtlcInvoiceImage struct {
+	Id       int       `storm:"id,increment" json:"id" `
+	H        string    `json:"h"`
+	Index    int       `json:"index"`
+	R        string    `json:"r"`
+	CreateBy string    `json:"create_by"`
+	CreateAt time.Time `json:"create_at"`
+}
+
 type AddHtlcRequestInfo struct {
 	Id                               int         `storm:"id,increment" json:"id" `
 	ChannelId                        string      `json:"channel_id"`
