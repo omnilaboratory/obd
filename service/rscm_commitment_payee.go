@@ -588,7 +588,7 @@ func (this *commitmentTxSignedManager) OnGetAliceSignC2bTransactionAtBobSide(dat
 }
 
 // step 10 协议号：100364 响应bob的才c2b的Rd的签名
-func (this *commitmentTxSignedManager) BobSignC2b_RdAtBobSide(data string, user *bean.User) (retData interface{}, err error) {
+func (this *commitmentTxSignedManager) BobSignC2bRdAtBobSide(data string, user *bean.User) (retData interface{}, err error) {
 	bobSignedRdTxForC2b := bean.BobSignedRdTxForC2b{}
 	_ = json.Unmarshal([]byte(data), &bobSignedRdTxForC2b)
 

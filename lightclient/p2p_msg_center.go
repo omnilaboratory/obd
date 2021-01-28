@@ -43,7 +43,11 @@ func routerOfP2PNode(msg bean.RequestMessage, data string, client *Client) (retD
 						signedOpenChannelMsg.Data = string(marshal)
 						_ = client.sendDataToP2PUser(signedOpenChannelMsg, true, signedOpenChannelMsg.Data)
 						return "", false, nil
+					} else {
+						log.Println(err)
 					}
+				} else {
+					log.Println(err)
 				}
 			}
 		} else {
@@ -155,6 +159,37 @@ func routerOfP2PNode(msg bean.RequestMessage, data string, client *Client) (retD
 		node, err := service.CommitmentTxSignedService.BeforeBobSignCommitmentTransactionAtBobSide(data, client.User)
 		if err == nil {
 			status = true
+			if client.User.IsAdmin {
+				secondSignC2a, err := agent.RsmcBobSecondSignC2a(node, client.User)
+				msg.Type = enum.MsgType_CommitmentTxSigned_SendRevokeAndAcknowledgeCommitmentTransaction_352
+				msg.RecipientNodePeerId = msg.SenderNodePeerId
+				msg.RecipientUserPeerId = msg.SenderUserPeerId
+				msg.SenderUserPeerId = client.User.PeerId
+				msg.SenderNodePeerId = client.User.P2PLocalPeerId
+				marshal, _ := json.Marshal(secondSignC2a)
+				msg.Data = string(marshal)
+				transaction, _, err := service.CommitmentTxSignedService.RevokeAndAcknowledgeCommitmentTransaction(msg, client.User)
+				if err == nil {
+					signedDataForC2b, err := agent.RsmcBobFirstSignC2b(transaction, client.User)
+					if err == nil {
+						marshal, _ := json.Marshal(signedDataForC2b)
+						_, retData, err := service.CommitmentTxSignedService.OnBobSignC2bTransactionAtBobSide(string(marshal), client.User)
+						if err == nil {
+							msg.Type = enum.MsgType_CommitmentTxSigned_ToAliceSign_352
+							marshal, _ := json.Marshal(retData)
+							msg.Data = string(marshal)
+							err = client.sendDataToP2PUser(msg, status, msg.Data)
+							return "", false, nil
+						} else {
+							log.Println(err)
+						}
+					} else {
+						log.Println(err)
+					}
+				} else {
+					log.Println(err)
+				}
+			}
 			retData, _ := json.Marshal(node)
 			return string(retData), true, nil
 		}
@@ -163,6 +198,36 @@ func routerOfP2PNode(msg bean.RequestMessage, data string, client *Client) (retD
 		node, needNoticeAlice, err := service.CommitmentTxService.OnGetBobC2bPartialSignTxAtAliceSide(msg, data, client.User)
 		if err == nil {
 			status = true
+			if client.User.IsAdmin {
+				signedData, err := agent.RsmcAliceSignC2b(node, client.User)
+				if err == nil {
+					marshal, _ := json.Marshal(signedData)
+					needSignData, err := service.CommitmentTxService.OnAliceSignedC2bTxAtAliceSide(string(marshal), client.User)
+					if err == nil {
+						signedRdTxForC2b, err := agent.RsmcAliceSignRdOfC2b(needSignData, client.User)
+						if err == nil {
+							marshal, _ := json.Marshal(signedRdTxForC2b)
+							_, bobRetData, _, err := service.CommitmentTxService.OnAliceSignedC2b_RDTxAtAliceSide(string(marshal), client.User)
+							if err == nil {
+								msg.Type = enum.MsgType_CommitmentTxSigned_SecondToBobSign_353
+								msg.RecipientNodePeerId = msg.SenderNodePeerId
+								msg.RecipientUserPeerId = msg.SenderUserPeerId
+								msg.SenderUserPeerId = client.User.PeerId
+								msg.SenderNodePeerId = client.User.P2PLocalPeerId
+								marshal, _ := json.Marshal(bobRetData)
+								msg.Data = string(marshal)
+								err = client.sendDataToP2PUser(msg, status, msg.Data)
+								return "", false, nil
+							}
+						}
+					} else {
+						log.Println(err)
+					}
+				} else {
+					log.Println(err)
+				}
+			}
+
 			retData, _ := json.Marshal(node)
 			return string(retData), true, nil
 		} else {
@@ -175,6 +240,14 @@ func routerOfP2PNode(msg bean.RequestMessage, data string, client *Client) (retD
 		node, err := service.CommitmentTxSignedService.OnGetAliceSignC2bTransactionAtBobSide(data, client.User)
 		if err == nil {
 			status = true
+			if client.User.IsAdmin {
+				signedData, err := agent.RsmcBobSignRdOfC2b(node, client.User)
+				if err == nil {
+					marshal, _ := json.Marshal(signedData)
+					service.CommitmentTxSignedService.BobSignC2bRdAtBobSide(string(marshal), client.User)
+					return "", false, nil
+				}
+			}
 			retData, _ := json.Marshal(node)
 			return string(retData), true, nil
 		}

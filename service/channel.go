@@ -1041,9 +1041,13 @@ func createChannelAddress(channelInfo *dao.ChannelInfo, reqData *bean.SendSignOp
 		}
 	}
 
-	count, _ := user.Db.Select(q.Eq("ChannelAddress", channelAddress)).Count(&dao.ChannelInfo{})
-	if count > 0 {
-		existAddress = true
+	if existAddress == false {
+		count, _ := user.Db.Select(q.Eq("ChannelAddress", channelAddress)).Count(&dao.ChannelInfo{})
+		if count > 0 {
+			existAddress = true
+		}
+	}
+	if existAddress {
 		if user.IsAdmin {
 			address, err := HDWalletService.CreateNewAddress(user)
 			if err != nil {
