@@ -262,6 +262,35 @@ func (service *obdNodeAccountManager) GetUserState(context *gin.Context) {
 	})
 }
 
+func (service *obdNodeAccountManager) GetUserP2pNodeId(context *gin.Context) {
+	reqData := &bean.ObdNodeUserLoginRequest{}
+	reqData.UserId = context.Query("userId")
+	if tool.CheckIsString(&reqData.UserId) == false {
+		context.JSON(http.StatusInternalServerError, gin.H{
+			"msg": "error userId",
+		})
+		return
+	}
+
+	retData := make(map[string]interface{})
+	retData["info"] = nil
+	if _, ok := userOfOnlineMap[reqData.UserId]; ok == true {
+		retData["info"] = userOfOnlineMap[reqData.UserId].ObdP2pNodeId
+	} else {
+		for _, item := range userOnlineOfOtherObdMap {
+			if _, ok := item[reqData.UserId]; ok == true {
+				split := strings.Split(item[reqData.UserId], "/")
+				retData["info"] = split[len(split)-1]
+				break
+			}
+		}
+	}
+	context.JSON(http.StatusOK, gin.H{
+		"msg":  "GetUserState",
+		"data": retData,
+	})
+}
+
 func getUserState(obdP2pNodeId, userId string) bool {
 	if _, ok := userOfOnlineMap[userId]; ok == true {
 		return true

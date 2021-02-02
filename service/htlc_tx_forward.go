@@ -350,6 +350,10 @@ func (service *htlcForwardTxManager) GetResponseFromTrackerOfPayerRequestFindPat
 	retData["is_private"] = false
 	retData["property_id"] = requestFindPathInfo.PropertyId
 	retData["amount"] = requestFindPathInfo.Amount
+	channelIds := strings.Split(dataArr[1], ",")
+	totalStep := len(channelIds)
+	tempAmount, _ := decimal.NewFromFloat(requestFindPathInfo.Amount).Mul(decimal.NewFromFloat(1 + config.HtlcFeeRate*float64(totalStep-1))).Round(8).Float64()
+	retData["amount_and_fee"] = tempAmount
 	retData["routing_packet"] = dataArr[1]
 	retData["min_cltv_expiry"] = arrLength
 	retData["next_node_peerId"] = nextNodePeerId

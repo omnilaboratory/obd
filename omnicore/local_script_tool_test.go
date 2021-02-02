@@ -8,11 +8,15 @@ import (
 )
 
 func TestCreateMultiSig(t *testing.T) {
-	s, i, i2 := CreateMultiSigAddr("02c57b02d24356e1d31d34d2e3a09f7d68a4bdec6c0556595bb6391ce5d6d4fc66", "032dedba91b8ed7fb32dec1e2270bd451dee3521d1d9f53059a05830b4aa0d635b", tool.GetCoreNet())
-	//s, i, i2 := CreateMultiSigAddr("02c4483151ede561fa04e465b47db1c0309af7f1afe753baedaac46a2d2e2a73c8", "032dedba91b8ed7fb32dec1e2270bd451dee3521d1d9f53059a05830b4aa0d635b", tool.GetCoreNet())
-	log.Println(s)
-	log.Println(i)
-	log.Println(i2)
+	htlcPathArr := []string{"a", "b", "c"}
+	for i := len(htlcPathArr) - 1; i >= 0; i-- {
+		log.Println(htlcPathArr[i])
+	}
+
+	//s, i, i2 := CreateMultiSigAddr("02c57b02d24356e1d31d34d2e3a09f7d68a4bdec6c0556595bb6391ce5d6d4fc66", "032dedba91b8ed7fb32dec1e2270bd451dee3521d1d9f53059a05830b4aa0d635b", tool.GetCoreNet())
+	//log.Println(s)
+	//log.Println(i)
+	//log.Println(i2)
 }
 
 func TestVerifyOmniTxHex(t *testing.T) {

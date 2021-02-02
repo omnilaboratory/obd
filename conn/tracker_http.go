@@ -589,3 +589,18 @@ func GetUserState(p2pNodeId, userId string) (flag int) {
 	}
 	return 0
 }
+
+func GetUserP2pNodeId(userId string) (p2pNodeId string) {
+	url := "http://" + config.TrackerHost + "/api/v1/getUserP2pNodeId?userId=" + userId
+	log.Println(url)
+	resp, err := http.Get(url)
+	if err != nil {
+		return ""
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode == 200 {
+		body, _ := ioutil.ReadAll(resp.Body)
+		return gjson.Get(string(body), "data").Get("info").String()
+	}
+	return ""
+}

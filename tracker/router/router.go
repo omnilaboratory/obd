@@ -24,6 +24,7 @@ func InitRouter() *gin.Engine {
 		apiv1.GET("GetHtlcCurrState", service.HtlcService.GetHtlcCurrState)
 		apiv1.GET("getChannelState", service.ChannelService.GetChannelState)
 		apiv1.GET("getUserState", service.NodeAccountService.GetUserState)
+		apiv1.GET("getUserP2pNodeId", service.NodeAccountService.GetUserP2pNodeId)
 		apiv1.GET("getNodeInfoByP2pAddress", service.NodeAccountService.GetNodeInfoByP2pAddress)
 	}
 	apiv2 := router.Group("/api/common/")

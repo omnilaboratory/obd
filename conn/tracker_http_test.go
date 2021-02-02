@@ -14,3 +14,6 @@ func TestTestMemPoolAccept(t *testing.T) {
 	log.Println(err)
 	log.Println(transaction)
 }
+func Test1(t *testing.T) {
+	log.Println(GetUserP2pNodeId("5773cc7b3b2fb80453ba82663b71992a91ecc8eb4b6b76fa6a60e42a6c913fa0"))
+}

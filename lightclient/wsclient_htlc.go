@@ -5,6 +5,7 @@ import (
 	"github.com/omnilaboratory/obd/agent"
 	"github.com/omnilaboratory/obd/bean"
 	"github.com/omnilaboratory/obd/bean/enum"
+	conn2tracker "github.com/omnilaboratory/obd/conn"
 	"github.com/omnilaboratory/obd/service"
 	"log"
 )
@@ -25,12 +26,23 @@ func htlcTrackerDealModule(msg bean.RequestMessage) {
 		if err != nil {
 			data = err.Error()
 		} else {
-			bytes, err := json.Marshal(respond)
-			if err != nil {
-				data = err.Error()
-			} else {
-				data = string(bytes)
-				status = true
+			bytes, _ := json.Marshal(respond)
+			data = string(bytes)
+			status = true
+			if client.User.IsAdmin {
+				invoiceInfo := respond.(map[string]interface{})
+				amountToPayee := invoiceInfo["amount"].(float64)
+				amount := invoiceInfo["amount_and_fee"].(float64)
+				invoiceInfo["amount"] = amount
+				invoiceInfo["amount_to_payee"] = amountToPayee
+				newMsg := bean.RequestMessage{Type: enum.MsgType_HTLC_SendAddHTLC_40}
+				newMsg.RecipientUserPeerId = invoiceInfo["next_node_peerId"].(string)
+				newMsg.RecipientNodePeerId = conn2tracker.GetUserP2pNodeId(newMsg.RecipientUserPeerId)
+				newMsg.SenderNodePeerId = client.User.P2PLocalPeerId
+				newMsg.SenderUserPeerId = client.User.PeerId
+				marshal, _ := json.Marshal(invoiceInfo)
+				newMsg.Data = string(marshal)
+				client.htlcHModule(newMsg)
 			}
 		}
 		client.SendToMyself(enum.MsgType_HTLC_FindPath_401, status, data)
@@ -330,6 +342,13 @@ func (client *Client) htlcHModule(msg bean.RequestMessage) (enum.SendTargetType,
 		}
 		msg.Type = enum.MsgType_HTLC_ClientSign_Alice_He_105
 		client.SendToMyself(msg.Type, status, data)
+
+		//TODO 启动R的回传
+		if status {
+			if client.User.IsAdmin {
+				afterH(toBob, *client, msg)
+			}
+		}
 	}
 	return sendType, []byte(data), status
 }
@@ -434,18 +453,38 @@ func (client *Client) htlcTxModule(msg bean.RequestMessage) (enum.SendTargetType
 				}
 			}
 			if status {
-				bytes, err := json.Marshal(toAlice)
-				if err != nil {
-					data = err.Error()
-				} else {
-					data = string(bytes)
-					status = true
-				}
+				bytes, _ := json.Marshal(toAlice)
+				data = string(bytes)
+				status = true
 			}
-
 		}
 		msg.Type = enum.MsgType_HTLC_ClientSign_Alice_HeSub_46
 		client.SendToMyself(msg.Type, status, data)
+
+		//TODO Alice完成R的签收，然后检测是否有上一个节点
+		if client.User.IsAdmin {
+			r, channelId, msg := agent.InterUserGetHtlcRFromLocal(toAlice, client.User)
+			if r != "" {
+				msg.Type = enum.MsgType_HTLC_SendVerifyR_45
+				sendR := bean.HtlcBobSendR{ChannelId: channelId, R: r}
+				marshal, _ := json.Marshal(sendR)
+				msg.Data = string(marshal)
+				retData, err := service.HtlcBackwardTxService.SendRToPreviousNodeAtBobSide(*msg, *client.User)
+				if err == nil {
+					signedData, err := agent.HtlcBobSignedHeRdAtBobSide(retData, client.User)
+					if err == nil {
+						marshal, _ := json.Marshal(signedData)
+						msg.Type = enum.MsgType_HTLC_VerifyR_45
+						msg.Data = string(marshal)
+						client.sendDataToP2PUser(*msg, status, msg.Data)
+					} else {
+						log.Println(err)
+					}
+				} else {
+					log.Println(err)
+				}
+			}
+		}
 	}
 	return sendType, []byte(data), status
 }
@@ -520,13 +559,10 @@ func (client *Client) htlcCloseModule(msg bean.RequestMessage) (enum.SendTargetT
 		if err != nil {
 			data = err.Error()
 		} else {
-			bytes, err := json.Marshal(outData)
-			if err != nil {
-				data = err.Error()
-			} else {
-				data = string(bytes)
-				status = true
-			}
+			bytes, _ := json.Marshal(outData)
+			data = string(bytes)
+			status = true
+
 		}
 		client.SendToMyself(msg.Type, status, data)
 	case enum.MsgType_HTLC_Close_ClientSign_Bob_C4b_111:
@@ -613,13 +649,9 @@ func (client *Client) htlcCloseModule(msg bean.RequestMessage) (enum.SendTargetT
 		if err != nil {
 			data = err.Error()
 		} else {
-			bytes, err := json.Marshal(toBob)
-			if err != nil {
-				data = err.Error()
-			} else {
-				data = string(bytes)
-				status = true
-			}
+			bytes, _ := json.Marshal(toBob)
+			data = string(bytes)
+			status = true
 		}
 		client.SendToMyself(msg.Type, status, data)
 	}

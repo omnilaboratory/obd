@@ -18,11 +18,16 @@ func getLatestCommitmentTx(channelId string, user bean.User) *dao.CommitmentTran
 		First(commitmentTransaction)
 	return commitmentTransaction
 }
+
 func getCurrCommitmentTx(channelId string, user bean.User) *dao.CommitmentTransaction {
 	commitmentTransaction := &dao.CommitmentTransaction{}
 	err := user.Db.Select(
 		q.Eq("ChannelId", channelId),
-		q.Eq("CurrState", dao.TxInfoState_Create)).
+		q.Or(
+			q.Eq("CurrState", dao.TxInfoState_Create),
+			q.Eq("CurrState", dao.TxInfoState_Htlc_GetH),
+			q.Eq("CurrState", dao.TxInfoState_Htlc_GetR),
+			q.Eq("CurrState", dao.TxInfoState_Init))).
 		OrderBy("Id").Reverse().
 		First(commitmentTransaction)
 	if err != nil {
@@ -34,6 +39,9 @@ func getCurrCommitmentTx(channelId string, user bean.User) *dao.CommitmentTransa
 
 func convertBean(inputs interface{}) (result []bean.TransactionInputItem) {
 	result = make([]bean.TransactionInputItem, 0)
+	if inputs == nil {
+		return result
+	}
 
 	if arr, ok := inputs.([]map[string]interface{}); ok {
 		for _, item := range arr {
