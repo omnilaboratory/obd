@@ -425,6 +425,7 @@ func routerOfP2PNode(msg bean.RequestMessage, data string, client *Client) (retD
 						client.sendDataToP2PUser(msg, true, msg.Data)
 						// TODO 启动寻找上一个通道 回传R
 						log.Println(toAlice)
+						getR(toAlice, *client)
 					} else {
 						log.Println(err)
 					}
@@ -739,7 +740,7 @@ func afterH(toBob interface{}, client Client, msg bean.RequestMessage) {
 		//trigger send 40
 		channelId, amount, msg := agent.InterUserGetNextNode(toBob, client.User)
 		if len(channelId) > 0 {
-			currNodeTx := toBob.(dao.CommitmentTransaction)
+			currNodeTx := toBob.(*dao.CommitmentTransaction)
 			msg.Type = enum.MsgType_HTLC_SendAddHTLC_40
 			createHtlcTxForC3a := bean.CreateHtlcTxForC3a{}
 			createHtlcTxForC3a.Amount = amount
@@ -752,6 +753,35 @@ func afterH(toBob interface{}, client Client, msg bean.RequestMessage) {
 			marshal, _ := json.Marshal(createHtlcTxForC3a)
 			msg.Data = string(marshal)
 			client.htlcHModule(*msg)
+		}
+	}
+}
+
+func getR(toAlice interface{}, client Client) {
+	r, channelId, msg := agent.InterUserGetHtlcRFromLocal(toAlice, client.User)
+	if r != "" {
+		msg.Type = enum.MsgType_HTLC_SendVerifyR_45
+		sendR := bean.HtlcBobSendR{ChannelId: channelId, R: r}
+		marshal, _ := json.Marshal(sendR)
+		msg.Data = string(marshal)
+		retData, err := service.HtlcBackwardTxService.SendRToPreviousNodeAtBobSide(*msg, *client.User)
+		if err == nil {
+			signedData, err := agent.HtlcBobSignedHeRdAtBobSide(retData, client.User)
+			if err == nil {
+				marshal, _ := json.Marshal(signedData)
+				msg.Data = string(marshal)
+				toAlice, err := service.HtlcBackwardTxService.OnBobSignedHeRdAtBobSide(*msg, *client.User)
+				if err == nil {
+					msg.Type = enum.MsgType_HTLC_VerifyR_45
+					marshal, _ := json.Marshal(toAlice)
+					msg.Data = string(marshal)
+					client.sendDataToP2PUser(*msg, true, msg.Data)
+				}
+			} else {
+				log.Println(err)
+			}
+		} else {
+			log.Println(err)
 		}
 	}
 }

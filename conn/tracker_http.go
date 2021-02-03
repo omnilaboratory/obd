@@ -592,7 +592,7 @@ func GetUserState(p2pNodeId, userId string) (flag int) {
 
 func GetUserP2pNodeId(userId string) (p2pNodeId string) {
 	url := "http://" + config.TrackerHost + "/api/v1/getUserP2pNodeId?userId=" + userId
-	log.Println(url)
+	//log.Println(url)
 	resp, err := http.Get(url)
 	if err != nil {
 		return ""

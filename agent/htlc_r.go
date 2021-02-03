@@ -42,18 +42,20 @@ func InterUserGetNextNode(dataTx interface{}, user *bean.User) (channelId string
 		if user.PeerId == latestCommitmentTx.PeerIdA {
 			msg.RecipientUserPeerId = latestCommitmentTx.PeerIdB
 		}
-		msg.SenderNodePeerId = conn2tracker.GetUserP2pNodeId(msg.RecipientUserPeerId)
+		msg.RecipientNodePeerId = conn2tracker.GetUserP2pNodeId(msg.RecipientUserPeerId)
 		amount, _ = decimal.NewFromFloat(currNodeTx.HtlcAmountToPayee).Mul(decimal.NewFromFloat(1 + config.HtlcFeeRate*float64(totalStep-currStep-1))).Round(8).Float64()
-		if len(msg.SenderNodePeerId) == 0 {
+		if len(msg.RecipientNodePeerId) == 0 {
 			return "", 0, nil
 		}
+		msg.SenderNodePeerId = user.P2PLocalPeerId
+		msg.SenderUserPeerId = user.PeerId
 		return channelId, amount, msg
 	}
 	return "", 0, nil
 }
 
 func InterUserGetHtlcRFromLocal(dataTx interface{}, user *bean.User) (r, channelId string, msg *bean.RequestMessage) {
-	currNodeTx := dataTx.(dao.CommitmentTransaction)
+	currNodeTx := dataTx.(*dao.CommitmentTransaction)
 	currChannelId := currNodeTx.ChannelId
 	htlcPathArr := strings.Split(currNodeTx.HtlcRoutingPacket, ",")
 	index := len(htlcPathArr) - 1
@@ -62,17 +64,17 @@ func InterUserGetHtlcRFromLocal(dataTx interface{}, user *bean.User) (r, channel
 			break
 		}
 	}
-	if index >= 0 {
-		var newNodeTx dao.CommitmentTransaction
-		_ = user.Db.Select(q.Eq("H", currNodeTx.HtlcH), q.Eq("ChannelId", htlcPathArr[index-1])).First(newNodeTx)
+	if index > 0 {
+		newNodeTx := &dao.CommitmentTransaction{}
+		_ = user.Db.Select(q.Eq("HtlcH", currNodeTx.HtlcH), q.Eq("ChannelId", htlcPathArr[index-1])).First(newNodeTx)
 		if newNodeTx.Id > 0 {
 			msg = &bean.RequestMessage{}
 			msg.RecipientUserPeerId = newNodeTx.PeerIdA
 			if user.PeerId == newNodeTx.PeerIdA {
 				msg.RecipientUserPeerId = newNodeTx.PeerIdB
 			}
-			msg.SenderNodePeerId = conn2tracker.GetUserP2pNodeId(msg.RecipientUserPeerId)
-			if len(msg.SenderNodePeerId) == 0 {
+			msg.RecipientNodePeerId = conn2tracker.GetUserP2pNodeId(msg.RecipientUserPeerId)
+			if len(msg.RecipientNodePeerId) == 0 {
 				return "", "", nil
 			}
 			return currNodeTx.HtlcR, newNodeTx.ChannelId, msg
@@ -87,7 +89,7 @@ func HtlcBobSignedHeRdAtBobSide(dataTx interface{}, user *bean.User) (signedData
 
 	currCommitmentTx := getCurrCommitmentTx(needSignData.ChannelId, *user)
 	htTx := &dao.HTLCTimeoutTxForAAndExecutionForB{}
-	user.Db.Select(q.Eq("ChannelId", needSignData.ChannelId), q.Eq("CommitmentTxId", currCommitmentTx.Id)).First(htTx)
+	_ = user.Db.Select(q.Eq("ChannelId", needSignData.ChannelId), q.Eq("CommitmentTxId", currCommitmentTx.Id)).First(htTx)
 	if htTx.Id > 0 {
 		wallet, _ := service.HDWalletService.GetAddressByIndex(user, uint32(htTx.RSMCTempAddressIndex))
 		_, hex, err := omnicore.OmniSignRawTransactionForUnsend(needSignData.C3bHtlcHerdRawData.Hex, convertBean(needSignData.C3bHtlcHerdRawData.Inputs), wallet.Wif)

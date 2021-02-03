@@ -9,7 +9,6 @@ import (
 	"github.com/omnilaboratory/obd/tool"
 	"github.com/shopspring/decimal"
 	"github.com/tidwall/gjson"
-	"log"
 	"strconv"
 	"strings"
 )
@@ -542,8 +541,8 @@ func OmniSignRawTransactionForUnsend(hex string, inputItems []bean.TransactionIn
 	if err != nil {
 		return "", hex, err
 	}
-	transaction, _ := DecodeBtcRawTransaction(hex)
-	log.Println(transaction)
+	//transaction, _ := DecodeBtcRawTransaction(hex)
+	//log.Println(transaction)
 
 	return GetTxId(hex), hex, nil
 }
