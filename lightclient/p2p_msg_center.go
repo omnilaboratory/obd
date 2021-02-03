@@ -102,7 +102,6 @@ func routerOfP2PNode(msg bean.RequestMessage, data string, client *Client) (retD
 		_, err := service.FundingTransactionService.BeforeSignAssetFundingCreateAtBobSide(data, client.User)
 		if err == nil {
 			status = true
-			// todo sign c1a
 			if client.User.IsAdmin {
 				signC1a, err := agent.BobSignC1a(data, client.User)
 				if err == nil {
@@ -110,7 +109,6 @@ func routerOfP2PNode(msg bean.RequestMessage, data string, client *Client) (retD
 					signed, err := service.FundingTransactionService.AssetFundingSigned(string(marshal), client.User)
 					if err == nil {
 						marshal, _ := json.Marshal(signed)
-						//	todo sign rd and br
 						signedRdAndBrData, err := agent.BobSignRdAndBrOfC1a(string(marshal), client.User)
 						if err == nil {
 							marshal, _ := json.Marshal(signedRdAndBrData)
@@ -377,8 +375,8 @@ func routerOfP2PNode(msg bean.RequestMessage, data string, client *Client) (retD
 								msg.Data = string(marshal)
 								client.sendDataToP2PUser(msg, true, msg.Data)
 
-								afterH(toBob, *client, msg)
-
+								// go to next channel
+								go checkHForNextNodeOrRForBackward(toBob, *client, msg)
 								return "", false, nil
 							} else {
 								log.Println(err)
@@ -423,9 +421,7 @@ func routerOfP2PNode(msg bean.RequestMessage, data string, client *Client) (retD
 						marshal, _ := json.Marshal(toBob)
 						msg.Data = string(marshal)
 						client.sendDataToP2PUser(msg, true, msg.Data)
-						// TODO 启动寻找上一个通道 回传R
-						log.Println(toAlice)
-						getR(toAlice, *client)
+						go checkRToPreNode(toAlice, *client)
 					} else {
 						log.Println(err)
 					}
@@ -440,43 +436,9 @@ func routerOfP2PNode(msg bean.RequestMessage, data string, client *Client) (retD
 	case enum.MsgType_HTLC_SendHerdHex_46:
 		responseData, err := service.HtlcBackwardTxService.OnGetHeRdDataAtBobObd(data, *client.User)
 		if err == nil {
-			// TODO 关闭htlc
 			if client.User.IsAdmin {
-				closeHtlc, err := agent.HtlcRequestCloseHtlc(responseData, client.User)
-				if err == nil {
-					msg.Type = enum.MsgType_HTLC_Close_SendRequestCloseCurrTx_49
-					msg.RecipientNodePeerId = msg.SenderNodePeerId
-					msg.RecipientUserPeerId = msg.SenderUserPeerId
-					msg.SenderNodePeerId = client.User.P2PLocalPeerId
-					msg.SenderUserPeerId = client.User.PeerId
-					marshal, _ := json.Marshal(closeHtlc)
-					msg.Data = string(marshal)
-					htlc, _, err := service.HtlcCloseTxService.RequestCloseHtlc(msg, *client.User)
-					if err == nil {
-						cxa, err := agent.HtlcCloseAliceSignedCxa(htlc, client.User)
-						if err == nil {
-							msg.Type = enum.MsgType_HTLC_Close_ClientSign_Alice_C4a_110
-							marshal, _ := json.Marshal(cxa)
-							msg.Data = string(marshal)
-							_, toBob, err := service.HtlcCloseTxService.OnAliceSignedCxa(msg, *client.User)
-							if err == nil {
-								msg.Type = enum.MsgType_HTLC_Close_RequestCloseCurrTx_49
-								marshal, _ := json.Marshal(toBob)
-								msg.Data = string(marshal)
-								err = client.sendDataToP2PUser(msg, true, msg.Data)
-								return "", false, nil
-							} else {
-								log.Println(err)
-							}
-						} else {
-							log.Println(err)
-						}
-					} else {
-						log.Println(err)
-					}
-				} else {
-					log.Println(err)
-				}
+				// close the htlc
+				go closeHtlc(msg, responseData, *client)
 			}
 			retData, _ := json.Marshal(responseData)
 			return string(retData), true, nil
@@ -707,8 +669,10 @@ func p2pMiddleNodeTransferData(msg *bean.RequestMessage, itemClient Client, data
 	return data
 }
 
-func afterH(toBob interface{}, client Client, msg bean.RequestMessage) {
+// forward H
+func checkHForNextNodeOrRForBackward(toBob interface{}, client Client, msg bean.RequestMessage) {
 	r := agent.ROwnerGetHtlcRFromLocal(toBob, client.User)
+	// when currUser is the real payee, can get r from local db,then backward R (45 MsgType_HTLC_SendVerifyR_45)
 	if r != "" {
 		msg.Type = enum.MsgType_HTLC_SendVerifyR_45
 		c3b := toBob.(*dao.CommitmentTransaction)
@@ -737,6 +701,7 @@ func afterH(toBob interface{}, client Client, msg bean.RequestMessage) {
 			log.Println(err)
 		}
 	} else {
+		// when currUser is the interUser, get next channel by h, to get the r
 		//trigger send 40
 		channelId, amount, msg := agent.InterUserGetNextNode(toBob, client.User)
 		if len(channelId) > 0 {
@@ -757,8 +722,9 @@ func afterH(toBob interface{}, client Client, msg bean.RequestMessage) {
 	}
 }
 
-func getR(toAlice interface{}, client Client) {
-	r, channelId, msg := agent.InterUserGetHtlcRFromLocal(toAlice, client.User)
+// backward R
+func checkRToPreNode(toAlice interface{}, client Client) {
+	r, channelId, msg := agent.InterUserGetHtlcRFromLocalForPreNode(toAlice, client.User)
 	if r != "" {
 		msg.Type = enum.MsgType_HTLC_SendVerifyR_45
 		sendR := bean.HtlcBobSendR{ChannelId: channelId, R: r}
@@ -783,5 +749,42 @@ func getR(toAlice interface{}, client Client) {
 		} else {
 			log.Println(err)
 		}
+	}
+}
+
+func closeHtlc(msg bean.RequestMessage, responseData interface{}, client Client) {
+	closeHtlc, err := agent.HtlcRequestCloseHtlc(responseData, client.User)
+	if err == nil {
+		msg.Type = enum.MsgType_HTLC_Close_SendRequestCloseCurrTx_49
+		msg.RecipientNodePeerId = msg.SenderNodePeerId
+		msg.RecipientUserPeerId = msg.SenderUserPeerId
+		msg.SenderNodePeerId = client.User.P2PLocalPeerId
+		msg.SenderUserPeerId = client.User.PeerId
+		marshal, _ := json.Marshal(closeHtlc)
+		msg.Data = string(marshal)
+		htlc, _, err := service.HtlcCloseTxService.RequestCloseHtlc(msg, *client.User)
+		if err == nil {
+			cxa, err := agent.HtlcCloseAliceSignedCxa(htlc, client.User)
+			if err == nil {
+				msg.Type = enum.MsgType_HTLC_Close_ClientSign_Alice_C4a_110
+				marshal, _ := json.Marshal(cxa)
+				msg.Data = string(marshal)
+				_, toBob, err := service.HtlcCloseTxService.OnAliceSignedCxa(msg, *client.User)
+				if err == nil {
+					msg.Type = enum.MsgType_HTLC_Close_RequestCloseCurrTx_49
+					marshal, _ := json.Marshal(toBob)
+					msg.Data = string(marshal)
+					err = client.sendDataToP2PUser(msg, true, msg.Data)
+				} else {
+					log.Println(err)
+				}
+			} else {
+				log.Println(err)
+			}
+		} else {
+			log.Println(err)
+		}
+	} else {
+		log.Println(err)
 	}
 }

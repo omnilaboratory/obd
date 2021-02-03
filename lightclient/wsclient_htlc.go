@@ -139,7 +139,6 @@ func (client *Client) htlcHModule(msg bean.RequestMessage) (enum.SendTargetType,
 				if err == nil {
 					signedDataBytes, _ := json.Marshal(signedData)
 					msg.Data = string(signedDataBytes)
-					log.Println(msg.Data)
 
 					_, toBob, err := service.HtlcForwardTxService.OnAliceSignedC3aAtAliceSide(msg, *client.User)
 					if err != nil {
@@ -342,13 +341,6 @@ func (client *Client) htlcHModule(msg bean.RequestMessage) (enum.SendTargetType,
 		}
 		msg.Type = enum.MsgType_HTLC_ClientSign_Alice_He_105
 		client.SendToMyself(msg.Type, status, data)
-
-		//TODO 启动R的回传
-		if status {
-			if client.User.IsAdmin {
-				afterH(toBob, *client, msg)
-			}
-		}
 	}
 	return sendType, []byte(data), status
 }
@@ -460,31 +452,6 @@ func (client *Client) htlcTxModule(msg bean.RequestMessage) (enum.SendTargetType
 		}
 		msg.Type = enum.MsgType_HTLC_ClientSign_Alice_HeSub_46
 		client.SendToMyself(msg.Type, status, data)
-
-		//TODO Alice完成R的签收，然后检测是否有上一个节点
-		if client.User.IsAdmin {
-			r, channelId, msg := agent.InterUserGetHtlcRFromLocal(toAlice, client.User)
-			if r != "" {
-				msg.Type = enum.MsgType_HTLC_SendVerifyR_45
-				sendR := bean.HtlcBobSendR{ChannelId: channelId, R: r}
-				marshal, _ := json.Marshal(sendR)
-				msg.Data = string(marshal)
-				retData, err := service.HtlcBackwardTxService.SendRToPreviousNodeAtBobSide(*msg, *client.User)
-				if err == nil {
-					signedData, err := agent.HtlcBobSignedHeRdAtBobSide(retData, client.User)
-					if err == nil {
-						marshal, _ := json.Marshal(signedData)
-						msg.Type = enum.MsgType_HTLC_VerifyR_45
-						msg.Data = string(marshal)
-						client.sendDataToP2PUser(*msg, status, msg.Data)
-					} else {
-						log.Println(err)
-					}
-				} else {
-					log.Println(err)
-				}
-			}
-		}
 	}
 	return sendType, []byte(data), status
 }

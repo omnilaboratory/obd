@@ -54,7 +54,7 @@ func InterUserGetNextNode(dataTx interface{}, user *bean.User) (channelId string
 	return "", 0, nil
 }
 
-func InterUserGetHtlcRFromLocal(dataTx interface{}, user *bean.User) (r, channelId string, msg *bean.RequestMessage) {
+func InterUserGetHtlcRFromLocalForPreNode(dataTx interface{}, user *bean.User) (r, channelId string, msg *bean.RequestMessage) {
 	currNodeTx := dataTx.(*dao.CommitmentTransaction)
 	currChannelId := currNodeTx.ChannelId
 	htlcPathArr := strings.Split(currNodeTx.HtlcRoutingPacket, ",")
