@@ -304,7 +304,7 @@ func readData(s network.Stream, rw *bufio.ReadWriter) {
 		if str != "" {
 			log.Println(s.Conn())
 			str = strings.TrimSuffix(str, "~")
-			log.Println(str)
+			//log.Println(str)
 			reqData := &bean.RequestMessage{}
 			err := json.Unmarshal([]byte(str), reqData)
 			if err == nil {
