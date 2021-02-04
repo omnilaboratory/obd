@@ -97,6 +97,21 @@ func (client *Client) htlcHModule(msg bean.RequestMessage) (enum.SendTargetType,
 					status = true
 				}
 				client.SendToMyself(msg.Type, status, data)
+				if client.User.IsAdmin {
+					invoiceInfo := respond.(map[string]interface{})
+					amountToPayee := invoiceInfo["amount"].(float64)
+					amount := invoiceInfo["amount_and_fee"].(float64)
+					invoiceInfo["amount"] = amount
+					invoiceInfo["amount_to_payee"] = amountToPayee
+					newMsg := bean.RequestMessage{Type: enum.MsgType_HTLC_SendAddHTLC_40}
+					newMsg.RecipientUserPeerId = invoiceInfo["next_node_peerId"].(string)
+					newMsg.RecipientNodePeerId = conn2tracker.GetUserP2pNodeId(newMsg.RecipientUserPeerId)
+					newMsg.SenderNodePeerId = client.User.P2PLocalPeerId
+					newMsg.SenderUserPeerId = client.User.PeerId
+					marshal, _ := json.Marshal(invoiceInfo)
+					newMsg.Data = string(marshal)
+					client.htlcHModule(newMsg)
+				}
 			} else {
 				status = true
 			}
@@ -106,9 +121,18 @@ func (client *Client) htlcHModule(msg bean.RequestMessage) (enum.SendTargetType,
 	case enum.MsgType_HTLC_SendAddHTLC_40:
 
 		if client.User.IsAdmin {
-			agent.HtlcBeforeAliceAddHtlcAtAliceSide(&msg, client.User)
+			err := agent.HtlcBeforeAliceAddHtlcAtAliceSide(&msg, client.User)
+			if err == nil {
+				if p2pChannelMap[msg.RecipientNodePeerId] == nil {
+					err = scanAndConnNode(msg.RecipientNodePeerId)
+				}
+			}
+			if err != nil {
+				msg.Type = enum.MsgType_HTLC_SendAddHTLC_40
+				client.SendToMyself(msg.Type, false, err.Error())
+				break
+			}
 		}
-
 		respond, needSign, err := service.HtlcForwardTxService.AliceAddHtlcAtAliceSide(msg, *client.User)
 		if err != nil {
 			data = err.Error()
@@ -142,6 +166,7 @@ func (client *Client) htlcHModule(msg bean.RequestMessage) (enum.SendTargetType,
 
 					_, toBob, err := service.HtlcForwardTxService.OnAliceSignedC3aAtAliceSide(msg, *client.User)
 					if err != nil {
+						log.Println(err)
 						data = err.Error()
 					} else {
 						bytes, err := json.Marshal(toBob)

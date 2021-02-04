@@ -280,6 +280,7 @@ func getPrivateChannelForHtlc(requestData *bean.HtlcRequestFindPath, user bean.U
 					retData["is_private"] = requestData.IsPrivate
 					retData["property_id"] = requestData.PropertyId
 					retData["amount"] = requestData.Amount
+					retData["amount_and_fee"] = requestData.Amount
 					retData["routing_packet"] = channel.ChannelId
 					retData["min_cltv_expiry"] = 1
 					retData["next_node_peerId"] = requestData.RecipientUserPeerId
