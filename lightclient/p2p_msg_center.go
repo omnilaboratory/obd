@@ -452,13 +452,13 @@ func routerOfP2PNode(msg bean.RequestMessage, data string, client *Client) (retD
 				if err == nil {
 					marshal, _ := json.Marshal(signedData)
 					msg.Data = string(marshal)
+					msg.RecipientNodePeerId = msg.SenderNodePeerId
+					msg.RecipientUserPeerId = msg.SenderUserPeerId
 					needSignData, err := service.HtlcCloseTxService.OnBobSignCloseHtlcRequest(msg, *client.User)
 					if err == nil {
 						signedCxb, err := agent.HtlcCloseBobSignedCxb(needSignData, client.User)
 						if err == nil {
 							msg.Type = enum.MsgType_HTLC_Close_ClientSign_Bob_C4b_111
-							msg.RecipientNodePeerId = msg.SenderNodePeerId
-							msg.RecipientUserPeerId = msg.SenderUserPeerId
 							marshal, _ := json.Marshal(signedCxb)
 							msg.Data = string(marshal)
 							toAlice, _, err := service.HtlcCloseTxService.OnBobSignedCxb(msg, *client.User)

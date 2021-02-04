@@ -114,7 +114,6 @@ func EstimateSmartFee() (result float64) {
 	}
 	if cacheFeeRate == 0 {
 		url := "http://" + config.TrackerHost + "/api/rpc/estimateSmartFee"
-		log.Println(url)
 		resp, err := http.Get(url)
 		if err != nil {
 			return 0
@@ -307,7 +306,6 @@ func GetBalanceByAddress(address string) (result float64, err error) {
 		return 0.0, errors.New("error address")
 	}
 	url := "http://" + config.TrackerHost + "/api/rpc/getBalanceByAddress?address=" + address
-	log.Println(url)
 	resp, err := http.Get(url)
 	if err != nil {
 		return 0.0, err
@@ -554,7 +552,6 @@ func GetChainNodeType() (chainNodeType, trackerP2pAddress string, err error) {
 
 func GetChannelState(channelId string) (flag int) {
 	url := "http://" + config.TrackerHost + "/api/v1/getChannelState?channelId=" + channelId
-	log.Println(url)
 	resp, err := http.Get(url)
 	if err != nil {
 		return 0

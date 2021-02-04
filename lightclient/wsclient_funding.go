@@ -11,6 +11,7 @@ import (
 	"github.com/shopspring/decimal"
 	"log"
 	"strconv"
+	"time"
 )
 
 func (client *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.SendTargetType, []byte, bool) {
@@ -46,7 +47,7 @@ func (client *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.Se
 		msg.Type = enum.MsgType_FundingCreate_SendBtcFundingCreated_340
 		client.SendToMyself(msg.Type, status, data)
 
-		if status {
+		if status && targetUser == client.User.PeerId {
 			if client.User.IsAdmin {
 				signedData, err := agent.AliceFirstSignFundBtcRedeemTx(node, client.User)
 				if err == nil {
@@ -501,26 +502,29 @@ func channelFund(client Client, msg bean.RequestMessage) {
 		minerFee := 0.00001
 		btcAmount, _ := decimal.NewFromFloat(funding.BtcAmount).Div(decimal.NewFromFloat(3.0)).Sub(decimal.NewFromFloat(minerFee)).Round(8).Float64()
 		for i := 0; i < 3; i++ {
-			resp, err := omnicore.BtcCreateRawTransaction(channelInfo.FundingAddress, []bean.TransactionOutputItem{{channelInfo.ChannelAddress, btcAmount}}, minerFee, 0, nil)
-			if err != nil {
-				status = false
-				data = err.Error()
-			} else {
-				sendInfo := &bean.FundingBtc{}
-				sendInfo.FromAddress = channelInfo.FundingAddress
-				sendInfo.ToAddress = channelInfo.ChannelAddress
-				marshal, _ := json.Marshal(sendInfo)
-				msg.Data = string(marshal)
-				resp, _ = agent.AliceSignFundBtc(msg, resp, client.User)
+			go func() {
+				resp, err := omnicore.BtcCreateRawTransaction(channelInfo.FundingAddress, []bean.TransactionOutputItem{{channelInfo.ChannelAddress, btcAmount}}, minerFee, 0, nil)
+				if err != nil {
+					status = false
+					data = err.Error()
+				} else {
+					sendInfo := &bean.FundingBtc{}
+					sendInfo.FromAddress = channelInfo.FundingAddress
+					sendInfo.ToAddress = channelInfo.ChannelAddress
+					marshal, _ := json.Marshal(sendInfo)
+					msg.Data = string(marshal)
+					resp, _ = agent.AliceSignFundBtc(msg, resp, client.User)
 
-				msg.Type = enum.MsgType_FundingCreate_SendBtcFundingCreated_340
-				fundingBtc := bean.SendRequestFundingBtc{}
-				fundingBtc.TemporaryChannelId = channelInfo.TemporaryChannelId
-				fundingBtc.FundingTxHex = resp["hex"].(string)
-				bytes, _ := json.Marshal(fundingBtc)
-				msg.Data = string(bytes)
-				client.fundingTransactionModule(msg)
-			}
+					msg.Type = enum.MsgType_FundingCreate_SendBtcFundingCreated_340
+					fundingBtc := bean.SendRequestFundingBtc{}
+					fundingBtc.TemporaryChannelId = channelInfo.TemporaryChannelId
+					fundingBtc.FundingTxHex = resp["hex"].(string)
+					bytes, _ := json.Marshal(fundingBtc)
+					msg.Data = string(bytes)
+					client.fundingTransactionModule(msg)
+				}
+			}()
+			time.Sleep(time.Second * 2)
 		}
 
 		respNode, err := omnicore.OmniCreateRawTransaction(channelInfo.FundingAddress, channelInfo.ChannelAddress, funding.PropertyId, funding.AssetAmount, minerFee)

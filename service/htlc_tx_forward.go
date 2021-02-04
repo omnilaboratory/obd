@@ -303,6 +303,7 @@ func (service *htlcForwardTxManager) GetResponseFromTrackerOfPayerRequestFindPat
 		return nil, err
 	}
 
+	log.Println("channelPath " + channelPath)
 	dataArr := strings.Split(channelPath, "_")
 	if len(dataArr) != 3 {
 		return nil, errors.New("no channel path")
