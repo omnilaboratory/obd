@@ -255,7 +255,9 @@ func (client *Client) omniCoreModule(msg bean.RequestMessage) (enum.SendTargetTy
 				if err != nil {
 					data = err.Error()
 				} else {
-					resp, _ = agent.AliceSignFundBtc(msg, resp, client.User)
+					if client.User.IsAdmin {
+						resp, _ = agent.AliceSignFundBtc(msg, resp, client.User)
+					}
 					resp["is_multisig"] = false
 					bytes, _ := json.Marshal(resp)
 					data = string(bytes)

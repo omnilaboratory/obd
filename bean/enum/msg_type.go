@@ -136,6 +136,7 @@ const (
 	MsgType_FundingSign_BtcSign_350     MsgType = -350
 	MsgType_FundingSign_RecvBtcSign_350 MsgType = -110350
 
+	MsgType_Funding_134                              MsgType = -100134
 	MsgType_FundingCreate_SendAssetFundingCreated_34 MsgType = -100034
 	// 客户端签名：alice签名C1a
 	MsgType_ClientSign_AssetFunding_AliceSignC1a_1034 MsgType = -101034
@@ -308,6 +309,8 @@ func CheckExist(msgType MsgType) bool {
 	case MsgType_CheckChannelAddessExist_3156:
 		return true
 	case MsgType_SendChannelAccept_33:
+		return true
+	case MsgType_Funding_134:
 		return true
 	case MsgType_FundingCreate_SendAssetFundingCreated_34:
 		return true

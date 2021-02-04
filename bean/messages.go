@@ -144,6 +144,14 @@ type FundingAssetOfP2p struct {
 	FunderPeerId          string                `json:"funder_peer_id"`
 }
 
+// -MsgType_Funding_134 100134
+type SendRequestFunding struct {
+	TemporaryChannelId string  `json:"temporary_channel_id"`
+	BtcAmount          float64 `json:"btc_amount"`
+	PropertyId         int64   `json:"property_id"`
+	AssetAmount        float64 `json:"asset_amount"`
+}
+
 // -100034
 type SendRequestAssetFunding struct {
 	TemporaryChannelId string `json:"temporary_channel_id"`

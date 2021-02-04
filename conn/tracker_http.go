@@ -61,7 +61,6 @@ func ListReceivedByAddress(address string) (result string) {
 		return ""
 	}
 	url := "http://" + config.TrackerHost + "/api/rpc/listReceivedByAddress?address=" + address
-	log.Println(url)
 	resp, err := http.Get(url)
 	if err != nil {
 		return ""
@@ -76,7 +75,6 @@ func ListReceivedByAddress(address string) (result string) {
 
 func GetTransactionById(txid string) (result string) {
 	url := "http://" + config.TrackerHost + "/api/rpc/getTransactionById?txid=" + txid
-	log.Println(url)
 	resp, err := http.Get(url)
 	if err != nil {
 		return ""
@@ -93,7 +91,6 @@ func ListUnspent(address string) (result string) {
 		return ""
 	}
 	url := "http://" + config.TrackerHost + "/api/rpc/listUnspent?address=" + address
-	log.Println(url)
 	resp, err := http.Get(url)
 	if err != nil {
 		return ""
@@ -134,7 +131,6 @@ func EstimateSmartFee() (result float64) {
 
 func CreateRawTransaction(data string) (result string) {
 	url := "http://" + config.TrackerHost + "/api/rpc/createRawTransaction"
-	log.Println(url)
 	request, _ := http.NewRequest("POST", url, strings.NewReader(data))
 	resp, err := http.DefaultClient.Do(request)
 	if err != nil {
@@ -188,7 +184,6 @@ func TestMemPoolAccept(hex string) (result string) {
 		return ""
 	}
 	url := "http://" + config.TrackerHost + "/api/rpc/testMemPoolAccept?hex=" + hex
-	log.Println(url)
 	resp, err := http.Get(url)
 	if err != nil {
 		return ""
@@ -206,7 +201,6 @@ func SendRawTransaction(hex string) (result string, err error) {
 		return "", errors.New("error hex")
 	}
 	url := "http://" + config.TrackerHost + "/api/rpc/sendRawTransaction?hex=" + hex
-	log.Println(url)
 	resp, err := http.Get(url)
 	if err != nil {
 		return "", err
@@ -228,7 +222,6 @@ func OmniDecodeTransaction(hex string) (result string, err error) {
 		return "", errors.New("error hex")
 	}
 	url := "http://" + config.TrackerHost + "/api/rpc/omniDecodeTransaction?hex=" + hex
-	log.Println(url)
 	resp, err := http.Get(url)
 	if err != nil {
 		return "", err
