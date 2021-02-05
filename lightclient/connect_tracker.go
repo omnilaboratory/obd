@@ -274,16 +274,19 @@ func unlockChannel(userId, channelId string) (err error) {
 	var channelInfo dao.ChannelInfo
 	if userDb != nil {
 		err = userDb.Select(
-			q.Eq("CurrState", bean.ChannelState_LockByTracker),
+			q.Or(q.Eq("CurrState", bean.ChannelState_LockByTracker),
+				q.Eq("CurrState", bean.ChannelState_CanUse)),
 			q.Eq("ChannelId", channelId)).First(&channelInfo)
 		if err == nil {
-			return userDb.UpdateField(&channelInfo, "CurrState", bean.ChannelState_CanUse)
+			if channelInfo.CurrState != bean.ChannelState_CanUse {
+				err = userDb.UpdateField(&channelInfo, "CurrState", bean.ChannelState_CanUse)
+			}
 		}
 		if dbIsOnOpen == false {
 			_ = userDb.Close()
 		}
 	}
-	return nil
+	return err
 }
 
 func checkChannel(userId string, db storm.Node, nodes []bean.ChannelInfoRequest) []bean.ChannelInfoRequest {
