@@ -94,7 +94,17 @@ func startSchedule() {
 				log.Println("timer 1m", t)
 				announceSelf()
 				scanNodes()
-				updateLockChannel()
+			}
+		}
+	}()
+	go func() {
+		ticker := time.NewTicker(10 * time.Second)
+		defer ticker.Stop()
+		for {
+			select {
+			case t := <-ticker.C:
+				log.Println("timer 10s", t)
+				go updateLockChannel()
 			}
 		}
 	}()
@@ -287,7 +297,7 @@ func sendChannelLockInfoToObd(channelId, userId, obdP2pNodeId string) bool {
 
 func updateLockChannel() {
 	var infos []dao.LockHtlcPath
-	now := time.Now().Add(-1 * time.Minute)
+	now := time.Now().Add(-20 * time.Second)
 	_ = db.Select(q.Or(q.Eq("CurrState", 0), q.Eq("CurrState", 1)), q.Lt("CreateAt", now)).Find(&infos)
 	for _, item := range infos {
 		paths := item.Path
