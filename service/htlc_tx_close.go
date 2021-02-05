@@ -1372,6 +1372,9 @@ func (service *htlcCloseTxManager) OnAliceSignedCxbBubTx(msg bean.RequestMessage
 	beginTime = time.Now()
 	log.Println("close step 8 ", "totalDurationObd", totalDurationObd, "totalDurationClient", totalDurationClient)
 
+	totalDurationObd = 0
+	totalDurationClient = 0
+
 	return aliceData, bobData, nil
 }
 
