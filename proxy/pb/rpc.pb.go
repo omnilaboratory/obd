@@ -107,7 +107,9 @@ func init() {
 	proto.RegisterType((*HelloResponse)(nil), "proxy.HelloResponse")
 }
 
-func init() { proto.RegisterFile("rpc.proto", fileDescriptor_77a6da22d6a3feb1) }
+func init() {
+	proto.RegisterFile("rpc.proto", fileDescriptor_77a6da22d6a3feb1)
+}
 
 var fileDescriptor_77a6da22d6a3feb1 = []byte{
 	// 138 bytes of a gzipped FileDescriptorProto
@@ -124,11 +126,11 @@ var fileDescriptor_77a6da22d6a3feb1 = []byte{
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ context.Context
-var _ grpc.ClientConn
+var _ grpc.ClientConnInterface
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion4
+const _ = grpc.SupportPackageIsVersion6
 
 // ProxyClient is the client API for Proxy service.
 //
@@ -140,10 +142,10 @@ type ProxyClient interface {
 }
 
 type proxyClient struct {
-	cc *grpc.ClientConn
+	cc grpc.ClientConnInterface
 }
 
-func NewProxyClient(cc *grpc.ClientConn) ProxyClient {
+func NewProxyClient(cc grpc.ClientConnInterface) ProxyClient {
 	return &proxyClient{cc}
 }
 

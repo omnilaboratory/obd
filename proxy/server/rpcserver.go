@@ -11,12 +11,13 @@ import (
 	grpc "google.golang.org/grpc"
 )
 
-type rpcServer struct {}
+type rpcServer struct{}
 
 // for testing
 func (r *rpcServer) Hello(ctx context.Context,
 	in *proxy.HelloRequest) (*proxy.HelloResponse, error) {
 
+	log.Println("hello " + in.GetSayhi())
 	resp, err := rpc.Hello(in.Sayhi)
 	if err != nil {
 		return nil, err
@@ -36,6 +37,7 @@ func startServer() {
 
 	s := grpc.NewServer()
 	proxy.RegisterProxyServer(s, &rpcServer{})
+	proxy.RegisterUserServer(s, &rpc.UserRpc{})
 
 	s.Serve(lis)
 }

@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package proxy;
+option go_package = "pb";
+//  proto3变量类型  https://blog.csdn.net/yjfsoft/article/details/77900688
+message LoginRequest {
+  string mnemonic = 1;
+}
+
+message LoginResponse {
+  string userPeerId = 1;
+  string nodePeerId = 2;
+  string nodeAddress = 3;
+  double htlcFeeRate = 4;
+  double htlcMaxFee = 5;
+  string chainNodeType = 6;
+}
+
+service User{
+  rpc Login(LoginRequest) returns (LoginResponse){}
+}
+
+
