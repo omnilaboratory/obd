@@ -53,6 +53,8 @@ We propose [OmniBOLT](https://github.com/omnilaboratory/OmniBOLT-spec) to enable
 # Installation
 The following instruction works for Ubuntu 14.04.4 LTS, golang 1.10 or later.
 
+You could download the binary we compiled to major platforms at [here](https://github.com/omnilaboratory/obd/releases), and ignor step 1 and 3. 
+
 ## step 1: fetch the source code
 
 on your terminal:
