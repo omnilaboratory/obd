@@ -5,6 +5,7 @@ import (
 	"github.com/asdine/storm"
 	"github.com/asdine/storm/q"
 	"github.com/omnilaboratory/obd/bean/enum"
+	"github.com/omnilaboratory/obd/config"
 	"github.com/omnilaboratory/obd/conn"
 	"github.com/omnilaboratory/obd/dao"
 	"github.com/omnilaboratory/obd/tool"
@@ -20,7 +21,46 @@ func Start() {
 	obdGlobalDB, err = dao.DBService.GetGlobalDB()
 	if err != nil {
 		log.Println(err)
+		return
 	}
+	checkInitConfig()
+}
+
+func checkInitConfig() {
+	localConfig := &dao.ObdConfig{}
+	_ = obdGlobalDB.Select().First(localConfig)
+	if localConfig.Id == 0 {
+		localConfig.InitHashCode = tool.GenerateInitHashCode()
+		localConfig.AdminLoginToken = strings.ToLower(localConfig.InitHashCode)[0:8]
+		_ = obdGlobalDB.Save(localConfig)
+	}
+	config.Init_node_chain_hash = localConfig.InitHashCode
+	log.Println("admin login token:", localConfig.AdminLoginToken)
+}
+
+func CheckIsAdmin(loginToken string) bool {
+	if len(loginToken) == 0 {
+		return false
+	}
+	localConfig := &dao.ObdConfig{}
+	_ = obdGlobalDB.Select().First(localConfig)
+	if localConfig.AdminLoginToken == loginToken {
+		return true
+	}
+	return false
+}
+
+func UpdateAdminLoginToken(newToken string) error {
+	newToken = strings.TrimLeft(newToken, " ")
+	newToken = strings.TrimRight(newToken, " ")
+	if len(newToken) < 6 {
+		return errors.New("token length must greater 6")
+	}
+	localConfig := &dao.ObdConfig{}
+	_ = obdGlobalDB.Select().First(localConfig)
+	localConfig.AdminLoginToken = newToken
+	_ = obdGlobalDB.Update(localConfig)
+	return nil
 }
 
 func addRDTxToWaitDB(lastRevocableDeliveryTx *dao.RevocableDeliveryTransaction) (err error) {

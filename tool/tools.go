@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"github.com/btcsuite/btcd/btcec"
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcutil"
 	"github.com/btcsuite/btcutil/base58"
@@ -164,4 +165,12 @@ func GetBtcMinerAmount(total float64) float64 {
 
 func GetOmniDustBtc() float64 {
 	return 0.00000546
+}
+
+func GenerateInitHashCode() string {
+	key, _ := btcec.NewPrivateKey(btcec.S256())
+	wif, _ := btcutil.NewWIF(key, GetCoreNet(), true)
+	pubKeyHash := btcutil.Hash160(wif.SerializePubKey())
+	addr, _ := btcutil.NewAddressPubKeyHash(pubKeyHash, GetCoreNet())
+	return addr.String()
 }

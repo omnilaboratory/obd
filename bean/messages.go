@@ -60,24 +60,24 @@ type SendChannelOpen struct {
 // type = -110032 接收方obd发给接收方客户端的消息
 type RequestOpenChannel struct {
 	SendChannelOpen
-	ChainHash                chainhash.ChainHash `json:"chain_hash"`
-	TemporaryChannelId       string              `json:"temporary_channel_id"`
-	FundingSatoshis          uint64              `json:"funding_satoshis"`
-	PushMsat                 uint64              `json:"push_msat"`
-	DustLimitSatoshis        uint64              `json:"dust_limit_satoshis"`
-	MaxHtlcValueInFlightMsat uint64              `json:"max_htlc_value_in_flight_msat"`
-	ChannelReserveSatoshis   uint64              `json:"channel_reserve_satoshis"`
-	HtlcMinimumMsat          uint64              `json:"htlc_minimum_msat"`
-	FeeRatePerKw             uint32              `json:"fee_rate_per_kw"`
-	ToSelfDelay              uint16              `json:"to_self_delay"`
-	MaxAcceptedHtlcs         uint16              `json:"max_accepted_htlcs"` //最多可以接受多少给hltc请求 500
-	FunderNodeAddress        string              `json:"funder_node_address"`
-	FunderPeerId             string              `json:"funder_peer_id"`
-	FundingAddress           string              `json:"funding_address"`
-	RevocationBasePoint      chainhash.Point     `json:"revocation_base_point"`
-	PaymentBasePoint         chainhash.Point     `json:"payment_base_point"`
-	DelayedPaymentBasePoint  chainhash.Point     `json:"delayed_payment_base_point"`
-	HtlcBasePoint            chainhash.Point     `json:"htlc_base_point"`
+	ChainHash                string          `json:"chain_hash"`
+	TemporaryChannelId       string          `json:"temporary_channel_id"`
+	FundingSatoshis          uint64          `json:"funding_satoshis"`
+	PushMsat                 uint64          `json:"push_msat"`
+	DustLimitSatoshis        uint64          `json:"dust_limit_satoshis"`
+	MaxHtlcValueInFlightMsat uint64          `json:"max_htlc_value_in_flight_msat"`
+	ChannelReserveSatoshis   uint64          `json:"channel_reserve_satoshis"`
+	HtlcMinimumMsat          uint64          `json:"htlc_minimum_msat"`
+	FeeRatePerKw             uint32          `json:"fee_rate_per_kw"`
+	ToSelfDelay              uint16          `json:"to_self_delay"`
+	MaxAcceptedHtlcs         uint16          `json:"max_accepted_htlcs"` //最多可以接受多少给hltc请求 500
+	FunderNodeAddress        string          `json:"funder_node_address"`
+	FunderPeerId             string          `json:"funder_peer_id"`
+	FundingAddress           string          `json:"funding_address"`
+	RevocationBasePoint      chainhash.Point `json:"revocation_base_point"`
+	PaymentBasePoint         chainhash.Point `json:"payment_base_point"`
+	DelayedPaymentBasePoint  chainhash.Point `json:"delayed_payment_base_point"`
+	HtlcBasePoint            chainhash.Point `json:"htlc_base_point"`
 }
 
 // -100033 接收方给自己的obd发送回复开通通道的请求

@@ -30,7 +30,8 @@ func (client *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, 
 	switch msg.Type {
 	case enum.MsgType_UserLogin_2001:
 		mnemonic := gjson.Get(msg.Data, "mnemonic").String()
-		isAdmin := gjson.Get(msg.Data, "is_admin").Bool()
+		loginToken := gjson.Get(msg.Data, "login_token").Str
+		isAdmin := service.CheckIsAdmin(loginToken)
 
 		peerId := tool.GetUserPeerId(mnemonic)
 		if globalWsClientManager.OnlineClientMap[peerId] != nil {
