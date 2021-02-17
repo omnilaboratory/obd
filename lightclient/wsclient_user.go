@@ -92,16 +92,12 @@ func (client *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, 
 			data = client.User.PeerId + " logout"
 			status = true
 			client.SendToMyself(msg.Type, status, "logout success")
-			if client.User != nil {
-				delete(globalWsClientManager.OnlineClientMap, client.User.PeerId)
-				delete(service.OnlineUserMap, client.User.PeerId)
-			}
-			sendType = enum.SendTargetType_SendToExceptMe
-			client.User = nil
+			client.User.IsAdmin = false
+			client.Socket.Close()
 		} else {
 			client.SendToMyself(msg.Type, status, "please login")
-			sendType = enum.SendTargetType_SendToSomeone
 		}
+		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_p2p_ConnectPeer_2003:
 		remoteNodeAddress := gjson.Get(msg.Data, "remote_node_address")
 		if remoteNodeAddress.Exists() == false {

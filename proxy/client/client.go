@@ -16,15 +16,26 @@ func main() {
 	}
 	defer conn.Close()
 	ctxb := context.Background()
-	proxyClient := proxy.NewProxyClient(conn)
-	response, err := proxyClient.Hello(ctxb, &proxy.HelloRequest{Sayhi: "Test  obd grpc 你好"})
-	if err != nil {
-		log.Println(err)
-	}
-	log.Println(response)
+	//proxyClient := proxy.NewProxyClient(conn)
+	//response, err := proxyClient.Hello(ctxb, &proxy.HelloRequest{Sayhi: "Test  obd grpc 你好"})
+	//if err != nil {
+	//	log.Println(err)
+	//}
+	//log.Println(response)
 
 	userClient := proxy.NewUserClient(conn)
-	login, err := userClient.Login(ctxb, &proxy.LoginRequest{Mnemonic: "dawn enter attitude merry cliff stone rely convince team warfare wasp whisper"})
-
+	login, err := userClient.Login(ctxb, &proxy.LoginRequest{
+		Mnemonic:   "dawn enter attitude merry cliff stone rely convince team warfare wasp whisper",
+		LoginToken: "mvgcnx",
+	})
 	log.Println(login)
+	token, err := userClient.UpdateLoginToken(ctxb, &proxy.UpdateLoginTokenRequest{
+		OldLoginToken: "mvgcnx",
+		NewLoginToken: "mvgcnx",
+	})
+
+	log.Println(token)
+
+	logout, err := userClient.Logout(ctxb, &proxy.LogoutRequest{})
+	log.Println(logout)
 }

@@ -2,7 +2,7 @@ package rpc
 
 import (
 	"context"
-	"encoding/json"
+	"errors"
 	"github.com/gorilla/websocket"
 	"github.com/omnilaboratory/obd/bean"
 	"github.com/omnilaboratory/obd/bean/enum"
@@ -10,15 +10,10 @@ import (
 	"github.com/omnilaboratory/obd/proxy/pb"
 	"log"
 	"net/url"
+	"strings"
 )
 
 var connObd *websocket.Conn
-var loginChan chan bean.ReplyMessage
-
-type loginInfo struct {
-	Mnemonic string `json:"mnemonic"`
-	IsAdmin  bool   `json:"is_admin"`
-}
 
 type UserRpc struct {
 }
@@ -33,18 +28,17 @@ func (user *UserRpc) Login(ctx context.Context, in *pb.LoginRequest) (resp *pb.L
 
 		connObd, _, err = websocket.DefaultDialer.Dial(u.String(), nil)
 		if err != nil {
-			log.Println("fail to dial tracker:", err)
+			log.Println("fail to dial obd:", err)
 			return nil, err
 		}
 		go readDataFromObd()
 	}
+	if len(in.LoginToken) < 6 {
+		return nil, errors.New("wrong login_token")
+	}
 
-	info := loginInfo{Mnemonic: in.Mnemonic, IsAdmin: true}
-	marshal, _ := json.Marshal(info)
-	requestMessage := bean.RequestMessage{Data: string(marshal), Type: enum.MsgType_UserLogin_2001}
-	marshal, _ = json.Marshal(requestMessage)
-	sendMsgToObd(marshal)
-
+	info := loginInfo{Mnemonic: in.Mnemonic, LoginToken: in.LoginToken}
+	sendMsgToObd(info, enum.MsgType_UserLogin_2001)
 	data := <-loginChan
 
 	node := data.Result.(map[string]interface{})
@@ -59,30 +53,53 @@ func (user *UserRpc) Login(ctx context.Context, in *pb.LoginRequest) (resp *pb.L
 	return resp, nil
 }
 
-func readDataFromObd() {
-	for {
-		_, message, err := connObd.ReadMessage()
-		if err != nil {
-			connObd = nil
-			return
-		}
-
-		replyMessage := bean.ReplyMessage{}
-		err = json.Unmarshal(message, &replyMessage)
-		if err == nil {
-			log.Println(replyMessage)
-			switch replyMessage.Type {
-			case enum.MsgType_UserLogin_2001:
-				loginChan <- replyMessage
-			}
-		}
+func (user *UserRpc) Logout(ctx context.Context, in *pb.LogoutRequest) (resp *pb.LogoutResponse, err error) {
+	log.Println("log out")
+	if connObd == nil {
+		return nil, errors.New("please login first")
 	}
+
+	logoutChan = make(chan bean.ReplyMessage)
+	defer close(logoutChan)
+
+	sendMsgToObd(nil, enum.MsgType_UserLogout_2002)
+
+	data := <-logoutChan
+	if data.Status == true {
+		_ = connObd.Close()
+		connObd = nil
+	}
+	return &pb.LogoutResponse{}, nil
 }
 
-func sendMsgToObd(msg []byte) {
-	err := connObd.WriteMessage(websocket.TextMessage, msg)
-	if err != nil {
-		log.Println("write:", err)
-		return
+func (user *UserRpc) UpdateLoginToken(ctx context.Context, in *pb.UpdateLoginTokenRequest) (resp *pb.UpdateLoginTokenResponse, err error) {
+	if connObd == nil {
+		return nil, errors.New("please login first")
 	}
+
+	if len(in.OldLoginToken) < 6 {
+		return nil, errors.New("wrong oldLoginToken")
+	}
+
+	in.NewLoginToken = strings.TrimLeft(in.NewLoginToken, " ")
+	in.NewLoginToken = strings.TrimRight(in.NewLoginToken, " ")
+	if len(in.NewLoginToken) < 6 {
+		return nil, errors.New("wrong newLoginToken")
+	}
+
+	token := updateLoginToken{OldLoginToken: in.OldLoginToken, NewLoginToken: in.NewLoginToken}
+
+	updateLoginTokenChan = make(chan bean.ReplyMessage)
+	defer close(updateLoginTokenChan)
+
+	sendMsgToObd(token, enum.MsgType_User_UpdateAdminToken_2008)
+
+	data := <-updateLoginTokenChan
+	if data.Status == false {
+		return nil, errors.New(data.Result.(string))
+	}
+	resp = &pb.UpdateLoginTokenResponse{
+		Result: data.Result.(string),
+	}
+	return resp, nil
 }

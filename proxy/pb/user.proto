@@ -5,6 +5,7 @@ option go_package = "pb";
 //  proto3变量类型  https://blog.csdn.net/yjfsoft/article/details/77900688
 message LoginRequest {
   string mnemonic = 1;
+  string loginToken = 2;
 }
 
 message LoginResponse {
@@ -16,8 +17,24 @@ message LoginResponse {
   string chainNodeType = 6;
 }
 
+message UpdateLoginTokenRequest {
+  string oldLoginToken = 1;
+  string newLoginToken = 2;
+}
+
+message UpdateLoginTokenResponse {
+  string result = 1;
+}
+
+message LogoutRequest {
+}
+message LogoutResponse {
+}
+
 service User{
   rpc Login(LoginRequest) returns (LoginResponse){}
+  rpc UpdateLoginToken(UpdateLoginTokenRequest) returns (UpdateLoginTokenResponse){}
+  rpc Logout(LogoutRequest) returns(LogoutResponse) {}
 }
 
 
