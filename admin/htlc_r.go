@@ -1,4 +1,4 @@
-package agent
+package admin
 
 import (
 	"github.com/asdine/storm/q"

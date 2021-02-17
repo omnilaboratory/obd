@@ -2,7 +2,7 @@ package lightclient
 
 import (
 	"encoding/json"
-	"github.com/omnilaboratory/obd/agent"
+	"github.com/omnilaboratory/obd/admin"
 	"github.com/omnilaboratory/obd/bean"
 	"github.com/omnilaboratory/obd/bean/enum"
 	"github.com/omnilaboratory/obd/omnicore"
@@ -49,7 +49,7 @@ func (client *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.Se
 
 		if status && targetUser == client.User.PeerId {
 			if client.User.IsAdmin {
-				signedData, err := agent.AliceFirstSignFundBtcRedeemTx(node, client.User)
+				signedData, err := admin.AliceFirstSignFundBtcRedeemTx(node, client.User)
 				if err == nil {
 					marshal, _ := json.Marshal(signedData)
 					msg.Data = string(marshal)
@@ -234,7 +234,7 @@ func (client *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.Se
 	case enum.MsgType_FundingCreate_SendAssetFundingCreated_34:
 
 		if client.User.IsAdmin {
-			agent.AliceCreateTempWalletForC1a(&msg, client.User)
+			admin.AliceCreateTempWalletForC1a(&msg, client.User)
 		}
 		node, needSign, err := service.FundingTransactionService.AssetFundingCreated(msg, client.User)
 		if err != nil {
@@ -258,7 +258,7 @@ func (client *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.Se
 		}
 
 		if client.User.IsAdmin && needSign {
-			signedData, err := agent.AliceSignC1a(node, client.User)
+			signedData, err := admin.AliceSignC1a(node, client.User)
 			if err != nil {
 				data = err.Error()
 				status = false
@@ -513,7 +513,7 @@ func channelFund(client Client, msg bean.RequestMessage) {
 					sendInfo.ToAddress = channelInfo.ChannelAddress
 					marshal, _ := json.Marshal(sendInfo)
 					msg.Data = string(marshal)
-					resp, _ = agent.AliceSignFundBtc(msg, resp, client.User)
+					resp, _ = admin.AliceSignFundBtc(msg, resp, client.User)
 
 					msg.Type = enum.MsgType_FundingCreate_SendBtcFundingCreated_340
 					fundingBtc := bean.SendRequestFundingBtc{}
@@ -537,7 +537,7 @@ func channelFund(client Client, msg bean.RequestMessage) {
 			sendInfo.ToAddress = channelInfo.ChannelAddress
 			marshal, _ := json.Marshal(sendInfo)
 			msg.Data = string(marshal)
-			respNode, _ = agent.AliceSignFundAsset(msg, respNode, client.User)
+			respNode, _ = admin.AliceSignFundAsset(msg, respNode, client.User)
 
 			msg.Type = enum.MsgType_FundingCreate_SendAssetFundingCreated_34
 			fundingBtc := bean.SendRequestFundingBtc{}

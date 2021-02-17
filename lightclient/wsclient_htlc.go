@@ -2,7 +2,7 @@ package lightclient
 
 import (
 	"encoding/json"
-	"github.com/omnilaboratory/obd/agent"
+	"github.com/omnilaboratory/obd/admin"
 	"github.com/omnilaboratory/obd/bean"
 	"github.com/omnilaboratory/obd/bean/enum"
 	conn2tracker "github.com/omnilaboratory/obd/conn"
@@ -63,7 +63,7 @@ func (client *Client) htlcHModule(msg bean.RequestMessage) (enum.SendTargetType,
 			data = err.Error()
 		} else {
 			if client.User.IsAdmin {
-				err := agent.HtlcCreateInvoice(&msg, client.User)
+				err := admin.HtlcCreateInvoice(&msg, client.User)
 				if err != nil {
 					data = err.Error()
 					client.SendToMyself(msg.Type, status, data)
@@ -121,7 +121,7 @@ func (client *Client) htlcHModule(msg bean.RequestMessage) (enum.SendTargetType,
 	case enum.MsgType_HTLC_SendAddHTLC_40:
 
 		if client.User.IsAdmin {
-			err := agent.HtlcBeforeAliceAddHtlcAtAliceSide(&msg, client.User)
+			err := admin.HtlcBeforeAliceAddHtlcAtAliceSide(&msg, client.User)
 			if err == nil {
 				if p2pChannelMap[msg.RecipientNodePeerId] == nil {
 					err = scanAndConnNode(msg.RecipientNodePeerId)
@@ -159,7 +159,7 @@ func (client *Client) htlcHModule(msg bean.RequestMessage) (enum.SendTargetType,
 		if status && needSign {
 			if client.User.IsAdmin {
 				//签名完成
-				signedData, err := agent.HtlcAliceSignC3aAtAliceSide(respond, client.User)
+				signedData, err := admin.HtlcAliceSignC3aAtAliceSide(respond, client.User)
 				if err == nil {
 					signedDataBytes, _ := json.Marshal(signedData)
 					msg.Data = string(signedDataBytes)

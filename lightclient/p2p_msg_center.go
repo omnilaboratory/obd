@@ -3,7 +3,7 @@ package lightclient
 import (
 	"encoding/json"
 	"errors"
-	"github.com/omnilaboratory/obd/agent"
+	"github.com/omnilaboratory/obd/admin"
 	"github.com/omnilaboratory/obd/bean"
 	"github.com/omnilaboratory/obd/bean/enum"
 	"github.com/omnilaboratory/obd/dao"
@@ -24,7 +24,7 @@ func routerOfP2PNode(msg bean.RequestMessage, data string, client *Client) (retD
 			// when bob get the request for open channel
 			if client.User.IsAdmin {
 				msg.Data = data
-				acceptOpenChannelInfo, err := agent.BeforeBobAcceptOpenChannel(&msg, client.User)
+				acceptOpenChannelInfo, err := admin.BeforeBobAcceptOpenChannel(&msg, client.User)
 				if err == nil {
 					signOpenChannelMsg := bean.RequestMessage{}
 					marshal, _ := json.Marshal(acceptOpenChannelInfo)
@@ -68,7 +68,7 @@ func routerOfP2PNode(msg bean.RequestMessage, data string, client *Client) (retD
 		if err == nil {
 			status = true
 			if client.User.IsAdmin {
-				signedRedeemTx, err := agent.BobSignFundBtcRedeemTx(data, client.User)
+				signedRedeemTx, err := admin.BobSignFundBtcRedeemTx(data, client.User)
 				if err == nil {
 					newMsg := bean.RequestMessage{}
 					newMsg.Type = enum.MsgType_FundingSign_SendBtcSign_350
@@ -103,13 +103,13 @@ func routerOfP2PNode(msg bean.RequestMessage, data string, client *Client) (retD
 		if err == nil {
 			status = true
 			if client.User.IsAdmin {
-				signC1a, err := agent.BobSignC1a(data, client.User)
+				signC1a, err := admin.BobSignC1a(data, client.User)
 				if err == nil {
 					marshal, _ := json.Marshal(signC1a)
 					signed, err := service.FundingTransactionService.AssetFundingSigned(string(marshal), client.User)
 					if err == nil {
 						marshal, _ := json.Marshal(signed)
-						signedRdAndBrData, err := agent.BobSignRdAndBrOfC1a(string(marshal), client.User)
+						signedRdAndBrData, err := admin.BobSignRdAndBrOfC1a(string(marshal), client.User)
 						if err == nil {
 							marshal, _ := json.Marshal(signedRdAndBrData)
 							aliceData, _, err := service.FundingTransactionService.OnBobSignedRDAndBR(string(marshal), client.User)
@@ -138,7 +138,7 @@ func routerOfP2PNode(msg bean.RequestMessage, data string, client *Client) (retD
 			status = true
 			retData, _ := json.Marshal(node)
 			if client.User.IsAdmin {
-				signedData, _ := agent.AliceSignRdOfC1a(node, client.User)
+				signedData, _ := admin.AliceSignRdOfC1a(node, client.User)
 				marshal, _ := json.Marshal(signedData)
 				outData, err := service.FundingTransactionService.OnAliceSignedRdAtAliceSide(string(marshal), client.User)
 				if err != nil {
@@ -159,7 +159,7 @@ func routerOfP2PNode(msg bean.RequestMessage, data string, client *Client) (retD
 		if err == nil {
 			status = true
 			if client.User.IsAdmin {
-				secondSignC2a, err := agent.RsmcBobSecondSignC2a(node, client.User)
+				secondSignC2a, err := admin.RsmcBobSecondSignC2a(node, client.User)
 				msg.Type = enum.MsgType_CommitmentTxSigned_SendRevokeAndAcknowledgeCommitmentTransaction_352
 				msg.RecipientNodePeerId = msg.SenderNodePeerId
 				msg.RecipientUserPeerId = msg.SenderUserPeerId
@@ -169,7 +169,7 @@ func routerOfP2PNode(msg bean.RequestMessage, data string, client *Client) (retD
 				msg.Data = string(marshal)
 				transaction, _, err := service.CommitmentTxSignedService.RevokeAndAcknowledgeCommitmentTransaction(msg, client.User)
 				if err == nil {
-					signedDataForC2b, err := agent.RsmcBobFirstSignC2b(transaction, client.User)
+					signedDataForC2b, err := admin.RsmcBobFirstSignC2b(transaction, client.User)
 					if err == nil {
 						marshal, _ := json.Marshal(signedDataForC2b)
 						_, retData, err := service.CommitmentTxSignedService.OnBobSignC2bTransactionAtBobSide(string(marshal), client.User)
@@ -198,12 +198,12 @@ func routerOfP2PNode(msg bean.RequestMessage, data string, client *Client) (retD
 		if err == nil {
 			status = true
 			if client.User.IsAdmin {
-				signedData, err := agent.RsmcAliceSignC2b(node, client.User)
+				signedData, err := admin.RsmcAliceSignC2b(node, client.User)
 				if err == nil {
 					marshal, _ := json.Marshal(signedData)
 					needSignData, err := service.CommitmentTxService.OnAliceSignedC2bTxAtAliceSide(string(marshal), client.User)
 					if err == nil {
-						signedRdTxForC2b, err := agent.RsmcAliceSignRdOfC2b(needSignData, client.User)
+						signedRdTxForC2b, err := admin.RsmcAliceSignRdOfC2b(needSignData, client.User)
 						if err == nil {
 							marshal, _ := json.Marshal(signedRdTxForC2b)
 							_, bobRetData, _, err := service.CommitmentTxService.OnAliceSignedC2b_RDTxAtAliceSide(string(marshal), client.User)
@@ -240,7 +240,7 @@ func routerOfP2PNode(msg bean.RequestMessage, data string, client *Client) (retD
 		if err == nil {
 			status = true
 			if client.User.IsAdmin {
-				signedData, err := agent.RsmcBobSignRdOfC2b(node, client.User)
+				signedData, err := admin.RsmcBobSignRdOfC2b(node, client.User)
 				if err == nil {
 					marshal, _ := json.Marshal(signedData)
 					service.CommitmentTxSignedService.BobSignC2bRdAtBobSide(string(marshal), client.User)
@@ -270,12 +270,12 @@ func routerOfP2PNode(msg bean.RequestMessage, data string, client *Client) (retD
 	case enum.MsgType_HTLC_AddHTLC_40:
 		node, err := service.HtlcForwardTxService.BeforeBobSignAddHtlcRequestAtBobSide_40(data, *client.User)
 		if client.User.IsAdmin {
-			signedData, err := agent.HtlcBobSignAddHtlcRequestAtBobSide_40(*node, client.User)
+			signedData, err := admin.HtlcBobSignAddHtlcRequestAtBobSide_40(*node, client.User)
 			if err == nil {
 				marshal, _ := json.Marshal(signedData)
 				txOfC3b, err := service.HtlcForwardTxService.BobSignedAddHtlcAtBobSide(string(marshal), *client.User)
 				if err == nil {
-					signedHtlcTxOfC3b, err := agent.HtlcBobSignC3b(txOfC3b, client.User)
+					signedHtlcTxOfC3b, err := admin.HtlcBobSignC3b(txOfC3b, client.User)
 					if err == nil {
 						bytes, _ := json.Marshal(signedHtlcTxOfC3b)
 						msg.Data = string(bytes)
@@ -312,13 +312,13 @@ func routerOfP2PNode(msg bean.RequestMessage, data string, client *Client) (retD
 		if err == nil {
 			status = true
 			if client.User.IsAdmin {
-				signedC3b, err := agent.HtlcAliceSignC3b(node, client.User)
+				signedC3b, err := admin.HtlcAliceSignC3b(node, client.User)
 				if err == nil {
 					marshal, _ := json.Marshal(signedC3b)
 					msg.Data = string(marshal)
 					needSignHtlcPartTx, err := service.HtlcForwardTxService.OnAliceSignC3bAtAliceSide(msg, *client.User)
 					if err == nil {
-						signedData, err := agent.HtlcAliceSignedC3bSubTxAtAliceSide(needSignHtlcPartTx, client.User)
+						signedData, err := admin.HtlcAliceSignedC3bSubTxAtAliceSide(needSignHtlcPartTx, client.User)
 						if err == nil {
 							marshal, _ := json.Marshal(signedData)
 							msg.Data = string(marshal)
@@ -354,13 +354,13 @@ func routerOfP2PNode(msg bean.RequestMessage, data string, client *Client) (retD
 		if err == nil {
 			status = true
 			if client.User.IsAdmin {
-				signedData, err := agent.HtlcBobSignedC3bSubTxAtBobSide(node, client.User)
+				signedData, err := admin.HtlcBobSignedC3bSubTxAtBobSide(node, client.User)
 				if err == nil {
 					marshal, _ := json.Marshal(signedData)
 					msg.Data = string(marshal)
 					needSignHtRd, err := service.HtlcForwardTxService.OnBobSignedC3bSubTxAtBobSide(msg, *client.User)
 					if err == nil {
-						signedData, err := agent.HtlcBobSignHtRdAtBobSide(needSignHtRd, client.User)
+						signedData, err := admin.HtlcBobSignHtRdAtBobSide(needSignHtRd, client.User)
 						if err == nil {
 							marshal, _ := json.Marshal(signedData)
 							msg.Data = string(marshal)
@@ -407,7 +407,7 @@ func routerOfP2PNode(msg bean.RequestMessage, data string, client *Client) (retD
 		responseData, err := service.HtlcBackwardTxService.OnGetHeSubTxDataAtAliceObdAtAliceSide(data, *client.User)
 		if err == nil {
 			if client.User.IsAdmin {
-				signedData, err := agent.HtlcAliceSignedHeRdAtAliceSide(responseData, client.User)
+				signedData, err := admin.HtlcAliceSignedHeRdAtAliceSide(responseData, client.User)
 				if err == nil {
 					marshal, _ := json.Marshal(signedData)
 					msg.Data = string(marshal)
@@ -448,7 +448,7 @@ func routerOfP2PNode(msg bean.RequestMessage, data string, client *Client) (retD
 		responseData, err := service.HtlcCloseTxService.OnObdOfBobGet49PData(data, *client.User)
 		if err == nil {
 			if client.User.IsAdmin {
-				signedData, err := agent.HtlcCloseBobSignCloseHtlcRequest(responseData, client.User)
+				signedData, err := admin.HtlcCloseBobSignCloseHtlcRequest(responseData, client.User)
 				if err == nil {
 					marshal, _ := json.Marshal(signedData)
 					msg.Data = string(marshal)
@@ -456,7 +456,7 @@ func routerOfP2PNode(msg bean.RequestMessage, data string, client *Client) (retD
 					msg.RecipientUserPeerId = msg.SenderUserPeerId
 					needSignData, err := service.HtlcCloseTxService.OnBobSignCloseHtlcRequest(msg, *client.User)
 					if err == nil {
-						signedCxb, err := agent.HtlcCloseBobSignedCxb(needSignData, client.User)
+						signedCxb, err := admin.HtlcCloseBobSignedCxb(needSignData, client.User)
 						if err == nil {
 							msg.Type = enum.MsgType_HTLC_Close_ClientSign_Bob_C4b_111
 							marshal, _ := json.Marshal(signedCxb)
@@ -491,13 +491,13 @@ func routerOfP2PNode(msg bean.RequestMessage, data string, client *Client) (retD
 		responseData, _, err := service.HtlcCloseTxService.OnObdOfAliceGet50PData(data, *client.User)
 		if err == nil {
 			if client.User.IsAdmin {
-				signedCxb, err := agent.HtlcCloseAliceSignedCxb(responseData, client.User)
+				signedCxb, err := admin.HtlcCloseAliceSignedCxb(responseData, client.User)
 				if err == nil {
 					marshal, _ := json.Marshal(signedCxb)
 					msg.Data = string(marshal)
 					needSignData, err := service.HtlcCloseTxService.OnAliceSignedCxb(msg, *client.User)
 					if err == nil {
-						cxbBubTx, err := agent.HtlcCloseAliceSignedCxbBubTx(needSignData, client.User)
+						cxbBubTx, err := admin.HtlcCloseAliceSignedCxbBubTx(needSignData, client.User)
 						if err == nil {
 							marshal, _ := json.Marshal(cxbBubTx)
 							msg.Data = string(marshal)
@@ -534,7 +534,7 @@ func routerOfP2PNode(msg bean.RequestMessage, data string, client *Client) (retD
 		node, err := service.HtlcCloseTxService.OnObdOfBobGet51PData(data, *client.User)
 		if err == nil {
 			if client.User.IsAdmin {
-				signedCxb, err := agent.HtlcCloseBobSignedCxbSubTx(node, client.User)
+				signedCxb, err := admin.HtlcCloseBobSignedCxbSubTx(node, client.User)
 				if err == nil {
 					marshal, _ := json.Marshal(signedCxb)
 					msg.Data = string(marshal)
@@ -671,7 +671,7 @@ func p2pMiddleNodeTransferData(msg *bean.RequestMessage, itemClient Client, data
 
 // forward H
 func checkHForNextNodeOrRForBackward(toBob interface{}, client Client, msg bean.RequestMessage) {
-	r := agent.ROwnerGetHtlcRFromLocal(toBob, client.User)
+	r := admin.ROwnerGetHtlcRFromLocal(toBob, client.User)
 	// when currUser is the real payee, can get r from local db,then backward R (45 MsgType_HTLC_SendVerifyR_45)
 	if r != "" {
 		msg.Type = enum.MsgType_HTLC_SendVerifyR_45
@@ -681,7 +681,7 @@ func checkHForNextNodeOrRForBackward(toBob interface{}, client Client, msg bean.
 		msg.Data = string(marshal)
 		retData, err := service.HtlcBackwardTxService.SendRToPreviousNodeAtBobSide(msg, *client.User)
 		if err == nil {
-			signedData, err := agent.HtlcBobSignedHeRdAtBobSide(retData, client.User)
+			signedData, err := admin.HtlcBobSignedHeRdAtBobSide(retData, client.User)
 			if err == nil {
 				marshal, _ := json.Marshal(signedData)
 				msg.Data = string(marshal)
@@ -703,7 +703,7 @@ func checkHForNextNodeOrRForBackward(toBob interface{}, client Client, msg bean.
 	} else {
 		// when currUser is the interUser, get next channel by h, to get the r
 		//trigger send 40
-		channelId, amount, msg := agent.InterUserGetNextNode(toBob, client.User)
+		channelId, amount, msg := admin.InterUserGetNextNode(toBob, client.User)
 		if len(channelId) > 0 {
 			currNodeTx := toBob.(*dao.CommitmentTransaction)
 			msg.Type = enum.MsgType_HTLC_SendAddHTLC_40
@@ -724,7 +724,7 @@ func checkHForNextNodeOrRForBackward(toBob interface{}, client Client, msg bean.
 
 // backward R
 func checkRToPreNode(toAlice interface{}, client Client) {
-	r, channelId, msg := agent.InterUserGetHtlcRFromLocalForPreNode(toAlice, client.User)
+	r, channelId, msg := admin.InterUserGetHtlcRFromLocalForPreNode(toAlice, client.User)
 	if r != "" {
 		msg.Type = enum.MsgType_HTLC_SendVerifyR_45
 		sendR := bean.HtlcBobSendR{ChannelId: channelId, R: r}
@@ -732,7 +732,7 @@ func checkRToPreNode(toAlice interface{}, client Client) {
 		msg.Data = string(marshal)
 		retData, err := service.HtlcBackwardTxService.SendRToPreviousNodeAtBobSide(*msg, *client.User)
 		if err == nil {
-			signedData, err := agent.HtlcBobSignedHeRdAtBobSide(retData, client.User)
+			signedData, err := admin.HtlcBobSignedHeRdAtBobSide(retData, client.User)
 			if err == nil {
 				marshal, _ := json.Marshal(signedData)
 				msg.Data = string(marshal)
@@ -753,7 +753,7 @@ func checkRToPreNode(toAlice interface{}, client Client) {
 }
 
 func closeHtlc(msg bean.RequestMessage, responseData interface{}, client Client) {
-	closeHtlc, err := agent.HtlcRequestCloseHtlc(responseData, client.User)
+	closeHtlc, err := admin.HtlcRequestCloseHtlc(responseData, client.User)
 	if err == nil {
 		msg.Type = enum.MsgType_HTLC_Close_SendRequestCloseCurrTx_49
 		msg.RecipientNodePeerId = msg.SenderNodePeerId
@@ -764,7 +764,7 @@ func closeHtlc(msg bean.RequestMessage, responseData interface{}, client Client)
 		msg.Data = string(marshal)
 		htlc, _, err := service.HtlcCloseTxService.RequestCloseHtlc(msg, *client.User)
 		if err == nil {
-			cxa, err := agent.HtlcCloseAliceSignedCxa(htlc, client.User)
+			cxa, err := admin.HtlcCloseAliceSignedCxa(htlc, client.User)
 			if err == nil {
 				msg.Type = enum.MsgType_HTLC_Close_ClientSign_Alice_C4a_110
 				marshal, _ := json.Marshal(cxa)

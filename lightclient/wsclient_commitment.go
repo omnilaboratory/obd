@@ -2,7 +2,7 @@ package lightclient
 
 import (
 	"encoding/json"
-	"github.com/omnilaboratory/obd/agent"
+	"github.com/omnilaboratory/obd/admin"
 	"github.com/omnilaboratory/obd/bean"
 	"github.com/omnilaboratory/obd/bean/enum"
 	"github.com/omnilaboratory/obd/service"
@@ -18,7 +18,7 @@ func (client *Client) commitmentTxModule(msg bean.RequestMessage) (enum.SendTarg
 	case enum.MsgType_CommitmentTx_SendCommitmentTransactionCreated_351:
 
 		if client.User.IsAdmin {
-			err := agent.RsmcAliceCreateTx(&msg, client.User)
+			err := admin.RsmcAliceCreateTx(&msg, client.User)
 			if err != nil {
 				data = err.Error()
 				log.Println(data)
@@ -50,7 +50,7 @@ func (client *Client) commitmentTxModule(msg bean.RequestMessage) (enum.SendTarg
 			}
 		} else {
 			if client.User.IsAdmin {
-				signedDataForC2a, err := agent.RsmcAliceFirstSignC2a(retData, client.User)
+				signedDataForC2a, err := admin.RsmcAliceFirstSignC2a(retData, client.User)
 				if err != nil {
 					data = err.Error()
 					status = false
