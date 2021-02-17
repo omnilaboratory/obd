@@ -50,7 +50,7 @@ func CheckIsAdmin(loginToken string) bool {
 	return false
 }
 
-func UpdateAdminLoginToken(newToken string) error {
+func UpdateAdminLoginToken(oldToken, newToken string) error {
 	newToken = strings.TrimLeft(newToken, " ")
 	newToken = strings.TrimRight(newToken, " ")
 	if len(newToken) < 6 {
@@ -58,6 +58,9 @@ func UpdateAdminLoginToken(newToken string) error {
 	}
 	localConfig := &dao.ObdConfig{}
 	_ = obdGlobalDB.Select().First(localConfig)
+	if oldToken != localConfig.AdminLoginToken {
+		return errors.New("wrong old token")
+	}
 	localConfig.AdminLoginToken = newToken
 	_ = obdGlobalDB.Update(localConfig)
 	return nil

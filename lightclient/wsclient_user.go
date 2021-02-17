@@ -135,6 +135,22 @@ func (client *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, 
 	case enum.MsgType_HeartBeat_2007:
 		client.SendToMyself(msg.Type, true, data)
 		sendType = enum.SendTargetType_SendToSomeone
+	case enum.MsgType_User_UpdateAdminToken_2008:
+		oldLoginToken := gjson.Get(msg.Data, "old_login_token").Str
+		newLoginToken := gjson.Get(msg.Data, "new_login_token").Str
+		if client.User != nil && client.User.IsAdmin {
+			err := service.UpdateAdminLoginToken(oldLoginToken, newLoginToken)
+			if err != nil {
+				data = err.Error()
+			} else {
+				data = newLoginToken
+				status = true
+			}
+		} else {
+			data = errors.New("you are not the admin or login as admin").Error()
+		}
+		client.SendToMyself(msg.Type, status, data)
+		sendType = enum.SendTargetType_SendToSomeone
 	// Process GetMnemonic
 	case enum.MsgType_GetMnemonic_2004:
 		if client.User != nil { // The user already login.
