@@ -17,12 +17,12 @@ message LoginResponse {
   string chainNodeType = 6;
 }
 
-message UpdateLoginTokenRequest {
-  string oldLoginToken = 1;
-  string newLoginToken = 2;
+message ChangePasswordRequest {
+  string current_password = 1;
+  string new_password = 2;
 }
 
-message UpdateLoginTokenResponse {
+message ChangePasswordResponse {
   string result = 1;
 }
 
@@ -33,7 +33,7 @@ message LogoutResponse {
 
 service User{
   rpc Login(LoginRequest) returns (LoginResponse){}
-  rpc UpdateLoginToken(UpdateLoginTokenRequest) returns (UpdateLoginTokenResponse){}
+  rpc ChangePassword(ChangePasswordRequest) returns (ChangePasswordResponse){}
   rpc Logout(LogoutRequest) returns(LogoutResponse) {}
 }
 

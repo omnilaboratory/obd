@@ -132,8 +132,8 @@ func (client *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, 
 		client.SendToMyself(msg.Type, true, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_User_UpdateAdminToken_2008:
-		oldLoginToken := gjson.Get(msg.Data, "old_login_token").Str
-		newLoginToken := gjson.Get(msg.Data, "new_login_token").Str
+		oldLoginToken := gjson.Get(msg.Data, "current_password").Str
+		newLoginToken := gjson.Get(msg.Data, "new_password").Str
 		if client.User != nil && client.User.IsAdmin {
 			err := service.UpdateAdminLoginToken(oldLoginToken, newLoginToken)
 			if err != nil {

@@ -72,22 +72,22 @@ func (user *UserRpc) Logout(ctx context.Context, in *pb.LogoutRequest) (resp *pb
 	return &pb.LogoutResponse{}, nil
 }
 
-func (user *UserRpc) UpdateLoginToken(ctx context.Context, in *pb.UpdateLoginTokenRequest) (resp *pb.UpdateLoginTokenResponse, err error) {
+func (user *UserRpc) ChangePassword(ctx context.Context, in *pb.ChangePasswordRequest) (resp *pb.ChangePasswordResponse, err error) {
 	if connObd == nil {
 		return nil, errors.New("please login first")
 	}
 
-	if len(in.OldLoginToken) < 6 {
-		return nil, errors.New("wrong oldLoginToken")
+	if len(in.CurrentPassword) < 6 {
+		return nil, errors.New("wrong current_password")
 	}
 
-	in.NewLoginToken = strings.TrimLeft(in.NewLoginToken, " ")
-	in.NewLoginToken = strings.TrimRight(in.NewLoginToken, " ")
-	if len(in.NewLoginToken) < 6 {
-		return nil, errors.New("wrong newLoginToken")
+	in.NewPassword = strings.TrimLeft(in.NewPassword, " ")
+	in.NewPassword = strings.TrimRight(in.NewPassword, " ")
+	if len(in.NewPassword) < 6 {
+		return nil, errors.New("wrong new_password")
 	}
 
-	token := updateLoginToken{OldLoginToken: in.OldLoginToken, NewLoginToken: in.NewLoginToken}
+	token := updateLoginToken{CurrentPassword: in.CurrentPassword, NewPassword: in.NewPassword}
 
 	updateLoginTokenChan = make(chan bean.ReplyMessage)
 	defer close(updateLoginTokenChan)
@@ -98,7 +98,7 @@ func (user *UserRpc) UpdateLoginToken(ctx context.Context, in *pb.UpdateLoginTok
 	if data.Status == false {
 		return nil, errors.New(data.Result.(string))
 	}
-	resp = &pb.UpdateLoginTokenResponse{
+	resp = &pb.ChangePasswordResponse{
 		Result: data.Result.(string),
 	}
 	return resp, nil

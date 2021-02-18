@@ -28,10 +28,11 @@ func main() {
 		Mnemonic:   "dawn enter attitude merry cliff stone rely convince team warfare wasp whisper",
 		LoginToken: "mvgcnx",
 	})
+
 	log.Println(login)
-	token, err := userClient.UpdateLoginToken(ctxb, &proxy.UpdateLoginTokenRequest{
-		OldLoginToken: "mvgcnx",
-		NewLoginToken: "mvgcnx",
+	token, err := userClient.ChangePassword(ctxb, &proxy.ChangePasswordRequest{
+		CurrentPassword: "mvgcnx",
+		NewPassword:     "mvgcnx",
 	})
 
 	log.Println(token)

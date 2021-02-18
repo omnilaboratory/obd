@@ -6,6 +6,6 @@ type loginInfo struct {
 }
 
 type updateLoginToken struct {
-	OldLoginToken string `json:"old_login_token"`
-	NewLoginToken string `json:"new_login_token"`
+	CurrentPassword string `json:"current_password"`
+	NewPassword     string `json:"new_password"`
 }

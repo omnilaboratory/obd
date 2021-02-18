@@ -151,86 +151,86 @@ func (m *LoginResponse) GetChainNodeType() string {
 	return ""
 }
 
-type UpdateLoginTokenRequest struct {
-	OldLoginToken        string   `protobuf:"bytes,1,opt,name=oldLoginToken,proto3" json:"oldLoginToken,omitempty"`
-	NewLoginToken        string   `protobuf:"bytes,2,opt,name=newLoginToken,proto3" json:"newLoginToken,omitempty"`
+type ChangePasswordRequest struct {
+	CurrentPassword      string   `protobuf:"bytes,1,opt,name=current_password,json=currentPassword,proto3" json:"current_password,omitempty"`
+	NewPassword          string   `protobuf:"bytes,2,opt,name=new_password,json=newPassword,proto3" json:"new_password,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *UpdateLoginTokenRequest) Reset()         { *m = UpdateLoginTokenRequest{} }
-func (m *UpdateLoginTokenRequest) String() string { return proto.CompactTextString(m) }
-func (*UpdateLoginTokenRequest) ProtoMessage()    {}
-func (*UpdateLoginTokenRequest) Descriptor() ([]byte, []int) {
+func (m *ChangePasswordRequest) Reset()         { *m = ChangePasswordRequest{} }
+func (m *ChangePasswordRequest) String() string { return proto.CompactTextString(m) }
+func (*ChangePasswordRequest) ProtoMessage()    {}
+func (*ChangePasswordRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_116e343673f7ffaf, []int{2}
 }
 
-func (m *UpdateLoginTokenRequest) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_UpdateLoginTokenRequest.Unmarshal(m, b)
+func (m *ChangePasswordRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ChangePasswordRequest.Unmarshal(m, b)
 }
-func (m *UpdateLoginTokenRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_UpdateLoginTokenRequest.Marshal(b, m, deterministic)
+func (m *ChangePasswordRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ChangePasswordRequest.Marshal(b, m, deterministic)
 }
-func (m *UpdateLoginTokenRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_UpdateLoginTokenRequest.Merge(m, src)
+func (m *ChangePasswordRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ChangePasswordRequest.Merge(m, src)
 }
-func (m *UpdateLoginTokenRequest) XXX_Size() int {
-	return xxx_messageInfo_UpdateLoginTokenRequest.Size(m)
+func (m *ChangePasswordRequest) XXX_Size() int {
+	return xxx_messageInfo_ChangePasswordRequest.Size(m)
 }
-func (m *UpdateLoginTokenRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_UpdateLoginTokenRequest.DiscardUnknown(m)
+func (m *ChangePasswordRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_ChangePasswordRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_UpdateLoginTokenRequest proto.InternalMessageInfo
+var xxx_messageInfo_ChangePasswordRequest proto.InternalMessageInfo
 
-func (m *UpdateLoginTokenRequest) GetOldLoginToken() string {
+func (m *ChangePasswordRequest) GetCurrentPassword() string {
 	if m != nil {
-		return m.OldLoginToken
+		return m.CurrentPassword
 	}
 	return ""
 }
 
-func (m *UpdateLoginTokenRequest) GetNewLoginToken() string {
+func (m *ChangePasswordRequest) GetNewPassword() string {
 	if m != nil {
-		return m.NewLoginToken
+		return m.NewPassword
 	}
 	return ""
 }
 
-type UpdateLoginTokenResponse struct {
+type ChangePasswordResponse struct {
 	Result               string   `protobuf:"bytes,1,opt,name=result,proto3" json:"result,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *UpdateLoginTokenResponse) Reset()         { *m = UpdateLoginTokenResponse{} }
-func (m *UpdateLoginTokenResponse) String() string { return proto.CompactTextString(m) }
-func (*UpdateLoginTokenResponse) ProtoMessage()    {}
-func (*UpdateLoginTokenResponse) Descriptor() ([]byte, []int) {
+func (m *ChangePasswordResponse) Reset()         { *m = ChangePasswordResponse{} }
+func (m *ChangePasswordResponse) String() string { return proto.CompactTextString(m) }
+func (*ChangePasswordResponse) ProtoMessage()    {}
+func (*ChangePasswordResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_116e343673f7ffaf, []int{3}
 }
 
-func (m *UpdateLoginTokenResponse) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_UpdateLoginTokenResponse.Unmarshal(m, b)
+func (m *ChangePasswordResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ChangePasswordResponse.Unmarshal(m, b)
 }
-func (m *UpdateLoginTokenResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_UpdateLoginTokenResponse.Marshal(b, m, deterministic)
+func (m *ChangePasswordResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ChangePasswordResponse.Marshal(b, m, deterministic)
 }
-func (m *UpdateLoginTokenResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_UpdateLoginTokenResponse.Merge(m, src)
+func (m *ChangePasswordResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ChangePasswordResponse.Merge(m, src)
 }
-func (m *UpdateLoginTokenResponse) XXX_Size() int {
-	return xxx_messageInfo_UpdateLoginTokenResponse.Size(m)
+func (m *ChangePasswordResponse) XXX_Size() int {
+	return xxx_messageInfo_ChangePasswordResponse.Size(m)
 }
-func (m *UpdateLoginTokenResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_UpdateLoginTokenResponse.DiscardUnknown(m)
+func (m *ChangePasswordResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_ChangePasswordResponse.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_UpdateLoginTokenResponse proto.InternalMessageInfo
+var xxx_messageInfo_ChangePasswordResponse proto.InternalMessageInfo
 
-func (m *UpdateLoginTokenResponse) GetResult() string {
+func (m *ChangePasswordResponse) GetResult() string {
 	if m != nil {
 		return m.Result
 	}
@@ -302,8 +302,8 @@ var xxx_messageInfo_LogoutResponse proto.InternalMessageInfo
 func init() {
 	proto.RegisterType((*LoginRequest)(nil), "proxy.LoginRequest")
 	proto.RegisterType((*LoginResponse)(nil), "proxy.LoginResponse")
-	proto.RegisterType((*UpdateLoginTokenRequest)(nil), "proxy.UpdateLoginTokenRequest")
-	proto.RegisterType((*UpdateLoginTokenResponse)(nil), "proxy.UpdateLoginTokenResponse")
+	proto.RegisterType((*ChangePasswordRequest)(nil), "proxy.ChangePasswordRequest")
+	proto.RegisterType((*ChangePasswordResponse)(nil), "proxy.ChangePasswordResponse")
 	proto.RegisterType((*LogoutRequest)(nil), "proxy.LogoutRequest")
 	proto.RegisterType((*LogoutResponse)(nil), "proxy.LogoutResponse")
 }
@@ -313,29 +313,31 @@ func init() {
 }
 
 var fileDescriptor_116e343673f7ffaf = []byte{
-	// 352 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x74, 0x92, 0x4f, 0x4f, 0x32, 0x31,
-	0x10, 0xc6, 0xdf, 0xe5, 0x85, 0x8d, 0x8e, 0xa2, 0xa4, 0xfe, 0xdb, 0xec, 0x01, 0x49, 0xc3, 0x81,
-	0x13, 0x07, 0x34, 0xf1, 0xac, 0x07, 0x12, 0x0d, 0x1a, 0xb3, 0x81, 0x8b, 0xb7, 0x85, 0x4e, 0x84,
-	0xb8, 0xb4, 0x6b, 0xdb, 0x8d, 0xf0, 0x1d, 0xfd, 0x02, 0x7e, 0x1b, 0xd3, 0x52, 0xa0, 0x8b, 0xe1,
-	0x38, 0xbf, 0x79, 0x66, 0x9e, 0x99, 0x69, 0x01, 0x0a, 0x85, 0xb2, 0x9b, 0x4b, 0xa1, 0x05, 0xa9,
-	0xe5, 0x52, 0x2c, 0x96, 0xf4, 0x09, 0x8e, 0x07, 0xe2, 0x7d, 0xc6, 0x13, 0xfc, 0x2c, 0x50, 0x69,
-	0x12, 0xc3, 0xc1, 0x9c, 0xe3, 0x5c, 0xf0, 0xd9, 0x24, 0x0a, 0x5a, 0x41, 0xe7, 0x30, 0xd9, 0xc4,
-	0xa4, 0x09, 0x90, 0x19, 0xed, 0x50, 0x7c, 0x20, 0x8f, 0x2a, 0x36, 0xeb, 0x11, 0xfa, 0x13, 0x40,
-	0xdd, 0x35, 0x53, 0xb9, 0xe0, 0x0a, 0x4d, 0x85, 0xb1, 0x7c, 0x45, 0x94, 0x8f, 0xcc, 0xf5, 0xf3,
-	0x88, 0xc9, 0x73, 0xc1, 0xd0, 0xe5, 0x5d, 0xc7, 0x2d, 0x21, 0x2d, 0x38, 0x32, 0xd1, 0x3d, 0x63,
-	0x12, 0x95, 0x8a, 0xfe, 0x5b, 0x81, 0x8f, 0x8c, 0x62, 0xaa, 0xb3, 0x49, 0x1f, 0x31, 0x49, 0x35,
-	0x46, 0xd5, 0x56, 0xd0, 0x09, 0x12, 0x1f, 0x19, 0x0f, 0x13, 0x3e, 0xa7, 0x8b, 0x3e, 0x62, 0x54,
-	0xb3, 0x02, 0x8f, 0x90, 0x36, 0xd4, 0x27, 0xd3, 0x74, 0xc6, 0x5f, 0x04, 0xc3, 0xe1, 0x32, 0xc7,
-	0x28, 0xb4, 0x2e, 0x65, 0x48, 0x11, 0xae, 0x46, 0x39, 0x4b, 0x35, 0x0e, 0x36, 0xfb, 0xae, 0x4f,
-	0xd6, 0x86, 0xba, 0xc8, 0xd8, 0x96, 0xbb, 0x3d, 0xcb, 0xd0, 0xa8, 0x38, 0x7e, 0x0d, 0x76, 0xef,
-	0x57, 0x86, 0xb4, 0x07, 0xd1, 0x5f, 0x1b, 0x77, 0xcc, 0x4b, 0x08, 0x25, 0xaa, 0x22, 0xd3, 0xce,
-	0xc0, 0x45, 0xf4, 0xd4, 0x5e, 0x5d, 0x14, 0xda, 0x0d, 0x44, 0x1b, 0x70, 0xb2, 0x06, 0xab, 0xd2,
-	0xde, 0x77, 0x00, 0xd5, 0x91, 0x42, 0x49, 0x6e, 0xa1, 0x66, 0x3b, 0x93, 0xb3, 0xae, 0x7d, 0xff,
-	0xae, 0xff, 0xf8, 0xf1, 0x79, 0x19, 0xae, 0x8a, 0xe9, 0x3f, 0x32, 0x82, 0xc6, 0xee, 0x54, 0xa4,
-	0xe9, 0xb4, 0x7b, 0xae, 0x12, 0x5f, 0xef, 0xcd, 0x6f, 0xda, 0xde, 0x41, 0xb8, 0x9a, 0x93, 0x78,
-	0xc6, 0xdb, 0x3d, 0xe2, 0x8b, 0x1d, 0xba, 0x2e, 0x7c, 0xa8, 0xbe, 0x55, 0xf2, 0xf1, 0x38, 0xb4,
-	0x1f, 0xf9, 0xe6, 0x37, 0x00, 0x00, 0xff, 0xff, 0x72, 0x6e, 0xc6, 0xc8, 0xd6, 0x02, 0x00, 0x00,
+	// 370 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x74, 0x92, 0x4d, 0x4f, 0xf2, 0x40,
+	0x10, 0xc7, 0x9f, 0xf2, 0x40, 0xa3, 0x23, 0x6f, 0x59, 0x85, 0x34, 0x8d, 0x1a, 0x6c, 0x3c, 0xe0,
+	0x85, 0x18, 0x35, 0xf1, 0xac, 0x26, 0x24, 0x1a, 0x5f, 0x48, 0x83, 0x17, 0x2f, 0xa6, 0xb4, 0x13,
+	0x20, 0xc2, 0x6e, 0xdd, 0xdd, 0x06, 0xf8, 0x82, 0x7e, 0x07, 0xbf, 0x8d, 0xd9, 0x65, 0x0b, 0x0b,
+	0xd1, 0xe3, 0xfc, 0xe6, 0x3f, 0xf3, 0xdf, 0x99, 0x59, 0x80, 0x4c, 0x20, 0xef, 0xa4, 0x9c, 0x49,
+	0x46, 0x4a, 0x29, 0x67, 0xf3, 0x45, 0xf0, 0x00, 0xe5, 0x47, 0x36, 0x1c, 0xd3, 0x10, 0x3f, 0x33,
+	0x14, 0x92, 0xf8, 0xb0, 0x33, 0xa5, 0x38, 0x65, 0x74, 0x1c, 0x7b, 0x4e, 0xcb, 0x69, 0xef, 0x86,
+	0xab, 0x98, 0x1c, 0x03, 0x4c, 0x94, 0xb6, 0xcf, 0x3e, 0x90, 0x7a, 0x05, 0x9d, 0xb5, 0x48, 0xf0,
+	0xed, 0x40, 0xc5, 0x34, 0x13, 0x29, 0xa3, 0x02, 0x55, 0x85, 0xb2, 0xec, 0x21, 0xf2, 0xfb, 0xc4,
+	0xf4, 0xb3, 0x88, 0xca, 0x53, 0x96, 0xa0, 0xc9, 0x9b, 0x8e, 0x6b, 0x42, 0x5a, 0xb0, 0xa7, 0xa2,
+	0x9b, 0x24, 0xe1, 0x28, 0x84, 0xf7, 0x5f, 0x0b, 0x6c, 0xa4, 0x14, 0x23, 0x39, 0x89, 0xbb, 0x88,
+	0x61, 0x24, 0xd1, 0x2b, 0xb6, 0x9c, 0xb6, 0x13, 0xda, 0x48, 0x79, 0xa8, 0xf0, 0x29, 0x9a, 0x77,
+	0x11, 0xbd, 0x92, 0x16, 0x58, 0x84, 0x9c, 0x42, 0x25, 0x1e, 0x45, 0x63, 0xfa, 0xcc, 0x12, 0xec,
+	0x2f, 0x52, 0xf4, 0x5c, 0xed, 0xb2, 0x09, 0x03, 0x84, 0xc6, 0xdd, 0x28, 0xa2, 0x43, 0xec, 0x45,
+	0x42, 0xcc, 0x18, 0x4f, 0xf2, 0x85, 0x9d, 0x41, 0x3d, 0xce, 0x38, 0x47, 0x2a, 0xdf, 0x53, 0x93,
+	0x32, 0x83, 0xd6, 0x0c, 0xcf, 0x2b, 0xc8, 0x09, 0x94, 0x29, 0xce, 0xd6, 0xb2, 0x82, 0x19, 0x07,
+	0x67, 0xb9, 0x24, 0x38, 0x87, 0xe6, 0xb6, 0x8d, 0x59, 0x65, 0x13, 0x5c, 0x8e, 0x22, 0x9b, 0x48,
+	0xd3, 0xdd, 0x44, 0x41, 0x4d, 0xef, 0x9c, 0x65, 0xd2, 0x3c, 0x28, 0xa8, 0x43, 0x35, 0x07, 0xcb,
+	0xd2, 0x8b, 0x2f, 0x07, 0x8a, 0xaf, 0x02, 0x39, 0xb9, 0x82, 0x92, 0xbe, 0x0f, 0xd9, 0xef, 0xe8,
+	0xeb, 0x77, 0xec, 0xd3, 0xfb, 0x07, 0x9b, 0x70, 0x59, 0x1c, 0xfc, 0x23, 0x2f, 0x50, 0xdd, 0x7c,
+	0x13, 0x39, 0x34, 0xca, 0x5f, 0x37, 0xe2, 0x1f, 0xfd, 0x91, 0x5d, 0x35, 0xbc, 0x06, 0x77, 0xf9,
+	0x42, 0x62, 0x59, 0xae, 0x27, 0xf0, 0x1b, 0x5b, 0x34, 0x2f, 0xbc, 0x2d, 0xbe, 0x15, 0xd2, 0xc1,
+	0xc0, 0xd5, 0x1f, 0xf8, 0xf2, 0x27, 0x00, 0x00, 0xff, 0xff, 0x57, 0x29, 0x51, 0xe4, 0xce, 0x02,
+	0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -351,7 +353,7 @@ const _ = grpc.SupportPackageIsVersion6
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type UserClient interface {
 	Login(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*LoginResponse, error)
-	UpdateLoginToken(ctx context.Context, in *UpdateLoginTokenRequest, opts ...grpc.CallOption) (*UpdateLoginTokenResponse, error)
+	ChangePassword(ctx context.Context, in *ChangePasswordRequest, opts ...grpc.CallOption) (*ChangePasswordResponse, error)
 	Logout(ctx context.Context, in *LogoutRequest, opts ...grpc.CallOption) (*LogoutResponse, error)
 }
 
@@ -372,9 +374,9 @@ func (c *userClient) Login(ctx context.Context, in *LoginRequest, opts ...grpc.C
 	return out, nil
 }
 
-func (c *userClient) UpdateLoginToken(ctx context.Context, in *UpdateLoginTokenRequest, opts ...grpc.CallOption) (*UpdateLoginTokenResponse, error) {
-	out := new(UpdateLoginTokenResponse)
-	err := c.cc.Invoke(ctx, "/proxy.User/UpdateLoginToken", in, out, opts...)
+func (c *userClient) ChangePassword(ctx context.Context, in *ChangePasswordRequest, opts ...grpc.CallOption) (*ChangePasswordResponse, error) {
+	out := new(ChangePasswordResponse)
+	err := c.cc.Invoke(ctx, "/proxy.User/ChangePassword", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -393,7 +395,7 @@ func (c *userClient) Logout(ctx context.Context, in *LogoutRequest, opts ...grpc
 // UserServer is the server API for User service.
 type UserServer interface {
 	Login(context.Context, *LoginRequest) (*LoginResponse, error)
-	UpdateLoginToken(context.Context, *UpdateLoginTokenRequest) (*UpdateLoginTokenResponse, error)
+	ChangePassword(context.Context, *ChangePasswordRequest) (*ChangePasswordResponse, error)
 	Logout(context.Context, *LogoutRequest) (*LogoutResponse, error)
 }
 
@@ -404,8 +406,8 @@ type UnimplementedUserServer struct {
 func (*UnimplementedUserServer) Login(ctx context.Context, req *LoginRequest) (*LoginResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Login not implemented")
 }
-func (*UnimplementedUserServer) UpdateLoginToken(ctx context.Context, req *UpdateLoginTokenRequest) (*UpdateLoginTokenResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method UpdateLoginToken not implemented")
+func (*UnimplementedUserServer) ChangePassword(ctx context.Context, req *ChangePasswordRequest) (*ChangePasswordResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ChangePassword not implemented")
 }
 func (*UnimplementedUserServer) Logout(ctx context.Context, req *LogoutRequest) (*LogoutResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Logout not implemented")
@@ -433,20 +435,20 @@ func _User_Login_Handler(srv interface{}, ctx context.Context, dec func(interfac
 	return interceptor(ctx, in, info, handler)
 }
 
-func _User_UpdateLoginToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UpdateLoginTokenRequest)
+func _User_ChangePassword_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ChangePasswordRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(UserServer).UpdateLoginToken(ctx, in)
+		return srv.(UserServer).ChangePassword(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/proxy.User/UpdateLoginToken",
+		FullMethod: "/proxy.User/ChangePassword",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(UserServer).UpdateLoginToken(ctx, req.(*UpdateLoginTokenRequest))
+		return srv.(UserServer).ChangePassword(ctx, req.(*ChangePasswordRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -478,8 +480,8 @@ var _User_serviceDesc = grpc.ServiceDesc{
 			Handler:    _User_Login_Handler,
 		},
 		{
-			MethodName: "UpdateLoginToken",
-			Handler:    _User_UpdateLoginToken_Handler,
+			MethodName: "ChangePassword",
+			Handler:    _User_ChangePassword_Handler,
 		},
 		{
 			MethodName: "Logout",
