@@ -19,11 +19,13 @@ Clone, compile the source code and run the binary executable file, you will have
 
 The latest document/tutorial has been moved to [OmniBOLT - Developers](https://omnilaboratory.github.io/obd/#/OBD-README).  
 
-To know how OBD works, jump to the [OmniBOLT - Architecture](https://omnilaboratory.github.io/obd/#/OBD-README).  
+To know how OBD works, jump to the [OmniBOLT - Architecture](https://omnilaboratory.github.io/obd/#/Architecture).  
 
 The latest features and ETA is here: [OmniBOLT - Features and Roadmap](https://omnilaboratory.github.io/obd/#/features).  
 
-Graphic terminal that assists you get started quikly is here: [OmniBOLT - GUI Terminal](https://omnilaboratory.github.io/obd/#/GUI-tool). 
+Graphic terminal that assists you get started quickly is here: [OmniBOLT - GUI Terminal](https://omnilaboratory.github.io/obd/#/GUI-tool). 
+
+Join our community to get the latest progress: [communities](https://omnilaboratory.github.io/obd/#/communities)
 
 Video tutorials can be found here:   
 
