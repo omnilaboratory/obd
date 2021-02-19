@@ -38,7 +38,7 @@ func startServer() {
 	s := grpc.NewServer()
 	proxy.RegisterProxyServer(s, &rpcServer{})
 	proxy.RegisterUserServer(s, &rpc.UserRpc{})
-
+	proxy.RegisterChannelServer(s, &rpc.ChannelRpc{})
 	s.Serve(lis)
 }
 

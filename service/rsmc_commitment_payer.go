@@ -292,6 +292,8 @@ func (this *commitmentTxManager) OnAliceSignC2aRawTxAtAliceSide(msg bean.Request
 	toAliceResult.CurrTempAddressPubKey = p2pData.CurrTempAddressPubKey
 	toAliceResult.CommitmentTxHash = p2pData.CommitmentTxHash
 	toAliceResult.Amount = p2pData.Amount
+	toAliceResult.AmountA = latestCommitmentTxInfo.AmountToRSMC
+	toAliceResult.AmountB = latestCommitmentTxInfo.AmountToCounterparty
 	log.Println("rsmc step 2 end ", time.Now())
 	return toAliceResult, p2pData, nil
 }

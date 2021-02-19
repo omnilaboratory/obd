@@ -33,8 +33,11 @@ func (client *Client) Write() {
 				_ = client.Socket.WriteMessage(websocket.CloseMessage, []byte{})
 				return
 			}
-			//log.Println("send data to client ", string(data))
-			_ = client.Socket.WriteMessage(websocket.TextMessage, data)
+			err := client.Socket.WriteMessage(websocket.TextMessage, data)
+			if err != nil {
+				log.Println("fail to send data to client ", string(data))
+				log.Println(err)
+			}
 		}
 	}
 }

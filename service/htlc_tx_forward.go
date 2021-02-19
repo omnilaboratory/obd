@@ -332,7 +332,8 @@ func (service *htlcForwardTxManager) GetResponseFromTrackerOfPayerRequestFindPat
 	currChannelInfo := dao.ChannelInfo{}
 	err = user.Db.Select(
 		q.Eq("ChannelId", splitArr[0]),
-		q.Eq("CurrState", bean.ChannelState_LockByTracker),
+		q.Or(q.Eq("CurrState", bean.ChannelState_CanUse),
+			q.Eq("CurrState", bean.ChannelState_LockByTracker)),
 		q.Or(
 			q.Eq("PeerIdA", user.PeerId),
 			q.Eq("PeerIdB", user.PeerId))).First(&currChannelInfo)

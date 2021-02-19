@@ -41,7 +41,6 @@ func (client *Client) channelModule(msg bean.RequestMessage) (enum.SendTargetTyp
 			if err != nil {
 				data = err.Error()
 				status = false
-
 				msg.Type = enum.MsgType_RecvChannelAccept_33
 				client.SendToMyself(msg.Type, status, data)
 			}

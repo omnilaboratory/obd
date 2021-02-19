@@ -32,9 +32,9 @@ message LogoutResponse {
 }
 
 service User{
-  rpc Login(LoginRequest) returns (LoginResponse){}
-  rpc ChangePassword(ChangePasswordRequest) returns (ChangePasswordResponse){}
-  rpc Logout(LogoutRequest) returns(LogoutResponse) {}
+  rpc Login(LoginRequest) returns (LoginResponse);
+  rpc ChangePassword(ChangePasswordRequest) returns (ChangePasswordResponse);
+  rpc Logout(LogoutRequest) returns(LogoutResponse);
 }
 
 

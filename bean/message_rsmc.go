@@ -29,7 +29,9 @@ type AliceSignedRsmcDataForC2a struct {
 type AliceSignedRsmcDataForC2aResult struct {
 	ChannelId             string  `json:"channel_id"` //the global channel id.
 	CommitmentTxHash      string  `json:"commitment_tx_hash"`
-	Amount                float64 `json:"amount"` //amount of the payment
+	Amount                float64 `json:"amount"`   //amount of the payment
+	AmountA               float64 `json:"amount_a"` //amount of the payment
+	AmountB               float64 `json:"amount_b"` //amount of the payment
 	CurrTempAddressPubKey string  `json:"curr_temp_address_pub_key"`
 }
 
