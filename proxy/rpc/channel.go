@@ -14,6 +14,7 @@ type ChannelRpc struct {
 }
 
 func (s *ChannelRpc) OpenChannel(ctx context.Context, in *pb.OpenChannelRequest) (*pb.OpenChannelResponse, error) {
+	log.Println("OpenChannel")
 	if connObd == nil {
 		return nil, errors.New("please login first")
 	}
@@ -56,6 +57,7 @@ func (s *ChannelRpc) OpenChannel(ctx context.Context, in *pb.OpenChannelRequest)
 }
 
 func (s *ChannelRpc) FundChannel(ctx context.Context, in *pb.FundChannelRequest) (*pb.FundChannelResponse, error) {
+	log.Println("FundChannel")
 	if connObd == nil {
 		return nil, errors.New("please login first")
 	}
@@ -106,6 +108,7 @@ func (s *ChannelRpc) FundChannel(ctx context.Context, in *pb.FundChannelRequest)
 	}
 }
 func (s *ChannelRpc) RsmcPayment(ctx context.Context, in *pb.RsmcPaymentRequest) (*pb.RsmcPaymentResponse, error) {
+	log.Println("RsmcPayment")
 	if connObd == nil {
 		return nil, errors.New("please login first")
 	}
@@ -133,22 +136,26 @@ func (s *ChannelRpc) RsmcPayment(ctx context.Context, in *pb.RsmcPaymentRequest)
 
 	sendMsgToObd(request, in.RecipientInfo.RecipientNodePeerId, in.RecipientInfo.RecipientUserPeerId, enum.MsgType_CommitmentTx_SendCommitmentTransactionCreated_351)
 
-	data := <-rsmcChan
-
-	if data.Status == false {
-		return nil, errors.New(data.Result.(string))
+	for {
+		data := <-rsmcChan
+		if data.Status == false {
+			return nil, errors.New(data.Result.(string))
+		}
+		if data.Type == enum.MsgType_ClientSign_CommitmentTx_AliceSignC2a_360 {
+			dataResult := data.Result.(map[string]interface{})
+			resp := &pb.RsmcPaymentResponse{
+				ChannelId: dataResult["channel_id"].(string),
+				AmountA:   dataResult["amount_a"].(float64),
+				AmountB:   dataResult["amount_b"].(float64),
+			}
+			return resp, nil
+		}
 	}
 
-	dataResult := data.Result.(map[string]interface{})
-	resp := &pb.RsmcPaymentResponse{
-		ChannelId: dataResult["channel_id"].(string),
-		AmountA:   dataResult["amount_a"].(float64),
-		AmountB:   dataResult["amount_b"].(float64),
-	}
-	return resp, nil
 }
 
 func (s *ChannelRpc) AddInvoice(ctx context.Context, in *pb.Invoice) (*pb.AddInvoiceResponse, error) {
+	log.Println("AddInvoice")
 	if connObd == nil {
 		return nil, errors.New("please login first")
 	}
@@ -185,6 +192,7 @@ func (s *ChannelRpc) AddInvoice(ctx context.Context, in *pb.Invoice) (*pb.AddInv
 }
 
 func (s *ChannelRpc) SendPayment(ctx context.Context, in *pb.SendPaymentRequest) (*pb.PaymentResp, error) {
+	log.Println("SendPayment")
 	if connObd == nil {
 		return nil, errors.New("please login first")
 	}

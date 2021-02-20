@@ -43,5 +43,6 @@ func startServer() {
 }
 
 func main() {
+	log.SetFlags(log.Ldate | log.Lmicroseconds | log.Lshortfile)
 	startServer()
 }

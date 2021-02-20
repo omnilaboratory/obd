@@ -6,10 +6,8 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/omnilaboratory/obd/bean"
 	"github.com/omnilaboratory/obd/bean/enum"
-	"github.com/omnilaboratory/obd/config"
 	"github.com/omnilaboratory/obd/proxy/pb"
 	"log"
-	"net/url"
 	"strings"
 )
 
@@ -19,22 +17,9 @@ var currUserInfo *pb.LoginResponse
 type UserRpc struct {
 }
 
-func init() {
-	u := url.URL{Scheme: "ws", Host: "127.0.0.1:60020", Path: "/ws" + config.ChainNodeType}
-	log.Printf("begin to connect to tracker: %s", u.String())
-
-	var err error
-	connObd, _, err = websocket.DefaultDialer.Dial(u.String(), nil)
-	if err != nil {
-		log.Println("fail to dial obd:", err)
-	}
-	connObd.SetReadLimit(1 << 24)
-
-	go readDataFromObd()
-}
-
 func (user *UserRpc) Login(ctx context.Context, in *pb.LoginRequest) (resp *pb.LoginResponse, err error) {
 
+	log.Println("Login")
 	if len(in.LoginToken) < 6 {
 		return nil, errors.New("wrong login_token")
 	}
@@ -58,6 +43,7 @@ func (user *UserRpc) Login(ctx context.Context, in *pb.LoginRequest) (resp *pb.L
 }
 
 func (user *UserRpc) Logout(ctx context.Context, in *pb.LogoutRequest) (resp *pb.LogoutResponse, err error) {
+	log.Println("Logout")
 	if connObd == nil {
 		return nil, errors.New("please login first")
 	}
@@ -77,6 +63,7 @@ func (user *UserRpc) Logout(ctx context.Context, in *pb.LogoutRequest) (resp *pb
 }
 
 func (user *UserRpc) ChangePassword(ctx context.Context, in *pb.ChangePasswordRequest) (resp *pb.ChangePasswordResponse, err error) {
+	log.Println("ChangePassword")
 	if connObd == nil {
 		return nil, errors.New("please login first")
 	}

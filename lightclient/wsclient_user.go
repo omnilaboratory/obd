@@ -37,10 +37,12 @@ func (client *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, 
 		if globalWsClientManager.OnlineClientMap[peerId] != nil {
 			if globalWsClientManager.OnlineClientMap[peerId].User.IsAdmin {
 				client.User = globalWsClientManager.OnlineClientMap[peerId].User
+				globalWsClientManager.OnlineClientMap[peerId] = client
 			} else {
 				if isAdmin {
 					client.User = globalWsClientManager.OnlineClientMap[peerId].User
 					client.User.IsAdmin = true
+					globalWsClientManager.OnlineClientMap[peerId] = client
 				}
 			}
 		}
