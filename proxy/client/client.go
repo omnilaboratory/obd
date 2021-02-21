@@ -16,30 +16,27 @@ func main() {
 	}
 	defer conn.Close()
 	ctxb := context.Background()
-	//proxyClient := proxy.NewProxyClient(conn)
+	proxyClient := proxy.NewProxyClient(conn)
 	//response, err := proxyClient.Hello(ctxb, &proxy.HelloRequest{Sayhi: "Test  obd grpc 你好"})
 	//if err != nil {
 	//	log.Println(err)
 	//}
 	//log.Println(response)
 
-	userClient := proxy.NewUserClient(conn)
-	login, err := userClient.Login(ctxb, &proxy.LoginRequest{
+	login, err := proxyClient.Login(ctxb, &proxy.LoginRequest{
 		Mnemonic:   "dawn enter attitude merry cliff stone rely convince team warfare wasp whisper",
 		LoginToken: "mvgcnx",
 	})
 
 	log.Println(login)
 
-	//token, err := userClient.ChangePassword(ctxb, &proxy.ChangePasswordRequest{
+	//token, err := proxyClient.ChangePassword(ctxb, &proxy.ChangePasswordRequest{
 	//	CurrentPassword: "mvgcnx",
 	//	NewPassword:     "mvgcnx",
 	//})
 	//log.Println(token)
 
-	channelClient := proxy.NewChannelClient(conn)
-
-	//channelResponse, err := channelClient.OpenChannel(ctxb, &proxy.OpenChannelRequest{
+	//channelResponse, err := proxyClient.OpenChannel(ctxb, &proxy.OpenChannelRequest{
 	//	RecipientInfo: &proxy.RecipientNodeInfo{
 	//		RecipientNodePeerId: "QmccE4s2uhEXrJXE778NChn1ed8NyWNyAHH23mP7f9NM3L",
 	//		RecipientUserPeerId: "63167817c979ade9e42f3204404c1513a4b1b4e9eea654c9498ed9cc920dbb36"},
@@ -52,7 +49,7 @@ func main() {
 	//}
 	//log.Println(channelResponse.TemplateChannelId)
 	//
-	//fundChannel, err := channelClient.FundChannel(ctxb, &proxy.FundChannelRequest{
+	//fundChannel, err := proxyClient.FundChannel(ctxb, &proxy.FundChannelRequest{
 	//	RecipientInfo: &proxy.RecipientNodeInfo{
 	//		RecipientNodePeerId: "QmccE4s2uhEXrJXE778NChn1ed8NyWNyAHH23mP7f9NM3L",
 	//		RecipientUserPeerId: "63167817c979ade9e42f3204404c1513a4b1b4e9eea654c9498ed9cc920dbb36"},
@@ -63,11 +60,11 @@ func main() {
 	//})
 	//log.Println(fundChannel.ChannelId)
 
-	payment, err := channelClient.RsmcPayment(ctxb, &proxy.RsmcPaymentRequest{
+	payment, err := proxyClient.RsmcPayment(ctxb, &proxy.RsmcPaymentRequest{
 		RecipientInfo: &proxy.RecipientNodeInfo{
 			RecipientNodePeerId: "QmccE4s2uhEXrJXE778NChn1ed8NyWNyAHH23mP7f9NM3L",
 			RecipientUserPeerId: "63167817c979ade9e42f3204404c1513a4b1b4e9eea654c9498ed9cc920dbb36"},
-		ChannelId: "840ea30905fca26533de2de38f1d41314a9c763f6202db62c3297c6c57a70921",
+		ChannelId: "d91836282058158348162e37b62a6dfae4eedd3739960111632a6ec8fe92162b",
 		Amount:    0.001,
 	})
 	if err != nil {
@@ -75,7 +72,7 @@ func main() {
 	}
 	log.Println(payment)
 
-	//invoice, err := channelClient.AddInvoice(ctxb, &proxy.Invoice{
+	//invoice, err := proxyClient.AddInvoice(ctxb, &proxy.Invoice{
 	//	CltvExpiry: "2021-08-15",
 	//	Value:      0.001,
 	//	PropertyId: 137,
@@ -83,7 +80,7 @@ func main() {
 	//})
 	//log.Println(invoice.PaymentRequest)
 
-	htlcPayment, err := channelClient.SendPayment(ctxb, &proxy.SendPaymentRequest{
+	htlcPayment, err := proxyClient.SendPayment(ctxb, &proxy.SendPaymentRequest{
 		PaymentRequest: "obtb100000s1pqzyfnpwQmccE4s2uhEXrJXE778NChn1ed8NyWNyAHH23mP7f9NM3Luzq63167817c979ade9e42f3204404c1513a4b1b4e9eea654c9498ed9cc920dbb36hzz02a56bedfb2aa9772fd984a0a6e83f25713a2cc8db7d9a29c95b7d9d62041306c2xq8ps306yqtqp0dqtdescription34x",
 	})
 	if err != nil {
@@ -91,6 +88,6 @@ func main() {
 	}
 	log.Println(htlcPayment)
 
-	//logout, err := userClient.Logout(ctxb, &proxy.LogoutRequest{})
+	//logout, err := proxyClient.Logout(ctxb, &proxy.LogoutRequest{})
 	//log.Println(logout)
 }

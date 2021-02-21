@@ -14,10 +14,7 @@ import (
 var connObd *websocket.Conn
 var currUserInfo *pb.LoginResponse
 
-type UserRpc struct {
-}
-
-func (user *UserRpc) Login(ctx context.Context, in *pb.LoginRequest) (resp *pb.LoginResponse, err error) {
+func (server *RpcServer) Login(ctx context.Context, in *pb.LoginRequest) (resp *pb.LoginResponse, err error) {
 
 	log.Println("Login")
 	if len(in.LoginToken) < 6 {
@@ -42,7 +39,7 @@ func (user *UserRpc) Login(ctx context.Context, in *pb.LoginRequest) (resp *pb.L
 	return resp, nil
 }
 
-func (user *UserRpc) Logout(ctx context.Context, in *pb.LogoutRequest) (resp *pb.LogoutResponse, err error) {
+func (server *RpcServer) Logout(ctx context.Context, in *pb.LogoutRequest) (resp *pb.LogoutResponse, err error) {
 	log.Println("Logout")
 	if connObd == nil {
 		return nil, errors.New("please login first")
@@ -62,7 +59,7 @@ func (user *UserRpc) Logout(ctx context.Context, in *pb.LogoutRequest) (resp *pb
 	return &pb.LogoutResponse{}, nil
 }
 
-func (user *UserRpc) ChangePassword(ctx context.Context, in *pb.ChangePasswordRequest) (resp *pb.ChangePasswordResponse, err error) {
+func (server *RpcServer) ChangePassword(ctx context.Context, in *pb.ChangePasswordRequest) (resp *pb.ChangePasswordResponse, err error) {
 	log.Println("ChangePassword")
 	if connObd == nil {
 		return nil, errors.New("please login first")

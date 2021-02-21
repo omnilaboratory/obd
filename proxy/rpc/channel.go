@@ -10,10 +10,7 @@ import (
 	"log"
 )
 
-type ChannelRpc struct {
-}
-
-func (s *ChannelRpc) OpenChannel(ctx context.Context, in *pb.OpenChannelRequest) (*pb.OpenChannelResponse, error) {
+func (s *RpcServer) OpenChannel(ctx context.Context, in *pb.OpenChannelRequest) (*pb.OpenChannelResponse, error) {
 	log.Println("OpenChannel")
 	if connObd == nil {
 		return nil, errors.New("please login first")
@@ -56,7 +53,7 @@ func (s *ChannelRpc) OpenChannel(ctx context.Context, in *pb.OpenChannelRequest)
 	}
 }
 
-func (s *ChannelRpc) FundChannel(ctx context.Context, in *pb.FundChannelRequest) (*pb.FundChannelResponse, error) {
+func (s *RpcServer) FundChannel(ctx context.Context, in *pb.FundChannelRequest) (*pb.FundChannelResponse, error) {
 	log.Println("FundChannel")
 	if connObd == nil {
 		return nil, errors.New("please login first")
@@ -107,7 +104,7 @@ func (s *ChannelRpc) FundChannel(ctx context.Context, in *pb.FundChannelRequest)
 		}
 	}
 }
-func (s *ChannelRpc) RsmcPayment(ctx context.Context, in *pb.RsmcPaymentRequest) (*pb.RsmcPaymentResponse, error) {
+func (s *RpcServer) RsmcPayment(ctx context.Context, in *pb.RsmcPaymentRequest) (*pb.RsmcPaymentResponse, error) {
 	log.Println("RsmcPayment")
 	if connObd == nil {
 		return nil, errors.New("please login first")
@@ -154,7 +151,7 @@ func (s *ChannelRpc) RsmcPayment(ctx context.Context, in *pb.RsmcPaymentRequest)
 
 }
 
-func (s *ChannelRpc) AddInvoice(ctx context.Context, in *pb.Invoice) (*pb.AddInvoiceResponse, error) {
+func (s *RpcServer) AddInvoice(ctx context.Context, in *pb.Invoice) (*pb.AddInvoiceResponse, error) {
 	log.Println("AddInvoice")
 	if connObd == nil {
 		return nil, errors.New("please login first")
@@ -191,7 +188,7 @@ func (s *ChannelRpc) AddInvoice(ctx context.Context, in *pb.Invoice) (*pb.AddInv
 	return resp, nil
 }
 
-func (s *ChannelRpc) SendPayment(ctx context.Context, in *pb.SendPaymentRequest) (*pb.PaymentResp, error) {
+func (s *RpcServer) SendPayment(ctx context.Context, in *pb.SendPaymentRequest) (*pb.PaymentResp, error) {
 	log.Println("SendPayment")
 	if connObd == nil {
 		return nil, errors.New("please login first")
