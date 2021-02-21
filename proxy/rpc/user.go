@@ -55,6 +55,8 @@ func (server *RpcServer) Logout(ctx context.Context, in *pb.LogoutRequest) (resp
 	if data.Status == true {
 		_ = connObd.Close()
 		connObd = nil
+	} else {
+		return nil, errors.New(data.Result.(string))
 	}
 	return &pb.LogoutResponse{}, nil
 }

@@ -91,11 +91,20 @@ func (client *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, 
 		}
 	case enum.MsgType_UserLogout_2002:
 		if client.User != nil {
-			data = client.User.PeerId + " logout"
-			status = true
-			client.SendToMyself(msg.Type, status, "logout success")
-			client.User.IsAdmin = false
-			client.Socket.Close()
+
+			exist := service.UserService.CheckExecutingTx(client.User)
+			if exist == false {
+				data = client.User.PeerId + " logout"
+				status = true
+			} else {
+				data = "exist executing tx ,can not logout"
+			}
+			client.SendToMyself(msg.Type, status, data)
+
+			if exist == false {
+				client.User.IsAdmin = false
+				client.Socket.Close()
+			}
 		} else {
 			client.SendToMyself(msg.Type, status, "please login")
 		}

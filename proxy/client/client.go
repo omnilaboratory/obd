@@ -88,6 +88,9 @@ func main() {
 	}
 	log.Println(htlcPayment)
 
-	//logout, err := proxyClient.Logout(ctxb, &proxy.LogoutRequest{})
-	//log.Println(logout)
+	logout, err := proxyClient.Logout(ctxb, &proxy.LogoutRequest{})
+	if err != nil {
+		log.Println(err)
+	}
+	log.Println(logout)
 }
