@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	proxy "github.com/omnilaboratory/obd/proxy/pb"
+	"github.com/omnilaboratory/obd/tool"
 	"google.golang.org/grpc"
 	"log"
 	"testing"
@@ -21,7 +22,7 @@ func TestLogin(t *testing.T) {
 
 	login, err := client.Login(ctxb, &proxy.LoginRequest{
 		Mnemonic:   "dawn enter attitude merry cliff stone rely convince team warfare wasp whisper",
-		LoginToken: "mjgwhdzx",
+		LoginToken: tool.SignMsgWithMd5([]byte("mjgwhdzx")),
 	})
 	log.Println(login)
 }

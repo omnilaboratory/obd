@@ -44,7 +44,7 @@ func CheckIsAdmin(loginToken string) bool {
 	}
 	localConfig := &dao.ObdConfig{}
 	_ = obdGlobalDB.Select().First(localConfig)
-	if localConfig.AdminLoginToken == loginToken {
+	if tool.SignMsgWithMd5([]byte(localConfig.AdminLoginToken)) == loginToken {
 		return true
 	}
 	return false
