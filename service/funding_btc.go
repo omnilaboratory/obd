@@ -11,6 +11,7 @@ import (
 	"github.com/omnilaboratory/obd/dao"
 	"github.com/omnilaboratory/obd/omnicore"
 	"github.com/omnilaboratory/obd/tool"
+	"github.com/shopspring/decimal"
 	"github.com/tidwall/gjson"
 	"log"
 	"strings"
@@ -910,4 +911,52 @@ func (service *fundingTransactionManager) AssetFundingTotalCount(user bean.User)
 			q.Eq("PeerIdA", user.PeerId),
 			q.Eq("PeerIdB", user.PeerId))).
 		Count(&dao.FundingTransaction{})
+}
+
+func (service *fundingTransactionManager) CheckChannelFund(msg bean.RequestMessage, user *bean.User) (channelInfo *dao.ChannelInfo, err error) {
+	funding := &bean.SendRequestFunding{}
+	err = json.Unmarshal([]byte(msg.Data), funding)
+	if err != nil {
+		return nil, err
+	}
+	if tool.CheckIsString(&funding.TemporaryChannelId) == false {
+		return nil, errors.New("empty temporary_channel_id")
+	}
+
+	channelInfo = &dao.ChannelInfo{}
+	_ = user.Db.Select(q.Eq("TemporaryChannelId", funding.TemporaryChannelId)).First(channelInfo)
+	if channelInfo.Id == 0 {
+		return nil, errors.New("not found the channel")
+	}
+
+	count, err := user.Db.Select(q.Eq("TemporaryChannelId", funding.TemporaryChannelId), q.Eq("IsFinish", true), q.Eq("Owner", user.PeerId)).Count(&dao.MinerFeeRedeemTransaction{})
+	if err != nil {
+		return nil, err
+	}
+	//log.Println("listunspent", array)
+	if count >= config.BtcNeedFundTimes {
+		return nil, errors.New("do not need fund btc more")
+	}
+
+	needAmount := decimal.NewFromFloat(GetBtcMinerFundMiniAmount()).Add(decimal.NewFromFloat(0.00001))
+	needAmount = needAmount.Mul(decimal.NewFromFloat(3.0)).Add(decimal.NewFromFloat(0.00001))
+	out, _ := needAmount.Round(8).Float64()
+	if funding.BtcAmount < out {
+		return nil, errors.New("btc balance greater :" + tool.FloatToString(out, 8))
+	}
+
+	balanceByAddress, err := conn2tracker.GetBalanceByAddress(channelInfo.FundingAddress)
+	if err != nil {
+		return nil, err
+	}
+	if balanceByAddress < funding.BtcAmount {
+		return nil, errors.New("not enough btc balance in address :" + channelInfo.FundingAddress)
+	}
+	omniBalanceObj := conn2tracker.OmniGetBalancesForAddress(channelInfo.FundingAddress, int(funding.PropertyId))
+	omniBalance := gjson.Get(omniBalanceObj, "balance").Float()
+	if omniBalance < funding.AssetAmount {
+		return nil, errors.New("not enough omni balance in address :" + channelInfo.FundingAddress + ": balance is " + tool.FloatToString(omniBalance, 8))
+	}
+
+	return channelInfo, nil
 }

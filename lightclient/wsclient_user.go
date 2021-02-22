@@ -30,16 +30,19 @@ func (client *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, 
 	switch msg.Type {
 	case enum.MsgType_UserLogin_2001:
 		mnemonic := gjson.Get(msg.Data, "mnemonic").String()
-		isAdmin := gjson.Get(msg.Data, "is_admin").Bool()
+		loginToken := gjson.Get(msg.Data, "login_token").Str
+		isAdmin := service.CheckIsAdmin(loginToken)
 
 		peerId := tool.GetUserPeerId(mnemonic)
 		if globalWsClientManager.OnlineClientMap[peerId] != nil {
 			if globalWsClientManager.OnlineClientMap[peerId].User.IsAdmin {
 				client.User = globalWsClientManager.OnlineClientMap[peerId].User
+				globalWsClientManager.OnlineClientMap[peerId] = client
 			} else {
 				if isAdmin {
 					client.User = globalWsClientManager.OnlineClientMap[peerId].User
 					client.User.IsAdmin = true
+					globalWsClientManager.OnlineClientMap[peerId] = client
 				}
 			}
 		}
@@ -88,19 +91,24 @@ func (client *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, 
 		}
 	case enum.MsgType_UserLogout_2002:
 		if client.User != nil {
-			data = client.User.PeerId + " logout"
-			status = true
-			client.SendToMyself(msg.Type, status, "logout success")
-			if client.User != nil {
-				delete(globalWsClientManager.OnlineClientMap, client.User.PeerId)
-				delete(service.OnlineUserMap, client.User.PeerId)
+
+			exist := service.UserService.CheckExecutingTx(client.User)
+			if exist == false {
+				data = client.User.PeerId + " logout"
+				status = true
+			} else {
+				data = "exist executing tx ,can not logout"
 			}
-			sendType = enum.SendTargetType_SendToExceptMe
-			client.User = nil
+			client.SendToMyself(msg.Type, status, data)
+
+			if exist == false {
+				client.User.IsAdmin = false
+				client.Socket.Close()
+			}
 		} else {
 			client.SendToMyself(msg.Type, status, "please login")
-			sendType = enum.SendTargetType_SendToSomeone
 		}
+		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_p2p_ConnectPeer_2003:
 		remoteNodeAddress := gjson.Get(msg.Data, "remote_node_address")
 		if remoteNodeAddress.Exists() == false {
@@ -133,6 +141,22 @@ func (client *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, 
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_HeartBeat_2007:
 		client.SendToMyself(msg.Type, true, data)
+		sendType = enum.SendTargetType_SendToSomeone
+	case enum.MsgType_User_UpdateAdminToken_2008:
+		oldLoginToken := gjson.Get(msg.Data, "current_password").Str
+		newLoginToken := gjson.Get(msg.Data, "new_password").Str
+		if client.User != nil && client.User.IsAdmin {
+			err := service.UpdateAdminLoginToken(oldLoginToken, newLoginToken)
+			if err != nil {
+				data = err.Error()
+			} else {
+				data = newLoginToken
+				status = true
+			}
+		} else {
+			data = errors.New("you are not the admin or login as admin").Error()
+		}
+		client.SendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
 	// Process GetMnemonic
 	case enum.MsgType_GetMnemonic_2004:

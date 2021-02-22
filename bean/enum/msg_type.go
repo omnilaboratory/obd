@@ -31,14 +31,15 @@ const (
 
 	// region
 	// Common messages, login is not required [-102000,-103000]
-	MsgType_UserLogin_2001            MsgType = -102001
-	MsgType_UserLogout_2002           MsgType = -102002
-	MsgType_p2p_ConnectPeer_2003      MsgType = -102003
-	MsgType_GetMnemonic_2004          MsgType = -102004
-	MsgType_GetObdNodeInfo_2005       MsgType = -102005
-	MsgType_GetMiniBtcFundAmount_2006 MsgType = -102006
-	MsgType_HeartBeat_2007            MsgType = -102007
-	MsgType_User_End_2099             MsgType = -102099
+	MsgType_UserLogin_2001             MsgType = -102001
+	MsgType_UserLogout_2002            MsgType = -102002
+	MsgType_p2p_ConnectPeer_2003       MsgType = -102003
+	MsgType_GetMnemonic_2004           MsgType = -102004
+	MsgType_GetObdNodeInfo_2005        MsgType = -102005
+	MsgType_GetMiniBtcFundAmount_2006  MsgType = -102006
+	MsgType_HeartBeat_2007             MsgType = -102007
+	MsgType_User_UpdateAdminToken_2008 MsgType = -102008
+	MsgType_User_End_2099              MsgType = -102099
 
 	MsgType_Core_GetNewAddress_2101                    MsgType = -102101
 	MsgType_Core_GetMiningInfo_2102                    MsgType = -102102
@@ -136,6 +137,7 @@ const (
 	MsgType_FundingSign_BtcSign_350     MsgType = -350
 	MsgType_FundingSign_RecvBtcSign_350 MsgType = -110350
 
+	MsgType_Funding_134                              MsgType = -100134
 	MsgType_FundingCreate_SendAssetFundingCreated_34 MsgType = -100034
 	// 客户端签名：alice签名C1a
 	MsgType_ClientSign_AssetFunding_AliceSignC1a_1034 MsgType = -101034
@@ -241,6 +243,8 @@ func CheckExist(msgType MsgType) bool {
 		return true
 	case MsgType_HeartBeat_2007:
 		return true
+	case MsgType_User_UpdateAdminToken_2008:
+		return true
 	case MsgType_Core_GetNewAddress_2101:
 		return true
 	case MsgType_Core_GetMiningInfo_2102:
@@ -308,6 +312,8 @@ func CheckExist(msgType MsgType) bool {
 	case MsgType_CheckChannelAddessExist_3156:
 		return true
 	case MsgType_SendChannelAccept_33:
+		return true
+	case MsgType_Funding_134:
 		return true
 	case MsgType_FundingCreate_SendAssetFundingCreated_34:
 		return true

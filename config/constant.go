@@ -9,9 +9,7 @@ import (
 )
 
 const (
-	Init_node_chain_hash = "1EXoDusjGwvnjZUyKkxZ4UHEf77z6A5S4P"
-	BtcNeedFundTimes     = 3
-	//Dust                 = 0.00000540
+	BtcNeedFundTimes = 3
 )
 
 //database

@@ -529,6 +529,9 @@ func createOmniRawTransaction(balance, out, amount, minerFee float64, propertyId
 }
 
 func OmniSignRawTransactionForUnsend(hex string, inputItems []bean.TransactionInputItem, privKey string) (string, string, error) {
+	if len(hex) == 0 {
+		return "", "", nil
+	}
 	var items []bean.RawTxInputItem
 	for _, item := range inputItems {
 		items = append(items, bean.RawTxInputItem{ScriptPubKey: item.ScriptPubKey, RedeemScript: item.RedeemScript})
@@ -538,5 +541,8 @@ func OmniSignRawTransactionForUnsend(hex string, inputItems []bean.TransactionIn
 	if err != nil {
 		return "", hex, err
 	}
+	//transaction, _ := DecodeBtcRawTransaction(hex)
+	//log.Println(transaction)
+
 	return GetTxId(hex), hex, nil
 }

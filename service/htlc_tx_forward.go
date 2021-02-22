@@ -280,6 +280,7 @@ func getPrivateChannelForHtlc(requestData *bean.HtlcRequestFindPath, user bean.U
 					retData["is_private"] = requestData.IsPrivate
 					retData["property_id"] = requestData.PropertyId
 					retData["amount"] = requestData.Amount
+					retData["amount_and_fee"] = requestData.Amount
 					retData["routing_packet"] = channel.ChannelId
 					retData["min_cltv_expiry"] = 1
 					retData["next_node_peerId"] = requestData.RecipientUserPeerId
@@ -303,6 +304,7 @@ func (service *htlcForwardTxManager) GetResponseFromTrackerOfPayerRequestFindPat
 		return nil, err
 	}
 
+	log.Println("channelPath " + channelPath)
 	dataArr := strings.Split(channelPath, "_")
 	if len(dataArr) != 3 {
 		return nil, errors.New("no channel path")
@@ -330,7 +332,8 @@ func (service *htlcForwardTxManager) GetResponseFromTrackerOfPayerRequestFindPat
 	currChannelInfo := dao.ChannelInfo{}
 	err = user.Db.Select(
 		q.Eq("ChannelId", splitArr[0]),
-		q.Eq("CurrState", bean.ChannelState_LockByTracker),
+		q.Or(q.Eq("CurrState", bean.ChannelState_CanUse),
+			q.Eq("CurrState", bean.ChannelState_LockByTracker)),
 		q.Or(
 			q.Eq("PeerIdA", user.PeerId),
 			q.Eq("PeerIdB", user.PeerId))).First(&currChannelInfo)
@@ -350,6 +353,10 @@ func (service *htlcForwardTxManager) GetResponseFromTrackerOfPayerRequestFindPat
 	retData["is_private"] = false
 	retData["property_id"] = requestFindPathInfo.PropertyId
 	retData["amount"] = requestFindPathInfo.Amount
+	channelIds := strings.Split(dataArr[1], ",")
+	totalStep := len(channelIds)
+	tempAmount, _ := decimal.NewFromFloat(requestFindPathInfo.Amount).Mul(decimal.NewFromFloat(1 + config.HtlcFeeRate*float64(totalStep-1))).Round(8).Float64()
+	retData["amount_and_fee"] = tempAmount
 	retData["routing_packet"] = dataArr[1]
 	retData["min_cltv_expiry"] = arrLength
 	retData["next_node_peerId"] = nextNodePeerId

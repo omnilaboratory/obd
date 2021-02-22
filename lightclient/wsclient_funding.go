@@ -2,13 +2,16 @@ package lightclient
 
 import (
 	"encoding/json"
-	"github.com/omnilaboratory/obd/agent"
+	"github.com/omnilaboratory/obd/admin"
 	"github.com/omnilaboratory/obd/bean"
 	"github.com/omnilaboratory/obd/bean/enum"
+	"github.com/omnilaboratory/obd/omnicore"
 	"github.com/omnilaboratory/obd/service"
 	"github.com/omnilaboratory/obd/tool"
+	"github.com/shopspring/decimal"
 	"log"
 	"strconv"
+	"time"
 )
 
 func (client *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.SendTargetType, []byte, bool) {
@@ -16,6 +19,8 @@ func (client *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.Se
 	var sendType = enum.SendTargetType_SendToSomeone
 	var data string
 	switch msg.Type {
+	case enum.MsgType_Funding_134:
+		channelFund(*client, msg)
 	case enum.MsgType_FundingCreate_SendBtcFundingCreated_340:
 		node, targetUser, err := service.FundingTransactionService.BtcFundingCreated(msg, client.User)
 		if err != nil {
@@ -42,9 +47,9 @@ func (client *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.Se
 		msg.Type = enum.MsgType_FundingCreate_SendBtcFundingCreated_340
 		client.SendToMyself(msg.Type, status, data)
 
-		if status {
+		if status && targetUser == client.User.PeerId {
 			if client.User.IsAdmin {
-				signedData, err := agent.AliceFirstSignFundBtcRedeemTx(node, client.User)
+				signedData, err := admin.AliceFirstSignFundBtcRedeemTx(node, client.User)
 				if err == nil {
 					marshal, _ := json.Marshal(signedData)
 					msg.Data = string(marshal)
@@ -229,7 +234,7 @@ func (client *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.Se
 	case enum.MsgType_FundingCreate_SendAssetFundingCreated_34:
 
 		if client.User.IsAdmin {
-			agent.AliceCreateTempWalletForC1a(&msg, client.User)
+			admin.AliceCreateTempWalletForC1a(&msg, client.User)
 		}
 		node, needSign, err := service.FundingTransactionService.AssetFundingCreated(msg, client.User)
 		if err != nil {
@@ -253,7 +258,7 @@ func (client *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.Se
 		}
 
 		if client.User.IsAdmin && needSign {
-			signedData, err := agent.AliceSignC1a(node, client.User)
+			signedData, err := admin.AliceSignC1a(node, client.User)
 			if err != nil {
 				data = err.Error()
 				status = false
@@ -481,4 +486,69 @@ func (client *Client) fundingSignModule(msg bean.RequestMessage) (enum.SendTarge
 		sendType = enum.SendTargetType_SendToNone
 	}
 	return sendType, []byte(data), status
+}
+
+func channelFund(client Client, msg bean.RequestMessage) {
+	status := true
+	data := ""
+
+	channelInfo, err := service.FundingTransactionService.CheckChannelFund(msg, client.User)
+	if err != nil {
+		status = false
+		data = err.Error()
+	} else {
+		funding := &bean.SendRequestFunding{}
+		_ = json.Unmarshal([]byte(msg.Data), funding)
+		minerFee := 0.00001
+		btcAmount, _ := decimal.NewFromFloat(funding.BtcAmount).Div(decimal.NewFromFloat(3.0)).Sub(decimal.NewFromFloat(minerFee)).Round(8).Float64()
+		for i := 0; i < 3; i++ {
+			go func() {
+				resp, err := omnicore.BtcCreateRawTransaction(channelInfo.FundingAddress, []bean.TransactionOutputItem{{channelInfo.ChannelAddress, btcAmount}}, minerFee, 0, nil)
+				if err != nil {
+					status = false
+					data = err.Error()
+				} else {
+					sendInfo := &bean.FundingBtc{}
+					sendInfo.FromAddress = channelInfo.FundingAddress
+					sendInfo.ToAddress = channelInfo.ChannelAddress
+					marshal, _ := json.Marshal(sendInfo)
+					msg.Data = string(marshal)
+					resp, _ = admin.AliceSignFundBtc(msg, resp, client.User)
+
+					msg.Type = enum.MsgType_FundingCreate_SendBtcFundingCreated_340
+					fundingBtc := bean.SendRequestFundingBtc{}
+					fundingBtc.TemporaryChannelId = channelInfo.TemporaryChannelId
+					fundingBtc.FundingTxHex = resp["hex"].(string)
+					bytes, _ := json.Marshal(fundingBtc)
+					msg.Data = string(bytes)
+					client.fundingTransactionModule(msg)
+				}
+			}()
+			time.Sleep(time.Second * 2)
+		}
+
+		respNode, err := omnicore.OmniCreateRawTransaction(channelInfo.FundingAddress, channelInfo.ChannelAddress, funding.PropertyId, funding.AssetAmount, minerFee)
+		if err != nil {
+			data = err.Error()
+			status = false
+		} else {
+			sendInfo := &bean.FundingBtc{}
+			sendInfo.FromAddress = channelInfo.FundingAddress
+			sendInfo.ToAddress = channelInfo.ChannelAddress
+			marshal, _ := json.Marshal(sendInfo)
+			msg.Data = string(marshal)
+			respNode, _ = admin.AliceSignFundAsset(msg, respNode, client.User)
+
+			msg.Type = enum.MsgType_FundingCreate_SendAssetFundingCreated_34
+			fundingBtc := bean.SendRequestFundingBtc{}
+			fundingBtc.TemporaryChannelId = channelInfo.TemporaryChannelId
+			fundingBtc.FundingTxHex = respNode["hex"].(string)
+			bytes, _ := json.Marshal(fundingBtc)
+			msg.Data = string(bytes)
+			client.fundingTransactionModule(msg)
+		}
+	}
+	if status == false {
+		client.SendToMyself(msg.Type, status, data)
+	}
 }

@@ -1,7 +1,6 @@
 package main
 
 import (
-	context "context"
 	fmt "fmt"
 	"log"
 	"net"
@@ -10,20 +9,6 @@ import (
 	"github.com/omnilaboratory/obd/proxy/rpc"
 	grpc "google.golang.org/grpc"
 )
-
-type rpcServer struct {}
-
-// for testing
-func (r *rpcServer) Hello(ctx context.Context,
-	in *proxy.HelloRequest) (*proxy.HelloResponse, error) {
-
-	resp, err := rpc.Hello(in.Sayhi)
-	if err != nil {
-		return nil, err
-	}
-
-	return &proxy.HelloResponse{Resp: resp}, nil
-}
 
 func startServer() {
 
@@ -35,11 +20,11 @@ func startServer() {
 	fmt.Printf("Server is listening on %v ...", address)
 
 	s := grpc.NewServer()
-	proxy.RegisterProxyServer(s, &rpcServer{})
-
+	proxy.RegisterProxyServer(s, &rpc.RpcServer{})
 	s.Serve(lis)
 }
 
 func main() {
+	log.SetFlags(log.Ldate | log.Lmicroseconds | log.Lshortfile)
 	startServer()
 }

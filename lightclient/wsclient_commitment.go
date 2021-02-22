@@ -2,7 +2,7 @@ package lightclient
 
 import (
 	"encoding/json"
-	"github.com/omnilaboratory/obd/agent"
+	"github.com/omnilaboratory/obd/admin"
 	"github.com/omnilaboratory/obd/bean"
 	"github.com/omnilaboratory/obd/bean/enum"
 	"github.com/omnilaboratory/obd/service"
@@ -18,7 +18,7 @@ func (client *Client) commitmentTxModule(msg bean.RequestMessage) (enum.SendTarg
 	case enum.MsgType_CommitmentTx_SendCommitmentTransactionCreated_351:
 
 		if client.User.IsAdmin {
-			err := agent.RsmcAliceCreateTx(&msg, client.User)
+			err := admin.RsmcAliceCreateTx(&msg, client.User)
 			if err != nil {
 				data = err.Error()
 				log.Println(data)
@@ -48,9 +48,46 @@ func (client *Client) commitmentTxModule(msg bean.RequestMessage) (enum.SendTarg
 					status = false
 				}
 			}
+		} else {
+			if client.User.IsAdmin {
+				signedDataForC2a, err := admin.RsmcAliceFirstSignC2a(retData, client.User)
+				if err != nil {
+					data = err.Error()
+					status = false
+				} else {
+					marshal, _ := json.Marshal(signedDataForC2a)
+					msg.Data = string(marshal)
+					toAlice, retData, err := service.CommitmentTxService.OnAliceSignC2aRawTxAtAliceSide(msg, client.User)
+					if err != nil {
+						data = err.Error()
+						status = false
+					} else {
+						bytes, _ := json.Marshal(retData)
+						msg.Type = enum.MsgType_CommitmentTx_CommitmentTransactionCreated_351
+						data = string(bytes)
+						err = client.sendDataToP2PUser(msg, status, data)
+						if err != nil {
+							data = err.Error()
+							status = false
+						}
+
+						bytes, err := json.Marshal(toAlice)
+						if err != nil {
+							data = err.Error()
+						} else {
+							data = string(bytes)
+							status = true
+						}
+						msg.Type = enum.MsgType_ClientSign_CommitmentTx_AliceSignC2a_360
+						client.SendToMyself(msg.Type, status, data)
+						break
+					}
+				}
+			}
 		}
 		msg.Type = enum.MsgType_CommitmentTx_SendCommitmentTransactionCreated_351
 		client.SendToMyself(msg.Type, status, data)
+
 	case enum.MsgType_ClientSign_CommitmentTx_AliceSignC2a_360:
 		toAlice, retData, err := service.CommitmentTxService.OnAliceSignC2aRawTxAtAliceSide(msg, client.User)
 		if err != nil {
@@ -340,7 +377,7 @@ func (client *Client) commitmentTxSignModule(msg bean.RequestMessage) (enum.Send
 		msg.Type = enum.MsgType_ClientSign_CommitmentTx_BobSignC2b_361
 		client.SendToMyself(msg.Type, status, data)
 	case enum.MsgType_ClientSign_CommitmentTx_BobSignC2b_Rd_364:
-		retData, err := service.CommitmentTxSignedService.BobSignC2b_RdAtBobSide(msg.Data, client.User)
+		retData, err := service.CommitmentTxSignedService.BobSignC2bRdAtBobSide(msg.Data, client.User)
 		if err != nil {
 			data = err.Error()
 		} else {

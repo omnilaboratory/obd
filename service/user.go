@@ -97,3 +97,15 @@ func (service *UserManager) UserLogout(user *bean.User) error {
 	noticeTrackerUserLogout(node)
 	return user.Db.Close()
 }
+
+func (service *UserManager) CheckExecutingTx(user *bean.User) bool {
+	count, _ := user.Db.Select(q.Or(
+		q.Eq("CurrState", bean.ChannelState_HtlcTx),
+		q.Eq("CurrState", bean.ChannelState_NewTx),
+		q.Eq("CurrState", bean.ChannelState_LockByTracker),
+	)).Count(&dao.ChannelInfo{})
+	if count > 0 {
+		return true
+	}
+	return false
+}

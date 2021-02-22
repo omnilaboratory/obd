@@ -33,8 +33,11 @@ func (client *Client) Write() {
 				_ = client.Socket.WriteMessage(websocket.CloseMessage, []byte{})
 				return
 			}
-			//log.Println("send data to client ", string(data))
-			_ = client.Socket.WriteMessage(websocket.TextMessage, data)
+			err := client.Socket.WriteMessage(websocket.TextMessage, data)
+			if err != nil {
+				log.Println("fail to send data to client ", string(data))
+				log.Println(err)
+			}
 		}
 	}
 }
@@ -130,6 +133,7 @@ func (client *Client) Read() {
 				if msg.Type == enum.MsgType_SendChannelOpen_32 || msg.Type == enum.MsgType_SendChannelAccept_33 ||
 					msg.Type == enum.MsgType_FundingCreate_SendBtcFundingCreated_340 || msg.Type == enum.MsgType_FundingSign_SendBtcSign_350 ||
 					msg.Type == enum.MsgType_FundingCreate_SendAssetFundingCreated_34 || msg.Type == enum.MsgType_FundingSign_SendAssetFundingSigned_35 ||
+					msg.Type == enum.MsgType_Funding_134 ||
 					msg.Type == enum.MsgType_ClientSign_Duplex_BtcFundingMinerRDTx_341 ||
 					msg.Type == enum.MsgType_CommitmentTx_SendCommitmentTransactionCreated_351 ||
 					msg.Type == enum.MsgType_ClientSign_CommitmentTx_AliceSignC2a_360 ||
@@ -190,6 +194,7 @@ func (client *Client) Read() {
 						msg.Type == enum.MsgType_ClientSign_AssetFunding_AliceSignC1a_1034 ||
 						msg.Type == enum.MsgType_ClientSign_AssetFunding_AliceSignRD_1134 ||
 						msg.Type == enum.MsgType_ClientSign_Duplex_BtcFundingMinerRDTx_341 ||
+						msg.Type == enum.MsgType_Funding_134 ||
 						(msg.Type <= enum.MsgType_FundingCreate_Asset_AllItem_3100 &&
 							msg.Type >= enum.MsgType_FundingCreate_Btc_ItemByChannelId_3111) {
 						sendType, dataOut, status = client.fundingTransactionModule(msg)

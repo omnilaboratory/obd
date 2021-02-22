@@ -304,6 +304,7 @@ func readData(s network.Stream, rw *bufio.ReadWriter) {
 		if str != "" {
 			log.Println(s.Conn())
 			str = strings.TrimSuffix(str, "~")
+			//log.Println(str)
 			reqData := &bean.RequestMessage{}
 			err := json.Unmarshal([]byte(str), reqData)
 			if err == nil {
@@ -342,6 +343,8 @@ func sendP2PMsg(remoteP2PPeerId string, msg string) error {
 		msg = msg + "~"
 		_, _ = channel.rw.WriteString(msg)
 		_ = channel.rw.Flush()
+	} else {
+		log.Println("remoteP2PPeerId " + remoteP2PPeerId + " not connect")
 	}
 	return nil
 }
@@ -365,7 +368,7 @@ func sendInfoOnUserStateChange(userId string) {
 }
 
 func sendChannelInfoToIndirectTracker(msg string) {
-	log.Println("sendChannelInfoToIndirectTracker", msg)
+	//log.Println("sendChannelInfoToIndirectTracker", msg)
 	for key := range trackerNodeIdMap {
 		findID, err := peer.Decode(key)
 		if err == nil {
@@ -386,47 +389,39 @@ func sendChannelInfoToIndirectTracker(msg string) {
 func handleLockChannelStream(stream network.Stream) {
 	rw := bufio.NewReadWriter(bufio.NewReader(stream), bufio.NewWriter(stream))
 	str, err := rw.ReadString('~')
+	if err != nil || str == "" {
+		return
+	}
+
+	str = strings.TrimSuffix(str, "~")
+	request := &bean.TrackerLockChannelRequest{}
+	_ = json.Unmarshal([]byte(str), request)
+	err = lockChannel(request.UserId, request.ChannelId)
+	result := "1"
 	if err != nil {
-		return
+		result = "0"
 	}
-	if str == "" {
-		return
-	}
-	if str != "" {
-		str = strings.TrimSuffix(str, "~")
-		request := &bean.TrackerLockChannelRequest{}
-		_ = json.Unmarshal([]byte(str), request)
-		err = lockChannel(request.UserId, request.ChannelId)
-		result := "1"
-		if err != nil {
-			result = "0"
-		}
-		//request.UserId
-		_, _ = rw.WriteString(result + "~")
-		_ = rw.Flush()
-	}
+	//request.UserId
+	_, _ = rw.WriteString(result + "~")
+	_ = rw.Flush()
 }
 
 func handleUnlockChannelStream(stream network.Stream) {
 	rw := bufio.NewReadWriter(bufio.NewReader(stream), bufio.NewWriter(stream))
 	str, err := rw.ReadString('~')
+	if err != nil || str == "" {
+		return
+	}
+
+	str = strings.TrimSuffix(str, "~")
+	request := &bean.TrackerLockChannelRequest{}
+	_ = json.Unmarshal([]byte(str), request)
+	err = unlockChannel(request.UserId, request.ChannelId)
+	result := "1"
 	if err != nil {
-		return
+		result = "0"
 	}
-	if str == "" {
-		return
-	}
-	if str != "" {
-		str = strings.TrimSuffix(str, "~")
-		request := &bean.TrackerLockChannelRequest{}
-		_ = json.Unmarshal([]byte(str), request)
-		err = unlockChannel(request.UserId, request.ChannelId)
-		result := "1"
-		if err != nil {
-			result = "0"
-		}
-		//request.UserId
-		_, _ = rw.WriteString(result + "~")
-		_ = rw.Flush()
-	}
+	//request.UserId
+	_, _ = rw.WriteString(result + "~")
+	_ = rw.Flush()
 }

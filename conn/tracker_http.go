@@ -61,7 +61,6 @@ func ListReceivedByAddress(address string) (result string) {
 		return ""
 	}
 	url := "http://" + config.TrackerHost + "/api/rpc/listReceivedByAddress?address=" + address
-	log.Println(url)
 	resp, err := http.Get(url)
 	if err != nil {
 		return ""
@@ -76,7 +75,6 @@ func ListReceivedByAddress(address string) (result string) {
 
 func GetTransactionById(txid string) (result string) {
 	url := "http://" + config.TrackerHost + "/api/rpc/getTransactionById?txid=" + txid
-	log.Println(url)
 	resp, err := http.Get(url)
 	if err != nil {
 		return ""
@@ -93,7 +91,6 @@ func ListUnspent(address string) (result string) {
 		return ""
 	}
 	url := "http://" + config.TrackerHost + "/api/rpc/listUnspent?address=" + address
-	log.Println(url)
 	resp, err := http.Get(url)
 	if err != nil {
 		return ""
@@ -117,7 +114,6 @@ func EstimateSmartFee() (result float64) {
 	}
 	if cacheFeeRate == 0 {
 		url := "http://" + config.TrackerHost + "/api/rpc/estimateSmartFee"
-		log.Println(url)
 		resp, err := http.Get(url)
 		if err != nil {
 			return 0
@@ -134,7 +130,6 @@ func EstimateSmartFee() (result float64) {
 
 func CreateRawTransaction(data string) (result string) {
 	url := "http://" + config.TrackerHost + "/api/rpc/createRawTransaction"
-	log.Println(url)
 	request, _ := http.NewRequest("POST", url, strings.NewReader(data))
 	resp, err := http.DefaultClient.Do(request)
 	if err != nil {
@@ -188,7 +183,6 @@ func TestMemPoolAccept(hex string) (result string) {
 		return ""
 	}
 	url := "http://" + config.TrackerHost + "/api/rpc/testMemPoolAccept?hex=" + hex
-	log.Println(url)
 	resp, err := http.Get(url)
 	if err != nil {
 		return ""
@@ -206,7 +200,6 @@ func SendRawTransaction(hex string) (result string, err error) {
 		return "", errors.New("error hex")
 	}
 	url := "http://" + config.TrackerHost + "/api/rpc/sendRawTransaction?hex=" + hex
-	log.Println(url)
 	resp, err := http.Get(url)
 	if err != nil {
 		return "", err
@@ -228,7 +221,6 @@ func OmniDecodeTransaction(hex string) (result string, err error) {
 		return "", errors.New("error hex")
 	}
 	url := "http://" + config.TrackerHost + "/api/rpc/omniDecodeTransaction?hex=" + hex
-	log.Println(url)
 	resp, err := http.Get(url)
 	if err != nil {
 		return "", err
@@ -314,7 +306,6 @@ func GetBalanceByAddress(address string) (result float64, err error) {
 		return 0.0, errors.New("error address")
 	}
 	url := "http://" + config.TrackerHost + "/api/rpc/getBalanceByAddress?address=" + address
-	log.Println(url)
 	resp, err := http.Get(url)
 	if err != nil {
 		return 0.0, err
@@ -561,7 +552,6 @@ func GetChainNodeType() (chainNodeType, trackerP2pAddress string, err error) {
 
 func GetChannelState(channelId string) (flag int) {
 	url := "http://" + config.TrackerHost + "/api/v1/getChannelState?channelId=" + channelId
-	log.Println(url)
 	resp, err := http.Get(url)
 	if err != nil {
 		return 0
@@ -576,7 +566,7 @@ func GetChannelState(channelId string) (flag int) {
 
 func GetUserState(p2pNodeId, userId string) (flag int) {
 	url := "http://" + config.TrackerHost + "/api/v1/getUserState?userId=" + userId + "&p2pNodeId=" + p2pNodeId
-	log.Println(url)
+	//log.Println(url)
 	resp, err := http.Get(url)
 	if err != nil {
 		return 0
@@ -588,4 +578,19 @@ func GetUserState(p2pNodeId, userId string) (flag int) {
 		return int(gjson.Get(string(body), "data").Get("state").Int())
 	}
 	return 0
+}
+
+func GetUserP2pNodeId(userId string) (p2pNodeId string) {
+	url := "http://" + config.TrackerHost + "/api/v1/getUserP2pNodeId?userId=" + userId
+	//log.Println(url)
+	resp, err := http.Get(url)
+	if err != nil {
+		return ""
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode == 200 {
+		body, _ := ioutil.ReadAll(resp.Body)
+		return gjson.Get(string(body), "data").Get("info").String()
+	}
+	return ""
 }
