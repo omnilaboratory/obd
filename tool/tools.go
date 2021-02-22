@@ -96,15 +96,16 @@ func GetAddressFromPubKey(pubKey string) (address string, err error) {
 func PathExistsAndCreate(path string) error {
 	_, err := os.Stat(path)
 	if os.IsNotExist(err) {
-		err := os.Mkdir(path, os.ModePerm)
+		err := os.MkdirAll(path, os.ModePerm)
 		if err != nil {
 			log.Println(err)
 			return err
+		} else {
+			return nil
 		}
 	} else {
 		return nil
 	}
-	return errors.New("fail to create")
 }
 
 func FloatToString(input_num float64, prec int) string {

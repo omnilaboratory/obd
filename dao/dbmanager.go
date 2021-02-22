@@ -31,7 +31,7 @@ func (manager dbManager) GetGlobalDB() (*storm.DB, error) {
 }
 
 func (manager dbManager) GetUserDB(peerId string) (*storm.DB, error) {
-	_dir := "dbdata" + config.ChainNodeType
+	_dir := cfg.DataDirectory + "/" + config.ChainNodeType
 	_ = tool.PathExistsAndCreate(_dir)
 
 	db, e := storm.Open(_dir + "/user_" + peerId + ".db")
