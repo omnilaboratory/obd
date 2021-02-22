@@ -2,6 +2,7 @@ package config
 
 import (
 	"flag"
+	"github.com/mitchellh/go-homedir"
 	"log"
 	"testing"
 	"time"
@@ -28,6 +29,9 @@ var (
 	BootstrapPeers addrList
 
 	Init_node_chain_hash = "1EXoDusjGwvnjZUyKkxZ4UHEf77z6A5S4P"
+  
+	DataDirectory     = ""
+	dataDirectoryName = ".obd"
 )
 
 func Init() {
@@ -49,6 +53,17 @@ func Init() {
 	ServerPort = section.Key("port").MustInt(60020)
 	ReadTimeout = time.Duration(section.Key("readTimeout").MustInt(60)) * time.Second
 	WriteTimeout = time.Duration(section.Key("writeTimeout").MustInt(60)) * time.Second
+
+	specifiedDataDirectory, err := section.GetKey("dataDirectory")
+	if err == nil {
+		DataDirectory = specifiedDataDirectory.Value()
+	} else {
+		homeDirectory, err := homedir.Dir()
+		if err != nil {
+			panic(err.Error())
+		}
+		DataDirectory = homeDirectory + "/" + dataDirectoryName
+	}
 
 	htlcNode, err := Cfg.GetSection("htlc")
 	if err != nil {

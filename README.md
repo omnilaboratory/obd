@@ -10,7 +10,7 @@
 OBD implements the [OmniBOLT](https://github.com/omnilaboratory/OmniBOLT-spec) specification, and it is an open source, off-chain decentralized platform, build upon BTC/OmniLayer network, implements basic multi hop HTLC payment, multi-currency atomic swap, and more off-chain contracts on the network of [smart assets lightning channels](https://github.com/omnilaboratory/OmniBOLT-spec/blob/master/OmniBOLT-02-peer-protocol.md#omni-address).  
 
 <p align="center">
-  <img width="750" alt="None Custodial OmniBOLT Daemon" src="docs/assets/None-Custodial-OmniBOLT-Daemon.png">
+  <img width="750" alt="None Custodial OmniBOLT Daemon" src="docs/assets/None-Custodial-OmniBOLT-Daemon-2.png">
 </p>
 
 In addition, OBD is designed special for inbound liquidity providers. A daemon allows thousands of remote light clients connections, including connections from [LND wallets](https://omnilaboratory.github.io/obd/#/Architecture?id=lnd-integrated). 
@@ -19,11 +19,13 @@ Clone, compile the source code and run the binary executable file, you will have
 
 The latest document/tutorial has been moved to [OmniBOLT - Developers](https://omnilaboratory.github.io/obd/#/OBD-README).  
 
-To know how OBD works, jump to the [OmniBOLT - Architecture](https://omnilaboratory.github.io/obd/#/OBD-README).  
+To know how OBD works, jump to the [OmniBOLT - Architecture](https://omnilaboratory.github.io/obd/#/Architecture).  
 
 The latest features and ETA is here: [OmniBOLT - Features and Roadmap](https://omnilaboratory.github.io/obd/#/features).  
 
-Graphic terminal that assists you get started quikly is here: [OmniBOLT - GUI Terminal](https://omnilaboratory.github.io/obd/#/GUI-tool). 
+Graphic terminal that assists you get started quickly is here: [OmniBOLT - GUI Terminal](https://omnilaboratory.github.io/obd/#/GUI-tool). 
+
+Join our community to get the latest progress: [communities](https://omnilaboratory.github.io/obd/#/communities)
 
 Video tutorials can be found here:   
 
