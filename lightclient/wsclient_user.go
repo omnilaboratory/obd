@@ -103,7 +103,7 @@ func (client *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, 
 
 			if exist == false {
 				client.User.IsAdmin = false
-				client.Socket.Close()
+				//client.Socket.Close()
 			}
 		} else {
 			client.SendToMyself(msg.Type, status, "please login")

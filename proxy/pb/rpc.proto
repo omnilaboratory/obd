@@ -4,7 +4,7 @@ package proxy;
 option go_package = "pb";
 
 // Proxy is the main RPC server of the daemon.
-service Proxy {
+service Lightning {
 
   /* obdcli: `hello`
   hello is a `say hi` gRPC.

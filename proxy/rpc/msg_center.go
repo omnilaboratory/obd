@@ -23,13 +23,9 @@ var (
 	payInvoiceChan     = make(chan bean.ReplyMessage)
 )
 
-func init() {
-	connToObd()
-}
-
-func connToObd() {
+func ConnToObd() {
 	u := url.URL{Scheme: "ws", Host: "127.0.0.1:60020", Path: "/ws" + config.ChainNodeType}
-	log.Printf("begin to connect to tracker: %s", u.String())
+	log.Printf("grpc begin to connect to obd: %s", u.String())
 
 	var err error
 	connObd, _, err = websocket.DefaultDialer.Dial(u.String(), nil)
@@ -46,7 +42,7 @@ func readDataFromObd() {
 		if connObd != nil {
 			_ = connObd.Close()
 		}
-		connToObd()
+		ConnToObd()
 	}()
 
 	go func() {
@@ -54,11 +50,11 @@ func readDataFromObd() {
 			log.Println("waiting message...")
 			_, message, err := connObd.ReadMessage()
 			log.Println("receive message")
+			log.Println(string(message))
 			if err != nil {
 				log.Println(err)
 				return
 			}
-			log.Println(string(message))
 			replyMessage := bean.ReplyMessage{}
 			_ = json.Unmarshal(message, &replyMessage)
 
@@ -147,6 +143,9 @@ func readDataFromObd() {
 }
 
 func sendMsgToObd(info interface{}, RecipientNodePeerId, RecipientUserPeerId string, msgType enum.MsgType) {
+	if connObd == nil {
+		ConnToObd()
+	}
 	var infoBytes []byte
 	if info != nil {
 		infoBytes, _ = json.Marshal(info)
@@ -155,10 +154,11 @@ func sendMsgToObd(info interface{}, RecipientNodePeerId, RecipientUserPeerId str
 	requestMessage.RecipientNodePeerId = RecipientNodePeerId
 	requestMessage.RecipientUserPeerId = RecipientUserPeerId
 	msg, _ := json.Marshal(requestMessage)
+
 	err := connObd.WriteMessage(websocket.TextMessage, msg)
 	if err != nil {
 		connObd.Close()
-		connToObd()
+		ConnToObd()
 		sendMsgToObd(info, RecipientNodePeerId, RecipientUserPeerId, msgType)
 		return
 	}
