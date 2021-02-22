@@ -10,7 +10,6 @@ import (
 
 const (
 	BtcNeedFundTimes = 3
-	//Dust                 = 0.00000540
 )
 
 //database

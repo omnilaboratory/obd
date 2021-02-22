@@ -5,9 +5,12 @@ import (
 	proxy "github.com/omnilaboratory/obd/proxy/pb"
 	"google.golang.org/grpc"
 	"log"
+	"testing"
 )
 
-func main() {
+func TestClient(t *testing.T) {
+
+	//go startServer()
 
 	opts := grpc.WithInsecure()
 	conn, err := grpc.Dial("localhost:50051", opts)
@@ -17,11 +20,6 @@ func main() {
 	defer conn.Close()
 	ctxb := context.Background()
 	proxyClient := proxy.NewProxyClient(conn)
-	//response, err := proxyClient.Hello(ctxb, &proxy.HelloRequest{Sayhi: "Test  obd grpc 你好"})
-	//if err != nil {
-	//	log.Println(err)
-	//}
-	//log.Println(response)
 
 	login, err := proxyClient.Login(ctxb, &proxy.LoginRequest{
 		Mnemonic:   "dawn enter attitude merry cliff stone rely convince team warfare wasp whisper",
@@ -48,7 +46,7 @@ func main() {
 	//	log.Println(err)
 	//}
 	//log.Println(channelResponse.TemplateChannelId)
-	//
+
 	//fundChannel, err := proxyClient.FundChannel(ctxb, &proxy.FundChannelRequest{
 	//	RecipientInfo: &proxy.RecipientNodeInfo{
 	//		RecipientNodePeerId: "QmccE4s2uhEXrJXE778NChn1ed8NyWNyAHH23mP7f9NM3L",
@@ -88,9 +86,9 @@ func main() {
 	}
 	log.Println(htlcPayment)
 
-	logout, err := proxyClient.Logout(ctxb, &proxy.LogoutRequest{})
-	if err != nil {
-		log.Println(err)
-	}
-	log.Println(logout)
+	//logout, err := proxyClient.Logout(ctxb, &proxy.LogoutRequest{})
+	//if err != nil {
+	//	log.Println(err)
+	//}
+	//log.Println(logout)
 }

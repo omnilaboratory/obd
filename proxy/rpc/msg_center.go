@@ -51,9 +51,9 @@ func readDataFromObd() {
 
 	go func() {
 		for {
-			log.Println("等待信息")
+			log.Println("waiting message...")
 			_, message, err := connObd.ReadMessage()
-			log.Println("收到信息")
+			log.Println("receive message")
 			if err != nil {
 				log.Println(err)
 				return
