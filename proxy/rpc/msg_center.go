@@ -21,6 +21,7 @@ var (
 	rsmcChan           = make(chan bean.ReplyMessage)
 	addInvoiceChan     = make(chan bean.ReplyMessage)
 	payInvoiceChan     = make(chan bean.ReplyMessage)
+	OnceRequestChan    = make(chan bean.ReplyMessage)
 )
 
 func ConnToObd() {
@@ -66,6 +67,8 @@ func readDataFromObd() {
 			}
 
 			switch replyMessage.Type {
+			case enum.MsgType_GetMnemonic_2004:
+				OnceRequestChan <- replyMessage
 			case enum.MsgType_UserLogin_2001:
 				if strings.Contains(replyMessage.From, replyMessage.To) {
 					loginChan <- replyMessage

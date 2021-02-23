@@ -32,7 +32,19 @@ message LogoutRequest {
 message LogoutResponse {
 }
 
+message GenSeedRequest {
+  bytes aezeed_passphrase = 1;
+  bytes seed_entropy = 2;
+
+}
+message GenSeedResponse {
+  string cipher_seed_mnemonic = 1;
+  string enciphered_seed = 2;
+
+}
+
 service Wallet {
+  rpc GenSeed(GenSeedRequest) returns(GenSeedResponse);
   rpc Login(LoginRequest) returns (LoginResponse);
   rpc ChangePassword(ChangePasswordRequest) returns (ChangePasswordResponse);
   rpc Logout(LogoutRequest) returns(LogoutResponse);

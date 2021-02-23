@@ -9,6 +9,16 @@ import (
 	"testing"
 )
 
+func TestGenSeed(t *testing.T) {
+	client, conn := getUserClient()
+	defer conn.Close()
+	seed, err := client.GenSeed(context.Background(), &proxy.GenSeedRequest{})
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	log.Println(seed)
+}
 func TestLogin(t *testing.T) {
 	client, conn := getUserClient()
 	defer conn.Close()

@@ -14,6 +14,19 @@ import (
 var connObd *websocket.Conn
 var currUserInfo *pb.LoginResponse
 
+func (server *RpcServer) GenSeed(ctx context.Context, in *pb.GenSeedRequest) (resp *pb.GenSeedResponse, err error) {
+	log.Println("GenSeed")
+	sendMsgToObd(nil, "", "", enum.MsgType_GetMnemonic_2004)
+	data := <-OnceRequestChan
+	if data.Status == false {
+		return nil, errors.New(data.Result.(string))
+	}
+	resp = &pb.GenSeedResponse{
+		CipherSeedMnemonic: data.Result.(string),
+	}
+	return resp, nil
+}
+
 func (server *RpcServer) Login(ctx context.Context, in *pb.LoginRequest) (resp *pb.LoginResponse, err error) {
 
 	log.Println("Login")
