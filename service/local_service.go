@@ -4,6 +4,7 @@ import (
 	"errors"
 	"github.com/asdine/storm"
 	"github.com/asdine/storm/q"
+	"github.com/happierall/l"
 	"github.com/omnilaboratory/obd/bean/enum"
 	"github.com/omnilaboratory/obd/config"
 	"github.com/omnilaboratory/obd/conn"
@@ -35,7 +36,7 @@ func checkInitConfig() {
 		_ = obdGlobalDB.Save(localConfig)
 	}
 	config.Init_node_chain_hash = localConfig.InitHashCode
-	log.Println("admin login token:", localConfig.AdminLoginToken)
+	l.Log("admin login token:", l.Colorize(localConfig.AdminLoginToken, l.Red))
 }
 
 func CheckIsAdmin(loginToken, endType string) bool {
