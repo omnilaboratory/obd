@@ -3,23 +3,16 @@ package main
 import (
 	"context"
 	proxy "github.com/omnilaboratory/obd/proxy/pb"
-	"google.golang.org/grpc"
 	"log"
 	"testing"
 )
 
 func TestOpenChannel(t *testing.T) {
 
-	opts := grpc.WithInsecure()
-	conn, err := grpc.Dial("localhost:50051", opts)
-	if err != nil {
-		log.Println(err)
-	}
+	client, conn := getClient()
 	defer conn.Close()
-	ctxb := context.Background()
-	client := proxy.NewLightningClient(conn)
 
-	channelResponse, err := client.OpenChannel(ctxb, &proxy.OpenChannelRequest{
+	channelResponse, err := client.OpenChannel(context.Background(), &proxy.OpenChannelRequest{
 		RecipientInfo: &proxy.RecipientNodeInfo{
 			RecipientNodePeerId: "QmccE4s2uhEXrJXE778NChn1ed8NyWNyAHH23mP7f9NM3L",
 			RecipientUserPeerId: "63167817c979ade9e42f3204404c1513a4b1b4e9eea654c9498ed9cc920dbb36"},
@@ -29,32 +22,29 @@ func TestOpenChannel(t *testing.T) {
 	})
 	if err != nil {
 		log.Println(err)
+		return
 	}
 	log.Println(channelResponse.TemplateChannelId)
-
-	select {}
 }
 
 func TestFundChannel(t *testing.T) {
 
-	opts := grpc.WithInsecure()
-	conn, err := grpc.Dial("localhost:50051", opts)
-	if err != nil {
-		log.Println(err)
-	}
+	client, conn := getClient()
 	defer conn.Close()
-	ctxb := context.Background()
-	client := proxy.NewLightningClient(conn)
 
-	fundChannel, err := client.FundChannel(ctxb, &proxy.FundChannelRequest{
+	fundChannel, err := client.FundChannel(context.Background(), &proxy.FundChannelRequest{
 		RecipientInfo: &proxy.RecipientNodeInfo{
 			RecipientNodePeerId: "QmccE4s2uhEXrJXE778NChn1ed8NyWNyAHH23mP7f9NM3L",
 			RecipientUserPeerId: "63167817c979ade9e42f3204404c1513a4b1b4e9eea654c9498ed9cc920dbb36"},
-		TemplateChannelId: "",
+		TemplateChannelId: "fd11f0b3df40903e17c2d6375f5fe969016bbf626dcb9b36274d448d31c3ff49",
 		BtcAmount:         0.0004,
 		PropertyId:        137,
 		AssetAmount:       1,
 	})
+	if err != nil {
+		log.Println(err)
+		return
+	}
 	log.Println(fundChannel.ChannelId)
-	select {}
+	//select {}
 }

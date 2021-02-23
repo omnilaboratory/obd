@@ -31,8 +31,9 @@ func ConnToObd() {
 	connObd, _, err = websocket.DefaultDialer.Dial(u.String(), nil)
 	if err != nil {
 		log.Println("fail to dial obd:", err)
+		return
 	}
-	connObd.SetReadLimit(1 << 28)
+	connObd.SetReadLimit(1 << 20)
 
 	go readDataFromObd()
 }
@@ -120,7 +121,6 @@ func readDataFromObd() {
 			connObd = nil
 		}
 	}(ticker)
-	defer connObd.Close()
 
 	for {
 		select {

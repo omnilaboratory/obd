@@ -21,7 +21,7 @@ func (server *RpcServer) Login(ctx context.Context, in *pb.LoginRequest) (resp *
 		return nil, errors.New("wrong login_token")
 	}
 
-	info := loginInfo{Mnemonic: in.Mnemonic, LoginToken: in.LoginToken}
+	info := loginInfo{Mnemonic: in.Mnemonic, LoginToken: in.LoginToken, EndType: "grpc"}
 	sendMsgToObd(info, "", "", enum.MsgType_UserLogin_2001)
 
 	data := <-loginChan

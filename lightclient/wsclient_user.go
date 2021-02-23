@@ -31,7 +31,14 @@ func (client *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, 
 	case enum.MsgType_UserLogin_2001:
 		mnemonic := gjson.Get(msg.Data, "mnemonic").String()
 		loginToken := gjson.Get(msg.Data, "login_token").Str
-		isAdmin := service.CheckIsAdmin(loginToken)
+		endType := gjson.Get(msg.Data, "end_type").Str
+		isAdmin := service.CheckIsAdmin(loginToken, endType)
+
+		if endType == "grpc" && isAdmin == false {
+			client.SendToMyself(msg.Type, status, "your login token is wrong")
+			sendType = enum.SendTargetType_SendToSomeone
+			break
+		}
 
 		peerId := tool.GetUserPeerId(mnemonic)
 		if globalWsClientManager.OnlineClientMap[peerId] != nil {

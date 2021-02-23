@@ -38,10 +38,15 @@ func checkInitConfig() {
 	log.Println("admin login token:", localConfig.AdminLoginToken)
 }
 
-func CheckIsAdmin(loginToken string) bool {
+func CheckIsAdmin(loginToken, endType string) bool {
 	if len(loginToken) == 0 {
 		return false
 	}
+
+	if endType != "grpc" {
+		return false
+	}
+
 	localConfig := &dao.ObdConfig{}
 	_ = obdGlobalDB.Select().First(localConfig)
 	if tool.SignMsgWithMd5([]byte(localConfig.AdminLoginToken)) == loginToken {
