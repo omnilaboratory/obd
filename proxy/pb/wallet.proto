@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+package proxy;
+option go_package = "pb";
+
+message LoginRequest {
+  string mnemonic = 1;
+  string login_token = 2;
+}
+
+message LoginResponse {
+  string user_peerId = 1;
+  string node_peerId = 2;
+  string node_address = 3;
+  double htlc_fee_rate = 4;
+  double htlc_max_fee = 5;
+  string chain_node_type = 6;
+}
+
+message ChangePasswordRequest {
+  string current_password = 1;
+  string new_password = 2;
+}
+
+message ChangePasswordResponse {
+  string result = 1;
+}
+
+message LogoutRequest {
+}
+
+message LogoutResponse {
+}
+
+service Wallet {
+  rpc Login(LoginRequest) returns (LoginResponse);
+  rpc ChangePassword(ChangePasswordRequest) returns (ChangePasswordResponse);
+  rpc Logout(LogoutRequest) returns(LogoutResponse);
+}

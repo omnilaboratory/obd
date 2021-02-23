@@ -10,7 +10,7 @@ import (
 )
 
 func TestLogin(t *testing.T) {
-	client, conn := getClient()
+	client, conn := getUserClient()
 	defer conn.Close()
 
 	login, err := client.Login(context.Background(), &proxy.LoginRequest{
@@ -25,7 +25,7 @@ func TestLogin(t *testing.T) {
 }
 func TestChangePassword(t *testing.T) {
 
-	client, conn := getClient()
+	client, conn := getUserClient()
 	defer conn.Close()
 
 	token, err := client.ChangePassword(context.Background(), &proxy.ChangePasswordRequest{
@@ -39,7 +39,7 @@ func TestChangePassword(t *testing.T) {
 	log.Println(token)
 }
 func TestLogout(t *testing.T) {
-	client, conn := getClient()
+	client, conn := getUserClient()
 	defer conn.Close()
 
 	logout, err := client.Logout(context.Background(), &proxy.LogoutRequest{})
@@ -48,6 +48,16 @@ func TestLogout(t *testing.T) {
 		return
 	}
 	log.Println(logout)
+}
+
+func getUserClient() (proxy.WalletClient, *grpc.ClientConn) {
+	opts := grpc.WithInsecure()
+	conn, err := grpc.Dial("localhost:50051", opts)
+	if err != nil {
+		log.Println(err)
+		return nil, nil
+	}
+	return proxy.NewWalletClient(conn), conn
 }
 
 func getClient() (proxy.LightningClient, *grpc.ClientConn) {

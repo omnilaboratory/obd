@@ -46,5 +46,4 @@ func TestFundChannel(t *testing.T) {
 		return
 	}
 	log.Println(fundChannel.ChannelId)
-	//select {}
 }

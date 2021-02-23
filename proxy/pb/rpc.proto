@@ -11,48 +11,12 @@ service Lightning {
   */
   rpc Hello (HelloRequest) returns (HelloResponse);
 
-  rpc Login(LoginRequest) returns (LoginResponse);
-  rpc ChangePassword(ChangePasswordRequest) returns (ChangePasswordResponse);
-  rpc Logout(LogoutRequest) returns(LogoutResponse);
-
   rpc OpenChannel(OpenChannelRequest) returns(OpenChannelResponse);
   rpc FundChannel(FundChannelRequest) returns(FundChannelResponse);
   rpc RsmcPayment(RsmcPaymentRequest) returns(RsmcPaymentResponse);
   rpc AddInvoice(Invoice) returns(AddInvoiceResponse);
   rpc SendPayment(SendPaymentRequest) returns(PaymentResp);
 }
-
-
-message LoginRequest {
-  string mnemonic = 1;
-  string loginToken = 2;
-}
-
-message LoginResponse {
-  string userPeerId = 1;
-  string nodePeerId = 2;
-  string nodeAddress = 3;
-  double htlcFeeRate = 4;
-  double htlcMaxFee = 5;
-  string chainNodeType = 6;
-}
-
-message ChangePasswordRequest {
-  string current_password = 1;
-  string new_password = 2;
-}
-
-message ChangePasswordResponse {
-  string result = 1;
-}
-
-message LogoutRequest {
-}
-
-message LogoutResponse {
-}
-
-
 
 message RecipientNodeInfo{
   string recipient_node_peer_id = 1;

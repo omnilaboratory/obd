@@ -2,11 +2,9 @@ package main
 
 import (
 	"github.com/lestrrat-go/file-rotatelogs"
-	proxy "github.com/omnilaboratory/obd/proxy/pb"
 	"github.com/omnilaboratory/obd/proxy/rpc"
 	"io"
 	"log"
-	"net"
 	"net/http"
 	"os"
 	"strconv"
@@ -17,8 +15,6 @@ import (
 	"github.com/omnilaboratory/obd/lightclient"
 	"github.com/omnilaboratory/obd/service"
 	"github.com/omnilaboratory/obd/tool"
-
-	grpc "google.golang.org/grpc"
 )
 
 func initObdLog() {
@@ -71,26 +67,9 @@ func main() {
 	// Timer
 	service.ScheduleService.StartSchedule()
 
-	go startGrpcServer()
+	go rpc.StartGrpcServer()
 
 	log.Println("obd " + tool.GetObdNodeId() + " start in " + config.ChainNodeType)
 	log.Println("wsAddress: " + bean.CurrObdNodeInfo.WebsocketLink)
 	log.Fatal(server.ListenAndServe())
-}
-
-func startGrpcServer() {
-
-	log.Println("startGrpcServer")
-	rpc.ConnToObd()
-
-	address := "localhost:50051"
-	lis, err := net.Listen("tcp", address)
-	if err != nil {
-		log.Fatalf("Error %v", err)
-	}
-	log.Printf("grpc Server is listening on %v ...", address)
-
-	s := grpc.NewServer()
-	proxy.RegisterLightningServer(s, &rpc.RpcServer{})
-	s.Serve(lis)
 }
