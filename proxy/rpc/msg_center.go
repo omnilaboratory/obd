@@ -103,6 +103,7 @@ func readDataFromObd() {
 
 			case enum.MsgType_HTLC_Invoice_402:
 				addInvoiceChan <- replyMessage
+
 			case enum.MsgType_HTLC_ParseInvoice_403:
 				onceRequestChan <- replyMessage
 
