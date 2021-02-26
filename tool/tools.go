@@ -175,3 +175,12 @@ func GenerateInitHashCode() string {
 	addr, _ := btcutil.NewAddressPubKeyHash(pubKeyHash, GetCoreNet())
 	return addr.String()
 }
+
+var grpcSession string
+
+func GetGRpcSession() string {
+	if len(grpcSession) == 0 {
+		grpcSession = GenerateInitHashCode()
+	}
+	return grpcSession
+}

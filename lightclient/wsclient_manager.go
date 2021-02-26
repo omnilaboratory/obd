@@ -69,7 +69,6 @@ func (clientManager *clientManager) cleanConn(client *Client) {
 		_ = service.UserService.UserLogout(client.User)
 		sendInfoOnUserStateChange(client.User.PeerId)
 		delete(clientManager.OnlineClientMap, client.User.PeerId)
-		delete(globalWsClientManager.OnlineClientMap, client.User.PeerId)
 		delete(service.OnlineUserMap, client.User.PeerId)
 		client.User = nil
 	}

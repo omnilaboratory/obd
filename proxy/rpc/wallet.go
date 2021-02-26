@@ -17,7 +17,7 @@ var currUserInfo *pb.LoginResponse
 func (server *RpcServer) GenSeed(ctx context.Context, in *pb.GenSeedRequest) (resp *pb.GenSeedResponse, err error) {
 	log.Println("GenSeed")
 	sendMsgToObd(nil, "", "", enum.MsgType_GetMnemonic_2004)
-	data := <-OnceRequestChan
+	data := <-onceRequestChan
 	if data.Status == false {
 		return nil, errors.New(data.Result.(string))
 	}
@@ -65,12 +65,10 @@ func (server *RpcServer) Logout(ctx context.Context, in *pb.LogoutRequest) (resp
 	sendMsgToObd(nil, "", "", enum.MsgType_UserLogout_2002)
 
 	data := <-logoutChan
-	if data.Status == true {
-		_ = connObd.Close()
-		connObd = nil
-	} else {
+	if data.Status == false {
 		return nil, errors.New(data.Result.(string))
 	}
+
 	return &pb.LogoutResponse{}, nil
 }
 

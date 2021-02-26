@@ -31,13 +31,11 @@ func (client *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, 
 	case enum.MsgType_UserLogin_2001:
 		mnemonic := gjson.Get(msg.Data, "mnemonic").String()
 		loginToken := gjson.Get(msg.Data, "login_token").Str
-		endType := gjson.Get(msg.Data, "end_type").Str
-		isAdmin := service.CheckIsAdmin(loginToken, endType)
 
-		if endType == "grpc" && isAdmin == false {
-			client.SendToMyself(msg.Type, status, "your login token is wrong")
-			sendType = enum.SendTargetType_SendToSomeone
-			break
+		isAdmin := false
+		//TODO 管理员验证
+		if client.IsGRpcRequest || true {
+			isAdmin = service.CheckIsAdmin(loginToken)
 		}
 
 		peerId := tool.GetUserPeerId(mnemonic)
@@ -98,7 +96,6 @@ func (client *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, 
 		}
 	case enum.MsgType_UserLogout_2002:
 		if client.User != nil {
-
 			exist := service.UserService.CheckExecutingTx(client.User)
 			if exist == false {
 				data = client.User.PeerId + " logout"
@@ -109,8 +106,13 @@ func (client *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, 
 			client.SendToMyself(msg.Type, status, data)
 
 			if exist == false {
-				client.User.IsAdmin = false
-				//client.Socket.Close()
+				_ = service.UserService.UserLogout(client.User)
+				sendInfoOnUserStateChange(client.User.PeerId)
+
+				delete(globalWsClientManager.ClientsMap, client)
+				delete(globalWsClientManager.OnlineClientMap, client.User.PeerId)
+				delete(service.OnlineUserMap, client.User.PeerId)
+				client.User = nil
 			}
 		} else {
 			client.SendToMyself(msg.Type, status, "please login")

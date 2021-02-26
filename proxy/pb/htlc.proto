@@ -1,0 +1,51 @@
+syntax = "proto3";
+
+package proxy;
+option go_package = "pb";
+
+message Invoice{
+  int64 property_id = 1;
+  double value = 2;
+  string memo = 3;
+  string cltv_expiry = 4;
+  bool private = 5;
+}
+
+message AddInvoiceResponse{
+  string payment_request = 1;
+}
+
+message ParseInvoiceRequest{
+  string payment_request = 1;
+}
+message ParseInvoiceResponse{
+  int64 property_id = 1;
+  double value = 2;
+  string memo = 3;
+  string cltv_expiry = 4;
+  bool private = 5;
+  string h = 6;
+  string recipient_node_peer_id = 7;
+  string recipient_user_peer_id = 8;
+}
+
+message SendPaymentRequest{
+  string payment_request = 1;
+  ParseInvoiceResponse invoice_detail = 2;
+}
+
+message PaymentResp{
+  string payment_hash = 1;
+  string payment_preimage = 2;
+  double amount_to_rsmc = 3;
+  double amount_to_htlc = 4;
+  double amount_to_counterparty = 5;
+}
+
+
+
+service Htlc {
+  rpc AddInvoice(Invoice) returns(AddInvoiceResponse);
+  rpc ParseInvoice(ParseInvoiceRequest) returns(ParseInvoiceResponse);
+  rpc SendPayment(SendPaymentRequest) returns(PaymentResp);
+}

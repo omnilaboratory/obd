@@ -15,10 +15,11 @@ import (
 )
 
 type Client struct {
-	Id          string
-	User        *bean.User
-	Socket      *websocket.Conn
-	SendChannel chan []byte
+	Id            string
+	IsGRpcRequest bool
+	User          *bean.User
+	Socket        *websocket.Conn
+	SendChannel   chan []byte
 }
 
 func (client *Client) Write() {
@@ -238,6 +239,7 @@ func (client *Client) Read() {
 					//-40 -41
 					if msg.Type == enum.MsgType_HTLC_FindPath_401 ||
 						msg.Type == enum.MsgType_HTLC_Invoice_402 ||
+						msg.Type == enum.MsgType_HTLC_ParseInvoice_403 ||
 						msg.Type == enum.MsgType_HTLC_SendAddHTLC_40 ||
 						msg.Type == enum.MsgType_HTLC_ClientSign_Alice_C3a_100 ||
 						msg.Type == enum.MsgType_HTLC_ClientSign_Bob_C3b_101 ||

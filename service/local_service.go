@@ -39,12 +39,8 @@ func checkInitConfig() {
 	l.Log("admin login token:", l.Colorize(localConfig.AdminLoginToken, l.Red))
 }
 
-func CheckIsAdmin(loginToken, endType string) bool {
+func CheckIsAdmin(loginToken string) bool {
 	if len(loginToken) == 0 {
-		return false
-	}
-
-	if endType != "grpc" {
 		return false
 	}
 

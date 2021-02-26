@@ -10,7 +10,7 @@ import (
 )
 
 func TestGenSeed(t *testing.T) {
-	client, conn := getUserClient()
+	client, conn := getWalletClient()
 	defer conn.Close()
 	seed, err := client.GenSeed(context.Background(), &proxy.GenSeedRequest{})
 	if err != nil {
@@ -19,8 +19,9 @@ func TestGenSeed(t *testing.T) {
 	}
 	log.Println(seed)
 }
+
 func TestLogin(t *testing.T) {
-	client, conn := getUserClient()
+	client, conn := getWalletClient()
 	defer conn.Close()
 
 	login, err := client.Login(context.Background(), &proxy.LoginRequest{
@@ -35,7 +36,7 @@ func TestLogin(t *testing.T) {
 }
 func TestChangePassword(t *testing.T) {
 
-	client, conn := getUserClient()
+	client, conn := getWalletClient()
 	defer conn.Close()
 
 	token, err := client.ChangePassword(context.Background(), &proxy.ChangePasswordRequest{
@@ -49,7 +50,7 @@ func TestChangePassword(t *testing.T) {
 	log.Println(token)
 }
 func TestLogout(t *testing.T) {
-	client, conn := getUserClient()
+	client, conn := getWalletClient()
 	defer conn.Close()
 
 	logout, err := client.Logout(context.Background(), &proxy.LogoutRequest{})
@@ -60,7 +61,7 @@ func TestLogout(t *testing.T) {
 	log.Println(logout)
 }
 
-func getUserClient() (proxy.WalletClient, *grpc.ClientConn) {
+func getWalletClient() (proxy.WalletClient, *grpc.ClientConn) {
 	opts := grpc.WithInsecure()
 	conn, err := grpc.Dial("localhost:50051", opts)
 	if err != nil {

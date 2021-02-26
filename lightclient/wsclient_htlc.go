@@ -117,9 +117,19 @@ func (client *Client) htlcHModule(msg bean.RequestMessage) (enum.SendTargetType,
 			}
 		}
 		sendType = enum.SendTargetType_SendToSomeone
+	case enum.MsgType_HTLC_ParseInvoice_403:
+		invoice, err := service.HtlcForwardTxService.ParseInvoice(msg.Data, *client.User)
+		if err != nil {
+			data = err.Error()
+		} else {
+			bytes, _ := json.Marshal(invoice)
+			data = string(bytes)
+			status = true
+		}
+		client.SendToMyself(msg.Type, status, data)
+		sendType = enum.SendTargetType_SendToSomeone
 
 	case enum.MsgType_HTLC_SendAddHTLC_40:
-
 		if client.User.IsAdmin {
 			err := admin.HtlcBeforeAliceAddHtlcAtAliceSide(&msg, client.User)
 			if err == nil {

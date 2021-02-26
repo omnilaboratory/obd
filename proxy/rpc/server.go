@@ -22,5 +22,6 @@ func StartGrpcServer() {
 	s := grpc.NewServer()
 	proxy.RegisterLightningServer(s, &RpcServer{})
 	proxy.RegisterWalletServer(s, &RpcServer{})
+	proxy.RegisterHtlcServer(s, &RpcServer{})
 	s.Serve(lis)
 }
