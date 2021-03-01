@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+import "rpc.proto";
+
+package proxy;
+option go_package = "pb";
+
+message RsmcPaymentRequest{
+  string channel_id = 1;
+  double amount = 2;
+  RecipientNodeInfo recipientInfo = 3;
+}
+
+message RsmcPaymentResponse{
+  string channel_id = 1;
+  double amount_a = 2;
+  double amount_b = 3;
+}
+
+service Rsmc{
+  rpc RsmcPayment(RsmcPaymentRequest) returns(RsmcPaymentResponse);
+}

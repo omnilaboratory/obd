@@ -36,7 +36,7 @@ func TestFundChannel(t *testing.T) {
 		RecipientInfo: &proxy.RecipientNodeInfo{
 			RecipientNodePeerId: "QmccE4s2uhEXrJXE778NChn1ed8NyWNyAHH23mP7f9NM3L",
 			RecipientUserPeerId: "63167817c979ade9e42f3204404c1513a4b1b4e9eea654c9498ed9cc920dbb36"},
-		TemplateChannelId: "fd11f0b3df40903e17c2d6375f5fe969016bbf626dcb9b36274d448d31c3ff49",
+		TemplateChannelId: "a41db534003e7c49fe573e4f7c8091714f87f9b429264edab6af6e0a70cb4175",
 		BtcAmount:         0.0004,
 		PropertyId:        137,
 		AssetAmount:       1,

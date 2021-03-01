@@ -13,7 +13,7 @@ service Lightning {
 
   rpc OpenChannel(OpenChannelRequest) returns(OpenChannelResponse);
   rpc FundChannel(FundChannelRequest) returns(FundChannelResponse);
-  rpc RsmcPayment(RsmcPaymentRequest) returns(RsmcPaymentResponse);
+
 }
 
 message RecipientNodeInfo{
@@ -43,20 +43,6 @@ message FundChannelRequest{
 message FundChannelResponse{
   string channel_id = 1;
 }
-
-message RsmcPaymentRequest{
-  string channel_id = 1;
-  double amount = 2;
-  RecipientNodeInfo recipientInfo = 3;
-}
-
-message RsmcPaymentResponse{
-  string channel_id = 1;
-  double amount_a = 2;
-  double amount_b = 3;
-}
-
-
 
 message HelloRequest {
   string sayhi = 1;

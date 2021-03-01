@@ -30,7 +30,7 @@ func TestParseInvoice(t *testing.T) {
 	client, conn := getHtlcClient()
 	defer conn.Close()
 	invoice, err := client.ParseInvoice(context.Background(), &proxy.ParseInvoiceRequest{
-		PaymentRequest: "obtb100000s1pqzyfnpwQmccE4s2uhEXrJXE778NChn1ed8NyWNyAHH23mP7f9NM3Luzq63167817c979ade9e42f3204404c1513a4b1b4e9eea654c9498ed9cc920dbb36hzz02fd7f35f5b334f63add11abd1c951d4d3f1488550cda268472ecf97ae2552ffa8xq8ps306yqtqp0dqtdescription3kc",
+		PaymentRequest: "obtb100000s1pqzyfnpwQmccE4s2uhEXrJXE778NChn1ed8NyWNyAHH23mP7f9NM3Luzq63167817c979ade9e42f3204404c1513a4b1b4e9eea654c9498ed9cc920dbb36hzz0202c3aac5755ec024a102da30bcfc80658a7969a5448f145bf0e986606b459d1dxq8ps306yqtqp0dqtdescription3wh",
 	})
 	if err != nil {
 		log.Println(err)
@@ -45,13 +45,13 @@ func TestSendPayment(t *testing.T) {
 	defer conn.Close()
 
 	htlcPayment, err := client.SendPayment(context.Background(), &proxy.SendPaymentRequest{
-		PaymentRequest: "obtb100000s1pqzyfnpwQmccE4s2uhEXrJXE778NChn1ed8NyWNyAHH23mP7f9NM3Luzq63167817c979ade9e42f3204404c1513a4b1b4e9eea654c9498ed9cc920dbb36hzz02fd7f35f5b334f63add11abd1c951d4d3f1488550cda268472ecf97ae2552ffa8xq8ps306yqtqp0dqtdescription3kc",
+		PaymentRequest: "obtb100000s1pqzyfnpwQmccE4s2uhEXrJXE778NChn1ed8NyWNyAHH23mP7f9NM3Luzq63167817c979ade9e42f3204404c1513a4b1b4e9eea654c9498ed9cc920dbb36hzz0202c3aac5755ec024a102da30bcfc80658a7969a5448f145bf0e986606b459d1dxq8ps306yqtqp0dqtdescription3wh",
 		InvoiceDetail: &proxy.ParseInvoiceResponse{
 			PropertyId:          137,
 			Value:               0.001,
 			Memo:                "description",
 			CltvExpiry:          "2021-08-15",
-			H:                   "02fd7f35f5b334f63add11abd1c951d4d3f1488550cda268472ecf97ae2552ffa8",
+			H:                   "0202c3aac5755ec024a102da30bcfc80658a7969a5448f145bf0e986606b459d1d",
 			RecipientNodePeerId: "QmccE4s2uhEXrJXE778NChn1ed8NyWNyAHH23mP7f9NM3L",
 			RecipientUserPeerId: "63167817c979ade9e42f3204404c1513a4b1b4e9eea654c9498ed9cc920dbb36",
 		},
