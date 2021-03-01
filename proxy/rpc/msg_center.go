@@ -86,6 +86,8 @@ func readDataFromObd() {
 			case enum.MsgType_RecvChannelAccept_33:
 				openChannelChan <- replyMessage
 
+			case enum.MsgType_Funding_134:
+				fundChannelChan <- replyMessage
 			case enum.MsgType_FundingCreate_SendBtcFundingCreated_340:
 				fundChannelChan <- replyMessage
 			case enum.MsgType_FundingSign_RecvBtcSign_350:
