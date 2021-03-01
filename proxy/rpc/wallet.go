@@ -8,12 +8,42 @@ import (
 	"github.com/omnilaboratory/obd/bean/enum"
 	"github.com/omnilaboratory/obd/omnicore"
 	"github.com/omnilaboratory/obd/proxy/pb"
+	"github.com/omnilaboratory/obd/service"
 	"log"
 	"strings"
 )
 
 var connObd *websocket.Conn
 var currUserInfo *pb.LoginResponse
+
+func checkLogin() (user *bean.User, err error) {
+	if currUserInfo == nil {
+		return nil, errors.New("please login")
+	}
+	user = service.OnlineUserMap[currUserInfo.UserPeerId]
+	if user == nil {
+		return nil, errors.New("please login")
+	}
+	return user, nil
+}
+
+func (server *RpcServer) NextAddr(ctx context.Context, in *pb.AddrRequest) (resp *pb.AddrResponse, err error) {
+	log.Println("NextAddr")
+
+	user, err := checkLogin()
+	if err != nil {
+		return nil, err
+	}
+
+	address, err := service.HDWalletService.CreateNewAddress(user)
+	if err != nil {
+		return nil, err
+	}
+	resp = &pb.AddrResponse{
+		Addr: address.Address,
+	}
+	return resp, nil
+}
 
 func (server *RpcServer) EstimateFee(ctx context.Context, in *pb.EstimateFeeRequest) (resp *pb.EstimateFeeResponse, err error) {
 	log.Println("EstimateFee")
@@ -64,8 +94,10 @@ func (server *RpcServer) Login(ctx context.Context, in *pb.LoginRequest) (resp *
 
 func (server *RpcServer) Logout(ctx context.Context, in *pb.LogoutRequest) (resp *pb.LogoutResponse, err error) {
 	log.Println("Logout")
-	if connObd == nil {
-		return nil, errors.New("please login first")
+
+	_, err = checkLogin()
+	if err != nil {
+		return nil, err
 	}
 
 	if logoutChan == nil {
@@ -84,10 +116,11 @@ func (server *RpcServer) Logout(ctx context.Context, in *pb.LogoutRequest) (resp
 
 func (server *RpcServer) ChangePassword(ctx context.Context, in *pb.ChangePasswordRequest) (resp *pb.ChangePasswordResponse, err error) {
 	log.Println("ChangePassword")
-	if connObd == nil {
-		return nil, errors.New("please login first")
-	}
 
+	_, err = checkLogin()
+	if err != nil {
+		return nil, err
+	}
 	if len(in.CurrentPassword) < 6 {
 		return nil, errors.New("wrong current_password")
 	}

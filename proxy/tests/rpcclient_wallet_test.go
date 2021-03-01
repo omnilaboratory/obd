@@ -9,6 +9,17 @@ import (
 	"testing"
 )
 
+func TestNextAddr(t *testing.T) {
+	client, conn := getWalletClient()
+	defer conn.Close()
+	resp, err := client.NextAddr(context.Background(), &proxy.AddrRequest{})
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	log.Println(resp)
+}
+
 func TestEstimateFee(t *testing.T) {
 	client, conn := getWalletClient()
 	defer conn.Close()

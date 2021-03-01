@@ -52,10 +52,26 @@ message EstimateFeeResponse {
   int64 sat_per_kw = 1;
 }
 
+
+message AddrRequest {
+  // No fields, as we always give out a p2wkh address.
+}
+message AddrResponse {
+  /*
+  The address encoded using a bech32 format.
+  */
+  string addr = 1;
+}
+
 service Wallet {
   rpc GenSeed(GenSeedRequest) returns(GenSeedResponse);
   rpc Login(LoginRequest) returns (LoginResponse);
   rpc ChangePassword(ChangePasswordRequest) returns (ChangePasswordResponse);
   rpc Logout(LogoutRequest) returns(LogoutResponse);
   rpc EstimateFee(EstimateFeeRequest) returns(EstimateFeeResponse);
+
+  /*
+    NextAddr returns the next unused address within the wallet.
+    */
+  rpc NextAddr (AddrRequest) returns (AddrResponse);
 }

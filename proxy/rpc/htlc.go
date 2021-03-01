@@ -12,8 +12,9 @@ import (
 
 func (s *RpcServer) AddInvoice(ctx context.Context, in *pb.Invoice) (*pb.AddInvoiceResponse, error) {
 	log.Println("AddInvoice")
-	if connObd == nil {
-		return nil, errors.New("please login first")
+	_, err := checkLogin()
+	if err != nil {
+		return nil, err
 	}
 
 	if tool.CheckIsString(&in.CltvExpiry) == false {
@@ -49,8 +50,9 @@ func (s *RpcServer) AddInvoice(ctx context.Context, in *pb.Invoice) (*pb.AddInvo
 
 func (s *RpcServer) ParseInvoice(ctx context.Context, in *pb.ParseInvoiceRequest) (*pb.ParseInvoiceResponse, error) {
 	log.Println("ParseInvoice")
-	if connObd == nil {
-		return nil, errors.New("please login first")
+	_, err := checkLogin()
+	if err != nil {
+		return nil, err
 	}
 
 	if tool.CheckIsString(&in.PaymentRequest) == false {
@@ -85,8 +87,9 @@ func (s *RpcServer) ParseInvoice(ctx context.Context, in *pb.ParseInvoiceRequest
 
 func (s *RpcServer) SendPayment(ctx context.Context, in *pb.SendPaymentRequest) (*pb.PaymentResp, error) {
 	log.Println("SendPayment")
-	if connObd == nil {
-		return nil, errors.New("please login first")
+	_, err := checkLogin()
+	if err != nil {
+		return nil, err
 	}
 
 	if tool.CheckIsString(&in.PaymentRequest) == false {
