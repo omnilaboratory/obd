@@ -43,9 +43,19 @@ message GenSeedResponse {
 
 }
 
+
+message EstimateFeeRequest {
+  int32 conf_target = 1;
+}
+
+message EstimateFeeResponse {
+  int64 sat_per_kw = 1;
+}
+
 service Wallet {
   rpc GenSeed(GenSeedRequest) returns(GenSeedResponse);
   rpc Login(LoginRequest) returns (LoginResponse);
   rpc ChangePassword(ChangePasswordRequest) returns (ChangePasswordResponse);
   rpc Logout(LogoutRequest) returns(LogoutResponse);
+  rpc EstimateFee(EstimateFeeRequest) returns(EstimateFeeResponse);
 }

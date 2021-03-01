@@ -6,6 +6,7 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/omnilaboratory/obd/bean"
 	"github.com/omnilaboratory/obd/bean/enum"
+	"github.com/omnilaboratory/obd/omnicore"
 	"github.com/omnilaboratory/obd/proxy/pb"
 	"log"
 	"strings"
@@ -13,6 +14,15 @@ import (
 
 var connObd *websocket.Conn
 var currUserInfo *pb.LoginResponse
+
+func (server *RpcServer) EstimateFee(ctx context.Context, in *pb.EstimateFeeRequest) (resp *pb.EstimateFeeResponse, err error) {
+	log.Println("EstimateFee")
+	minerFee := omnicore.GetMinerFee()
+	resp = &pb.EstimateFeeResponse{
+		SatPerKw: int64(100000000 * minerFee),
+	}
+	return resp, nil
+}
 
 func (server *RpcServer) GenSeed(ctx context.Context, in *pb.GenSeedRequest) (resp *pb.GenSeedResponse, err error) {
 	log.Println("GenSeed")

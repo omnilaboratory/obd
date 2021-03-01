@@ -9,6 +9,17 @@ import (
 	"testing"
 )
 
+func TestEstimateFee(t *testing.T) {
+	client, conn := getWalletClient()
+	defer conn.Close()
+	resp, err := client.EstimateFee(context.Background(), &proxy.EstimateFeeRequest{})
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	log.Println(resp)
+}
+
 func TestGenSeed(t *testing.T) {
 	client, conn := getWalletClient()
 	defer conn.Close()
