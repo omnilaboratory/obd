@@ -3,18 +3,8 @@ syntax = "proto3";
 package proxy;
 option go_package = "pb";
 
-// Proxy is the main RPC server of the daemon.
-service Lightning {
 
-  /* obdcli: `hello`
-  hello is a `say hi` gRPC.
-  */
-  rpc Hello (HelloRequest) returns (HelloResponse);
 
-  rpc OpenChannel(OpenChannelRequest) returns(OpenChannelResponse);
-  rpc FundChannel(FundChannelRequest) returns(FundChannelResponse);
-
-}
 
 message RecipientNodeInfo{
   string recipient_node_peer_id = 1;
@@ -49,6 +39,154 @@ message HelloRequest {
 }
 message HelloResponse {
   string resp = 1;
+}
+
+message ListChannelsRequest {
+  bool active_only = 1;
+  bool inactive_only = 2;
+  bool public_only = 3;
+  bool private_only = 4;
+
+  /*
+  Filters the response for channels with a target peer's pubkey. If peer is
+  empty, all channels will be returned.
+  */
+  bytes peer = 5;
+
+  int32 page_size = 6;
+  int32 page_index = 7;
+}
+
+message Channel {
+  // Whether this channel is active or not
+  bool active = 1;
+
+  // The identity pubkey of the remote node
+  string remote_pubkey = 2;
+
+  /*
+  The outpoint (txid:index) of the funding transaction. With this value, Bob
+  will be able to generate a signature for Alice's version of the commitment
+  transaction.
+  */
+  string channel_point = 3;
+
+  string chan_id = 4 ;
+
+  // The total amount of funds held in this channel
+  int64 capacity = 5;
+
+  // This node's current balance in this channel
+  int64 local_balance = 6;
+
+  // The counterparty's current balance in this channel
+  int64 remote_balance = 7;
+
+  /*
+  The amount calculated to be paid in fees for the current set of commitment
+  transactions. The fee amount is persisted with the channel in order to
+  allow the fee amount to be removed and recalculated with each channel state
+  update, including updates that happen after a system restart.
+  */
+  int64 commit_fee = 8;
+
+  // The weight of the commitment transaction
+  int64 commit_weight = 9;
+
+  /*
+  The required number of satoshis per kilo-weight that the requester will pay
+  at all times, for both the funding transaction and commitment transaction.
+  This value can later be updated once the channel is open.
+  */
+  int64 fee_per_kw = 10;
+
+  // The unsettled balance in this channel
+  int64 unsettled_balance = 11;
+
+  /*
+  The total number of satoshis we've sent within this channel.
+  */
+  int64 total_satoshis_sent = 12;
+
+  /*
+  The total number of satoshis we've received within this channel.
+  */
+  int64 total_satoshis_received = 13;
+
+  /*
+  The total number of updates conducted within this channel.
+  */
+  uint64 num_updates = 14;
+
+  /*
+  The list of active, uncleared HTLCs currently pending within the channel.
+  */
+  //  repeated HTLC pending_htlcs = 15;
+
+
+  // Whether this channel is advertised to the network or not.
+  bool private = 17;
+
+  // True if we were the ones that created the channel.
+  bool initiator = 18;
+
+  // A set of flags showing the current state of the channel.
+  string chan_status_flags = 19;
+
+
+  // The commitment type used by this channel.
+  //  CommitmentType commitment_type = 26;
+
+  /*
+  The number of seconds that the channel has been monitored by the channel
+  scoring system. Scores are currently not persisted, so this value may be
+  less than the lifetime of the channel [EXPERIMENTAL].
+  */
+  int64 lifetime = 23;
+
+  /*
+  The number of seconds that the remote peer has been observed as being online
+  by the channel scoring system over the lifetime of the channel
+  [EXPERIMENTAL].
+  */
+  int64 uptime = 24;
+
+  /*
+  Close address is the address that we will enforce payout to on cooperative
+  close if the channel was opened utilizing option upfront shutdown. This
+  value can be set on channel open by setting close_address in an open channel
+  request. If this value is not set, you can still choose a payout address by
+  cooperatively closing with the delivery_address field set.
+  */
+  string close_address = 25;
+
+  /*
+  The amount that the initiator of the channel optionally pushed to the remote
+  party on channel open. This amount will be zero if the channel initiator did
+  not push any funds to the remote peer. If the initiator field is true, we
+  pushed this amount to our peer, if it is false, the remote peer pushed this
+  amount to us.
+  */
+  uint64 push_amount_sat = 27;
+
+  int64 property_id = 28;
+}
+
+
+message ListChannelsResponse {
+  // The list of active channels
+  repeated Channel channels = 1;
+}
+service Lightning {
+
+  /* obdcli: `hello`
+  hello is a `say hi` gRPC.
+  */
+  rpc Hello (HelloRequest) returns (HelloResponse);
+
+  rpc OpenChannel(OpenChannelRequest) returns(OpenChannelResponse);
+  rpc FundChannel(FundChannelRequest) returns(FundChannelResponse);
+  rpc ListChannels(ListChannelsRequest) returns(ListChannelsResponse);
 }
 
 

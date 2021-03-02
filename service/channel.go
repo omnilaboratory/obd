@@ -250,6 +250,7 @@ type ChannelVO struct {
 	BalanceA           float64           `json:"balance_a"`
 	BalanceB           float64           `json:"balance_b"`
 	BalanceHtlc        float64           `json:"balance_htlc"`
+	NumUpdates         uint64            `json:"num_updates"`
 	CreateAt           time.Time         `json:"create_at"`
 }
 
@@ -274,19 +275,31 @@ func (this *channelManager) AllItem(jsonData string, user bean.User) (data *page
 	if pageIndex <= 0 {
 		pageIndex = 1
 	}
+
 	pageSize := gjson.Get(jsonData, "page_size").Int()
 	if pageSize <= 0 {
 		pageSize = 10
 	}
+	activeOnly := gjson.Get(jsonData, "active_only").Bool()
 	skip := (pageIndex - 1) * pageSize
 
 	var infos []dao.ChannelInfo
-	err = tx.Select(
-		q.Or(
-			q.Eq("PeerIdA", user.PeerId),
-			q.Eq("PeerIdB", user.PeerId))).
-		OrderBy("CreateAt").Reverse().Skip(int(skip)).Limit(int(pageSize)).
-		Find(&infos)
+	if activeOnly {
+		err = tx.Select(
+			q.Gt("CurrState", bean.ChannelState_WaitFundAsset),
+			q.Or(
+				q.Eq("PeerIdA", user.PeerId),
+				q.Eq("PeerIdB", user.PeerId))).
+			OrderBy("CreateAt").Reverse().Skip(int(skip)).Limit(int(pageSize)).
+			Find(&infos)
+	} else {
+		err = tx.Select(
+			q.Or(
+				q.Eq("PeerIdA", user.PeerId),
+				q.Eq("PeerIdB", user.PeerId))).
+			OrderBy("CreateAt").Reverse().Skip(int(skip)).Limit(int(pageSize)).
+			Find(&infos)
+	}
 
 	tempCount, err := tx.Select(
 		q.Or(
@@ -344,6 +357,8 @@ func (this *channelManager) AllItem(jsonData string, user bean.User) (data *page
 					item.BalanceB = commitmentTxInfo.AmountToCounterparty
 					item.BalanceHtlc = commitmentTxInfo.AmountToHtlc
 				}
+				count, _ := tx.Select(q.Eq("ChannelId", info.ChannelId)).Count(&dao.CommitmentTransaction{})
+				item.NumUpdates = uint64(count)
 			}
 			items = append(items, item)
 		}
