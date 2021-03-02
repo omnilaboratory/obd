@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	proxy "github.com/omnilaboratory/obd/proxy/pb"
 	"google.golang.org/grpc"
 	"log"
@@ -17,6 +18,20 @@ func getRsmcClient() (proxy.RsmcClient, *grpc.ClientConn) {
 		return nil, nil
 	}
 	return proxy.NewRsmcClient(conn), conn
+}
+
+func TestLatestRsmcTx(t *testing.T) {
+	client, conn := getRsmcClient()
+	defer conn.Close()
+
+	payment, err := client.LatestRsmcTx(context.Background(), &proxy.LatestRsmcTxRequest{
+		ChannelId: "0caf45d8b014dbb84b557f671bb10981af13f7b9ffd317f56abcd9d77a45bf87",
+	})
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	log.Println(payment)
 }
 
 func TestRsmcPayment(t *testing.T) {
@@ -36,4 +51,22 @@ func TestRsmcPayment(t *testing.T) {
 		return
 	}
 	log.Println(payment)
+}
+
+func TestTxListByChannelId(t *testing.T) {
+
+	client, conn := getRsmcClient()
+	defer conn.Close()
+
+	payment, err := client.TxListByChannelId(context.Background(), &proxy.TxListRequest{
+		ChannelId: "0caf45d8b014dbb84b557f671bb10981af13f7b9ffd317f56abcd9d77a45bf87",
+		PageSize:  10,
+		PageIndex: 1,
+	})
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	marshal, _ := json.Marshal(payment)
+	log.Println(string(marshal))
 }

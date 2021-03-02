@@ -1,6 +1,7 @@
 package rpc
 
 import (
+	"crypto/x509"
 	"encoding/json"
 	"github.com/gorilla/websocket"
 	"github.com/omnilaboratory/obd/bean"
@@ -9,6 +10,7 @@ import (
 	"github.com/omnilaboratory/obd/tool"
 	"log"
 	"net/http"
+	"net/http/httptest"
 	"net/url"
 	"strings"
 	"time"
@@ -26,21 +28,41 @@ var (
 	onceRequestChan    = make(chan bean.ReplyMessage)
 )
 
-func ConnToObd() {
+func ConnToObd() (err error) {
+	//u := url.URL{Scheme: "wss", Host: "127.0.0.1:60020", Path: "/ws" + config.ChainNodeType}
 	u := url.URL{Scheme: "ws", Host: "127.0.0.1:60020", Path: "/ws" + config.ChainNodeType}
 	log.Printf("grpc begin to connect to obd: %s", u.String())
 
+	dailer := websocket.DefaultDialer
+	//dailer.TLSClientConfig =&tls.Config{InsecureSkipVerify: true}
+
 	header := http.Header{}
 	header.Add("session", tool.GetGRpcSession())
-	var err error
-	connObd, _, err = websocket.DefaultDialer.Dial(u.String(), header)
+
+	connObd, _, err = dailer.Dial(u.String(), header)
 	if err != nil {
 		log.Println("fail to dial obd:", err)
-		return
+		return err
 	}
 	connObd.SetReadLimit(1 << 20)
 
 	go readDataFromObd()
+
+	return nil
+}
+
+func rootCAs(s *httptest.Server) *x509.CertPool {
+	certs := x509.NewCertPool()
+	for _, c := range s.TLS.Certificates {
+		roots, err := x509.ParseCertificates(c.Certificate[len(c.Certificate)-1])
+		if err != nil {
+			log.Println("error parsing server's root cert: %v", err)
+		}
+		for _, root := range roots {
+			certs.AddCert(root)
+		}
+	}
+	return certs
 }
 
 func readDataFromObd() {

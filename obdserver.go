@@ -71,5 +71,13 @@ func main() {
 
 	log.Println("obd " + tool.GetObdNodeId() + " start in " + config.ChainNodeType)
 	log.Println("wsAddress: " + bean.CurrObdNodeInfo.WebsocketLink)
+
+	//https://blog.csdn.net/Binary2014/article/details/103919365
+	//server.ListenAndServeTLS()
+	//err = server.ListenAndServeTLS("cert.pem", "key.pem")
+	//if err != nil {
+	//	log.Println(err)
+	//}
+
 	log.Fatal(server.ListenAndServe())
 }

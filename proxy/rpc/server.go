@@ -10,7 +10,11 @@ import (
 func StartGrpcServer() {
 
 	log.Println("startGrpcServer")
-	ConnToObd()
+	err := ConnToObd()
+	if err != nil {
+		log.Println(err)
+		return
+	}
 
 	address := "localhost:50051"
 	lis, err := net.Listen("tcp", address)
