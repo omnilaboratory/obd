@@ -3,7 +3,6 @@ package rpc
 type loginInfo struct {
 	Mnemonic   string `json:"mnemonic"`
 	LoginToken string `json:"login_token"`
-	EndType    string `json:"end_type"`
 }
 
 type updateLoginToken struct {

@@ -60,9 +60,9 @@ func (s *RpcServer) ListChannels(ctx context.Context, in *pb.ListChannelsRequest
 		if user.PeerId == item.PeerIdA {
 			node.Initiator = true
 		}
-		node.RemoteBalance = int64(item.BalanceB * 100000000)
 		node.LocalBalance = int64(item.BalanceA * 100000000)
-		node.NumUpdates = uint64(item.NumUpdates)
+		node.RemoteBalance = int64(item.BalanceB * 100000000)
+		node.NumUpdates = item.NumUpdates
 		resp.Channels = append(resp.Channels, node)
 	}
 	return resp, err

@@ -6,12 +6,9 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/omnilaboratory/obd/bean"
 	"github.com/omnilaboratory/obd/bean/enum"
-	"github.com/omnilaboratory/obd/config"
-	"github.com/omnilaboratory/obd/tool"
+	"github.com/omnilaboratory/obd/lightclient"
 	"log"
-	"net/http"
 	"net/http/httptest"
-	"net/url"
 	"strings"
 	"time"
 )
@@ -28,25 +25,30 @@ var (
 	onceRequestChan    = make(chan bean.ReplyMessage)
 )
 
+var obcClient *lightclient.Client
+
 func ConnToObd() (err error) {
-	//u := url.URL{Scheme: "wss", Host: "127.0.0.1:60020", Path: "/ws" + config.ChainNodeType}
-	u := url.URL{Scheme: "ws", Host: "127.0.0.1:60020", Path: "/ws" + config.ChainNodeType}
-	log.Printf("grpc begin to connect to obd: %s", u.String())
 
-	dailer := websocket.DefaultDialer
-	//dailer.TLSClientConfig =&tls.Config{InsecureSkipVerify: true}
+	obcClient = &lightclient.Client{IsGRpcRequest: true}
 
-	header := http.Header{}
-	header.Add("session", tool.GetGRpcSession())
-
-	connObd, _, err = dailer.Dial(u.String(), header)
-	if err != nil {
-		log.Println("fail to dial obd:", err)
-		return err
-	}
-	connObd.SetReadLimit(1 << 20)
-
-	go readDataFromObd()
+	////u := url.URL{Scheme: "wss", Host: "127.0.0.1:60020", Path: "/ws" + config.ChainNodeType}
+	//u := url.URL{Scheme: "ws", Host: "127.0.0.1:60020", Path: "/ws" + config.ChainNodeType}
+	//log.Printf("grpc begin to connect to obd: %s", u.String())
+	//
+	//dailer := websocket.DefaultDialer
+	////dailer.TLSClientConfig =&tls.Config{InsecureSkipVerify: true}
+	//
+	//header := http.Header{}
+	//header.Add("session", tool.GetGRpcSession())
+	//
+	//connObd, _, err = dailer.Dial(u.String(), header)
+	//if err != nil {
+	//	log.Println("fail to dial obd:", err)
+	//	return err
+	//}
+	//connObd.SetReadLimit(1 << 20)
+	//
+	//go readDataFromObd()
 
 	return nil
 }

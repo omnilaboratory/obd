@@ -167,7 +167,7 @@ func updateP2pAddressLogin() {
 func sycUserInfos() {
 
 	nodes := make([]bean.ObdNodeUserLoginRequest, 0)
-	for userId, _ := range globalWsClientManager.OnlineClientMap {
+	for userId, _ := range GlobalWsClientManager.OnlineClientMap {
 		user := bean.ObdNodeUserLoginRequest{}
 		user.UserId = userId
 		nodes = append(nodes, user)
@@ -208,7 +208,7 @@ func getChannelInfos() []bean.ChannelInfoRequest {
 		if strings.HasPrefix(f.Name(), "user_") && strings.HasSuffix(f.Name(), ".db") {
 			peerId := strings.TrimPrefix(f.Name(), "user_")
 			peerId = strings.TrimSuffix(peerId, ".db")
-			value, exists := globalWsClientManager.OnlineClientMap[peerId]
+			value, exists := GlobalWsClientManager.OnlineClientMap[peerId]
 			if exists && value != nil {
 				userPeerIds = append(userPeerIds, peerId)
 			} else {
@@ -220,7 +220,7 @@ func getChannelInfos() []bean.ChannelInfoRequest {
 	nodes := make([]bean.ChannelInfoRequest, 0)
 
 	for _, peerId := range userPeerIds {
-		client, _ := globalWsClientManager.OnlineClientMap[peerId]
+		client, _ := GlobalWsClientManager.OnlineClientMap[peerId]
 		if client != nil {
 			nodes = checkChannel(peerId, client.User.Db, nodes)
 		}
@@ -240,7 +240,7 @@ func getChannelInfos() []bean.ChannelInfoRequest {
 
 func lockChannel(userId, channelId string) (err error) {
 	var userDb *storm.DB
-	value, exists := globalWsClientManager.OnlineClientMap[userId]
+	value, exists := GlobalWsClientManager.OnlineClientMap[userId]
 	if exists && value.User.Db != nil {
 		userDb = value.User.Db
 	} else {
@@ -262,7 +262,7 @@ func lockChannel(userId, channelId string) (err error) {
 
 func unlockChannel(userId, channelId string) (err error) {
 	var userDb *storm.DB
-	value, exists := globalWsClientManager.OnlineClientMap[userId]
+	value, exists := GlobalWsClientManager.OnlineClientMap[userId]
 	dbIsOnOpen := false
 	if exists && value.User.Db != nil {
 		userDb = value.User.Db

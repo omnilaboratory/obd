@@ -2,6 +2,7 @@ package rpc
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"github.com/gorilla/websocket"
 	"github.com/omnilaboratory/obd/bean"
@@ -73,20 +74,25 @@ func (server *RpcServer) Login(ctx context.Context, in *pb.LoginRequest) (resp *
 	if len(in.LoginToken) < 6 {
 		return nil, errors.New("wrong login_token")
 	}
+	info := loginInfo{Mnemonic: in.Mnemonic, LoginToken: in.LoginToken}
 
-	info := loginInfo{Mnemonic: in.Mnemonic, LoginToken: in.LoginToken, EndType: "grpc"}
-	sendMsgToObd(info, "", "", enum.MsgType_UserLogin_2001)
+	infoBytes, _ := json.Marshal(info)
+	requestMessage := bean.RequestMessage{Data: string(infoBytes), Type: enum.MsgType_UserLogin_2001}
+	_, dataBytes, status := obcClient.UserModule(requestMessage)
+	data := string(dataBytes)
+	if status == false {
+		return nil, errors.New(data)
+	}
 
-	data := <-loginChan
-
-	node := data.Result.(map[string]interface{})
+	dataMap := make(map[string]interface{})
+	_ = json.Unmarshal(dataBytes, &dataMap)
 	resp = &pb.LoginResponse{
-		UserPeerId:    node["userPeerId"].(string),
-		NodePeerId:    node["nodePeerId"].(string),
-		NodeAddress:   node["nodeAddress"].(string),
-		HtlcFeeRate:   node["htlcFeeRate"].(float64),
-		HtlcMaxFee:    node["htlcMaxFee"].(float64),
-		ChainNodeType: node["chainNodeType"].(string),
+		UserPeerId:    dataMap["userPeerId"].(string),
+		NodePeerId:    dataMap["nodePeerId"].(string),
+		NodeAddress:   dataMap["nodeAddress"].(string),
+		HtlcFeeRate:   dataMap["htlcFeeRate"].(float64),
+		HtlcMaxFee:    dataMap["htlcMaxFee"].(float64),
+		ChainNodeType: dataMap["chainNodeType"].(string),
 	}
 	currUserInfo = resp
 	return resp, nil

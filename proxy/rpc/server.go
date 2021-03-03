@@ -1,10 +1,12 @@
 package rpc
 
 import (
+	"github.com/omnilaboratory/obd/config"
 	proxy "github.com/omnilaboratory/obd/proxy/pb"
 	"google.golang.org/grpc"
 	"log"
 	"net"
+	"strconv"
 )
 
 func StartGrpcServer() {
@@ -16,7 +18,7 @@ func StartGrpcServer() {
 		return
 	}
 
-	address := "localhost:50051"
+	address := "localhost:" + strconv.Itoa(config.GrpcServerPort)
 	lis, err := net.Listen("tcp", address)
 	if err != nil {
 		log.Fatalf("Error %v", err)

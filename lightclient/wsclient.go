@@ -45,7 +45,7 @@ func (client *Client) Write() {
 
 func (client *Client) Read() {
 	defer func() {
-		globalWsClientManager.Disconnected <- client
+		GlobalWsClientManager.Disconnected <- client
 	}()
 
 	for {
@@ -114,7 +114,7 @@ func (client *Client) Read() {
 			if msg.Type == enum.MsgType_GetMnemonic_2004 {
 				sendType, dataOut, status = client.hdWalletModule(msg)
 			} else {
-				sendType, dataOut, status = client.userModule(msg)
+				sendType, dataOut, status = client.UserModule(msg)
 			}
 			needLogin = false
 		}
@@ -295,7 +295,7 @@ func (client *Client) Read() {
 
 		//broadcast except me
 		if sendType == enum.SendTargetType_SendToExceptMe {
-			for itemClient := range globalWsClientManager.ClientsMap {
+			for itemClient := range GlobalWsClientManager.ClientsMap {
 				if itemClient != client {
 					jsonMessage := getReplyObj(string(dataOut), msg.Type, status, client, itemClient)
 					itemClient.SendChannel <- jsonMessage
@@ -305,14 +305,16 @@ func (client *Client) Read() {
 		//broadcast to all
 		if sendType == enum.SendTargetType_SendToAll {
 			jsonMessage := getReplyObj(string(dataOut), msg.Type, status, client, nil)
-			globalWsClientManager.Broadcast <- jsonMessage
+			GlobalWsClientManager.Broadcast <- jsonMessage
 		}
 	}
 }
 
 func (client *Client) SendToMyself(msgType enum.MsgType, status bool, data string) {
-	jsonMessage := getReplyObj(data, msgType, status, client, client)
-	client.SendChannel <- jsonMessage
+	if client.SendChannel != nil {
+		jsonMessage := getReplyObj(data, msgType, status, client, client)
+		client.SendChannel <- jsonMessage
+	}
 }
 
 // send p2p msg, check whether they are at the same obd node
@@ -323,7 +325,7 @@ func (client *Client) sendDataToP2PUser(msg bean.RequestMessage, status bool, da
 		//if they at the same obd node
 		if msg.RecipientNodePeerId == p2PLocalNodeId {
 			if _, err := findUserOnLine(msg); err == nil {
-				itemClient := globalWsClientManager.OnlineClientMap[msg.RecipientUserPeerId]
+				itemClient := GlobalWsClientManager.OnlineClientMap[msg.RecipientUserPeerId]
 				if itemClient != nil && itemClient.User != nil {
 					if status {
 						retData, isGoOn, err := routerOfP2PNode(msg, data, itemClient)
@@ -371,7 +373,7 @@ func getDataFromP2PSomeone(msg bean.RequestMessage) error {
 	if tool.CheckIsString(&msg.RecipientUserPeerId) && tool.CheckIsString(&msg.RecipientNodePeerId) {
 		if msg.RecipientNodePeerId == p2PLocalNodeId {
 			if _, err := findUserOnLine(msg); err == nil {
-				itemClient := globalWsClientManager.OnlineClientMap[msg.RecipientUserPeerId]
+				itemClient := GlobalWsClientManager.OnlineClientMap[msg.RecipientUserPeerId]
 				if itemClient != nil && itemClient.User != nil {
 					//收到数据后，需要对其进行加工
 					retData, isGoOn, err := routerOfP2PNode(msg, msg.Data, itemClient)

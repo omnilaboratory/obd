@@ -257,7 +257,7 @@ func handleTrackerScanStream(stream network.Stream) {
 		log.Println("request to scan channel and online user info from tracker", stream.Conn().RemotePeer().Pretty())
 
 		users := make(map[string]string)
-		for _, item := range globalWsClientManager.OnlineClientMap {
+		for _, item := range GlobalWsClientManager.OnlineClientMap {
 			if item.User != nil {
 				users[item.User.PeerId] = item.User.P2PLocalAddress
 			}
@@ -278,6 +278,7 @@ func handleTrackerScanStream(stream network.Stream) {
 			flag = true
 		}
 
+		log.Println(info)
 		if flag {
 			marshal, _ := json.Marshal(info)
 			msg := string(marshal) + "~"

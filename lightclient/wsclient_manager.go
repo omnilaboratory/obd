@@ -20,7 +20,7 @@ type clientManager struct {
 	OnlineClientMap map[string]*Client
 }
 
-var globalWsClientManager = clientManager{
+var GlobalWsClientManager = clientManager{
 	Broadcast:       make(chan []byte),
 	Connected:       make(chan *Client),
 	Disconnected:    make(chan *Client),
@@ -77,7 +77,7 @@ func (clientManager *clientManager) cleanConn(client *Client) {
 
 func findUserOnLine(msg bean.RequestMessage) (*Client, error) {
 	if tool.CheckIsString(&msg.RecipientUserPeerId) {
-		itemClient := globalWsClientManager.OnlineClientMap[msg.RecipientUserPeerId]
+		itemClient := GlobalWsClientManager.OnlineClientMap[msg.RecipientUserPeerId]
 		if itemClient != nil && itemClient.User != nil {
 			return itemClient, nil
 		}
