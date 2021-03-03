@@ -116,7 +116,8 @@ func (client *Client) UserModule(msg bean.RequestMessage) (enum.SendTargetType, 
 				client.User = nil
 			}
 		} else {
-			client.SendToMyself(msg.Type, status, "please login")
+			data = "please login"
+			client.SendToMyself(msg.Type, status, data)
 		}
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_p2p_ConnectPeer_2003:

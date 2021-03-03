@@ -18,14 +18,62 @@ var connObd *websocket.Conn
 var currUserInfo *pb.LoginResponse
 
 func checkLogin() (user *bean.User, err error) {
-	if currUserInfo == nil {
+	if obcClient.User == nil {
 		return nil, errors.New("please login")
 	}
-	user = service.OnlineUserMap[currUserInfo.UserPeerId]
-	if user == nil {
-		return nil, errors.New("please login")
+	return obcClient.User, nil
+}
+
+func (server *RpcServer) GenSeed(ctx context.Context, in *pb.GenSeedRequest) (resp *pb.GenSeedResponse, err error) {
+	log.Println("GenSeed")
+
+	requestMessage := bean.RequestMessage{Type: enum.MsgType_GetMnemonic_2004}
+	_, dataBytes, status := obcClient.HdWalletModule(requestMessage)
+	data := string(dataBytes)
+	if status == false {
+		return nil, errors.New(data)
 	}
-	return user, nil
+	resp = &pb.GenSeedResponse{
+		CipherSeedMnemonic: data,
+	}
+	return resp, nil
+}
+
+func (server *RpcServer) Login(ctx context.Context, in *pb.LoginRequest) (resp *pb.LoginResponse, err error) {
+
+	log.Println("Login")
+
+	if obcClient.User != nil {
+		if obcClient.User.Mnemonic != in.Mnemonic {
+			return nil, errors.New("user '" + in.Mnemonic + "' is online")
+		}
+	}
+
+	if len(in.LoginToken) < 6 {
+		return nil, errors.New("wrong login_token")
+	}
+	info := loginInfo{Mnemonic: in.Mnemonic, LoginToken: in.LoginToken}
+
+	infoBytes, _ := json.Marshal(info)
+	requestMessage := bean.RequestMessage{Data: string(infoBytes), Type: enum.MsgType_UserLogin_2001}
+	_, dataBytes, status := obcClient.UserModule(requestMessage)
+	data := string(dataBytes)
+	if status == false {
+		return nil, errors.New(data)
+	}
+
+	dataMap := make(map[string]interface{})
+	_ = json.Unmarshal(dataBytes, &dataMap)
+	resp = &pb.LoginResponse{
+		UserPeerId:    dataMap["userPeerId"].(string),
+		NodePeerId:    dataMap["nodePeerId"].(string),
+		NodeAddress:   dataMap["nodeAddress"].(string),
+		HtlcFeeRate:   dataMap["htlcFeeRate"].(float64),
+		HtlcMaxFee:    dataMap["htlcMaxFee"].(float64),
+		ChainNodeType: dataMap["chainNodeType"].(string),
+	}
+	currUserInfo = resp
+	return resp, nil
 }
 
 func (server *RpcServer) NextAddr(ctx context.Context, in *pb.AddrRequest) (resp *pb.AddrResponse, err error) {
@@ -55,49 +103,6 @@ func (server *RpcServer) EstimateFee(ctx context.Context, in *pb.EstimateFeeRequ
 	return resp, nil
 }
 
-func (server *RpcServer) GenSeed(ctx context.Context, in *pb.GenSeedRequest) (resp *pb.GenSeedResponse, err error) {
-	log.Println("GenSeed")
-	sendMsgToObd(nil, "", "", enum.MsgType_GetMnemonic_2004)
-	data := <-onceRequestChan
-	if data.Status == false {
-		return nil, errors.New(data.Result.(string))
-	}
-	resp = &pb.GenSeedResponse{
-		CipherSeedMnemonic: data.Result.(string),
-	}
-	return resp, nil
-}
-
-func (server *RpcServer) Login(ctx context.Context, in *pb.LoginRequest) (resp *pb.LoginResponse, err error) {
-
-	log.Println("Login")
-	if len(in.LoginToken) < 6 {
-		return nil, errors.New("wrong login_token")
-	}
-	info := loginInfo{Mnemonic: in.Mnemonic, LoginToken: in.LoginToken}
-
-	infoBytes, _ := json.Marshal(info)
-	requestMessage := bean.RequestMessage{Data: string(infoBytes), Type: enum.MsgType_UserLogin_2001}
-	_, dataBytes, status := obcClient.UserModule(requestMessage)
-	data := string(dataBytes)
-	if status == false {
-		return nil, errors.New(data)
-	}
-
-	dataMap := make(map[string]interface{})
-	_ = json.Unmarshal(dataBytes, &dataMap)
-	resp = &pb.LoginResponse{
-		UserPeerId:    dataMap["userPeerId"].(string),
-		NodePeerId:    dataMap["nodePeerId"].(string),
-		NodeAddress:   dataMap["nodeAddress"].(string),
-		HtlcFeeRate:   dataMap["htlcFeeRate"].(float64),
-		HtlcMaxFee:    dataMap["htlcMaxFee"].(float64),
-		ChainNodeType: dataMap["chainNodeType"].(string),
-	}
-	currUserInfo = resp
-	return resp, nil
-}
-
 func (server *RpcServer) Logout(ctx context.Context, in *pb.LogoutRequest) (resp *pb.LogoutResponse, err error) {
 	log.Println("Logout")
 
@@ -106,17 +111,12 @@ func (server *RpcServer) Logout(ctx context.Context, in *pb.LogoutRequest) (resp
 		return nil, err
 	}
 
-	if logoutChan == nil {
-		logoutChan = make(chan bean.ReplyMessage)
+	requestMessage := bean.RequestMessage{Type: enum.MsgType_UserLogout_2002}
+	_, dataBytes, status := obcClient.UserModule(requestMessage)
+	data := string(dataBytes)
+	if status == false {
+		return nil, errors.New(data)
 	}
-
-	sendMsgToObd(nil, "", "", enum.MsgType_UserLogout_2002)
-
-	data := <-logoutChan
-	if data.Status == false {
-		return nil, errors.New(data.Result.(string))
-	}
-
 	return &pb.LogoutResponse{}, nil
 }
 
@@ -138,19 +138,16 @@ func (server *RpcServer) ChangePassword(ctx context.Context, in *pb.ChangePasswo
 	}
 
 	token := updateLoginToken{CurrentPassword: in.CurrentPassword, NewPassword: in.NewPassword}
-
-	if changePasswordChan == nil {
-		changePasswordChan = make(chan bean.ReplyMessage)
+	infoBytes, _ := json.Marshal(token)
+	requestMessage := bean.RequestMessage{Type: enum.MsgType_User_UpdateAdminToken_2008, Data: string(infoBytes)}
+	_, dataBytes, status := obcClient.UserModule(requestMessage)
+	data := string(dataBytes)
+	if status == false {
+		return nil, errors.New(data)
 	}
 
-	sendMsgToObd(token, "", "", enum.MsgType_User_UpdateAdminToken_2008)
-
-	data := <-changePasswordChan
-	if data.Status == false {
-		return nil, errors.New(data.Result.(string))
-	}
 	resp = &pb.ChangePasswordResponse{
-		Result: data.Result.(string),
+		Result: data,
 	}
 	return resp, nil
 }

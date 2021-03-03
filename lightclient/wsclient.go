@@ -112,7 +112,7 @@ func (client *Client) Read() {
 
 		if msg.Type <= enum.MsgType_UserLogin_2001 && msg.Type > enum.MsgType_User_End_2099 {
 			if msg.Type == enum.MsgType_GetMnemonic_2004 {
-				sendType, dataOut, status = client.hdWalletModule(msg)
+				sendType, dataOut, status = client.HdWalletModule(msg)
 			} else {
 				sendType, dataOut, status = client.UserModule(msg)
 			}
@@ -175,7 +175,7 @@ func (client *Client) Read() {
 					//-3000 -3001
 					if msg.Type <= enum.MsgType_Mnemonic_CreateAddress_3000 &&
 						msg.Type >= enum.MsgType_Mnemonic_GetAddressByIndex_3001 {
-						sendType, dataOut, status = client.hdWalletModule(msg)
+						sendType, dataOut, status = client.HdWalletModule(msg)
 						break
 					}
 

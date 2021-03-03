@@ -8,7 +8,7 @@ import (
 	"strconv"
 )
 
-func (client *Client) hdWalletModule(msg bean.RequestMessage) (enum.SendTargetType, []byte, bool) {
+func (client *Client) HdWalletModule(msg bean.RequestMessage) (enum.SendTargetType, []byte, bool) {
 	status := false
 	var sendType = enum.SendTargetType_SendToSomeone
 	var data string
