@@ -409,6 +409,8 @@ func (service *fundingTransactionManager) OnAliceSignC1a(msg bean.RequestMessage
 		return nil, errors.New(enum.Tips_common_notFound + ": CommitmentTransaction")
 	}
 
+	fundingAssetOfP2p.ChannelId = channelInfo.ChannelId
+
 	// 检测 输出地址，数量是否一致
 	omniDecode, err := conn2tracker.OmniDecodeTransaction(hex)
 	if err != nil {

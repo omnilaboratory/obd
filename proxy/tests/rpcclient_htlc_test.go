@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	proxy "github.com/omnilaboratory/obd/proxy/pb"
 	"google.golang.org/grpc"
 	"log"
@@ -30,13 +31,14 @@ func TestParseInvoice(t *testing.T) {
 	client, conn := getHtlcClient()
 	defer conn.Close()
 	invoice, err := client.ParseInvoice(context.Background(), &proxy.ParseInvoiceRequest{
-		PaymentRequest: "obtb100000s1pqzyfnpwQmccE4s2uhEXrJXE778NChn1ed8NyWNyAHH23mP7f9NM3Luzq63167817c979ade9e42f3204404c1513a4b1b4e9eea654c9498ed9cc920dbb36hzz0202c3aac5755ec024a102da30bcfc80658a7969a5448f145bf0e986606b459d1dxq8ps306yqtqp0dqtdescription3wh",
+		PaymentRequest: "obtb100000s1pqzyfnpwQmccE4s2uhEXrJXE778NChn1ed8NyWNyAHH23mP7f9NM3Luzq63167817c979ade9e42f3204404c1513a4b1b4e9eea654c9498ed9cc920dbb36hzz03367ac2ec89f567433729a448bd0f115cba8f4f48f3b97c6c0e0a19bb226d2aacxq8ps306yqtqp0dqtdescription34q",
 	})
 	if err != nil {
 		log.Println(err)
 		return
 	}
-	log.Println(invoice)
+	marshal, _ := json.Marshal(invoice)
+	log.Println(string(marshal))
 }
 
 func TestSendPayment(t *testing.T) {
@@ -45,13 +47,13 @@ func TestSendPayment(t *testing.T) {
 	defer conn.Close()
 
 	htlcPayment, err := client.SendPayment(context.Background(), &proxy.SendPaymentRequest{
-		PaymentRequest: "obtb100000s1pqzyfnpwQmccE4s2uhEXrJXE778NChn1ed8NyWNyAHH23mP7f9NM3Luzq63167817c979ade9e42f3204404c1513a4b1b4e9eea654c9498ed9cc920dbb36hzz0202c3aac5755ec024a102da30bcfc80658a7969a5448f145bf0e986606b459d1dxq8ps306yqtqp0dqtdescription3wh",
+		PaymentRequest: "obtb100000s1pqzyfnpwQmccE4s2uhEXrJXE778NChn1ed8NyWNyAHH23mP7f9NM3Luzq63167817c979ade9e42f3204404c1513a4b1b4e9eea654c9498ed9cc920dbb36hzz03367ac2ec89f567433729a448bd0f115cba8f4f48f3b97c6c0e0a19bb226d2aacxq8ps306yqtqp0dqtdescription34q",
 		InvoiceDetail: &proxy.ParseInvoiceResponse{
 			PropertyId:          137,
 			Value:               0.001,
 			Memo:                "description",
 			CltvExpiry:          "2021-08-15",
-			H:                   "0202c3aac5755ec024a102da30bcfc80658a7969a5448f145bf0e986606b459d1d",
+			H:                   "03367ac2ec89f567433729a448bd0f115cba8f4f48f3b97c6c0e0a19bb226d2aac",
 			RecipientNodePeerId: "QmccE4s2uhEXrJXE778NChn1ed8NyWNyAHH23mP7f9NM3L",
 			RecipientUserPeerId: "63167817c979ade9e42f3204404c1513a4b1b4e9eea654c9498ed9cc920dbb36",
 		},
@@ -60,7 +62,8 @@ func TestSendPayment(t *testing.T) {
 		log.Println(err)
 		return
 	}
-	log.Println(htlcPayment)
+	marshal, _ := json.Marshal(htlcPayment)
+	log.Println(string(marshal))
 }
 
 func getHtlcClient() (proxy.HtlcClient, *grpc.ClientConn) {

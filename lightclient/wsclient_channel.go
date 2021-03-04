@@ -8,7 +8,7 @@ import (
 	"strconv"
 )
 
-func (client *Client) channelModule(msg bean.RequestMessage) (enum.SendTargetType, []byte, bool) {
+func (client *Client) ChannelModule(msg bean.RequestMessage) (enum.SendTargetType, []byte, bool) {
 	status := false
 	var sendType = enum.SendTargetType_SendToSomeone
 	data := ""

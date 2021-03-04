@@ -94,6 +94,7 @@ func readDataFromWs() {
 				return
 			}
 
+			log.Println("get data from tracker", string(message))
 			replyMessage := bean.ReplyMessage{}
 			err = json.Unmarshal(message, &replyMessage)
 			if err == nil {
@@ -199,7 +200,7 @@ func sycChannelInfos() {
 }
 
 func getChannelInfos() []bean.ChannelInfoRequest {
-	_dir := "dbdata" + config.ChainNodeType
+	_dir := config.DataDirectory + "/" + config.ChainNodeType
 	files, _ := ioutil.ReadDir(_dir)
 
 	dbNames := make([]string, 0)
@@ -334,7 +335,7 @@ func checkChannel(userId string, db storm.Node, nodes []bean.ChannelInfoRequest)
 }
 
 func sendMsgToTracker(msg []byte) {
-	//log.Println("send to tracker", string(msg))
+	log.Println("send to tracker", string(msg))
 	if conn == nil {
 		isReset = true
 		err := ConnectToTracker()

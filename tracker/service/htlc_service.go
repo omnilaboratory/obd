@@ -41,6 +41,7 @@ func (manager *htlcManager) getPath(obdClient *ObdNode, msgData string) (path in
 	manager.mu.Lock()
 	defer manager.mu.Unlock()
 
+	log.Println("getPath", msgData)
 	if tool.CheckIsString(&msgData) == false {
 		return "", errors.New("wrong inputData")
 	}
@@ -77,6 +78,7 @@ func (manager *htlcManager) getPath(obdClient *ObdNode, msgData string) (path in
 		path = strings.TrimSuffix(path, ",")
 		retNode["path"] = path
 	}
+	log.Println("return path info", retNode)
 	return retNode, nil
 }
 

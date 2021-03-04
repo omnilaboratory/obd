@@ -20,6 +20,7 @@ type Client struct {
 	User          *bean.User
 	Socket        *websocket.Conn
 	SendChannel   chan []byte
+	GrpcHtlcChan  chan []byte
 }
 
 func (client *Client) Write() {
@@ -185,7 +186,7 @@ func (client *Client) Read() {
 						msg.Type == enum.MsgType_SendCloseChannelRequest_38 ||
 						(msg.Type <= enum.MsgType_ChannelOpen_AllItem_3150 &&
 							msg.Type >= enum.MsgType_CheckChannelAddessExist_3156) {
-						sendType, dataOut, status = client.channelModule(msg)
+						sendType, dataOut, status = client.ChannelModule(msg)
 						break
 					}
 
@@ -198,7 +199,7 @@ func (client *Client) Read() {
 						msg.Type == enum.MsgType_Funding_134 ||
 						(msg.Type <= enum.MsgType_FundingCreate_Asset_AllItem_3100 &&
 							msg.Type >= enum.MsgType_FundingCreate_Btc_ItemByChannelId_3111) {
-						sendType, dataOut, status = client.fundingTransactionModule(msg)
+						sendType, dataOut, status = client.FundingTransactionModule(msg)
 						break
 					}
 
@@ -217,7 +218,7 @@ func (client *Client) Read() {
 						msg.Type == enum.MsgType_ClientSign_CommitmentTx_AliceSignC2b_Rd_363 ||
 						(msg.Type <= enum.MsgType_CommitmentTx_ItemsByChanId_3200 &&
 							msg.Type >= enum.MsgType_CommitmentTx_DelItemByChanId_3209) {
-						sendType, dataOut, status = client.commitmentTxModule(msg)
+						sendType, dataOut, status = client.CommitmentTxModule(msg)
 						break
 					}
 
@@ -248,7 +249,7 @@ func (client *Client) Read() {
 						msg.Type == enum.MsgType_HTLC_ClientSign_Bob_C3bSub_104 ||
 						msg.Type == enum.MsgType_HTLC_ClientSign_Alice_He_105 ||
 						msg.Type == enum.MsgType_HTLC_SendAddHTLCSigned_41 {
-						sendType, dataOut, status = client.htlcHModule(msg)
+						sendType, dataOut, status = client.HtlcHModule(msg)
 						break
 					}
 
@@ -347,7 +348,12 @@ func (client *Client) sendDataToP2PUser(msg bean.RequestMessage, status bool, da
 					fromId := msg.SenderUserPeerId + "@" + p2pChannelMap[msg.SenderNodePeerId].Address
 					toId := msg.RecipientUserPeerId + "@" + p2pChannelMap[msg.RecipientNodePeerId].Address
 					jsonMessage := getP2PReplyObj(data, msg.Type, status, fromId, toId)
-					itemClient.SendChannel <- jsonMessage
+					if itemClient.SendChannel != nil {
+						itemClient.SendChannel <- jsonMessage
+					}
+					if itemClient.IsGRpcRequest && itemClient.GrpcHtlcChan != nil {
+						itemClient.GrpcHtlcChan <- jsonMessage
+					}
 					return nil
 				}
 			}
@@ -396,7 +402,12 @@ func getDataFromP2PSomeone(msg bean.RequestMessage) error {
 					fromId := msg.SenderUserPeerId + "@" + p2pChannelMap[msg.SenderNodePeerId].Address
 					toId := msg.RecipientUserPeerId + "@" + p2pChannelMap[msg.RecipientNodePeerId].Address
 					jsonMessage := getP2PReplyObj(msg.Data, msg.Type, true, fromId, toId)
-					itemClient.SendChannel <- jsonMessage
+					if itemClient.SendChannel != nil {
+						itemClient.SendChannel <- jsonMessage
+					}
+					if itemClient.IsGRpcRequest && itemClient.GrpcHtlcChan != nil {
+						itemClient.GrpcHtlcChan <- jsonMessage
+					}
 					return nil
 				}
 			}

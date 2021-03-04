@@ -14,13 +14,13 @@ import (
 	"time"
 )
 
-func (client *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.SendTargetType, []byte, bool) {
+func (client *Client) FundingTransactionModule(msg bean.RequestMessage) (enum.SendTargetType, []byte, bool) {
 	status := false
 	var sendType = enum.SendTargetType_SendToSomeone
 	var data string
 	switch msg.Type {
 	case enum.MsgType_Funding_134:
-		channelFund(*client, msg)
+		status, data = channelFund(*client, msg)
 	case enum.MsgType_FundingCreate_SendBtcFundingCreated_340:
 		node, targetUser, err := service.FundingTransactionService.BtcFundingCreated(msg, client.User)
 		if err != nil {
@@ -273,6 +273,7 @@ func (client *Client) fundingTransactionModule(msg bean.RequestMessage) (enum.Se
 				msg.Type = enum.MsgType_FundingCreate_AssetFundingCreated_34
 				marshal, _ = json.Marshal(p2pData)
 				msg.Data = string(marshal)
+				data = msg.Data
 				err = client.sendDataToP2PUser(msg, status, msg.Data)
 				if err != nil {
 					data = err.Error()
@@ -488,9 +489,9 @@ func (client *Client) fundingSignModule(msg bean.RequestMessage) (enum.SendTarge
 	return sendType, []byte(data), status
 }
 
-func channelFund(client Client, msg bean.RequestMessage) {
-	status := true
-	data := ""
+func channelFund(client Client, msg bean.RequestMessage) (status bool, data string) {
+	status = true
+	data = ""
 
 	channelInfo, err := service.FundingTransactionService.CheckChannelFund(msg, client.User)
 	if err != nil {
@@ -521,7 +522,8 @@ func channelFund(client Client, msg bean.RequestMessage) {
 					fundingBtc.FundingTxHex = resp["hex"].(string)
 					bytes, _ := json.Marshal(fundingBtc)
 					msg.Data = string(bytes)
-					client.fundingTransactionModule(msg)
+					_, bytes, status = client.FundingTransactionModule(msg)
+					data = string(bytes)
 				}
 			}()
 			time.Sleep(time.Second * 2)
@@ -545,10 +547,12 @@ func channelFund(client Client, msg bean.RequestMessage) {
 			fundingBtc.FundingTxHex = respNode["hex"].(string)
 			bytes, _ := json.Marshal(fundingBtc)
 			msg.Data = string(bytes)
-			client.fundingTransactionModule(msg)
+			_, bytes, status = client.FundingTransactionModule(msg)
+			data = string(bytes)
 		}
 	}
 	if status == false {
 		client.SendToMyself(msg.Type, status, data)
 	}
+	return status, data
 }

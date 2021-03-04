@@ -2,6 +2,7 @@ package rpc
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"github.com/omnilaboratory/obd/bean"
 	"github.com/omnilaboratory/obd/bean/enum"
@@ -36,15 +37,20 @@ func (s *RpcServer) AddInvoice(ctx context.Context, in *pb.Invoice) (*pb.AddInvo
 		IsPrivate:   in.Private,
 	}
 
-	sendMsgToObd(request, "", "", enum.MsgType_HTLC_Invoice_402)
+	infoBytes, _ := json.Marshal(request)
+	requestMessage := bean.RequestMessage{
+		Type: enum.MsgType_HTLC_Invoice_402,
+		Data: string(infoBytes)}
+	_, dataBytes, status := obcClient.HtlcHModule(requestMessage)
 
-	data := <-addInvoiceChan
-
-	if data.Status == false {
-		return nil, errors.New(data.Result.(string))
+	data := string(dataBytes)
+	if status == false {
+		return nil, errors.New(data)
 	}
-	log.Println(data.Result)
-	resp := &pb.AddInvoiceResponse{PaymentRequest: data.Result.(string)}
+	dataMap := make(map[string]interface{})
+	_ = json.Unmarshal(dataBytes, &dataMap)
+
+	resp := &pb.AddInvoiceResponse{PaymentRequest: data}
 	return resp, nil
 }
 
@@ -63,24 +69,29 @@ func (s *RpcServer) ParseInvoice(ctx context.Context, in *pb.ParseInvoiceRequest
 		Invoice: in.PaymentRequest,
 	}
 
-	sendMsgToObd(request, "", "", enum.MsgType_HTLC_ParseInvoice_403)
+	infoBytes, _ := json.Marshal(request)
+	requestMessage := bean.RequestMessage{
+		Type: enum.MsgType_HTLC_ParseInvoice_403,
+		Data: string(infoBytes)}
+	_, dataBytes, status := obcClient.HtlcHModule(requestMessage)
 
-	data := <-onceRequestChan
-
-	if data.Status == false {
-		return nil, errors.New(data.Result.(string))
+	data := string(dataBytes)
+	if status == false {
+		return nil, errors.New(data)
 	}
-	log.Println(data.Result)
-	dataResult := data.Result.(map[string]interface{})
+
+	dataMap := make(map[string]interface{})
+	_ = json.Unmarshal(dataBytes, &dataMap)
+
 	resp := &pb.ParseInvoiceResponse{
-		Memo:                dataResult["description"].(string),
-		PropertyId:          int64(dataResult["property_id"].(float64)),
-		Value:               dataResult["amount"].(float64),
-		CltvExpiry:          dataResult["expiry_time"].(string),
-		H:                   dataResult["h"].(string),
-		Private:             dataResult["is_private"].(bool),
-		RecipientNodePeerId: dataResult["recipient_node_peer_id"].(string),
-		RecipientUserPeerId: dataResult["recipient_user_peer_id"].(string),
+		Memo:                dataMap["description"].(string),
+		PropertyId:          int64(dataMap["property_id"].(float64)),
+		Value:               dataMap["amount"].(float64),
+		CltvExpiry:          dataMap["expiry_time"].(string),
+		H:                   dataMap["h"].(string),
+		Private:             dataMap["is_private"].(bool),
+		RecipientNodePeerId: dataMap["recipient_node_peer_id"].(string),
+		RecipientUserPeerId: dataMap["recipient_user_peer_id"].(string),
 	}
 	return resp, nil
 }
@@ -99,27 +110,34 @@ func (s *RpcServer) SendPayment(ctx context.Context, in *pb.SendPaymentRequest) 
 	request := bean.HtlcRequestFindPath{
 		Invoice: in.PaymentRequest,
 	}
+	infoBytes, _ := json.Marshal(request)
+	requestMessage := bean.RequestMessage{
+		Type: enum.MsgType_HTLC_FindPath_401,
+		Data: string(infoBytes)}
+	obcClient.HtlcHModule(requestMessage)
 
-	sendMsgToObd(request, "", "", enum.MsgType_HTLC_FindPath_401)
+	obcClient.GrpcHtlcChan = make(chan []byte)
+	replyMessage := bean.ReplyMessage{}
 
-	for {
-		data := <-payInvoiceChan
-		if data.Status == false {
-			return nil, errors.New(data.Result.(string))
-		}
-		if data.Type == enum.MsgType_HTLC_FinishTransferH_43 {
-			log.Println(data.Result)
-			dataResult := data.Result.(map[string]interface{})
-			resp := &pb.PaymentResp{
-				PaymentHash:     dataResult["htlc_routing_packet"].(string),
-				PaymentPreimage: dataResult["htlc_h"].(string),
-				AmountToRsmc:    dataResult["amount_to_rsmc"].(float64),
-				AmountToHtlc:    dataResult["amount_to_htlc"].(float64),
-			}
-			if dataResult["amount_to_counterparty"] != nil {
-				resp.AmountToCounterparty = dataResult["amount_to_counterparty"].(float64)
-			}
-			return resp, nil
-		}
+	message := <-obcClient.GrpcHtlcChan
+	close(obcClient.GrpcHtlcChan)
+	obcClient.GrpcHtlcChan = nil
+
+	_ = json.Unmarshal(message, &replyMessage)
+	if replyMessage.Status == false {
+		return nil, errors.New(replyMessage.Result.(string))
 	}
+
+	dataResult := replyMessage.Result.(map[string]interface{})
+	resp := &pb.PaymentResp{
+		PaymentHash:     dataResult["htlc_routing_packet"].(string),
+		PaymentPreimage: dataResult["htlc_h"].(string),
+		AmountToRsmc:    dataResult["amount_to_rsmc"].(float64),
+		AmountToHtlc:    dataResult["amount_to_htlc"].(float64),
+	}
+	if dataResult["amount_to_counterparty"] != nil {
+		resp.AmountToCounterparty = dataResult["amount_to_counterparty"].(float64)
+	}
+
+	return resp, nil
 }

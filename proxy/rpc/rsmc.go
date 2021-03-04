@@ -40,23 +40,27 @@ func (s *RpcServer) RsmcPayment(ctx context.Context, in *pb.RsmcPaymentRequest) 
 		rsmcChan = make(chan bean.ReplyMessage)
 	}
 
-	sendMsgToObd(request, in.RecipientInfo.RecipientNodePeerId, in.RecipientInfo.RecipientUserPeerId, enum.MsgType_CommitmentTx_SendCommitmentTransactionCreated_351)
+	infoBytes, _ := json.Marshal(request)
+	requestMessage := bean.RequestMessage{
+		Type:                enum.MsgType_CommitmentTx_SendCommitmentTransactionCreated_351,
+		RecipientNodePeerId: in.RecipientInfo.RecipientNodePeerId,
+		RecipientUserPeerId: in.RecipientInfo.RecipientUserPeerId,
+		Data:                string(infoBytes)}
+	_, dataBytes, status := obcClient.CommitmentTxModule(requestMessage)
 
-	for {
-		data := <-rsmcChan
-		if data.Status == false {
-			return nil, errors.New(data.Result.(string))
-		}
-		if data.Type == enum.MsgType_ClientSign_CommitmentTx_AliceSignC2a_360 {
-			dataResult := data.Result.(map[string]interface{})
-			resp := &pb.RsmcPaymentResponse{
-				ChannelId: dataResult["channel_id"].(string),
-				AmountA:   dataResult["amount_a"].(float64),
-				AmountB:   dataResult["amount_b"].(float64),
-			}
-			return resp, nil
-		}
+	data := string(dataBytes)
+	if status == false {
+		return nil, errors.New(data)
 	}
+	dataMap := make(map[string]interface{})
+	_ = json.Unmarshal(dataBytes, &dataMap)
+
+	resp := &pb.RsmcPaymentResponse{
+		ChannelId: dataMap["channel_id"].(string),
+		AmountA:   dataMap["amount_a"].(float64),
+		AmountB:   dataMap["amount_b"].(float64),
+	}
+	return resp, nil
 }
 
 func (s *RpcServer) LatestRsmcTx(ctx context.Context, in *pb.LatestRsmcTxRequest) (*pb.RsmcTxResponse, error) {

@@ -717,7 +717,7 @@ func checkHForNextNodeOrRForBackward(toBob interface{}, client Client, msg bean.
 			createHtlcTxForC3a.RoutingPacket = currNodeTx.HtlcRoutingPacket
 			marshal, _ := json.Marshal(createHtlcTxForC3a)
 			msg.Data = string(marshal)
-			client.htlcHModule(*msg)
+			client.HtlcHModule(*msg)
 		}
 	}
 }

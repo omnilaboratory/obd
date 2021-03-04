@@ -2,6 +2,7 @@ package rpc
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"github.com/omnilaboratory/obd/bean"
 	"github.com/omnilaboratory/obd/bean/enum"
@@ -29,29 +30,31 @@ func (s *RpcServer) OpenChannel(ctx context.Context, in *pb.OpenChannelRequest) 
 		return nil, errors.New("wrong node_pubkey_string")
 	}
 
-	if openChannelChan == nil {
-		openChannelChan = make(chan bean.ReplyMessage)
-	}
-
 	channelOpen := bean.SendChannelOpen{
 		FundingPubKey:      in.NodePubkeyString,
 		FunderAddressIndex: int(in.NodePubkeyIndex),
 		IsPrivate:          in.Private,
 	}
-	sendMsgToObd(channelOpen, in.RecipientInfo.RecipientNodePeerId, in.RecipientInfo.RecipientUserPeerId, enum.MsgType_SendChannelOpen_32)
 
-	for {
-		data := <-openChannelChan
-		if data.Status == false {
-			return nil, errors.New(data.Result.(string))
-		}
-		if data.Type == enum.MsgType_RecvChannelAccept_33 {
-			log.Println(data.Result)
-			resp := &pb.OpenChannelResponse{}
-			resp.TemplateChannelId = data.Result.(map[string]interface{})["temporary_channel_id"].(string)
-			return resp, nil
-		}
+	infoBytes, _ := json.Marshal(channelOpen)
+	requestMessage := bean.RequestMessage{
+		Type:                enum.MsgType_SendChannelOpen_32,
+		RecipientNodePeerId: in.RecipientInfo.RecipientNodePeerId,
+		RecipientUserPeerId: in.RecipientInfo.RecipientUserPeerId,
+		Data:                string(infoBytes)}
+	_, dataBytes, status := obcClient.ChannelModule(requestMessage)
+	data := string(dataBytes)
+	if status == false {
+		return nil, errors.New(data)
 	}
+
+	dataMap := make(map[string]interface{})
+	_ = json.Unmarshal(dataBytes, &dataMap)
+
+	resp := &pb.OpenChannelResponse{}
+	resp.TemplateChannelId = dataMap["temporary_channel_id"].(string)
+
+	return resp, nil
 }
 
 func (s *RpcServer) FundChannel(ctx context.Context, in *pb.FundChannelRequest) (*pb.FundChannelResponse, error) {
@@ -87,22 +90,22 @@ func (s *RpcServer) FundChannel(ctx context.Context, in *pb.FundChannelRequest) 
 		AssetAmount:        in.AssetAmount,
 	}
 
-	if fundChannelChan == nil {
-		fundChannelChan = make(chan bean.ReplyMessage)
-	}
+	infoBytes, _ := json.Marshal(requestFunding)
+	requestMessage := bean.RequestMessage{
+		Type:                enum.MsgType_Funding_134,
+		RecipientNodePeerId: in.RecipientInfo.RecipientNodePeerId,
+		RecipientUserPeerId: in.RecipientInfo.RecipientUserPeerId,
+		Data:                string(infoBytes)}
+	_, dataBytes, status := obcClient.FundingTransactionModule(requestMessage)
 
-	sendMsgToObd(requestFunding, in.RecipientInfo.RecipientNodePeerId, in.RecipientInfo.RecipientUserPeerId, enum.MsgType_Funding_134)
-
-	for {
-		data := <-fundChannelChan
-		if data.Status == false {
-			return nil, errors.New(data.Result.(string))
-		}
-		if data.Type == enum.MsgType_ClientSign_AssetFunding_AliceSignRD_1134 {
-			log.Println(data.Result)
-			resp := &pb.FundChannelResponse{}
-			resp.ChannelId = data.Result.(map[string]interface{})["channel_id"].(string)
-			return resp, nil
-		}
+	data := string(dataBytes)
+	if status == false {
+		return nil, errors.New(data)
 	}
+	dataMap := make(map[string]interface{})
+	_ = json.Unmarshal(dataBytes, &dataMap)
+
+	resp := &pb.FundChannelResponse{}
+	resp.ChannelId = dataMap["channel_id"].(string)
+	return resp, nil
 }
