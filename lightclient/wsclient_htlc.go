@@ -198,9 +198,7 @@ func (client *Client) HtlcHModule(msg bean.RequestMessage) (enum.SendTargetType,
 			}
 		}
 		msg.Type = enum.MsgType_HTLC_SendAddHTLC_40
-		if client.IsGRpcRequest == false {
-			client.SendToMyself(msg.Type, status, data)
-		}
+		client.SendToMyself(msg.Type, status, data)
 
 	case enum.MsgType_HTLC_ClientSign_Alice_C3a_100:
 		toAlice, toBob, err := service.HtlcForwardTxService.OnAliceSignedC3aAtAliceSide(msg, *client.User)
