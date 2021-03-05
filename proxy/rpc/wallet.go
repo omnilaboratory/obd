@@ -7,6 +7,7 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/omnilaboratory/obd/bean"
 	"github.com/omnilaboratory/obd/bean/enum"
+	"github.com/omnilaboratory/obd/lightclient"
 	"github.com/omnilaboratory/obd/omnicore"
 	"github.com/omnilaboratory/obd/proxy/pb"
 	"github.com/omnilaboratory/obd/service"
@@ -24,10 +25,28 @@ func checkLogin() (user *bean.User, err error) {
 	return obcClient.User, nil
 }
 
+func checkTargetUserIsOnline(requestMessage bean.RequestMessage) (err error) {
+	_, err = lightclient.FindUserOnLine(requestMessage)
+	if err != nil {
+		return err
+	}
+	if lightclient.P2pChannelMap[requestMessage.RecipientNodePeerId] == nil {
+		err = lightclient.ScanAndConnNode(requestMessage.RecipientNodePeerId)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (server *RpcServer) GenSeed(ctx context.Context, in *pb.GenSeedRequest) (resp *pb.GenSeedResponse, err error) {
 	log.Println("GenSeed")
 
-	requestMessage := bean.RequestMessage{Type: enum.MsgType_GetMnemonic_2004}
+	requestMessage := bean.RequestMessage{
+		Type:             enum.MsgType_GetMnemonic_2004,
+		SenderNodePeerId: obcClient.User.P2PLocalPeerId,
+		SenderUserPeerId: obcClient.User.PeerId,
+	}
 	_, dataBytes, status := obcClient.HdWalletModule(requestMessage)
 	data := string(dataBytes)
 	if status == false {
@@ -55,7 +74,10 @@ func (server *RpcServer) Login(ctx context.Context, in *pb.LoginRequest) (resp *
 	info := loginInfo{Mnemonic: in.Mnemonic, LoginToken: in.LoginToken}
 
 	infoBytes, _ := json.Marshal(info)
-	requestMessage := bean.RequestMessage{Data: string(infoBytes), Type: enum.MsgType_UserLogin_2001}
+	requestMessage := bean.RequestMessage{
+		Type: enum.MsgType_UserLogin_2001,
+		Data: string(infoBytes),
+	}
 	_, dataBytes, status := obcClient.UserModule(requestMessage)
 	data := string(dataBytes)
 	if status == false {
@@ -111,7 +133,11 @@ func (server *RpcServer) Logout(ctx context.Context, in *pb.LogoutRequest) (resp
 		return nil, err
 	}
 
-	requestMessage := bean.RequestMessage{Type: enum.MsgType_UserLogout_2002}
+	requestMessage := bean.RequestMessage{
+		Type:             enum.MsgType_UserLogout_2002,
+		SenderNodePeerId: obcClient.User.P2PLocalPeerId,
+		SenderUserPeerId: obcClient.User.PeerId,
+	}
 	_, dataBytes, status := obcClient.UserModule(requestMessage)
 	data := string(dataBytes)
 	if status == false {
@@ -139,7 +165,11 @@ func (server *RpcServer) ChangePassword(ctx context.Context, in *pb.ChangePasswo
 
 	token := updateLoginToken{CurrentPassword: in.CurrentPassword, NewPassword: in.NewPassword}
 	infoBytes, _ := json.Marshal(token)
-	requestMessage := bean.RequestMessage{Type: enum.MsgType_User_UpdateAdminToken_2008, Data: string(infoBytes)}
+	requestMessage := bean.RequestMessage{
+		Type:             enum.MsgType_User_UpdateAdminToken_2008,
+		SenderNodePeerId: obcClient.User.P2PLocalPeerId,
+		SenderUserPeerId: obcClient.User.PeerId,
+		Data:             string(infoBytes)}
 	_, dataBytes, status := obcClient.UserModule(requestMessage)
 	data := string(dataBytes)
 	if status == false {

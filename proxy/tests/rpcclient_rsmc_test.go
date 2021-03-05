@@ -24,14 +24,15 @@ func TestLatestRsmcTx(t *testing.T) {
 	client, conn := getRsmcClient()
 	defer conn.Close()
 
-	payment, err := client.LatestRsmcTx(context.Background(), &proxy.LatestRsmcTxRequest{
-		ChannelId: "0caf45d8b014dbb84b557f671bb10981af13f7b9ffd317f56abcd9d77a45bf87",
+	resp, err := client.LatestRsmcTx(context.Background(), &proxy.LatestRsmcTxRequest{
+		ChannelId: "c299b48ed293ff8a36d959310a7bc698492fec9caee8fbe61c2c004a9921478e",
 	})
 	if err != nil {
 		log.Println(err)
 		return
 	}
-	log.Println(payment)
+	marshal, _ := json.Marshal(resp)
+	log.Println(string(marshal))
 }
 
 func TestRsmcPayment(t *testing.T) {
@@ -43,7 +44,7 @@ func TestRsmcPayment(t *testing.T) {
 		RecipientInfo: &proxy.RecipientNodeInfo{
 			RecipientNodePeerId: "QmccE4s2uhEXrJXE778NChn1ed8NyWNyAHH23mP7f9NM3L",
 			RecipientUserPeerId: "63167817c979ade9e42f3204404c1513a4b1b4e9eea654c9498ed9cc920dbb36"},
-		ChannelId: "3b5cd6f2cc9a011158431935259670898e1500387e3586482abf2abcf9648e3d",
+		ChannelId: "c299b48ed293ff8a36d959310a7bc698492fec9caee8fbe61c2c004a9921478e",
 		Amount:    0.001,
 	})
 	if err != nil {
@@ -60,7 +61,7 @@ func TestTxListByChannelId(t *testing.T) {
 	defer conn.Close()
 
 	resp, err := client.TxListByChannelId(context.Background(), &proxy.TxListRequest{
-		ChannelId: "3b5cd6f2cc9a011158431935259670898e1500387e3586482abf2abcf9648e3d",
+		ChannelId: "c299b48ed293ff8a36d959310a7bc698492fec9caee8fbe61c2c004a9921478e",
 		PageSize:  10,
 		PageIndex: 1,
 	})

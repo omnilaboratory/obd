@@ -39,9 +39,17 @@ func (s *RpcServer) OpenChannel(ctx context.Context, in *pb.OpenChannelRequest) 
 	infoBytes, _ := json.Marshal(channelOpen)
 	requestMessage := bean.RequestMessage{
 		Type:                enum.MsgType_SendChannelOpen_32,
+		SenderNodePeerId:    obcClient.User.P2PLocalPeerId,
+		SenderUserPeerId:    obcClient.User.PeerId,
 		RecipientNodePeerId: in.RecipientInfo.RecipientNodePeerId,
 		RecipientUserPeerId: in.RecipientInfo.RecipientUserPeerId,
 		Data:                string(infoBytes)}
+
+	err = checkTargetUserIsOnline(requestMessage)
+	if err != nil {
+		return nil, err
+	}
+
 	_, dataBytes, status := obcClient.ChannelModule(requestMessage)
 	data := string(dataBytes)
 	if status == false {
@@ -93,9 +101,17 @@ func (s *RpcServer) FundChannel(ctx context.Context, in *pb.FundChannelRequest) 
 	infoBytes, _ := json.Marshal(requestFunding)
 	requestMessage := bean.RequestMessage{
 		Type:                enum.MsgType_Funding_134,
+		SenderNodePeerId:    obcClient.User.P2PLocalPeerId,
+		SenderUserPeerId:    obcClient.User.PeerId,
 		RecipientNodePeerId: in.RecipientInfo.RecipientNodePeerId,
 		RecipientUserPeerId: in.RecipientInfo.RecipientUserPeerId,
 		Data:                string(infoBytes)}
+
+	err = checkTargetUserIsOnline(requestMessage)
+	if err != nil {
+		return nil, err
+	}
+
 	_, dataBytes, status := obcClient.FundingTransactionModule(requestMessage)
 
 	data := string(dataBytes)

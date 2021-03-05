@@ -75,7 +75,7 @@ func (clientManager *clientManager) cleanConn(client *Client) {
 	close(client.SendChannel)
 }
 
-func findUserOnLine(msg bean.RequestMessage) (*Client, error) {
+func FindUserOnLine(msg bean.RequestMessage) (*Client, error) {
 	if tool.CheckIsString(&msg.RecipientUserPeerId) {
 		itemClient := GlobalWsClientManager.OnlineClientMap[msg.RecipientUserPeerId]
 		if itemClient != nil && itemClient.User != nil {

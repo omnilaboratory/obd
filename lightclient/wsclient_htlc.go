@@ -131,8 +131,8 @@ func (client *Client) HtlcHModule(msg bean.RequestMessage) (enum.SendTargetType,
 		if client.User.IsAdmin {
 			err := admin.HtlcBeforeAliceAddHtlcAtAliceSide(&msg, client.User)
 			if err == nil {
-				if p2pChannelMap[msg.RecipientNodePeerId] == nil {
-					err = scanAndConnNode(msg.RecipientNodePeerId)
+				if P2pChannelMap[msg.RecipientNodePeerId] == nil {
+					err = ScanAndConnNode(msg.RecipientNodePeerId)
 				}
 			}
 			if err != nil {

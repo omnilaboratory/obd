@@ -43,9 +43,17 @@ func (s *RpcServer) RsmcPayment(ctx context.Context, in *pb.RsmcPaymentRequest) 
 	infoBytes, _ := json.Marshal(request)
 	requestMessage := bean.RequestMessage{
 		Type:                enum.MsgType_CommitmentTx_SendCommitmentTransactionCreated_351,
+		SenderNodePeerId:    obcClient.User.P2PLocalPeerId,
+		SenderUserPeerId:    obcClient.User.PeerId,
 		RecipientNodePeerId: in.RecipientInfo.RecipientNodePeerId,
 		RecipientUserPeerId: in.RecipientInfo.RecipientUserPeerId,
 		Data:                string(infoBytes)}
+
+	err = checkTargetUserIsOnline(requestMessage)
+	if err != nil {
+		return nil, err
+	}
+
 	_, dataBytes, status := obcClient.CommitmentTxModule(requestMessage)
 
 	data := string(dataBytes)

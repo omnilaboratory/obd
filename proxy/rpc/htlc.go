@@ -39,8 +39,10 @@ func (s *RpcServer) AddInvoice(ctx context.Context, in *pb.Invoice) (*pb.AddInvo
 
 	infoBytes, _ := json.Marshal(request)
 	requestMessage := bean.RequestMessage{
-		Type: enum.MsgType_HTLC_Invoice_402,
-		Data: string(infoBytes)}
+		Type:             enum.MsgType_HTLC_Invoice_402,
+		SenderNodePeerId: obcClient.User.P2PLocalPeerId,
+		SenderUserPeerId: obcClient.User.PeerId,
+		Data:             string(infoBytes)}
 	_, dataBytes, status := obcClient.HtlcHModule(requestMessage)
 
 	data := string(dataBytes)
@@ -71,8 +73,10 @@ func (s *RpcServer) ParseInvoice(ctx context.Context, in *pb.ParseInvoiceRequest
 
 	infoBytes, _ := json.Marshal(request)
 	requestMessage := bean.RequestMessage{
-		Type: enum.MsgType_HTLC_ParseInvoice_403,
-		Data: string(infoBytes)}
+		Type:             enum.MsgType_HTLC_ParseInvoice_403,
+		SenderNodePeerId: obcClient.User.P2PLocalPeerId,
+		SenderUserPeerId: obcClient.User.PeerId,
+		Data:             string(infoBytes)}
 	_, dataBytes, status := obcClient.HtlcHModule(requestMessage)
 
 	data := string(dataBytes)
@@ -112,8 +116,10 @@ func (s *RpcServer) SendPayment(ctx context.Context, in *pb.SendPaymentRequest) 
 	}
 	infoBytes, _ := json.Marshal(request)
 	requestMessage := bean.RequestMessage{
-		Type: enum.MsgType_HTLC_FindPath_401,
-		Data: string(infoBytes)}
+		Type:             enum.MsgType_HTLC_FindPath_401,
+		SenderNodePeerId: obcClient.User.P2PLocalPeerId,
+		SenderUserPeerId: obcClient.User.PeerId,
+		Data:             string(infoBytes)}
 	obcClient.HtlcHModule(requestMessage)
 
 	obcClient.GrpcHtlcChan = make(chan []byte)
