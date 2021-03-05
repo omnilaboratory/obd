@@ -551,8 +551,10 @@ func channelFund(client Client, msg bean.RequestMessage) (status bool, data stri
 			data = string(bytes)
 		}
 	}
+
 	if status == false {
 		client.SendToMyself(msg.Type, status, data)
 	}
+
 	return status, data
 }

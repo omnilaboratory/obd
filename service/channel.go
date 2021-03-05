@@ -65,6 +65,9 @@ func (this *channelManager) AliceOpenChannel(msg bean.RequestMessage, user *bean
 
 // obd init ChannelInfo for Bob
 func (this *channelManager) BeforeBobOpenChannelAtBobSide(msg string, user *bean.User) (err error) {
+
+	log.Println("BeforeBobOpenChannelAtBobSide")
+
 	if tool.CheckIsString(&msg) == false {
 		return errors.New(enum.Tips_common_wrong + "msg")
 	}
@@ -139,6 +142,7 @@ func (this *channelManager) BobCheckChannelAddressExist(jsonData string, user *b
 }
 
 func (this *channelManager) BobAcceptChannel(msg bean.RequestMessage, user *bean.User) (channelInfo *dao.ChannelInfo, err error) {
+	log.Println("BobAcceptChannel")
 	reqData := &bean.SendSignOpenChannel{}
 	err = json.Unmarshal([]byte(msg.Data), &reqData)
 
@@ -197,6 +201,9 @@ func (this *channelManager) BobAcceptChannel(msg bean.RequestMessage, user *bean
 
 //当bob操作完，发送信息到Alice所在的obd，obd处理先从bob得到发给alice的信息，然后再发给Alice的轻客户端
 func (this *channelManager) AfterBobAcceptChannelAtAliceSide(jsonData string, user *bean.User) (outputData interface{}, err error) {
+
+	log.Println("AfterBobAcceptChannelAtAliceSide")
+
 	bobChannelInfo := &dao.ChannelInfo{}
 	err = json.Unmarshal([]byte(jsonData), &bobChannelInfo)
 	if err != nil {

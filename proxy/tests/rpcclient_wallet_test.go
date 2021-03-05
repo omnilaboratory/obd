@@ -51,7 +51,7 @@ func TestLogin(t *testing.T) {
 	defer conn.Close()
 
 	login, err := client.Login(context.Background(), &proxy.LoginRequest{
-		Mnemonic:   "dawn enter attitude merry cliff stone rely convince team warfare wasp whisper",
+		Mnemonic:   "coyote antenna senior reward diesel vault into used veteran model throw relief",
 		LoginToken: tool.SignMsgWithMd5([]byte("mjgwhdzx")),
 	})
 	if err != nil {

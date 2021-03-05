@@ -37,6 +37,7 @@ func checkInitConfig() {
 	}
 	config.Init_node_chain_hash = localConfig.InitHashCode
 	l.Log("admin login token:", l.Colorize(localConfig.AdminLoginToken, l.Red))
+	log.Println("admin login token:", localConfig.AdminLoginToken)
 }
 
 func CheckIsAdmin(loginToken string) bool {

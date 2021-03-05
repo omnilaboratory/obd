@@ -50,17 +50,26 @@ func (s *RpcServer) OpenChannel(ctx context.Context, in *pb.OpenChannelRequest) 
 		return nil, err
 	}
 
-	_, dataBytes, status := obcClient.ChannelModule(requestMessage)
-	data := string(dataBytes)
-	if status == false {
-		return nil, errors.New(data)
+	if obcClient.GrpcChan == nil {
+		obcClient.GrpcChan = make(chan []byte)
 	}
 
-	dataMap := make(map[string]interface{})
-	_ = json.Unmarshal(dataBytes, &dataMap)
+	obcClient.ChannelModule(requestMessage)
 
+	message := <-obcClient.GrpcChan
+
+	close(obcClient.GrpcChan)
+	obcClient.GrpcChan = nil
+
+	replyMessage := bean.ReplyMessage{}
+	_ = json.Unmarshal(message, &replyMessage)
+	if replyMessage.Status == false {
+		return nil, errors.New(replyMessage.Result.(string))
+	}
+
+	dataResult := replyMessage.Result.(map[string]interface{})
 	resp := &pb.OpenChannelResponse{}
-	resp.TemplateChannelId = dataMap["temporary_channel_id"].(string)
+	resp.TemplateChannelId = dataResult["temporary_channel_id"].(string)
 
 	return resp, nil
 }

@@ -20,7 +20,7 @@ type Client struct {
 	User          *bean.User
 	Socket        *websocket.Conn
 	SendChannel   chan []byte
-	GrpcHtlcChan  chan []byte
+	GrpcChan      chan []byte
 }
 
 func (client *Client) Write() {
@@ -351,8 +351,13 @@ func (client *Client) sendDataToP2PUser(msg bean.RequestMessage, status bool, da
 					if itemClient.SendChannel != nil {
 						itemClient.SendChannel <- jsonMessage
 					}
-					if itemClient.IsGRpcRequest && itemClient.GrpcHtlcChan != nil {
-						itemClient.GrpcHtlcChan <- jsonMessage
+					if itemClient.IsGRpcRequest && itemClient.GrpcChan != nil {
+						if msg.Type == enum.MsgType_RecvChannelAccept_33 ||
+							msg.Type == enum.MsgType_HTLC_FinishTransferH_43 {
+							go func() {
+								itemClient.GrpcChan <- jsonMessage
+							}()
+						}
 					}
 					return nil
 				}
@@ -405,8 +410,13 @@ func getDataFromP2PSomeone(msg bean.RequestMessage) error {
 					if itemClient.SendChannel != nil {
 						itemClient.SendChannel <- jsonMessage
 					}
-					if itemClient.IsGRpcRequest && itemClient.GrpcHtlcChan != nil {
-						itemClient.GrpcHtlcChan <- jsonMessage
+					if itemClient.IsGRpcRequest && itemClient.GrpcChan != nil {
+						if msg.Type == enum.MsgType_RecvChannelAccept_33 ||
+							msg.Type == enum.MsgType_HTLC_FinishTransferH_43 {
+							go func() {
+								itemClient.GrpcChan <- jsonMessage
+							}()
+						}
 					}
 					return nil
 				}

@@ -122,13 +122,16 @@ func (s *RpcServer) SendPayment(ctx context.Context, in *pb.SendPaymentRequest) 
 		Data:             string(infoBytes)}
 	obcClient.HtlcHModule(requestMessage)
 
-	obcClient.GrpcHtlcChan = make(chan []byte)
+	if obcClient.GrpcChan == nil {
+		obcClient.GrpcChan = make(chan []byte)
+	}
+
+	message := <-obcClient.GrpcChan
+
+	close(obcClient.GrpcChan)
+	obcClient.GrpcChan = nil
+
 	replyMessage := bean.ReplyMessage{}
-
-	message := <-obcClient.GrpcHtlcChan
-	close(obcClient.GrpcHtlcChan)
-	obcClient.GrpcHtlcChan = nil
-
 	_ = json.Unmarshal(message, &replyMessage)
 	if replyMessage.Status == false {
 		return nil, errors.New(replyMessage.Result.(string))

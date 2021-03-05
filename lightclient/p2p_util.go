@@ -278,7 +278,7 @@ func handleTrackerScanStream(stream network.Stream) {
 			flag = true
 		}
 
-		log.Println(info)
+		//log.Println(info)
 		if flag {
 			marshal, _ := json.Marshal(info)
 			msg := string(marshal) + "~"
@@ -303,7 +303,7 @@ func readData(s network.Stream, rw *bufio.ReadWriter) {
 			return
 		}
 		if str != "" {
-			log.Println(s.Conn())
+			log.Println("readData", s.Conn())
 			str = strings.TrimSuffix(str, "~")
 			//log.Println(str)
 			reqData := &bean.RequestMessage{}
@@ -346,6 +346,7 @@ func sendP2PMsg(remoteP2PPeerId string, msg string) error {
 		_ = channel.rw.Flush()
 	} else {
 		log.Println("remoteP2PPeerId " + remoteP2PPeerId + " not connect")
+		return errors.New("remoteP2PPeerId " + remoteP2PPeerId + " not connect")
 	}
 	return nil
 }

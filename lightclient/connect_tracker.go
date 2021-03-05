@@ -94,7 +94,7 @@ func readDataFromWs() {
 				return
 			}
 
-			log.Println("get data from tracker", string(message))
+			//log.Println("get data from tracker", string(message))
 			replyMessage := bean.ReplyMessage{}
 			err = json.Unmarshal(message, &replyMessage)
 			if err == nil {
@@ -335,7 +335,7 @@ func checkChannel(userId string, db storm.Node, nodes []bean.ChannelInfoRequest)
 }
 
 func sendMsgToTracker(msg []byte) {
-	log.Println("send to tracker", string(msg))
+	//log.Println("send to tracker", string(msg))
 	if conn == nil {
 		isReset = true
 		err := ConnectToTracker()
