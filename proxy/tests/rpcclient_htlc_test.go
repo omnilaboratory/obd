@@ -31,7 +31,7 @@ func TestParseInvoice(t *testing.T) {
 	client, conn := getHtlcClient()
 	defer conn.Close()
 	invoice, err := client.ParseInvoice(context.Background(), &proxy.ParseInvoiceRequest{
-		PaymentRequest: "obtb100000s1pqzyfnpwQmccE4s2uhEXrJXE778NChn1ed8NyWNyAHH23mP7f9NM3Luzq5773cc7b3b2fb80453ba82663b71992a91ecc8eb4b6b76fa6a60e42a6c913fa0hzz02df979efb889b6349944e0995b41d3ab166263076927d52d10a0e858f6e3041adxq8ps306yqtqp00ll",
+		PaymentRequest: "obtb100000s1pqzyfnpwQmZPzUh7Q6PQg6gXB4XheaoZMMhHA9JNeCrJsp3FWjFrAFuzqa5f24dc5d5414d961bba98c98624b87222da3984b324bcab7cfd7fd63aee33b3hzz03cd311a46e7100f775607e231d2538cbfca01c8746ef8a0900e75a15e33456339xq8ps306yqtqp0dqtdescription3hg",
 	})
 	if err != nil {
 		log.Println(err)
@@ -47,7 +47,7 @@ func TestSendPayment(t *testing.T) {
 	defer conn.Close()
 
 	htlcPayment, err := client.SendPayment(context.Background(), &proxy.SendPaymentRequest{
-		PaymentRequest: "obtb100000s1pqzyfnpwQmccE4s2uhEXrJXE778NChn1ed8NyWNyAHH23mP7f9NM3Luzq63167817c979ade9e42f3204404c1513a4b1b4e9eea654c9498ed9cc920dbb36hzz03367ac2ec89f567433729a448bd0f115cba8f4f48f3b97c6c0e0a19bb226d2aacxq8ps306yqtqp0dqtdescription34q",
+		PaymentRequest: "obtb100000s1pqzyfnpwQmZPzUh7Q6PQg6gXB4XheaoZMMhHA9JNeCrJsp3FWjFrAFuzqa5f24dc5d5414d961bba98c98624b87222da3984b324bcab7cfd7fd63aee33b3hzz03cd311a46e7100f775607e231d2538cbfca01c8746ef8a0900e75a15e33456339xq8ps306yqtqp0dqtdescription3hg",
 		InvoiceDetail: &proxy.ParseInvoiceResponse{
 			PropertyId:          137,
 			Value:               0.001,

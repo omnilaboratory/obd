@@ -20,21 +20,6 @@ func getRsmcClient() (proxy.RsmcClient, *grpc.ClientConn) {
 	return proxy.NewRsmcClient(conn), conn
 }
 
-func TestLatestRsmcTx(t *testing.T) {
-	client, conn := getRsmcClient()
-	defer conn.Close()
-
-	resp, err := client.LatestRsmcTx(context.Background(), &proxy.LatestRsmcTxRequest{
-		ChannelId: "c299b48ed293ff8a36d959310a7bc698492fec9caee8fbe61c2c004a9921478e",
-	})
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	marshal, _ := json.Marshal(resp)
-	log.Println(string(marshal))
-}
-
 func TestRsmcPayment(t *testing.T) {
 
 	client, conn := getRsmcClient()
@@ -42,33 +27,15 @@ func TestRsmcPayment(t *testing.T) {
 
 	payment, err := client.RsmcPayment(context.Background(), &proxy.RsmcPaymentRequest{
 		RecipientInfo: &proxy.RecipientNodeInfo{
-			RecipientNodePeerId: "QmccE4s2uhEXrJXE778NChn1ed8NyWNyAHH23mP7f9NM3L",
-			RecipientUserPeerId: "63167817c979ade9e42f3204404c1513a4b1b4e9eea654c9498ed9cc920dbb36"},
-		ChannelId: "c299b48ed293ff8a36d959310a7bc698492fec9caee8fbe61c2c004a9921478e",
-		Amount:    0.001,
+			RecipientNodePeerId: "QmZPzUh7Q6PQg6gXB4XheaoZMMhHA9JNeCrJsp3FWjFrAF",
+			RecipientUserPeerId: "a5f24dc5d5414d961bba98c98624b87222da3984b324bcab7cfd7fd63aee33b3"},
+		ChannelId: "1973a103c683f6d8d5b015e3ce4927bf38b7295ccb4f27487b3fc478f2a118cc",
+		Amount:    0.01,
 	})
 	if err != nil {
 		log.Println(err)
 		return
 	}
 	marshal, _ := json.Marshal(payment)
-	log.Println(string(marshal))
-}
-
-func TestTxListByChannelId(t *testing.T) {
-
-	client, conn := getRsmcClient()
-	defer conn.Close()
-
-	resp, err := client.TxListByChannelId(context.Background(), &proxy.TxListRequest{
-		ChannelId: "c299b48ed293ff8a36d959310a7bc698492fec9caee8fbe61c2c004a9921478e",
-		PageSize:  10,
-		PageIndex: 1,
-	})
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	marshal, _ := json.Marshal(resp)
 	log.Println(string(marshal))
 }

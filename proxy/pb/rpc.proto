@@ -3,9 +3,6 @@ syntax = "proto3";
 package proxy;
 option go_package = "pb";
 
-
-
-
 message RecipientNodeInfo{
   string recipient_node_peer_id = 1;
   string recipient_user_peer_id = 2;
@@ -177,6 +174,38 @@ message ListChannelsResponse {
   // The list of active channels
   repeated Channel channels = 1;
 }
+
+message LatestTransactionRequest{
+  string channel_id = 1;
+}
+
+message Transaction{
+  string channel_id = 1;
+  double amount_a = 2;
+  double amount_b = 3;
+  string peer_a = 4;
+  string peer_b = 5;
+  int32 curr_state = 6;
+  string tx_hash = 7;
+  int32 tx_type = 8;
+  string h = 9;
+  string r = 10;
+  double amount_htlc = 11;
+}
+
+message GetTransactionsRequest{
+  string channel_id = 1;
+  int32 page_size = 2;
+  int32 page_index = 3;
+}
+message TransactionDetails{
+  repeated Transaction transactions = 1;
+  int32 total_count = 2;
+  int32 page_size = 3;
+  int32 page_index = 4;
+}
+
+
 service Lightning {
 
   /* obdcli: `hello`
@@ -187,6 +216,8 @@ service Lightning {
   rpc OpenChannel(OpenChannelRequest) returns(OpenChannelResponse);
   rpc FundChannel(FundChannelRequest) returns(FundChannelResponse);
   rpc ListChannels(ListChannelsRequest) returns(ListChannelsResponse);
+  rpc LatestTransaction(LatestTransactionRequest) returns(Transaction);
+  rpc GetTransactions(GetTransactionsRequest) returns(TransactionDetails);
 }
 
 
