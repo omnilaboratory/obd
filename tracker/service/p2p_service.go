@@ -142,16 +142,20 @@ func announceSelf() {
 }
 
 func scanNodes() {
+	log.Println("scanNodes")
 	peerChan, err := routingDiscovery.FindPeers(ctx, obdRendezvousString)
 	if err != nil {
-		panic(err)
+		log.Println(err)
+		return
 	}
+
 	for node := range peerChan {
+		log.Println("target p2p node id", node.ID)
 		if node.ID == hostNode.ID() {
 			continue
 		}
 
-		//和tracker直接连接的obd，不需要同步数据
+		//和tracker直接连接的obd，不需要同步数据 因为用户登录，都会直接向tracker报告登录状态
 		if obdOnlineNodesMap[node.ID.Pretty()] != nil {
 			continue
 		}

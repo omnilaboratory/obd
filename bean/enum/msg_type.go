@@ -173,8 +173,9 @@ const (
 	MsgType_RecvCloseChannelSign_39 MsgType = -110039
 
 	// path finding
-	MsgType_HTLC_FindPath_401 MsgType = -100401
-	MsgType_HTLC_Invoice_402  MsgType = -100402
+	MsgType_HTLC_FindPath_401     MsgType = -100401
+	MsgType_HTLC_Invoice_402      MsgType = -100402
+	MsgType_HTLC_ParseInvoice_403 MsgType = -100403
 
 	MsgType_HTLC_ClientSign_Alice_C3a_100    MsgType = -100100
 	MsgType_HTLC_ClientSign_Bob_C3b_101      MsgType = -100101
@@ -400,6 +401,8 @@ func CheckExist(msgType MsgType) bool {
 	case MsgType_HTLC_FindPath_401:
 		return true
 	case MsgType_HTLC_Invoice_402:
+		return true
+	case MsgType_HTLC_ParseInvoice_403:
 		return true
 	case MsgType_HTLC_SendAddHTLC_40:
 		return true

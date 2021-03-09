@@ -17,6 +17,7 @@ require (
 	github.com/go-ini/ini v1.56.0
 	github.com/golang/protobuf v1.4.0
 	github.com/gorilla/websocket v1.4.2
+	github.com/happierall/l v0.0.0-20190729144513-5eb32176fb02
 	github.com/jehiah/go-strftime v0.0.0-20171201141054-1d33003b3869 // indirect
 	github.com/jonboulle/clockwork v0.1.0 // indirect
 	github.com/lestrrat-go/file-rotatelogs v2.3.0+incompatible
@@ -36,6 +37,7 @@ require (
 	github.com/tidwall/gjson v1.6.0
 	github.com/tyler-smith/go-bip32 v0.0.0-20170922074101-2c9cfd177564
 	github.com/tyler-smith/go-bip39 v1.0.2
+	github.com/unrolled/secure v1.0.8
 	github.com/urfave/cli v1.22.1
 	github.com/vmihailenco/msgpack v4.0.4+incompatible // indirect
 	go.etcd.io/bbolt v1.3.4 // indirect

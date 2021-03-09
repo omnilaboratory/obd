@@ -14,9 +14,9 @@ func TestOpenChannel(t *testing.T) {
 
 	channelResponse, err := client.OpenChannel(context.Background(), &proxy.OpenChannelRequest{
 		RecipientInfo: &proxy.RecipientNodeInfo{
-			RecipientNodePeerId: "QmccE4s2uhEXrJXE778NChn1ed8NyWNyAHH23mP7f9NM3L",
-			RecipientUserPeerId: "63167817c979ade9e42f3204404c1513a4b1b4e9eea654c9498ed9cc920dbb36"},
-		NodePubkeyString: "03c384b8d9c65edea28ce205537bb58dc0096bc618e9e553455e1db1f36cc25642",
+			RecipientNodePeerId: "QmZPzUh7Q6PQg6gXB4XheaoZMMhHA9JNeCrJsp3FWjFrAF",
+			RecipientUserPeerId: "a5f24dc5d5414d961bba98c98624b87222da3984b324bcab7cfd7fd63aee33b3"},
+		NodePubkeyString: "023769b549838e48db217c4d2a8bbeb199c5dbf63dfa38649b6bc2bb18261d7454",
 		NodePubkeyIndex:  1,
 		Private:          false,
 	})
@@ -34,9 +34,9 @@ func TestFundChannel(t *testing.T) {
 
 	fundChannel, err := client.FundChannel(context.Background(), &proxy.FundChannelRequest{
 		RecipientInfo: &proxy.RecipientNodeInfo{
-			RecipientNodePeerId: "QmccE4s2uhEXrJXE778NChn1ed8NyWNyAHH23mP7f9NM3L",
-			RecipientUserPeerId: "63167817c979ade9e42f3204404c1513a4b1b4e9eea654c9498ed9cc920dbb36"},
-		TemplateChannelId: "fd11f0b3df40903e17c2d6375f5fe969016bbf626dcb9b36274d448d31c3ff49",
+			RecipientNodePeerId: "QmZPzUh7Q6PQg6gXB4XheaoZMMhHA9JNeCrJsp3FWjFrAF",
+			RecipientUserPeerId: "a5f24dc5d5414d961bba98c98624b87222da3984b324bcab7cfd7fd63aee33b3"},
+		TemplateChannelId: "ac98aef33e317a0063036c33ffd9b3703fd3e630ea22ffc2ba0b05e7da475ab8",
 		BtcAmount:         0.0004,
 		PropertyId:        137,
 		AssetAmount:       1,

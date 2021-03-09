@@ -19,6 +19,8 @@ func routerOfP2PNode(msg bean.RequestMessage, data string, client *Client) (retD
 	switch msgType {
 	case enum.MsgType_ChannelOpen_32:
 		err := service.ChannelService.BeforeBobOpenChannelAtBobSide(data, client.User)
+		log.Println("BeforeBobOpenChannelAtBobSide", err)
+		log.Println(client.User)
 		if err == nil {
 			status = true
 			// when bob get the request for open channel
@@ -26,6 +28,7 @@ func routerOfP2PNode(msg bean.RequestMessage, data string, client *Client) (retD
 				msg.Data = data
 				acceptOpenChannelInfo, err := admin.BeforeBobAcceptOpenChannel(&msg, client.User)
 				if err == nil {
+					log.Println("bob is admin")
 					signOpenChannelMsg := bean.RequestMessage{}
 					marshal, _ := json.Marshal(acceptOpenChannelInfo)
 					signOpenChannelMsg.Type = enum.MsgType_SendChannelAccept_33
@@ -42,6 +45,7 @@ func routerOfP2PNode(msg bean.RequestMessage, data string, client *Client) (retD
 						signedOpenChannelMsg.SenderUserPeerId = client.User.PeerId
 						marshal, _ = json.Marshal(signedData)
 						signedOpenChannelMsg.Data = string(marshal)
+						log.Println("open channel bob send MsgType_ChannelAccept_33")
 						_ = client.sendDataToP2PUser(signedOpenChannelMsg, true, signedOpenChannelMsg.Data)
 						return "", false, nil
 					} else {
@@ -717,7 +721,7 @@ func checkHForNextNodeOrRForBackward(toBob interface{}, client Client, msg bean.
 			createHtlcTxForC3a.RoutingPacket = currNodeTx.HtlcRoutingPacket
 			marshal, _ := json.Marshal(createHtlcTxForC3a)
 			msg.Data = string(marshal)
-			client.htlcHModule(*msg)
+			client.HtlcHModule(*msg)
 		}
 	}
 }

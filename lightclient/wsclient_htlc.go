@@ -42,7 +42,8 @@ func htlcTrackerDealModule(msg bean.RequestMessage) {
 				newMsg.SenderUserPeerId = client.User.PeerId
 				marshal, _ := json.Marshal(invoiceInfo)
 				newMsg.Data = string(marshal)
-				client.htlcHModule(newMsg)
+				_, bytes, status = client.HtlcHModule(newMsg)
+				data = string(bytes)
 			}
 		}
 		client.SendToMyself(enum.MsgType_HTLC_FindPath_401, status, data)
@@ -50,7 +51,7 @@ func htlcTrackerDealModule(msg bean.RequestMessage) {
 }
 
 //htlc h module
-func (client *Client) htlcHModule(msg bean.RequestMessage) (enum.SendTargetType, []byte, bool) {
+func (client *Client) HtlcHModule(msg bean.RequestMessage) (enum.SendTargetType, []byte, bool) {
 	status := false
 	var sendType = enum.SendTargetType_SendToNone
 	data := ""
@@ -62,6 +63,8 @@ func (client *Client) htlcHModule(msg bean.RequestMessage) (enum.SendTargetType,
 		if err != nil {
 			data = err.Error()
 		} else {
+			msg.SenderNodePeerId = client.User.P2PLocalPeerId
+			msg.SenderUserPeerId = client.User.PeerId
 			if client.User.IsAdmin {
 				err := admin.HtlcCreateInvoice(&msg, client.User)
 				if err != nil {
@@ -88,14 +91,10 @@ func (client *Client) htlcHModule(msg bean.RequestMessage) (enum.SendTargetType,
 			data = err.Error()
 			client.SendToMyself(msg.Type, status, data)
 		} else {
+			bytes, _ := json.Marshal(respond)
+			data = string(bytes)
+			status = true
 			if isPrivate {
-				bytes, err := json.Marshal(respond)
-				if err != nil {
-					data = err.Error()
-				} else {
-					data = string(bytes)
-					status = true
-				}
 				client.SendToMyself(msg.Type, status, data)
 				if client.User.IsAdmin {
 					invoiceInfo := respond.(map[string]interface{})
@@ -110,21 +109,30 @@ func (client *Client) htlcHModule(msg bean.RequestMessage) (enum.SendTargetType,
 					newMsg.SenderUserPeerId = client.User.PeerId
 					marshal, _ := json.Marshal(invoiceInfo)
 					newMsg.Data = string(marshal)
-					client.htlcHModule(newMsg)
+					sendType, bytes, status = client.HtlcHModule(newMsg)
+					data = string(bytes)
 				}
-			} else {
-				status = true
 			}
 		}
 		sendType = enum.SendTargetType_SendToSomeone
+	case enum.MsgType_HTLC_ParseInvoice_403:
+		invoice, err := service.HtlcForwardTxService.ParseInvoice(msg.Data, *client.User)
+		if err != nil {
+			data = err.Error()
+		} else {
+			bytes, _ := json.Marshal(invoice)
+			data = string(bytes)
+			status = true
+		}
+		client.SendToMyself(msg.Type, status, data)
+		sendType = enum.SendTargetType_SendToSomeone
 
 	case enum.MsgType_HTLC_SendAddHTLC_40:
-
 		if client.User.IsAdmin {
 			err := admin.HtlcBeforeAliceAddHtlcAtAliceSide(&msg, client.User)
 			if err == nil {
-				if p2pChannelMap[msg.RecipientNodePeerId] == nil {
-					err = scanAndConnNode(msg.RecipientNodePeerId)
+				if P2pChannelMap[msg.RecipientNodePeerId] == nil {
+					err = ScanAndConnNode(msg.RecipientNodePeerId)
 				}
 			}
 			if err != nil {

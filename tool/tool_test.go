@@ -10,5 +10,5 @@ func TestGenerateInitHashCode(t *testing.T) {
 }
 
 func TestSignMsgWithMd5(t *testing.T) {
-	log.Println(SignMsgWithMd5([]byte("mjgwhdzx")))
+	log.Println(SignMsgWithMd5([]byte("mrt1gppm")))
 }

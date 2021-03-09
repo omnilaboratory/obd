@@ -65,6 +65,9 @@ func (this *channelManager) AliceOpenChannel(msg bean.RequestMessage, user *bean
 
 // obd init ChannelInfo for Bob
 func (this *channelManager) BeforeBobOpenChannelAtBobSide(msg string, user *bean.User) (err error) {
+
+	log.Println("BeforeBobOpenChannelAtBobSide")
+
 	if tool.CheckIsString(&msg) == false {
 		return errors.New(enum.Tips_common_wrong + "msg")
 	}
@@ -139,6 +142,7 @@ func (this *channelManager) BobCheckChannelAddressExist(jsonData string, user *b
 }
 
 func (this *channelManager) BobAcceptChannel(msg bean.RequestMessage, user *bean.User) (channelInfo *dao.ChannelInfo, err error) {
+	log.Println("BobAcceptChannel")
 	reqData := &bean.SendSignOpenChannel{}
 	err = json.Unmarshal([]byte(msg.Data), &reqData)
 
@@ -197,6 +201,9 @@ func (this *channelManager) BobAcceptChannel(msg bean.RequestMessage, user *bean
 
 //当bob操作完，发送信息到Alice所在的obd，obd处理先从bob得到发给alice的信息，然后再发给Alice的轻客户端
 func (this *channelManager) AfterBobAcceptChannelAtAliceSide(jsonData string, user *bean.User) (outputData interface{}, err error) {
+
+	log.Println("AfterBobAcceptChannelAtAliceSide")
+
 	bobChannelInfo := &dao.ChannelInfo{}
 	err = json.Unmarshal([]byte(jsonData), &bobChannelInfo)
 	if err != nil {
@@ -250,6 +257,7 @@ type ChannelVO struct {
 	BalanceA           float64           `json:"balance_a"`
 	BalanceB           float64           `json:"balance_b"`
 	BalanceHtlc        float64           `json:"balance_htlc"`
+	NumUpdates         uint64            `json:"num_updates"`
 	CreateAt           time.Time         `json:"create_at"`
 }
 
@@ -274,19 +282,31 @@ func (this *channelManager) AllItem(jsonData string, user bean.User) (data *page
 	if pageIndex <= 0 {
 		pageIndex = 1
 	}
+
 	pageSize := gjson.Get(jsonData, "page_size").Int()
 	if pageSize <= 0 {
 		pageSize = 10
 	}
+	activeOnly := gjson.Get(jsonData, "active_only").Bool()
 	skip := (pageIndex - 1) * pageSize
 
 	var infos []dao.ChannelInfo
-	err = tx.Select(
-		q.Or(
-			q.Eq("PeerIdA", user.PeerId),
-			q.Eq("PeerIdB", user.PeerId))).
-		OrderBy("CreateAt").Reverse().Skip(int(skip)).Limit(int(pageSize)).
-		Find(&infos)
+	if activeOnly {
+		err = tx.Select(
+			q.Gt("CurrState", bean.ChannelState_WaitFundAsset),
+			q.Or(
+				q.Eq("PeerIdA", user.PeerId),
+				q.Eq("PeerIdB", user.PeerId))).
+			OrderBy("CreateAt").Reverse().Skip(int(skip)).Limit(int(pageSize)).
+			Find(&infos)
+	} else {
+		err = tx.Select(
+			q.Or(
+				q.Eq("PeerIdA", user.PeerId),
+				q.Eq("PeerIdB", user.PeerId))).
+			OrderBy("CreateAt").Reverse().Skip(int(skip)).Limit(int(pageSize)).
+			Find(&infos)
+	}
 
 	tempCount, err := tx.Select(
 		q.Or(
@@ -344,6 +364,8 @@ func (this *channelManager) AllItem(jsonData string, user bean.User) (data *page
 					item.BalanceB = commitmentTxInfo.AmountToCounterparty
 					item.BalanceHtlc = commitmentTxInfo.AmountToHtlc
 				}
+				count, _ := tx.Select(q.Eq("ChannelId", info.ChannelId)).Count(&dao.CommitmentTransaction{})
+				item.NumUpdates = uint64(count)
 			}
 			items = append(items, item)
 		}

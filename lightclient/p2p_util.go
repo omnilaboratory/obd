@@ -45,7 +45,7 @@ var relayNode string
 var localServerDest string
 var p2PLocalNodeId string
 var privateKey crypto.PrivKey
-var p2pChannelMap map[string]*P2PChannel
+var P2pChannelMap map[string]*P2PChannel
 
 func generatePrivateKey() (crypto.PrivKey, error) {
 	if privateKey == nil {
@@ -84,7 +84,7 @@ func StartP2PNode() (err error) {
 		log.Println(err)
 		return err
 	}
-	p2pChannelMap = make(map[string]*P2PChannel)
+	P2pChannelMap = make(map[string]*P2PChannel)
 	p2PLocalNodeId = hostNode.ID().Pretty()
 	service.P2PLocalNodeId = p2PLocalNodeId
 
@@ -93,7 +93,7 @@ func StartP2PNode() (err error) {
 	log.Println("local p2p address", localServerDest)
 
 	//把自己也作为终点放进去，阻止自己连接自己
-	p2pChannelMap[p2PLocalNodeId] = &P2PChannel{
+	P2pChannelMap[p2PLocalNodeId] = &P2PChannel{
 		IsLocalChannel: true,
 		Address:        localServerDest,
 	}
@@ -144,7 +144,7 @@ func StartP2PNode() (err error) {
 var routingDiscovery *discovery.RoutingDiscovery
 var ctx = context.Background()
 
-func scanAndConnNode(nodeId string) error {
+func ScanAndConnNode(nodeId string) error {
 	peerChan, err := routingDiscovery.FindPeers(context.Background(), obdRendezvousString)
 	if err != nil {
 		return err
@@ -161,7 +161,7 @@ func scanAndConnNode(nodeId string) error {
 }
 
 func connSomeNode(node peer.AddrInfo) error {
-	if p2pChannelMap[node.ID.Pretty()] != nil {
+	if P2pChannelMap[node.ID.Pretty()] != nil {
 		log.Println("Remote peer has been connected")
 		return nil
 	}
@@ -242,7 +242,7 @@ func connP2PNode(dest string) (string, error) {
 
 func handleStream(s network.Stream) {
 	if s != nil {
-		if p2pChannelMap[s.Conn().RemotePeer().Pretty()] == nil {
+		if P2pChannelMap[s.Conn().RemotePeer().Pretty()] == nil {
 			log.Println("Got a new stream!")
 			rw := addP2PChannel(s)
 			go readData(s, rw)
@@ -257,7 +257,7 @@ func handleTrackerScanStream(stream network.Stream) {
 		log.Println("request to scan channel and online user info from tracker", stream.Conn().RemotePeer().Pretty())
 
 		users := make(map[string]string)
-		for _, item := range globalWsClientManager.OnlineClientMap {
+		for _, item := range GlobalWsClientManager.OnlineClientMap {
 			if item.User != nil {
 				users[item.User.PeerId] = item.User.P2PLocalAddress
 			}
@@ -278,6 +278,7 @@ func handleTrackerScanStream(stream network.Stream) {
 			flag = true
 		}
 
+		//log.Println(info)
 		if flag {
 			marshal, _ := json.Marshal(info)
 			msg := string(marshal) + "~"
@@ -295,14 +296,14 @@ func readData(s network.Stream, rw *bufio.ReadWriter) {
 	for {
 		str, err := rw.ReadString('~')
 		if err != nil {
-			delete(p2pChannelMap, s.Conn().RemotePeer().Pretty())
+			delete(P2pChannelMap, s.Conn().RemotePeer().Pretty())
 			return
 		}
 		if str == "" {
 			return
 		}
 		if str != "" {
-			log.Println(s.Conn())
+			log.Println("readData", s.Conn())
 			str = strings.TrimSuffix(str, "~")
 			//log.Println(str)
 			reqData := &bean.RequestMessage{}
@@ -326,7 +327,7 @@ func addP2PChannel(stream network.Stream) *bufio.ReadWriter {
 		stream:  stream,
 		rw:      rw,
 	}
-	p2pChannelMap[stream.Conn().RemotePeer().Pretty()] = node
+	P2pChannelMap[stream.Conn().RemotePeer().Pretty()] = node
 	return rw
 }
 
@@ -338,13 +339,14 @@ func sendP2PMsg(remoteP2PPeerId string, msg string) error {
 		return errors.New("remoteP2PPeerId is yourself,can not send msg to yourself")
 	}
 
-	channel := p2pChannelMap[remoteP2PPeerId]
+	channel := P2pChannelMap[remoteP2PPeerId]
 	if channel != nil {
 		msg = msg + "~"
 		_, _ = channel.rw.WriteString(msg)
 		_ = channel.rw.Flush()
 	} else {
 		log.Println("remoteP2PPeerId " + remoteP2PPeerId + " not connect")
+		return errors.New("remoteP2PPeerId " + remoteP2PPeerId + " not connect")
 	}
 	return nil
 }

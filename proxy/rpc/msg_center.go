@@ -1,13 +1,14 @@
 package rpc
 
 import (
+	"crypto/x509"
 	"encoding/json"
 	"github.com/gorilla/websocket"
 	"github.com/omnilaboratory/obd/bean"
 	"github.com/omnilaboratory/obd/bean/enum"
-	"github.com/omnilaboratory/obd/config"
+	"github.com/omnilaboratory/obd/lightclient"
 	"log"
-	"net/url"
+	"net/http/httptest"
 	"strings"
 	"time"
 )
@@ -21,21 +22,49 @@ var (
 	rsmcChan           = make(chan bean.ReplyMessage)
 	addInvoiceChan     = make(chan bean.ReplyMessage)
 	payInvoiceChan     = make(chan bean.ReplyMessage)
+	onceRequestChan    = make(chan bean.ReplyMessage)
 )
 
-func ConnToObd() {
-	u := url.URL{Scheme: "ws", Host: "127.0.0.1:60020", Path: "/ws" + config.ChainNodeType}
-	log.Printf("grpc begin to connect to obd: %s", u.String())
+var obcClient *lightclient.Client
 
-	var err error
-	connObd, _, err = websocket.DefaultDialer.Dial(u.String(), nil)
-	if err != nil {
-		log.Println("fail to dial obd:", err)
-		return
+func ConnToObd() (err error) {
+
+	obcClient = &lightclient.Client{IsGRpcRequest: true}
+
+	////u := url.URL{Scheme: "wss", Host: "127.0.0.1:60020", Path: "/ws" + config.ChainNodeType}
+	//u := url.URL{Scheme: "ws", Host: "127.0.0.1:60020", Path: "/ws" + config.ChainNodeType}
+	//log.Printf("grpc begin to connect to obd: %s", u.String())
+	//
+	//dailer := websocket.DefaultDialer
+	////dailer.TLSClientConfig =&tls.Config{InsecureSkipVerify: true}
+	//
+	//header := http.Header{}
+	//header.Add("session", tool.GetGRpcSession())
+	//
+	//connObd, _, err = dailer.Dial(u.String(), header)
+	//if err != nil {
+	//	log.Println("fail to dial obd:", err)
+	//	return err
+	//}
+	//connObd.SetReadLimit(1 << 20)
+	//
+	//go readDataFromObd()
+
+	return nil
+}
+
+func rootCAs(s *httptest.Server) *x509.CertPool {
+	certs := x509.NewCertPool()
+	for _, c := range s.TLS.Certificates {
+		roots, err := x509.ParseCertificates(c.Certificate[len(c.Certificate)-1])
+		if err != nil {
+			log.Println("error parsing server's root cert: %v", err)
+		}
+		for _, root := range roots {
+			certs.AddCert(root)
+		}
 	}
-	connObd.SetReadLimit(1 << 20)
-
-	go readDataFromObd()
+	return certs
 }
 
 func readDataFromObd() {
@@ -50,7 +79,6 @@ func readDataFromObd() {
 		for {
 			log.Println("waiting message...")
 			_, message, err := connObd.ReadMessage()
-			log.Println("receive message")
 			log.Println(string(message))
 			if err != nil {
 				log.Println(err)
@@ -66,6 +94,8 @@ func readDataFromObd() {
 			}
 
 			switch replyMessage.Type {
+			case enum.MsgType_GetMnemonic_2004:
+				onceRequestChan <- replyMessage
 			case enum.MsgType_UserLogin_2001:
 				if strings.Contains(replyMessage.From, replyMessage.To) {
 					loginChan <- replyMessage
@@ -80,6 +110,8 @@ func readDataFromObd() {
 			case enum.MsgType_RecvChannelAccept_33:
 				openChannelChan <- replyMessage
 
+			case enum.MsgType_Funding_134:
+				fundChannelChan <- replyMessage
 			case enum.MsgType_FundingCreate_SendBtcFundingCreated_340:
 				fundChannelChan <- replyMessage
 			case enum.MsgType_FundingSign_RecvBtcSign_350:
@@ -97,6 +129,9 @@ func readDataFromObd() {
 
 			case enum.MsgType_HTLC_Invoice_402:
 				addInvoiceChan <- replyMessage
+
+			case enum.MsgType_HTLC_ParseInvoice_403:
+				onceRequestChan <- replyMessage
 
 			case enum.MsgType_HTLC_FindPath_401:
 				if replyMessage.Status == false {

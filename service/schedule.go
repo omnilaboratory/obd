@@ -38,7 +38,7 @@ func (service *scheduleManager) StartSchedule() {
 //检查通道地址的金额是否变动了，根据交易的txid，广播br
 func checkBR() {
 	log.Println("checkBR")
-	_dir := "dbdata" + config.ChainNodeType
+	_dir := config.DataDirectory + "/" + config.ChainNodeType
 	files, _ := ioutil.ReadDir(_dir)
 	dbNames := make([]string, 0)
 	userPeerIds := make([]string, 0)

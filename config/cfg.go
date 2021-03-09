@@ -17,6 +17,8 @@ var (
 	ReadTimeout  = 60 * time.Second
 	WriteTimeout = 60 * time.Second
 
+	GrpcServerPort = 50051
+
 	HtlcFeeRate = 0.0001
 	HtlcMaxFee  = 0.01
 
@@ -29,7 +31,7 @@ var (
 	BootstrapPeers addrList
 
 	Init_node_chain_hash = "1EXoDusjGwvnjZUyKkxZ4UHEf77z6A5S4P"
-  
+
 	DataDirectory     = ""
 	dataDirectoryName = ".obd"
 )
@@ -51,6 +53,7 @@ func Init() {
 		return
 	}
 	ServerPort = section.Key("port").MustInt(60020)
+	GrpcServerPort = section.Key("grpc_server_port").MustInt(50051)
 	ReadTimeout = time.Duration(section.Key("readTimeout").MustInt(60)) * time.Second
 	WriteTimeout = time.Duration(section.Key("writeTimeout").MustInt(60)) * time.Second
 

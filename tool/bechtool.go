@@ -73,6 +73,9 @@ func ConvertBechStringToNum(str string) (result int64, err error) {
 }
 
 func DecodeInvoiceObjFromCodes(encode string) (invoice bean.HtlcRequestInvoice, err error) {
+	if len(encode) == 0 {
+		return invoice, errors.New("wrong invoice")
+	}
 	source := encode
 
 	invoice = bean.HtlcRequestInvoice{}

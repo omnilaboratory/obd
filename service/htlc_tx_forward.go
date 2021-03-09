@@ -153,7 +153,21 @@ func (service *htlcForwardTxManager) CreateHtlcInvoice(msg bean.RequestMessage) 
 	return addr, nil
 }
 
-// 401 find htlc find path
+func (service *htlcForwardTxManager) ParseInvoice(msgData string, user bean.User) (data interface{}, err error) {
+	requestData := &bean.HtlcRequestFindPath{}
+	err = json.Unmarshal([]byte(msgData), requestData)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	htlcRequestInvoice, err := tool.DecodeInvoiceObjFromCodes(requestData.Invoice)
+	if err != nil {
+		return nil, err
+	}
+	return htlcRequestInvoice, nil
+}
+
+// 401 htlc find path
 func (service *htlcForwardTxManager) PayerRequestFindPath(msgData string, user bean.User) (data interface{}, isPrivate bool, err error) {
 	if tool.CheckIsString(&msgData) == false {
 		return nil, false, errors.New(enum.Tips_common_empty + "msg data")

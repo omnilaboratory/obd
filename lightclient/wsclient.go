@@ -15,10 +15,12 @@ import (
 )
 
 type Client struct {
-	Id          string
-	User        *bean.User
-	Socket      *websocket.Conn
-	SendChannel chan []byte
+	Id            string
+	IsGRpcRequest bool
+	User          *bean.User
+	Socket        *websocket.Conn
+	SendChannel   chan []byte
+	GrpcChan      chan []byte
 }
 
 func (client *Client) Write() {
@@ -44,7 +46,7 @@ func (client *Client) Write() {
 
 func (client *Client) Read() {
 	defer func() {
-		globalWsClientManager.Disconnected <- client
+		GlobalWsClientManager.Disconnected <- client
 	}()
 
 	for {
@@ -92,7 +94,7 @@ func (client *Client) Read() {
 
 		// check the Recipient is online
 		if tool.CheckIsString(&msg.RecipientUserPeerId) {
-			_, err = findUserOnLine(msg)
+			_, err = FindUserOnLine(msg)
 			if err != nil {
 				client.SendToMyself(msg.Type, false, fmt.Sprintf(enum.Tips_user_notExistOrOnline, msg.RecipientUserPeerId))
 				continue
@@ -111,9 +113,9 @@ func (client *Client) Read() {
 
 		if msg.Type <= enum.MsgType_UserLogin_2001 && msg.Type > enum.MsgType_User_End_2099 {
 			if msg.Type == enum.MsgType_GetMnemonic_2004 {
-				sendType, dataOut, status = client.hdWalletModule(msg)
+				sendType, dataOut, status = client.HdWalletModule(msg)
 			} else {
-				sendType, dataOut, status = client.userModule(msg)
+				sendType, dataOut, status = client.UserModule(msg)
 			}
 			needLogin = false
 		}
@@ -161,8 +163,8 @@ func (client *Client) Read() {
 						client.SendToMyself(msg.Type, false, enum.Tips_common_empty+"error recipient_node_peer_id")
 						continue
 					}
-					if p2pChannelMap[msg.RecipientNodePeerId] == nil {
-						err = scanAndConnNode(msg.RecipientNodePeerId)
+					if P2pChannelMap[msg.RecipientNodePeerId] == nil {
+						err = ScanAndConnNode(msg.RecipientNodePeerId)
 						if err != nil {
 							client.SendToMyself(msg.Type, false, fmt.Sprintf(enum.Tips_common_errorObdPeerId, msg.RecipientNodePeerId))
 							continue
@@ -174,7 +176,7 @@ func (client *Client) Read() {
 					//-3000 -3001
 					if msg.Type <= enum.MsgType_Mnemonic_CreateAddress_3000 &&
 						msg.Type >= enum.MsgType_Mnemonic_GetAddressByIndex_3001 {
-						sendType, dataOut, status = client.hdWalletModule(msg)
+						sendType, dataOut, status = client.HdWalletModule(msg)
 						break
 					}
 
@@ -184,7 +186,7 @@ func (client *Client) Read() {
 						msg.Type == enum.MsgType_SendCloseChannelRequest_38 ||
 						(msg.Type <= enum.MsgType_ChannelOpen_AllItem_3150 &&
 							msg.Type >= enum.MsgType_CheckChannelAddessExist_3156) {
-						sendType, dataOut, status = client.channelModule(msg)
+						sendType, dataOut, status = client.ChannelModule(msg)
 						break
 					}
 
@@ -197,7 +199,7 @@ func (client *Client) Read() {
 						msg.Type == enum.MsgType_Funding_134 ||
 						(msg.Type <= enum.MsgType_FundingCreate_Asset_AllItem_3100 &&
 							msg.Type >= enum.MsgType_FundingCreate_Btc_ItemByChannelId_3111) {
-						sendType, dataOut, status = client.fundingTransactionModule(msg)
+						sendType, dataOut, status = client.FundingTransactionModule(msg)
 						break
 					}
 
@@ -216,7 +218,7 @@ func (client *Client) Read() {
 						msg.Type == enum.MsgType_ClientSign_CommitmentTx_AliceSignC2b_Rd_363 ||
 						(msg.Type <= enum.MsgType_CommitmentTx_ItemsByChanId_3200 &&
 							msg.Type >= enum.MsgType_CommitmentTx_DelItemByChanId_3209) {
-						sendType, dataOut, status = client.commitmentTxModule(msg)
+						sendType, dataOut, status = client.CommitmentTxModule(msg)
 						break
 					}
 
@@ -238,6 +240,7 @@ func (client *Client) Read() {
 					//-40 -41
 					if msg.Type == enum.MsgType_HTLC_FindPath_401 ||
 						msg.Type == enum.MsgType_HTLC_Invoice_402 ||
+						msg.Type == enum.MsgType_HTLC_ParseInvoice_403 ||
 						msg.Type == enum.MsgType_HTLC_SendAddHTLC_40 ||
 						msg.Type == enum.MsgType_HTLC_ClientSign_Alice_C3a_100 ||
 						msg.Type == enum.MsgType_HTLC_ClientSign_Bob_C3b_101 ||
@@ -246,7 +249,7 @@ func (client *Client) Read() {
 						msg.Type == enum.MsgType_HTLC_ClientSign_Bob_C3bSub_104 ||
 						msg.Type == enum.MsgType_HTLC_ClientSign_Alice_He_105 ||
 						msg.Type == enum.MsgType_HTLC_SendAddHTLCSigned_41 {
-						sendType, dataOut, status = client.htlcHModule(msg)
+						sendType, dataOut, status = client.HtlcHModule(msg)
 						break
 					}
 
@@ -293,7 +296,7 @@ func (client *Client) Read() {
 
 		//broadcast except me
 		if sendType == enum.SendTargetType_SendToExceptMe {
-			for itemClient := range globalWsClientManager.ClientsMap {
+			for itemClient := range GlobalWsClientManager.ClientsMap {
 				if itemClient != client {
 					jsonMessage := getReplyObj(string(dataOut), msg.Type, status, client, itemClient)
 					itemClient.SendChannel <- jsonMessage
@@ -303,14 +306,16 @@ func (client *Client) Read() {
 		//broadcast to all
 		if sendType == enum.SendTargetType_SendToAll {
 			jsonMessage := getReplyObj(string(dataOut), msg.Type, status, client, nil)
-			globalWsClientManager.Broadcast <- jsonMessage
+			GlobalWsClientManager.Broadcast <- jsonMessage
 		}
 	}
 }
 
 func (client *Client) SendToMyself(msgType enum.MsgType, status bool, data string) {
-	jsonMessage := getReplyObj(data, msgType, status, client, client)
-	client.SendChannel <- jsonMessage
+	if client.SendChannel != nil {
+		jsonMessage := getReplyObj(data, msgType, status, client, client)
+		client.SendChannel <- jsonMessage
+	}
 }
 
 // send p2p msg, check whether they are at the same obd node
@@ -320,8 +325,8 @@ func (client *Client) sendDataToP2PUser(msg bean.RequestMessage, status bool, da
 	if tool.CheckIsString(&msg.RecipientUserPeerId) && tool.CheckIsString(&msg.RecipientNodePeerId) {
 		//if they at the same obd node
 		if msg.RecipientNodePeerId == p2PLocalNodeId {
-			if _, err := findUserOnLine(msg); err == nil {
-				itemClient := globalWsClientManager.OnlineClientMap[msg.RecipientUserPeerId]
+			if _, err := FindUserOnLine(msg); err == nil {
+				itemClient := GlobalWsClientManager.OnlineClientMap[msg.RecipientUserPeerId]
 				if itemClient != nil && itemClient.User != nil {
 					if status {
 						retData, isGoOn, err := routerOfP2PNode(msg, data, itemClient)
@@ -340,10 +345,20 @@ func (client *Client) sendDataToP2PUser(msg bean.RequestMessage, status bool, da
 							return nil
 						}
 					}
-					fromId := msg.SenderUserPeerId + "@" + p2pChannelMap[msg.SenderNodePeerId].Address
-					toId := msg.RecipientUserPeerId + "@" + p2pChannelMap[msg.RecipientNodePeerId].Address
+					fromId := msg.SenderUserPeerId + "@" + P2pChannelMap[msg.SenderNodePeerId].Address
+					toId := msg.RecipientUserPeerId + "@" + P2pChannelMap[msg.RecipientNodePeerId].Address
 					jsonMessage := getP2PReplyObj(data, msg.Type, status, fromId, toId)
-					itemClient.SendChannel <- jsonMessage
+					if itemClient.SendChannel != nil {
+						itemClient.SendChannel <- jsonMessage
+					}
+					if itemClient.IsGRpcRequest && itemClient.GrpcChan != nil {
+						if msg.Type == enum.MsgType_RecvChannelAccept_33 ||
+							msg.Type == enum.MsgType_HTLC_FinishTransferH_43 {
+							go func() {
+								itemClient.GrpcChan <- jsonMessage
+							}()
+						}
+					}
 					return nil
 				}
 			}
@@ -368,8 +383,8 @@ func (client *Client) sendDataToP2PUser(msg bean.RequestMessage, status bool, da
 func getDataFromP2PSomeone(msg bean.RequestMessage) error {
 	if tool.CheckIsString(&msg.RecipientUserPeerId) && tool.CheckIsString(&msg.RecipientNodePeerId) {
 		if msg.RecipientNodePeerId == p2PLocalNodeId {
-			if _, err := findUserOnLine(msg); err == nil {
-				itemClient := globalWsClientManager.OnlineClientMap[msg.RecipientUserPeerId]
+			if _, err := FindUserOnLine(msg); err == nil {
+				itemClient := GlobalWsClientManager.OnlineClientMap[msg.RecipientUserPeerId]
 				if itemClient != nil && itemClient.User != nil {
 					//收到数据后，需要对其进行加工
 					retData, isGoOn, err := routerOfP2PNode(msg, msg.Data, itemClient)
@@ -389,10 +404,20 @@ func getDataFromP2PSomeone(msg bean.RequestMessage) error {
 						return nil
 					}
 
-					fromId := msg.SenderUserPeerId + "@" + p2pChannelMap[msg.SenderNodePeerId].Address
-					toId := msg.RecipientUserPeerId + "@" + p2pChannelMap[msg.RecipientNodePeerId].Address
+					fromId := msg.SenderUserPeerId + "@" + P2pChannelMap[msg.SenderNodePeerId].Address
+					toId := msg.RecipientUserPeerId + "@" + P2pChannelMap[msg.RecipientNodePeerId].Address
 					jsonMessage := getP2PReplyObj(msg.Data, msg.Type, true, fromId, toId)
-					itemClient.SendChannel <- jsonMessage
+					if itemClient.SendChannel != nil {
+						itemClient.SendChannel <- jsonMessage
+					}
+					if itemClient.IsGRpcRequest && itemClient.GrpcChan != nil {
+						if msg.Type == enum.MsgType_RecvChannelAccept_33 ||
+							msg.Type == enum.MsgType_HTLC_FinishTransferH_43 {
+							go func() {
+								itemClient.GrpcChan <- jsonMessage
+							}()
+						}
+					}
 					return nil
 				}
 			}

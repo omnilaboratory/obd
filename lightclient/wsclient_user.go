@@ -23,7 +23,7 @@ func loginRetData(client Client) string {
 	return string(bytes)
 }
 
-func (client *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, []byte, bool) {
+func (client *Client) UserModule(msg bean.RequestMessage) (enum.SendTargetType, []byte, bool) {
 	status := false
 	var sendType = enum.SendTargetType_SendToNone
 	var data string
@@ -31,25 +31,23 @@ func (client *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, 
 	case enum.MsgType_UserLogin_2001:
 		mnemonic := gjson.Get(msg.Data, "mnemonic").String()
 		loginToken := gjson.Get(msg.Data, "login_token").Str
-		endType := gjson.Get(msg.Data, "end_type").Str
-		isAdmin := service.CheckIsAdmin(loginToken, endType)
 
-		if endType == "grpc" && isAdmin == false {
-			client.SendToMyself(msg.Type, status, "your login token is wrong")
-			sendType = enum.SendTargetType_SendToSomeone
-			break
+		isAdmin := false
+		//TODO 管理员验证
+		if client.IsGRpcRequest || true {
+			isAdmin = service.CheckIsAdmin(loginToken)
 		}
 
 		peerId := tool.GetUserPeerId(mnemonic)
-		if globalWsClientManager.OnlineClientMap[peerId] != nil {
-			if globalWsClientManager.OnlineClientMap[peerId].User.IsAdmin {
-				client.User = globalWsClientManager.OnlineClientMap[peerId].User
-				globalWsClientManager.OnlineClientMap[peerId] = client
+		if GlobalWsClientManager.OnlineClientMap[peerId] != nil {
+			if GlobalWsClientManager.OnlineClientMap[peerId].User.IsAdmin {
+				client.User = GlobalWsClientManager.OnlineClientMap[peerId].User
+				GlobalWsClientManager.OnlineClientMap[peerId] = client
 			} else {
 				if isAdmin {
-					client.User = globalWsClientManager.OnlineClientMap[peerId].User
+					client.User = GlobalWsClientManager.OnlineClientMap[peerId].User
 					client.User.IsAdmin = true
-					globalWsClientManager.OnlineClientMap[peerId] = client
+					GlobalWsClientManager.OnlineClientMap[peerId] = client
 				}
 			}
 		}
@@ -57,7 +55,7 @@ func (client *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, 
 			if client.User.Mnemonic != mnemonic {
 				_ = service.UserService.UserLogout(client.User)
 				sendInfoOnUserStateChange(client.User.PeerId)
-				delete(globalWsClientManager.OnlineClientMap, client.User.PeerId)
+				delete(GlobalWsClientManager.OnlineClientMap, client.User.PeerId)
 				delete(service.OnlineUserMap, client.User.PeerId)
 				client.User = nil
 			}
@@ -65,7 +63,8 @@ func (client *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, 
 
 		if client.User != nil {
 			data = loginRetData(*client)
-			client.SendToMyself(msg.Type, true, data)
+			status = true
+			client.SendToMyself(msg.Type, status, data)
 			sendType = enum.SendTargetType_SendToSomeone
 		} else {
 			user := bean.User{
@@ -75,7 +74,7 @@ func (client *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, 
 				IsAdmin:         isAdmin,
 			}
 			var err error = nil
-			if globalWsClientManager.OnlineClientMap[peerId] != nil {
+			if GlobalWsClientManager.OnlineClientMap[peerId] != nil {
 				err = errors.New("user has login at other node")
 			} else {
 				err = service.UserService.UserLogin(&user)
@@ -85,7 +84,7 @@ func (client *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, 
 			}
 			if err == nil {
 				client.User = &user
-				globalWsClientManager.OnlineClientMap[user.PeerId] = client
+				GlobalWsClientManager.OnlineClientMap[user.PeerId] = client
 				service.OnlineUserMap[user.PeerId] = &user
 				data = loginRetData(*client)
 				status = true
@@ -98,7 +97,6 @@ func (client *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, 
 		}
 	case enum.MsgType_UserLogout_2002:
 		if client.User != nil {
-
 			exist := service.UserService.CheckExecutingTx(client.User)
 			if exist == false {
 				data = client.User.PeerId + " logout"
@@ -109,11 +107,17 @@ func (client *Client) userModule(msg bean.RequestMessage) (enum.SendTargetType, 
 			client.SendToMyself(msg.Type, status, data)
 
 			if exist == false {
-				client.User.IsAdmin = false
-				//client.Socket.Close()
+				_ = service.UserService.UserLogout(client.User)
+				sendInfoOnUserStateChange(client.User.PeerId)
+
+				delete(GlobalWsClientManager.ClientsMap, client)
+				delete(GlobalWsClientManager.OnlineClientMap, client.User.PeerId)
+				delete(service.OnlineUserMap, client.User.PeerId)
+				client.User = nil
 			}
 		} else {
-			client.SendToMyself(msg.Type, status, "please login")
+			data = "please login"
+			client.SendToMyself(msg.Type, status, data)
 		}
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_p2p_ConnectPeer_2003:

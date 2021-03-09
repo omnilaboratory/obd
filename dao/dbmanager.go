@@ -3,7 +3,6 @@ package dao
 import (
 	"github.com/asdine/storm"
 	"github.com/omnilaboratory/obd/config"
-	cfg "github.com/omnilaboratory/obd/config"
 	"github.com/omnilaboratory/obd/tool"
 	"log"
 )
@@ -18,7 +17,7 @@ var DBService dbManager
 
 func (manager dbManager) GetGlobalDB() (*storm.DB, error) {
 	if DBService.Db == nil {
-		_dir := cfg.DataDirectory + "/" + config.ChainNodeType
+		_dir := config.DataDirectory + "/" + config.ChainNodeType
 		_ = tool.PathExistsAndCreate(_dir)
 		db, e := storm.Open(_dir + "/" + config.DBname)
 		if e != nil {
@@ -31,7 +30,7 @@ func (manager dbManager) GetGlobalDB() (*storm.DB, error) {
 }
 
 func (manager dbManager) GetUserDB(peerId string) (*storm.DB, error) {
-	_dir := cfg.DataDirectory + "/" + config.ChainNodeType
+	_dir := config.DataDirectory + "/" + config.ChainNodeType
 	_ = tool.PathExistsAndCreate(_dir)
 
 	db, e := storm.Open(_dir + "/user_" + peerId + ".db")

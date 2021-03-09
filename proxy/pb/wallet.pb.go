@@ -298,6 +298,250 @@ func (m *LogoutResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_LogoutResponse proto.InternalMessageInfo
 
+type GenSeedRequest struct {
+	AezeedPassphrase     []byte   `protobuf:"bytes,1,opt,name=aezeed_passphrase,json=aezeedPassphrase,proto3" json:"aezeed_passphrase,omitempty"`
+	SeedEntropy          []byte   `protobuf:"bytes,2,opt,name=seed_entropy,json=seedEntropy,proto3" json:"seed_entropy,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *GenSeedRequest) Reset()         { *m = GenSeedRequest{} }
+func (m *GenSeedRequest) String() string { return proto.CompactTextString(m) }
+func (*GenSeedRequest) ProtoMessage()    {}
+func (*GenSeedRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_b88fd140af4deb6f, []int{6}
+}
+
+func (m *GenSeedRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GenSeedRequest.Unmarshal(m, b)
+}
+func (m *GenSeedRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GenSeedRequest.Marshal(b, m, deterministic)
+}
+func (m *GenSeedRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GenSeedRequest.Merge(m, src)
+}
+func (m *GenSeedRequest) XXX_Size() int {
+	return xxx_messageInfo_GenSeedRequest.Size(m)
+}
+func (m *GenSeedRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_GenSeedRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GenSeedRequest proto.InternalMessageInfo
+
+func (m *GenSeedRequest) GetAezeedPassphrase() []byte {
+	if m != nil {
+		return m.AezeedPassphrase
+	}
+	return nil
+}
+
+func (m *GenSeedRequest) GetSeedEntropy() []byte {
+	if m != nil {
+		return m.SeedEntropy
+	}
+	return nil
+}
+
+type GenSeedResponse struct {
+	CipherSeedMnemonic   string   `protobuf:"bytes,1,opt,name=cipher_seed_mnemonic,json=cipherSeedMnemonic,proto3" json:"cipher_seed_mnemonic,omitempty"`
+	EncipheredSeed       string   `protobuf:"bytes,2,opt,name=enciphered_seed,json=encipheredSeed,proto3" json:"enciphered_seed,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *GenSeedResponse) Reset()         { *m = GenSeedResponse{} }
+func (m *GenSeedResponse) String() string { return proto.CompactTextString(m) }
+func (*GenSeedResponse) ProtoMessage()    {}
+func (*GenSeedResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_b88fd140af4deb6f, []int{7}
+}
+
+func (m *GenSeedResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GenSeedResponse.Unmarshal(m, b)
+}
+func (m *GenSeedResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GenSeedResponse.Marshal(b, m, deterministic)
+}
+func (m *GenSeedResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GenSeedResponse.Merge(m, src)
+}
+func (m *GenSeedResponse) XXX_Size() int {
+	return xxx_messageInfo_GenSeedResponse.Size(m)
+}
+func (m *GenSeedResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_GenSeedResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GenSeedResponse proto.InternalMessageInfo
+
+func (m *GenSeedResponse) GetCipherSeedMnemonic() string {
+	if m != nil {
+		return m.CipherSeedMnemonic
+	}
+	return ""
+}
+
+func (m *GenSeedResponse) GetEncipheredSeed() string {
+	if m != nil {
+		return m.EncipheredSeed
+	}
+	return ""
+}
+
+type EstimateFeeRequest struct {
+	ConfTarget           int32    `protobuf:"varint,1,opt,name=conf_target,json=confTarget,proto3" json:"conf_target,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *EstimateFeeRequest) Reset()         { *m = EstimateFeeRequest{} }
+func (m *EstimateFeeRequest) String() string { return proto.CompactTextString(m) }
+func (*EstimateFeeRequest) ProtoMessage()    {}
+func (*EstimateFeeRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_b88fd140af4deb6f, []int{8}
+}
+
+func (m *EstimateFeeRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_EstimateFeeRequest.Unmarshal(m, b)
+}
+func (m *EstimateFeeRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_EstimateFeeRequest.Marshal(b, m, deterministic)
+}
+func (m *EstimateFeeRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_EstimateFeeRequest.Merge(m, src)
+}
+func (m *EstimateFeeRequest) XXX_Size() int {
+	return xxx_messageInfo_EstimateFeeRequest.Size(m)
+}
+func (m *EstimateFeeRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_EstimateFeeRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_EstimateFeeRequest proto.InternalMessageInfo
+
+func (m *EstimateFeeRequest) GetConfTarget() int32 {
+	if m != nil {
+		return m.ConfTarget
+	}
+	return 0
+}
+
+type EstimateFeeResponse struct {
+	SatPerKw             int64    `protobuf:"varint,1,opt,name=sat_per_kw,json=satPerKw,proto3" json:"sat_per_kw,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *EstimateFeeResponse) Reset()         { *m = EstimateFeeResponse{} }
+func (m *EstimateFeeResponse) String() string { return proto.CompactTextString(m) }
+func (*EstimateFeeResponse) ProtoMessage()    {}
+func (*EstimateFeeResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_b88fd140af4deb6f, []int{9}
+}
+
+func (m *EstimateFeeResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_EstimateFeeResponse.Unmarshal(m, b)
+}
+func (m *EstimateFeeResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_EstimateFeeResponse.Marshal(b, m, deterministic)
+}
+func (m *EstimateFeeResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_EstimateFeeResponse.Merge(m, src)
+}
+func (m *EstimateFeeResponse) XXX_Size() int {
+	return xxx_messageInfo_EstimateFeeResponse.Size(m)
+}
+func (m *EstimateFeeResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_EstimateFeeResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_EstimateFeeResponse proto.InternalMessageInfo
+
+func (m *EstimateFeeResponse) GetSatPerKw() int64 {
+	if m != nil {
+		return m.SatPerKw
+	}
+	return 0
+}
+
+type AddrRequest struct {
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *AddrRequest) Reset()         { *m = AddrRequest{} }
+func (m *AddrRequest) String() string { return proto.CompactTextString(m) }
+func (*AddrRequest) ProtoMessage()    {}
+func (*AddrRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_b88fd140af4deb6f, []int{10}
+}
+
+func (m *AddrRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_AddrRequest.Unmarshal(m, b)
+}
+func (m *AddrRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_AddrRequest.Marshal(b, m, deterministic)
+}
+func (m *AddrRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_AddrRequest.Merge(m, src)
+}
+func (m *AddrRequest) XXX_Size() int {
+	return xxx_messageInfo_AddrRequest.Size(m)
+}
+func (m *AddrRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_AddrRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_AddrRequest proto.InternalMessageInfo
+
+type AddrResponse struct {
+	//
+	//The address encoded using a bech32 format.
+	Addr                 string   `protobuf:"bytes,1,opt,name=addr,proto3" json:"addr,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *AddrResponse) Reset()         { *m = AddrResponse{} }
+func (m *AddrResponse) String() string { return proto.CompactTextString(m) }
+func (*AddrResponse) ProtoMessage()    {}
+func (*AddrResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_b88fd140af4deb6f, []int{11}
+}
+
+func (m *AddrResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_AddrResponse.Unmarshal(m, b)
+}
+func (m *AddrResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_AddrResponse.Marshal(b, m, deterministic)
+}
+func (m *AddrResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_AddrResponse.Merge(m, src)
+}
+func (m *AddrResponse) XXX_Size() int {
+	return xxx_messageInfo_AddrResponse.Size(m)
+}
+func (m *AddrResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_AddrResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_AddrResponse proto.InternalMessageInfo
+
+func (m *AddrResponse) GetAddr() string {
+	if m != nil {
+		return m.Addr
+	}
+	return ""
+}
+
 func init() {
 	proto.RegisterType((*LoginRequest)(nil), "proxy.LoginRequest")
 	proto.RegisterType((*LoginResponse)(nil), "proxy.LoginResponse")
@@ -305,6 +549,12 @@ func init() {
 	proto.RegisterType((*ChangePasswordResponse)(nil), "proxy.ChangePasswordResponse")
 	proto.RegisterType((*LogoutRequest)(nil), "proxy.LogoutRequest")
 	proto.RegisterType((*LogoutResponse)(nil), "proxy.LogoutResponse")
+	proto.RegisterType((*GenSeedRequest)(nil), "proxy.GenSeedRequest")
+	proto.RegisterType((*GenSeedResponse)(nil), "proxy.GenSeedResponse")
+	proto.RegisterType((*EstimateFeeRequest)(nil), "proxy.EstimateFeeRequest")
+	proto.RegisterType((*EstimateFeeResponse)(nil), "proxy.EstimateFeeResponse")
+	proto.RegisterType((*AddrRequest)(nil), "proxy.AddrRequest")
+	proto.RegisterType((*AddrResponse)(nil), "proxy.AddrResponse")
 }
 
 func init() {
@@ -312,32 +562,46 @@ func init() {
 }
 
 var fileDescriptor_b88fd140af4deb6f = []byte{
-	// 397 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x74, 0x92, 0xdd, 0x8a, 0xd3, 0x40,
-	0x14, 0x80, 0x49, 0xdd, 0x06, 0x3d, 0x9b, 0x6e, 0x97, 0xd1, 0x5d, 0x42, 0x50, 0xac, 0xb9, 0x90,
-	0x7a, 0x53, 0xa4, 0xe2, 0x03, 0xa8, 0x50, 0x10, 0xad, 0x94, 0x50, 0x10, 0xbc, 0x09, 0xd3, 0xe4,
-	0xd8, 0x16, 0xd3, 0x99, 0x71, 0x66, 0x42, 0xda, 0xd7, 0xf3, 0x51, 0x7c, 0x12, 0x99, 0x93, 0x89,
-	0xfd, 0x41, 0x2f, 0xf3, 0xcd, 0x77, 0x7e, 0x73, 0x20, 0x6a, 0x78, 0x55, 0xa1, 0x9d, 0x28, 0x2d,
-	0xad, 0x64, 0x7d, 0xa5, 0xe5, 0xfe, 0x90, 0x7e, 0x82, 0xe8, 0xb3, 0x5c, 0x6f, 0x45, 0x86, 0x3f,
-	0x6b, 0x34, 0x96, 0x25, 0xf0, 0x70, 0x27, 0x70, 0x27, 0xc5, 0xb6, 0x88, 0x83, 0x51, 0x30, 0x7e,
-	0x94, 0xfd, 0xfd, 0x66, 0xcf, 0xe1, 0xba, 0x72, 0x6e, 0x6e, 0xe5, 0x0f, 0x14, 0x71, 0x8f, 0x9e,
-	0x81, 0xd0, 0xd2, 0x91, 0xf4, 0x77, 0x00, 0x03, 0x9f, 0xcd, 0x28, 0x29, 0x0c, 0xba, 0x90, 0xda,
-	0xa0, 0xce, 0x15, 0xa2, 0xfe, 0x58, 0xfa, 0x8c, 0xe0, 0xd0, 0x82, 0x88, 0x13, 0x84, 0x2c, 0xb1,
-	0x13, 0x7c, 0x4e, 0x87, 0xbc, 0xf0, 0x02, 0x22, 0x12, 0x78, 0x59, 0x6a, 0x34, 0x26, 0x7e, 0x40,
-	0x06, 0x05, 0xbd, 0x6b, 0x11, 0x4b, 0x61, 0xb0, 0xb1, 0x55, 0x91, 0x7f, 0x47, 0xcc, 0x35, 0xb7,
-	0x18, 0x5f, 0x8d, 0x82, 0x71, 0x90, 0x5d, 0x3b, 0x38, 0x43, 0xcc, 0xb8, 0x45, 0x36, 0x82, 0x88,
-	0x9c, 0x1d, 0xdf, 0x3b, 0x2f, 0xee, 0x93, 0x02, 0x8e, 0xcd, 0xf9, 0x7e, 0x86, 0xc8, 0x5e, 0xc2,
-	0xb0, 0xd8, 0xf0, 0xad, 0xc8, 0xa9, 0x9c, 0x3d, 0x28, 0x8c, 0x43, 0xaa, 0x35, 0x20, 0xfc, 0x45,
-	0x96, 0xb8, 0x3c, 0x28, 0x4c, 0x11, 0xee, 0x3e, 0x6c, 0xb8, 0x58, 0xe3, 0x82, 0x1b, 0xd3, 0x48,
-	0x5d, 0x76, 0xab, 0x7b, 0x05, 0xb7, 0x45, 0xad, 0x35, 0x0a, 0x9b, 0x2b, 0xff, 0xe4, 0x07, 0x1e,
-	0x7a, 0xde, 0x45, 0xd0, 0x50, 0xd8, 0x1c, 0xb5, 0x9e, 0x1f, 0x0a, 0x9b, 0x4e, 0x49, 0x5f, 0xc3,
-	0xfd, 0x65, 0x19, 0xbf, 0xd3, 0x7b, 0x08, 0x35, 0x9a, 0xba, 0xb2, 0x3e, 0xbb, 0xff, 0x4a, 0x87,
-	0xb4, 0x7c, 0x59, 0x5b, 0xdf, 0x50, 0x7a, 0x0b, 0x37, 0x1d, 0x68, 0x43, 0xa7, 0xbf, 0x02, 0x08,
-	0xbf, 0xd2, 0x15, 0xb0, 0x29, 0xf4, 0xe9, 0x57, 0xb1, 0xc7, 0x13, 0xba, 0x84, 0xc9, 0xe9, 0x19,
-	0x24, 0x4f, 0xce, 0xa1, 0xaf, 0x3c, 0x87, 0x9b, 0xf3, 0x9e, 0xd8, 0x53, 0xef, 0xfd, 0x73, 0x23,
-	0xc9, 0xb3, 0xff, 0xbc, 0xfa, 0x74, 0x6f, 0x21, 0x6c, 0xfb, 0x63, 0x27, 0xe5, 0x8e, 0xfd, 0x27,
-	0x77, 0x17, 0xb4, 0x0d, 0x7b, 0x7f, 0xf5, 0xad, 0xa7, 0x56, 0xab, 0x90, 0xce, 0xf8, 0xcd, 0x9f,
-	0x00, 0x00, 0x00, 0xff, 0xff, 0x44, 0xdd, 0x2f, 0xb5, 0xd6, 0x02, 0x00, 0x00,
+	// 620 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x74, 0x94, 0x5d, 0x4f, 0x1b, 0x3b,
+	0x10, 0x86, 0x95, 0x40, 0x72, 0x38, 0x93, 0x4d, 0xc2, 0x31, 0x1f, 0xca, 0x59, 0x71, 0x04, 0xc7,
+	0x17, 0x2d, 0x55, 0x25, 0x84, 0x40, 0x48, 0xbd, 0xed, 0x07, 0x54, 0x15, 0x05, 0x45, 0x5b, 0xa4,
+	0x4a, 0xbd, 0xd9, 0x9a, 0xec, 0x40, 0x22, 0x12, 0x7b, 0x6b, 0x3b, 0x4a, 0xd2, 0x9f, 0xdb, 0x3f,
+	0xd1, 0xdb, 0xca, 0xb3, 0xb3, 0x21, 0x49, 0xe9, 0x5d, 0xf6, 0x99, 0xf7, 0x1d, 0xcf, 0x8c, 0xc7,
+	0x81, 0x68, 0xa2, 0x86, 0x43, 0xf4, 0x47, 0xb9, 0x35, 0xde, 0x88, 0x5a, 0x6e, 0xcd, 0x74, 0x26,
+	0x2f, 0x21, 0xfa, 0x68, 0xee, 0x07, 0x3a, 0xc1, 0x6f, 0x63, 0x74, 0x5e, 0xc4, 0xb0, 0x31, 0xd2,
+	0x38, 0x32, 0x7a, 0xd0, 0xeb, 0x54, 0x0e, 0x2a, 0x87, 0x7f, 0x27, 0xf3, 0x6f, 0xb1, 0x0f, 0x8d,
+	0x61, 0xd0, 0xa6, 0xde, 0x3c, 0xa0, 0xee, 0x54, 0x29, 0x0c, 0x84, 0x6e, 0x02, 0x91, 0x3f, 0x2a,
+	0xd0, 0xe4, 0x6c, 0x2e, 0x37, 0xda, 0x61, 0xb0, 0x8c, 0x1d, 0xda, 0x34, 0x47, 0xb4, 0x1f, 0x32,
+	0xce, 0x08, 0x01, 0x75, 0x89, 0x04, 0x81, 0x36, 0x19, 0x96, 0x02, 0xce, 0x19, 0x10, 0x0b, 0xfe,
+	0x87, 0x88, 0x04, 0x2a, 0xcb, 0x2c, 0x3a, 0xd7, 0x59, 0x23, 0x05, 0x99, 0x5e, 0x17, 0x48, 0x48,
+	0x68, 0xf6, 0xfd, 0xb0, 0x97, 0xde, 0x21, 0xa6, 0x56, 0x79, 0xec, 0xac, 0x1f, 0x54, 0x0e, 0x2b,
+	0x49, 0x23, 0xc0, 0x0b, 0xc4, 0x44, 0x79, 0x14, 0x07, 0x10, 0x91, 0x66, 0xa4, 0xa6, 0x41, 0xd7,
+	0xa9, 0x91, 0x04, 0x02, 0xbb, 0x52, 0xd3, 0x0b, 0x44, 0xf1, 0x0c, 0xda, 0xbd, 0xbe, 0x1a, 0xe8,
+	0x94, 0x8e, 0xf3, 0xb3, 0x1c, 0x3b, 0x75, 0x3a, 0xab, 0x49, 0xf8, 0xda, 0x64, 0x78, 0x33, 0xcb,
+	0x51, 0x22, 0xec, 0xbc, 0xed, 0x2b, 0x7d, 0x8f, 0x5d, 0xe5, 0xdc, 0xc4, 0xd8, 0xac, 0x1c, 0xdd,
+	0x0b, 0xd8, 0xec, 0x8d, 0xad, 0x45, 0xed, 0xd3, 0x9c, 0x43, 0xdc, 0x70, 0x9b, 0x79, 0xe9, 0xa0,
+	0xa6, 0x70, 0xf2, 0x28, 0xab, 0x72, 0x53, 0x38, 0x29, 0x25, 0xf2, 0x18, 0x76, 0x57, 0x8f, 0xe1,
+	0x99, 0xee, 0x42, 0xdd, 0xa2, 0x1b, 0x0f, 0x3d, 0x67, 0xe7, 0x2f, 0xd9, 0xa6, 0xe1, 0x9b, 0xb1,
+	0xe7, 0x82, 0xe4, 0x26, 0xb4, 0x4a, 0x50, 0x58, 0xe5, 0x57, 0x68, 0xbd, 0x47, 0xfd, 0x09, 0x71,
+	0x5e, 0xf4, 0x4b, 0xf8, 0x47, 0xe1, 0x77, 0xc4, 0x8c, 0x8a, 0xc9, 0xfb, 0x56, 0x39, 0xa4, 0xbc,
+	0x51, 0xb2, 0x59, 0x04, 0xba, 0x73, 0x1e, 0xca, 0x76, 0x41, 0x8a, 0xda, 0x5b, 0x93, 0xcf, 0xa8,
+	0xec, 0x28, 0x69, 0x04, 0x76, 0x5e, 0x20, 0x39, 0x84, 0xf6, 0xfc, 0x04, 0xae, 0xf7, 0x18, 0xb6,
+	0x7b, 0x83, 0xbc, 0x8f, 0x36, 0x25, 0xf3, 0xca, 0x7a, 0x89, 0x22, 0x16, 0x1c, 0x57, 0xe5, 0xa2,
+	0x3d, 0x87, 0x36, 0xea, 0x82, 0x63, 0x46, 0x2e, 0x9e, 0x50, 0xeb, 0x11, 0x07, 0x83, 0x3c, 0x03,
+	0x71, 0xee, 0xfc, 0x60, 0xa4, 0x3c, 0x86, 0x8b, 0xe6, 0x9e, 0xf6, 0xa1, 0xd1, 0x33, 0xfa, 0x2e,
+	0xf5, 0xca, 0xde, 0x63, 0x31, 0xa5, 0x5a, 0x02, 0x01, 0xdd, 0x10, 0x91, 0xa7, 0xb0, 0xb5, 0x64,
+	0xe3, 0x42, 0xf7, 0x00, 0x9c, 0xf2, 0x69, 0x8e, 0x36, 0x7d, 0x98, 0x90, 0x6d, 0x2d, 0xd9, 0x70,
+	0xca, 0x77, 0xd1, 0x5e, 0x4e, 0x64, 0x13, 0x1a, 0x61, 0xe1, 0xca, 0xe1, 0x4a, 0x88, 0x8a, 0x4f,
+	0x36, 0x0b, 0x58, 0x0f, 0x2b, 0xca, 0x5d, 0xd1, 0xef, 0x93, 0x9f, 0x55, 0xa8, 0x7f, 0xa6, 0x47,
+	0x27, 0x5e, 0xc1, 0x5f, 0x3c, 0x17, 0xb1, 0x73, 0x44, 0x4f, 0xef, 0x68, 0xf9, 0x26, 0xe2, 0xdd,
+	0x55, 0xcc, 0x89, 0x4f, 0xa0, 0x46, 0x6f, 0x4a, 0x6c, 0xb1, 0x60, 0xf1, 0xbd, 0xc6, 0xdb, 0xcb,
+	0x90, 0x3d, 0x57, 0xd0, 0x5a, 0x5e, 0x1e, 0xb1, 0xc7, 0xba, 0x27, 0x57, 0x37, 0xfe, 0xef, 0x0f,
+	0x51, 0x4e, 0x77, 0x06, 0xf5, 0x62, 0x91, 0xc4, 0xc2, 0x71, 0x8f, 0x8b, 0x16, 0xef, 0xac, 0x50,
+	0xb6, 0xbd, 0x83, 0xc6, 0xc2, 0x98, 0xc5, 0xbf, 0xac, 0xfa, 0xfd, 0xc6, 0xe2, 0xf8, 0xa9, 0x10,
+	0x67, 0x39, 0x85, 0x8d, 0x6b, 0x9c, 0xfa, 0x30, 0x6c, 0x21, 0x58, 0xb7, 0x70, 0x11, 0xf1, 0xd6,
+	0x12, 0x2b, 0x4c, 0x6f, 0xd6, 0xbf, 0x54, 0xf3, 0xdb, 0xdb, 0x3a, 0xfd, 0xd5, 0x9d, 0xfe, 0x0a,
+	0x00, 0x00, 0xff, 0xff, 0x18, 0xc0, 0x75, 0x35, 0xfa, 0x04, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -352,9 +616,14 @@ const _ = grpc.SupportPackageIsVersion6
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type WalletClient interface {
+	GenSeed(ctx context.Context, in *GenSeedRequest, opts ...grpc.CallOption) (*GenSeedResponse, error)
 	Login(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*LoginResponse, error)
 	ChangePassword(ctx context.Context, in *ChangePasswordRequest, opts ...grpc.CallOption) (*ChangePasswordResponse, error)
 	Logout(ctx context.Context, in *LogoutRequest, opts ...grpc.CallOption) (*LogoutResponse, error)
+	EstimateFee(ctx context.Context, in *EstimateFeeRequest, opts ...grpc.CallOption) (*EstimateFeeResponse, error)
+	//
+	//NextAddr returns the next unused address within the wallet.
+	NextAddr(ctx context.Context, in *AddrRequest, opts ...grpc.CallOption) (*AddrResponse, error)
 }
 
 type walletClient struct {
@@ -363,6 +632,15 @@ type walletClient struct {
 
 func NewWalletClient(cc grpc.ClientConnInterface) WalletClient {
 	return &walletClient{cc}
+}
+
+func (c *walletClient) GenSeed(ctx context.Context, in *GenSeedRequest, opts ...grpc.CallOption) (*GenSeedResponse, error) {
+	out := new(GenSeedResponse)
+	err := c.cc.Invoke(ctx, "/proxy.Wallet/GenSeed", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *walletClient) Login(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*LoginResponse, error) {
@@ -392,17 +670,43 @@ func (c *walletClient) Logout(ctx context.Context, in *LogoutRequest, opts ...gr
 	return out, nil
 }
 
+func (c *walletClient) EstimateFee(ctx context.Context, in *EstimateFeeRequest, opts ...grpc.CallOption) (*EstimateFeeResponse, error) {
+	out := new(EstimateFeeResponse)
+	err := c.cc.Invoke(ctx, "/proxy.Wallet/EstimateFee", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *walletClient) NextAddr(ctx context.Context, in *AddrRequest, opts ...grpc.CallOption) (*AddrResponse, error) {
+	out := new(AddrResponse)
+	err := c.cc.Invoke(ctx, "/proxy.Wallet/NextAddr", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // WalletServer is the server API for Wallet service.
 type WalletServer interface {
+	GenSeed(context.Context, *GenSeedRequest) (*GenSeedResponse, error)
 	Login(context.Context, *LoginRequest) (*LoginResponse, error)
 	ChangePassword(context.Context, *ChangePasswordRequest) (*ChangePasswordResponse, error)
 	Logout(context.Context, *LogoutRequest) (*LogoutResponse, error)
+	EstimateFee(context.Context, *EstimateFeeRequest) (*EstimateFeeResponse, error)
+	//
+	//NextAddr returns the next unused address within the wallet.
+	NextAddr(context.Context, *AddrRequest) (*AddrResponse, error)
 }
 
 // UnimplementedWalletServer can be embedded to have forward compatible implementations.
 type UnimplementedWalletServer struct {
 }
 
+func (*UnimplementedWalletServer) GenSeed(ctx context.Context, req *GenSeedRequest) (*GenSeedResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GenSeed not implemented")
+}
 func (*UnimplementedWalletServer) Login(ctx context.Context, req *LoginRequest) (*LoginResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Login not implemented")
 }
@@ -412,9 +716,33 @@ func (*UnimplementedWalletServer) ChangePassword(ctx context.Context, req *Chang
 func (*UnimplementedWalletServer) Logout(ctx context.Context, req *LogoutRequest) (*LogoutResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Logout not implemented")
 }
+func (*UnimplementedWalletServer) EstimateFee(ctx context.Context, req *EstimateFeeRequest) (*EstimateFeeResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method EstimateFee not implemented")
+}
+func (*UnimplementedWalletServer) NextAddr(ctx context.Context, req *AddrRequest) (*AddrResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method NextAddr not implemented")
+}
 
 func RegisterWalletServer(s *grpc.Server, srv WalletServer) {
 	s.RegisterService(&_Wallet_serviceDesc, srv)
+}
+
+func _Wallet_GenSeed_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GenSeedRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WalletServer).GenSeed(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/proxy.Wallet/GenSeed",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WalletServer).GenSeed(ctx, req.(*GenSeedRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _Wallet_Login_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -471,10 +799,50 @@ func _Wallet_Logout_Handler(srv interface{}, ctx context.Context, dec func(inter
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Wallet_EstimateFee_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(EstimateFeeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WalletServer).EstimateFee(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/proxy.Wallet/EstimateFee",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WalletServer).EstimateFee(ctx, req.(*EstimateFeeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Wallet_NextAddr_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AddrRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WalletServer).NextAddr(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/proxy.Wallet/NextAddr",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WalletServer).NextAddr(ctx, req.(*AddrRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _Wallet_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "proxy.Wallet",
 	HandlerType: (*WalletServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "GenSeed",
+			Handler:    _Wallet_GenSeed_Handler,
+		},
 		{
 			MethodName: "Login",
 			Handler:    _Wallet_Login_Handler,
@@ -486,6 +854,14 @@ var _Wallet_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Logout",
 			Handler:    _Wallet_Logout_Handler,
+		},
+		{
+			MethodName: "EstimateFee",
+			Handler:    _Wallet_EstimateFee_Handler,
+		},
+		{
+			MethodName: "NextAddr",
+			Handler:    _Wallet_NextAddr_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

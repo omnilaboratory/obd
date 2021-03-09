@@ -107,11 +107,18 @@ func (service *obdNodeAccountManager) logout(obdClient *ObdNode) (err error) {
 		}
 	}
 
+	if info.Id > 0 {
+		split := strings.Split(info.P2PAddress, "/")
+		p2PNodeId := split[len(split)-1]
+		delete(obdOnlineNodesMap, p2PNodeId)
+	}
+
 	obdClient.IsLogin = false
 	return err
 }
 
 func (service *obdNodeAccountManager) userLogin(obdClient *ObdNode, msgData string) (retData interface{}, err error) {
+	log.Println("userLogin", msgData)
 	if obdClient.IsLogin == false {
 		return nil, errors.New("obd need to login first")
 	}
@@ -121,7 +128,7 @@ func (service *obdNodeAccountManager) userLogin(obdClient *ObdNode, msgData stri
 		return nil, err
 	}
 	if tool.CheckIsString(&reqData.UserId) == false {
-		return nil, errors.New("error node_id")
+		return nil, errors.New("error user_id")
 	}
 	return service.updateUserInfo(obdClient.ObdP2pNodeId, obdClient.Id, reqData.UserId)
 }
@@ -144,6 +151,7 @@ func (service *obdNodeAccountManager) updateUserInfo(obdP2pNodeId, obdClientId, 
 			_ = db.Update(info)
 		}
 	}
+	log.Println(info.UserId, info.ObdP2pNodeId, "login successfully")
 	userOfOnlineMap[info.UserId] = *info
 	retData = "login successfully"
 	return retData, err
@@ -249,6 +257,7 @@ func (service *obdNodeAccountManager) GetUserState(context *gin.Context) {
 	if _, ok := userOfOnlineMap[reqData.UserId]; ok == true {
 		retData["state"] = 1
 	} else {
+		log.Println("currTracker userOfOnlineMap:", userOfOnlineMap)
 		if _, ok := userOnlineOfOtherObdMap[reqData.P2pNodeId]; ok == true {
 			if _, ok := userOnlineOfOtherObdMap[reqData.P2pNodeId][reqData.UserId]; ok == true {
 				retData["state"] = 1
