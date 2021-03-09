@@ -31,6 +31,49 @@ func Hello(sayhi string) (string, error) {
 	return returnMsg, nil
 }
 
+func (s *RpcServer) PendingChannels(ctx context.Context, in *pb.PendingChannelsRequest) (resp *pb.ListChannelsResponse, err error) {
+	log.Println("PendingChannels")
+
+	user, err := checkLogin()
+	if err != nil {
+		return nil, err
+	}
+
+	inputData := make(map[string]interface{})
+	inputData["is_pending"] = true
+	inputData["page_size"] = in.PageSize
+	inputData["page_index"] = in.PageIndex
+	marshal, _ := json.Marshal(inputData)
+	respData, err := service.ChannelService.AllItem(string(marshal), *user)
+	if err != nil {
+		return nil, err
+	}
+	resp = &pb.ListChannelsResponse{}
+	list := respData.Data.([]service.ChannelVO)
+	for _, item := range list {
+		if len(item.ChannelId) == 0 {
+			continue
+		}
+		node := &pb.Channel{}
+		node.ChanId = item.ChannelId
+		node.Private = item.IsPrivate
+		node.Active = true
+		if item.CurrState == bean.ChannelState_Close {
+			node.Active = false
+		}
+		node.PropertyId = item.PropertyId
+		node.Capacity = int64(item.AssetAmount * 100000000)
+		node.Initiator = false
+		if user.PeerId == item.PeerIdA {
+			node.Initiator = true
+		}
+		node.LocalBalance = int64(item.BalanceA * 100000000)
+		node.RemoteBalance = int64(item.BalanceB * 100000000)
+		node.NumUpdates = item.NumUpdates
+		resp.Channels = append(resp.Channels, node)
+	}
+	return resp, nil
+}
 func (s *RpcServer) ListChannels(ctx context.Context, in *pb.ListChannelsRequest) (resp *pb.ListChannelsResponse, err error) {
 	log.Println("ListChannels")
 	user, err := checkLogin()

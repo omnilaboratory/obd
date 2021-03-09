@@ -269,7 +269,6 @@ type pageVO struct {
 	TotalPage  int         `json:"totalPage"`
 }
 
-// AssetFundingAllItem
 func (this *channelManager) AllItem(jsonData string, user bean.User) (data *pageVO, err error) {
 	data = &pageVO{}
 	tx, err := user.Db.Begin(true)
@@ -288,12 +287,22 @@ func (this *channelManager) AllItem(jsonData string, user bean.User) (data *page
 		pageSize = 10
 	}
 	activeOnly := gjson.Get(jsonData, "active_only").Bool()
+	isPending := gjson.Get(jsonData, "is_pending").Bool()
+
 	skip := (pageIndex - 1) * pageSize
 
 	var infos []dao.ChannelInfo
 	if activeOnly {
 		err = tx.Select(
 			q.Gt("CurrState", bean.ChannelState_WaitFundAsset),
+			q.Or(
+				q.Eq("PeerIdA", user.PeerId),
+				q.Eq("PeerIdB", user.PeerId))).
+			OrderBy("CreateAt").Reverse().Skip(int(skip)).Limit(int(pageSize)).
+			Find(&infos)
+	} else if isPending {
+		err = tx.Select(
+			q.Not(q.Eq("CurrState", bean.ChannelState_CanUse)),
 			q.Or(
 				q.Eq("PeerIdA", user.PeerId),
 				q.Eq("PeerIdB", user.PeerId))).
@@ -306,6 +315,10 @@ func (this *channelManager) AllItem(jsonData string, user bean.User) (data *page
 				q.Eq("PeerIdB", user.PeerId))).
 			OrderBy("CreateAt").Reverse().Skip(int(skip)).Limit(int(pageSize)).
 			Find(&infos)
+	}
+
+	if isPending {
+
 	}
 
 	tempCount, err := tx.Select(

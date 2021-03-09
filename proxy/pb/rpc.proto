@@ -169,6 +169,10 @@ message Channel {
   int64 property_id = 28;
 }
 
+message PendingChannelsRequest {
+  int32 page_size = 1;
+  int32 page_index = 2;
+}
 
 message ListChannelsResponse {
   // The list of active channels
@@ -216,6 +220,7 @@ service Lightning {
   rpc OpenChannel(OpenChannelRequest) returns(OpenChannelResponse);
   rpc FundChannel(FundChannelRequest) returns(FundChannelResponse);
   rpc ListChannels(ListChannelsRequest) returns(ListChannelsResponse);
+  rpc PendingChannels(PendingChannelsRequest) returns(ListChannelsResponse);
   rpc LatestTransaction(LatestTransactionRequest) returns(Transaction);
   rpc GetTransactions(GetTransactionsRequest) returns(TransactionDetails);
 }
