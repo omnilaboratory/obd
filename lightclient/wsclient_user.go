@@ -95,6 +95,15 @@ func (client *Client) UserModule(msg bean.RequestMessage) (enum.SendTargetType, 
 				sendType = enum.SendTargetType_SendToSomeone
 			}
 		}
+	case enum.MsgType_User_GetInfo_2009:
+		if client.User != nil {
+			data = loginRetData(*client)
+			status = true
+		} else {
+			data = "please login"
+		}
+		client.SendToMyself(msg.Type, status, data)
+		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_UserLogout_2002:
 		if client.User != nil {
 			exist := service.UserService.CheckExecutingTx(client.User)

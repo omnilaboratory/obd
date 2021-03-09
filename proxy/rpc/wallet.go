@@ -98,6 +98,28 @@ func (server *RpcServer) Login(ctx context.Context, in *pb.LoginRequest) (resp *
 	return resp, nil
 }
 
+func (server *RpcServer) GetInfo(ctx context.Context, in *pb.GetInfoRequest) (resp *pb.GetInfoResponse, err error) {
+	requestMessage := bean.RequestMessage{
+		Type: enum.MsgType_User_GetInfo_2009,
+	}
+	_, dataBytes, status := obcClient.UserModule(requestMessage)
+	if status == false {
+		return nil, errors.New(string(dataBytes))
+	}
+
+	dataMap := make(map[string]interface{})
+	_ = json.Unmarshal(dataBytes, &dataMap)
+	resp = &pb.GetInfoResponse{
+		UserPeerId:    dataMap["userPeerId"].(string),
+		NodePeerId:    dataMap["nodePeerId"].(string),
+		NodeAddress:   dataMap["nodeAddress"].(string),
+		HtlcFeeRate:   dataMap["htlcFeeRate"].(float64),
+		HtlcMaxFee:    dataMap["htlcMaxFee"].(float64),
+		ChainNodeType: dataMap["chainNodeType"].(string),
+	}
+	resp.IsAdmin = true
+	return resp, nil
+}
 func (server *RpcServer) NextAddr(ctx context.Context, in *pb.AddrRequest) (resp *pb.AddrResponse, err error) {
 	log.Println("NextAddr")
 
@@ -111,6 +133,23 @@ func (server *RpcServer) NextAddr(ctx context.Context, in *pb.AddrRequest) (resp
 		return nil, err
 	}
 	resp = &pb.AddrResponse{
+		Addr: address.Address,
+	}
+	return resp, nil
+}
+func (server *RpcServer) NewAddress(ctx context.Context, in *pb.NewAddressRequest) (resp *pb.NewAddressResponse, err error) {
+	log.Println("NextAddr")
+
+	user, err := checkLogin()
+	if err != nil {
+		return nil, err
+	}
+
+	address, err := service.HDWalletService.CreateNewAddress(user)
+	if err != nil {
+		return nil, err
+	}
+	resp = &pb.NewAddressResponse{
 		Addr: address.Address,
 	}
 	return resp, nil

@@ -10,6 +10,18 @@ import (
 	"testing"
 )
 
+func TestNewAddress(t *testing.T) {
+	client, conn := getWalletClient()
+	defer conn.Close()
+	resp, err := client.NewAddress(context.Background(), &proxy.NewAddressRequest{})
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	marshal, _ := json.Marshal(resp)
+	log.Println(string(marshal))
+}
+
 func TestNextAddr(t *testing.T) {
 	client, conn := getWalletClient()
 	defer conn.Close()
@@ -82,6 +94,19 @@ func TestLogout(t *testing.T) {
 	defer conn.Close()
 
 	resp, err := client.Logout(context.Background(), &proxy.LogoutRequest{})
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	marshal, _ := json.Marshal(resp)
+	log.Println(string(marshal))
+}
+
+func TestGetInfo(t *testing.T) {
+	client, conn := getWalletClient()
+	defer conn.Close()
+
+	resp, err := client.GetInfo(context.Background(), &proxy.GetInfoRequest{})
 	if err != nil {
 		log.Println(err)
 		return
