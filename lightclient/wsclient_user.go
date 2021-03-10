@@ -144,6 +144,21 @@ func (client *Client) UserModule(msg bean.RequestMessage) (enum.SendTargetType, 
 		}
 		client.SendToMyself(msg.Type, status, data)
 		sendType = enum.SendTargetType_SendToSomeone
+	case enum.MsgType_p2p_DisconnectPeer_2010:
+		remoteNodeAddress := gjson.Get(msg.Data, "remote_node_address")
+		if remoteNodeAddress.Exists() == false {
+			data = errors.New("remote_node_address not exist").Error()
+		} else {
+			err := disConnP2PNode(remoteNodeAddress.Str)
+			if err != nil {
+				data = err.Error()
+			} else {
+				status = true
+				data = "success"
+			}
+		}
+		client.SendToMyself(msg.Type, status, data)
+		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_GetObdNodeInfo_2005:
 		bytes, err := json.Marshal(bean.CurrObdNodeInfo)
 		if err != nil {

@@ -10,6 +10,33 @@ import (
 	"testing"
 )
 
+func TestConnectPeer(t *testing.T) {
+	client, conn := getClient()
+	defer conn.Close()
+	resp, err := client.ConnectPeer(context.Background(), &proxy.ConnectPeerRequest{
+		Addr: "/ip4/127.0.0.1/tcp/4002/p2p/QmZPzUh7Q6PQg6gXB4XheaoZMMhHA9JNeCrJsp3FWjFrAF",
+	})
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	marshal, _ := json.Marshal(resp)
+	log.Println(string(marshal))
+}
+
+func TestDisconnectPeer(t *testing.T) {
+	client, conn := getClient()
+	defer conn.Close()
+	resp, err := client.DisconnectPeer(context.Background(), &proxy.DisconnectPeerRequest{
+		Addr: "QmZPzUh7Q6PQg6gXB4XheaoZMMhHA9JNeCrJsp3FWjFrAF",
+	})
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	marshal, _ := json.Marshal(resp)
+	log.Println(string(marshal))
+}
 func TestNewAddress(t *testing.T) {
 	client, conn := getWalletClient()
 	defer conn.Close()

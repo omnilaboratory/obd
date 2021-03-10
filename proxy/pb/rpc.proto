@@ -3,9 +3,22 @@ syntax = "proto3";
 package proxy;
 option go_package = "pb";
 
+
 message RecipientNodeInfo{
   string recipient_node_peer_id = 1;
   string recipient_user_peer_id = 2;
+}
+
+message ConnectPeerRequest {
+  string addr = 1;
+}
+message ConnectPeerResponse {
+}
+
+message DisconnectPeerRequest {
+  string addr = 1;
+}
+message DisconnectPeerResponse {
 }
 
 message OpenChannelRequest{
@@ -216,6 +229,9 @@ service Lightning {
   hello is a `say hi` gRPC.
   */
   rpc Hello (HelloRequest) returns (HelloResponse);
+
+  rpc ConnectPeer(ConnectPeerRequest) returns (ConnectPeerResponse);
+  rpc DisconnectPeer(DisconnectPeerRequest) returns (DisconnectPeerResponse);
 
   rpc OpenChannel(OpenChannelRequest) returns(OpenChannelResponse);
   rpc FundChannel(FundChannelRequest) returns(FundChannelResponse);

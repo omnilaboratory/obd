@@ -160,6 +160,24 @@ func ScanAndConnNode(nodeId string) error {
 	return errors.New("find no node")
 }
 
+func disConnP2PNode(dest string) error {
+
+	if dest == hostNode.ID().Pretty() {
+		return errors.New("can not disconnect self")
+	}
+
+	if P2pChannelMap[dest] == nil {
+		return errors.New("Remote peer not be connecting")
+	}
+
+	msgChan := P2pChannelMap[dest]
+	err := msgChan.stream.Close()
+	if err == nil {
+		delete(P2pChannelMap, dest)
+	}
+	return err
+}
+
 func connSomeNode(node peer.AddrInfo) error {
 	if P2pChannelMap[node.ID.Pretty()] != nil {
 		log.Println("Remote peer has been connected")
@@ -243,7 +261,7 @@ func connP2PNode(dest string) (string, error) {
 func handleStream(s network.Stream) {
 	if s != nil {
 		if P2pChannelMap[s.Conn().RemotePeer().Pretty()] == nil {
-			log.Println("Got a new stream!")
+			log.Println("Got a new stream!", s.Conn().RemotePeer().Pretty())
 			rw := addP2PChannel(s)
 			go readData(s, rw)
 		}
@@ -296,6 +314,7 @@ func readData(s network.Stream, rw *bufio.ReadWriter) {
 	for {
 		str, err := rw.ReadString('~')
 		if err != nil {
+			log.Println(s.Conn().RemotePeer().Pretty(), "offline")
 			delete(P2pChannelMap, s.Conn().RemotePeer().Pretty())
 			return
 		}

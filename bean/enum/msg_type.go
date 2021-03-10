@@ -40,6 +40,7 @@ const (
 	MsgType_HeartBeat_2007             MsgType = -102007
 	MsgType_User_UpdateAdminToken_2008 MsgType = -102008
 	MsgType_User_GetInfo_2009          MsgType = -102009
+	MsgType_p2p_DisconnectPeer_2010    MsgType = -102010
 	MsgType_User_End_2099              MsgType = -102099
 
 	MsgType_Core_GetNewAddress_2101                    MsgType = -102101
@@ -236,6 +237,8 @@ func CheckExist(msgType MsgType) bool {
 	case MsgType_UserLogout_2002:
 		return true
 	case MsgType_p2p_ConnectPeer_2003:
+		return true
+	case MsgType_p2p_DisconnectPeer_2010:
 		return true
 	case MsgType_GetMnemonic_2004:
 		return true

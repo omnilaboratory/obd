@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/omnilaboratory/obd/bean"
+	"github.com/omnilaboratory/obd/bean/enum"
 	"github.com/omnilaboratory/obd/proxy/pb"
 	"github.com/omnilaboratory/obd/service"
 	"log"
@@ -29,6 +30,47 @@ func (r *RpcServer) Hello(ctx context.Context,
 func Hello(sayhi string) (string, error) {
 	returnMsg := "You sent: [" + sayhi + "]. We're testing proxy mode of OBD."
 	return returnMsg, nil
+}
+
+func (s *RpcServer) ConnectPeer(ctx context.Context, in *pb.ConnectPeerRequest) (resp *pb.ConnectPeerResponse, err error) {
+	log.Println("ConnectPeer")
+
+	if len(in.Addr) == 0 {
+		return nil, errors.New("wrong addr")
+	}
+	input := make(map[string]interface{})
+	input["remote_node_address"] = in.Addr
+	marshal, _ := json.Marshal(input)
+	requestMessage := bean.RequestMessage{
+		Type: enum.MsgType_p2p_ConnectPeer_2003,
+		Data: string(marshal)}
+	_, bytes, status := obcClient.UserModule(requestMessage)
+	data := string(bytes)
+	if status == false {
+		return nil, errors.New(data)
+	}
+	resp = &pb.ConnectPeerResponse{}
+	return resp, nil
+}
+func (s *RpcServer) DisconnectPeer(ctx context.Context, in *pb.DisconnectPeerRequest) (resp *pb.DisconnectPeerResponse, err error) {
+	log.Println("ConnectPeer")
+
+	if len(in.Addr) == 0 {
+		return nil, errors.New("wrong addr")
+	}
+	input := make(map[string]interface{})
+	input["remote_node_address"] = in.Addr
+	marshal, _ := json.Marshal(input)
+	requestMessage := bean.RequestMessage{
+		Type: enum.MsgType_p2p_DisconnectPeer_2010,
+		Data: string(marshal)}
+	_, bytes, status := obcClient.UserModule(requestMessage)
+	data := string(bytes)
+	if status == false {
+		return nil, errors.New(data)
+	}
+	resp = &pb.DisconnectPeerResponse{}
+	return resp, nil
 }
 
 func (s *RpcServer) PendingChannels(ctx context.Context, in *pb.PendingChannelsRequest) (resp *pb.ListChannelsResponse, err error) {
