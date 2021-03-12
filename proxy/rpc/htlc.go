@@ -100,7 +100,7 @@ func (s *RpcServer) ParseInvoice(ctx context.Context, in *pb.ParseInvoiceRequest
 	return resp, nil
 }
 
-func (s *RpcServer) SendPayment(ctx context.Context, in *pb.SendPaymentRequest) (*pb.PaymentResp, error) {
+func (s *RpcServer) SendPayment(ctx context.Context, in *pb.SendRequest) (*pb.SendResponse, error) {
 	log.Println("SendPayment")
 	_, err := checkLogin()
 	if err != nil {
@@ -138,7 +138,7 @@ func (s *RpcServer) SendPayment(ctx context.Context, in *pb.SendPaymentRequest) 
 	}
 
 	dataResult := replyMessage.Result.(map[string]interface{})
-	resp := &pb.PaymentResp{
+	resp := &pb.SendResponse{
 		PaymentHash:     dataResult["htlc_routing_packet"].(string),
 		PaymentPreimage: dataResult["htlc_h"].(string),
 		AmountToRsmc:    dataResult["amount_to_rsmc"].(float64),

@@ -46,7 +46,7 @@ func TestSendPayment(t *testing.T) {
 	client, conn := getHtlcClient()
 	defer conn.Close()
 
-	htlcPayment, err := client.SendPayment(context.Background(), &proxy.SendPaymentRequest{
+	htlcPayment, err := client.SendPayment(context.Background(), &proxy.SendRequest{
 		PaymentRequest: "obtb100000s1pqzyfnpwQmZPzUh7Q6PQg6gXB4XheaoZMMhHA9JNeCrJsp3FWjFrAFuzqa5f24dc5d5414d961bba98c98624b87222da3984b324bcab7cfd7fd63aee33b3hzz03cd311a46e7100f775607e231d2538cbfca01c8746ef8a0900e75a15e33456339xq8ps306yqtqp0dqtdescription3hg",
 		InvoiceDetail: &proxy.ParseInvoiceResponse{
 			PropertyId:          137,
