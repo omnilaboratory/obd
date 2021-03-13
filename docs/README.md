@@ -24,11 +24,11 @@ Meanwhile, Omnilayer is an onchain smart assets issuance technology, which is pr
 
 ## Advantages  
  
-* Instant payment of smart assets issued on OmniLayer and Etherium(soon future). 
+* Instant payment of smart assets issued on OmniLayer. 
 * Cross channel atomic swap for various crypto assets.
-* Decentralized exchange on top of stable coin enabled lightning channels. 
-* Collateral Lending Contract and more flexible contracts for various DeFi scenarios based on atomic swap, without any extra cost of transaction fee or any intermediary;  
-	* Interested readers shall directly go to [chapter 6: DEX, Collateral Lending Contract, online store ...](https://github.com/omnilaboratory/OmniBOLT-spec/blob/master/OmniBOLT-06-Mortgage-Loan-Contracts-for-Crypto-Assets.md) to seek more examples.
+* Decentralized exchange on top of stable coin enabled lightning channels.  
+* Automatic market maker and liquidity pool for DEX.
+
  
 
 ## How it works:
@@ -58,7 +58,11 @@ We not only just list messages and arguments that are used in our implementation
 
 [OmniBOLT #05:](https://github.com/omnilaboratory/OmniBOLT-spec/blob/master/OmniBOLT-05-Atomic-Swap-among-Channels.md) Atomic Swap Protocol among Channels
 
+<!--
 [OmniBOLT #06:](https://github.com/omnilaboratory/OmniBOLT-spec/blob/master/OmniBOLT-06-Mortgage-Loan-Contracts-for-Crypto-Assets.md) DEX, Collateral Lending Contract, online store and more applications
+-->
+[OmniBOLT #06:](https://github.com/omnilaboratory/OmniBOLT-spec/blob/master/OmniBOLT-06-Automatic-Market-Maker-and-DEX.md) Automatic Market Maker, Liquidity Pool and DEX
+
 
 [OmniBOLT #07:](https://github.com/omnilaboratory/OmniBOLT-spec/blob/master/OmniBOLT-07-Hierarchical-Deterministic-(HD)-wallet.md)  Hierarchical Deterministic (HD) wallet, Invoice Encoding
 
@@ -81,5 +85,5 @@ GUI debugging tool: [here](https://github.com/omnilaboratory/DebuggingTool).
 
 ## Contribution
 
-OmniBolt specification is initiated by [Omnilayer.foundation](https://github.com/OmniLayer).
+OmniBolt specification is incubated by [Omnilayer.foundation](https://github.com/OmniLayer).
 Any proposal, please submit issues in this repo.
