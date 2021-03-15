@@ -19,7 +19,7 @@ func StartGrpcServer() {
 		return
 	}
 
-	address := "localhost:" + strconv.Itoa(config.GrpcServerPort)
+	address := "0.0.0.0:" + strconv.Itoa(config.GrpcServerPort)
 	lis, err := net.Listen("tcp", address)
 	if err != nil {
 		log.Fatalf("Error %v", err)
