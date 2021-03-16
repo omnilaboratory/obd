@@ -220,3 +220,20 @@ func (server *RpcServer) ChangePassword(ctx context.Context, in *pb.ChangePasswo
 	}
 	return resp, nil
 }
+func (server *RpcServer) ListPeers(ctx context.Context, in *pb.ListPeersRequest) (resp *pb.ListPeersResponse, err error) {
+	log.Println("ListPeers")
+
+	_, err = checkLogin()
+	if err != nil {
+		return nil, err
+	}
+
+	resp = &pb.ListPeersResponse{}
+	for key, value := range lightclient.P2pChannelMap {
+		if key != lightclient.P2PLocalNodeId {
+			peer := &pb.Peer{Address: value.Address, PubKey: key}
+			resp.Peers = append(resp.Peers, peer)
+		}
+	}
+	return resp, nil
+}

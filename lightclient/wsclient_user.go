@@ -70,7 +70,7 @@ func (client *Client) UserModule(msg bean.RequestMessage) (enum.SendTargetType, 
 			user := bean.User{
 				Mnemonic:        mnemonic,
 				P2PLocalAddress: localServerDest,
-				P2PLocalPeerId:  p2PLocalNodeId,
+				P2PLocalPeerId:  P2PLocalNodeId,
 				IsAdmin:         isAdmin,
 			}
 			var err error = nil

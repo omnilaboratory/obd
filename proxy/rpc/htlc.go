@@ -6,7 +6,9 @@ import (
 	"errors"
 	"github.com/omnilaboratory/obd/bean"
 	"github.com/omnilaboratory/obd/bean/enum"
+	"github.com/omnilaboratory/obd/dao"
 	"github.com/omnilaboratory/obd/proxy/pb"
+	"github.com/omnilaboratory/obd/service"
 	"github.com/omnilaboratory/obd/tool"
 	"log"
 )
@@ -96,6 +98,37 @@ func (s *RpcServer) ParseInvoice(ctx context.Context, in *pb.ParseInvoiceRequest
 		Private:             dataMap["is_private"].(bool),
 		RecipientNodePeerId: dataMap["recipient_node_peer_id"].(string),
 		RecipientUserPeerId: dataMap["recipient_user_peer_id"].(string),
+	}
+	return resp, nil
+}
+func (s *RpcServer) ListInvoices(ctx context.Context, in *pb.ListInvoiceRequest) (*pb.ListInvoiceResponse, error) {
+	log.Println("ParseInvoice")
+	_, err := checkLogin()
+	if err != nil {
+		return nil, err
+	}
+
+	infoBytes, _ := json.Marshal(in)
+
+	data, err := service.HtlcQueryTxManager.ListInvoices(string(infoBytes), *obcClient.User)
+	if err != nil {
+		return nil, err
+	}
+
+	resp := &pb.ListInvoiceResponse{
+		FirstIndexOffset: uint64(data["first_index_offset"].(int64)),
+		LastIndexOffset:  uint64(data["last_index_offset"].(int64)),
+	}
+	invoices := data["invoices"].([]dao.InvoiceInfo)
+	for _, item := range invoices {
+		invoice := &pb.Invoice{}
+		invoice.PropertyId = item.Detail.PropertyId
+		invoice.Value = item.Detail.Amount
+		invoice.Private = item.Detail.IsPrivate
+		invoice.CltvExpiry = item.Detail.ExpiryTime.String()
+		invoice.Memo = item.Detail.Description
+		invoice.PaymentRequest = item.Invoice
+		resp.Invoices = append(resp.Invoices, invoice)
 	}
 	return resp, nil
 }

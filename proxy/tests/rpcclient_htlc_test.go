@@ -27,6 +27,25 @@ func TestAddInvoice(t *testing.T) {
 	log.Println(invoice.PaymentRequest)
 }
 
+func TestListInvoices(t *testing.T) {
+
+	client, conn := getHtlcClient()
+	defer conn.Close()
+
+	resp, err := client.ListInvoices(context.Background(), &proxy.ListInvoiceRequest{
+		Reversed:       false,
+		IndexOffset:    0,
+		NumMaxInvoices: 10,
+	})
+
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	marshal, _ := json.Marshal(resp)
+	log.Println(string(marshal))
+}
+
 func TestParseInvoice(t *testing.T) {
 	client, conn := getHtlcClient()
 	defer conn.Close()

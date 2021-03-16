@@ -142,6 +142,19 @@ func TestGetInfo(t *testing.T) {
 	log.Println(string(marshal))
 }
 
+func TestListPeers(t *testing.T) {
+	client, conn := getWalletClient()
+	defer conn.Close()
+
+	resp, err := client.ListPeers(context.Background(), &proxy.ListPeersRequest{})
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	marshal, _ := json.Marshal(resp)
+	log.Println(string(marshal))
+}
+
 func getWalletClient() (proxy.WalletClient, *grpc.ClientConn) {
 	opts := grpc.WithInsecure()
 	conn, err := grpc.Dial("localhost:50051", opts)

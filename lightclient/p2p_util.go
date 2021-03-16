@@ -43,7 +43,7 @@ var kademliaDHT *dht.IpfsDHT
 var relayNode string
 
 var localServerDest string
-var p2PLocalNodeId string
+var P2PLocalNodeId string
 var privateKey crypto.PrivKey
 var P2pChannelMap map[string]*P2PChannel
 
@@ -85,15 +85,15 @@ func StartP2PNode() (err error) {
 		return err
 	}
 	P2pChannelMap = make(map[string]*P2PChannel)
-	p2PLocalNodeId = hostNode.ID().Pretty()
-	service.P2PLocalNodeId = p2PLocalNodeId
+	P2PLocalNodeId = hostNode.ID().Pretty()
+	service.P2PLocalNodeId = P2PLocalNodeId
 
 	localServerDest = fmt.Sprintf("/ip4/%s/tcp/%v/p2p/%s", config.P2P_hostIp, config.P2P_port, hostNode.ID().Pretty())
 	bean.CurrObdNodeInfo.P2pAddress = localServerDest
 	log.Println("local p2p address", localServerDest)
 
 	//把自己也作为终点放进去，阻止自己连接自己
-	P2pChannelMap[p2PLocalNodeId] = &P2PChannel{
+	P2pChannelMap[P2PLocalNodeId] = &P2PChannel{
 		IsLocalChannel: true,
 		Address:        localServerDest,
 	}
@@ -221,7 +221,7 @@ func connP2PNode(dest string) (string, error) {
 		return "", errors.New("wrong dest address")
 	}
 
-	if strings.Contains(dest, p2PLocalNodeId) {
+	if strings.Contains(dest, P2PLocalNodeId) {
 		return "", errors.New("do not need connect self")
 	}
 
@@ -282,7 +282,7 @@ func handleTrackerScanStream(stream network.Stream) {
 		}
 		flag := false
 		info := make(map[string]string)
-		info["obdP2pNodeId"] = p2PLocalNodeId
+		info["obdP2pNodeId"] = P2PLocalNodeId
 		if len(users) > 0 {
 			marshal, _ := json.Marshal(users)
 			info["userInfo"] = string(marshal)
@@ -354,7 +354,7 @@ func sendP2PMsg(remoteP2PPeerId string, msg string) error {
 	if tool.CheckIsString(&remoteP2PPeerId) == false {
 		return errors.New("empty remoteP2PPeerId")
 	}
-	if remoteP2PPeerId == p2PLocalNodeId {
+	if remoteP2PPeerId == P2PLocalNodeId {
 		return errors.New("remoteP2PPeerId is yourself,can not send msg to yourself")
 	}
 

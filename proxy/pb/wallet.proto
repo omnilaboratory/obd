@@ -86,7 +86,25 @@ message GetInfoResponse {
   bool is_admin = 7;
 }
 
+message Peer {
+  // The identity pubkey of the peer
+  string pub_key = 1;
+  // Network address of the peer; eg `127.0.0.1:10011`
+  string address = 2;
+}
+
+message ListPeersRequest {
+}
+message ListPeersResponse {
+  // The list of currently connected peers
+  repeated Peer peers = 1;
+}
+
+
 service Wallet {
+
+  rpc ListPeers(ListPeersRequest) returns(ListPeersResponse);
+
   rpc GenSeed(GenSeedRequest) returns(GenSeedResponse);
   rpc Login(LoginRequest) returns (LoginResponse);
   rpc ChangePassword(ChangePasswordRequest) returns (ChangePasswordResponse);

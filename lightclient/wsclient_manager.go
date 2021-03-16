@@ -35,8 +35,8 @@ func (clientManager *clientManager) Start() {
 			clientManager.ClientsMap[client] = true
 			jsonMessage, _ := json.Marshal(&bean.RequestMessage{
 				SenderUserPeerId:    client.Id,
-				SenderNodePeerId:    p2PLocalNodeId,
-				RecipientNodePeerId: p2PLocalNodeId,
+				SenderNodePeerId:    P2PLocalNodeId,
+				RecipientNodePeerId: P2PLocalNodeId,
 				RecipientUserPeerId: client.Id,
 				Data:                "welcome to you."})
 			log.Println(fmt.Sprintf("a new socket %s has connected.", client.Id))
@@ -82,7 +82,7 @@ func FindUserOnLine(msg bean.RequestMessage) (*Client, error) {
 			return itemClient, nil
 		}
 
-		if msg.RecipientNodePeerId != p2PLocalNodeId {
+		if msg.RecipientNodePeerId != P2PLocalNodeId {
 			if conn2tracker.GetUserState(msg.RecipientNodePeerId, msg.RecipientUserPeerId) > 0 {
 				return nil, nil
 			}

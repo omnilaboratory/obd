@@ -17,6 +17,34 @@ type htlcQueryTxManager struct {
 
 var HtlcQueryTxManager htlcQueryTxManager
 
+func (service *htlcQueryTxManager) ListInvoices(jsonData string, user bean.User) (data map[string]interface{}, err error) {
+
+	indexOffset := gjson.Get(jsonData, "index_offset").Int()
+	if indexOffset < 0 {
+		indexOffset = 0
+	}
+	numMaxInvoices := gjson.Get(jsonData, "num_max_invoices").Int()
+	if numMaxInvoices < 0 {
+		numMaxInvoices = 1
+	}
+	reversed := gjson.Get(jsonData, "reversed").Bool()
+
+	var list []dao.InvoiceInfo
+	if reversed {
+		err = user.Db.Select().Reverse().Skip(int(indexOffset)).Limit(int(numMaxInvoices)).Find(&list)
+	} else {
+		err = user.Db.Select().Skip(int(indexOffset)).Limit(int(numMaxInvoices)).Find(&list)
+	}
+	if len(list) < int(numMaxInvoices) {
+		numMaxInvoices = int64(len(list))
+	}
+	data = make(map[string]interface{})
+	data["invoices"] = list
+	data["first_index_offset"] = indexOffset
+	data["last_index_offset"] = numMaxInvoices + indexOffset
+	return data, err
+}
+
 func (service *htlcQueryTxManager) GetLatestHT1aOrHE1b(msgData string, user bean.User) (data interface{}, err error) {
 	if tool.CheckIsString(&msgData) == false {
 		return nil, errors.New(enum.Tips_common_empty + "msg data")
