@@ -222,3 +222,26 @@ func (s *RpcServer) GetTransactions(ctx context.Context, in *pb.GetTransactionsR
 	}
 	return resp, nil
 }
+
+func (s *RpcServer) ChannelBalance(ctx context.Context, in *pb.ChannelBalanceRequest) (*pb.ChannelBalanceResponse, error) {
+	log.Println("ChannelBalance")
+
+	user, err := checkLogin()
+	if err != nil {
+		return nil, err
+	}
+	data, err := service.ChannelService.ChannelBalance(user)
+	if err != nil {
+		return nil, err
+	}
+
+	resp := &pb.ChannelBalanceResponse{
+		LocalBalance:             data["local_balance"],
+		RemoteBalance:            data["remote_balance"],
+		UnsettledLocalBalance:    data["unsettled_local_balance"],
+		UnsettledRemoteBalance:   data["unsettled_remote_balance"],
+		PendingOpenLocalBalance:  data["pending_open_local_balance"],
+		PendingOpenRemoteBalance: data["pending_open_remote_balance"],
+	}
+	return resp, nil
+}

@@ -1055,6 +1055,49 @@ func (this *channelManager) CloseHtlcChannelSigned(tx storm.Node, latestCommitme
 	return nil
 }
 
+func (this *channelManager) ChannelBalance(user *bean.User) (map[string]float64, error) {
+	var channels []dao.ChannelInfo
+	err := user.Db.Select().Find(&channels)
+	if err != nil {
+		return nil, err
+	}
+
+	localBalance := 0.0
+	remoteBalance := 0.0
+	unsettledLocalBalance := 0.0
+	unsettledRemoteBalance := 0.0
+	pendingOpenLocalBalance := 0.0
+	pendingOpenRemoteBalance := 0.0
+	for _, item := range channels {
+		tx, err := getLatestCommitmentTxUseDbTx(user.Db, item.ChannelId, user.PeerId)
+		if err == nil {
+			if item.CurrState == bean.ChannelState_CanUse {
+				localBalance += tx.AmountToRSMC
+				remoteBalance += tx.AmountToCounterparty
+				continue
+			}
+			if item.CurrState == bean.ChannelState_Close {
+				unsettledLocalBalance += tx.AmountToRSMC
+				unsettledRemoteBalance += tx.AmountToCounterparty
+				continue
+			}
+			if item.CurrState == bean.ChannelState_NewTx || item.CurrState == bean.ChannelState_HtlcTx || item.CurrState == bean.ChannelState_LockByTracker {
+				pendingOpenLocalBalance += tx.AmountToRSMC
+				pendingOpenRemoteBalance += tx.AmountToCounterparty
+				continue
+			}
+		}
+	}
+	data := make(map[string]float64)
+	data["local_balance"] = localBalance
+	data["remote_balance"] = remoteBalance
+	data["unsettled_local_balance"] = unsettledLocalBalance
+	data["unsettled_remote_balance"] = unsettledRemoteBalance
+	data["pending_open_local_balance"] = pendingOpenLocalBalance
+	data["pending_open_remote_balance"] = pendingOpenRemoteBalance
+	return data, nil
+}
+
 func createChannelAddress(channelInfo *dao.ChannelInfo, reqData *bean.SendSignOpenChannel, user *bean.User) (err error) {
 	bobFundingAddress, _ := getAddressFromPubKey(reqData.FundingPubKey)
 	channelInfo.PubKeyB = reqData.FundingPubKey

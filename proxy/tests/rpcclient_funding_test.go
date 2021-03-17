@@ -14,9 +14,9 @@ func TestFundChannel(t *testing.T) {
 
 	fundChannel, err := client.FundChannel(context.Background(), &proxy.FundChannelRequest{
 		RecipientInfo: &proxy.RecipientNodeInfo{
-			RecipientNodePeerId: "QmZPzUh7Q6PQg6gXB4XheaoZMMhHA9JNeCrJsp3FWjFrAF",
-			RecipientUserPeerId: "a5f24dc5d5414d961bba98c98624b87222da3984b324bcab7cfd7fd63aee33b3"},
-		TemplateChannelId: "ac98aef33e317a0063036c33ffd9b3703fd3e630ea22ffc2ba0b05e7da475ab8",
+			RecipientNodePeerId: "QmccE4s2uhEXrJXE778NChn1ed8NyWNyAHH23mP7f9NM3L",
+			RecipientUserPeerId: "63167817c979ade9e42f3204404c1513a4b1b4e9eea654c9498ed9cc920dbb36"},
+		TemplateChannelId: "8abc7d1042de7d9e43b8b64acb2e65de4cacd05f9ea5955ef36a4db3f3547a1b",
 		BtcAmount:         0.0004,
 		PropertyId:        137,
 		AssetAmount:       1,
