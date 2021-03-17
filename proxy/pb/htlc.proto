@@ -43,7 +43,6 @@ message SendResponse{
   double amount_to_counterparty = 5;
 }
 
-
 message ListInvoiceRequest {
   /*
   The index of an invoice that will be used as either the start or end of a
