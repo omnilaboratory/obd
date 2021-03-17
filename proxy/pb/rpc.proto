@@ -222,6 +222,18 @@ message TransactionDetails{
   int32 page_index = 4;
 }
 
+message ChannelBalanceRequest{
+}
+
+message ChannelBalanceResponse{
+  double local_balance = 1;
+  double remote_balance = 2;
+  double unsettled_local_balance = 3;
+  double unsettled_remote_balance = 4;
+  double pending_open_local_balance = 5;
+  double pending_open_remote_balance = 6;
+}
+
 
 service Lightning {
 
@@ -239,6 +251,15 @@ service Lightning {
   rpc PendingChannels(PendingChannelsRequest) returns(ListChannelsResponse);
   rpc LatestTransaction(LatestTransactionRequest) returns(Transaction);
   rpc GetTransactions(GetTransactionsRequest) returns(TransactionDetails);
+
+  /**
+      ChannelBalance returns a report on the total funds across all open channels,
+      categorized in
+      local/remote,
+      pending local/remote
+      and unsettled local/remote balances.
+   */
+  rpc ChannelBalance(ChannelBalanceRequest) returns(ChannelBalanceResponse);
 }
 
 
