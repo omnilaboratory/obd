@@ -197,8 +197,8 @@ func DecodeBtcRawTransaction(hex string) (result string, err error) {
 	return result, err
 }
 
-func GetMinerFee() float64 {
-	price := conn2tracker.EstimateSmartFee()
+func GetMinerFee(confTarget int32) float64 {
+	price := conn2tracker.EstimateSmartFee(confTarget)
 	if price == 0 {
 		price = 6
 	} else {

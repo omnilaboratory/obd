@@ -23,7 +23,7 @@ func BtcCreateRawTransactionForUnsendInputTx(fromBitCoinAddress string, inputIte
 	}
 
 	if minerFee <= tool.GetOmniDustBtc() {
-		minerFee = GetMinerFee()
+		minerFee = GetMinerFee(10)
 	}
 
 	outAmount := decimal.NewFromFloat(0)
@@ -130,7 +130,7 @@ func BtcCreateRawTransaction(fromBitCoinAddress string, outputItems []bean.Trans
 	}
 
 	if minerFee <= 0 {
-		minerFee = GetMinerFee()
+		minerFee = GetMinerFee(10)
 	}
 
 	outTotalAmount := decimal.NewFromFloat(0)

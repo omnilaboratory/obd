@@ -157,7 +157,7 @@ func (server *RpcServer) NewAddress(ctx context.Context, in *pb.NewAddressReques
 
 func (server *RpcServer) EstimateFee(ctx context.Context, in *pb.EstimateFeeRequest) (resp *pb.EstimateFeeResponse, err error) {
 	log.Println("EstimateFee")
-	minerFee := omnicore.GetMinerFee()
+	minerFee := omnicore.GetMinerFee(in.ConfTarget)
 	resp = &pb.EstimateFeeResponse{
 		SatPerKw: int64(100000000 * minerFee),
 	}

@@ -106,14 +106,14 @@ func ListUnspent(address string) (result string) {
 var smartFeeSpanTime time.Time
 var cacheFeeRate float64
 
-func EstimateSmartFee() (result float64) {
+func EstimateSmartFee(confTarget int32) (result float64) {
 	if smartFeeSpanTime.IsZero() == false {
 		if time.Now().Sub(smartFeeSpanTime).Minutes() > 10 {
 			cacheFeeRate = 0
 		}
 	}
 	if cacheFeeRate == 0 {
-		url := "http://" + config.TrackerHost + "/api/rpc/estimateSmartFee"
+		url := "http://" + config.TrackerHost + "/api/rpc/estimateSmartFee?confTarget=" + strconv.Itoa(int(confTarget))
 		resp, err := http.Get(url)
 		if err != nil {
 			return 0
