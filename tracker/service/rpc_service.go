@@ -506,8 +506,13 @@ func (manager *rpcManager) EstimateSmartFee(context *gin.Context) {
 			cacheFeeRate = 0
 		}
 	}
+	confTarget := 10
+	if context.Query("confTarget") != "" {
+		confTarget, _ = strconv.Atoi(context.Query("confTarget"))
+	}
+
 	if cacheFeeRate == 0 {
-		fee := rpc.NewClient().EstimateSmartFee()
+		fee := rpc.NewClient().EstimateSmartFee(confTarget)
 		cacheFeeRate = fee
 		smartFeeSpanTime = time.Now()
 	}

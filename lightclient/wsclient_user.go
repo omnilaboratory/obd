@@ -70,7 +70,7 @@ func (client *Client) UserModule(msg bean.RequestMessage) (enum.SendTargetType, 
 			user := bean.User{
 				Mnemonic:        mnemonic,
 				P2PLocalAddress: localServerDest,
-				P2PLocalPeerId:  p2PLocalNodeId,
+				P2PLocalPeerId:  P2PLocalNodeId,
 				IsAdmin:         isAdmin,
 			}
 			var err error = nil
@@ -95,6 +95,15 @@ func (client *Client) UserModule(msg bean.RequestMessage) (enum.SendTargetType, 
 				sendType = enum.SendTargetType_SendToSomeone
 			}
 		}
+	case enum.MsgType_User_GetInfo_2009:
+		if client.User != nil {
+			data = loginRetData(*client)
+			status = true
+		} else {
+			data = "please login"
+		}
+		client.SendToMyself(msg.Type, status, data)
+		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_UserLogout_2002:
 		if client.User != nil {
 			exist := service.UserService.CheckExecutingTx(client.User)
@@ -131,6 +140,21 @@ func (client *Client) UserModule(msg bean.RequestMessage) (enum.SendTargetType, 
 			} else {
 				status = true
 				data = localP2PAddress
+			}
+		}
+		client.SendToMyself(msg.Type, status, data)
+		sendType = enum.SendTargetType_SendToSomeone
+	case enum.MsgType_p2p_DisconnectPeer_2010:
+		remoteNodeAddress := gjson.Get(msg.Data, "remote_node_address")
+		if remoteNodeAddress.Exists() == false {
+			data = errors.New("remote_node_address not exist").Error()
+		} else {
+			err := disConnP2PNode(remoteNodeAddress.Str)
+			if err != nil {
+				data = err.Error()
+			} else {
+				status = true
+				data = "success"
 			}
 		}
 		client.SendToMyself(msg.Type, status, data)

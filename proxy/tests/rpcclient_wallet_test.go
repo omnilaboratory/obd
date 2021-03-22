@@ -10,6 +10,45 @@ import (
 	"testing"
 )
 
+func TestConnectPeer(t *testing.T) {
+	client, conn := getClient()
+	defer conn.Close()
+	resp, err := client.ConnectPeer(context.Background(), &proxy.ConnectPeerRequest{
+		Addr: "/ip4/127.0.0.1/tcp/4002/p2p/QmZPzUh7Q6PQg6gXB4XheaoZMMhHA9JNeCrJsp3FWjFrAF",
+	})
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	marshal, _ := json.Marshal(resp)
+	log.Println(string(marshal))
+}
+
+func TestDisconnectPeer(t *testing.T) {
+	client, conn := getClient()
+	defer conn.Close()
+	resp, err := client.DisconnectPeer(context.Background(), &proxy.DisconnectPeerRequest{
+		Addr: "QmZPzUh7Q6PQg6gXB4XheaoZMMhHA9JNeCrJsp3FWjFrAF",
+	})
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	marshal, _ := json.Marshal(resp)
+	log.Println(string(marshal))
+}
+func TestNewAddress(t *testing.T) {
+	client, conn := getWalletClient()
+	defer conn.Close()
+	resp, err := client.NewAddress(context.Background(), &proxy.NewAddressRequest{})
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	marshal, _ := json.Marshal(resp)
+	log.Println(string(marshal))
+}
+
 func TestNextAddr(t *testing.T) {
 	client, conn := getWalletClient()
 	defer conn.Close()
@@ -82,6 +121,32 @@ func TestLogout(t *testing.T) {
 	defer conn.Close()
 
 	resp, err := client.Logout(context.Background(), &proxy.LogoutRequest{})
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	marshal, _ := json.Marshal(resp)
+	log.Println(string(marshal))
+}
+
+func TestGetInfo(t *testing.T) {
+	client, conn := getWalletClient()
+	defer conn.Close()
+
+	resp, err := client.GetInfo(context.Background(), &proxy.GetInfoRequest{})
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	marshal, _ := json.Marshal(resp)
+	log.Println(string(marshal))
+}
+
+func TestListPeers(t *testing.T) {
+	client, conn := getWalletClient()
+	defer conn.Close()
+
+	resp, err := client.ListPeers(context.Background(), &proxy.ListPeersRequest{})
 	if err != nil {
 		log.Println(err)
 		return

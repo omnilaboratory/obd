@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/omnilaboratory/obd/bean"
+	"github.com/omnilaboratory/obd/bean/enum"
 	"github.com/omnilaboratory/obd/proxy/pb"
 	"github.com/omnilaboratory/obd/service"
 	"log"
@@ -31,6 +32,90 @@ func Hello(sayhi string) (string, error) {
 	return returnMsg, nil
 }
 
+func (s *RpcServer) ConnectPeer(ctx context.Context, in *pb.ConnectPeerRequest) (resp *pb.ConnectPeerResponse, err error) {
+	log.Println("ConnectPeer")
+
+	if len(in.Addr) == 0 {
+		return nil, errors.New("wrong addr")
+	}
+	input := make(map[string]interface{})
+	input["remote_node_address"] = in.Addr
+	marshal, _ := json.Marshal(input)
+	requestMessage := bean.RequestMessage{
+		Type: enum.MsgType_p2p_ConnectPeer_2003,
+		Data: string(marshal)}
+	_, bytes, status := obcClient.UserModule(requestMessage)
+	data := string(bytes)
+	if status == false {
+		return nil, errors.New(data)
+	}
+	resp = &pb.ConnectPeerResponse{}
+	return resp, nil
+}
+func (s *RpcServer) DisconnectPeer(ctx context.Context, in *pb.DisconnectPeerRequest) (resp *pb.DisconnectPeerResponse, err error) {
+	log.Println("ConnectPeer")
+
+	if len(in.Addr) == 0 {
+		return nil, errors.New("wrong addr")
+	}
+	input := make(map[string]interface{})
+	input["remote_node_address"] = in.Addr
+	marshal, _ := json.Marshal(input)
+	requestMessage := bean.RequestMessage{
+		Type: enum.MsgType_p2p_DisconnectPeer_2010,
+		Data: string(marshal)}
+	_, bytes, status := obcClient.UserModule(requestMessage)
+	data := string(bytes)
+	if status == false {
+		return nil, errors.New(data)
+	}
+	resp = &pb.DisconnectPeerResponse{}
+	return resp, nil
+}
+
+func (s *RpcServer) PendingChannels(ctx context.Context, in *pb.PendingChannelsRequest) (resp *pb.ListChannelsResponse, err error) {
+	log.Println("PendingChannels")
+
+	user, err := checkLogin()
+	if err != nil {
+		return nil, err
+	}
+
+	inputData := make(map[string]interface{})
+	inputData["is_pending"] = true
+	inputData["page_size"] = in.PageSize
+	inputData["page_index"] = in.PageIndex
+	marshal, _ := json.Marshal(inputData)
+	respData, err := service.ChannelService.AllItem(string(marshal), *user)
+	if err != nil {
+		return nil, err
+	}
+	resp = &pb.ListChannelsResponse{}
+	list := respData.Data.([]service.ChannelVO)
+	for _, item := range list {
+		if len(item.ChannelId) == 0 {
+			continue
+		}
+		node := &pb.Channel{}
+		node.ChanId = item.ChannelId
+		node.Private = item.IsPrivate
+		node.Active = true
+		if item.CurrState == bean.ChannelState_Close {
+			node.Active = false
+		}
+		node.PropertyId = item.PropertyId
+		node.Capacity = int64(item.AssetAmount * 100000000)
+		node.Initiator = false
+		if user.PeerId == item.PeerIdA {
+			node.Initiator = true
+		}
+		node.LocalBalance = int64(item.BalanceA * 100000000)
+		node.RemoteBalance = int64(item.BalanceB * 100000000)
+		node.NumUpdates = item.NumUpdates
+		resp.Channels = append(resp.Channels, node)
+	}
+	return resp, nil
+}
 func (s *RpcServer) ListChannels(ctx context.Context, in *pb.ListChannelsRequest) (resp *pb.ListChannelsResponse, err error) {
 	log.Println("ListChannels")
 	user, err := checkLogin()
@@ -134,6 +219,29 @@ func (s *RpcServer) GetTransactions(ctx context.Context, in *pb.GetTransactionsR
 			AmountHtlc: item.AmountToHtlc,
 		}
 		resp.Transactions = append(resp.Transactions, node)
+	}
+	return resp, nil
+}
+
+func (s *RpcServer) ChannelBalance(ctx context.Context, in *pb.ChannelBalanceRequest) (*pb.ChannelBalanceResponse, error) {
+	log.Println("ChannelBalance")
+
+	user, err := checkLogin()
+	if err != nil {
+		return nil, err
+	}
+	data, err := service.ChannelService.ChannelBalance(user)
+	if err != nil {
+		return nil, err
+	}
+
+	resp := &pb.ChannelBalanceResponse{
+		LocalBalance:             data["local_balance"],
+		RemoteBalance:            data["remote_balance"],
+		UnsettledLocalBalance:    data["unsettled_local_balance"],
+		UnsettledRemoteBalance:   data["unsettled_remote_balance"],
+		PendingOpenLocalBalance:  data["pending_open_local_balance"],
+		PendingOpenRemoteBalance: data["pending_open_remote_balance"],
 	}
 	return resp, nil
 }

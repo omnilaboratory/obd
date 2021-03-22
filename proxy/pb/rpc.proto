@@ -3,9 +3,22 @@ syntax = "proto3";
 package proxy;
 option go_package = "pb";
 
+
 message RecipientNodeInfo{
   string recipient_node_peer_id = 1;
   string recipient_user_peer_id = 2;
+}
+
+message ConnectPeerRequest {
+  string addr = 1;
+}
+message ConnectPeerResponse {
+}
+
+message DisconnectPeerRequest {
+  string addr = 1;
+}
+message DisconnectPeerResponse {
 }
 
 message OpenChannelRequest{
@@ -169,6 +182,10 @@ message Channel {
   int64 property_id = 28;
 }
 
+message PendingChannelsRequest {
+  int32 page_size = 1;
+  int32 page_index = 2;
+}
 
 message ListChannelsResponse {
   // The list of active channels
@@ -205,6 +222,18 @@ message TransactionDetails{
   int32 page_index = 4;
 }
 
+message ChannelBalanceRequest{
+}
+
+message ChannelBalanceResponse{
+  double local_balance = 1;
+  double remote_balance = 2;
+  double unsettled_local_balance = 3;
+  double unsettled_remote_balance = 4;
+  double pending_open_local_balance = 5;
+  double pending_open_remote_balance = 6;
+}
+
 
 service Lightning {
 
@@ -213,11 +242,24 @@ service Lightning {
   */
   rpc Hello (HelloRequest) returns (HelloResponse);
 
+  rpc ConnectPeer(ConnectPeerRequest) returns (ConnectPeerResponse);
+  rpc DisconnectPeer(DisconnectPeerRequest) returns (DisconnectPeerResponse);
+
   rpc OpenChannel(OpenChannelRequest) returns(OpenChannelResponse);
   rpc FundChannel(FundChannelRequest) returns(FundChannelResponse);
   rpc ListChannels(ListChannelsRequest) returns(ListChannelsResponse);
+  rpc PendingChannels(PendingChannelsRequest) returns(ListChannelsResponse);
   rpc LatestTransaction(LatestTransactionRequest) returns(Transaction);
   rpc GetTransactions(GetTransactionsRequest) returns(TransactionDetails);
+
+  /**
+      ChannelBalance returns a report on the total funds across all open channels,
+      categorized in
+      local/remote,
+      pending local/remote
+      and unsettled local/remote balances.
+   */
+  rpc ChannelBalance(ChannelBalanceRequest) returns(ChannelBalanceResponse);
 }
 
 

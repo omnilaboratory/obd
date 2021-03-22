@@ -98,6 +98,28 @@ func (server *RpcServer) Login(ctx context.Context, in *pb.LoginRequest) (resp *
 	return resp, nil
 }
 
+func (server *RpcServer) GetInfo(ctx context.Context, in *pb.GetInfoRequest) (resp *pb.GetInfoResponse, err error) {
+	requestMessage := bean.RequestMessage{
+		Type: enum.MsgType_User_GetInfo_2009,
+	}
+	_, dataBytes, status := obcClient.UserModule(requestMessage)
+	if status == false {
+		return nil, errors.New(string(dataBytes))
+	}
+
+	dataMap := make(map[string]interface{})
+	_ = json.Unmarshal(dataBytes, &dataMap)
+	resp = &pb.GetInfoResponse{
+		UserPeerId:    dataMap["userPeerId"].(string),
+		NodePeerId:    dataMap["nodePeerId"].(string),
+		NodeAddress:   dataMap["nodeAddress"].(string),
+		HtlcFeeRate:   dataMap["htlcFeeRate"].(float64),
+		HtlcMaxFee:    dataMap["htlcMaxFee"].(float64),
+		ChainNodeType: dataMap["chainNodeType"].(string),
+	}
+	resp.IsAdmin = true
+	return resp, nil
+}
 func (server *RpcServer) NextAddr(ctx context.Context, in *pb.AddrRequest) (resp *pb.AddrResponse, err error) {
 	log.Println("NextAddr")
 
@@ -115,10 +137,27 @@ func (server *RpcServer) NextAddr(ctx context.Context, in *pb.AddrRequest) (resp
 	}
 	return resp, nil
 }
+func (server *RpcServer) NewAddress(ctx context.Context, in *pb.NewAddressRequest) (resp *pb.NewAddressResponse, err error) {
+	log.Println("NextAddr")
+
+	user, err := checkLogin()
+	if err != nil {
+		return nil, err
+	}
+
+	address, err := service.HDWalletService.CreateNewAddress(user)
+	if err != nil {
+		return nil, err
+	}
+	resp = &pb.NewAddressResponse{
+		Addr: address.Address,
+	}
+	return resp, nil
+}
 
 func (server *RpcServer) EstimateFee(ctx context.Context, in *pb.EstimateFeeRequest) (resp *pb.EstimateFeeResponse, err error) {
 	log.Println("EstimateFee")
-	minerFee := omnicore.GetMinerFee()
+	minerFee := omnicore.GetMinerFee(in.ConfTarget)
 	resp = &pb.EstimateFeeResponse{
 		SatPerKw: int64(100000000 * minerFee),
 	}
@@ -178,6 +217,23 @@ func (server *RpcServer) ChangePassword(ctx context.Context, in *pb.ChangePasswo
 
 	resp = &pb.ChangePasswordResponse{
 		Result: data,
+	}
+	return resp, nil
+}
+func (server *RpcServer) ListPeers(ctx context.Context, in *pb.ListPeersRequest) (resp *pb.ListPeersResponse, err error) {
+	log.Println("ListPeers")
+
+	_, err = checkLogin()
+	if err != nil {
+		return nil, err
+	}
+
+	resp = &pb.ListPeersResponse{}
+	for key, value := range lightclient.P2pChannelMap {
+		if key != lightclient.P2PLocalNodeId {
+			peer := &pb.Peer{Address: value.Address, PubKey: key}
+			resp.Peers = append(resp.Peers, peer)
+		}
 	}
 	return resp, nil
 }

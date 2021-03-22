@@ -4,6 +4,7 @@ import (
 	"github.com/omnilaboratory/obd/config"
 	proxy "github.com/omnilaboratory/obd/proxy/pb"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 	"log"
 	"net"
 	"strconv"
@@ -18,7 +19,7 @@ func StartGrpcServer() {
 		return
 	}
 
-	address := "localhost:" + strconv.Itoa(config.GrpcServerPort)
+	address := "0.0.0.0:" + strconv.Itoa(config.GrpcServerPort)
 	lis, err := net.Listen("tcp", address)
 	if err != nil {
 		log.Fatalf("Error %v", err)
@@ -26,6 +27,7 @@ func StartGrpcServer() {
 	log.Printf("grpc Server is listening on %v ...", address)
 
 	s := grpc.NewServer()
+	reflection.Register(s)
 	proxy.RegisterLightningServer(s, &RpcServer{})
 	proxy.RegisterWalletServer(s, &RpcServer{})
 	proxy.RegisterRsmcServer(s, &RpcServer{})

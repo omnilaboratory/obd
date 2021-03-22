@@ -1,8 +1,16 @@
 package dao
 
 import (
+	"github.com/omnilaboratory/obd/bean"
 	"time"
 )
+
+type InvoiceInfo struct {
+	Id       int                     `storm:"id,increment" json:"id" `
+	Detail   bean.HtlcRequestInvoice `json:"detail"`
+	Invoice  string                  `json:"invoice"`
+	CreateAt time.Time               `json:"create_at"`
+}
 
 type HtlcHAndRImage struct {
 	Id       int       `storm:"id,increment" json:"id" `

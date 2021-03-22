@@ -542,6 +542,316 @@ func (m *AddrResponse) GetAddr() string {
 	return ""
 }
 
+type NewAddressRequest struct {
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *NewAddressRequest) Reset()         { *m = NewAddressRequest{} }
+func (m *NewAddressRequest) String() string { return proto.CompactTextString(m) }
+func (*NewAddressRequest) ProtoMessage()    {}
+func (*NewAddressRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_b88fd140af4deb6f, []int{12}
+}
+
+func (m *NewAddressRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_NewAddressRequest.Unmarshal(m, b)
+}
+func (m *NewAddressRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_NewAddressRequest.Marshal(b, m, deterministic)
+}
+func (m *NewAddressRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_NewAddressRequest.Merge(m, src)
+}
+func (m *NewAddressRequest) XXX_Size() int {
+	return xxx_messageInfo_NewAddressRequest.Size(m)
+}
+func (m *NewAddressRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_NewAddressRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_NewAddressRequest proto.InternalMessageInfo
+
+type NewAddressResponse struct {
+	//
+	//The address encoded using a bech32 format.
+	Addr                 string   `protobuf:"bytes,1,opt,name=addr,proto3" json:"addr,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *NewAddressResponse) Reset()         { *m = NewAddressResponse{} }
+func (m *NewAddressResponse) String() string { return proto.CompactTextString(m) }
+func (*NewAddressResponse) ProtoMessage()    {}
+func (*NewAddressResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_b88fd140af4deb6f, []int{13}
+}
+
+func (m *NewAddressResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_NewAddressResponse.Unmarshal(m, b)
+}
+func (m *NewAddressResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_NewAddressResponse.Marshal(b, m, deterministic)
+}
+func (m *NewAddressResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_NewAddressResponse.Merge(m, src)
+}
+func (m *NewAddressResponse) XXX_Size() int {
+	return xxx_messageInfo_NewAddressResponse.Size(m)
+}
+func (m *NewAddressResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_NewAddressResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_NewAddressResponse proto.InternalMessageInfo
+
+func (m *NewAddressResponse) GetAddr() string {
+	if m != nil {
+		return m.Addr
+	}
+	return ""
+}
+
+type GetInfoRequest struct {
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *GetInfoRequest) Reset()         { *m = GetInfoRequest{} }
+func (m *GetInfoRequest) String() string { return proto.CompactTextString(m) }
+func (*GetInfoRequest) ProtoMessage()    {}
+func (*GetInfoRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_b88fd140af4deb6f, []int{14}
+}
+
+func (m *GetInfoRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GetInfoRequest.Unmarshal(m, b)
+}
+func (m *GetInfoRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GetInfoRequest.Marshal(b, m, deterministic)
+}
+func (m *GetInfoRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetInfoRequest.Merge(m, src)
+}
+func (m *GetInfoRequest) XXX_Size() int {
+	return xxx_messageInfo_GetInfoRequest.Size(m)
+}
+func (m *GetInfoRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetInfoRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetInfoRequest proto.InternalMessageInfo
+
+type GetInfoResponse struct {
+	UserPeerId           string   `protobuf:"bytes,1,opt,name=user_peerId,json=userPeerId,proto3" json:"user_peerId,omitempty"`
+	NodePeerId           string   `protobuf:"bytes,2,opt,name=node_peerId,json=nodePeerId,proto3" json:"node_peerId,omitempty"`
+	NodeAddress          string   `protobuf:"bytes,3,opt,name=node_address,json=nodeAddress,proto3" json:"node_address,omitempty"`
+	HtlcFeeRate          float64  `protobuf:"fixed64,4,opt,name=htlc_fee_rate,json=htlcFeeRate,proto3" json:"htlc_fee_rate,omitempty"`
+	HtlcMaxFee           float64  `protobuf:"fixed64,5,opt,name=htlc_max_fee,json=htlcMaxFee,proto3" json:"htlc_max_fee,omitempty"`
+	ChainNodeType        string   `protobuf:"bytes,6,opt,name=chain_node_type,json=chainNodeType,proto3" json:"chain_node_type,omitempty"`
+	IsAdmin              bool     `protobuf:"varint,7,opt,name=is_admin,json=isAdmin,proto3" json:"is_admin,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *GetInfoResponse) Reset()         { *m = GetInfoResponse{} }
+func (m *GetInfoResponse) String() string { return proto.CompactTextString(m) }
+func (*GetInfoResponse) ProtoMessage()    {}
+func (*GetInfoResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_b88fd140af4deb6f, []int{15}
+}
+
+func (m *GetInfoResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GetInfoResponse.Unmarshal(m, b)
+}
+func (m *GetInfoResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GetInfoResponse.Marshal(b, m, deterministic)
+}
+func (m *GetInfoResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetInfoResponse.Merge(m, src)
+}
+func (m *GetInfoResponse) XXX_Size() int {
+	return xxx_messageInfo_GetInfoResponse.Size(m)
+}
+func (m *GetInfoResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetInfoResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetInfoResponse proto.InternalMessageInfo
+
+func (m *GetInfoResponse) GetUserPeerId() string {
+	if m != nil {
+		return m.UserPeerId
+	}
+	return ""
+}
+
+func (m *GetInfoResponse) GetNodePeerId() string {
+	if m != nil {
+		return m.NodePeerId
+	}
+	return ""
+}
+
+func (m *GetInfoResponse) GetNodeAddress() string {
+	if m != nil {
+		return m.NodeAddress
+	}
+	return ""
+}
+
+func (m *GetInfoResponse) GetHtlcFeeRate() float64 {
+	if m != nil {
+		return m.HtlcFeeRate
+	}
+	return 0
+}
+
+func (m *GetInfoResponse) GetHtlcMaxFee() float64 {
+	if m != nil {
+		return m.HtlcMaxFee
+	}
+	return 0
+}
+
+func (m *GetInfoResponse) GetChainNodeType() string {
+	if m != nil {
+		return m.ChainNodeType
+	}
+	return ""
+}
+
+func (m *GetInfoResponse) GetIsAdmin() bool {
+	if m != nil {
+		return m.IsAdmin
+	}
+	return false
+}
+
+type Peer struct {
+	// The identity pubkey of the peer
+	PubKey string `protobuf:"bytes,1,opt,name=pub_key,json=pubKey,proto3" json:"pub_key,omitempty"`
+	// Network address of the peer; eg `127.0.0.1:10011`
+	Address              string   `protobuf:"bytes,2,opt,name=address,proto3" json:"address,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *Peer) Reset()         { *m = Peer{} }
+func (m *Peer) String() string { return proto.CompactTextString(m) }
+func (*Peer) ProtoMessage()    {}
+func (*Peer) Descriptor() ([]byte, []int) {
+	return fileDescriptor_b88fd140af4deb6f, []int{16}
+}
+
+func (m *Peer) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Peer.Unmarshal(m, b)
+}
+func (m *Peer) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Peer.Marshal(b, m, deterministic)
+}
+func (m *Peer) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Peer.Merge(m, src)
+}
+func (m *Peer) XXX_Size() int {
+	return xxx_messageInfo_Peer.Size(m)
+}
+func (m *Peer) XXX_DiscardUnknown() {
+	xxx_messageInfo_Peer.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Peer proto.InternalMessageInfo
+
+func (m *Peer) GetPubKey() string {
+	if m != nil {
+		return m.PubKey
+	}
+	return ""
+}
+
+func (m *Peer) GetAddress() string {
+	if m != nil {
+		return m.Address
+	}
+	return ""
+}
+
+type ListPeersRequest struct {
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *ListPeersRequest) Reset()         { *m = ListPeersRequest{} }
+func (m *ListPeersRequest) String() string { return proto.CompactTextString(m) }
+func (*ListPeersRequest) ProtoMessage()    {}
+func (*ListPeersRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_b88fd140af4deb6f, []int{17}
+}
+
+func (m *ListPeersRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ListPeersRequest.Unmarshal(m, b)
+}
+func (m *ListPeersRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ListPeersRequest.Marshal(b, m, deterministic)
+}
+func (m *ListPeersRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListPeersRequest.Merge(m, src)
+}
+func (m *ListPeersRequest) XXX_Size() int {
+	return xxx_messageInfo_ListPeersRequest.Size(m)
+}
+func (m *ListPeersRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListPeersRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ListPeersRequest proto.InternalMessageInfo
+
+type ListPeersResponse struct {
+	// The list of currently connected peers
+	Peers                []*Peer  `protobuf:"bytes,1,rep,name=peers,proto3" json:"peers,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *ListPeersResponse) Reset()         { *m = ListPeersResponse{} }
+func (m *ListPeersResponse) String() string { return proto.CompactTextString(m) }
+func (*ListPeersResponse) ProtoMessage()    {}
+func (*ListPeersResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_b88fd140af4deb6f, []int{18}
+}
+
+func (m *ListPeersResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ListPeersResponse.Unmarshal(m, b)
+}
+func (m *ListPeersResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ListPeersResponse.Marshal(b, m, deterministic)
+}
+func (m *ListPeersResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListPeersResponse.Merge(m, src)
+}
+func (m *ListPeersResponse) XXX_Size() int {
+	return xxx_messageInfo_ListPeersResponse.Size(m)
+}
+func (m *ListPeersResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListPeersResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ListPeersResponse proto.InternalMessageInfo
+
+func (m *ListPeersResponse) GetPeers() []*Peer {
+	if m != nil {
+		return m.Peers
+	}
+	return nil
+}
+
 func init() {
 	proto.RegisterType((*LoginRequest)(nil), "proxy.LoginRequest")
 	proto.RegisterType((*LoginResponse)(nil), "proxy.LoginResponse")
@@ -555,6 +865,13 @@ func init() {
 	proto.RegisterType((*EstimateFeeResponse)(nil), "proxy.EstimateFeeResponse")
 	proto.RegisterType((*AddrRequest)(nil), "proxy.AddrRequest")
 	proto.RegisterType((*AddrResponse)(nil), "proxy.AddrResponse")
+	proto.RegisterType((*NewAddressRequest)(nil), "proxy.NewAddressRequest")
+	proto.RegisterType((*NewAddressResponse)(nil), "proxy.NewAddressResponse")
+	proto.RegisterType((*GetInfoRequest)(nil), "proxy.GetInfoRequest")
+	proto.RegisterType((*GetInfoResponse)(nil), "proxy.GetInfoResponse")
+	proto.RegisterType((*Peer)(nil), "proxy.Peer")
+	proto.RegisterType((*ListPeersRequest)(nil), "proxy.ListPeersRequest")
+	proto.RegisterType((*ListPeersResponse)(nil), "proxy.ListPeersResponse")
 }
 
 func init() {
@@ -562,46 +879,57 @@ func init() {
 }
 
 var fileDescriptor_b88fd140af4deb6f = []byte{
-	// 620 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x74, 0x94, 0x5d, 0x4f, 0x1b, 0x3b,
-	0x10, 0x86, 0x95, 0x40, 0x72, 0x38, 0x93, 0x4d, 0xc2, 0x31, 0x1f, 0xca, 0x59, 0x71, 0x04, 0xc7,
-	0x17, 0x2d, 0x55, 0x25, 0x84, 0x40, 0x48, 0xbd, 0xed, 0x07, 0x54, 0x15, 0x05, 0x45, 0x5b, 0xa4,
-	0x4a, 0xbd, 0xd9, 0x9a, 0xec, 0x40, 0x22, 0x12, 0x7b, 0x6b, 0x3b, 0x4a, 0xd2, 0x9f, 0xdb, 0x3f,
-	0xd1, 0xdb, 0xca, 0xb3, 0xb3, 0x21, 0x49, 0xe9, 0x5d, 0xf6, 0x99, 0xf7, 0x1d, 0xcf, 0x8c, 0xc7,
-	0x81, 0x68, 0xa2, 0x86, 0x43, 0xf4, 0x47, 0xb9, 0x35, 0xde, 0x88, 0x5a, 0x6e, 0xcd, 0x74, 0x26,
-	0x2f, 0x21, 0xfa, 0x68, 0xee, 0x07, 0x3a, 0xc1, 0x6f, 0x63, 0x74, 0x5e, 0xc4, 0xb0, 0x31, 0xd2,
-	0x38, 0x32, 0x7a, 0xd0, 0xeb, 0x54, 0x0e, 0x2a, 0x87, 0x7f, 0x27, 0xf3, 0x6f, 0xb1, 0x0f, 0x8d,
-	0x61, 0xd0, 0xa6, 0xde, 0x3c, 0xa0, 0xee, 0x54, 0x29, 0x0c, 0x84, 0x6e, 0x02, 0x91, 0x3f, 0x2a,
-	0xd0, 0xe4, 0x6c, 0x2e, 0x37, 0xda, 0x61, 0xb0, 0x8c, 0x1d, 0xda, 0x34, 0x47, 0xb4, 0x1f, 0x32,
-	0xce, 0x08, 0x01, 0x75, 0x89, 0x04, 0x81, 0x36, 0x19, 0x96, 0x02, 0xce, 0x19, 0x10, 0x0b, 0xfe,
-	0x87, 0x88, 0x04, 0x2a, 0xcb, 0x2c, 0x3a, 0xd7, 0x59, 0x23, 0x05, 0x99, 0x5e, 0x17, 0x48, 0x48,
-	0x68, 0xf6, 0xfd, 0xb0, 0x97, 0xde, 0x21, 0xa6, 0x56, 0x79, 0xec, 0xac, 0x1f, 0x54, 0x0e, 0x2b,
-	0x49, 0x23, 0xc0, 0x0b, 0xc4, 0x44, 0x79, 0x14, 0x07, 0x10, 0x91, 0x66, 0xa4, 0xa6, 0x41, 0xd7,
-	0xa9, 0x91, 0x04, 0x02, 0xbb, 0x52, 0xd3, 0x0b, 0x44, 0xf1, 0x0c, 0xda, 0xbd, 0xbe, 0x1a, 0xe8,
-	0x94, 0x8e, 0xf3, 0xb3, 0x1c, 0x3b, 0x75, 0x3a, 0xab, 0x49, 0xf8, 0xda, 0x64, 0x78, 0x33, 0xcb,
-	0x51, 0x22, 0xec, 0xbc, 0xed, 0x2b, 0x7d, 0x8f, 0x5d, 0xe5, 0xdc, 0xc4, 0xd8, 0xac, 0x1c, 0xdd,
-	0x0b, 0xd8, 0xec, 0x8d, 0xad, 0x45, 0xed, 0xd3, 0x9c, 0x43, 0xdc, 0x70, 0x9b, 0x79, 0xe9, 0xa0,
-	0xa6, 0x70, 0xf2, 0x28, 0xab, 0x72, 0x53, 0x38, 0x29, 0x25, 0xf2, 0x18, 0x76, 0x57, 0x8f, 0xe1,
-	0x99, 0xee, 0x42, 0xdd, 0xa2, 0x1b, 0x0f, 0x3d, 0x67, 0xe7, 0x2f, 0xd9, 0xa6, 0xe1, 0x9b, 0xb1,
-	0xe7, 0x82, 0xe4, 0x26, 0xb4, 0x4a, 0x50, 0x58, 0xe5, 0x57, 0x68, 0xbd, 0x47, 0xfd, 0x09, 0x71,
-	0x5e, 0xf4, 0x4b, 0xf8, 0x47, 0xe1, 0x77, 0xc4, 0x8c, 0x8a, 0xc9, 0xfb, 0x56, 0x39, 0xa4, 0xbc,
-	0x51, 0xb2, 0x59, 0x04, 0xba, 0x73, 0x1e, 0xca, 0x76, 0x41, 0x8a, 0xda, 0x5b, 0x93, 0xcf, 0xa8,
-	0xec, 0x28, 0x69, 0x04, 0x76, 0x5e, 0x20, 0x39, 0x84, 0xf6, 0xfc, 0x04, 0xae, 0xf7, 0x18, 0xb6,
-	0x7b, 0x83, 0xbc, 0x8f, 0x36, 0x25, 0xf3, 0xca, 0x7a, 0x89, 0x22, 0x16, 0x1c, 0x57, 0xe5, 0xa2,
-	0x3d, 0x87, 0x36, 0xea, 0x82, 0x63, 0x46, 0x2e, 0x9e, 0x50, 0xeb, 0x11, 0x07, 0x83, 0x3c, 0x03,
-	0x71, 0xee, 0xfc, 0x60, 0xa4, 0x3c, 0x86, 0x8b, 0xe6, 0x9e, 0xf6, 0xa1, 0xd1, 0x33, 0xfa, 0x2e,
-	0xf5, 0xca, 0xde, 0x63, 0x31, 0xa5, 0x5a, 0x02, 0x01, 0xdd, 0x10, 0x91, 0xa7, 0xb0, 0xb5, 0x64,
-	0xe3, 0x42, 0xf7, 0x00, 0x9c, 0xf2, 0x69, 0x8e, 0x36, 0x7d, 0x98, 0x90, 0x6d, 0x2d, 0xd9, 0x70,
-	0xca, 0x77, 0xd1, 0x5e, 0x4e, 0x64, 0x13, 0x1a, 0x61, 0xe1, 0xca, 0xe1, 0x4a, 0x88, 0x8a, 0x4f,
-	0x36, 0x0b, 0x58, 0x0f, 0x2b, 0xca, 0x5d, 0xd1, 0xef, 0x93, 0x9f, 0x55, 0xa8, 0x7f, 0xa6, 0x47,
-	0x27, 0x5e, 0xc1, 0x5f, 0x3c, 0x17, 0xb1, 0x73, 0x44, 0x4f, 0xef, 0x68, 0xf9, 0x26, 0xe2, 0xdd,
-	0x55, 0xcc, 0x89, 0x4f, 0xa0, 0x46, 0x6f, 0x4a, 0x6c, 0xb1, 0x60, 0xf1, 0xbd, 0xc6, 0xdb, 0xcb,
-	0x90, 0x3d, 0x57, 0xd0, 0x5a, 0x5e, 0x1e, 0xb1, 0xc7, 0xba, 0x27, 0x57, 0x37, 0xfe, 0xef, 0x0f,
-	0x51, 0x4e, 0x77, 0x06, 0xf5, 0x62, 0x91, 0xc4, 0xc2, 0x71, 0x8f, 0x8b, 0x16, 0xef, 0xac, 0x50,
-	0xb6, 0xbd, 0x83, 0xc6, 0xc2, 0x98, 0xc5, 0xbf, 0xac, 0xfa, 0xfd, 0xc6, 0xe2, 0xf8, 0xa9, 0x10,
-	0x67, 0x39, 0x85, 0x8d, 0x6b, 0x9c, 0xfa, 0x30, 0x6c, 0x21, 0x58, 0xb7, 0x70, 0x11, 0xf1, 0xd6,
-	0x12, 0x2b, 0x4c, 0x6f, 0xd6, 0xbf, 0x54, 0xf3, 0xdb, 0xdb, 0x3a, 0xfd, 0xd5, 0x9d, 0xfe, 0x0a,
-	0x00, 0x00, 0xff, 0xff, 0x18, 0xc0, 0x75, 0x35, 0xfa, 0x04, 0x00, 0x00,
+	// 786 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xdc, 0x55, 0xdd, 0x6e, 0xeb, 0x44,
+	0x10, 0x96, 0xdb, 0xfc, 0x9d, 0x71, 0xfe, 0xba, 0x39, 0xed, 0x71, 0xad, 0x83, 0x4e, 0xce, 0x5e,
+	0x40, 0x10, 0x52, 0x75, 0xd4, 0xaa, 0x08, 0x6e, 0x90, 0x0a, 0xb4, 0xa8, 0xea, 0x8f, 0x22, 0x53,
+	0x09, 0x89, 0x1b, 0xb3, 0x89, 0xa7, 0x8d, 0xd5, 0xc4, 0x36, 0xbb, 0x1b, 0x25, 0xe1, 0xb9, 0x78,
+	0x22, 0x5e, 0x04, 0xb4, 0xeb, 0x71, 0xe2, 0xa4, 0x85, 0x07, 0xe0, 0x2e, 0xfb, 0xcd, 0xf7, 0xcd,
+	0x9f, 0x67, 0x26, 0xd0, 0x5c, 0x88, 0xe9, 0x14, 0xf5, 0x49, 0x26, 0x53, 0x9d, 0xb2, 0x6a, 0x26,
+	0xd3, 0xe5, 0x8a, 0xdf, 0x40, 0xf3, 0x36, 0x7d, 0x8a, 0x93, 0x00, 0x7f, 0x9f, 0xa3, 0xd2, 0xcc,
+	0x87, 0xc6, 0x2c, 0xc1, 0x59, 0x9a, 0xc4, 0x63, 0xcf, 0xe9, 0x3b, 0x83, 0x37, 0xc1, 0xfa, 0xcd,
+	0x3e, 0x80, 0x3b, 0x35, 0xdc, 0x50, 0xa7, 0xcf, 0x98, 0x78, 0x7b, 0xd6, 0x0c, 0x16, 0x7a, 0x30,
+	0x08, 0xff, 0xcb, 0x81, 0x16, 0x79, 0x53, 0x59, 0x9a, 0x28, 0x34, 0x92, 0xb9, 0x42, 0x19, 0x66,
+	0x88, 0xf2, 0x3a, 0x22, 0x8f, 0x60, 0xa0, 0xa1, 0x45, 0x0c, 0x21, 0x49, 0x23, 0x2c, 0x08, 0xe4,
+	0xd3, 0x40, 0x44, 0xf8, 0x08, 0x4d, 0x4b, 0x10, 0x51, 0x24, 0x51, 0x29, 0x6f, 0xdf, 0x32, 0xac,
+	0xe8, 0x22, 0x87, 0x18, 0x87, 0xd6, 0x44, 0x4f, 0xc7, 0xe1, 0x23, 0x62, 0x28, 0x85, 0x46, 0xaf,
+	0xd2, 0x77, 0x06, 0x4e, 0xe0, 0x1a, 0xf0, 0x0a, 0x31, 0x10, 0x1a, 0x59, 0x1f, 0x9a, 0x96, 0x33,
+	0x13, 0x4b, 0xc3, 0xf3, 0xaa, 0x96, 0x02, 0x06, 0xbb, 0x13, 0xcb, 0x2b, 0x44, 0xf6, 0x39, 0x74,
+	0xc6, 0x13, 0x11, 0x27, 0xa1, 0x0d, 0xa7, 0x57, 0x19, 0x7a, 0x35, 0x1b, 0xab, 0x65, 0xe1, 0xfb,
+	0x34, 0xc2, 0x87, 0x55, 0x86, 0x1c, 0xe1, 0xf0, 0x87, 0x89, 0x48, 0x9e, 0x70, 0x28, 0x94, 0x5a,
+	0xa4, 0x32, 0x2a, 0x5a, 0xf7, 0x25, 0x74, 0xc7, 0x73, 0x29, 0x31, 0xd1, 0x61, 0x46, 0x26, 0x2a,
+	0xb8, 0x43, 0x78, 0xa1, 0xb0, 0x45, 0xe1, 0x62, 0x43, 0xdb, 0xa3, 0xa2, 0x70, 0x51, 0x50, 0xf8,
+	0x27, 0x38, 0xda, 0x0d, 0x43, 0x3d, 0x3d, 0x82, 0x9a, 0x44, 0x35, 0x9f, 0x6a, 0xf2, 0x4e, 0x2f,
+	0xde, 0xb1, 0xcd, 0x4f, 0xe7, 0x9a, 0x12, 0xe2, 0x5d, 0x68, 0x17, 0x40, 0x2e, 0xe5, 0xbf, 0x41,
+	0xfb, 0x27, 0x4c, 0x7e, 0x46, 0x5c, 0x27, 0xfd, 0x15, 0x1c, 0x08, 0xfc, 0x03, 0x31, 0xb2, 0xc9,
+	0x64, 0x13, 0x29, 0x14, 0x5a, 0xbf, 0xcd, 0xa0, 0x9b, 0x1b, 0x86, 0x6b, 0xdc, 0xa4, 0xad, 0x0c,
+	0x15, 0x13, 0x2d, 0xd3, 0x6c, 0x65, 0xd3, 0x6e, 0x06, 0xae, 0xc1, 0x2e, 0x73, 0x88, 0x4f, 0xa1,
+	0xb3, 0x8e, 0x40, 0xf9, 0x7e, 0x82, 0xb7, 0xe3, 0x38, 0x9b, 0xa0, 0x0c, 0xad, 0x78, 0x67, 0xbc,
+	0x58, 0x6e, 0x33, 0x8a, 0xbb, 0x62, 0xd0, 0xbe, 0x80, 0x0e, 0x26, 0x39, 0x8e, 0x91, 0x55, 0x51,
+	0x87, 0xda, 0x1b, 0xd8, 0x08, 0xf8, 0x39, 0xb0, 0x4b, 0xa5, 0xe3, 0x99, 0xd0, 0x68, 0x3e, 0x34,
+	0xd5, 0xf4, 0x01, 0xdc, 0x71, 0x9a, 0x3c, 0x86, 0x5a, 0xc8, 0x27, 0xcc, 0xbb, 0x54, 0x0d, 0xc0,
+	0x40, 0x0f, 0x16, 0xe1, 0x67, 0xd0, 0xdb, 0x92, 0x51, 0xa2, 0xef, 0x01, 0x94, 0xd0, 0x61, 0x86,
+	0x32, 0x7c, 0x5e, 0x58, 0xd9, 0x7e, 0xd0, 0x50, 0x42, 0x0f, 0x51, 0xde, 0x2c, 0x78, 0x0b, 0x5c,
+	0x33, 0x70, 0x45, 0x73, 0x39, 0x34, 0xf3, 0x27, 0x89, 0x19, 0x54, 0xcc, 0x88, 0x52, 0x55, 0xf6,
+	0x37, 0xef, 0xc1, 0xc1, 0x3d, 0x2e, 0x68, 0x4c, 0x0b, 0xe1, 0x00, 0x58, 0x19, 0xfc, 0x0f, 0x79,
+	0xd7, 0x7c, 0x2d, 0x7d, 0x9d, 0x3c, 0xa6, 0x85, 0xf6, 0x6f, 0xc7, 0xb4, 0x97, 0xa0, 0xff, 0xed,
+	0x8a, 0xb1, 0x63, 0x68, 0xc4, 0x2a, 0x14, 0xd1, 0x2c, 0x4e, 0xbc, 0x7a, 0xdf, 0x19, 0x34, 0x82,
+	0x7a, 0xac, 0x2e, 0xcc, 0x93, 0x7f, 0x0b, 0x15, 0x93, 0x35, 0x7b, 0x07, 0xf5, 0x6c, 0x3e, 0x0a,
+	0x9f, 0x71, 0x55, 0x6c, 0x41, 0x36, 0x1f, 0xdd, 0xe0, 0x8a, 0x79, 0x50, 0x2f, 0xea, 0xc8, 0x2b,
+	0x2d, 0x9e, 0x9c, 0x41, 0xf7, 0x36, 0x56, 0xda, 0xc8, 0xd7, 0x1f, 0xe3, 0x6b, 0x38, 0x28, 0x61,
+	0xd4, 0xd1, 0x8f, 0x50, 0x35, 0xbd, 0x52, 0x9e, 0xd3, 0xdf, 0x1f, 0xb8, 0xa7, 0xee, 0x89, 0x3d,
+	0x95, 0x27, 0x86, 0x14, 0xe4, 0x96, 0xd3, 0x3f, 0x2b, 0x50, 0xfb, 0xc5, 0x9e, 0x53, 0xf6, 0x1d,
+	0xbc, 0x59, 0xbb, 0x60, 0xef, 0x88, 0xbb, 0x1b, 0xc8, 0xf7, 0x5e, 0x1a, 0x28, 0xda, 0x37, 0x50,
+	0xa7, 0x8d, 0x61, 0x87, 0x44, 0xda, 0xde, 0x51, 0xff, 0x68, 0x17, 0x26, 0xe5, 0x29, 0x54, 0xed,
+	0xb5, 0x65, 0xbd, 0xc2, 0x79, 0xe9, 0x92, 0xfb, 0x6f, 0xb7, 0x41, 0xd2, 0xdc, 0x41, 0x7b, 0xfb,
+	0xac, 0xb0, 0xf7, 0xc4, 0x7b, 0xf5, 0xa8, 0xf9, 0x9f, 0xfd, 0x8b, 0x95, 0xdc, 0x9d, 0x43, 0x2d,
+	0x3f, 0x31, 0xac, 0x14, 0x6e, 0x73, 0x82, 0xfc, 0xc3, 0x1d, 0x94, 0x64, 0x3f, 0x82, 0x5b, 0x5a,
+	0x40, 0x76, 0x4c, 0xac, 0x97, 0xbb, 0xec, 0xfb, 0xaf, 0x99, 0xca, 0x9d, 0xb3, 0xcb, 0x50, 0xea,
+	0x5c, 0x79, 0x5f, 0x4a, 0x9d, 0xdb, 0xde, 0x99, 0x33, 0x68, 0xdc, 0xe3, 0x52, 0x9b, 0xe9, 0x66,
+	0x8c, 0x38, 0xa5, 0xe5, 0xf6, 0x7b, 0x5b, 0x18, 0x89, 0x2e, 0x00, 0x36, 0x8b, 0xcb, 0x8a, 0x0f,
+	0xfa, 0x62, 0xc1, 0xfd, 0xe3, 0x57, 0x2c, 0xb9, 0x8b, 0xef, 0x2b, 0xbf, 0xee, 0x65, 0xa3, 0x51,
+	0xcd, 0xfe, 0x03, 0x9f, 0xfd, 0x13, 0x00, 0x00, 0xff, 0xff, 0x99, 0x39, 0x25, 0x27, 0x91, 0x07,
+	0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -616,14 +944,17 @@ const _ = grpc.SupportPackageIsVersion6
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type WalletClient interface {
+	ListPeers(ctx context.Context, in *ListPeersRequest, opts ...grpc.CallOption) (*ListPeersResponse, error)
 	GenSeed(ctx context.Context, in *GenSeedRequest, opts ...grpc.CallOption) (*GenSeedResponse, error)
 	Login(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*LoginResponse, error)
 	ChangePassword(ctx context.Context, in *ChangePasswordRequest, opts ...grpc.CallOption) (*ChangePasswordResponse, error)
 	Logout(ctx context.Context, in *LogoutRequest, opts ...grpc.CallOption) (*LogoutResponse, error)
 	EstimateFee(ctx context.Context, in *EstimateFeeRequest, opts ...grpc.CallOption) (*EstimateFeeResponse, error)
+	GetInfo(ctx context.Context, in *GetInfoRequest, opts ...grpc.CallOption) (*GetInfoResponse, error)
 	//
 	//NextAddr returns the next unused address within the wallet.
 	NextAddr(ctx context.Context, in *AddrRequest, opts ...grpc.CallOption) (*AddrResponse, error)
+	NewAddress(ctx context.Context, in *NewAddressRequest, opts ...grpc.CallOption) (*NewAddressResponse, error)
 }
 
 type walletClient struct {
@@ -632,6 +963,15 @@ type walletClient struct {
 
 func NewWalletClient(cc grpc.ClientConnInterface) WalletClient {
 	return &walletClient{cc}
+}
+
+func (c *walletClient) ListPeers(ctx context.Context, in *ListPeersRequest, opts ...grpc.CallOption) (*ListPeersResponse, error) {
+	out := new(ListPeersResponse)
+	err := c.cc.Invoke(ctx, "/proxy.Wallet/ListPeers", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *walletClient) GenSeed(ctx context.Context, in *GenSeedRequest, opts ...grpc.CallOption) (*GenSeedResponse, error) {
@@ -679,6 +1019,15 @@ func (c *walletClient) EstimateFee(ctx context.Context, in *EstimateFeeRequest, 
 	return out, nil
 }
 
+func (c *walletClient) GetInfo(ctx context.Context, in *GetInfoRequest, opts ...grpc.CallOption) (*GetInfoResponse, error) {
+	out := new(GetInfoResponse)
+	err := c.cc.Invoke(ctx, "/proxy.Wallet/GetInfo", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *walletClient) NextAddr(ctx context.Context, in *AddrRequest, opts ...grpc.CallOption) (*AddrResponse, error) {
 	out := new(AddrResponse)
 	err := c.cc.Invoke(ctx, "/proxy.Wallet/NextAddr", in, out, opts...)
@@ -688,22 +1037,37 @@ func (c *walletClient) NextAddr(ctx context.Context, in *AddrRequest, opts ...gr
 	return out, nil
 }
 
+func (c *walletClient) NewAddress(ctx context.Context, in *NewAddressRequest, opts ...grpc.CallOption) (*NewAddressResponse, error) {
+	out := new(NewAddressResponse)
+	err := c.cc.Invoke(ctx, "/proxy.Wallet/NewAddress", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // WalletServer is the server API for Wallet service.
 type WalletServer interface {
+	ListPeers(context.Context, *ListPeersRequest) (*ListPeersResponse, error)
 	GenSeed(context.Context, *GenSeedRequest) (*GenSeedResponse, error)
 	Login(context.Context, *LoginRequest) (*LoginResponse, error)
 	ChangePassword(context.Context, *ChangePasswordRequest) (*ChangePasswordResponse, error)
 	Logout(context.Context, *LogoutRequest) (*LogoutResponse, error)
 	EstimateFee(context.Context, *EstimateFeeRequest) (*EstimateFeeResponse, error)
+	GetInfo(context.Context, *GetInfoRequest) (*GetInfoResponse, error)
 	//
 	//NextAddr returns the next unused address within the wallet.
 	NextAddr(context.Context, *AddrRequest) (*AddrResponse, error)
+	NewAddress(context.Context, *NewAddressRequest) (*NewAddressResponse, error)
 }
 
 // UnimplementedWalletServer can be embedded to have forward compatible implementations.
 type UnimplementedWalletServer struct {
 }
 
+func (*UnimplementedWalletServer) ListPeers(ctx context.Context, req *ListPeersRequest) (*ListPeersResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListPeers not implemented")
+}
 func (*UnimplementedWalletServer) GenSeed(ctx context.Context, req *GenSeedRequest) (*GenSeedResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GenSeed not implemented")
 }
@@ -719,12 +1083,36 @@ func (*UnimplementedWalletServer) Logout(ctx context.Context, req *LogoutRequest
 func (*UnimplementedWalletServer) EstimateFee(ctx context.Context, req *EstimateFeeRequest) (*EstimateFeeResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method EstimateFee not implemented")
 }
+func (*UnimplementedWalletServer) GetInfo(ctx context.Context, req *GetInfoRequest) (*GetInfoResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetInfo not implemented")
+}
 func (*UnimplementedWalletServer) NextAddr(ctx context.Context, req *AddrRequest) (*AddrResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method NextAddr not implemented")
+}
+func (*UnimplementedWalletServer) NewAddress(ctx context.Context, req *NewAddressRequest) (*NewAddressResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method NewAddress not implemented")
 }
 
 func RegisterWalletServer(s *grpc.Server, srv WalletServer) {
 	s.RegisterService(&_Wallet_serviceDesc, srv)
+}
+
+func _Wallet_ListPeers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListPeersRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WalletServer).ListPeers(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/proxy.Wallet/ListPeers",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WalletServer).ListPeers(ctx, req.(*ListPeersRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _Wallet_GenSeed_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -817,6 +1205,24 @@ func _Wallet_EstimateFee_Handler(srv interface{}, ctx context.Context, dec func(
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Wallet_GetInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetInfoRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WalletServer).GetInfo(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/proxy.Wallet/GetInfo",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WalletServer).GetInfo(ctx, req.(*GetInfoRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Wallet_NextAddr_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(AddrRequest)
 	if err := dec(in); err != nil {
@@ -835,10 +1241,32 @@ func _Wallet_NextAddr_Handler(srv interface{}, ctx context.Context, dec func(int
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Wallet_NewAddress_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(NewAddressRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WalletServer).NewAddress(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/proxy.Wallet/NewAddress",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WalletServer).NewAddress(ctx, req.(*NewAddressRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _Wallet_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "proxy.Wallet",
 	HandlerType: (*WalletServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "ListPeers",
+			Handler:    _Wallet_ListPeers_Handler,
+		},
 		{
 			MethodName: "GenSeed",
 			Handler:    _Wallet_GenSeed_Handler,
@@ -860,8 +1288,16 @@ var _Wallet_serviceDesc = grpc.ServiceDesc{
 			Handler:    _Wallet_EstimateFee_Handler,
 		},
 		{
+			MethodName: "GetInfo",
+			Handler:    _Wallet_GetInfo_Handler,
+		},
+		{
 			MethodName: "NextAddr",
 			Handler:    _Wallet_NextAddr_Handler,
+		},
+		{
+			MethodName: "NewAddress",
+			Handler:    _Wallet_NewAddress_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -9,12 +9,14 @@ import (
 )
 
 func TestOpenChannel(t *testing.T) {
+
 	client, conn := getClient()
 	defer conn.Close()
+
 	channelResponse, err := client.OpenChannel(context.Background(), &proxy.OpenChannelRequest{
 		RecipientInfo: &proxy.RecipientNodeInfo{
-			RecipientNodePeerId: "QmZPzUh7Q6PQg6gXB4XheaoZMMhHA9JNeCrJsp3FWjFrAF",
-			RecipientUserPeerId: "a5f24dc5d5414d961bba98c98624b87222da3984b324bcab7cfd7fd63aee33b3"},
+		RecipientNodePeerId: "QmccE4s2uhEXrJXE778NChn1ed8NyWNyAHH23mP7f9NM3L",
+		RecipientUserPeerId: "63167817c979ade9e42f3204404c1513a4b1b4e9eea654c9498ed9cc920dbb36"},
 		NodePubkeyString: "023769b549838e48db217c4d2a8bbeb199c5dbf63dfa38649b6bc2bb18261d7454",
 		NodePubkeyIndex:  1,
 		Private:          false,
@@ -33,6 +35,21 @@ func TestListChannels(t *testing.T) {
 		ActiveOnly: true,
 		PageIndex:  1,
 		PageSize:   10,
+	})
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	marshal, _ := json.Marshal(resp)
+	log.Println(string(marshal))
+}
+
+func TestPendingChannels(t *testing.T) {
+	client, conn := getClient()
+	defer conn.Close()
+	resp, err := client.PendingChannels(context.Background(), &proxy.PendingChannelsRequest{
+		PageIndex: 1,
+		PageSize:  10,
 	})
 	if err != nil {
 		log.Println(err)
@@ -62,10 +79,24 @@ func TestGetTransactionsByChannelId(t *testing.T) {
 	defer conn.Close()
 
 	resp, err := client.GetTransactions(context.Background(), &proxy.GetTransactionsRequest{
-		ChannelId: "ce7d6a2a15093b80bc9ce12d53c49070ff00bc9e522bf3b40d384cf0c5f5fcc3",
-		PageSize:  10,
+		ChannelId: "343a94dd76703596b6b001a7751abfaa6afe27af196259b5e419ae17928aefdb",
+		PageSize:  20,
 		PageIndex: 1,
 	})
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	marshal, _ := json.Marshal(resp)
+	log.Println(string(marshal))
+}
+
+func TestChannelBalance(t *testing.T) {
+
+	client, conn := getClient()
+	defer conn.Close()
+
+	resp, err := client.ChannelBalance(context.Background(), &proxy.ChannelBalanceRequest{})
 	if err != nil {
 		log.Println(err)
 		return

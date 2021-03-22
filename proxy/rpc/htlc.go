@@ -6,7 +6,9 @@ import (
 	"errors"
 	"github.com/omnilaboratory/obd/bean"
 	"github.com/omnilaboratory/obd/bean/enum"
+	"github.com/omnilaboratory/obd/dao"
 	"github.com/omnilaboratory/obd/proxy/pb"
+	"github.com/omnilaboratory/obd/service"
 	"github.com/omnilaboratory/obd/tool"
 	"log"
 )
@@ -99,8 +101,39 @@ func (s *RpcServer) ParseInvoice(ctx context.Context, in *pb.ParseInvoiceRequest
 	}
 	return resp, nil
 }
+func (s *RpcServer) ListInvoices(ctx context.Context, in *pb.ListInvoiceRequest) (*pb.ListInvoiceResponse, error) {
+	log.Println("ParseInvoice")
+	_, err := checkLogin()
+	if err != nil {
+		return nil, err
+	}
 
-func (s *RpcServer) SendPayment(ctx context.Context, in *pb.SendPaymentRequest) (*pb.PaymentResp, error) {
+	infoBytes, _ := json.Marshal(in)
+
+	data, err := service.HtlcQueryTxManager.ListInvoices(string(infoBytes), *obcClient.User)
+	if err != nil {
+		return nil, err
+	}
+
+	resp := &pb.ListInvoiceResponse{
+		FirstIndexOffset: uint64(data["first_index_offset"].(int64)),
+		LastIndexOffset:  uint64(data["last_index_offset"].(int64)),
+	}
+	invoices := data["invoices"].([]dao.InvoiceInfo)
+	for _, item := range invoices {
+		invoice := &pb.Invoice{}
+		invoice.PropertyId = item.Detail.PropertyId
+		invoice.Value = item.Detail.Amount
+		invoice.Private = item.Detail.IsPrivate
+		invoice.CltvExpiry = item.Detail.ExpiryTime.String()
+		invoice.Memo = item.Detail.Description
+		invoice.PaymentRequest = item.Invoice
+		resp.Invoices = append(resp.Invoices, invoice)
+	}
+	return resp, nil
+}
+
+func (s *RpcServer) SendPayment(ctx context.Context, in *pb.SendRequest) (*pb.SendResponse, error) {
 	log.Println("SendPayment")
 	_, err := checkLogin()
 	if err != nil {
@@ -138,7 +171,7 @@ func (s *RpcServer) SendPayment(ctx context.Context, in *pb.SendPaymentRequest) 
 	}
 
 	dataResult := replyMessage.Result.(map[string]interface{})
-	resp := &pb.PaymentResp{
+	resp := &pb.SendResponse{
 		PaymentHash:     dataResult["htlc_routing_packet"].(string),
 		PaymentPreimage: dataResult["htlc_h"].(string),
 		AmountToRsmc:    dataResult["amount_to_rsmc"].(float64),

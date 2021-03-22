@@ -30,6 +30,7 @@ type Invoice struct {
 	Memo                 string   `protobuf:"bytes,3,opt,name=memo,proto3" json:"memo,omitempty"`
 	CltvExpiry           string   `protobuf:"bytes,4,opt,name=cltv_expiry,json=cltvExpiry,proto3" json:"cltv_expiry,omitempty"`
 	Private              bool     `protobuf:"varint,5,opt,name=private,proto3" json:"private,omitempty"`
+	PaymentRequest       string   `protobuf:"bytes,6,opt,name=payment_request,json=paymentRequest,proto3" json:"payment_request,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -93,6 +94,13 @@ func (m *Invoice) GetPrivate() bool {
 		return m.Private
 	}
 	return false
+}
+
+func (m *Invoice) GetPaymentRequest() string {
+	if m != nil {
+		return m.PaymentRequest
+	}
+	return ""
 }
 
 type AddInvoiceResponse struct {
@@ -268,7 +276,7 @@ func (m *ParseInvoiceResponse) GetRecipientUserPeerId() string {
 	return ""
 }
 
-type SendPaymentRequest struct {
+type SendRequest struct {
 	PaymentRequest       string                `protobuf:"bytes,1,opt,name=payment_request,json=paymentRequest,proto3" json:"payment_request,omitempty"`
 	InvoiceDetail        *ParseInvoiceResponse `protobuf:"bytes,2,opt,name=invoice_detail,json=invoiceDetail,proto3" json:"invoice_detail,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}              `json:"-"`
@@ -276,46 +284,46 @@ type SendPaymentRequest struct {
 	XXX_sizecache        int32                 `json:"-"`
 }
 
-func (m *SendPaymentRequest) Reset()         { *m = SendPaymentRequest{} }
-func (m *SendPaymentRequest) String() string { return proto.CompactTextString(m) }
-func (*SendPaymentRequest) ProtoMessage()    {}
-func (*SendPaymentRequest) Descriptor() ([]byte, []int) {
+func (m *SendRequest) Reset()         { *m = SendRequest{} }
+func (m *SendRequest) String() string { return proto.CompactTextString(m) }
+func (*SendRequest) ProtoMessage()    {}
+func (*SendRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_ba4445548e82dcd3, []int{4}
 }
 
-func (m *SendPaymentRequest) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_SendPaymentRequest.Unmarshal(m, b)
+func (m *SendRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_SendRequest.Unmarshal(m, b)
 }
-func (m *SendPaymentRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_SendPaymentRequest.Marshal(b, m, deterministic)
+func (m *SendRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_SendRequest.Marshal(b, m, deterministic)
 }
-func (m *SendPaymentRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_SendPaymentRequest.Merge(m, src)
+func (m *SendRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SendRequest.Merge(m, src)
 }
-func (m *SendPaymentRequest) XXX_Size() int {
-	return xxx_messageInfo_SendPaymentRequest.Size(m)
+func (m *SendRequest) XXX_Size() int {
+	return xxx_messageInfo_SendRequest.Size(m)
 }
-func (m *SendPaymentRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_SendPaymentRequest.DiscardUnknown(m)
+func (m *SendRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_SendRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_SendPaymentRequest proto.InternalMessageInfo
+var xxx_messageInfo_SendRequest proto.InternalMessageInfo
 
-func (m *SendPaymentRequest) GetPaymentRequest() string {
+func (m *SendRequest) GetPaymentRequest() string {
 	if m != nil {
 		return m.PaymentRequest
 	}
 	return ""
 }
 
-func (m *SendPaymentRequest) GetInvoiceDetail() *ParseInvoiceResponse {
+func (m *SendRequest) GetInvoiceDetail() *ParseInvoiceResponse {
 	if m != nil {
 		return m.InvoiceDetail
 	}
 	return nil
 }
 
-type PaymentResp struct {
+type SendResponse struct {
 	PaymentHash          string   `protobuf:"bytes,1,opt,name=payment_hash,json=paymentHash,proto3" json:"payment_hash,omitempty"`
 	PaymentPreimage      string   `protobuf:"bytes,2,opt,name=payment_preimage,json=paymentPreimage,proto3" json:"payment_preimage,omitempty"`
 	AmountToRsmc         float64  `protobuf:"fixed64,3,opt,name=amount_to_rsmc,json=amountToRsmc,proto3" json:"amount_to_rsmc,omitempty"`
@@ -326,62 +334,188 @@ type PaymentResp struct {
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *PaymentResp) Reset()         { *m = PaymentResp{} }
-func (m *PaymentResp) String() string { return proto.CompactTextString(m) }
-func (*PaymentResp) ProtoMessage()    {}
-func (*PaymentResp) Descriptor() ([]byte, []int) {
+func (m *SendResponse) Reset()         { *m = SendResponse{} }
+func (m *SendResponse) String() string { return proto.CompactTextString(m) }
+func (*SendResponse) ProtoMessage()    {}
+func (*SendResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_ba4445548e82dcd3, []int{5}
 }
 
-func (m *PaymentResp) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_PaymentResp.Unmarshal(m, b)
+func (m *SendResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_SendResponse.Unmarshal(m, b)
 }
-func (m *PaymentResp) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_PaymentResp.Marshal(b, m, deterministic)
+func (m *SendResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_SendResponse.Marshal(b, m, deterministic)
 }
-func (m *PaymentResp) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_PaymentResp.Merge(m, src)
+func (m *SendResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SendResponse.Merge(m, src)
 }
-func (m *PaymentResp) XXX_Size() int {
-	return xxx_messageInfo_PaymentResp.Size(m)
+func (m *SendResponse) XXX_Size() int {
+	return xxx_messageInfo_SendResponse.Size(m)
 }
-func (m *PaymentResp) XXX_DiscardUnknown() {
-	xxx_messageInfo_PaymentResp.DiscardUnknown(m)
+func (m *SendResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_SendResponse.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_PaymentResp proto.InternalMessageInfo
+var xxx_messageInfo_SendResponse proto.InternalMessageInfo
 
-func (m *PaymentResp) GetPaymentHash() string {
+func (m *SendResponse) GetPaymentHash() string {
 	if m != nil {
 		return m.PaymentHash
 	}
 	return ""
 }
 
-func (m *PaymentResp) GetPaymentPreimage() string {
+func (m *SendResponse) GetPaymentPreimage() string {
 	if m != nil {
 		return m.PaymentPreimage
 	}
 	return ""
 }
 
-func (m *PaymentResp) GetAmountToRsmc() float64 {
+func (m *SendResponse) GetAmountToRsmc() float64 {
 	if m != nil {
 		return m.AmountToRsmc
 	}
 	return 0
 }
 
-func (m *PaymentResp) GetAmountToHtlc() float64 {
+func (m *SendResponse) GetAmountToHtlc() float64 {
 	if m != nil {
 		return m.AmountToHtlc
 	}
 	return 0
 }
 
-func (m *PaymentResp) GetAmountToCounterparty() float64 {
+func (m *SendResponse) GetAmountToCounterparty() float64 {
 	if m != nil {
 		return m.AmountToCounterparty
+	}
+	return 0
+}
+
+type ListInvoiceRequest struct {
+	//
+	//The index of an invoice that will be used as either the start or end of a
+	//query to determine which invoices should be returned in the response.
+	IndexOffset uint64 `protobuf:"varint,1,opt,name=index_offset,json=indexOffset,proto3" json:"index_offset,omitempty"`
+	// The max number of invoices to return in the response to this query.
+	NumMaxInvoices uint64 `protobuf:"varint,2,opt,name=num_max_invoices,json=numMaxInvoices,proto3" json:"num_max_invoices,omitempty"`
+	//
+	//If set, the invoices returned will result from seeking backwards from the
+	//specified index offset. This can be used to paginate backwards.
+	Reversed             bool     `protobuf:"varint,3,opt,name=reversed,proto3" json:"reversed,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *ListInvoiceRequest) Reset()         { *m = ListInvoiceRequest{} }
+func (m *ListInvoiceRequest) String() string { return proto.CompactTextString(m) }
+func (*ListInvoiceRequest) ProtoMessage()    {}
+func (*ListInvoiceRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ba4445548e82dcd3, []int{6}
+}
+
+func (m *ListInvoiceRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ListInvoiceRequest.Unmarshal(m, b)
+}
+func (m *ListInvoiceRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ListInvoiceRequest.Marshal(b, m, deterministic)
+}
+func (m *ListInvoiceRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListInvoiceRequest.Merge(m, src)
+}
+func (m *ListInvoiceRequest) XXX_Size() int {
+	return xxx_messageInfo_ListInvoiceRequest.Size(m)
+}
+func (m *ListInvoiceRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListInvoiceRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ListInvoiceRequest proto.InternalMessageInfo
+
+func (m *ListInvoiceRequest) GetIndexOffset() uint64 {
+	if m != nil {
+		return m.IndexOffset
+	}
+	return 0
+}
+
+func (m *ListInvoiceRequest) GetNumMaxInvoices() uint64 {
+	if m != nil {
+		return m.NumMaxInvoices
+	}
+	return 0
+}
+
+func (m *ListInvoiceRequest) GetReversed() bool {
+	if m != nil {
+		return m.Reversed
+	}
+	return false
+}
+
+type ListInvoiceResponse struct {
+	//
+	//A list of invoices from the time slice of the time series specified in the
+	//request.
+	Invoices []*Invoice `protobuf:"bytes,1,rep,name=invoices,proto3" json:"invoices,omitempty"`
+	//
+	//The index of the last item in the set of returned invoices. This can be used
+	//to seek further, pagination style.
+	LastIndexOffset uint64 `protobuf:"varint,2,opt,name=last_index_offset,json=lastIndexOffset,proto3" json:"last_index_offset,omitempty"`
+	//
+	//The index of the last item in the set of returned invoices. This can be used
+	//to seek backwards, pagination style.
+	FirstIndexOffset     uint64   `protobuf:"varint,3,opt,name=first_index_offset,json=firstIndexOffset,proto3" json:"first_index_offset,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *ListInvoiceResponse) Reset()         { *m = ListInvoiceResponse{} }
+func (m *ListInvoiceResponse) String() string { return proto.CompactTextString(m) }
+func (*ListInvoiceResponse) ProtoMessage()    {}
+func (*ListInvoiceResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ba4445548e82dcd3, []int{7}
+}
+
+func (m *ListInvoiceResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ListInvoiceResponse.Unmarshal(m, b)
+}
+func (m *ListInvoiceResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ListInvoiceResponse.Marshal(b, m, deterministic)
+}
+func (m *ListInvoiceResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListInvoiceResponse.Merge(m, src)
+}
+func (m *ListInvoiceResponse) XXX_Size() int {
+	return xxx_messageInfo_ListInvoiceResponse.Size(m)
+}
+func (m *ListInvoiceResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListInvoiceResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ListInvoiceResponse proto.InternalMessageInfo
+
+func (m *ListInvoiceResponse) GetInvoices() []*Invoice {
+	if m != nil {
+		return m.Invoices
+	}
+	return nil
+}
+
+func (m *ListInvoiceResponse) GetLastIndexOffset() uint64 {
+	if m != nil {
+		return m.LastIndexOffset
+	}
+	return 0
+}
+
+func (m *ListInvoiceResponse) GetFirstIndexOffset() uint64 {
+	if m != nil {
+		return m.FirstIndexOffset
 	}
 	return 0
 }
@@ -391,8 +525,10 @@ func init() {
 	proto.RegisterType((*AddInvoiceResponse)(nil), "proxy.AddInvoiceResponse")
 	proto.RegisterType((*ParseInvoiceRequest)(nil), "proxy.ParseInvoiceRequest")
 	proto.RegisterType((*ParseInvoiceResponse)(nil), "proxy.ParseInvoiceResponse")
-	proto.RegisterType((*SendPaymentRequest)(nil), "proxy.SendPaymentRequest")
-	proto.RegisterType((*PaymentResp)(nil), "proxy.PaymentResp")
+	proto.RegisterType((*SendRequest)(nil), "proxy.SendRequest")
+	proto.RegisterType((*SendResponse)(nil), "proxy.SendResponse")
+	proto.RegisterType((*ListInvoiceRequest)(nil), "proxy.ListInvoiceRequest")
+	proto.RegisterType((*ListInvoiceResponse)(nil), "proxy.ListInvoiceResponse")
 }
 
 func init() {
@@ -400,39 +536,47 @@ func init() {
 }
 
 var fileDescriptor_ba4445548e82dcd3 = []byte{
-	// 499 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xcc, 0x54, 0xc1, 0x6e, 0xd3, 0x40,
-	0x10, 0xd5, 0xa6, 0x49, 0xd3, 0x4c, 0x42, 0x40, 0xd3, 0xa8, 0x32, 0xe1, 0x40, 0x88, 0x90, 0x08,
-	0x97, 0x1c, 0x5a, 0x24, 0x2e, 0x80, 0x44, 0x01, 0xd1, 0x5c, 0x50, 0xb4, 0xc0, 0x85, 0x8b, 0xb5,
-	0xb5, 0x47, 0xd8, 0x52, 0xec, 0x5d, 0x76, 0x37, 0x51, 0x7d, 0xe4, 0x0b, 0xb8, 0xf0, 0x4d, 0xfc,
-	0x05, 0xff, 0x82, 0xbc, 0x5e, 0xbb, 0x09, 0x44, 0xa8, 0xc7, 0xde, 0x76, 0xde, 0xce, 0x9b, 0x19,
-	0xbf, 0xb7, 0x63, 0x80, 0xc4, 0xae, 0xa2, 0xb9, 0xd2, 0xd2, 0x4a, 0xec, 0x28, 0x2d, 0xaf, 0x8a,
-	0xe9, 0x0f, 0x06, 0xdd, 0x45, 0xbe, 0x91, 0x69, 0x44, 0xf8, 0x10, 0xfa, 0x4a, 0x4b, 0x45, 0xda,
-	0x16, 0x61, 0x1a, 0x07, 0x6c, 0xc2, 0x66, 0x07, 0x1c, 0x6a, 0x68, 0x11, 0xe3, 0x08, 0x3a, 0x1b,
-	0xb1, 0x5a, 0x53, 0xd0, 0x9a, 0xb0, 0x19, 0xe3, 0x55, 0x80, 0x08, 0xed, 0x8c, 0x32, 0x19, 0x1c,
-	0x4c, 0xd8, 0xac, 0xc7, 0xdd, 0xb9, 0x2c, 0x15, 0xad, 0xec, 0x26, 0xa4, 0x2b, 0x95, 0xea, 0x22,
-	0x68, 0xbb, 0x2b, 0x28, 0xa1, 0x77, 0x0e, 0xc1, 0x00, 0xba, 0x4a, 0xa7, 0x1b, 0x61, 0x29, 0xe8,
-	0x4c, 0xd8, 0xec, 0x88, 0xd7, 0xe1, 0xf4, 0x25, 0xe0, 0xeb, 0x38, 0xf6, 0x33, 0x71, 0x32, 0x4a,
-	0xe6, 0x86, 0xf0, 0x09, 0xdc, 0x55, 0xa2, 0xc8, 0x28, 0xb7, 0xa1, 0xa6, 0x6f, 0x6b, 0x32, 0xd6,
-	0xcd, 0xd7, 0xe3, 0x43, 0x0f, 0xf3, 0x0a, 0x9d, 0xbe, 0x82, 0xe3, 0xa5, 0xd0, 0x86, 0x9a, 0x02,
-	0x0e, 0xbe, 0x39, 0xff, 0x67, 0x0b, 0x46, 0xbb, 0x05, 0xfc, 0x04, 0xb7, 0x42, 0x1d, 0x1c, 0x00,
-	0x4b, 0x82, 0x43, 0x47, 0x60, 0x09, 0x9e, 0xc1, 0x89, 0xa6, 0x28, 0x55, 0x69, 0xf9, 0x5d, 0xb9,
-	0x8c, 0x29, 0x54, 0x44, 0xba, 0x1c, 0xaf, 0xeb, 0x52, 0x8e, 0x9b, 0xdb, 0x0f, 0x32, 0xa6, 0x25,
-	0x91, 0x5e, 0xc4, 0xbb, 0xa4, 0xb5, 0x21, 0xdd, 0x90, 0x8e, 0xfe, 0x22, 0x7d, 0x36, 0xa4, 0x2b,
-	0xd2, 0xf4, 0x3b, 0x03, 0xfc, 0x48, 0x79, 0xbc, 0xdc, 0x51, 0xeb, 0xc6, 0xb2, 0xe2, 0x39, 0x0c,
-	0xd3, 0x4a, 0xd0, 0x30, 0x26, 0x2b, 0xd2, 0x95, 0x53, 0xa9, 0x7f, 0xfa, 0x60, 0xee, 0xde, 0xe1,
-	0x7c, 0x9f, 0xe4, 0xfc, 0x8e, 0xa7, 0xbc, 0x75, 0x8c, 0xe9, 0x6f, 0x06, 0xfd, 0xa6, 0xbf, 0x51,
-	0xf8, 0x08, 0x06, 0x75, 0xf3, 0x44, 0x98, 0xc4, 0x77, 0xee, 0x7b, 0xec, 0x42, 0x98, 0x04, 0x9f,
-	0xc2, 0xbd, 0x3a, 0x45, 0x69, 0x4a, 0x33, 0xf1, 0xb5, 0xb2, 0xa7, 0xc7, 0xeb, 0xb9, 0x97, 0x1e,
-	0xc6, 0xc7, 0x30, 0x14, 0x99, 0x5c, 0xe7, 0x36, 0xb4, 0x32, 0xd4, 0x26, 0x8b, 0x9c, 0x65, 0x8c,
-	0x0f, 0x2a, 0xf4, 0x93, 0xe4, 0x26, 0x8b, 0x76, 0xb3, 0xca, 0x75, 0x72, 0xee, 0x6d, 0x65, 0x5d,
-	0xd8, 0x55, 0x84, 0xcf, 0xe0, 0xe4, 0x3a, 0x2b, 0x2a, 0x0f, 0xa4, 0x95, 0xd0, 0xb6, 0x70, 0x76,
-	0x32, 0x3e, 0xaa, 0xb3, 0xdf, 0x6c, 0xdd, 0x9d, 0xfe, 0x62, 0xd0, 0x76, 0xf4, 0xe7, 0x00, 0xd7,
-	0x2b, 0x80, 0x43, 0x2f, 0x91, 0x8f, 0xc7, 0xf7, 0x7d, 0xbc, 0x67, 0x4b, 0xde, 0xc3, 0x60, 0x5b,
-	0x48, 0x1c, 0xef, 0x55, 0xd7, 0x39, 0x32, 0xfe, 0x9f, 0xf2, 0xf8, 0x02, 0xfa, 0x5b, 0x6e, 0x63,
-	0xdd, 0xf2, 0xdf, 0x17, 0x30, 0xc6, 0xa6, 0x4c, 0x63, 0xcc, 0x79, 0xfb, 0x4b, 0x4b, 0x5d, 0x5e,
-	0x1e, 0xba, 0x1f, 0xcd, 0xd9, 0x9f, 0x00, 0x00, 0x00, 0xff, 0xff, 0xa2, 0xc8, 0x35, 0x4b, 0x76,
-	0x04, 0x00, 0x00,
+	// 638 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xcc, 0x54, 0xcf, 0x6e, 0xd3, 0x4e,
+	0x10, 0xd6, 0x26, 0x69, 0x9b, 0x4e, 0xfc, 0x4b, 0xfb, 0xdb, 0x54, 0x95, 0x31, 0x07, 0xd2, 0x08,
+	0x89, 0x50, 0xa1, 0x1e, 0x5a, 0x04, 0x27, 0x90, 0x28, 0x54, 0x34, 0x12, 0x7f, 0xa2, 0x05, 0x2e,
+	0x5c, 0xac, 0xad, 0x3d, 0x21, 0x96, 0x62, 0xef, 0xb2, 0xbb, 0x89, 0x12, 0x24, 0xce, 0xbc, 0x00,
+	0x37, 0x5e, 0x84, 0xa7, 0xe1, 0x59, 0x90, 0xd7, 0xeb, 0xd4, 0x09, 0x11, 0x82, 0x1b, 0x37, 0xef,
+	0x37, 0xdf, 0x37, 0x33, 0xfe, 0x66, 0x76, 0x01, 0xc6, 0x66, 0x12, 0x9d, 0x48, 0x25, 0x8c, 0xa0,
+	0x5b, 0x52, 0x89, 0xf9, 0xa2, 0xf7, 0x9d, 0xc0, 0xce, 0x20, 0x9b, 0x89, 0x24, 0x42, 0x7a, 0x0b,
+	0x5a, 0x52, 0x09, 0x89, 0xca, 0x2c, 0xc2, 0x24, 0xf6, 0x49, 0x97, 0xf4, 0xeb, 0x0c, 0x4a, 0x68,
+	0x10, 0xd3, 0x03, 0xd8, 0x9a, 0xf1, 0xc9, 0x14, 0xfd, 0x5a, 0x97, 0xf4, 0x09, 0x2b, 0x0e, 0x94,
+	0x42, 0x23, 0xc5, 0x54, 0xf8, 0xf5, 0x2e, 0xe9, 0xef, 0x32, 0xfb, 0x9d, 0xa7, 0x8a, 0x26, 0x66,
+	0x16, 0xe2, 0x5c, 0x26, 0x6a, 0xe1, 0x37, 0x6c, 0x08, 0x72, 0xe8, 0xc2, 0x22, 0xd4, 0x87, 0x1d,
+	0xa9, 0x92, 0x19, 0x37, 0xe8, 0x6f, 0x75, 0x49, 0xbf, 0xc9, 0xca, 0x23, 0xbd, 0x03, 0x7b, 0x92,
+	0x2f, 0x52, 0xcc, 0x4c, 0xa8, 0xf0, 0xe3, 0x14, 0xb5, 0xf1, 0xb7, 0xad, 0xbc, 0xed, 0x60, 0x56,
+	0xa0, 0xbd, 0x47, 0x40, 0x9f, 0xc4, 0xb1, 0x6b, 0x9e, 0xa1, 0x96, 0x22, 0xd3, 0x1b, 0xe5, 0x64,
+	0xa3, 0xfc, 0x31, 0x74, 0x86, 0x5c, 0x69, 0x5c, 0x26, 0xb0, 0xf0, 0x9f, 0xeb, 0xbf, 0xd6, 0xe0,
+	0x60, 0x35, 0x81, 0xeb, 0xe0, 0xdf, 0xb0, 0xd1, 0x03, 0x32, 0x76, 0xc6, 0x91, 0x31, 0x3d, 0x83,
+	0x43, 0x85, 0x51, 0x22, 0x93, 0xfc, 0xbf, 0x32, 0x11, 0x63, 0x28, 0x11, 0x55, 0xde, 0xde, 0x8e,
+	0xa5, 0x74, 0x96, 0xd1, 0x57, 0x22, 0xc6, 0x21, 0xa2, 0x1a, 0xc4, 0xab, 0xa2, 0xa9, 0x46, 0xb5,
+	0x14, 0x35, 0xd7, 0x44, 0xef, 0x34, 0xaa, 0x42, 0xd4, 0xfb, 0x04, 0xad, 0x37, 0x98, 0xc5, 0x7f,
+	0x6b, 0x27, 0x3d, 0x87, 0x76, 0x52, 0x18, 0x19, 0xc6, 0x68, 0x78, 0x32, 0xb1, 0xee, 0xb4, 0x4e,
+	0x6f, 0x9e, 0xd8, 0x45, 0x3d, 0xd9, 0x64, 0x35, 0xfb, 0xcf, 0x49, 0x9e, 0x59, 0x45, 0xef, 0x07,
+	0x01, 0xaf, 0x28, 0xee, 0x46, 0x71, 0x04, 0x5e, 0x59, 0x7d, 0xcc, 0xf5, 0xd8, 0x95, 0x6e, 0x39,
+	0xec, 0x92, 0xeb, 0x31, 0xbd, 0x0b, 0xfb, 0x25, 0x45, 0x2a, 0x4c, 0x52, 0xfe, 0xa1, 0x98, 0xcb,
+	0x2e, 0x2b, 0x1b, 0x1f, 0x3a, 0x98, 0xde, 0x86, 0x36, 0x4f, 0xc5, 0x34, 0x33, 0xa1, 0x11, 0xa1,
+	0xd2, 0x69, 0x64, 0x67, 0x45, 0x98, 0x57, 0xa0, 0x6f, 0x05, 0xd3, 0x69, 0xb4, 0xca, 0xca, 0x2f,
+	0x9c, 0x1d, 0x5b, 0x85, 0x75, 0x69, 0x26, 0x11, 0xbd, 0x0f, 0x87, 0xd7, 0xac, 0x28, 0xff, 0x40,
+	0x25, 0xb9, 0x32, 0x0b, 0x3b, 0x47, 0xc2, 0x0e, 0x4a, 0xf6, 0xd3, 0x4a, 0xac, 0xf7, 0x19, 0xe8,
+	0x8b, 0x44, 0x9b, 0xb5, 0x95, 0x3d, 0x02, 0x2f, 0xc9, 0x62, 0x9c, 0x87, 0x62, 0x34, 0xd2, 0x58,
+	0x18, 0xdc, 0x60, 0x2d, 0x8b, 0xbd, 0xb6, 0x10, 0xed, 0xc3, 0x7e, 0x36, 0x4d, 0xc3, 0x94, 0xcf,
+	0x43, 0x67, 0x99, 0xb6, 0x7f, 0xd9, 0x60, 0xed, 0x6c, 0x9a, 0xbe, 0xe4, 0x73, 0x97, 0x52, 0xd3,
+	0x00, 0x9a, 0x0a, 0x67, 0xa8, 0x34, 0xc6, 0xf6, 0xf7, 0x9a, 0x6c, 0x79, 0xee, 0x7d, 0x23, 0xd0,
+	0x59, 0xa9, 0xef, 0x6c, 0x3e, 0x86, 0xe6, 0x32, 0x2b, 0xe9, 0xd6, 0xfb, 0xad, 0xd3, 0xb6, 0x9b,
+	0x5a, 0xc9, 0x5c, 0xc6, 0xe9, 0x31, 0xfc, 0x3f, 0xe1, 0xda, 0x84, 0x2b, 0x1d, 0x17, 0xad, 0xec,
+	0xe5, 0x81, 0x41, 0xa5, 0xeb, 0x7b, 0x40, 0x47, 0x89, 0x5a, 0x27, 0xd7, 0x2d, 0x79, 0xdf, 0x46,
+	0x2a, 0xec, 0xd3, 0x2f, 0x35, 0x68, 0x58, 0x6f, 0x1f, 0x02, 0x5c, 0x3f, 0x0c, 0x74, 0xad, 0x95,
+	0xe0, 0x86, 0x3b, 0x6f, 0x78, 0x3b, 0x9e, 0x83, 0x57, 0x5d, 0x33, 0x1a, 0x6c, 0xdc, 0x3d, 0x6b,
+	0x7a, 0xf0, 0xbb, 0xbd, 0xa4, 0x17, 0xe0, 0x55, 0x7c, 0xd2, 0xb4, 0xac, 0xf9, 0xeb, 0xf0, 0x82,
+	0x60, 0x53, 0xc8, 0xa5, 0x79, 0x50, 0xdc, 0xa5, 0x61, 0xb1, 0x87, 0x94, 0x3a, 0x6a, 0xe5, 0x7e,
+	0x05, 0x9d, 0x15, 0xac, 0xd0, 0x9d, 0x37, 0xde, 0xd7, 0xe4, 0xd5, 0xd5, 0xb6, 0x7d, 0xe8, 0xcf,
+	0x7e, 0x06, 0x00, 0x00, 0xff, 0xff, 0x51, 0x0e, 0xed, 0xc4, 0xf6, 0x05, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -449,7 +593,8 @@ const _ = grpc.SupportPackageIsVersion6
 type HtlcClient interface {
 	AddInvoice(ctx context.Context, in *Invoice, opts ...grpc.CallOption) (*AddInvoiceResponse, error)
 	ParseInvoice(ctx context.Context, in *ParseInvoiceRequest, opts ...grpc.CallOption) (*ParseInvoiceResponse, error)
-	SendPayment(ctx context.Context, in *SendPaymentRequest, opts ...grpc.CallOption) (*PaymentResp, error)
+	ListInvoices(ctx context.Context, in *ListInvoiceRequest, opts ...grpc.CallOption) (*ListInvoiceResponse, error)
+	SendPayment(ctx context.Context, in *SendRequest, opts ...grpc.CallOption) (*SendResponse, error)
 }
 
 type htlcClient struct {
@@ -478,8 +623,17 @@ func (c *htlcClient) ParseInvoice(ctx context.Context, in *ParseInvoiceRequest, 
 	return out, nil
 }
 
-func (c *htlcClient) SendPayment(ctx context.Context, in *SendPaymentRequest, opts ...grpc.CallOption) (*PaymentResp, error) {
-	out := new(PaymentResp)
+func (c *htlcClient) ListInvoices(ctx context.Context, in *ListInvoiceRequest, opts ...grpc.CallOption) (*ListInvoiceResponse, error) {
+	out := new(ListInvoiceResponse)
+	err := c.cc.Invoke(ctx, "/proxy.Htlc/ListInvoices", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *htlcClient) SendPayment(ctx context.Context, in *SendRequest, opts ...grpc.CallOption) (*SendResponse, error) {
+	out := new(SendResponse)
 	err := c.cc.Invoke(ctx, "/proxy.Htlc/SendPayment", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -491,7 +645,8 @@ func (c *htlcClient) SendPayment(ctx context.Context, in *SendPaymentRequest, op
 type HtlcServer interface {
 	AddInvoice(context.Context, *Invoice) (*AddInvoiceResponse, error)
 	ParseInvoice(context.Context, *ParseInvoiceRequest) (*ParseInvoiceResponse, error)
-	SendPayment(context.Context, *SendPaymentRequest) (*PaymentResp, error)
+	ListInvoices(context.Context, *ListInvoiceRequest) (*ListInvoiceResponse, error)
+	SendPayment(context.Context, *SendRequest) (*SendResponse, error)
 }
 
 // UnimplementedHtlcServer can be embedded to have forward compatible implementations.
@@ -504,7 +659,10 @@ func (*UnimplementedHtlcServer) AddInvoice(ctx context.Context, req *Invoice) (*
 func (*UnimplementedHtlcServer) ParseInvoice(ctx context.Context, req *ParseInvoiceRequest) (*ParseInvoiceResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ParseInvoice not implemented")
 }
-func (*UnimplementedHtlcServer) SendPayment(ctx context.Context, req *SendPaymentRequest) (*PaymentResp, error) {
+func (*UnimplementedHtlcServer) ListInvoices(ctx context.Context, req *ListInvoiceRequest) (*ListInvoiceResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListInvoices not implemented")
+}
+func (*UnimplementedHtlcServer) SendPayment(ctx context.Context, req *SendRequest) (*SendResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SendPayment not implemented")
 }
 
@@ -548,8 +706,26 @@ func _Htlc_ParseInvoice_Handler(srv interface{}, ctx context.Context, dec func(i
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Htlc_ListInvoices_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListInvoiceRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(HtlcServer).ListInvoices(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/proxy.Htlc/ListInvoices",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(HtlcServer).ListInvoices(ctx, req.(*ListInvoiceRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Htlc_SendPayment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SendPaymentRequest)
+	in := new(SendRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -561,7 +737,7 @@ func _Htlc_SendPayment_Handler(srv interface{}, ctx context.Context, dec func(in
 		FullMethod: "/proxy.Htlc/SendPayment",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(HtlcServer).SendPayment(ctx, req.(*SendPaymentRequest))
+		return srv.(HtlcServer).SendPayment(ctx, req.(*SendRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -577,6 +753,10 @@ var _Htlc_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ParseInvoice",
 			Handler:    _Htlc_ParseInvoice_Handler,
+		},
+		{
+			MethodName: "ListInvoices",
+			Handler:    _Htlc_ListInvoices_Handler,
 		},
 		{
 			MethodName: "SendPayment",

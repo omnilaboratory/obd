@@ -39,7 +39,7 @@ type htlcForwardTxManager struct {
 // htlc pay money  付款
 var HtlcForwardTxService htlcForwardTxManager
 
-func (service *htlcForwardTxManager) CreateHtlcInvoice(msg bean.RequestMessage) (data interface{}, err error) {
+func (service *htlcForwardTxManager) CreateHtlcInvoice(msg bean.RequestMessage, user bean.User) (data interface{}, err error) {
 
 	if tool.CheckIsString(&msg.Data) == false {
 		return nil, errors.New(enum.Tips_common_empty + "msd data")
@@ -149,6 +149,15 @@ func (service *htlcForwardTxManager) CreateHtlcInvoice(msg bean.RequestMessage) 
 	tool.ConvertNumToString(sum, &checkSum)
 
 	addr += checkSum
+
+	invoiceInfo := &dao.InvoiceInfo{}
+	err = user.Db.Select(q.Eq("Invoice", addr)).First(invoiceInfo)
+	if err != nil {
+		invoiceInfo.Detail = *requestData
+		invoiceInfo.Invoice = addr
+		invoiceInfo.CreateAt = time.Now()
+		_ = user.Db.Save(invoiceInfo)
+	}
 
 	return addr, nil
 }

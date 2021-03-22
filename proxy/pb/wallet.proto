@@ -63,15 +63,58 @@ message AddrResponse {
   string addr = 1;
 }
 
+message NewAddressRequest {
+  // No fields, as we always give out a p2wkh address.
+}
+message NewAddressResponse {
+  /*
+  The address encoded using a bech32 format.
+  */
+  string addr = 1;
+}
+
+message GetInfoRequest {
+  // No fields, as we always give out a p2wkh address.
+}
+message GetInfoResponse {
+  string user_peerId = 1;
+  string node_peerId = 2;
+  string node_address = 3;
+  double htlc_fee_rate = 4;
+  double htlc_max_fee = 5;
+  string chain_node_type = 6;
+  bool is_admin = 7;
+}
+
+message Peer {
+  // The identity pubkey of the peer
+  string pub_key = 1;
+  // Network address of the peer; eg `127.0.0.1:10011`
+  string address = 2;
+}
+
+message ListPeersRequest {
+}
+message ListPeersResponse {
+  // The list of currently connected peers
+  repeated Peer peers = 1;
+}
+
+
 service Wallet {
+
+  rpc ListPeers(ListPeersRequest) returns(ListPeersResponse);
+
   rpc GenSeed(GenSeedRequest) returns(GenSeedResponse);
   rpc Login(LoginRequest) returns (LoginResponse);
   rpc ChangePassword(ChangePasswordRequest) returns (ChangePasswordResponse);
   rpc Logout(LogoutRequest) returns(LogoutResponse);
   rpc EstimateFee(EstimateFeeRequest) returns(EstimateFeeResponse);
+  rpc GetInfo(GetInfoRequest) returns(GetInfoResponse);
 
   /*
     NextAddr returns the next unused address within the wallet.
     */
   rpc NextAddr (AddrRequest) returns (AddrResponse);
+  rpc NewAddress (NewAddressRequest) returns (NewAddressResponse);
 }

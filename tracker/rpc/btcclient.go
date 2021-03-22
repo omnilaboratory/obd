@@ -17,8 +17,9 @@ func (client *Client) GetBlockChainInfo() (result string, err error) {
 }
 
 //https://developer.bitcoin.org/reference/rpc/estimatesmartfee.html
-func (client *Client) EstimateSmartFee() (feeRate float64) {
-	result, err := client.send("estimatesmartfee", []interface{}{10})
+func (client *Client) EstimateSmartFee(confTarget int) (feeRate float64) {
+
+	result, err := client.send("estimatesmartfee", []interface{}{confTarget})
 	if err == nil {
 		return gjson.Get(result, "feerate").Float() * 100000
 	}
