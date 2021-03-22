@@ -5,6 +5,7 @@
     - [Features and Roadmap](features.md)
     - [Nodes and Trackers in Testnet](nodes-in-testnet.md)
     - [Communities](communities.md)
+    - [FAQ](FAQ.md)
     - [Bug Bounty Program](bug-bounty-program.md)
 
 - GUI Playground
