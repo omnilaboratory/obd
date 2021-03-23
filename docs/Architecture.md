@@ -15,15 +15,21 @@ Users don't need to trust any obd node, even those nodes they deploy by themselv
 
 
 ## Exclusive mode
-Exclusive mode works in the same way as lnd. Every user should run his own obd node. His obd node manages and stores all his keys. For application integrators, obd exposes GRPC API to interact and the tech stack is the same to lnd, which is familiar to integrators.  
+Exclusive mode works in the same way as lnd. Every user MUST run his own obd node， which manages and stores all his keys. For application integrators, obd exposes GRPC API to interact with and the tech stack is the same to lnd.  
 
-Running in exclusive mode, follow these steps below:
+Run obd in exclusive mode:
+```
 
-* Launch an obd.
+```
+
+
 * Invoke [Login](https://api.omnilab.online/?shell#login) gRPC API.
-* Go ahead to play others gRPC APIs like [ConnectPeer](https://api.omnilab.online/?shell#connectpeer), [OpenChannel](https://api.omnilab.online/?shell#openchannel) etc.
+* connect remote peer using [ConnectPeer](https://api.omnilab.online/?shell#connectpeer).
+* [OpenChannel](https://api.omnilab.online/?shell#openchannel), fundChannel, and make payment, etc.
 
-An example of the launch an obd shows in the screenshot below, and you could find the `login_token` (known as password) indicated by the red arrow. The `login_token` used to login to obd.
+For more details of how to use these APIs, please refer to the online documentation: api.omnilab.online
+
+You will get the `login_token` (known as password) indicated by the red arrow in the screenshot of an running obd. The `login_token` is used to login to obd. 
 
 <p align="center">
   <img width="750" alt="An example of the launch an obd" src="assets/launch-an-obd.png">
