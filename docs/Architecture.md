@@ -26,7 +26,7 @@ $ go run obdserver.go
 * connect remote peer using [ConnectPeer](https://api.omnilab.online/?shell#connectpeer).
 * [OpenChannel](https://api.omnilab.online/?shell#openchannel), fundChannel, and make payment, etc.
 
-For more details of how to use these APIs, please refer to the online documentation at api.omnilab.online
+For more details of how to use these APIs, please refer to the online documentation at [API Website](https://api.omnilab.online/?shell#obd-grpc-api-reference).
 
 
 OBD is designed for both (inbound ) liquidity providers and individual users:

@@ -172,7 +172,7 @@ And while in the exclusive mode, there are gRPC APIs used to interact with obd.
 * Create a new invoice using [AddInvoice](https://api.omnilab.online/?shell#addinvoice)
 * Payment with HTLC using [SendPayment](https://api.omnilab.online/?shell#sendpayment)
 
-For more details on how to use these APIs, please refer to the online documentation at api.omnilab.online
+For more details on how to use these APIs, please refer to the online documentation at [API Website](https://api.omnilab.online/?shell#obd-grpc-api-reference).
 
 
 ## Step 4: Test channel operations using GUI testing tool.
