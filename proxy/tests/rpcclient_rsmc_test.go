@@ -29,7 +29,7 @@ func TestRsmcPayment(t *testing.T) {
 		RecipientInfo: &proxy.RecipientNodeInfo{
 			RecipientNodePeerId: "QmccE4s2uhEXrJXE778NChn1ed8NyWNyAHH23mP7f9NM3L",
 			RecipientUserPeerId: "63167817c979ade9e42f3204404c1513a4b1b4e9eea654c9498ed9cc920dbb36"},
-		ChannelId: "343a94dd76703596b6b001a7751abfaa6afe27af196259b5e419ae17928aefdb",
+		ChannelId: "037136dd08e5daffad209ac214f3939d0a2fc9109202df07b2df0406b4fc4c51",
 		Amount:    0.01,
 	})
 	if err != nil {
