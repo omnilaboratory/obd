@@ -16,7 +16,7 @@ class OmnicoreConnection:
             address,
             address,
             omnicore_item["propertyid"],
-            str(amount),
+            amount,
         )
 
     def send_omnicore_token(self, from_address, to_address, omnicore_item, amount):
@@ -41,7 +41,7 @@ class OmnicoreConnection:
 
         """
         return self._bitcoin_connection.omni_sendissuancemanaged(
-            funder_address, 2, 1, 0, "Companies", "Bitcoin Mining", "Qunatum", "a", "a"
+            funder_address, 2, 2, 0, "Companies", "Bitcoin Mining", "Qunatum", "a", "a"
         )
 
     def list_omnicore_properties(self):
