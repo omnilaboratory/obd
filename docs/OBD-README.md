@@ -153,6 +153,27 @@ The terminal displays:
 ```
 Which tells us the daemon is running. We are going to use WebSocket testing tools to test our obd commands.
 
+### Running obd in the exclusive mode
+
+Once obd is launched through the steps mentioned above, you can then invoke the [Login](https://api.omnilab.online/?shell#login) gRPC API to run obd in the exclusive mode.
+
+You will get the `login_token` (known as password) indicated by the red arrow in the screenshot of a running obd. The `login_token` is used to login to obd.
+
+<p align="center">
+  <img width="750" alt="An example of the launch an obd" src="assets/launch-an-obd.png">
+</p>
+
+And while in the exclusive mode, there are gRPC APIs used to interact with obd.
+
+* Connect remote peer using [ConnectPeer](https://api.omnilab.online/?shell#connectpeer).
+* Create a new channel using [OpenChannel](https://api.omnilab.online/?shell#openchannel)
+* Fund to channel using [FundChannel](https://api.omnilab.online/?shell#fundchannel)
+* Payment with RSMC using [RsmcPayment](https://api.omnilab.online/?shell#rsmcpayment) 
+* Create a new invoice using [AddInvoice](https://api.omnilab.online/?shell#addinvoice)
+* Payment with HTLC using [SendPayment](https://api.omnilab.online/?shell#sendpayment)
+
+For more details on how to use these APIs, please refer to the online documentation at api.omnilab.online
+
 
 ## Step 4: Test channel operations using GUI testing tool.
 

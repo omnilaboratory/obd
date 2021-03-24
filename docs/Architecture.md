@@ -19,21 +19,14 @@ Exclusive mode works in the same way as lnd. Every user MUST run his own obd nod
 
 Run obd in exclusive mode:
 ```
-
+$ go run obdserver.go
 ```
-
 
 * Invoke [Login](https://api.omnilab.online/?shell#login) gRPC API.
 * connect remote peer using [ConnectPeer](https://api.omnilab.online/?shell#connectpeer).
 * [OpenChannel](https://api.omnilab.online/?shell#openchannel), fundChannel, and make payment, etc.
 
-For more details of how to use these APIs, please refer to the online documentation: api.omnilab.online
-
-You will get the `login_token` (known as password) indicated by the red arrow in the screenshot of an running obd. The `login_token` is used to login to obd. 
-
-<p align="center">
-  <img width="750" alt="An example of the launch an obd" src="assets/launch-an-obd.png">
-</p>
+For more details of how to use these APIs, please refer to the online documentation at api.omnilab.online
 
 
 OBD is designed for both (inbound ) liquidity providers and individual users:
