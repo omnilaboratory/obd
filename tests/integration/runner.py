@@ -54,7 +54,7 @@ class TestRunner:
         omnicore_connection.mine_bitcoin(20, address_miner)
         self.omni_bolt_alice.property_id = int(created_omnicore_item["propertyid"])
         self.omni_bolt_bob.property_id = int(created_omnicore_item["propertyid"])
-        self.channel_id = self.omni_bolt_alice.open_channel(
+        self.omni_bolt_alice.open_channel(
             self.omni_bolt_bob,
             omnicore_connection,
             created_omnicore_item,

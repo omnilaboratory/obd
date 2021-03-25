@@ -1,3 +1,5 @@
+import time
+
 import pytest
 
 import omnicore
@@ -32,6 +34,7 @@ def _send_channel(from_: OmniBolt, to: OmniBolt, amount: int):
 
     invoice_bob = to.add_invoice(from_.property_id, amount=amount)
     from_.pay_invoice(invoice_bob, to)
+    time.sleep(1)
     open_channels_after_pay_invoice = from_.get_all_channels()
     assert open_channels_after_pay_invoice[0]["balance_a"] == amount_from - amount
     assert open_channels_after_pay_invoice[0]["balance_b"] == amount_to + amount
@@ -40,7 +43,6 @@ def _send_channel(from_: OmniBolt, to: OmniBolt, amount: int):
 def test_send_to_bob(basic_channel):
     alice = basic_channel.omni_bolt_alice
     bob = basic_channel.omni_bolt_bob
-    _send_channel(alice, bob, amount=100)
     _send_channel(alice, bob, amount=300)
     _send_channel(bob, alice, amount=300)
 
