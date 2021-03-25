@@ -37,6 +37,21 @@ func TestDisconnectPeer(t *testing.T) {
 	marshal, _ := json.Marshal(resp)
 	log.Println(string(marshal))
 }
+
+func TestGetAddressInfo(t *testing.T) {
+	client, conn := getWalletClient()
+	defer conn.Close()
+	resp, err := client.GetAddressInfo(context.Background(), &proxy.GetAddressInfoRequest{
+		Addr: "mvsvbhE5CUd23R2X2XTmNodHmbGSPcEqNb",
+	})
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	marshal, _ := json.Marshal(resp)
+	log.Println(string(marshal))
+}
+
 func TestNewAddress(t *testing.T) {
 	client, conn := getWalletClient()
 	defer conn.Close()
@@ -90,7 +105,7 @@ func TestLogin(t *testing.T) {
 	defer conn.Close()
 
 	login, err := client.Login(context.Background(), &proxy.LoginRequest{
-		Mnemonic:   "coyote antenna senior reward diesel vault into used veteran model throw relief",
+		Mnemonic:   "dawn enter attitude merry cliff stone rely convince team warfare wasp whisper",
 		LoginToken: tool.SignMsgWithMd5([]byte("mjgwhdzx")),
 	})
 	if err != nil {

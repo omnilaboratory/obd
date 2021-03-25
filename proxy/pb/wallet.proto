@@ -60,7 +60,10 @@ message AddrResponse {
   /*
   The address encoded using a bech32 format.
   */
-  string addr = 1;
+  int64 index = 1;
+  string addr = 2;
+  string pub_key = 3;
+  string wif = 4;
 }
 
 message NewAddressRequest {
@@ -70,7 +73,10 @@ message NewAddressResponse {
   /*
   The address encoded using a bech32 format.
   */
-  string addr = 1;
+  int64 index = 1;
+  string addr = 2;
+  string pub_key = 3;
+  string wif = 4;
 }
 
 message GetInfoRequest {
@@ -95,11 +101,14 @@ message Peer {
 
 message ListPeersRequest {
 }
+
 message ListPeersResponse {
   // The list of currently connected peers
   repeated Peer peers = 1;
 }
-
+message GetAddressInfoRequest {
+  string addr = 1;
+}
 
 service Wallet {
 
@@ -117,4 +126,5 @@ service Wallet {
     */
   rpc NextAddr (AddrRequest) returns (AddrResponse);
   rpc NewAddress (NewAddressRequest) returns (NewAddressResponse);
+  rpc GetAddressInfo (GetAddressInfoRequest) returns (AddrResponse);
 }

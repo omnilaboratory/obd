@@ -133,7 +133,40 @@ func (server *RpcServer) NextAddr(ctx context.Context, in *pb.AddrRequest) (resp
 		return nil, err
 	}
 	resp = &pb.AddrResponse{
-		Addr: address.Address,
+		Index:  int64(address.Index),
+		Addr:   address.Address,
+		PubKey: address.PubKey,
+		Wif:    address.Wif,
+	}
+	return resp, nil
+}
+
+func (server *RpcServer) GetAddressInfo(ctx context.Context, in *pb.GetAddressInfoRequest) (resp *pb.AddrResponse, err error) {
+	log.Println("GetAddressInfo")
+
+	if in.Addr == "" {
+		return nil, errors.New("empty addr")
+	}
+
+	user, err := checkLogin()
+	if err != nil {
+		return nil, err
+	}
+
+	for i := 0; i < obcClient.User.CurrAddrIndex; i++ {
+		wallet, _ := service.HDWalletService.GetAddressByIndex(user, uint32(i))
+		if wallet.Address == in.GetAddr() {
+			resp = &pb.AddrResponse{
+				Index:  int64(wallet.Index),
+				Addr:   wallet.Address,
+				PubKey: wallet.PubKey,
+				Wif:    wallet.Wif,
+			}
+			break
+		}
+	}
+	if resp == nil {
+		return nil, errors.New("not found")
 	}
 	return resp, nil
 }
@@ -150,7 +183,10 @@ func (server *RpcServer) NewAddress(ctx context.Context, in *pb.NewAddressReques
 		return nil, err
 	}
 	resp = &pb.NewAddressResponse{
-		Addr: address.Address,
+		Index:  int64(address.Index),
+		Addr:   address.Address,
+		PubKey: address.PubKey,
+		Wif:    address.Wif,
 	}
 	return resp, nil
 }
