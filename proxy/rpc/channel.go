@@ -7,6 +7,7 @@ import (
 	"github.com/omnilaboratory/obd/bean"
 	"github.com/omnilaboratory/obd/bean/enum"
 	"github.com/omnilaboratory/obd/proxy/pb"
+	"github.com/omnilaboratory/obd/service"
 	"github.com/omnilaboratory/obd/tool"
 	"log"
 )
@@ -30,9 +31,21 @@ func (s *RpcServer) OpenChannel(ctx context.Context, in *pb.OpenChannelRequest) 
 		return nil, errors.New("wrong node_pubkey_string")
 	}
 
+	nodePubKeyIndex := -1
+	for i := 0; i < obcClient.User.CurrAddrIndex; i++ {
+		wallet, _ := service.HDWalletService.GetAddressByIndex(obcClient.User, uint32(i))
+		if wallet.PubKey == in.NodePubkeyString {
+			nodePubKeyIndex = i
+			break
+		}
+	}
+	if nodePubKeyIndex == -1 {
+		return nil, errors.New("NodePubkeyString not found in current Mnemonic")
+	}
+
 	channelOpen := bean.SendChannelOpen{
 		FundingPubKey:      in.NodePubkeyString,
-		FunderAddressIndex: int(in.NodePubkeyIndex),
+		FunderAddressIndex: nodePubKeyIndex,
 		IsPrivate:          in.Private,
 	}
 

@@ -23,9 +23,8 @@ message DisconnectPeerResponse {
 
 message OpenChannelRequest{
   string node_pubkey_string = 1;
-  int32 node_pubkey_index = 2;
-  bool private = 3;
-  RecipientNodeInfo recipientInfo = 4;
+  bool private = 2;
+  RecipientNodeInfo recipientInfo = 3;
 }
 
 message OpenChannelResponse{

@@ -22,9 +22,9 @@ var (
 	HtlcFeeRate = 0.0001
 	HtlcMaxFee  = 0.01
 
-	TrackerHost = "62.234.216.108:60060"
+	TrackerHost = "127.0.0.1:60060"
 
-	ChainNodeType = "test"
+	ChainNodeType = "regtest"
 	//P2P
 	P2P_hostIp     = "127.0.0.1"
 	P2P_port       = 4001

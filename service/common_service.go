@@ -268,7 +268,7 @@ func checkOmniTxHex(fundingTxHexDecode string, channelInfo *dao.ChannelInfo, use
 
 	sendingAddress := jsonOmniTxHexDecode.Get("sendingaddress").String()
 	if sendingAddress != funderAddress {
-		err = errors.New(fmt.Sprintf(enum.Tips_funding_wrongFunderAddressFromAssetHex, sendingAddress, funderAddress))
+		err = errors.New(fmt.Sprintf(enum.Tips_funding_wrongFunderAddressFromAssetHex, sendingAddress))
 		log.Println(err)
 		return "", 0, 0, err
 	}

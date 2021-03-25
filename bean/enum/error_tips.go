@@ -45,7 +45,7 @@ const (
 	Tips_funding_wrongBtcHexVin                  = "Data error of vin in transaction hex："
 	Tips_funding_wrongFunderAddressFromBtcHex    = "Input address of current bitcoin funding transaction is not the funder's address(funderAddress) in creading this channel."
 	Tips_funding_wrongChannelAddressFromBtcHex   = "Target address of current bitcoin funding transaction is not the multi-sig address in creating this channel."
-	Tips_funding_wrongFunderAddressFromAssetHex  = "Input address %s of current asset funding transaction is not the funder's address(funderAddress) in creading this channel."
+	Tips_funding_wrongFunderAddressFromAssetHex  = "Input address %s of current asset funding transaction is not the funder's address(funderAddress) in creating this channel."
 	Tips_funding_wrongChannelAddressFromAssetHex = "arget address %s of current asset funding transaction is not the multi-sig address %s in creating this channel."
 
 	Tips_rsmc_broadcastedChannel     = "The amount of assets in this channel has been changed. Possiblly someone closed this channel, or broadcasted a commitment transaction."
