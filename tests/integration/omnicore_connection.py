@@ -21,7 +21,7 @@ class OmnicoreConnection:
 
     def send_omnicore_token(self, from_address, to_address, omnicore_item, amount):
 
-        self._bitcoin_connection.omni_send(
+        return self._bitcoin_connection.omni_send(
             from_address, to_address, omnicore_item["propertyid"], str(amount)
         )
 
