@@ -233,6 +233,30 @@ message ChannelBalanceResponse{
   double pending_open_remote_balance = 6;
 }
 
+message CloseChannelRequest{
+  string channel_id = 1;
+}
+
+message CloseChannelResponse{
+  string channel_id = 1;
+  double local_balance = 2;
+  double remote_balance = 3;
+  double total_amount = 4;
+  int64 property_id = 5;
+}
+message ChanInfoRequest{
+  string channel_id = 1;
+}
+
+message ChannelEdge {
+  string channel_id = 1 ;
+  double total_amount = 2;
+  int64 property_id = 3;
+  string channel_address = 4;
+  string node1_pub = 5;
+  string node2_pub = 6;
+  int64 curr_state = 7;
+}
 
 service Lightning {
 
@@ -245,8 +269,10 @@ service Lightning {
   rpc DisconnectPeer(DisconnectPeerRequest) returns (DisconnectPeerResponse);
 
   rpc OpenChannel(OpenChannelRequest) returns(OpenChannelResponse);
+  rpc CloseChannel(CloseChannelRequest) returns(CloseChannelResponse);
   rpc FundChannel(FundChannelRequest) returns(FundChannelResponse);
   rpc ListChannels(ListChannelsRequest) returns(ListChannelsResponse);
+  rpc GetChanInfo(ChanInfoRequest) returns(ChannelEdge);
   rpc PendingChannels(PendingChannelsRequest) returns(ListChannelsResponse);
   rpc LatestTransaction(LatestTransactionRequest) returns(Transaction);
   rpc GetTransactions(GetTransactionsRequest) returns(TransactionDetails);

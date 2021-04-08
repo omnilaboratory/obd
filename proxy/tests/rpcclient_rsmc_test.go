@@ -27,9 +27,9 @@ func TestRsmcPayment(t *testing.T) {
 
 	payment, err := client.RsmcPayment(context.Background(), &proxy.RsmcPaymentRequest{
 		RecipientInfo: &proxy.RecipientNodeInfo{
-			RecipientNodePeerId: "QmccE4s2uhEXrJXE778NChn1ed8NyWNyAHH23mP7f9NM3L",
-			RecipientUserPeerId: "63167817c979ade9e42f3204404c1513a4b1b4e9eea654c9498ed9cc920dbb36"},
-		ChannelId: "037136dd08e5daffad209ac214f3939d0a2fc9109202df07b2df0406b4fc4c51",
+			RecipientNodePeerId: "QmZPzUh7Q6PQg6gXB4XheaoZMMhHA9JNeCrJsp3FWjFrAF",
+			RecipientUserPeerId: "a5f24dc5d5414d961bba98c98624b87222da3984b324bcab7cfd7fd63aee33b3"},
+		ChannelId: "04281cba5a1179cf47501ae3cc687bd58aeeae848fc4daa3690351292ad2eb7a",
 		Amount:    0.01,
 	})
 	if err != nil {

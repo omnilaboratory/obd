@@ -6,6 +6,7 @@ import (
 	"errors"
 	"github.com/omnilaboratory/obd/bean"
 	"github.com/omnilaboratory/obd/bean/enum"
+	"github.com/omnilaboratory/obd/dao"
 	"github.com/omnilaboratory/obd/proxy/pb"
 	"github.com/omnilaboratory/obd/service"
 	"github.com/omnilaboratory/obd/tool"
@@ -84,6 +85,69 @@ func (s *RpcServer) OpenChannel(ctx context.Context, in *pb.OpenChannelRequest) 
 	resp := &pb.OpenChannelResponse{}
 	resp.TemplateChannelId = dataResult["temporary_channel_id"].(string)
 
+	return resp, nil
+}
+
+func (s *RpcServer) CloseChannel(ctx context.Context, in *pb.CloseChannelRequest) (*pb.CloseChannelResponse, error) {
+	log.Println("CloseChannel")
+	_, err := checkLogin()
+	if err != nil {
+		return nil, err
+	}
+	if tool.CheckIsString(&in.ChannelId) == false {
+		return nil, errors.New("wrong channel_id")
+	}
+	marshal, _ := json.Marshal(in)
+	requestMessage := bean.RequestMessage{
+		Type:             enum.MsgType_SendChannelOpen_32,
+		SenderNodePeerId: obcClient.User.P2PLocalPeerId,
+		SenderUserPeerId: obcClient.User.PeerId,
+		Data:             string(marshal)}
+
+	channel, err := service.ChannelService.ForceCloseChannel(requestMessage, obcClient.User)
+	if err != nil {
+		return nil, err
+	}
+
+	rsmcTxInfo, err := service.CommitmentTxService.GetLatestCommitmentTxByChannelId(string(marshal), obcClient.User)
+	if err != nil {
+		return nil, err
+	}
+	channelInfo := channel.(*dao.ChannelInfo)
+	resp := &pb.CloseChannelResponse{
+		ChannelId:     channelInfo.ChannelId,
+		TotalAmount:   channelInfo.Amount,
+		LocalBalance:  rsmcTxInfo.AmountToRSMC,
+		RemoteBalance: rsmcTxInfo.AmountToCounterparty,
+		PropertyId:    channelInfo.PropertyId,
+	}
+	return resp, nil
+}
+
+func (s *RpcServer) GetChanInfo(ctx context.Context, in *pb.ChanInfoRequest) (*pb.ChannelEdge, error) {
+	log.Println("CloseChannel")
+	_, err := checkLogin()
+	if err != nil {
+		return nil, err
+	}
+	if tool.CheckIsString(&in.ChannelId) == false {
+		return nil, errors.New("wrong channel_id")
+	}
+
+	channelInfo, err := service.ChannelService.GetChannelInfoByChannelId(in.ChannelId, *obcClient.User)
+	if err != nil {
+		return nil, err
+	}
+
+	resp := &pb.ChannelEdge{
+		ChannelId:      channelInfo.ChannelId,
+		ChannelAddress: channelInfo.ChannelAddress,
+		Node1Pub:       channelInfo.PubKeyA,
+		Node2Pub:       channelInfo.PubKeyB,
+		TotalAmount:    channelInfo.Amount,
+		PropertyId:     channelInfo.PropertyId,
+		CurrState:      int64(channelInfo.CurrState),
+	}
 	return resp, nil
 }
 

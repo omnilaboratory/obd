@@ -15,9 +15,9 @@ func TestOpenChannel(t *testing.T) {
 
 	channelResponse, err := client.OpenChannel(context.Background(), &proxy.OpenChannelRequest{
 		RecipientInfo: &proxy.RecipientNodeInfo{
-			RecipientNodePeerId: "QmccE4s2uhEXrJXE778NChn1ed8NyWNyAHH23mP7f9NM3L",
-			RecipientUserPeerId: "63167817c979ade9e42f3204404c1513a4b1b4e9eea654c9498ed9cc920dbb36"},
-		NodePubkeyString: "023769b549838e48db217c4d2a8bbeb199c5dbf63dfa38649b6bc2bb18261d7454",
+			RecipientNodePeerId: "QmZPzUh7Q6PQg6gXB4XheaoZMMhHA9JNeCrJsp3FWjFrAF",
+			RecipientUserPeerId: "a5f24dc5d5414d961bba98c98624b87222da3984b324bcab7cfd7fd63aee33b3"},
+		NodePubkeyString: "03c384b8d9c65edea28ce205537bb58dc0096bc618e9e553455e1db1f36cc25642",
 		Private:          false,
 	})
 	if err != nil {
@@ -25,6 +25,34 @@ func TestOpenChannel(t *testing.T) {
 		return
 	}
 	log.Println(channelResponse.TemplateChannelId)
+}
+
+func TestCloseChannel(t *testing.T) {
+	client, conn := getClient()
+	defer conn.Close()
+	resp, err := client.CloseChannel(context.Background(), &proxy.CloseChannelRequest{
+		ChannelId: "e936e067a885ebf6fe94b4c75f7356aacb438ecdbc182172f55febe7d1e860fa",
+	})
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	marshal, _ := json.Marshal(resp)
+	log.Println(string(marshal))
+}
+
+func TestGetChanInfo(t *testing.T) {
+	client, conn := getClient()
+	defer conn.Close()
+	resp, err := client.GetChanInfo(context.Background(), &proxy.ChanInfoRequest{
+		ChannelId: "e936e067a885ebf6fe94b4c75f7356aacb438ecdbc182172f55febe7d1e860fa",
+	})
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	marshal, _ := json.Marshal(resp)
+	log.Println(string(marshal))
 }
 
 func TestListChannels(t *testing.T) {

@@ -633,6 +633,9 @@ func (this *channelManager) ForceCloseChannel(msg bean.RequestMessage, user *bea
 		log.Println(err)
 		return nil, err
 	}
+	if channelInfo.CurrState == bean.ChannelState_Close {
+		return nil, errors.New("in close state")
+	}
 
 	latestCommitmentTx, err := getLatestCommitmentTxUseDbTx(tx, channelInfo.ChannelId, targetUser)
 	if err != nil {

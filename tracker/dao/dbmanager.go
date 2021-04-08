@@ -15,7 +15,7 @@ var DBService dbManager
 
 func (manager dbManager) GetTrackerDB(chainType string) (*storm.DB, error) {
 	if DBService.Db == nil {
-		_dir := "dbdata" + chainType
+		_dir := "dbdata" + "/" + chainType
 		_ = tool.PathExistsAndCreate(_dir)
 		db, e := storm.Open(_dir + "/" + config.TrackerDbName)
 		if e != nil {
