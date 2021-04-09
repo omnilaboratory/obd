@@ -288,6 +288,7 @@ func (this *channelManager) AllItem(jsonData string, user bean.User) (data *page
 	}
 	activeOnly := gjson.Get(jsonData, "active_only").Bool()
 	isPending := gjson.Get(jsonData, "is_pending").Bool()
+	closed := gjson.Get(jsonData, "closed").Bool()
 
 	skip := (pageIndex - 1) * pageSize
 
@@ -303,6 +304,14 @@ func (this *channelManager) AllItem(jsonData string, user bean.User) (data *page
 	} else if isPending {
 		err = tx.Select(
 			q.Not(q.Eq("CurrState", bean.ChannelState_CanUse)),
+			q.Or(
+				q.Eq("PeerIdA", user.PeerId),
+				q.Eq("PeerIdB", user.PeerId))).
+			OrderBy("CreateAt").Reverse().Skip(int(skip)).Limit(int(pageSize)).
+			Find(&infos)
+	} else if closed {
+		err = tx.Select(
+			q.Not(q.Eq("CurrState", bean.ChannelState_Close)),
 			q.Or(
 				q.Eq("PeerIdA", user.PeerId),
 				q.Eq("PeerIdB", user.PeerId))).

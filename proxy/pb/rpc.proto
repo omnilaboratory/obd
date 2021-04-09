@@ -258,6 +258,15 @@ message ChannelEdge {
   int64 curr_state = 7;
 }
 
+message ClosedChannelsRequest{
+  int32 page_size = 1;
+  int32 page_index = 2;
+}
+
+message ClosedChannelsResponse {
+  repeated Channel channels = 1;
+}
+
 service Lightning {
 
   /* obdcli: `hello`
@@ -270,6 +279,7 @@ service Lightning {
 
   rpc OpenChannel(OpenChannelRequest) returns(OpenChannelResponse);
   rpc CloseChannel(CloseChannelRequest) returns(CloseChannelResponse);
+  rpc ClosedChannels(ClosedChannelsRequest) returns(ClosedChannelsResponse);
   rpc FundChannel(FundChannelRequest) returns(FundChannelResponse);
   rpc ListChannels(ListChannelsRequest) returns(ListChannelsResponse);
   rpc GetChanInfo(ChanInfoRequest) returns(ChannelEdge);

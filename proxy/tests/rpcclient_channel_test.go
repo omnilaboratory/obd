@@ -86,6 +86,21 @@ func TestPendingChannels(t *testing.T) {
 	log.Println(string(marshal))
 }
 
+func TestClosedChannels(t *testing.T) {
+	client, conn := getClient()
+	defer conn.Close()
+	resp, err := client.ClosedChannels(context.Background(), &proxy.ClosedChannelsRequest{
+		PageIndex: 1,
+		PageSize:  10,
+	})
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	marshal, _ := json.Marshal(resp)
+	log.Println(string(marshal))
+}
+
 func TestLatestTransaction(t *testing.T) {
 	client, conn := getClient()
 	defer conn.Close()
