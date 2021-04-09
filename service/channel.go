@@ -311,7 +311,7 @@ func (this *channelManager) AllItem(jsonData string, user bean.User) (data *page
 			Find(&infos)
 	} else if closed {
 		err = tx.Select(
-			q.Not(q.Eq("CurrState", bean.ChannelState_Close)),
+			q.Eq("CurrState", bean.ChannelState_Close),
 			q.Or(
 				q.Eq("PeerIdA", user.PeerId),
 				q.Eq("PeerIdB", user.PeerId))).
