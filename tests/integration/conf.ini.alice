@@ -3,10 +3,11 @@ mode = sole
 port = 60020
 readTimeout = 30
 writeTimeout = 30
-
+dataDirectory = dbdata_alice
+grpc_server_port = 50050
 
 [p2p]
-hostIp = omnibolt_alice
+hostIp = omnibolt
 sourcePort = 4001
 
 [htlc]

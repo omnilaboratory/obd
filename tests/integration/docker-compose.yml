@@ -9,28 +9,23 @@ services:
         expose:
             - "18444"
 
-    omnibolt_alice:
+    omnibolt:
         volumes:
-            - ${PWD}/tests/integration/conf.ini.alice:/obd/conf.ini
-        build: 
+            - ${PWD}/tests/integration/conf.ini.bob:/obd/conf.ini.bob
+            - ${PWD}/tests/integration/conf.ini.alice:/obd/conf.ini.alice
+        build:
             context: ../..
             dockerfile: ./tests/integration/omnibolt.Dockerfile
-        depends_on:
-            - omnicore
+
         expose:
             - 4002
-            - 60021
-
-    omnibolt_bob:
-        volumes:
-            - ${PWD}/tests/integration/conf.ini.bob:/obd/conf.ini
-        build: 
-            context: ../..
-            dockerfile: ./tests/integration/omnibolt.Dockerfile
-
-        expose:
             - 4001
             - 60020
+            - 60021
+            - 60080
+            - 60060
+            - 50050
+            - 50051
         depends_on:
             - omnicore
     omnitest:
@@ -38,7 +33,6 @@ services:
             context: .
             dockerfile: Dockerfile
         depends_on: 
-            - omnibolt_bob
-            - omnibolt_alice
+            - omnibolt
             - omnicore
 

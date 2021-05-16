@@ -7,4 +7,5 @@ cd /obd && ./tracker_server --trackerConfigPath "/obd/conf.tracker.ini" &
 
 sleep 1
 
-cd /obd  && ./obdserver --configPath "/obd/conf.ini"
+/obd/obdserver --configPath "/obd/conf.ini.alice" &
+/obd/obdserver --configPath "/obd/conf.ini.bob"

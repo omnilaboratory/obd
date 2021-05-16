@@ -8,13 +8,14 @@ RUN python3.9 -m pip install -r reqs.txt
 
 COPY omnibolt.py .
 COPY omnicore_connection.py .
+COPY omnicore_types.py .
 COPY runner.py .
 COPY test.py .
 COPY bitcoin.conf .
 COPY conf.tracker.ini .
 
-ENV OMNI_BOLT_ALICE=omnibolt_alice:60020
-ENV OMNI_BOLT_BOB=omnibolt_bob:60020
+ENV OMNI_BOLT_ALICE=omnibolt:60020
+ENV OMNI_BOLT_BOB=omnibolt:60021
 ENV BITCOIN_CONF=/test/bitcoin.conf
 
 COPY test_entrypoint.sh /test/test_entrypoint.sh
