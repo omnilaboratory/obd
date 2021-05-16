@@ -88,7 +88,13 @@ func StartP2PNode() (err error) {
 	P2PLocalNodeId = hostNode.ID().Pretty()
 	service.P2PLocalNodeId = P2PLocalNodeId
 
-	localServerDest = fmt.Sprintf("/ip4/%s/tcp/%v/p2p/%s", config.P2P_hostIp, config.P2P_port, hostNode.ID().Pretty())
+	hostIpAddress, err := net.LookupIP(config.P2P_hostIp)
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+
+	localServerDest = fmt.Sprintf("/ip4/%s/tcp/%v/p2p/%s", hostIpAddress[0].String(), config.P2P_port, hostNode.ID().Pretty())
 	bean.CurrObdNodeInfo.P2pAddress = localServerDest
 	log.Println("local p2p address", localServerDest)
 
