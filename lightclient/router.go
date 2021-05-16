@@ -9,6 +9,7 @@ import (
 	"github.com/satori/go.uuid"
 	"github.com/unrolled/secure"
 	"log"
+	"net"
 	"net/http"
 	"strconv"
 )
@@ -21,7 +22,9 @@ func InitRouter() *gin.Engine {
 	//router.Use(TlsHandler())
 
 	go GlobalWsClientManager.Start()
-	bean.CurrObdNodeInfo.WebsocketLink = "ws://" + config.P2P_hostIp + ":" + strconv.Itoa(config.ServerPort) + "/ws" + config.ChainNodeType
+
+	hostIpAddress, _ := net.LookupIP(config.P2P_hostIp)
+	bean.CurrObdNodeInfo.WebsocketLink = "ws://" + hostIpAddress[0].String() + ":" + strconv.Itoa(config.ServerPort) + "/ws" + config.ChainNodeType
 	router.GET("/ws"+config.ChainNodeType, wsClientConnect)
 
 	return router

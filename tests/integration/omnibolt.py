@@ -1,5 +1,3 @@
-from bit.network.meta import Unspent
-
 from typing import Optional, Final, Any
 
 import json
@@ -169,6 +167,7 @@ class OmniBolt:
             self.read_message(),
             self.read_message(),
             self.read_message(),
+            self.read_message(),
         )
 
     def pay_invoice(self, invoice: str, peer: "OmniBolt"):
@@ -237,11 +236,10 @@ class OmniBolt:
 
         omnicore_connection.mine_bitcoin(200, self.wallet_address.address)
 
-        resp_funding = self.auto_funding(
+        return self.auto_funding(
             temporary_channel_id=temp_channel_id,
             peer=peer,
             btc_amount=0.0004,
             property_id=property_id,
             asset_amount=channel_size,
         )
-        print("Response funding {}".format(resp_funding))
