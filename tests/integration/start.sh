@@ -1,7 +1,10 @@
 #!/bin/bash
 
-cd /go/obd && ./tracker_server --trackerConfigPath "/go/conf.tracker.ini" &
+# TODO: Replace with healthcheck
+sleep 4
+
+cd /obd && ./tracker_server --trackerConfigPath "/obd/conf.tracker.ini" &
 
 sleep 1
 
-cd /go/obd  && ./obdserver --configPath "/go/conf.ini"
+cd /obd  && ./obdserver --configPath "/obd/conf.ini"
