@@ -1,7 +1,7 @@
 FROM golang:1.13-alpine as builder
 
 WORKDIR /obd
-
+ENV DEBIAN_FRONTEND=noninteractive
 # Install dependencies and build the binaries.
 RUN apk add --no-cache --update alpine-sdk \
     git \
