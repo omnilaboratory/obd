@@ -1,4 +1,4 @@
-from typing import Optional, Final, Any
+from typing import Optional
 
 import json
 from websocket import create_connection
@@ -20,39 +20,56 @@ class OmniBolt:
 
     def _sent_sync_request(self, message, expected_type=None):
 
-        if expected_type is None:
-            expected_type = message["type"]
+        attempts = 0
+        max_attempts = 10
+        while attempts < max_attempts:
 
-        str_message = json.dumps(message)
-        print(str_message)
-        self._websocket.send(str_message)
+            if expected_type is None:
+                expected_type = message["type"]
 
-        raw_result = self._websocket.recv()
+            str_message = json.dumps(message)
+            print(str_message)
+            self._websocket.send(str_message)
 
-        result = json.loads(raw_result)
+            raw_result = self._websocket.recv()
 
-        assert (
-            result["type"] == expected_type
-        ), f"Expecting type={expected_type}, got type={result['type'], }"
+            result = json.loads(raw_result)
 
-        print(result)
-        assert result["status"], f"Invalid response=[{result}]"
-        return result["result"]
+            try:
+                response = result['result']
+
+                assert (
+                    result["type"] == expected_type
+                ), f"Expecting type={expected_type}, got type={result['type'], }"
+
+                assert result["status"], f"Invalid response=[{result}]"
+                return result["result"]
+            except KeyError:
+                attempts = attempts + 1
+
+        raise RuntimeError("Can't get a valid response")
 
     def connect(self):
-        ws = create_connection(f"ws://{self._address_str}/wsregtest")
-        open_message = '{"type": -102004}'
-        ws.send(open_message)
-        self._websocket = ws
-        result = ws.recv()
-        print("Received '%s'" % result)
-        result = ws.recv()
-        print("Received '%s'" % result)
-        d = json.loads(result)
-        return d["result"]
+        attempt = 0
+        max_attempts = 10
+        while attempt < max_attempts:
+            ws = create_connection(f"ws://{self._address_str}/wsregtest")
+            open_message = '{"type": -102004}'
+            ws.send(open_message)
+            self._websocket = ws
+            result = ws.recv()
+            print("Received '%s'" % result)
+            result = ws.recv()
+            print("Received '%s'" % result)
+            d = json.loads(result)
+            try:
+                return d["result"]
+            except KeyError:
+                print(f"Invalid response {d}")
+                attempt = attempt + 1
 
     def login(self, user) -> str:
-        message = {"type": -102001, "data": {"mnemonic": user, "is_admin": False}}
+        message = {"type": -102001, "data": {"mnemonic": user, "is_admin": True}}
 
         response = self._sent_sync_request(message)
         self.user_id = response["userPeerId"]
