@@ -29,7 +29,7 @@ Join our community to get the latest progress: [communities](https://omnilaborat
 
 Video tutorials can be found here:   
   
-* [OmniBOLT Technology guide part](https://youtu.be/G-T_uwqzDAI)  
+* [OmniBOLT Technology guide part I](https://youtu.be/G-T_uwqzDAI)  
 * [Step 1 -- create and fund channel](https://youtu.be/PbbNk2JCopA)
 * [Step 2 -- create invoice](https://youtu.be/Z9UmHFclGdc)
 * [Step 3 -- pay invoice](https://youtu.be/NEexFe7R9kc)
