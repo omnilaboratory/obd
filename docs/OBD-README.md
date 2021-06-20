@@ -14,8 +14,7 @@ Clone, compile the source code and run the binary executable file, you will have
 	* [Step 1: fetch the source code](#step-1-fetch-the-source-code)
 	<!--* [Step 2: set up OmniCore node](#step-2)
 		* [option 1: remote omnicore node](#option-1-remote-omnicore-node)	
-		* [option 2: local omnicore node](#option-2-local-omnicore-node) 
-	-->
+		* [option 2: local omnicore node](#option-2-local-omnicore-node) --> 
 	* [Step 2: Connect to a tracker](#step-2-connect-to-a-tracker)
 	* [Step 3: compile and run OmniBOLT daemon](#step-3-compile-and-run-omnibolt-daemon)
 	* [Step 4: test channel operations using GUI testing tool](#step-4-test-channel-operations-using-gui-testing-tool)
@@ -50,7 +49,10 @@ We propose [OmniBOLT](https://github.com/omnilaboratory/OmniBOLT-spec) to enable
 
 # Dependency
 
-[Omnicore 0.18](https://github.com/OmniLayer/omnicore) or later integrates the latest BTC core 0.18, which enables relative time locker used in RSM contracts and HTL contracts.
+If you run your own tracker, you should maintain an [Omnicore 0.18](https://github.com/OmniLayer/omnicore)(or later) full node, which integrates the latest BTC core 0.18 and which enables relative time locker used in RSM contracts and HTL contracts.
+
+Runing an obd node don't require full btc/omni node. The obd node should connects a remote tracker for full node services. 
+ 
 
 # Installation and minimum system requirment
 The following instruction works for Ubuntu 14.04.4 LTS, golang 1.10 or later.
