@@ -10,11 +10,13 @@ Clone, compile the source code and run the binary executable file, you will have
 # Table of Contents
  * [Background](#background)
  * [Dependency](#dependency)
- * [Installation](#installation)
+ * [Installation](#installation and minimum system requirment)
 	* [Step 1: fetch the source code](#step-1-fetch-the-source-code)
-	* [Step 2: set up OmniCore node](#step-2)
+	<!--* [Step 2: set up OmniCore node](#step-2)
 		* [option 1: remote omnicore node](#option-1-remote-omnicore-node)	
 		* [option 2: local omnicore node](#option-2-local-omnicore-node) 
+	-->
+	* [Step 2: Connect to a tracker](#step-2-connect-to-a-tracker)
 	* [Step 3: compile and run OmniBOLT daemon](#step-3-compile-and-run-omnibolt-daemon)
 	* [Step 4: test channel operations using GUI testing tool](#step-4-test-channel-operations-using-gui-testing-tool)
 	* [Step 5: channel operations on test site](#step-5-channel-operations-on-test-site)
@@ -50,10 +52,27 @@ We propose [OmniBOLT](https://github.com/omnilaboratory/OmniBOLT-spec) to enable
 
 [Omnicore 0.18](https://github.com/OmniLayer/omnicore) or later integrates the latest BTC core 0.18, which enables relative time locker used in RSM contracts and HTL contracts.
 
-# Installation
+# Installation and minimum system requirment
 The following instruction works for Ubuntu 14.04.4 LTS, golang 1.10 or later.
 
-You could download the binary we compiled to major platforms at [here](https://github.com/omnilaboratory/obd/releases), and ignor step 1 and 3. 
+You could run obd on your desktop or a cloud server you trust. You could download the binary we compiled to major platforms at [here](https://github.com/omnilaboratory/obd/releases), and ignor step 1 and 3. 
+
+The following are the estimated system requirements for running an obd node:  
+* 2.0 GHz 64-bit processor  
+* 4 GB memory  
+* 100 GB HDD(SSD would be better)  
+* Ubuntu 14.04.4 LTS or later  
+* golang 1.10 or later  
+
+
+For running a tracker, the system requirment is higher, because a tracker requires a full btc/omnicore node. We suggest you have:  
+* 4 .0 GHz 64-bit processor  
+* 16 GB memory  
+* 500 GB HDD(SSD would be better)  for a btc/omnicore full node  
+* Ubuntu 14.04.4 LTS or later  
+* golang 1.10 or later  
+
+
 
 ## step 1: fetch the source code
 
