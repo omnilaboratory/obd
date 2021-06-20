@@ -10,7 +10,7 @@ Clone, compile the source code and run the binary executable file, you will have
 # Table of Contents
  * [Background](#background)
  * [Dependency](#dependency)
- * [Installation](#installation and minimum system requirment)
+ * [Installation](#installation and minimum system requirement)
 	* [Step 1: fetch the source code](#step-1-fetch-the-source-code)
 	<!--* [Step 2: set up OmniCore node](#step-2)
 		* [option 1: remote omnicore node](#option-1-remote-omnicore-node)	
@@ -54,7 +54,7 @@ If you run your own tracker, you should maintain an [Omnicore 0.18](https://gith
 Runing an obd node don't require full btc/omni node. The obd node should connects a remote tracker for full node services. 
  
 
-# Installation and minimum system requirment
+# Installation and minimum system requirement
 The following instruction works for Ubuntu 14.04.4 LTS, golang 1.10 or later.
 
 You could run obd on your desktop or a cloud server you trust. You could download the binary we compiled to major platforms at [here](https://github.com/omnilaboratory/obd/releases), and ignor step 1 and 3. 
