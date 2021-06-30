@@ -31,6 +31,31 @@ For more details of how to use these APIs, please refer to the online documentat
 
 OBD is designed for both (inbound ) liquidity providers and individual users:
 
+## Tracker network
+
+<p align="center">
+  <img width="750" alt="None Custodial OmniBOLT Daemon" src="assets/tracker.png">
+</p>
+
+Trackers form a DHT network, and each of them offers following services for obd nodes:  
+
+1. Full BTC/OMNI node services: create, mint, burn, destry assets.  
+
+2. Find payment path for peers.  
+
+3. Some statistic works, reporting channel/nodes status, network status  
+
+4. Monitor transactions and execute punishment of cheating   
+
+**rationali**:  
+In order to lower the barrier to use obd, we seperate the full BTC/OMNI node from obd, and developed tracker to provide full public node services such as minting or burning tokens. Plus, for quickly finding a payment path, each tracker greedly seeks the whole obd network, to build its local network topology, which avoids slow fully distributed path finding algorithms. When an obd queries a path to any tracker for a payment, the tracker will be able to response in milli-seconds.  
+
+* [connect a tracker when you run your obd](https://omnilaboratory.github.io/obd/#/OBD-README?id=step-2-connect-to-a-tracker).  
+
+* [minimum system requirement for a tracker](https://omnilaboratory.github.io/obd/#/OBD-README?id=installation-and-minimum-system-requirement).  
+
+* [tracker configuration](https://github.com/omnilaboratory/obd/tree/master/tracker/config/conf.ini)  
+
 ## liquidity provider
 
 The business model for a liquidity providers is straight forword. They connect to as many clients as possible, and earn channel fees by providing funded channels as relays of payments. Liquidity providers shall make sure the service quality of their nodes, especially the quality of being constantly online in order to earn more money during their service. With this motivation, we can expect that these liquidity providers bring sufficient funded channels hence better connectivity to the network.
