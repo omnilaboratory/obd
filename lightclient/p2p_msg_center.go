@@ -542,7 +542,11 @@ func routerOfP2PNode(msg bean.RequestMessage, data string, client *Client) (retD
 				if err == nil {
 					marshal, _ := json.Marshal(signedCxb)
 					msg.Data = string(marshal)
-					_, _ = service.HtlcCloseTxService.OnBobSignedCxbSubTx(msg, *client.User)
+					resp, _ := service.HtlcCloseTxService.OnBobSignedCxbSubTx(msg, *client.User)
+					bytes, _ := json.Marshal(resp)
+					data := string(bytes)
+					status := true
+					client.SendToMyself(msg.Type, status, data)
 					return "", false, nil
 				} else {
 					log.Println(err)
