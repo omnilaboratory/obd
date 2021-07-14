@@ -686,10 +686,6 @@ func (service *htlcCloseTxManager) OnBobSignCloseHtlcRequest(msg bean.RequestMes
 				log.Println(err)
 				return nil, err
 			}
-			if err != nil {
-				log.Println(err)
-				return nil, err
-			}
 			cnaBrRawData := bean.NeedClientSignRawBRTxData{}
 			cnaBrRawData.Hex = cnaBrHexData["hex"].(string)
 			cnaBrRawData.Inputs = cnaBrHexData["inputs"]
