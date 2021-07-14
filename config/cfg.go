@@ -4,6 +4,8 @@ import (
 	"flag"
 	"github.com/mitchellh/go-homedir"
 	"log"
+	"net"
+	"strings"
 	"testing"
 	"time"
 
@@ -35,6 +37,15 @@ var (
 	DataDirectory     = ""
 	dataDirectoryName = ".obd"
 )
+
+func parseHostname(hostname string) string {
+	P2pHostIps, err := net.LookupIP(hostname)
+	if err != nil {
+		panic("Can't parse hostname")
+	}
+
+	return P2pHostIps[0].String()
+}
 
 func Init() {
 	testing.Init()
@@ -81,7 +92,8 @@ func Init() {
 		log.Println(err)
 		return
 	}
-	P2P_hostIp = p2pNode.Key("hostIp").String()
+
+	P2P_hostIp = parseHostname(p2pNode.Key("hostIp").String())
 	P2P_port = p2pNode.Key("port").MustInt()
 
 	//tracker
@@ -90,5 +102,9 @@ func Init() {
 		log.Println(err)
 		return
 	}
-	TrackerHost = tracker.Key("host").MustString("localhost:60060")
+
+	p2pHost := strings.Split(tracker.Key("host").MustString("localhost:60060"), ":")
+	hostName := parseHostname(p2pHost[0])
+	hostIp := p2pHost[1]
+	TrackerHost = hostName + ":" + hostIp
 }
