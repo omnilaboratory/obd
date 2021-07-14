@@ -264,7 +264,7 @@ func routerOfP2PNode(msg bean.RequestMessage, data string, client *Client) (retD
 		}
 		defaultErr = err
 	case enum.MsgType_CloseChannelSign_39:
-		node, err := service.ChannelService.AfterBobSignCloseChannelAtAliceSide(data, *client.User)
+		node, err := service.ChannelService.OnGetCloseChannelInfo(data, *client.User)
 		if err == nil {
 			status = true
 			retData, _ := json.Marshal(node)

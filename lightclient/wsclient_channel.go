@@ -182,11 +182,11 @@ func (client *Client) ChannelModule(msg bean.RequestMessage) (enum.SendTargetTyp
 				status = true
 			}
 		}
-		//if status {
-		//	msg.Type = enum.MsgType_CloseChannelRequest_38
-		//	_ = client.sendDataToP2PUser(msg, status, data)
-		//}
-		//msg.Type = enum.MsgType_SendCloseChannelRequest_38
+		if status {
+			msg.Type = enum.MsgType_CloseChannelSign_39
+			err = client.sendDataToP2PUser(msg, status, data)
+		}
+		msg.Type = enum.MsgType_SendCloseChannelRequest_38
 		client.SendToMyself(msg.Type, status, data)
 
 	case enum.MsgType_SendCloseChannelSign_39:

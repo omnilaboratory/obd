@@ -753,9 +753,60 @@ func (this *channelManager) ForceCloseChannel(msg bean.RequestMessage, user *bea
 
 	//同步通道信息到tracker
 	sendChannelStateToTracker(*channelInfo, *latestCommitmentTx)
+	return channelInfo, nil
+}
+
+func (this *channelManager) OnGetCloseChannelInfo(jsonData string, user bean.User) (interface{}, error) {
+	if tool.CheckIsString(&jsonData) == false {
+		return nil, errors.New(enum.Tips_common_empty + "inputData")
+	}
+
+	reqData := &dao.ChannelInfo{}
+	err := json.Unmarshal([]byte(jsonData), reqData)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	if tool.CheckIsString(&reqData.ChannelId) == false {
+		err = errors.New(enum.Tips_common_empty + "channel_id")
+		log.Println(err)
+		return nil, err
+	}
+
+	tx, err := user.Db.Begin(true)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	defer tx.Rollback()
+
+	targetUser := user.PeerId
+	channelInfo := &dao.ChannelInfo{}
+	err = tx.Select(
+		q.Eq("ChannelId", reqData.ChannelId),
+		q.Or(
+			q.Eq("PeerIdA", targetUser),
+			q.Eq("PeerIdB", targetUser))).
+		First(channelInfo)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	channelInfo.CurrState = bean.ChannelState_Close
+	channelInfo.CloseAt = time.Now()
+	err = tx.Update(channelInfo)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
 
 	return channelInfo, nil
-
 }
 
 //请求方节点处理关闭通道的操作
