@@ -436,19 +436,138 @@ func (this *channelManager) DelChannelByTemporaryChanId(jsonData string, user be
 	return node, err
 }
 
-func (this *channelManager) GetChannelInfoByChannelId(jsonData string, user bean.User) (info *dao.ChannelInfo, err error) {
-	if tool.CheckIsString(&jsonData) == false {
+func (this *channelManager) GetChannelInfoByChannelId(channelId string, user bean.User) (info *dao.ChannelInfo, err error) {
+	if tool.CheckIsString(&channelId) == false {
 		return nil, errors.New(enum.Tips_common_empty + "ChannelId")
 	}
 
 	info = &dao.ChannelInfo{}
 	err = user.Db.Select(
-		q.Eq("ChannelId", jsonData),
+		q.Eq("ChannelId", channelId),
 		q.Or(
 			q.Eq("PeerIdA", user.PeerId),
 			q.Eq("PeerIdB", user.PeerId))).
 		First(info)
 	return info, err
+}
+
+func (this *channelManager) SendBRTxByChannelId(channelId string, user bean.User) (channelInfo *dao.ChannelInfo, err error) {
+	if tool.CheckIsString(&channelId) == false {
+		return nil, errors.New(enum.Tips_common_empty + "channelId")
+	}
+
+	channelInfo = &dao.ChannelInfo{}
+	err = user.Db.Select(
+		q.Eq("ChannelId", channelId),
+		q.Or(
+			q.Eq("PeerIdA", user.PeerId),
+			q.Eq("PeerIdB", user.PeerId))).
+		First(channelInfo)
+
+	if err != nil || channelInfo.Id == 0 {
+		return nil, errors.New(enum.Tips_common_empty + "channel")
+	}
+
+	if channelInfo.CurrState == bean.ChannelState_CanUse || channelInfo.CurrState == bean.ChannelState_HtlcTx {
+		result := conn2tracker.OmniGetBalancesForAddress(channelInfo.ChannelAddress, int(channelInfo.PropertyId))
+		if result == "" {
+			return nil, errors.New("fail to get channel balance")
+		}
+		balance := gjson.Get(result, "balance").Float()
+
+		isSend := false
+		if balance < channelInfo.Amount {
+			transactionsStr, err := conn2tracker.OmniListTransactions(channelInfo.ChannelAddress)
+			if transactionsStr == "" {
+				return nil, errors.New("fail to get channel transactions")
+			}
+			transactions := gjson.Parse(transactionsStr).Array()
+			for _, item := range transactions {
+				txid := item.Get("txid").Str
+				if tool.CheckIsString(&txid) == false {
+					continue
+				}
+				rsmcBreachRemedy := &dao.BreachRemedyTransaction{}
+				_ = user.Db.Select(q.Eq("CurrState", dao.TxInfoState_CreateAndSign), q.Eq("InputTxid", txid)).First(rsmcBreachRemedy)
+				if rsmcBreachRemedy.Id > 0 {
+					txid, err = conn2tracker.SendRawTransaction(rsmcBreachRemedy.BrTxHex)
+					if err == nil {
+						log.Println("user send rsmcBr BreachRemedyTransaction id:", rsmcBreachRemedy.Id, txid)
+						rsmcBreachRemedy.CurrState = dao.TxInfoState_SendHex
+						rsmcBreachRemedy.SendAt = time.Now()
+						_ = user.Db.Update(rsmcBreachRemedy)
+						isSend = true
+					}
+
+					// htlc htlcbr
+					htlcBreachRemedy := &dao.BreachRemedyTransaction{}
+					_ = user.Db.Select(
+						q.Eq("Type", dao.BRType_Htlc),
+						q.Eq("CurrState", dao.TxInfoState_CreateAndSign),
+						q.Eq("ChannelId", rsmcBreachRemedy.ChannelId),
+						q.Eq("CommitmentTxId", rsmcBreachRemedy.CommitmentTxId)).First(htlcBreachRemedy)
+					if htlcBreachRemedy.Id > 0 {
+						txid, err = conn2tracker.SendRawTransaction(htlcBreachRemedy.BrTxHex)
+						if err == nil {
+							log.Println("user send htlcBr BreachRemedyTransaction id:", htlcBreachRemedy.Id, txid)
+							htlcBreachRemedy.CurrState = dao.TxInfoState_SendHex
+							htlcBreachRemedy.SendAt = time.Now()
+							_ = user.Db.Update(htlcBreachRemedy)
+							isSend = true
+						}
+					}
+				} else {
+					// htlc payer方的htbr
+					sentRsmcBreachRemedy := &dao.BreachRemedyTransaction{}
+					_ = user.Db.Select(q.Eq("CurrState", dao.TxInfoState_SendHex), q.Eq("InputTxid", txid)).First(sentRsmcBreachRemedy)
+					if sentRsmcBreachRemedy.Id > 0 {
+						htBreachRemedy := &dao.BreachRemedyTransaction{}
+						_ = user.Db.Select(
+							q.Eq("Type", dao.BRType_Ht1a),
+							q.Eq("CurrState", dao.TxInfoState_CreateAndSign),
+							q.Eq("ChannelId", sentRsmcBreachRemedy.ChannelId),
+							q.Eq("CommitmentTxId", sentRsmcBreachRemedy.CommitmentTxId)).First(htBreachRemedy)
+						if htBreachRemedy.Id > 0 {
+							txid, err = conn2tracker.SendRawTransaction(htBreachRemedy.BrTxHex)
+							if err == nil {
+								log.Println("user send htBr BreachRemedyTransaction id: ", htBreachRemedy.Id, txid)
+								htBreachRemedy.CurrState = dao.TxInfoState_SendHex
+								htBreachRemedy.SendAt = time.Now()
+								_ = user.Db.Update(htBreachRemedy)
+								isSend = true
+							}
+						}
+						// 或者 htlc payee方的hebr
+						heBreachRemedy := &dao.BreachRemedyTransaction{}
+						_ = user.Db.Select(
+							q.Eq("Type", dao.BRType_HE1b),
+							q.Eq("CurrState", dao.TxInfoState_CreateAndSign),
+							q.Eq("ChannelId", sentRsmcBreachRemedy.ChannelId),
+							q.Eq("CommitmentTxId", sentRsmcBreachRemedy.CommitmentTxId)).First(heBreachRemedy)
+						if heBreachRemedy.Id > 0 {
+							txid, err = conn2tracker.SendRawTransaction(heBreachRemedy.BrTxHex)
+							if err != nil {
+								log.Println("user send heBr BreachRemedyTransaction id: ", heBreachRemedy.Id, txid)
+								heBreachRemedy.CurrState = dao.TxInfoState_SendHex
+								heBreachRemedy.SendAt = time.Now()
+								_ = user.Db.Update(heBreachRemedy)
+								isSend = true
+							}
+						}
+					}
+				}
+			}
+			if isSend {
+				log.Println(transactionsStr)
+				channelInfo.CurrState = bean.ChannelState_Close
+				channelInfo.CloseAt = time.Now()
+				_ = user.Db.Update(&channelInfo)
+				sendChannelStateToTracker(*channelInfo, dao.CommitmentTransaction{})
+				return channelInfo, nil
+			}
+		}
+	}
+	return nil, errors.New("send nothing")
 }
 
 func (this *channelManager) GetChannelInfoById(jsonData string, user bean.User) (info *dao.ChannelInfo, err error) {

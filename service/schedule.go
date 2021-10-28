@@ -89,6 +89,7 @@ func checkRsmcAndSendBR(db storm.Node) {
 						if transactionsStr == "" {
 							continue
 						}
+						isSend := false
 						transactions := gjson.Parse(transactionsStr).Array()
 						for _, item := range transactions {
 							txid := item.Get("txid").Str
@@ -104,6 +105,7 @@ func checkRsmcAndSendBR(db storm.Node) {
 									rsmcBreachRemedy.CurrState = dao.TxInfoState_SendHex
 									rsmcBreachRemedy.SendAt = time.Now()
 									_ = db.Update(rsmcBreachRemedy)
+									isSend = true
 								}
 
 								// htlc htlcbr
@@ -120,6 +122,7 @@ func checkRsmcAndSendBR(db storm.Node) {
 										htlcBreachRemedy.CurrState = dao.TxInfoState_SendHex
 										htlcBreachRemedy.SendAt = time.Now()
 										_ = db.Update(htlcBreachRemedy)
+										isSend = true
 									}
 								}
 							} else {
@@ -140,6 +143,7 @@ func checkRsmcAndSendBR(db storm.Node) {
 											htBreachRemedy.CurrState = dao.TxInfoState_SendHex
 											htBreachRemedy.SendAt = time.Now()
 											_ = db.Update(htBreachRemedy)
+											isSend = true
 										}
 									}
 									// 或者 htlc payee方的hebr
@@ -156,16 +160,19 @@ func checkRsmcAndSendBR(db storm.Node) {
 											heBreachRemedy.CurrState = dao.TxInfoState_SendHex
 											heBreachRemedy.SendAt = time.Now()
 											_ = db.Update(heBreachRemedy)
+											isSend = true
 										}
 									}
 								}
 							}
 						}
-						log.Println(transactionsStr)
-						channelInfo.CurrState = bean.ChannelState_Close
-						channelInfo.CloseAt = time.Now()
-						_ = db.Update(&channelInfo)
-						sendChannelStateToTracker(channelInfo, dao.CommitmentTransaction{})
+						if isSend {
+							log.Println(transactionsStr)
+							channelInfo.CurrState = bean.ChannelState_Close
+							channelInfo.CloseAt = time.Now()
+							_ = db.Update(&channelInfo)
+							sendChannelStateToTracker(channelInfo, dao.CommitmentTransaction{})
+						}
 					}
 				}
 			}

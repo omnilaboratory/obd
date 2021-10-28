@@ -145,6 +145,20 @@ func (client *Client) ChannelModule(msg bean.RequestMessage) (enum.SendTargetTyp
 			}
 		}
 		client.SendToMyself(msg.Type, status, data)
+	case enum.MsgType_SendBrTxByChannelId_3157:
+		node, err := service.ChannelService.SendBRTxByChannelId(msg.Data, *client.User)
+		if err != nil {
+			data = err.Error()
+		} else {
+			bytes, err := json.Marshal(node)
+			if err != nil {
+				data = err.Error()
+			} else {
+				data = string(bytes)
+				status = true
+			}
+		}
+		client.SendToMyself(msg.Type, status, data)
 
 	//get acceptChannelReq from fundee then send to funder
 	case enum.MsgType_SendChannelAccept_33:

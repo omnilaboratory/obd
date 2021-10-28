@@ -185,7 +185,7 @@ func (client *Client) Read() {
 						msg.Type == enum.MsgType_SendChannelAccept_33 ||
 						msg.Type == enum.MsgType_SendCloseChannelRequest_38 ||
 						(msg.Type <= enum.MsgType_ChannelOpen_AllItem_3150 &&
-							msg.Type >= enum.MsgType_CheckChannelAddessExist_3156) {
+							msg.Type >= enum.MsgType_SendBrTxByChannelId_3157) {
 						sendType, dataOut, status = client.ChannelModule(msg)
 						break
 					}
