@@ -2,13 +2,9 @@ package service
 
 import (
 	"github.com/asdine/storm"
-	"github.com/asdine/storm/q"
 	"github.com/omnilaboratory/obd/bean"
 	"github.com/omnilaboratory/obd/config"
-	"github.com/omnilaboratory/obd/conn"
 	"github.com/omnilaboratory/obd/dao"
-	"github.com/omnilaboratory/obd/tool"
-	"github.com/tidwall/gjson"
 	"io/ioutil"
 	"log"
 	"strings"
@@ -78,102 +74,7 @@ func checkRsmcAndSendBR(db storm.Node) {
 		for _, channelInfo := range channelInfos {
 			if len(channelInfo.ChannelId) > 0 {
 				if channelInfo.CurrState == bean.ChannelState_CanUse || channelInfo.CurrState == bean.ChannelState_HtlcTx {
-					result := conn2tracker.OmniGetBalancesForAddress(channelInfo.ChannelAddress, int(channelInfo.PropertyId))
-					if result == "" {
-						continue
-					}
-					balance := gjson.Get(result, "balance").Float()
-
-					if balance < channelInfo.Amount {
-						transactionsStr, err := conn2tracker.OmniListTransactions(channelInfo.ChannelAddress)
-						if transactionsStr == "" {
-							continue
-						}
-						isSend := false
-						transactions := gjson.Parse(transactionsStr).Array()
-						for _, item := range transactions {
-							txid := item.Get("txid").Str
-							if tool.CheckIsString(&txid) == false {
-								continue
-							}
-							rsmcBreachRemedy := &dao.BreachRemedyTransaction{}
-							_ = db.Select(q.Eq("CurrState", dao.TxInfoState_CreateAndSign), q.Eq("InputTxid", txid)).First(rsmcBreachRemedy)
-							if rsmcBreachRemedy.Id > 0 {
-								txid, err = conn2tracker.SendRawTransaction(rsmcBreachRemedy.BrTxHex)
-								if err == nil {
-									log.Println("timer send rsmcBr BreachRemedyTransaction id:", rsmcBreachRemedy.Id, txid)
-									rsmcBreachRemedy.CurrState = dao.TxInfoState_SendHex
-									rsmcBreachRemedy.SendAt = time.Now()
-									_ = db.Update(rsmcBreachRemedy)
-									isSend = true
-								}
-
-								// htlc htlcbr
-								htlcBreachRemedy := &dao.BreachRemedyTransaction{}
-								_ = db.Select(
-									q.Eq("Type", dao.BRType_Htlc),
-									q.Eq("CurrState", dao.TxInfoState_CreateAndSign),
-									q.Eq("ChannelId", rsmcBreachRemedy.ChannelId),
-									q.Eq("CommitmentTxId", rsmcBreachRemedy.CommitmentTxId)).First(htlcBreachRemedy)
-								if htlcBreachRemedy.Id > 0 {
-									txid, err = conn2tracker.SendRawTransaction(htlcBreachRemedy.BrTxHex)
-									if err == nil {
-										log.Println("timer send htlcBr BreachRemedyTransaction id:", htlcBreachRemedy.Id, txid)
-										htlcBreachRemedy.CurrState = dao.TxInfoState_SendHex
-										htlcBreachRemedy.SendAt = time.Now()
-										_ = db.Update(htlcBreachRemedy)
-										isSend = true
-									}
-								}
-							} else {
-								// htlc payer方的htbr
-								sentRsmcBreachRemedy := &dao.BreachRemedyTransaction{}
-								_ = db.Select(q.Eq("CurrState", dao.TxInfoState_SendHex), q.Eq("InputTxid", txid)).First(sentRsmcBreachRemedy)
-								if sentRsmcBreachRemedy.Id > 0 {
-									htBreachRemedy := &dao.BreachRemedyTransaction{}
-									_ = db.Select(
-										q.Eq("Type", dao.BRType_Ht1a),
-										q.Eq("CurrState", dao.TxInfoState_CreateAndSign),
-										q.Eq("ChannelId", sentRsmcBreachRemedy.ChannelId),
-										q.Eq("CommitmentTxId", sentRsmcBreachRemedy.CommitmentTxId)).First(htBreachRemedy)
-									if htBreachRemedy.Id > 0 {
-										txid, err = conn2tracker.SendRawTransaction(htBreachRemedy.BrTxHex)
-										if err == nil {
-											log.Println("timer send htBr BreachRemedyTransaction id: ", htBreachRemedy.Id, txid)
-											htBreachRemedy.CurrState = dao.TxInfoState_SendHex
-											htBreachRemedy.SendAt = time.Now()
-											_ = db.Update(htBreachRemedy)
-											isSend = true
-										}
-									}
-									// 或者 htlc payee方的hebr
-									heBreachRemedy := &dao.BreachRemedyTransaction{}
-									_ = db.Select(
-										q.Eq("Type", dao.BRType_HE1b),
-										q.Eq("CurrState", dao.TxInfoState_CreateAndSign),
-										q.Eq("ChannelId", sentRsmcBreachRemedy.ChannelId),
-										q.Eq("CommitmentTxId", sentRsmcBreachRemedy.CommitmentTxId)).First(heBreachRemedy)
-									if heBreachRemedy.Id > 0 {
-										txid, err = conn2tracker.SendRawTransaction(heBreachRemedy.BrTxHex)
-										if err != nil {
-											log.Println("timer send heBr BreachRemedyTransaction id: ", heBreachRemedy.Id, txid)
-											heBreachRemedy.CurrState = dao.TxInfoState_SendHex
-											heBreachRemedy.SendAt = time.Now()
-											_ = db.Update(heBreachRemedy)
-											isSend = true
-										}
-									}
-								}
-							}
-						}
-						if isSend {
-							log.Println(transactionsStr)
-							channelInfo.CurrState = bean.ChannelState_Close
-							channelInfo.CloseAt = time.Now()
-							_ = db.Update(&channelInfo)
-							sendChannelStateToTracker(channelInfo, dao.CommitmentTransaction{})
-						}
-					}
+					_, _ = dealBrTx(&channelInfo, db)
 				}
 			}
 		}
