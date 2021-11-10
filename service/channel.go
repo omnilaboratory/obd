@@ -461,7 +461,8 @@ func (this *channelManager) SendBRTxByChannelId(channelId string, user bean.User
 		q.Eq("ChannelId", channelId),
 		q.Or(
 			q.Eq("PeerIdA", user.PeerId),
-			q.Eq("PeerIdB", user.PeerId))).
+			q.Eq("PeerIdB", user.PeerId)),
+	).
 		First(channelInfo)
 
 	if err != nil || channelInfo.Id == 0 {

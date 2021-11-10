@@ -902,5 +902,5 @@ func (this *commitmentTxManager) SendSomeCommitmentById(data string, user *bean.
 	}
 	_ = tx.Commit()
 
-	return nil, nil
+	return commitmentTransaction, nil
 }
