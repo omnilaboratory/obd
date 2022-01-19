@@ -4,7 +4,7 @@
 
 * `Contact`: Neo Carmack(neocarmack@omnilab.online), Ben Fei(benfei@omnilab.online)
 
-Based on the fundamental theory of Lightning network, OmniBOLT specification describes how to enable OmniLayer assets to be circulated via ligtning channels, and how can smart assets benefit from this noval quick payment theory.
+Based on the fundamental theory of Lightning network, OmniBOLT specification describes how to enable OmniLayer assets to be circulated via lightning channels, and how can smart assets benefit from this noval quick payment theory.
 
 In addition, OmniBOLT provides more flexible contracts for upper layer decentralized applications. [OmniBOLT daemon](https://github.com/omnilaboratory/obd) is a golang implementation of this specification, an open source, off-chain decentralized platform, build upon BTC/OmniLayer network, implements basic HTLC payment, atomic swap of multi-currencies, and more off-chain contracts on the network of smart [assets enabled lightning channels](https://github.com/omnilaboratory/OmniBOLT-spec/blob/master/OmniBOLT-02-peer-protocol.md#omni-address).
 
