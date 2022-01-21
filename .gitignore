@@ -15,3 +15,7 @@
 /tracker/tracker_windows_amd64.exe
 /dbdatatest/user_945e772bd80f806039f8f9d15930b0715d7d45bd8cf9ebd0b5a9d22566ea22e2.db.lock
 /dbdatatest/trackerServer.db.lock
+tmp/
+maing_test.go
+tmp.*
+*.log
