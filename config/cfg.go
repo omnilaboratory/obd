@@ -38,7 +38,7 @@ var (
 
 func Init() {
 	testing.Init()
-	flag.Parse()
+	//flag.Parse()
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
 
 	//Cfg, err := ini.Load("config/conf.ini")
