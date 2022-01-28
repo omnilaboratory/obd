@@ -29,8 +29,10 @@ func (client *Client) UserModule(msg bean.RequestMessage) (enum.SendTargetType, 
 	var data string
 	switch msg.Type {
 	case enum.MsgType_UserLogin_2001:
-		userId := gjson.Get(msg.Data, "user_id").String()
+		//for js sdk user
+		walletId := gjson.Get(msg.Data, "wallet_id").String()
 
+		//for admin user
 		mnemonic := gjson.Get(msg.Data, "mnemonic").String()
 
 		isAdmin := false
@@ -44,7 +46,7 @@ func (client *Client) UserModule(msg bean.RequestMessage) (enum.SendTargetType, 
 		if isAdmin {
 			peerId = tool.GetUserPeerId(mnemonic)
 		} else {
-			peerId = tool.GetUserPeerId(userId)
+			peerId = tool.GetUserPeerId(walletId)
 		}
 		if GlobalWsClientManager.OnlineClientMap[peerId] != nil {
 			if GlobalWsClientManager.OnlineClientMap[peerId].User.IsAdmin {
