@@ -39,7 +39,8 @@ Video tutorials can be found here:
 
 ## How to Build:
 
-* make linux-amd64   # the complied file will in bin dir ,example: lncli-linux-amd64  obd-linux-amd64  tracker-linux-amd64
+* make linux-amd64   
+the complied file will in bin dir ,example: lncli-linux-amd64  obd-linux-amd64  tracker-linux-amd64
 
 * or use go build command directly:
 1. go build -o bin/
