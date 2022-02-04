@@ -56,6 +56,8 @@ In order to lower the barrier to use obd, we seperate the full BTC/OMNI node fro
 
 * [minimum system requirement for a tracker](https://omnilaboratory.github.io/obd/#/OBD-README?id=installation-and-minimum-system-requirement).  
 
+* [installation](https://github.com/omnilaboratory/obd/tree/master/tracker#omnibolt-tracker--in-golang).  
+
 * [tracker configuration](https://github.com/omnilaboratory/obd/tree/master/tracker/config/conf.ini)  
 
 ## liquidity provider
