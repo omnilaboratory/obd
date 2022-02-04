@@ -2,7 +2,7 @@
 [![](https://img.shields.io/badge/license-MIT-blue)](https://github.com/omnilaboratory/obd/blob/master/LICENSE) [![](https://img.shields.io/badge/golang-%3E%3D1.9.0-orange)](https://golang.org/dl/) [![](https://img.shields.io/badge/Spec-OmniLayer-brightgreen)](https://github.com/omnilaboratory/OmniBOLT-spec) 
   
 
-The architecture of tracker network is [here](https://omnilaboratory.github.io/obd/#/Architecture?id=tracker-network)
+The introduction and architecture of tracker network is [here](https://omnilaboratory.github.io/obd/#/Architecture?id=tracker-network).  
 
 ## Minimum system requirement
 
