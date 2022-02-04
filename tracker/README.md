@@ -4,6 +4,17 @@
 
 The architecture of tracker network is [here](https://omnilaboratory.github.io/obd/#/Architecture?id=tracker-network)
 
+## Minimum system requirement
+
+https://omnilaboratory.github.io/obd/#/OBD-README?id=installation-and-minimum-system-requirement
+
+* 4.0 GHz 64-bit processor
+* 16 GB memory
+* 500 GB HDD(SSD would be better) for a btc/omnicore full node
+* Ubuntu 14.04.4 LTS or later
+* golang 1.10 or later
+
+
 ## Install Omnicore
 
 [Install the omnicore from the project repository](https://github.com/OmniLayer/omnicore#installation) . After the installation is complete, the user needs to wait for a while to synchronize the full node data
