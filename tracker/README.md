@@ -17,7 +17,7 @@ https://omnilaboratory.github.io/obd/#/OBD-README?id=installation-and-minimum-sy
 
 ## Install Omnicore
 
-[Install the omnicore from the project repository](https://github.com/OmniLayer/omnicore#installation) . After the installation is complete, the user needs to wait for a while to synchronize the full node data
+[Install the omnicore from the project repository](https://github.com/OmniLayer/omnicore#installation) . After the installation is complete, the user needs to wait for a while to synchronize the full node data. 
 
 ## Config tracker
 
@@ -29,7 +29,7 @@ user = the user name
 pass = the password
 ```
 
-Omnicore has a whitelist, only the ip on the list can access it. We suggest user to run tracker and omnicore on the same device.  
+Omnicore has a whitelist, only the ip on the list can access it. We suggest user to run tracker and omnicore on the same device. A constant online cloud server is advised. 
 
 
 ## Run tracker
