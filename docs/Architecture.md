@@ -43,9 +43,11 @@ Trackers form a DHT network, and each of them offers following services for obd 
 
 2. Find payment path for peers.  
 
-3. Some statistic works, reporting channel/nodes status, network status  
+3. Some statistic works, reporting channel/nodes status, network status.    
 
-4. Monitor transactions and execute punishment of cheating   
+4. Monitor transactions and execute punishment of cheating.    
+
+5. Queue messages for off-line nodes.  
 
 **rationali**:  
 In order to lower the barrier to use obd, we seperate the full BTC/OMNI node from obd, and developed tracker to provide full public node services such as minting or burning tokens. Plus, for quickly finding a payment path, each tracker greedly seeks the whole obd network, to build its local network topology, which avoids slow fully distributed path finding algorithms. When an obd queries a path to any tracker for a payment, the tracker will be able to response in milli-seconds.  
