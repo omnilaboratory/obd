@@ -20,3 +20,4 @@ maing_test.go
 tmp.*
 *.log
 bin/
+*.tmp
