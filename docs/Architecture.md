@@ -51,6 +51,9 @@ Trackers form a DHT network, and each of them offers following services for obd 
 
 6. Relay messages when obd is behind a LAN firewall. The messages can be encryted if user chooses to(to do).  
 
+When a tracker joins the network, it synchronizes the information of the all obd nodes from the existing tracker network, and then establishes connections with obds to inquire about the status. Obd has the right to reject the inquiries of trackers that is unkown to it(via the white list in configure file).  
+
+
 **rationali**:  
 In order to lower the barrier to use obd, we seperate the full BTC/OMNI node from obd, and developed tracker to provide full public node services such as minting or burning tokens. Plus, for quickly finding a payment path, each tracker greedly seeks the whole obd network, to build its local network topology, which avoids slow fully distributed path finding algorithms. When an obd queries a path to any tracker for a payment, the tracker will be able to response in milli-seconds.  
 
@@ -63,7 +66,7 @@ In order to lower the barrier to use obd, we seperate the full BTC/OMNI node fro
 * [tracker configuration](https://github.com/omnilaboratory/obd/tree/master/tracker/config/conf.ini)  
 
 
-**User MUST know**:
+**Users MUST know**:
 1. Only public channel will seek payment path from its tracker. And tracker is only able collect public channel infomations.   
 
 2. Private channel is invisible to the network, only the owner has the state information.   
