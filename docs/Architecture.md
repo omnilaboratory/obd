@@ -47,7 +47,9 @@ Trackers form a DHT network, and each of them offers following services for obd 
 
 4. Monitor transactions and execute punishment of cheating.    
 
-5. Queue messages for off-line nodes.  
+5. Queue messages for off-line nodes. In the case of an obd node goes offline, the tracker it connects will maintain a queue to collect incoming messages.(to do)
+
+6. Relay messages when obd is behind a LAN firewall. The messages can be encryted if user chooses to(to do).  
 
 **rationali**:  
 In order to lower the barrier to use obd, we seperate the full BTC/OMNI node from obd, and developed tracker to provide full public node services such as minting or burning tokens. Plus, for quickly finding a payment path, each tracker greedly seeks the whole obd network, to build its local network topology, which avoids slow fully distributed path finding algorithms. When an obd queries a path to any tracker for a payment, the tracker will be able to response in milli-seconds.  
@@ -59,6 +61,19 @@ In order to lower the barrier to use obd, we seperate the full BTC/OMNI node fro
 * [installation](https://github.com/omnilaboratory/obd/tree/master/tracker#omnibolt-tracker--in-golang).  
 
 * [tracker configuration](https://github.com/omnilaboratory/obd/tree/master/tracker/config/conf.ini)  
+
+
+**User MUST know**:
+1. Only public channel will seek payment path from its tracker. And tracker is only able collect public channel infomations.   
+
+2. Private channel is invisible to the network, only the owner has the state information.   
+
+3. OBD has an option to encrypt messages when uses tracker as a relayer, in which case, before the two parties formally sending the information, they need to exchange a private key for encryption. The process is the same as for HTTPS protocol.  
+
+4. DO NOT use the tracker recommended by your counterparty.  
+
+5. Broadcast your transactions to your own tracker, a well-known lnd watch tower(or obd tracker), or a safe BTC mining pool to avoid malicious delays of broadcasting your transactions, hence losing the protection of the time-out mechanism of lightning network. 
+
 
 ## liquidity provider
 
