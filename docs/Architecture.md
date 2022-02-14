@@ -33,8 +33,17 @@ OBD is designed for both (inbound ) liquidity providers and individual users:
 
 ## Tracker network
 
+### Rationali  
+There are two major purposes for designing a tracker network that seperates the full BTC/OMNI node services from obd:  
+
+One is to lower the barrier of deploying and using use obd, without waiting days to sync full node data. Another purpose is to make the obd node more adaptable to realistic user scenarios. The user's network is usually unstable and cannot be constantly online. Therefore, trackers play an important role in maintaining network topology, path finding, message relay, reconnection, etc.
+
+For example, for quickly finding a payment path, each tracker greedly seeks the whole obd network, to build the network topology, which avoids slow fully distributed path finding algorithms. When an obd queries a path to any tracker for a payment, the tracker will be able to response in milli-seconds.  
+
+
+### Features of the current tracker release
 <p align="center">
-  <img width="750" alt="None Custodial OmniBOLT Daemon" src="assets/tracker.png">
+  <img width="750" alt="how tracker works" src="assets/tracker.png">
 </p>
 
 Trackers form a DHT network, and each of them offers following services for obd nodes:  
@@ -53,20 +62,21 @@ Trackers form a DHT network, and each of them offers following services for obd 
 
 When a tracker joins the network, it synchronizes the information of the all obd nodes from the existing tracker network, and then establishes connections with obds to inquire about the status. Obd has the right to reject the inquiries of trackers that is unkown to it(via the white list in configure file).  
 
-
-**rationali**:  
-In order to lower the barrier to use obd, we seperate the full BTC/OMNI node from obd, and developed tracker to provide full public node services such as minting or burning tokens. Plus, for quickly finding a payment path, each tracker greedly seeks the whole obd network, to build its local network topology, which avoids slow fully distributed path finding algorithms. When an obd queries a path to any tracker for a payment, the tracker will be able to response in milli-seconds.  
-
-* [connect a tracker when you run your obd](https://omnilaboratory.github.io/obd/#/OBD-README?id=step-2-connect-to-a-tracker).  
+### How to use
 
 * [minimum system requirement for a tracker](https://omnilaboratory.github.io/obd/#/OBD-README?id=installation-and-minimum-system-requirement).  
 
-* [installation](https://github.com/omnilaboratory/obd/tree/master/tracker#omnibolt-tracker--in-golang).  
+* [tracker installation](https://github.com/omnilaboratory/obd/tree/master/tracker#omnibolt-tracker--in-golang).  
 
 * [tracker configuration](https://github.com/omnilaboratory/obd/tree/master/tracker/config/conf.ini)  
 
+* [connect a tracker when you run your obd](https://omnilaboratory.github.io/obd/#/OBD-README?id=step-2-connect-to-a-tracker).  
 
-**Users MUST know**:
+
+
+
+
+### Users MUST know:
 1. Only public channel will seek payment path from its tracker. And tracker is only able collect public channel infomations.   
 
 2. Private channel is invisible to the network, only the owner has the state information.   
