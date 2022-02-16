@@ -38,7 +38,7 @@ func (client *Client) UserModule(msg bean.RequestMessage) (enum.SendTargetType, 
 		isAdmin := false
 
 		//TODO 管理员验证
-		if client.IsGRpcRequest || true {
+		if client.IsGRpcRequest {
 			loginToken := gjson.Get(msg.Data, "login_token").Str
 			isAdmin = service.CheckIsAdmin(loginToken)
 		}
@@ -47,6 +47,7 @@ func (client *Client) UserModule(msg bean.RequestMessage) (enum.SendTargetType, 
 			peerId = tool.GetUserPeerId(mnemonic)
 		} else {
 			peerId = tool.GetUserPeerId(walletId)
+			//peerId = tool.GetUserPeerId(mnemonic)
 		}
 		if GlobalWsClientManager.OnlineClientMap[peerId] != nil {
 			if GlobalWsClientManager.OnlineClientMap[peerId].User.IsAdmin {
