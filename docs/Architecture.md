@@ -36,7 +36,7 @@ OBD is designed for both (inbound ) liquidity providers and individual users:
 ### Rationali  
 There are two major purposes for designing a tracker network that seperates the full BTC/OMNI node services from obd:  
 
-One is to lower the barrier of deploying and using use obd, without waiting days to sync full node data. Another purpose is to make the obd node more adaptable to realistic user scenarios. The user's network is usually unstable and cannot be constantly online. Therefore, trackers play an important role in maintaining network topology, path finding, message relay, reconnection, etc.
+One is to lower the barrier of deploying and using obd, without waiting days to sync full node data. Another purpose is to make the obd node more adaptable to realistic user scenarios. The user's network is usually unstable and cannot be constantly online. Therefore, trackers play an important role in maintaining network topology, path finding, message relay, reconnection, etc.
 
 For example, for quickly finding a payment path, each tracker greedly seeks the whole obd network, to build the network topology, which avoids slow fully distributed path finding algorithms. When an obd queries a path to any tracker for a payment, the tracker will be able to response in milli-seconds.  
 
@@ -77,11 +77,11 @@ When a tracker joins the network, it synchronizes the information of the all obd
 
 
 ### Users MUST know:
-1. Only public channel will seek payment path from its tracker. And tracker is only able collect public channel infomations.   
+1. Only public channel will seek payment path from its tracker. And tracker is only able collect public channel informations.   
 
 2. Private channel is invisible to the network, only the owner has the state information.   
 
-3. OBD has an option to encrypt messages when uses tracker as a relayer, in which case, before the two parties formally sending the information, they need to exchange a private key for encryption. The process is the same as for HTTPS protocol.  
+3. OBD has an option to encrypt messages when uses tracker as a message relayer, in which case, before the two parties formally sending the information, they need to exchange a private key for encryption. The process is the same to HTTPS protocol.  
 
 4. DO NOT use the tracker recommended by your counterparty.  
 
@@ -156,6 +156,8 @@ The project address is: https://github.com/omnilaboratory/lnd
 * `rpc`:  
 
 * `service`:  
+
+* `omnicore`:  
 
 * `tool`:  
 
