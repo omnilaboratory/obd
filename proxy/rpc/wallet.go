@@ -11,6 +11,7 @@ import (
 	"github.com/omnilaboratory/obd/omnicore"
 	"github.com/omnilaboratory/obd/proxy/pb"
 	"github.com/omnilaboratory/obd/service"
+	"github.com/tyler-smith/go-bip32"
 	"log"
 	"strings"
 )
@@ -58,6 +59,9 @@ func (server *RpcServer) GenSeed(ctx context.Context, in *pb.GenSeedRequest) (re
 	return resp, nil
 }
 
+func LoginByKey(key *bip32.Key)(error) {
+	return obcClient.LoginFromChangeKey(key)
+}
 func (server *RpcServer) Login(ctx context.Context, in *pb.LoginRequest) (resp *pb.LoginResponse, err error) {
 
 	log.Println("Login")

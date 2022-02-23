@@ -23,15 +23,18 @@ func (service *UserManager) UserLogin(user *bean.User) error {
 	}
 
 	if user.IsAdmin {
-		if tool.CheckIsString(&user.Mnemonic) == false || bip39.IsMnemonicValid(user.Mnemonic) == false {
-			return errors.New(enum.Tips_common_wrong + "mnemonic")
+		//when user.ChangeExtKey  load from unlock,user.ChangeExtKey and user.PeerId will not nil
+		if user.ChangeExtKey==nil{
+			if tool.CheckIsString(&user.Mnemonic) == false || bip39.IsMnemonicValid(user.Mnemonic) == false {
+				return errors.New(enum.Tips_common_wrong + "mnemonic")
+			}
+			changeExtKey, err := HDWalletService.CreateChangeExtKey(user.Mnemonic,"")
+			if err != nil {
+				return err
+			}
+			user.PeerId = tool.GetUserPeerId(user.Mnemonic)
+			user.ChangeExtKey = changeExtKey
 		}
-		changeExtKey, err := HDWalletService.CreateChangeExtKey(user.Mnemonic)
-		if err != nil {
-			return err
-		}
-		user.PeerId = tool.GetUserPeerId(user.Mnemonic)
-		user.ChangeExtKey = changeExtKey
 	}
 	userDB, err := dao.DBService.GetUserDB(user.PeerId)
 	if err != nil {

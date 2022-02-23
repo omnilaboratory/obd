@@ -18,7 +18,7 @@ func Test_Demo2(t *testing.T) {
 	mnemonic := "coyote antenna senior reward diesel vault into used veteran model throw relief"
 	userId := tool.SignMsgWithSha256([]byte(mnemonic))
 
-	changeExtKey, _ := HDWalletService.CreateChangeExtKey(mnemonic)
+	changeExtKey, _ := HDWalletService.CreateChangeExtKey(mnemonic,"")
 
 	user := &bean.User{}
 	user.CurrAddrIndex = 0
@@ -30,7 +30,6 @@ func Test_Demo2(t *testing.T) {
 		bytes, _ := json.Marshal(wallet)
 		log.Println(string(bytes))
 	}
-
 }
 
 func Test_Demo1(t *testing.T) {

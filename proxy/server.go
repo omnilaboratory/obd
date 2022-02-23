@@ -1,8 +1,11 @@
-package rpc
+package proxy
 
 import (
 	"github.com/omnilaboratory/obd/config"
+	"github.com/omnilaboratory/obd/obrpc"
+	rpcNew "github.com/omnilaboratory/obd/obrpc/rpc"
 	proxy "github.com/omnilaboratory/obd/proxy/pb"
+	"github.com/omnilaboratory/obd/proxy/rpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 	"log"
@@ -13,7 +16,7 @@ import (
 func StartGrpcServer() {
 
 	log.Println("startGrpcServer")
-	err := ConnToObd()
+	err := rpc.ConnToObd()
 	if err != nil {
 		log.Println(err)
 		return
@@ -28,9 +31,14 @@ func StartGrpcServer() {
 
 	s := grpc.NewServer()
 	reflection.Register(s)
-	proxy.RegisterLightningServer(s, &RpcServer{})
-	proxy.RegisterWalletServer(s, &RpcServer{})
-	proxy.RegisterRsmcServer(s, &RpcServer{})
-	proxy.RegisterHtlcServer(s, &RpcServer{})
+	proxy.RegisterLightningServer(s, &rpc.RpcServer{})
+	proxy.RegisterWalletServer(s, &rpc.RpcServer{})
+	proxy.RegisterRsmcServer(s, &rpc.RpcServer{})
+	proxy.RegisterHtlcServer(s, &rpc.RpcServer{})
+
+
+	//unlocker:=rpcNew.NewInstance(config.ChainNodeType,config.DataDirectory)
+	unlock:=&rpcNew.UnlockerService{}
+	obrpc.RegisterWalletUnlockerServer(s,unlock)
 	s.Serve(lis)
 }

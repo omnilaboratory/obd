@@ -12,6 +12,8 @@ import (
 	"github.com/omnilaboratory/obd/tool"
 	"github.com/tyler-smith/go-bip32"
 	"github.com/tyler-smith/go-bip39"
+	"log"
+	"path"
 	"strings"
 )
 
@@ -93,7 +95,7 @@ func (service *hdWalletManager) CreateNewAddress(user *bean.User) (wallet *Walle
 	return wallet, nil
 }
 
-func (service *hdWalletManager) CreateChangeExtKey(mnemonic string) (changeExtKey *bip32.Key, err error) {
+func (service *hdWalletManager) CreateChangeExtKey(mnemonic, seedPwd string) (changeExtKey *bip32.Key, err error) {
 	if tool.CheckIsString(&mnemonic) == false {
 		return nil, errors.New("error mnemonic")
 	}
@@ -102,7 +104,7 @@ func (service *hdWalletManager) CreateChangeExtKey(mnemonic string) (changeExtKe
 		return nil, errors.New("wrong mnemonic")
 	}
 
-	seed := bip39.NewSeed(mnemonic, "")
+	seed := bip39.NewSeed(mnemonic, seedPwd)
 	masterKey, _ := bip32.NewMasterKey(seed)
 	//m/purpose'
 	purposeExtKey, _ := masterKey.NewChildKey(bip32.FirstHardenedChild + 44)
@@ -119,4 +121,52 @@ func (service *hdWalletManager) CreateChangeExtKey(mnemonic string) (changeExtKe
 	accountExtKey, _ := coinTypeExtKey.NewChildKey(bip32.FirstHardenedChild + 0)
 	//m/purpose'/cointype'/account'/change
 	return accountExtKey.NewChildKey(0)
+}
+
+func (service *hdWalletManager) ChangePwd(currentPasswd,newPasswd string) (err error) {
+	key,err:= service.LoadNodeMasterKey(currentPasswd)
+	if err == nil {
+			err=service.SaveNodeMasterKey(key,newPasswd)
+	}
+	return err
+}
+func (service *hdWalletManager) LoadNodeMasterKey(passwd string) (changeExtKey *bip32.Key, err error) {
+	var keyfilePath=path.Join(config.DataDirectory,"nodekey")
+	keybs,err:= decryptHexFile(keyfilePath,passwd)
+	if err == nil {
+		changeExtKey,err=bip32.Deserialize(keybs)
+	}
+	return changeExtKey,err
+}
+func (service *hdWalletManager) GetKeyAddress(key *bip32.Key,passwd string) ( string) {
+	net := tool.GetCoreNet()
+	hash160Bytes := btcutil.Hash160(key.PublicKey().Key)
+	addr, err := btcutil.NewAddressPubKeyHash(hash160Bytes, net)
+	if err != nil {
+		panic(err)
+	}
+	return addr.String()
+}
+func (service *hdWalletManager) SaveNodeMasterKey(key *bip32.Key,passwd string) ( err error) {
+	var keybs []byte
+	keybs,err=key.Serialize()
+	if err == nil {
+		var keyfilePath=path.Join(config.DataDirectory,"nodekey")
+		err= encryptHexFile(keyfilePath,keybs,passwd)
+		if err == nil {
+			log.Println("SaveNodeMasterKey",keyfilePath)
+
+		}
+	}
+	return  err
+}
+func (service *hdWalletManager) SaveNodeMasterKeyFormMnemonic(mnemonic,passwd,seedPwd string) (changeExtKey *bip32.Key,err error) {
+	key,err:=service.CreateChangeExtKey(mnemonic,seedPwd)
+	if err == nil {
+		err=service.SaveNodeMasterKey(key,passwd)
+	}
+	return key,err
+}
+func (service *hdWalletManager) GenSeed() (mnemonic string, err error) {
+	return service.Bip39GenMnemonic(256)
 }

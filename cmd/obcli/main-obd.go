@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/omnilaboratory/obd/cmd/obcmds"
 	"github.com/urfave/cli/v2"
 	"log"
 	"os"
@@ -79,6 +80,8 @@ func main() {
 		//},
 	}
 	btcSubcmd.Subcommands = []*cli.Command{
+		&createCommand,
+		&unlockCommand,
 		&createWatchOnlyCommand,
 		&changePasswordCommand,
 		&newAddressCommand,
@@ -157,9 +160,9 @@ func main() {
 			return nil
 		},
 	}
+	usdtSubcmd.Subcommands=obcmds.Commands()
+
 	app.Commands = []*cli.Command{
-		&createCommand,
-		&unlockCommand,
 		&btcSubcmd,
 		&usdtSubcmd,
 	}

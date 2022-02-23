@@ -6,7 +6,7 @@ import (
 	"github.com/lestrrat-go/file-rotatelogs"
 	"github.com/lightningnetwork/lnd"
 	"github.com/lightningnetwork/lnd/signal"
-	"github.com/omnilaboratory/obd/proxy/rpc"
+	"github.com/omnilaboratory/obd/proxy"
 	"io"
 	"log"
 	"net/http"
@@ -71,7 +71,7 @@ func main() {
 	// Timer
 	service.ScheduleService.StartSchedule()
 
-	go rpc.StartGrpcServer()
+	go proxy.StartGrpcServer()
 
 	log.Println("obd " + tool.GetObdNodeId() + " start in " + config.ChainNodeType)
 	log.Println("wsAddress: " + bean.CurrObdNodeInfo.WebsocketLink)
@@ -82,7 +82,7 @@ func main() {
 	//if err != nil {
 	//	log.Println(err)
 	//}
-	startLnd()
+	//startLnd()
 	log.Fatal(server.ListenAndServe())
 }
 

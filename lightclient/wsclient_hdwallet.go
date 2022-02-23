@@ -14,7 +14,7 @@ func (client *Client) HdWalletModule(msg bean.RequestMessage) (enum.SendTargetTy
 	var data string
 	switch msg.Type {
 	case enum.MsgType_GetMnemonic_2004:
-		mnemonic, err := service.HDWalletService.Bip39GenMnemonic(256)
+		mnemonic, err := service.HDWalletService.GenSeed()
 		if err != nil { //get  successful.
 			data = err.Error()
 		} else {

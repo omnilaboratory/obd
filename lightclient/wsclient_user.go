@@ -1,14 +1,18 @@
 package lightclient
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"github.com/btcsuite/btcutil"
 	"github.com/omnilaboratory/obd/bean"
 	"github.com/omnilaboratory/obd/bean/enum"
 	"github.com/omnilaboratory/obd/config"
 	"github.com/omnilaboratory/obd/service"
 	"github.com/omnilaboratory/obd/tool"
 	"github.com/tidwall/gjson"
+	"github.com/tyler-smith/go-bip32"
+	"log"
 )
 
 func loginRetData(client Client) string {
@@ -211,7 +215,7 @@ func (client *Client) UserModule(msg bean.RequestMessage) (enum.SendTargetType, 
 			sendType = enum.SendTargetType_SendToSomeone
 		} else {
 			// get Mnemonic
-			mnemonic, err := service.HDWalletService.Bip39GenMnemonic(256)
+			mnemonic, err := service.HDWalletService.GenSeed()
 			if err == nil { //get  successful.
 				data = mnemonic
 				status = true
@@ -223,4 +227,43 @@ func (client *Client) UserModule(msg bean.RequestMessage) (enum.SendTargetType, 
 		}
 	}
 	return sendType, []byte(data), status
+}
+
+
+func (client *Client) LoginFromChangeKey(key *bip32.Key) (error) {
+	client.IsGRpcRequest = true
+	pubKeyHashStr := hex.EncodeToString(btcutil.Hash160(key.PublicKey().Key))
+	peerId := pubKeyHashStr
+	user := bean.User{
+		//Mnemonic:       mnemonic,
+		P2PLocalAddress: localServerDest,
+		P2PLocalPeerId:  P2PLocalNodeId,
+		IsAdmin:         true,
+		ChangeExtKey:    key,
+		PeerId:          peerId,
+	}
+	var err error = nil
+
+	err = service.UserService.UserLogin(&user)
+	if err == nil {
+		sendInfoOnUserStateChange(user.PeerId)
+	}
+
+	//data:=""
+	//status:=false
+	//sendType:=enum.SendTargetType_SendToAll
+	if err == nil {
+		client.User = &user
+		GlobalWsClientManager.OnlineClientMap[user.PeerId] = client
+		service.OnlineUserMap[user.PeerId] = &user
+		//data = loginRetData(*client)
+		//status = true
+		//client.SendToMyself(msg.Type, status, data)
+		//sendType = enum.SendTargetType_SendToExceptMe
+		log.Println("grpc logined", pubKeyHashStr)
+	} else {
+		//client.SendToMyself(msg.Type, status, err.Error())
+		//sendType = enum.SendTargetType_SendToSomeone
+	}
+	return err
 }

@@ -1,0 +1,11 @@
+type: google.api.Service
+config_version: 3
+
+http:
+  rules:
+    - selector: obrpc.WalletUnlocker.InitWallet
+      post: "/v1/initwallet"
+      body: "*"
+    - selector: obrpc.WalletUnlocker.UnlockWallet
+      post: "/v1/unlockwallet"
+      body: "*"
