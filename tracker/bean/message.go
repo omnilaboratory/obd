@@ -35,8 +35,8 @@ const (
 
 //GetHtlcTxStateRequest
 type GetHtlcTxStateRequest struct {
-	Path string `json:"path"`
-	H    string `json:"h"`
+	Path string `json:"path" form:"path"`
+	H    string `json:"h" form:"h"`
 }
 
 //GetChannelStateRequest

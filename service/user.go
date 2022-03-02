@@ -56,8 +56,9 @@ func (service *UserManager) UserLogin(user *bean.User) error {
 		node.LatestLoginTime = time.Now()
 		err = userDB.Update(&node)
 	}
-
-	noticeTrackerUserLogin(node)
+	if err == nil {
+		noticeTrackerUserLogin(node)
+	}
 
 	if err != nil {
 		return err

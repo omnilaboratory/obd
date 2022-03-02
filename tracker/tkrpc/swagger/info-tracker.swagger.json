@@ -1,0 +1,864 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "info-tracker.proto",
+    "version": "version not set"
+  },
+  "tags": [
+    {
+      "name": "InfoTracker"
+    }
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/gw/GetChannelInfo/{id}": {
+      "get": {
+        "summary": "map to old ChannelService.GetChannelState",
+        "operationId": "InfoTracker_GetChannelInfo",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tkrpcChannelInfo"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "channel_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "user_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "InfoTracker"
+        ]
+      }
+    },
+    "/gw/GetChannels": {
+      "get": {
+        "operationId": "InfoTracker_GetChannels",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tkrpcNodeInfosRes"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "page",
+            "description": "page number.",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "size",
+            "description": "page size.",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "sort",
+            "description": "sort set the sql order-by  sort=[-]field_name .  example sort=-updated_at will sort by:\"desc id\";sort=updated_at  sort by:\"asc id\".",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "user_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "InfoTracker"
+        ]
+      }
+    },
+    "/gw/GetHtlcInfo": {
+      "post": {
+        "summary": "map old function GetHtlcCurrState",
+        "operationId": "InfoTracker_GetHtlcInfo",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tkrpcHtlcInfo"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/tkrpcGetHtlcInfoReq"
+            }
+          }
+        ],
+        "tags": [
+          "InfoTracker"
+        ]
+      }
+    },
+    "/gw/GetNodes": {
+      "post": {
+        "summary": "map old function GetAllObdNodes",
+        "operationId": "InfoTracker_GetNodes",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tkrpcNodeInfosRes"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "page",
+            "description": "page number.",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "size",
+            "description": "page size.",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "sort",
+            "description": "sort set the sql order-by  sort=[-]field_name .  example sort=-updated_at will sort by:\"desc id\";sort=updated_at  sort by:\"asc id\".",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "user_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "InfoTracker"
+        ]
+      }
+    },
+    "/gw/GetUserInfo": {
+      "post": {
+        "summary": "map to old func: GetUserState , GetUserP2pNodeId\nRequest:SetUserInfoReq{user_id,node_Id}\nold GetUserP2pNodeId use request:SetUserInfoReq{user_id} ;  may not work when user login on multi node",
+        "operationId": "InfoTracker_GetUserInfo",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tkrpcUserInfo"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/tkrpcUpdateUserInfoReq"
+            }
+          }
+        ],
+        "tags": [
+          "InfoTracker"
+        ]
+      }
+    },
+    "/gw/GetUserInfos": {
+      "get": {
+        "summary": "Map to old function GetAllUsers",
+        "operationId": "InfoTracker_GetUserInfos",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tkrpcUserInfosRes"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "page",
+            "description": "page number.",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "size",
+            "description": "page size.",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "sort",
+            "description": "sort set the sql order-by  sort=[-]field_name .  example sort=-updated_at will sort by:\"desc id\";sort=updated_at  sort by:\"asc id\".",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "user_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "InfoTracker"
+        ]
+      }
+    },
+    "/gw/HeartBeat": {
+      "post": {
+        "summary": "every HeartBeat will set nodeInfo.isonline=true; every HeartBeat disconnect will set  nodeInfo.isonline=false;",
+        "operationId": "InfoTracker_HeartBeat",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tkrpcEmptyRes"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "description": " (streaming inputs)",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/tkrpcUpdateNodeInfoReq"
+            }
+          }
+        ],
+        "tags": [
+          "InfoTracker"
+        ]
+      }
+    },
+    "/gw/HtlcGetPath": {
+      "post": {
+        "summary": "map old function getPath",
+        "operationId": "InfoTracker_HtlcGetPath",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tkrpcHtlcGetPathRes"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/tkrpcHtlcGetPathReq"
+            }
+          }
+        ],
+        "tags": [
+          "InfoTracker"
+        ]
+      }
+    },
+    "/gw/SetUserInfo": {
+      "post": {
+        "summary": "map to old func userLogout userLogin",
+        "operationId": "InfoTracker_UpdateUserInfo",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tkrpcEmptyRes"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/tkrpcUpdateUserInfoReq"
+            }
+          }
+        ],
+        "tags": [
+          "InfoTracker"
+        ]
+      }
+    },
+    "/gw/SetUserInfos": {
+      "post": {
+        "summary": "map to old func updateUsers",
+        "operationId": "InfoTracker_UpdateUserInfos",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tkrpcEmptyRes"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/tkrpcUpdateUserInfosReq"
+            }
+          }
+        ],
+        "tags": [
+          "InfoTracker"
+        ]
+      }
+    },
+    "/gw/UpdateChannelInfo": {
+      "post": {
+        "operationId": "InfoTracker_UpdateChannelInfo",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tkrpcChannelInfo"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/tkrpcChannelInfo"
+            }
+          }
+        ],
+        "tags": [
+          "InfoTracker"
+        ]
+      }
+    },
+    "/gw/UpdateHtlcInfo": {
+      "post": {
+        "summary": "map old function updateHtlcInfo",
+        "operationId": "InfoTracker_UpdateHtlcInfo",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tkrpcHtlcInfo"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/tkrpcHtlcInfo"
+            }
+          }
+        ],
+        "tags": [
+          "InfoTracker"
+        ]
+      }
+    },
+    "/gw/UpdateNodeInfo": {
+      "post": {
+        "summary": "map to old func Logout Login",
+        "operationId": "InfoTracker_UpdateNodeInfo",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tkrpcEmptyRes"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/tkrpcUpdateNodeInfoReq"
+            }
+          }
+        ],
+        "tags": [
+          "InfoTracker"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "@type": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": {}
+    },
+    "rpcStatus": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    },
+    "tkrpcChannelInfo": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "obd_node_ida": {
+          "type": "string"
+        },
+        "obd_node_idb": {
+          "type": "string"
+        },
+        "channel_id": {
+          "type": "string"
+        },
+        "property_id": {
+          "type": "string",
+          "format": "int64"
+        },
+        "curr_state": {
+          "$ref": "#/definitions/tkrpcChannelState"
+        },
+        "peer_ida": {
+          "type": "string"
+        },
+        "peer_idb": {
+          "type": "string"
+        },
+        "amount_a": {
+          "type": "number",
+          "format": "double"
+        },
+        "amount_b": {
+          "type": "number",
+          "format": "double"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "int64"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "int64"
+        },
+        "is_alice": {
+          "type": "boolean",
+          "title": "database will not store it"
+        },
+        "node_id": {
+          "type": "string",
+          "title": "database will not store it"
+        }
+      }
+    },
+    "tkrpcChannelState": {
+      "type": "integer",
+      "format": "int32",
+      "enum": [
+        "0",
+        "10",
+        "11",
+        "12",
+        "20",
+        "21",
+        "22",
+        "23",
+        "30"
+      ],
+      "default": "0"
+    },
+    "tkrpcEmptyRes": {
+      "type": "object",
+      "title": "Empty response"
+    },
+    "tkrpcGetHtlcInfoReq": {
+      "type": "object",
+      "properties": {
+        "h": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string"
+        }
+      }
+    },
+    "tkrpcHtlcGetPathReq": {
+      "type": "object",
+      "properties": {
+        "payer_obd_node_id": {
+          "type": "string"
+        },
+        "real_payer_peer_id": {
+          "type": "string"
+        },
+        "payee_peer_id": {
+          "type": "string"
+        },
+        "property_id": {
+          "type": "string",
+          "format": "int64"
+        },
+        "h": {
+          "type": "string"
+        },
+        "amount": {
+          "type": "number",
+          "format": "double"
+        }
+      }
+    },
+    "tkrpcHtlcGetPathRes": {
+      "type": "object",
+      "properties": {
+        "senderPeerId": {
+          "type": "string"
+        },
+        "h": {
+          "type": "string"
+        },
+        "amount": {
+          "type": "number",
+          "format": "double"
+        },
+        "path": {
+          "type": "string"
+        }
+      }
+    },
+    "tkrpcHtlcInfo": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "path": {
+          "type": "string"
+        },
+        "h": {
+          "type": "string"
+        },
+        "r": {
+          "type": "string"
+        },
+        "direction_flag": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "curr_channel_id": {
+          "type": "string"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "int64"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "tkrpcNodeInfo": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "node_id": {
+          "type": "string",
+          "title": "node_peer_id"
+        },
+        "p2p_address": {
+          "type": "string"
+        },
+        "access_ip": {
+          "type": "string"
+        },
+        "is_online": {
+          "type": "integer",
+          "format": "int32",
+          "title": "1 online 2 offline"
+        },
+        "hear_beat_counter": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "last_hear_beat": {
+          "type": "string",
+          "format": "int64"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "int64",
+          "description": "unix timestamp in seconds ; google.protobuf.Timestamp will more better,but sql database not support."
+        },
+        "created_at": {
+          "type": "string",
+          "format": "int64"
+        }
+      },
+      "title": "obd-node info"
+    },
+    "tkrpcNodeInfosRes": {
+      "type": "object",
+      "properties": {
+        "count": {
+          "type": "string",
+          "format": "int64"
+        },
+        "results": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/tkrpcNodeInfo"
+          }
+        }
+      }
+    },
+    "tkrpcUpdateNodeInfoReq": {
+      "type": "object",
+      "properties": {
+        "node_id": {
+          "type": "string"
+        },
+        "p2p_address": {
+          "type": "string"
+        },
+        "is_online": {
+          "type": "integer",
+          "format": "int32",
+          "title": "1 online 2 offline"
+        }
+      }
+    },
+    "tkrpcUpdateUserInfoReq": {
+      "type": "object",
+      "properties": {
+        "user_id": {
+          "type": "string"
+        },
+        "node_id": {
+          "type": "string"
+        },
+        "p2p_address": {
+          "type": "string"
+        },
+        "is_online": {
+          "type": "integer",
+          "format": "int32",
+          "title": "1 online 2 offline"
+        }
+      }
+    },
+    "tkrpcUpdateUserInfosReq": {
+      "type": "object",
+      "properties": {
+        "UpdateUserInfoReqs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/tkrpcUpdateUserInfoReq"
+          }
+        }
+      }
+    },
+    "tkrpcUserInfo": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "user_id": {
+          "type": "string",
+          "title": "user_peer_id"
+        },
+        "node_id": {
+          "type": "string",
+          "title": "node_peer_id"
+        },
+        "is_online": {
+          "type": "integer",
+          "format": "int32",
+          "title": "1 online 2 offline"
+        },
+        "access_ip": {
+          "type": "string"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "int64"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "int64"
+        }
+      },
+      "title": "obd-user-info"
+    },
+    "tkrpcUserInfosRes": {
+      "type": "object",
+      "properties": {
+        "count": {
+          "type": "string",
+          "format": "int64"
+        },
+        "results": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/tkrpcUserInfo"
+          }
+        }
+      }
+    }
+  }
+}

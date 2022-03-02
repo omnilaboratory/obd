@@ -7,8 +7,12 @@ import (
 	"github.com/omnilaboratory/obd/tracker/router"
 	"github.com/omnilaboratory/obd/tracker/rpc"
 	"github.com/omnilaboratory/obd/tracker/service"
+	"github.com/omnilaboratory/obd/tracker/tkrpc"
+	"github.com/omnilaboratory/obd/tracker/tkrpc/inforpc"
+	"google.golang.org/grpc"
 	"io"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"strconv"
@@ -49,7 +53,8 @@ func main() {
 	}
 	service.Start(cfg.ChainNode_Type)
 
-	service.StartP2PNode()
+	go service.StartP2PNode()
+	go StartGrpc()
 
 	routersInit := router.InitRouter()
 	if routersInit == nil {
@@ -67,4 +72,17 @@ func main() {
 
 	log.Println("tracker " + service.GetTrackerNodeId() + " start at port: " + strconv.Itoa(cfg.TrackerServerPort) + " in " + cfg.ChainNode_Type)
 	log.Fatal(server.ListenAndServe())
+}
+func StartGrpc(){
+	log.Println("StartGrpc")
+	lis, err := net.Listen("tcp", "0.0.0.0:"+cfg.TrackerServerGrpcPort)
+	if err != nil {
+		log.Fatalf("无法绑定grpc地址: %v", err)
+	}
+	log.Println("grpc server start at: 0.0.0.0:"+cfg.TrackerServerGrpcPort)
+	s := grpc.NewServer()
+	//reflection.Register(s)
+	tkrpc.RegisterInfoTrackerServer(s,&inforpc.ImpInfoServer{})
+	s.Serve(lis)
+
 }

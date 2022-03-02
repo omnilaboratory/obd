@@ -1,24 +1,40 @@
 package router
 
 import (
+	"context"
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"github.com/gorilla/websocket"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	cfg "github.com/omnilaboratory/obd/tracker/config"
 	"github.com/omnilaboratory/obd/tracker/service"
-	"github.com/satori/go.uuid"
+	"github.com/omnilaboratory/obd/tracker/tkrpc"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"net/http"
 	"strings"
 )
-
+func grpcGateWay(router *gin.Engine){
+	// Register gRPC server endpoint
+	// Note: Make sure the gRPC server is running properly and accessible
+	mux := runtime.NewServeMux()
+	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
+	err := tkrpc.RegisterInfoTrackerHandlerFromEndpoint(context.TODO(), mux,  "localhost:"+cfg.TrackerServerGrpcPort, opts)
+	if err != nil {
+		panic(err)
+	}
+	router.GET("/gw/*all",func( c *gin.Context){
+		mux.ServeHTTP(c.Writer,c.Request)
+	})
+}
 func InitRouter() *gin.Engine {
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.New()
 	router.Use(gin.Logger())
 	router.Use(gin.Recovery())
 	router.Use(cors())
-	go service.ObdNodeManager.TrackerStart()
-	router.GET("/ws", wsClientConnect)
+	grpcGateWay(router)
 
+	//apiv1's data can return by grpc-gateway too, should replace it at jsdk
 	apiv1 := router.Group("/api/v1/")
 	{
 		apiv1.GET("GetHtlcCurrState", service.HtlcService.GetHtlcCurrState)
@@ -27,6 +43,7 @@ func InitRouter() *gin.Engine {
 		apiv1.GET("getUserP2pNodeId", service.NodeAccountService.GetUserP2pNodeId)
 		apiv1.GET("getNodeInfoByP2pAddress", service.NodeAccountService.GetNodeInfoByP2pAddress)
 	}
+	//apiv2's data can return by grpc-gateway too, should replace it at jsdk
 	apiv2 := router.Group("/api/common/")
 	{
 		apiv2.GET("getObdNodes", service.NodeAccountService.GetAllObdNodes)
@@ -106,18 +123,4 @@ func cors() gin.HandlerFunc {
 	}
 }
 
-func wsClientConnect(c *gin.Context) {
-	conn, err := (&websocket.Upgrader{CheckOrigin: func(r *http.Request) bool { return true }}).Upgrade(c.Writer, c.Request, nil)
-	if err != nil {
-		http.NotFound(c.Writer, c.Request)
-		return
-	}
-	uuidStr := uuid.NewV4()
-	newClient := &service.ObdNode{
-		Id:          uuidStr.String(),
-		Socket:      conn,
-		SendChannel: make(chan []byte)}
-	service.ObdNodeManager.Connected <- newClient
-	go newClient.Write()
-	go newClient.Read()
-}
+

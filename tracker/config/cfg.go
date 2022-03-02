@@ -30,6 +30,7 @@ var (
 	ReadTimeout       = 60 * time.Second
 	WriteTimeout      = 60 * time.Second
 	TrackerServerPort = 60060
+	TrackerServerGrpcPort = "60061"
 
 	HtlcFeeRate = 0.0001
 

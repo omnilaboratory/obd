@@ -37,7 +37,7 @@ type htlcManager struct {
 
 var HtlcService htlcManager
 
-func (manager *htlcManager) getPath(obdClient *ObdNode, msgData string) (path interface{}, err error) {
+func (manager *htlcManager) getPath(msgData string) (path interface{}, err error) {
 	manager.mu.Lock()
 	defer manager.mu.Unlock()
 
@@ -102,12 +102,12 @@ func (manager *htlcManager) getPathIndex() int {
 			channelInfo := &dao.ChannelInfo{}
 			err := db.Select(q.Eq("ChannelId", item), q.Eq("CurrState", cbean.ChannelState_CanUse)).First(channelInfo)
 			if err == nil {
-				if len(channelInfo.ObdNodeIdA) > 0 && sendChannelLockInfoToObd(channelInfo.ChannelId, channelInfo.PeerIdA, channelInfo.ObdNodeIdA) == false {
+				if len(channelInfo.ObdNodeIdA) > 0 && SendChannelLockInfoToObd(channelInfo.ChannelId, channelInfo.PeerIdA, channelInfo.ObdNodeIdA,false) == false {
 					lockResult = false
 					break
 				}
 
-				if len(channelInfo.ObdNodeIdB) > 0 && sendChannelLockInfoToObd(channelInfo.ChannelId, channelInfo.PeerIdB, channelInfo.ObdNodeIdB) == false {
+				if len(channelInfo.ObdNodeIdB) > 0 && SendChannelLockInfoToObd(channelInfo.ChannelId, channelInfo.PeerIdB, channelInfo.ObdNodeIdB,false) == false {
 					lockResult = false
 					break
 				}
@@ -133,7 +133,7 @@ func (manager *htlcManager) getPathIndex() int {
 	return resultIndex
 }
 
-func (manager *htlcManager) updateHtlcInfo(obdClient *ObdNode, msgData string) (err error) {
+func (manager *htlcManager) updateHtlcInfo( msgData string) (err error) {
 	manager.mu.Lock()
 	defer manager.mu.Unlock()
 
@@ -175,11 +175,9 @@ func (manager *htlcManager) updateHtlcInfo(obdClient *ObdNode, msgData string) (
 	}
 	return nil
 }
-
 func (manager *htlcManager) GetHtlcCurrState(context *gin.Context) {
 	manager.mu.Lock()
 	defer manager.mu.Unlock()
-
 	reqData := &bean.GetHtlcTxStateRequest{}
 	reqData.Path = context.Query("path")
 	if tool.CheckIsString(&reqData.Path) == false {

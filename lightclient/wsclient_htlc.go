@@ -7,6 +7,8 @@ import (
 	"github.com/omnilaboratory/obd/bean/enum"
 	conn2tracker "github.com/omnilaboratory/obd/conn"
 	"github.com/omnilaboratory/obd/service"
+	"github.com/omnilaboratory/obd/tool"
+	"github.com/omnilaboratory/obd/tracker/tkrpc"
 	"log"
 )
 
@@ -86,7 +88,7 @@ func (client *Client) HtlcHModule(msg bean.RequestMessage) (enum.SendTargetType,
 		sendType = enum.SendTargetType_SendToSomeone
 	case enum.MsgType_HTLC_FindPath_401:
 		tempClientMap[client.User.PeerId] = client
-		respond, isPrivate, err := service.HtlcForwardTxService.PayerRequestFindPath(msg.Data, *client.User)
+		respond, isPrivate,pubPathRequst, err := service.HtlcForwardTxService.PayerRequestFindPath(msg.Data, *client.User)
 		if err != nil {
 			data = err.Error()
 			client.SendToMyself(msg.Type, status, data)
@@ -111,6 +113,28 @@ func (client *Client) HtlcHModule(msg bean.RequestMessage) (enum.SendTargetType,
 					newMsg.Data = string(marshal)
 					sendType, bytes, status = client.HtlcHModule(newMsg)
 					data = string(bytes)
+				}
+			}else {
+				//old obd/service/htlc_tx_forward.go HtlcForwardTxService.PayerRequestFindPath sendMsgToTracker(enum.MsgType_Tracker_GetHtlcPath_351, pathRequest) move here
+				//MsgType_Tracker_GetHtlcPath_351 now we can get response from  grpc-conn directly;then continue old MsgType_Tracker_GetHtlcPath_351-response process use old weektype function htlcTrackerDealModule
+				//pubPathRequst := trackerBean.HtlcPathRequest{}
+				gpReq := &tkrpc.HtlcGetPathReq{}
+				gpReq.PayerObdNodeId = pubPathRequst.PayerObdNodeId
+				gpReq.RealPayerPeerId = pubPathRequst.RealPayerPeerId
+				gpReq.PayeePeerId = pubPathRequst.PayeePeerId
+				gpReq.PropertyId = pubPathRequst.PropertyId
+				gpReq.H = pubPathRequst.H
+				gpReq.Amount = pubPathRequst.Amount
+				res, err1 := ITclient.HtlcGetPath(todo, gpReq)
+				err = err1
+				if err == nil {
+					requestMessage := bean.RequestMessage{}
+					requestMessage.Type = enum.MsgType_Tracker_GetHtlcPath_351
+					requestMessage.Data = ""
+					requestMessage.RecipientUserPeerId = res.SenderPeerId
+					requestMessage.Data = res.H + "_" + res.Path + "_" + tool.FloatToString(res.Amount, 8)
+					//requestMessage.Data = dataMap["h"].(string) + "_" + dataMap["path"].(string)
+					htlcTrackerDealModule(requestMessage)
 				}
 			}
 		}

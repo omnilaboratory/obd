@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -14,6 +15,7 @@ import (
 	"github.com/omnilaboratory/obd/omnicore"
 	"github.com/omnilaboratory/obd/tool"
 	trackerBean "github.com/omnilaboratory/obd/tracker/bean"
+	"github.com/omnilaboratory/obd/tracker/tkrpc"
 	"github.com/shopspring/decimal"
 	"log"
 	"strconv"
@@ -177,16 +179,16 @@ func (service *htlcForwardTxManager) ParseInvoice(msgData string, user bean.User
 }
 
 // 401 htlc find path
-func (service *htlcForwardTxManager) PayerRequestFindPath(msgData string, user bean.User) (data interface{}, isPrivate bool, err error) {
+func (service *htlcForwardTxManager) PayerRequestFindPath(msgData string, user bean.User) (data interface{}, isPrivate bool,pubPathRequest *trackerBean.HtlcPathRequest, err error) {
 	if tool.CheckIsString(&msgData) == false {
-		return nil, false, errors.New(enum.Tips_common_empty + "msg data")
+		return nil, false,nil, errors.New(enum.Tips_common_empty + "msg data")
 	}
 
 	requestData := &bean.HtlcRequestFindPath{}
 	err = json.Unmarshal([]byte(msgData), requestData)
 	if err != nil {
 		log.Println(err.Error())
-		return nil, false, err
+		return nil, false,nil, err
 	}
 
 	var requestFindPathInfo bean.HtlcRequestFindPathInfo
@@ -194,23 +196,23 @@ func (service *htlcForwardTxManager) PayerRequestFindPath(msgData string, user b
 	if tool.CheckIsString(&requestData.Invoice) {
 		htlcRequestInvoice, err := tool.DecodeInvoiceObjFromCodes(requestData.Invoice)
 		if err != nil {
-			return nil, false, errors.New(enum.Tips_common_wrong + "invoice")
+			return nil, false,nil, errors.New(enum.Tips_common_wrong + "invoice")
 		}
 		if err = findUserIsOnline(htlcRequestInvoice.RecipientNodePeerId, htlcRequestInvoice.RecipientUserPeerId); err != nil {
-			return nil, requestFindPathInfo.IsPrivate, err
+			return nil, requestFindPathInfo.IsPrivate,nil, err
 		}
 		requestFindPathInfo = htlcRequestInvoice.HtlcRequestFindPathInfo
 	} else {
 		requestFindPathInfo = requestData.HtlcRequestFindPathInfo
 		if tool.CheckIsString(&requestFindPathInfo.RecipientNodePeerId) == false {
-			return nil, requestFindPathInfo.IsPrivate, errors.New(enum.Tips_common_wrong + "recipient_node_peer_id")
+			return nil, requestFindPathInfo.IsPrivate, nil,errors.New(enum.Tips_common_wrong + "recipient_node_peer_id")
 		}
 		if tool.CheckIsString(&requestFindPathInfo.RecipientUserPeerId) == false {
-			return nil, requestFindPathInfo.IsPrivate, errors.New(enum.Tips_common_wrong + "recipient_user_peer_id")
+			return nil, requestFindPathInfo.IsPrivate, nil,errors.New(enum.Tips_common_wrong + "recipient_user_peer_id")
 		}
 
 		if err = findUserIsOnline(requestFindPathInfo.RecipientNodePeerId, requestFindPathInfo.RecipientUserPeerId); err != nil {
-			return nil, requestFindPathInfo.IsPrivate, err
+			return nil, requestFindPathInfo.IsPrivate,nil, err
 		}
 	}
 
@@ -220,24 +222,24 @@ func (service *htlcForwardTxManager) PayerRequestFindPath(msgData string, user b
 	if cacheDataForTx.Id != 0 {
 		now := time.Now().Add(-1 * time.Minute)
 		if cacheDataForTx.IsFinish && cacheDataForTx.CreateAt.After(now) {
-			return nil, false, errors.New("request too fast")
+			return nil, false,nil, errors.New("request too fast")
 		}
 	}
 
 	if requestFindPathInfo.RecipientUserPeerId == user.PeerId && requestFindPathInfo.RecipientNodePeerId == user.P2PLocalPeerId {
-		return nil, requestFindPathInfo.IsPrivate, errors.New("recipient_user_peer_id can not be yourself")
+		return nil, requestFindPathInfo.IsPrivate,nil, errors.New("recipient_user_peer_id can not be yourself")
 	}
 
 	if requestFindPathInfo.PropertyId < 0 {
-		return nil, requestFindPathInfo.IsPrivate, errors.New(enum.Tips_common_wrong + "property_id")
+		return nil, requestFindPathInfo.IsPrivate,nil, errors.New(enum.Tips_common_wrong + "property_id")
 	}
 
 	if requestFindPathInfo.Amount < tool.GetOmniDustBtc() {
-		return nil, requestFindPathInfo.IsPrivate, errors.New(enum.Tips_common_wrong + "amount")
+		return nil, requestFindPathInfo.IsPrivate, nil,errors.New(enum.Tips_common_wrong + "amount")
 	}
 
 	if time.Now().After(time.Time(requestFindPathInfo.ExpiryTime)) {
-		return nil, requestFindPathInfo.IsPrivate, errors.New(fmt.Sprintf(enum.Tips_htlc_expiryTimeAfterNow, "expiry_time"))
+		return nil, requestFindPathInfo.IsPrivate,nil, errors.New(fmt.Sprintf(enum.Tips_htlc_expiryTimeAfterNow, "expiry_time"))
 	}
 
 	if requestFindPathInfo.IsPrivate == false {
@@ -262,15 +264,16 @@ func (service *htlcForwardTxManager) PayerRequestFindPath(msgData string, user b
 		bytes, _ := json.Marshal(requestFindPathInfo)
 		cacheDataForTx.Data = bytes
 		_ = user.Db.Save(cacheDataForTx)
-
-		sendMsgToTracker(enum.MsgType_Tracker_GetHtlcPath_351, pathRequest)
-		return make(map[string]interface{}), requestFindPathInfo.IsPrivate, nil
+		//user login info will send when obd/lightclient/wsclient_htlc.go process MsgType_HTLC_FindPath_401
+		//sendMsgToTracker(enum.MsgType_Tracker_GetHtlcPath_351, pathRequest)
+		return make(map[string]interface{}), requestFindPathInfo.IsPrivate, &pathRequest,nil
 	} else {
 		requestData.HtlcRequestFindPathInfo = requestFindPathInfo
-		return getPrivateChannelForHtlc(requestData, user)
+		data , isPrivate , err:=getPrivateChannelForHtlc(requestData, user)
+		return data , isPrivate ,nil, err
 	}
 }
-
+var todo=context.TODO()
 func getPrivateChannelForHtlc(requestData *bean.HtlcRequestFindPath, user bean.User) (data interface{}, isPrivate bool, err error) {
 	tx, err := user.Db.Begin(true)
 	if err != nil {
@@ -592,12 +595,14 @@ func (service *htlcForwardTxManager) AliceAddHtlcAtAliceSide(msg bean.RequestMes
 
 		//更新tracker的htlc的状态
 		if channelInfo.IsPrivate == false {
-			txStateRequest := trackerBean.UpdateHtlcTxStateRequest{}
+			//txStateRequest := trackerBean.UpdateHtlcTxStateRequest{}
+			txStateRequest := &tkrpc.HtlcInfo{}
 			txStateRequest.Path = latestCommitmentTx.HtlcRoutingPacket
 			txStateRequest.H = latestCommitmentTx.HtlcH
 			txStateRequest.DirectionFlag = trackerBean.HtlcTxState_PayMoney
 			txStateRequest.CurrChannelId = channelInfo.ChannelId
-			sendMsgToTracker(enum.MsgType_Tracker_UpdateHtlcTxState_352, txStateRequest)
+			ITclient.UpdateHtlcInfo(todo,txStateRequest)
+			//sendMsgToTracker(enum.MsgType_Tracker_UpdateHtlcTxState_352, txStateRequest)
 		}
 	} else {
 		if requestData.CurrHtlcTempAddressForHt1aPubKey != htlcRequestInfo.CurrHtlcTempAddressForHt1aPubKey {

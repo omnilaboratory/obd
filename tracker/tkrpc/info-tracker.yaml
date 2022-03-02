@@ -1,0 +1,48 @@
+type: google.api.Service
+config_version: 3
+
+http:
+  rules:
+    - selector: tkrpc.InfoTracker.HeartBeat
+      post: "/gw/HeartBeat"
+      body: "*"
+    - selector: tkrpc.InfoTracker.UpdateNodeInfo
+      post: "/gw/UpdateNodeInfo"
+      body: "*"
+    - selector: tkrpc.InfoTracker.UpdateUserInfo
+      post: "/gw/SetUserInfo"
+      body: "*"
+    - selector: tkrpc.InfoTracker.UpdateUserInfos
+      post: "/gw/SetUserInfos"
+      body: "*"
+
+    - selector: tkrpc.InfoTracker.GetUserInfo
+      post: "/gw/GetUserInfo"
+      body: "*"
+
+    - selector: tkrpc.InfoTracker.GetUserInfos
+      get: "/gw/GetUserInfos"
+
+
+    - selector: tkrpc.InfoTracker.GetNodes
+      post: "/gw/GetNodes"
+
+    - selector: tkrpc.InfoTracker.UpdateChannelInfo
+      post: "/gw/UpdateChannelInfo"
+      body: "*"
+
+    - selector: tkrpc.InfoTracker.GetChannelInfo
+      get: "/gw/GetChannelInfo/{id}"
+
+    - selector: tkrpc.InfoTracker.GetChannels
+      get: "/gw/GetChannels"
+
+    - selector: tkrpc.InfoTracker.UpdateHtlcInfo
+      post: "/gw/UpdateHtlcInfo"
+      body: "*"
+    - selector: tkrpc.InfoTracker.HtlcGetPath
+      post: "/gw/HtlcGetPath"
+      body: "*"
+    - selector: tkrpc.InfoTracker.GetHtlcInfo
+      post: "/gw/GetHtlcInfo"
+      body: "*"

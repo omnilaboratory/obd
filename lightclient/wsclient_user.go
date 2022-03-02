@@ -8,6 +8,7 @@ import (
 	"github.com/omnilaboratory/obd/config"
 	"github.com/omnilaboratory/obd/service"
 	"github.com/omnilaboratory/obd/tool"
+	"github.com/omnilaboratory/obd/tracker/tkrpc"
 	"github.com/tidwall/gjson"
 )
 
@@ -64,7 +65,7 @@ func (client *Client) UserModule(msg bean.RequestMessage) (enum.SendTargetType, 
 		if client.User != nil {
 			if client.User.Mnemonic != mnemonic {
 				_ = service.UserService.UserLogout(client.User)
-				sendInfoOnUserStateChange(client.User.PeerId)
+				//sendInfoOnUserStateChange(client.User.PeerId)
 				delete(GlobalWsClientManager.OnlineClientMap, client.User.PeerId)
 				delete(service.OnlineUserMap, client.User.PeerId)
 				client.User = nil
@@ -90,7 +91,7 @@ func (client *Client) UserModule(msg bean.RequestMessage) (enum.SendTargetType, 
 			} else {
 				err = service.UserService.UserLogin(&user)
 				if err == nil {
-					sendInfoOnUserStateChange(user.PeerId)
+					//sendInfoOnUserStateChange(user.PeerId)
 				}
 			}
 			if err == nil {
@@ -127,8 +128,11 @@ func (client *Client) UserModule(msg bean.RequestMessage) (enum.SendTargetType, 
 			client.SendToMyself(msg.Type, status, data)
 
 			if exist == false {
+				user:=client.User
+				ITclient.UpdateUserInfo(todo,&tkrpc.UpdateUserInfoReq{UserId:user.PeerId,NodeId:user.P2PLocalPeerId,P2PAddress:user.P2PLocalAddress,IsOnline: 2})
+
 				_ = service.UserService.UserLogout(client.User)
-				sendInfoOnUserStateChange(client.User.PeerId)
+				//sendInfoOnUserStateChange(client.User.PeerId)
 
 				delete(GlobalWsClientManager.ClientsMap, client)
 				delete(GlobalWsClientManager.OnlineClientMap, client.User.PeerId)
