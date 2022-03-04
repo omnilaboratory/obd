@@ -229,6 +229,7 @@ func (manager *htlcManager) createChannelNetwork(realPayerPeerId, currPayeePeerI
 		currNode = manager.openList[0]
 	}
 	//如果当前用户已经在备选的用户列表中出现了，就return
+	//if current user is already in the candidate list, then returns. 
 	if strings.Contains(currNode.PathPeerIds, currNode.CurrNodePeerId) {
 		return
 	}
