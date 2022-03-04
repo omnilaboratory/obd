@@ -88,6 +88,10 @@ When a tracker joins the network, it synchronizes the information of the all obd
 5. Broadcast your transactions to your own tracker, a well-known lnd watch tower(or obd tracker), or a safe BTC mining pool to avoid malicious delays of broadcasting your transactions, hence losing the protection of the time-out mechanism of lightning network. 
 
 
+## Path Finding Strategies
+
+Currently applied path finding algorithm on obd network is the greedy best-first search algorithm. The well known Dijkstra algorithm( its variation A-star algorithm) is already implemented as one of the path-finding solutions in the some of the Lightning implementations. OBD does not set any restrictions on the search algorithm, and each node should choose or implement a search algorithm that is beneficial to itself. 
+
 ## liquidity provider
 
 The business model for a liquidity providers is straight forword. They connect to as many clients as possible, and earn channel fees by providing funded channels as relays of payments. Liquidity providers shall make sure the service quality of their nodes, especially the quality of being constantly online in order to earn more money during their service. With this motivation, we can expect that these liquidity providers bring sufficient funded channels hence better connectivity to the network.
