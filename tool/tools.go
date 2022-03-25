@@ -35,7 +35,7 @@ func CheckIsAddress(address string) bool {
 	if CheckIsString(&address) == false {
 		return false
 	}
-	_, err := btcutil.DecodeAddress(address, &chaincfg.TestNet3Params)
+	_, err := btcutil.DecodeAddress(address, GetCoreNet())
 	if err != nil {
 		return false
 	}
