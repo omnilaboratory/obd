@@ -10,7 +10,6 @@ import (
 	"github.com/btcsuite/btcutil"
 )
 
-
 //https://github.com/OmniLayer/omnicore/pull/1252
 // example 1:
 // omni_createpayload_sendtomany 31
@@ -190,4 +189,3 @@ func TestOmniCreateSendToManyScriptHashTransaction(t *testing.T) {
 	fmt.Println("tx hash is: ")
 	fmt.Println(tx_hash)
 }
-

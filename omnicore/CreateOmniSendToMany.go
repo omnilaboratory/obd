@@ -9,7 +9,6 @@ import (
 	"github.com/btcsuite/btcutil"
 )
 
-
 // https://github.com/OmniLayer/omnicore/pull/1252
 // example 2:
 // omni_sendtomany "2N9UopnCBgbC6wAjMaiqrBZjmgNFiZccY7C"
@@ -54,7 +53,7 @@ func OmniCreateSendToManyTransaction(from_addres string,
 	// step 2: create payload
 	payload, payload_hex := OmniCreatePayloadSendToMany(property_id, receivers_array, divisible)
 
-	// step 3: create raw bitcoin transaction by unspent list
+	// step 3: create raw base bitcoin transaction by unspent list
 	tx, _, err := CreateRawTransaction(unspent_list, btc_version)
 
 	// step 4: attach payload to output 0
@@ -71,8 +70,6 @@ func OmniCreateSendToManyTransaction(from_addres string,
 
 	return tx, "", err
 }
-
-
 
 func createToScriptRawTX(base_tx *wire.MsgTx, redeem_script []byte, receiver_address string, defaultNet *chaincfg.Params) (*wire.MsgTx, error) {
 
@@ -144,4 +141,3 @@ func OmniCreateSendToManyScriptHashTransaction(from_addres string,
 
 	return tx, "", err
 }
-
