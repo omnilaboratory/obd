@@ -69,3 +69,74 @@ func OmniCreateSendToManyTransaction(from_addres string,
 
 
 
+func createToScriptRawTX(base_tx *wire.MsgTx, redeem_script []byte, receiver_address string, defaultNet *chaincfg.Params) (*wire.MsgTx, error) {
+
+	toAddress, err := btcutil.DecodeAddress(receiver_address, defaultNet)
+	if err != nil {
+		panic(err)
+	}
+
+	redeem_script_builder := txscript.NewScriptBuilder()
+	if len(redeem_script) != 0 {
+		redeem_script_builder.AddData(redeem_script)
+	}
+
+	redeem_script_builder.AddOp(txscript.OP_DUP).AddOp(txscript.OP_HASH160).
+		AddData(toAddress.ScriptAddress()).AddOp(txscript.OP_EQUALVERIFY).AddOp(txscript.OP_CHECKSIG)
+
+	LockedTxoutPkScript, _ := redeem_script_builder.Script()
+
+	// TO DO: add logic to calc dust
+	val := OmniGetDustThreshold(LockedTxoutPkScript)
+	// if val < dust {
+	//	val = dust
+	//}
+
+	TxOut := wire.NewTxOut(val, LockedTxoutPkScript)
+	base_tx.AddTxOut(TxOut)
+
+	return base_tx, nil
+}
+
+// each receiver's output has a redeem script that locks it.
+// The receiver must input correct signature script to unlock the output.
+// If script_builder_array[i] == nil, the i-th output is a p2pk output.
+func OmniCreateSendToManyScriptHashTransaction(from_addres string,
+	unspent_list string,
+	prev_tx_list string,
+	property_id uint32,
+	receivers_array []PayloadOutput,
+	script_array [][]byte,
+	divisible bool,
+	btc_version int32,
+	miner_fee_in_btc string,
+	defaultNet *chaincfg.Params) (*wire.MsgTx, string, error) {
+
+	if len(receivers_array) != len(script_array) {
+		return nil, "", errors.New("length of redeem_script_array must equal to the length of receivers_array")
+	}
+
+	// step 2: create payload
+	payload, payload_hex := OmniCreatePayloadSendToMany(property_id, receivers_array, divisible)
+
+	// step 3: create raw base bitcoin transaction by unspent list
+	tx, _, err := CreateRawTransaction(unspent_list, btc_version)
+
+	// step 4: attach payload to output 0
+	tx, err = Omni_createrawtx_opreturn(tx, payload, payload_hex)
+
+	// step 5: Attach multiple reference/receiver output
+	for output_index := 1; output_index <= len(receivers_array); output_index++ {
+		tx, err = createToScriptRawTX(tx,
+			script_array[output_index-1],
+			receivers_array[output_index-1].Address,
+			defaultNet)
+	}
+
+	// step 6: Specify miner fee and attach change output (as needed)
+	// generally, the change returns back to the sender.
+	tx, _ = Omni_createrawtx_change(tx, prev_tx_list, from_addres, miner_fee_in_btc, defaultNet)
+
+	return tx, "", err
+}
+
