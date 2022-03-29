@@ -1,9 +1,14 @@
 package omnicore
 
 import (
+	"errors"
+
 	"github.com/btcsuite/btcd/chaincfg"
+	"github.com/btcsuite/btcd/txscript"
 	"github.com/btcsuite/btcd/wire"
+	"github.com/btcsuite/btcutil"
 )
+
 
 // https://github.com/OmniLayer/omnicore/pull/1252
 // example 2:
