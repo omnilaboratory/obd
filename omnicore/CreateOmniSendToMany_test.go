@@ -6,7 +6,10 @@ import (
 	"testing"
 
 	"github.com/btcsuite/btcd/chaincfg"
+	"github.com/btcsuite/btcd/txscript"
+	"github.com/btcsuite/btcutil"
 )
+
 
 //https://github.com/OmniLayer/omnicore/pull/1252
 // example 1:
@@ -125,3 +128,66 @@ func TestOmniCreateSendToManyTransaction(t *testing.T) {
 	fmt.Println("tx hash is: ")
 	fmt.Println(tx_hash)
 }
+
+// Example for adding redeem script to each receiver's output.
+func TestOmniCreateSendToManyScriptHashTransaction(t *testing.T) {
+
+	const prev_tx_list = `
+						{"txid":"2a89b07484fe8aa2b3038d32e2888b9b30de4553e23136e324502a0f049ed6b1", 
+						"vout": 3, 
+						"scriptPubKey": "",
+						"value": "4.99982296"}  
+						`
+
+	const unspent_list = `
+						{"txid":"2a89b07484fe8aa2b3038d32e2888b9b30de4553e23136e324502a0f049ed6b1", 
+						"vout": 3}  
+						`
+
+	const receiver_list = `
+						{"output": 1, "address": "mnM5bS3qQTxZSHkgpp2LDcKYL5thWtqCD6", "amount": "3"}
+						{"output": 2, "address": "2N9UopnCBgbC6wAjMaiqrBZjmgNFiZccY7C", "amount": "5"}
+					`
+	divisible := true
+	receivers_array := ExtractReceiverList(receiver_list, divisible)
+	var btc_version int32 = 1
+	miner_fee_in_btc := "0.0006"
+	from_address := "2N9UopnCBgbC6wAjMaiqrBZjmgNFiZccY7C"
+	var property_id uint32 = 3
+
+	// add hash locker for example
+	script := txscript.NewScriptBuilder()
+	locker := btcutil.Hash160([]byte("12341234123412341234"))
+	script.AddOp(txscript.OP_HASH160)
+	script.AddData(locker)
+	script.AddOp(txscript.OP_EQUALVERIFY)
+	var script_byts []byte
+	script_byts, _ = script.Script()
+
+	script_array := make([][]byte, 2)
+	script_array[0] = []byte{}
+	script_array[1] = script_byts
+
+	tx, _, err := OmniCreateSendToManyScriptHashTransaction(from_address,
+		unspent_list,
+		prev_tx_list,
+		property_id,
+		receivers_array,
+		script_array,
+		divisible,
+		btc_version,
+		miner_fee_in_btc,
+		&chaincfg.RegressionNetParams)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	exported := TxToHex(tx)
+	tx_hash := tx.TxHash()
+
+	fmt.Println(exported)
+	fmt.Println("tx hash is: ")
+	fmt.Println(tx_hash)
+}
+
