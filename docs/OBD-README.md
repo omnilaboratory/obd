@@ -42,22 +42,22 @@ Clone, compile the source code and run the binary executable file, you will have
 
 # Background
 
-Blockchain industry requires a much more flexible, extensible and cheaper smart assets circulation solution to solve the main chain scalability problem. Lightning network is a solid technology to this problem.  
+Blockchain industry requires a much more flexible, extensible, and cheaper smart assets circulation solution to solve the main chain scalability problem. Lightning network is a solid technology for this problem.  
 
-We propose [OmniBOLT](https://github.com/omnilaboratory/OmniBOLT-spec) to enable lightning network to be smart asset aware. OBD is the golang implementation. Interested readers please go to the [spec repository](https://github.com/omnilaboratory/OmniBOLT-spec) for further understanding of advantages and how it works.  
+We propose [OmniBOLT](https://github.com/omnilaboratory/OmniBOLT-spec) to enable lightning network to be smart asset aware. OBD is the golang implementation. Interested readers please go to the [spec repository](https://github.com/omnilaboratory/OmniBOLT-spec) for further understanding of its advantages and how it works.  
 
 
 # Dependency
 
 If you run your own tracker, you should maintain an [Omnicore 0.18](https://github.com/OmniLayer/omnicore)(or later) full node, which integrates the latest BTC core 0.18 and which enables relative time locker used in RSM contracts and HTL contracts.
 
-Runing an obd node don't require full btc/omni node. The obd node should connects a remote tracker for full node services. 
+Running an obd node doesn't require a full BTC/Omni node. The obd node should connect a remote tracker for full node services. 
  
 
 # Installation and minimum system requirement
 The following instruction works for Ubuntu 14.04.4 LTS, golang 1.10 or later.
 
-You could run obd on your desktop or a cloud server you trust. You could download the binary we compiled to major platforms at [here](https://github.com/omnilaboratory/obd/releases), and ignor step 1 and 3. 
+You could run obd on your desktop or a cloud server you trust. You could download the binary we compiled to major platforms at [here](https://github.com/omnilaboratory/obd/releases), and ignore steps 1 and 3. 
 
 The following are the estimated system requirements for running an obd node:  
 * 2.0 GHz 64-bit processor  
@@ -67,7 +67,7 @@ The following are the estimated system requirements for running an obd node:
 * golang 1.10 or later  
 
 
-For running a tracker, the system requirment is higher, because a tracker requires a full btc/omnicore node. We suggest you have:  
+For running a tracker, the system requirement is higher, because a tracker requires a full BTC/omnicore node. We suggest you have:  
 * 4 .0 GHz 64-bit processor  
 * 16 GB memory  
 * 500 GB HDD(SSD would be better)  for a btc/omnicore full node  
@@ -108,9 +108,8 @@ host=62.234.216.108:18332
 user=omniwallet
 pass=cB3]iL2@eZ1?cB2?
 ```
-This is a tesing full node for our community to run/call/test omni commands remotely. The OmniBOLT daemon invokes Omni RPC commands from this node, if you use this configuration. It is a conveniente way to get started.
+This is a testing full node for our community to run/call/test omni commands remotely. The OmniBOLT daemon invokes Omni RPC commands from this node if you use this configuration. It is a convenient way to get started.  
 
-**Notice:** Using remote omnicore causes lower efficiency during creating RSMC and HTLC transactions, since there are rounds of remote calls to construct a raw omni transaction. Our test reports around 3 seconds in constructing totally 20+ omni raw transactions for an HTLC. So that in production enviroment, we suggest to use local omnicore full node:  
 
 #### option 2: Local Omnicore node 
 [Install OmniCore](https://github.com/OmniLayer/omnicore#installation) on your local machine. Omnicore requires a full BTC core node, which may take days to synchronize the whole BTC database to your local device. After finishing synchronization, you can run omni/BTC commands for experiments, such as constructing raw transactions or generating new addresses.
@@ -125,9 +124,9 @@ pass=your password
 -->
 ## Step 2: Connect to a tracker
 
-Trackers offer such anomymous services: monitor node service quality, record channel balance if the channel is not private, update routing table for connected nodes, broadcaste transactions, and help nodes to find paths for payments.
+Trackers offer such anonymous services: monitor node service quality, record channel balance if the channel is not private, update routing table for connected nodes, broadcast transactions, and help nodes to find paths for payments.
 
-Any one can be a tracker. Runing a tracker requires a full omnilayer core node, which may take days to synchronize the whole database to your device. So that we deployed several tracker for our community. 
+Anyone can be a tracker maintainer. Running a tracker requires a full omnilayer core node, which may take days to synchronize the whole database to your device. So that we deployed several trackers for our community. 
 
 Edit the configure file: `\config\conf.ini`
 ```
@@ -395,19 +394,19 @@ Please visit OBD [online API documentation](https://api.omnilab.online) for the 
 
 
 # How to Contribute
-OmniBOLT Daemon is MIT licensed open source software. Hopefully you can get started by going through the above steps, but Lightning network is not that easy to develop. Anyone is welcome to join us in this journey, and please be nice to each other, don't bring any illegal/private stuff, abuse or racial into our community.
+OmniBOLT Daemon is MIT licensed open source software. Hopefully, you can get started by going through the above steps, but the lightning network is not that easy to develop. Anyone is welcome to join us in this journey, and please be nice to each other, don't bring any illegal/private stuff, abuse or racial into our community.
 
 Please submit issues to this repo or help us with those open ones.
 
 Guidelines:
 
-  * read the [OmniBOLT](https://github.com/omnilaboratory/OmniBOLT-spec) spec. If you have any question over there, raise issues in that repo.
+  * read the [OmniBOLT](https://github.com/omnilaboratory/OmniBOLT-spec) spec. If you have any questions over there, raise issues in that repo.
   * ask questions or talk about things in Issues.
   * make branches and raise pull-request, even if working on the main repository.
-  * don't copy/past any code from anywhere else in contribution, because we have limited resource to compare source codes to avoid legal issues. What we can do is to read your code, run tests of your newly developed modules and read your comments in your branch to see if it is solving a real problem. 
-  * better running `go fmt` before commiting any code.
+  * don't copy/paste any code from anywhere else in contribution, because we have limited resources to compare source codes to avoid legal issues. What we can do is read your code, run tests of your newly developed modules and read your comments in your branch to see if it is solving a real problem. 
+  * better running `go fmt` before committing any code.
   * add test to any package you commit.
-  * write/contribute light client testing tools, such as a HTML page supporting WebSocket, so that new programmers can have an intuitive experience to get started. That helps. We will release our tools for testing.
+  * write/contribute light client testing tools, such as an HTML page supporting WebSocket, so that new programmers can have an intuitive experience to get started. That helps. We will release our tools for testing.
 
 
 Join us in [OmniBOLT slack channel](https://join.slack.com/t/omnibolt/shared_invite/enQtNzY2MDIzNzY0MzU5LTFlZTNlZjJhMzQxZTU2M2NhYmFjYjc1ZGZmODYwMWE3YmM0YjNhZWQyMDU2Y2VlMWIxYWFjN2YwMjlmYjUxNzA)
