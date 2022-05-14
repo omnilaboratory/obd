@@ -3,12 +3,11 @@
 [![](https://img.shields.io/badge/API%20V0.3-Document-blue)](https://api.omnilab.online) 
 
 
-OmniBOLT Daemon Debugging Tool. This is a graphic user interface for developers. Every API on the left navigation tree has been defined in [api.omnilab.online](https://api.omnilab.online). This tool is in fact a lighning wallet.  
+OmniBOLT Daemon Debugging Tool. This is a graphic user interface for developers. Every API on the left navigation tree has been defined in [api.omnilab.online](https://api.omnilab.online). This tool is in fact a lightning wallet.  
 
-If you come to this tool in developing modules for OmniBOLT, you must have successfully installed and ran OBD on your local or remote machine. If you do not familiar with the whole process yet, we suggest you [install](https://github.com/omnilaboratory/obd#table-of-contents) OBD first and try to run it for a quick experience.  
+If you come to this tool in developing modules for OmniBOLT, you must have successfully installed and run OBD on your local or remote machine. If you do not familiar with the whole process yet, we suggest you [install](https://github.com/omnilaboratory/obd#table-of-contents) OBD first and try to run it for a quick experience.  
 
 In this tutorial, you can connect either your own OBD node, or the [nodes in the testnet](https://github.com/omnilaboratory/DebuggingTool#Nodes-in-testnet) we configured for our community. 
-
 
 <p align="center">
   <img width="500" alt="Debugging Tool Screenshot" src="assets/image_screen.png">
@@ -37,26 +36,37 @@ Video tutorials can be found here:
 git clone https://github.com/omnilaboratory/DebuggingTool
 ```
 
-Chrome must run with argument `disable-web-security` to disable web security stratigy. For example, if you are in Windows terminal:
+Chrome must run with the argument `disable-web-security` to disable the web security strategy. For example, if you are in Windows terminal:  
+
 ```
 chrome.exe --args --disable-web-security --user-data-dir=/any_temp_directory_for_chrome_data
 ```
 
 Then open index.html under the DebuggingTool directory.
 
-> Remark: We use some local json files to store the content of each interface, such as interface name, description, parameter list, etc.
+> Remark: We use some local JSON files to store the content of each interface, such as interface name, description, parameter list, etc.
 In the js code, we use jQuery’s `$.getJSON(jsonFile, function(result) {}` method to parse these json files. Chrome by default prohibits the access of this form of cross-domain resource.  
 
 There are currently three solutions:  
-1) Start Chrome by disabling web security policy: --disable-web-security.  
-2) Run a web server, put the debugging tool in the corresponding directory, so that Chrome can visit the url normally.  
+1) Start Chrome by disabling the web security policy: --disable-web-security.  
+2) Run a web server, and put the debugging tool in the corresponding directory, so that Chrome can visit the URL normally.  
 3) Use Safari or other browsers to run the debugging tool.  
 
-If you ran an older version before, we strongly suggest you to clear your browser storage before open index.html. Before first stable version is released, we can not gurantee that every update is backward compatible: we have to tune the storage structure according to obd updates.
+If you run an older version before, we strongly suggest you clear your browser storage before open index.html. Before the first stable version is released, we can not guarantee that every update is backward compatible: we have to tune the storage structure according to obd updates.   
+
 
 <p align="center">
   <img width="250" alt="clear broswer cache" src="assets/clearBroswerStorage.png">
 </p>
+
+There are currently three solutions:  
+1) Start Chrome by disabling the web security policy: --disable-web-security.  
+2) Run a web server, and put the debugging tool in the corresponding directory, so that Chrome can visit the URL normally.  
+3) Use Safari or other browsers to run the debugging tool.  
+
+If you run an older version before, we strongly suggest you clear your browser storage before opening the index.html. Before the first stable version is released, we can not guarantee that every update is backward compatible: we have to tune the storage structure according to obd updates.   
+
+
 
 
 
@@ -84,7 +94,7 @@ During forwarding HTLCs, a channel shall construct tens of temporary unbroadcast
 
 ## JS SDK
 
-The JS SDK is located under [/SDK](https://github.com/omnilaboratory/DebuggingTool/tree/master/sdk). It implments a complete set of APIs for HD wallets and client applications. It manages pub/priv keys genertion and helps developers automatically fill in the OBD arguments which is hardly to be manually finished.
+The JS SDK is located under [/SDK](https://github.com/omnilaboratory/DebuggingTool/tree/master/sdk). It implements a complete set of APIs for HD wallets and client applications. It manages pub/priv keys generation and helps developers automatically fill in the OBD arguments which are hard to be manually finished.
 
 ## How to use APIs
 
