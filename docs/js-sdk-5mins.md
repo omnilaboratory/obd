@@ -4,7 +4,7 @@
 First of all, you should put all of [JS SDK](https://github.com/omnilaboratory/DebuggingTool/tree/master/sdk) files 
 under your project's path.
 
-Following steps will assist you to build your first lightning wallet, and the code can be embeded in any mobile or desktop applications that support JS:
+The following steps will assist you to build your first lightning wallet, and the code can be embedded in any mobile or desktop applications that support JS:  
 
 * [Step 1: connect to an OBD node](#step-1-connect-to-an-obd-node)
 * [Step 2: signup a new user](#step-2-signup-a-new-user)
@@ -116,11 +116,11 @@ Full example in GUI-tool is [sdkLogIn](https://github.com/omnilaboratory/Debuggi
   <img width="300" alt="login" src="prototype/connectRemoteUser.png">
 </p>
 
-Connect a remote user, then you will be able to creat your first channel with him in the network. If you already have a channel, you can jump to the next step to pay or create invoices to collect money.
+Connect a remote user, then you will be able to create your first channel with him in the network. If you already have a channel, you can jump to the next step to pay or create invoices to collect money.
 
 Invoke **connectPeer** function defined in [wallet.js](https://github.com/omnilaboratory/DebuggingTool/blob/master/sdk/wallet.js).
 
-First parameter is `P2PPeer object`. It contains your counterparty's node address you will connect to. When a user login a wallet, he will get informed that which obd node he connects. A node address looks like this:
+The first parameter is `P2PPeer object`. It contains your counterparty's node address you will connect to. When a user login a wallet, he will get informed which obd node he connects to. A node address looks like this:
 
 ```
 /ip4/62.234.216.108/tcp/3001/p2p/QmP1mQMzDRV2bKWdhwvPWFubSAz1gqJY44RjdYm3G5DFeF
@@ -295,7 +295,7 @@ Before you create or pay an invoice, you must have your channel correctly funded
 
 [Fund channel by bitcoins and tokens](https://omnilaboratory.github.io/obd/#/gui-fund-channel).  
 
-If you want to dive deeper into the internal protocol that how invoice payment works, we suggest you read the [doc here](https://omnilaboratory.github.io/obd/#/gui-pay-invoice) 
+If you want to dive deeper into the internal protocol that how the invoice payment works, we suggest you read the [doc here](https://omnilaboratory.github.io/obd/#/gui-pay-invoice) 
 
 
 
