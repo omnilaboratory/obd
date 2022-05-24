@@ -497,6 +497,11 @@ func (service *htlcForwardTxManager) AliceAddHtlcAtAliceSide(msg bean.RequestMes
 	}
 	latestCommitmentTx, _ = getLatestCommitmentTxUseDbTx(tx, channelInfo.ChannelId, user.PeerId)
 
+	// Accepting HTLC when the balance is insufficient
+	if latestCommitmentTx.AmountToRSMC < requestData.AmountToPayee {
+		return nil, false, errors.New(fmt.Sprintf("The amountToPayee in transaction must be more than %.8f", latestCommitmentTx.AmountToRSMC))
+	}
+
 	if latestCommitmentTx.Id > 0 {
 		if latestCommitmentTx.CurrState == dao.TxInfoState_CreateAndSign {
 			_, err = omnicore.GetPubKeyFromWifAndCheck(requestData.LastTempAddressPrivateKey, latestCommitmentTx.RSMCTempAddressPubKey)

@@ -7,7 +7,7 @@ ws://62.234.216.108:60020/wstest
 ws://62.234.188.160:60020/wstest
 ```
 
-Some trackers for users who run your own obd nodes. You should edit the configure file: `\config\conf.ini`:
+Some trackers for users who run their own obd nodes. You should edit the configure file: `\config\conf.ini`:
 
 ```
 [tracker]

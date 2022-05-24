@@ -43,8 +43,7 @@ func StrToInt64(str string, divisible bool) int64 {
 
 		} else {
 			// check for existence of second decimal point, if so invalidate amount
-			//size_t posSecond = strAmount.find(".", pos + 1);
-			//if (posSecond != std::string::npos) return 0;
+			 
 			posSecond := strings.LastIndex(strAmount, ".")
 			if posSecond != pos {
 				return 0
@@ -52,8 +51,7 @@ func StrToInt64(str string, divisible bool) int64 {
 
 			if (len(strAmount) - pos) < 9 {
 				// there are decimals either exact or not enough, pad as needed
-				//std::string strRightOfDecimal = strAmount.substr(pos + 1);
-				//unsigned int zerosToPad = 8 - strRightOfDecimal.size();
+				 
 
 				strRightOfDecimal := strAmount[pos+1 : len(strAmount)]
 				zerosToPad := 8 - len(strRightOfDecimal)
@@ -74,10 +72,7 @@ func StrToInt64(str string, divisible bool) int64 {
 			str2 := strAmount[pos+1 : len(strAmount)]
 			strAmount = strings.Join([]string{str1, str2}, "")
 		}
-		//strAmount.erase(std::remove(strAmount.begin(), strAmount.end(), '.'), strAmount.end());
-		//try {
-		//    nAmount = boost::lexical_cast<int64_t>(strAmount);
-		//} catch (const boost::bad_lexical_cast &e) {}
+		 
 
 		nAmount, _ = strconv.ParseInt(strAmount, 10, 64)
 		//if err != nil {
@@ -86,11 +81,7 @@ func StrToInt64(str string, divisible bool) int64 {
 		//}
 
 	} else {
-		//   size_t pos = strAmount.find(".");
-		//   std::string newStrAmount = strAmount.substr(0, pos);
-		//  try {
-		//       nAmount = boost::lexical_cast<int64_t>(newStrAmount);
-		//   } catch (const boost::bad_lexical_cast &e) {}
+		 
 		pos := strings.Index(strAmount, ".")
 		if pos == -1 {
 			nAmount, _ = strconv.ParseInt(strAmount, 10, 64)

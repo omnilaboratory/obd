@@ -17,7 +17,7 @@ Full node will be used in funding/closing channels, monioring/punishing counterp
 ## 1) List unspent outputs
 
 List unspent outputs for 1K6JtSvrHtyFmxdtGZyZEF7ydytTGqasNc.
-```
+``` 
 omnicore-cli "listunspent" 0 999999 '["1K6JtSvrHtyFmxdtGZyZEF7ydytTGqasNc"]'
 ```
 
@@ -49,7 +49,7 @@ omnicore-cli "listunspent" 0 999999 '["1K6JtSvrHtyFmxdtGZyZEF7ydytTGqasNc"]'
 
 ## 2) Construct payload
 
-```
+```go
 const jsonStream = `
 		{ "txid" : "c23495f6e7ba24705d43583edd69ff25a354c18e69fd8514c07ec6f47cb995de" , "vout" : 0} 
 		{ "txid" : "ee1673b09b0edaf7aaf8eb0bfd53a5a2757eb3e342e731bfc960b869aa0ab6b3" , "vout" : 2 } 
@@ -62,14 +62,14 @@ const jsonStream = `
 ```
 
 ## 3) Construct transaction base
-```
+```go
 tx, tx_hex, _ := CreateRawTransaction(jsonStream, wire.TxVersion)
 	fmt.Printf("The final base transaction hex")
 	fmt.Printf("%s \n ", tx_hex)
 ```
 
 ## 4) Attach payload output
-```
+```go
 tx, _ = Omni_createrawtx_opreturn(tx, payload, payload_hex)
 
 	expected := "0100000002de95b97cf4c67ec01485fd698ec154a325ff69dd3e58435d7024bae7f69534c20000000000ffffffffb3b60aaa69b860c9bf31e742e3b37e75a2a553fd0bebf8aaf7da0e9bb07316ee0200000000ffffffff010000000000000000166a146f6d6e690000000000000002000000000098968000000000"
@@ -87,7 +87,7 @@ tx, _ = Omni_createrawtx_opreturn(tx, payload, payload_hex)
 ```
 
 ## 5) Attach reference/receiver output
-```
+```go
 //5) Attach reference/receiver output
 	receiver := "1Njbpr7EkLA1R8ag8bjRN7oks7nv5wUn3o"
 	tx, _ = Omni_createrawtx_reference(tx, receiver, &chaincfg.MainNetParams)
@@ -107,7 +107,7 @@ tx, _ = Omni_createrawtx_opreturn(tx, payload, payload_hex)
 
 ## 6) Specify miner fee and attach change output (as needed)
 
-```
+```go
 fmt.Println("step 6: attach change output to the sender")
 
 	const prev_txs_json = `
@@ -128,7 +128,7 @@ fmt.Println("step 6: attach change output to the sender")
 ```
 
 ## 7) Decode Raw Transaction Hex
-```
+```go
 fmt.Println("Hex from step 6 may be different than what expected, because omnicore c++ reorder the outputs. ")
 	fmt.Println("Use DecodeRawtrnasaction to verify the two hexs. ")
 

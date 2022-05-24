@@ -35,6 +35,7 @@ Video tutorials can be found here:
 * [Step 3 -- pay invoice](https://youtu.be/NEexFe7R9kc)
 
 
-
+## Security
+If you discover a vulnerability, weakness, or threat that can potentially compromise the security of obd, we ask you to keep it confidential and submit your concern directly to [the team](mailto:neo.carmack@gmail.com?subject=%5BGitHub%5D%20OmniBOLT%20Security).
 
  

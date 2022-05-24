@@ -21,20 +21,23 @@ func (service *UserManager) UserLogin(user *bean.User) error {
 	if user == nil {
 		return errors.New(enum.Tips_user_nilUser)
 	}
-	if tool.CheckIsString(&user.Mnemonic) == false || bip39.IsMnemonicValid(user.Mnemonic) == false {
-		return errors.New(enum.Tips_common_wrong + "mnemonic")
-	}
 
-	changeExtKey, err := HDWalletService.CreateChangeExtKey(user.Mnemonic)
-	if err != nil {
-		return err
+	if user.IsAdmin {
+		if tool.CheckIsString(&user.Mnemonic) == false || bip39.IsMnemonicValid(user.Mnemonic) == false {
+			return errors.New(enum.Tips_common_wrong + "mnemonic")
+		}
+		changeExtKey, err := HDWalletService.CreateChangeExtKey(user.Mnemonic)
+		if err != nil {
+			return err
+		}
+		user.PeerId = tool.GetUserPeerId(user.Mnemonic)
+		user.ChangeExtKey = changeExtKey
 	}
-	var node dao.User
-	user.PeerId = tool.GetUserPeerId(user.Mnemonic)
 	userDB, err := dao.DBService.GetUserDB(user.PeerId)
 	if err != nil {
 		return err
 	}
+	var node dao.User
 	err = userDB.Select(q.Eq("PeerId", user.PeerId)).First(&node)
 	if node.Id == 0 {
 		node = dao.User{}
@@ -67,7 +70,7 @@ func (service *UserManager) UserLogin(user *bean.User) error {
 
 	user.State = node.CurrState
 	user.CurrAddrIndex = node.CurrAddrIndex
-	user.ChangeExtKey = changeExtKey
+
 	user.Db = userDB
 	return nil
 }

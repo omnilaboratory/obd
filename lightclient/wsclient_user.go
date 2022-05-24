@@ -29,16 +29,26 @@ func (client *Client) UserModule(msg bean.RequestMessage) (enum.SendTargetType, 
 	var data string
 	switch msg.Type {
 	case enum.MsgType_UserLogin_2001:
+		//for js sdk user
+		walletId := gjson.Get(msg.Data, "wallet_id").String()
+
+		//for admin user
 		mnemonic := gjson.Get(msg.Data, "mnemonic").String()
-		loginToken := gjson.Get(msg.Data, "login_token").Str
 
 		isAdmin := false
+
 		//TODO 管理员验证
-		if client.IsGRpcRequest || true {
+		if client.IsGRpcRequest {
+			loginToken := gjson.Get(msg.Data, "login_token").Str
 			isAdmin = service.CheckIsAdmin(loginToken)
 		}
-
-		peerId := tool.GetUserPeerId(mnemonic)
+		peerId := ""
+		if isAdmin {
+			peerId = tool.GetUserPeerId(mnemonic)
+		} else {
+			peerId = tool.GetUserPeerId(walletId)
+			//peerId = tool.GetUserPeerId(mnemonic)
+		}
 		if GlobalWsClientManager.OnlineClientMap[peerId] != nil {
 			if GlobalWsClientManager.OnlineClientMap[peerId].User.IsAdmin {
 				client.User = GlobalWsClientManager.OnlineClientMap[peerId].User
@@ -69,6 +79,7 @@ func (client *Client) UserModule(msg bean.RequestMessage) (enum.SendTargetType, 
 		} else {
 			user := bean.User{
 				Mnemonic:        mnemonic,
+				PeerId:          peerId,
 				P2PLocalAddress: localServerDest,
 				P2PLocalPeerId:  P2PLocalNodeId,
 				IsAdmin:         isAdmin,
