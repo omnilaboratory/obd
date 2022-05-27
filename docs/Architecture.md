@@ -29,11 +29,8 @@ $ go run obdserver.go
 For more details of how to use these APIs, please refer to the online documentation at [API Website](https://api.omnilab.online/?shell#obd-grpc-api-reference).
 -->
 
-Current exclusive mode implementation bases Omni HTLC on lnd codebase. Please refer to the [chapter of gRPC](https://omnilaboratory.github.io/obd/#/grpc-api) for details. 
-
-
-
-OBD is designed for both (inbound ) liquidity providers and individual users:
+Current exclusive mode implementation bases Omni HTLC on the lnd codebase. Please refer to the [chapter of gRPC](https://omnilaboratory.github.io/obd/#/grpc-api) for details. 
+ 
 
 ## Tracker network
 
@@ -58,7 +55,7 @@ Trackers form a DHT network, and each of them offers the following services for 
 
 3. Some statistic works, reporting channel/nodes status, and network status.    
 
-4. Monitor transactions and execute punishment for cheating.    
+4. Monitor transactions and execute punishment for cheating as a watch tower.    
 
 5. Queue messages for offline nodes. In the case of an obd node going offline, the tracker it is connected maintains a queue to collect incoming messages. (to do)
 
@@ -96,8 +93,11 @@ When a tracker joins the network, it synchronizes the information of the all obd
 
 Currently applied path-finding algorithm on the obd network is the greedy best-first search algorithm. The well-known Dijkstra algorithm( its variation A-star algorithm) is already implemented as one of the path-finding solutions in some of the Lightning implementations. OBD does not set any restrictions on the search algorithm, and each node should choose or implement a search algorithm that is beneficial to itself. 
 
-## liquidity provider
+## Roles in the OBD network
+OBD is designed for both (inbound ) liquidity providers and individual users:
 
+## liquidity provider
+ 
 The business model for liquidity providers is straightforward. They connect to as many clients as possible and earn channel fees by providing funded channels as relays of payments. Liquidity providers shall make sure the service quality of their nodes, especially the quality of being constantly online in order to earn more money during their service. With this motivation, we can expect that these liquidity providers bring sufficient funded channels hence better connectivity to the network.
 
 More importantly, when you(the wallet client) go offline, these kinds of nodes keep monitoring your counterparty's activities and punishing cheating activities if there are any, which are basic functions of a lightning node.
