@@ -21,12 +21,16 @@ Run obd in exclusive mode:
 ```
 $ go run obdserver.go
 ```
-
+<!--
 * Invoke [Login](https://api.omnilab.online/?shell#login) gRPC API.
 * connect remote peer using [ConnectPeer](https://api.omnilab.online/?shell#connectpeer).
 * [OpenChannel](https://api.omnilab.online/?shell#openchannel), fundChannel, and make payment, etc.
 
 For more details of how to use these APIs, please refer to the online documentation at [API Website](https://api.omnilab.online/?shell#obd-grpc-api-reference).
+-->
+
+Current exclusive mode implementation bases Omni HTLC on lnd codebase. Please refer to the [chapter of gRPC](https://omnilaboratory.github.io/obd/#/grpc-api) for details. 
+
 
 
 OBD is designed for both (inbound ) liquidity providers and individual users:
