@@ -14,6 +14,9 @@
     - [fund the channel](gui-fund-channel.md)
     - [pay invoice](gui-pay-invoice.md)
 
+- gRPC Service
+    - [gRPC API](grpc-api.md)  
+
 - JS SDK
     - [Basic JS API](js-sdk.md) 
     - [Write your first lightning app](js-sdk-5mins.md) 
