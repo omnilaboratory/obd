@@ -5,23 +5,23 @@ The gRPC service is a service offered in exclusive mode, which means the user mu
 For exclusive and non-custodial modes, please refer to the [Architecture section](https://omnilaboratory.github.io/obd/#/Architecture).
 
 
-## list of asset related interfaces
+## mapping of asset related interfaces
 
-(updated May 27, 2022, keep updating)
+(updated Jun 25, 2022, keep updating)
 
 The new asset-related gRPC interfaces of an obd node are listed here, and other common/bitcoin interfaces are provided by the original code of lnd. 
 
-Interface: the asset-related gRPC interface.  
+obd Interface: the asset-related gRPC interface.  
 sub-service: the service it belongs to.  
-Argument added: the newly added argument.  
-bitcoin-only interface: the doc link of the original lnd interface. 
+Argument added: the newly added arguments.  
+bitcoin-only lnd interface: the doc link of the original lnd interface. 
 
 assetID: the asset id defined by Omnilayer is an unsigned 32-bit integer.  
 omniAmount: is defined by Omnilayer, see [OmniBOLT spec 3](https://github.com/omnilaboratory/OmniBOLT-spec/blob/master/OmniBOLT-03-RSMC-and-OmniLayer-Transactions.md#string-to-int64)
 
 
-| interface	    |	sub service		        		|	Argument added	    | Request/Response      |  bitcoin-only interface   |  
-| -------- 	    |	-----------------------		|	-------------------	|  -------------------	|  -------------------	    |   
+| obd interface	    |	sub service		        		|	Argument added	    |   Request/Response    |  bitcoin-only lnd interface   |  
+| -------- 	        |	-----------------------		|	-------------------	|  -------------------	|  -------------------	        |   
 | AddHoldInvoiceRequest	      |	Invoices		    |	assetID: uint32, amount: omniAmount    | Request, Response | https://api.lightning.community/#addholdinvoice  |
 | AddInvoice                	|	Lightning		    | assetID: uint32, amount: omniAmount    | Request, Response | https://api.lightning.community/#addinvoice      |
 | ChannelBalance              |	Lightning       |	assetID: uint32, amount: omniAmount    | Response          | https://api.lightning.community/#channelbalance  |
