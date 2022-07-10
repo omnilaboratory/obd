@@ -22,8 +22,8 @@ omniAmount: is defined by Omnilayer, see [OmniBOLT spec 3](https://github.com/om
 
 | obd interface	    |	sub service		        		|	Argument added	    |   Request/Response    |  bitcoin-only lnd interface   |  
 | -------- 	        |	-----------------------		|	-------------------	|  -------------------	|  -------------------	        |   
-| AddInvoice                	|	Lightning(lnrpc)		    | assetID: uint32, amount: omniAmount    | Request, Response | [https://api.lightning.community/#addinvoice](https://api.lightning.community/#addinvoice)      |
-| ChannelBalance                 |	Lightning(lnrpc)       |	assetID: uint32, asset_capacity: omniAmount          | Response          | [https://api.lightning.community/#channelbalance ](https://api.lightning.community/#channelbalance)   |
-| OpenChannel 	              |	Lightning(lnrpc)		    |	assetID: uint32, asset_capacity: omniAmount          | Request           | [https://api.lightning.community/#openchannel](https://api.lightning.community/#openchannel)  |
-| NewAddress 	                |	Lightning(lnrpc)		    |	AddressType type = 1, string account = 2         | Request           | [https://api.lightning.community/#newaddress](https://api.lightning.community/#newaddress)  |
+| AddInvoice                	|	Lightning(lnrpc)		    | asset_id: uint32, amount: omniAmount    | Request, Response | [https://api.lightning.community/#addinvoice](https://api.lightning.community/#addinvoice)      |
+| ChannelBalance              |	Lightning(lnrpc)       |	assetID: uint32          | Request           | [https://api.lightning.community/#channelbalance ](https://api.lightning.community/#channelbalance)   |
+| OpenChannel 	              |	Lightning(lnrpc)		    |	 asset_id: uint32, push_asset_sat: int64, local_funding_asset_amount: int64          | Request           | [https://api.lightning.community/#openchannel](https://api.lightning.community/#openchannel)  |
+| NewAddress 	                |	Lightning(lnrpc)		    |	 type: AddressType, accoun: string         | Request           | [https://api.lightning.community/#newaddress](https://api.lightning.community/#newaddress)  |
 | Sendpaymentv2 	            |	Router(lnrpc/routerrpc)		      |	asset_id : uint32, amt_msat : int64             | Request,Response          | https://api.lightning.community/#sendpaymentv2 |
