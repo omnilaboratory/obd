@@ -1,0 +1,4 @@
+[submodule "ob-lnd"]
+	path = ob-lnd
+	url = git@github.com:omnilaboratory/lnd.git
+	branch = obd
