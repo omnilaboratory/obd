@@ -13,6 +13,7 @@ import (
 	"github.com/omnilaboratory/obd/omnicore"
 	"github.com/omnilaboratory/obd/tool"
 	trackerBean "github.com/omnilaboratory/obd/tracker/bean"
+	"github.com/omnilaboratory/obd/tracker/tkrpc"
 	"github.com/tidwall/gjson"
 	"log"
 	"strconv"
@@ -493,7 +494,8 @@ func (service *htlcBackwardTxManager) OnGetHeRdDataAtBobObd(msg string, user bea
 
 	if channelInfo.IsPrivate == false {
 		//update htlc state on tracker
-		txStateRequest := trackerBean.UpdateHtlcTxStateRequest{}
+		//txStateRequest := trackerBean.UpdateHtlcTxStateRequest{}
+		txStateRequest := &tkrpc.HtlcInfo{}
 		txStateRequest.Path = latestCommitment.HtlcRoutingPacket
 		txStateRequest.H = latestCommitment.HtlcH
 		if strings.HasSuffix(latestCommitment.HtlcRoutingPacket, channelInfo.ChannelId) {
@@ -501,7 +503,9 @@ func (service *htlcBackwardTxManager) OnGetHeRdDataAtBobObd(msg string, user bea
 		}
 		txStateRequest.DirectionFlag = trackerBean.HtlcTxState_ConfirmPayMoney
 		txStateRequest.CurrChannelId = channelInfo.ChannelId
-		sendMsgToTracker(enum.MsgType_Tracker_UpdateHtlcTxState_352, txStateRequest)
+
+		ITclient.UpdateHtlcInfo(todo,txStateRequest)
+		//sendMsgToTracker(enum.MsgType_Tracker_UpdateHtlcTxState_352, txStateRequest)
 	}
 	totalDurationObd += time.Now().Sub(beginTime).Milliseconds()
 	beginTime = time.Now()

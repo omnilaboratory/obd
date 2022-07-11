@@ -1,0 +1,212 @@
+syntax = "proto3";
+
+package tkrpc;
+
+//import "google/protobuf/timestamp.proto";
+
+option go_package = ".;tkrpc";
+
+
+// InfoTracker is a service that is used to record and query on userinfo,channelInfo,nodeInfo
+service InfoTracker {
+  /*
+  // old service/NodeAccountService api
+  Login(obdClient *ObdNode, msgData string) (retData interface{}, err error)
+	Logout(obdClient *ObdNode) (err error)
+	UserLogin(obdClient *ObdNode, msgData string) (retData interface{}, err error)
+	UserLogout(obdClient *ObdNode, msgData string) (err error)
+	UpdateUserInfo(obdP2pNodeId, obdClientId, userId string) (retData interface{}, err error)
+	UpdateUsers(obdClient *ObdNode, msgData string) (err error)
+	GetNodeInfoByP2pAddress(context *gin.Context)
+	GetUserState(context *gin.Context)
+	GetUserP2pNodeId(context *gin.Context)
+	GetAllUsers(context *gin.Context)
+	GetAllObdNodes(context *gin.Context)
+
+	// service/channel api:
+   func (manager *channelManager) updateChannelInfo(obdP2pNodeId string, msgData string) (err error)
+   func (manager *channelManager) GetChannelState(context *gin.Context)
+   func (manager *channelManager) GetChannels(context *gin.Context)
+
+	// service/htlc api:
+	func (manager *htlcManager) getPath(msgData string) (path interface{}, err error)
+	func (manager *htlcManager) updateHtlcInfo( msgData string) (err error)
+	func (manager *htlcManager) GetHtlcCurrState(context *gin.Context)
+  */
+
+  //every HeartBeat will set nodeInfo.isonline=true; every HeartBeat disconnect will set  nodeInfo.isonline=false;
+  rpc HeartBeat (stream UpdateNodeInfoReq) returns (EmptyRes);
+  //map to old func Logout Login
+  rpc UpdateNodeInfo (UpdateNodeInfoReq) returns (EmptyRes);
+  //map to old func userLogout userLogin
+  rpc UpdateUserInfo (UpdateUserInfoReq) returns (EmptyRes);
+  //map to old func updateUsers
+  rpc UpdateUserInfos (UpdateUserInfosReq) returns (EmptyRes);
+  //map to old func: GetUserState , GetUserP2pNodeId
+  //Request:SetUserInfoReq{user_id,node_Id}
+  //old GetUserP2pNodeId use request:SetUserInfoReq{user_id} ;  may not work when user login on multi node
+  rpc GetUserInfo (UpdateUserInfoReq) returns (UserInfo);
+  //Map to old function GetAllUsers
+  rpc GetUserInfos (ListReq) returns (UserInfosRes);
+  //map old function GetAllObdNodes
+  rpc GetNodes (ListReq) returns (NodeInfosRes);
+  // map to old ChannelService.updateChannelInfo
+
+  rpc UpdateChannelInfo(ChannelInfo)returns(ChannelInfo);
+  rpc UpdateChannelInfos(UpdateChannelInfosReq)returns(EmptyRes);
+  //map to old ChannelService.GetChannelState
+  rpc GetChannelInfo(SimpleFilter)returns(ChannelInfo);
+  rpc GetChannels(ListReq)returns (NodeInfosRes);
+
+  // map old function updateHtlcInfo
+  rpc UpdateHtlcInfo(HtlcInfo)returns (HtlcInfo);
+  //map old function getPath
+  rpc HtlcGetPath(HtlcGetPathReq)returns (HtlcGetPathRes);
+  //map old function GetHtlcCurrState
+  rpc GetHtlcInfo(GetHtlcInfoReq)returns (HtlcInfo);
+}
+message HtlcGetPathReq{
+  string  payer_obd_node_id = 1;
+  string  real_payer_peer_id = 2;
+  string  payee_peer_id = 3;
+  int64  property_id = 4;
+  string  h = 5;
+  double amount = 6;
+}
+message HtlcGetPathRes{
+  string  senderPeerId = 1;
+  string  h = 2;
+  double  amount = 3;
+  string  path = 4;
+}
+message GetHtlcInfoReq{
+  string  h = 2;
+  string  path = 4;
+}
+
+message SimpleFilter{
+  string id = 1;
+  string channel_id = 2;
+  string user_id = 3;
+}
+//Empty response
+message EmptyRes {
+}
+message UpdateNodeInfoReq {
+  string  node_id = 2;
+  string  p2p_address = 3;
+  // 1 online 2 offline
+  int32 is_online = 5;
+}
+//obd-node info
+message NodeInfo {
+  int32 id = 1;
+  //node_peer_id
+  string  node_id = 2;
+  string  p2p_address = 3;
+  string access_ip = 4;
+  // 1 online 2 offline
+  int32 is_online = 5;
+  int32 hear_beat_counter = 6;
+  int64 last_hear_beat = 7;
+  //unix timestamp in seconds ; google.protobuf.Timestamp will more better,but sql database not support.
+  int64  updated_at = 8;
+  int64  created_at = 9 ;
+}
+//obd-user-info
+message UserInfo {
+  int32 id = 1;
+  //user_peer_id
+  string  user_id = 2;
+  //node_peer_id
+  string  node_id = 3;
+  // 1 online 2 offline
+  int32 is_online = 4;
+  string access_ip = 5;
+  //unix timestamp in seconds ; google.protobuf.Timestamp will more better,but sql database not support.
+  int64  updated_at = 6;
+  int64  created_at = 7;
+}
+message UpdateUserInfoReq{
+  string  user_id = 1;
+  string  node_id = 2;
+  string  p2p_address = 3;
+  // 1 online 2 offline
+  int32 is_online = 4;
+}
+message UpdateUserInfosReq {
+  repeated UpdateUserInfoReq UpdateUserInfoReqs = 1;
+}
+message UpdateChannelInfosReq {
+  repeated ChannelInfo ChannelInfos = 1;
+}
+message ChannelInfo{
+  int32 id = 1;
+  string obd_node_ida = 2;
+  string obd_node_idb = 3;
+  string channel_id = 4;
+  int64 property_id = 5;
+  ChannelState curr_state = 6;
+  string peer_ida = 7;
+  string peer_idb = 8;
+  double amount_a = 9;
+  double amount_b = 10;
+  int64  updated_at = 11;
+  int64  created_at = 12;
+  //database will not store it
+  bool  is_alice=13;
+  //database will not store it
+  string  node_id=14;
+}
+
+message ListReq {
+  //page number
+  int32 page = 1;
+  //page size
+  int32 size = 2;
+  //sort set the sql order-by  sort=[-]field_name .  example sort=-updated_at will sort by:"desc id";sort=updated_at  sort by:"asc id"
+  string sort = 3;
+  string user_id = 4;
+}
+message UserInfosRes {
+  int64 count = 1;
+  repeated  UserInfo results = 2;
+}
+message NodeInfosRes {
+  int64 count = 1;
+  repeated  NodeInfo results = 2;
+}
+message ChannelInfosRes {
+  int64 count = 1;
+  repeated  ChannelInfo results = 2;
+}
+
+enum ChannelState{
+  unknown = 0;
+  Create = 10 ;
+  WaitFundAsset = 11 ;
+  NewTx = 12 ;
+  CanUse = 20 ;
+  Close = 21 ;
+  HtlcTx = 22 ;
+  LockByTracker = 23 ;
+  OpenChannelRefuse = 30 ;
+}
+message HtlcInfo{
+  int32 id = 1;
+  string path = 2;
+  string h = 3;
+  string r = 4;
+  int32 direction_flag = 5;
+  string curr_channel_id = 6;
+  int64  updated_at = 7;
+  int64  created_at = 8;
+}
+message LockHtlcPath{
+  int32 id = 1;
+  string path = 2;
+  // 0 创建，1，标记作废，2 标记通知完成
+  int32 curr_state = 3;
+  int64  created_at = 8;
+  int64  updated_at = 7;
+}

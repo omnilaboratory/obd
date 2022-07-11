@@ -9,6 +9,7 @@ import (
 	"github.com/omnilaboratory/obd/conn"
 	"github.com/omnilaboratory/obd/service"
 	"github.com/omnilaboratory/obd/tool"
+	"github.com/omnilaboratory/obd/tracker/tkrpc"
 	"log"
 )
 
@@ -66,8 +67,10 @@ func (clientManager *clientManager) cleanConn(client *Client) {
 	}
 	delete(clientManager.ClientsMap, client)
 	if client.User != nil {
+		user:=client.User
+		ITclient.UpdateUserInfo(todo,&tkrpc.UpdateUserInfoReq{UserId:user.PeerId,NodeId:user.P2PLocalPeerId,P2PAddress:user.P2PLocalAddress,IsOnline: 2})
 		_ = service.UserService.UserLogout(client.User)
-		sendInfoOnUserStateChange(client.User.PeerId)
+		//sendInfoOnUserStateChange(client.User.PeerId)
 		delete(clientManager.OnlineClientMap, client.User.PeerId)
 		delete(service.OnlineUserMap, client.User.PeerId)
 		client.User = nil

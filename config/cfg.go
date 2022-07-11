@@ -23,6 +23,7 @@ var (
 	HtlcMaxFee  = 0.01
 
 	TrackerHost = "127.0.0.1:60060"
+	TrackerHostGrpc = "127.0.0.1:60061"
 
 	ChainNodeType = "regtest"
 	//P2P
@@ -91,4 +92,5 @@ func Init() {
 		return
 	}
 	TrackerHost = tracker.Key("host").MustString("localhost:60060")
+	TrackerHostGrpc = tracker.Key("grpc").MustString("localhost:60061")
 }
