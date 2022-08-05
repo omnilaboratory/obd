@@ -12,30 +12,34 @@ The lightning DEX implements the [OmniBOLT spec #6: DEX on Lightning Network](ht
 * Matching orders
 * Trading history
 
-## 1) Sign an order
+### 1) Sign an order
 ```
 to be added
 ```
 
-## 2) Post an order
+### 2) Post an order
 ```
 to be added
 ```
 
-## 3) Accept an order
+### 3) Accept an order
 ```
 to be added
 ```
 
-## 4) Update channel state
+### 4) Update channel state
 ```
 to be added
 ```
 
-## 5) List trading history
+### 5) List trading history
 ```
 to be added
 ```
+
+## Benchmark
+
+
 
 
 
