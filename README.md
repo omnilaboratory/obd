@@ -25,7 +25,9 @@ The latest features and ETA is here: [OmniBOLT - Features and Roadmap](https://o
 
 ## Quick Start:
 
-#### Graphic Terminal
+Users can get quickly started with graphic or command line tools:  
+
+#### Polar
 Graphic terminal is provided by Polar, and is custumized for OBD: [Polar - GUI Terminal](https://github.com/omnilaboratory/polar/releases). 
 
 Polar helps Lightning Network application developers quickly build networks locally on their computers. Here is a short video demo: [https://twitter.com/omni_bolt/status/1549709303921410048?s=20&t=-M9Y4L0Bw_VialiSVPgqmA](https://twitter.com/omni_bolt/status/1549709303921410048?s=20&t=-M9Y4L0Bw_VialiSVPgqmA)  
