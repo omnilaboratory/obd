@@ -10,7 +10,7 @@
 OBD implements the [OmniBOLT](https://github.com/omnilaboratory/OmniBOLT-spec) specification, and it is an open source, off-chain decentralized platform, build upon BTC/OmniLayer network, implements basic multi hop HTLC payment, multi-currency atomic swap, and more off-chain contracts on the network of [smart assets lightning channels](https://github.com/omnilaboratory/OmniBOLT-spec/blob/master/OmniBOLT-02-peer-protocol.md#omni-address).  
 
 <p align="center">
-  <img width="750" alt="None Custodial OmniBOLT Daemon" src="docs/assets/None-Custodial-OmniBOLT-Daemon-2.png">
+  <img width="500" alt="None Custodial OmniBOLT Daemon" src="docs/assets/None-Custodial-OmniBOLT-Daemon-2.png">
 </p>
 
 In addition, OBD is designed special for inbound liquidity providers. A daemon allows thousands of remote light clients connections, including connections from [LND wallets](https://omnilaboratory.github.io/obd/#/Architecture?id=lnd-integrated). 
@@ -52,7 +52,7 @@ The testing asset id is `--asset_id = 2147483651`.
 
 The faucet we deployed for developers is in this repository: [https://github.com/omnilaboratory/omnicore-faucet-api](https://github.com/omnilaboratory/omnicore-faucet-api) 
 
-** main api**： 
+**main api** 
 * mine  
 * send_coin  
 * get asset balance  
