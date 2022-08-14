@@ -31,7 +31,7 @@ Polar helps Lightning Network application developers quickly build networks loca
 
 #### Docker
 
-Docker helps people to quickly interact with obd and omnicore via their command line tools. OBD uses `docker-compose` to package `obd`, `omnicored`, and `btcd` together to make deploying these daemons easily. Please check the `docker-compose.yml` config file for all the configurations under:
+Docker helps people to quickly interact with obd and omnicore via command line tools. OBD uses `docker-compose` to package `obd`, `omnicored`, and `btcd` together to make deploying these daemons easily. Please check the `docker-compose.yml` config file for all the configurations under:
 
 ```
 https://github.com/omnilaboratory/lnd/tree/obd/docker/obtest
