@@ -66,7 +66,7 @@ Omnicore Proxy offers public anonymous omni services for obd nodes: [https://git
 
 ## Community
 
-Discord: [http://discord.gg/2QYqzSMZuy](http://discord.gg/2QYqzSMZuy)
+Discord: [http://discord.gg/2QYqzSMZuy](http://discord.gg/2QYqzSMZuy)  
 Slack: [https://join.slack.com/t/omnibolt/shared_invite/zt-ad732myf-1G7lXpHPkFH_yRcilwT4Ig](https://join.slack.com/t/omnibolt/shared_invite/zt-ad732myf-1G7lXpHPkFH_yRcilwT4Ig)
 
 ## Video Tutorials
