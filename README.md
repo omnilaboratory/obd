@@ -16,7 +16,7 @@ OBD implements the [OmniBOLT](https://github.com/omnilaboratory/OmniBOLT-spec) s
 
 The latest document/tutorial has been moved to [OmniBOLT - Developers](https://omnilaboratory.github.io/obd/#/OBD-README).  
 
-To know how OBD works, jump to the [OmniBOLT - Architecture](https://omnilaboratory.github.io/obd/#/Architecture).  
+To know how obd works, jump to the [OmniBOLT - Architecture](https://omnilaboratory.github.io/obd/#/Architecture).  
 
 The latest features and ETA is here: [OmniBOLT - Features and Roadmap](https://omnilaboratory.github.io/obd/#/features).  
 
@@ -25,13 +25,13 @@ The latest features and ETA is here: [OmniBOLT - Features and Roadmap](https://o
 Users can get quickly started with graphic or command line tools:  
 
 #### Polar
-Graphic terminal is provided by Polar, and is custumized for OBD: [Polar - GUI Terminal](https://github.com/omnilaboratory/polar/releases). 
+Graphic terminal is provided by Polar, and is customized for obd: [Polar - GUI Terminal Customized](https://github.com/omnilaboratory/polar/releases). 
 
 Polar helps Lightning Network application developers quickly build networks locally on their computers. Here is a short video demo: [https://twitter.com/omni_bolt/status/1549709303921410048?s=20&t=-M9Y4L0Bw_VialiSVPgqmA](https://twitter.com/omni_bolt/status/1549709303921410048?s=20&t=-M9Y4L0Bw_VialiSVPgqmA)  
 
 #### Docker
 
-Docker helps people to quickly interact with OBD and omnicore via their command line tools. OBD uses `docker-compose` to package `obd`, `omnicored`, and `btcd` together to make deploying these daemons easily. Please check the `docker-compose.yml` config file for all the configurations under:
+Docker helps people to quickly interact with obd and omnicore via their command line tools. OBD uses `docker-compose` to package `obd`, `omnicored`, and `btcd` together to make deploying these daemons easily. Please check the `docker-compose.yml` config file for all the configurations under:
 
 ```
 https://github.com/omnilaboratory/lnd/tree/obd/docker/obtest
