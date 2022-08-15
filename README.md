@@ -51,7 +51,7 @@ The testing asset id is `--asset_id = 2147483651`.
 
 The faucet we deployed for developers is in this repository: [https://github.com/omnilaboratory/omnicore-faucet-api](https://github.com/omnilaboratory/omnicore-faucet-api) 
 
-**main api** 
+main API:   
 * mine  
 * send_coin  
 * get asset balance  
@@ -60,7 +60,7 @@ The faucet we deployed for developers is in this repository: [https://github.com
 * create asset  
 
 #### Omnicore Proxy
-Omnicore Proxy offers public anonymous omni services for obd nodes: [https://github.com/omnilaboratory/btcwallet/tree/publicrpc](https://github.com/omnilaboratory/btcwallet/tree/publicrpc) 
+Omnicore Proxy offers public anonymous omni services for obd nodes: [https://github.com/omnilaboratory/omnicore-faucet-api/tree/master/whitelist_proxy](https://github.com/omnilaboratory/omnicore-faucet-api/tree/master/whitelist_proxy) 
 
 
 ## Community
