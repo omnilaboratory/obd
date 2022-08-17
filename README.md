@@ -3,7 +3,7 @@
 [![](https://img.shields.io/badge/API%20V0.3-Document-blue)](https://api.omnilab.online) 
 
 <p align="center">
-  <img width="500" alt="OmniBOLT-banner" src="docs/assets/omni-lightning.png">
+  <img width="500" alt="OmniBOLT-banner" src="docs/assets/omni-lightning-3.jpg">
 </p>
 
 
