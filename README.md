@@ -73,6 +73,8 @@ Video tutorials can be found here:
   
 * [OmniBOLT Technology guide part I](https://youtu.be/G-T_uwqzDAI)  
 
+## Mainnet warning
+OBD is still in an early stage, and `sendToMany` in omnicore is still under development. We do not recommend running it on mainnet with real money just yet, which may lead to loss of funds unless you want to take a reckless adventure.  
 
 ## Security
 If you discover a vulnerability, weakness, or threat that can potentially compromise the security of obd, we ask you to keep it confidential and submit your concern directly to [the team](mailto:neo.carmack@gmail.com?subject=%5BGitHub%5D%20OmniBOLT%20Security).
