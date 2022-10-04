@@ -2,7 +2,7 @@
 
 ## Current Features
 
-(latest updated Sep 23, 2020)
+(latest updated Sep 1, 2022)
 
 **Core 0.1:**  
 
@@ -40,8 +40,9 @@
 
 
 **Tools:**  
-* GUI tool version 0.1 for developers.  
-* JS SDK(wallet toolkit for light client) version 0.1  
+* [Polar](https://github.com/omnilaboratory/polar/releases/tag/v1.3.0) for one-click obd network building.  
+* [gRPC services](https://omnilaboratory.github.io/obd/#/grpc-api) in exclusive mode.  
+* JS SDK(experimental wallet toolkit for light client) version 0.1  
 	* Generate seeds and pub/priv key pairs.  
 	* backup and restore keys.  
 	* Websocket API to operate remote/local obd node.  
@@ -49,20 +50,19 @@
 
 
 ## Coming Features   
-(latest updated Sep 23, 2020)
+(latest updated Oct 23, 2022)
  
-* OBD as a plugin for current lnd implementation. (~5 weeks, middle of Oct, 2020)  
-* Interoperability of obd and lnd. (~5 weeks, middle of october, 2020)  
-* Add obd grpc interfaces to lnd interface package. lnd clients will be able to operate obd channel by the newly added interfaces. (6~8 weeks, earlier Nov, 2020)  
-* Outsource channel monitoring and penalizing malicious activity.(to be estimated)  
-* Update core version 0.1 to new omnicore with SegWit and sendmany supported.  (~5 weeks, earlier Nov, 2020)  
-* Service quality statistics by tracker. (to be estimated)
-* to be updated, pursuant to the development of OmniBOLT specification.  
- 
+* October 2022, a benchmark for obd.
+* November 2022, Android OmniBOLT wallet for Bitcoin and Omnilayer assets.  
+* December 2022, DEX based on atomic swap protocol.
+* Earlier Dec 2022, Update core version 0.1 to new omnicore with SegWit and `sendToMany` supported.
+* March 2023, NFT support in OmniBOLT android wallet.   
+* (to be estimated) Service quality statistics by the tracker network.
+* to be updated, pursuant to the development of OmniBOLT specification.
 
 
 ## Experimental Features
 
 * Smart Contract System on top of OBD channel. 
-* "Payment is Settlement" theory.
+* "Payment is Settlement" theory. 
 
