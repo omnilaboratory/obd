@@ -47,21 +47,20 @@ obd: ccr.ccs.tencentyun.com/omnicore/ob-lnd:${lnd-version:-0.0.7
 
 The testing asset id is `--asset_id = 2147483651`.  
 
-#### Faucet
+#### Proxy and Faucet
 
-The faucet we deployed for developers is in this repository: [https://github.com/omnilaboratory/omnicore-faucet-api](https://github.com/omnilaboratory/omnicore-faucet-api) 
+The [Omnicore Proxy](https://github.com/omnilaboratory/omnicore-proxy) offers public anonymous omni services for obd nodes.  
 
 main API:   
 * mine  
-* send_coin  
+* send_coin (only for Regtest) 
 * get asset balance  
 * list assets  
 * query asset  
 * create asset  
 
-#### Omnicore Proxy
-Omnicore Proxy offers public anonymous omni services for obd nodes: [https://github.com/omnilaboratory/omnicore-faucet-api/tree/master/whitelist_proxy](https://github.com/omnilaboratory/omnicore-faucet-api/tree/master/whitelist_proxy) 
-
+The complete white-listed interfaces are: [https://github.com/omnilaboratory/omnicore-proxy/blob/master/whitelist_proxy/whitelist_proxy.go](https://github.com/omnilaboratory/omnicore-proxy/blob/master/whitelist_proxy/whitelist_proxy.go)
+ 
 
 ## Community
 
