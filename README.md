@@ -47,6 +47,7 @@ Now we can:
 #### Issue tokens, Build obd network, and Lightning pay tokens
 
 [test-shell-template.md](https://github.com/omnilaboratory/lnd/blob/obd/docker/obtest/test-shell-template.md) instructs how to start with command line tool, including: 
+* [start nodes](https://github.com/omnilaboratory/lnd/blob/obd/docker/obtest/test-shell-template.md#alice-and-bob-cli)
 * [build a network with three nodes(Alice, Bob, Carol)](https://github.com/omnilaboratory/lnd/blob/obd/docker/obtest/test-shell-template.md#connect) 
 * [generate address](https://github.com/omnilaboratory/lnd/blob/obd/docker/obtest/test-shell-template.md#newaddress)
 * [issue token using omnicore](https://github.com/omnilaboratory/lnd/blob/obd/docker/obtest/test-shell-template.md#send_coin)
