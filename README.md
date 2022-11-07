@@ -47,9 +47,9 @@ obd: ccr.ccs.tencentyun.com/omnicore/ob-lnd:${lnd-version:-0.0.7
 
 The testing asset id is `--asset_id = 2147483651`.  
 
-#### Proxy and Faucet
+#### Proxy and Faucet(on Regtest)
 
-The [Omnicore Proxy](https://github.com/omnilaboratory/omnicore-proxy) offers public anonymous omni services for obd nodes.  
+The [Omnicore Proxy](https://github.com/omnilaboratory/omnicore-proxy) offers the backend public anonymous omni/bitcoin services for obd nodes.  
 
 main API:   
 * mine  
