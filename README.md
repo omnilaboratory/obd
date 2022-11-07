@@ -43,7 +43,12 @@ omnicored: ccr.ccs.tencentyun.com/omnicore/omnicored:0.0.1
 obd: ccr.ccs.tencentyun.com/omnicore/ob-lnd:${lnd-version:-0.0.7
 ```
 
-[test-shell-template.md](https://github.com/omnilaboratory/lnd/blob/obd/docker/obtest/test-shell-template.md) instructs how to build a network with three nodes(Alice, Bob, Carol), fund each node, build channels, create invoices and pay invoices.  
+[test-shell-template.md](https://github.com/omnilaboratory/lnd/blob/obd/docker/obtest/test-shell-template.md) instructs how to start with command line tool, including: 
+* build a network with three nodes(Alice, Bob, Carol), 
+* fund each node, 
+* build channels, 
+* create invoices 
+* pay invoices.  
 
 The testing asset id is `--asset_id = 2147483651`.  
 
