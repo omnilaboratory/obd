@@ -42,8 +42,9 @@ We compiled and deployed images for your testing:
 omnicored: ccr.ccs.tencentyun.com/omnicore/omnicored:0.0.1
 obd: ccr.ccs.tencentyun.com/omnicore/ob-lnd:${lnd-version:-0.0.7
 ```
+Now we can:  
 
-#### Issue tokens, Build obd network
+#### Issue tokens, Build obd network, and Lightning pay tokens
 
 [test-shell-template.md](https://github.com/omnilaboratory/lnd/blob/obd/docker/obtest/test-shell-template.md) instructs how to start with command line tool, including: 
 * [build a network with three nodes(Alice, Bob, Carol)](https://github.com/omnilaboratory/lnd/blob/obd/docker/obtest/test-shell-template.md#connect) 
@@ -54,7 +55,9 @@ obd: ccr.ccs.tencentyun.com/omnicore/ob-lnd:${lnd-version:-0.0.7
 * [create invoices](https://github.com/omnilaboratory/lnd/blob/obd/docker/obtest/test-shell-template.md#addinvoice) 
 * [pay invoices](https://github.com/omnilaboratory/lnd/blob/obd/docker/obtest/test-shell-template.md#sendpayment)  
 
-The testing asset id is `--asset_id = 2147483651`. To issue assets on the Bitcoin/Omnilayer mainnet, you should deploy an omnicore full node and execute the cli to issue. For non-developers, we recommend you to visit the official [https://www.omniwallet.org/](https://www.omniwallet.org/) (https://github.com/OmniLayer/omniwallet) for easier and quicker manage your assets.  
+The testing asset id is `--asset_id = 2147483651`.  
+
+To issue assets on the Bitcoin/Omnilayer mainnet, you should deploy an omnicore full node and execute the cli to issue. For non-developers, we recommend you to visit the official [https://www.omniwallet.org/](https://www.omniwallet.org/) (https://github.com/OmniLayer/omniwallet) for easier and quicker manage your assets.  
 
 #### Proxy and Faucet(on Regtest)
 
