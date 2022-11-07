@@ -43,14 +43,18 @@ omnicored: ccr.ccs.tencentyun.com/omnicore/omnicored:0.0.1
 obd: ccr.ccs.tencentyun.com/omnicore/ob-lnd:${lnd-version:-0.0.7
 ```
 
-[test-shell-template.md](https://github.com/omnilaboratory/lnd/blob/obd/docker/obtest/test-shell-template.md) instructs how to start with command line tool, including: 
-* build a network with three nodes(Alice, Bob, Carol), 
-* fund each node, 
-* build channels, 
-* create invoices 
-* pay invoices.  
+#### Issue tokens, Build obd network
 
-The testing asset id is `--asset_id = 2147483651`.  
+[test-shell-template.md](https://github.com/omnilaboratory/lnd/blob/obd/docker/obtest/test-shell-template.md) instructs how to start with command line tool, including: 
+* [build a network with three nodes(Alice, Bob, Carol)](https://github.com/omnilaboratory/lnd/blob/obd/docker/obtest/test-shell-template.md#connect) 
+* [generate address](https://github.com/omnilaboratory/lnd/blob/obd/docker/obtest/test-shell-template.md#newaddress)
+* [issue token using omnicore](https://github.com/omnilaboratory/lnd/blob/obd/docker/obtest/test-shell-template.md#send_coin)
+* [fund each node by asset](https://github.com/omnilaboratory/lnd/blob/obd/docker/obtest/test-shell-template.md#send_coin)  
+* [open channels](https://github.com/omnilaboratory/lnd/blob/obd/docker/obtest/test-shell-template.md#openchannel) 
+* [create invoices](https://github.com/omnilaboratory/lnd/blob/obd/docker/obtest/test-shell-template.md#addinvoice) 
+* [pay invoices](https://github.com/omnilaboratory/lnd/blob/obd/docker/obtest/test-shell-template.md#sendpayment)  
+
+The testing asset id is `--asset_id = 2147483651`. To issue assets on the Bitcoin/Omnilayer mainnet, you should deploy an omnicore full node and execute the cli to issue. For non-developers, we recommend you to visit the official [https://www.omniwallet.org/](https://www.omniwallet.org/) (https://github.com/OmniLayer/omniwallet) for easier and quicker manage your assets.  
 
 #### Proxy and Faucet(on Regtest)
 
