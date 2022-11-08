@@ -58,12 +58,12 @@ Now we can:
 
 The testing asset id is `--asset_id = 2147483651`.  
 
-To issue assets on the Bitcoin/Omnilayer mainnet, you should deploy an omnicore full node and execute the cli to issue. For non-developers, we recommend you to visit the official [https://www.omniwallet.org/](https://www.omniwallet.org/) (https://github.com/OmniLayer/omniwallet) for easier and quicker manage your assets.  
+To issue assets on the Bitcoin/Omnilayer mainnet, you should deploy an omnicore full node and execute the cli to issue. For non-developers, we recommend you to visit the official [https://www.omniwallet.org/](https://www.omniwallet.org/) (https://github.com/OmniLayer/omniwallet) for easier and quicker managing your assets.  
 
 #### Backend and Faucet(on Regtest)
 
 The [Omnicore Proxy](https://github.com/omnilaboratory/omnicore-proxy) offers the backend public anonymous omni/bitcoin services for obd nodes.  
-It is specified in `lnd/start-a.sh` when starts an OBD node:  
+It is specified in the parameter `$BACKEND.rpchost` when starts an OBD node. For example, as in `docker/lnd/start-a.sh`, the `regnet.oblnd.top:18332` is where the proxy deployed:  
 ```
 exec ./lnd-debug \
     --autopilot.active \
