@@ -60,19 +60,33 @@ The testing asset id is `--asset_id = 2147483651`.
 
 To issue assets on the Bitcoin/Omnilayer mainnet, you should deploy an omnicore full node and execute the cli to issue. For non-developers, we recommend you to visit the official [https://www.omniwallet.org/](https://www.omniwallet.org/) (https://github.com/OmniLayer/omniwallet) for easier and quicker manage your assets.  
 
-#### Proxy and Faucet(on Regtest)
+#### Backend and Faucet(on Regtest)
 
 The [Omnicore Proxy](https://github.com/omnilaboratory/omnicore-proxy) offers the backend public anonymous omni/bitcoin services for obd nodes.  
+It is specified in `lnd/start-a.sh` when starts an OBD node:  
+```
+exec ./lnd-debug \
+    --autopilot.active \
+    --maxpendingchannels=100 \
+    --noseedbackup \
+    "--lnddir=~/apps/oblnd" \
+    "--$CHAIN.active" \
+    "--$CHAIN.$NETWORK" \
+    "--$CHAIN.node"="$BACKEND" \
+    "--$BACKEND.rpchost"="regnet.oblnd.top:18332" \
+    "--rpclisten=$HOSTNAME:10010" \
+    "--rpclisten=localhost:10010" \
+    --listen=0.0.0.0:9736 \
+    "--restlisten=0.0.0.0:18080" \
+    --debuglevel="$DEBUG" \
+    --$BACKEND.zmqpubrawblock=tcp://regnet.oblnd.top:28332 \
+    --$BACKEND.zmqpubrawtx=tcp://regnet.oblnd.top:28333 \
+    "$@"
+```
 
-main API:   
-* mine  
-* send_coin (only for Regtest) 
-* get asset balance  
-* list assets  
-* query asset  
-* create asset  
+The proxy decouples the lightning node and the full Bitcoin/Omnilayer node, to lower the barriers of OBD deployment, especially for mobile nodes. 
 
-The complete white-listed interfaces are: [https://github.com/omnilaboratory/omnicore-proxy/blob/master/whitelist_proxy/whitelist_proxy.go](https://github.com/omnilaboratory/omnicore-proxy/blob/master/whitelist_proxy/whitelist_proxy.go)
+The complete white-listed services are: [https://github.com/omnilaboratory/omnicore-proxy/blob/master/whitelist_proxy/whitelist_proxy.go](https://github.com/omnilaboratory/omnicore-proxy/blob/master/whitelist_proxy/whitelist_proxy.go)
  
 
 ## Community
