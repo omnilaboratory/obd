@@ -37,10 +37,10 @@ Docker helps people to quickly interact with obd and omnicore via command line t
 https://github.com/omnilaboratory/lnd/tree/obd/docker/obtest
 ```
 
-We compiled and deployed images for your testing:
+We compiled and deployed images/backend for your testing:
 ```
-omnicored: ccr.ccs.tencentyun.com/omnicore/omnicored:0.0.1
-obd: ccr.ccs.tencentyun.com/omnicore/ob-lnd:${lnd-version:-0.0.7
+omnicore proxy: ccr.ccs.tencentyun.com/omnicore/regnet.oblnd.top:0.0.1
+obd: ccr.ccs.tencentyun.com/omnicore/ob-lnd:${lnd-version:-0.1.0}
 ```
 Now we can:  
 
@@ -63,25 +63,16 @@ To issue assets on the Bitcoin/Omnilayer mainnet, you should deploy an omnicore 
 #### Backend and Faucet(on Regtest)
 
 The [Omnicore Proxy](https://github.com/omnilaboratory/omnicore-proxy) offers the backend public anonymous omni/bitcoin services for obd nodes.  
-It is specified in the parameter `$BACKEND.rpchost` when starts an OBD node. For example, as in `docker/lnd/start-a.sh`, the `regnet.oblnd.top:18332` is where the proxy deployed:  
+It is specified in the parameter `omnicoreproxy.rpchost` when starts an OBD node. For example, as in the `docker/lnd/start-a.shdocker/obtest/docker-compose.yml`, the `regnet.oblnd.top:18332` is where the proxy deployed:  
 ```
-exec ./lnd-debug \
-    --autopilot.active \
-    --maxpendingchannels=100 \
-    --noseedbackup \
-    "--lnddir=~/apps/oblnd" \
-    "--$CHAIN.active" \
-    "--$CHAIN.$NETWORK" \
-    "--$CHAIN.node"="$BACKEND" \
-    "--$BACKEND.rpchost"="regnet.oblnd.top:18332" \
-    "--rpclisten=$HOSTNAME:10010" \
-    "--rpclisten=localhost:10010" \
-    --listen=0.0.0.0:9736 \
-    "--restlisten=0.0.0.0:18080" \
-    --debuglevel="$DEBUG" \
-    --$BACKEND.zmqpubrawblock=tcp://regnet.oblnd.top:28332 \
-    --$BACKEND.zmqpubrawtx=tcp://regnet.oblnd.top:28333 \
-    "$@"
+command: >-
+      lnd-debug --noseedbackup --trickledelay=5000 --alias=alice
+      --externalip=alice --tlsextradomain=alice --tlsextradomain=alice
+      --listen=0.0.0.0:9735 --rpclisten=0.0.0.0:10009 --restlisten=0.0.0.0:8080
+      --bitcoin.active --bitcoin.regtest --bitcoin.node=omnicoreproxy
+      --omnicoreproxy.rpchost=regnet.oblnd.top:18332 
+      --omnicoreproxy.zmqpubrawblock=tcp://regnet.oblnd.top:28332
+      --omnicoreproxy.zmqpubrawtx=tcp://regnet.oblnd.top:28333
 ```
 
 The proxy decouples the lightning node and the full Bitcoin/Omnilayer node, to lower the barriers of OBD deployment, especially for mobile nodes. 
