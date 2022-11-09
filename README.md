@@ -38,10 +38,9 @@ https://github.com/omnilaboratory/lnd/tree/obd/docker/obtest
 ```
 
 We compiled and deployed images/backend for your testing:
-```
-omnicore proxy: ccr.ccs.tencentyun.com/omnicore/regnet.oblnd.top:0.0.1
-obd: ccr.ccs.tencentyun.com/omnicore/ob-lnd:${lnd-version:-0.1.0}
-```
+* [omnicore proxy server for regnet ](https://github.com/omnilaboratory/omnicore-proxy#pre-created-regtest-net-omnicoreporxy)
+* obd docker: ccr.ccs.tencentyun.com/omnicore/ob-lnd:0.1.0
+
 Now we can:  
 
 #### Issue tokens, Build obd network, and Lightning pay tokens
