@@ -88,8 +88,8 @@ The network is specified by param: `--bitcoin.xxxxxx`:  　
 --bitcoin.mainnet
 ```
 
-The three backends have been specified by: `--bitcoin.node=[bitcoind|omnicoreproxy|neutrino|]`:  
-(Currently, we only support these 3 modes, each has different connection types and certification ways.)
+The backend is specified by: `--bitcoin.node=[bitcoind|omnicoreproxy|neutrino|]`:  
+(Currently, we only support these 3 modes, each has different connection type and certification way.)  
 * bitcoind
 ```shell
   --bitcoind.rpchost="$btc_host_adress_port"
