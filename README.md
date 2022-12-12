@@ -110,7 +110,8 @@ The three backends have been specified by: `--bitcoin.node=[bitcoind|omnicorepro
 ```shell
     --neutrino.connect="$btc_host_adress"
     --omnicoreproxy.rpchost="$omni_host_adress_port"
-    
+```  
+
 #### Depolyed Backends
 * regtest 
   * omnicoreproxy
