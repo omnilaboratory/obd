@@ -77,7 +77,7 @@ The proxy decouples the lightning node and the full Bitcoin/Omnilayer node, to l
 
 The complete white-listed services are: [https://github.com/omnilaboratory/omnicore-proxy/blob/master/whitelist_proxy/whitelist_proxy.go](https://github.com/omnilaboratory/omnicore-proxy/blob/master/whitelist_proxy/whitelist_proxy.go).  
 
-OBD supports three networks: regtest, testnet and mainnet; Each network supports three backends: bitcoind, omnicore proxy, and neutrino. The omnicore proxy and neutrino have to be used together.  
+OBD supports three networks: regtest, testnet and mainnet; Each network supports three backends: bitcoind, omnicore proxy, and neutrino. For a neutrino backend, an omnicore proxy must be specified.  
 
 The network is specified by param: `--bitcoin.xxxxxx`:  　
 ```shell
@@ -113,23 +113,24 @@ The three backends have been specified by: `--bitcoin.node=[bitcoind|omnicorepro
 ```  
 
 #### Depolyed Backends
+On each network, not all 3 backends are deployed. We currently maintain the following backends for the community:  
 * regtest 
   * omnicoreproxy
-    * Asia： 
-      $omni_host_adress_port=43.138.107.248   
-      $omni_host_adress_port=43.138.107.248:18332   
+    * Asia：  
+      `$omni_host_adress_port`=43.138.107.248   
+      `$omni_host_adress_port`=43.138.107.248:18332   
       faucet：[http://43.138.107.248:9090/swaggerTool/?surl=http://43.138.107.248:8090/openapiv2/foo.swagger.json](http://43.138.107.248:9090/swaggerTool/?surl=http://43.138.107.248:8090/openapiv2/foo.swagger.json)  
     
-    * Other countries and regions： 
-      $omni_host_adress_port=regnet.oblnd.top   
-      $omni_host_adress_port=regnet.oblnd.top:18332   
+    * Other countries and regions：   
+      `$omni_host_adress_port`=regnet.oblnd.top   
+      `$omni_host_adress_port`=regnet.oblnd.top:18332   
       faucet：[http://swagger.cn.oblnd.top:9090/?surl=surl=http://faucet.cn.oblnd.top:9090/openapiv2/foo.swagger.json](http://swagger.cn.oblnd.top:9090/?surl=surl=http://faucet.cn.oblnd.top:9090/openapiv2/foo.swagger.json)  
     
 * testnet 
   * neutrino
     * Asia：
-      $btc_host_adress=192.144.199.67  
-      $omni_host_adress_port=192.144.199.67:18332   
+      `$btc_host_adress`=192.144.199.67  
+      `$omni_host_adress_port`=192.144.199.67:18332   
       faucet: to be done 
     * Other countries and regions：to be done.
  
