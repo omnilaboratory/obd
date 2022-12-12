@@ -14,7 +14,7 @@ OBD implements the [OmniBOLT](https://github.com/omnilaboratory/OmniBOLT-spec) s
 </p>
     
 
-The latest document/tutorial has been moved to [OmniBOLT - Developers](https://omnilaboratory.github.io/obd/#/OBD-README).  
+<!-- The latest document/tutorial has been moved to [OmniBOLT - Developers](https://omnilaboratory.github.io/obd/#/OBD-README).  -->
 
 To know how obd works, jump to the [OmniBOLT - Architecture](https://omnilaboratory.github.io/obd/#/Architecture).  
 
