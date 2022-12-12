@@ -37,8 +37,7 @@ Docker helps people to quickly interact with obd and omnicore via command line t
 https://github.com/omnilaboratory/lnd/tree/obd/docker/obtest
 ```
 
-We compiled and deployed images/backend for your testing:
-* [omnicore proxy server for regnet ](https://github.com/omnilaboratory/omnicore-proxy#pre-created-regtest-net-omnicoreporxy)
+We compiled and deployed images for your testing: 
 * obd docker: ccr.ccs.tencentyun.com/omnicore/ob-lnd:0.1.0
 
 Now we can:  
