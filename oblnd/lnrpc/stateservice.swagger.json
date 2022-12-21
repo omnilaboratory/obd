@@ -1,0 +1,133 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "stateservice.proto",
+    "version": "version not set"
+  },
+  "tags": [
+    {
+      "name": "State"
+    }
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/v1/state": {
+      "get": {
+        "summary": "GetState returns the current wallet state without streaming further\nchanges.",
+        "operationId": "State_GetState",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/lnrpcGetStateResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "State"
+        ]
+      }
+    },
+    "/v1/state/subscribe": {
+      "get": {
+        "summary": "SubscribeState subscribes to the state of the wallet. The current wallet\nstate will always be delivered immediately.",
+        "operationId": "State_SubscribeState",
+        "responses": {
+          "200": {
+            "description": "A successful response.(streaming responses)",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "result": {
+                  "$ref": "#/definitions/lnrpcSubscribeStateResponse"
+                },
+                "error": {
+                  "$ref": "#/definitions/rpcStatus"
+                }
+              },
+              "title": "Stream result of lnrpcSubscribeStateResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "State"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "lnrpcGetStateResponse": {
+      "type": "object",
+      "properties": {
+        "state": {
+          "$ref": "#/definitions/lnrpcWalletState"
+        }
+      }
+    },
+    "lnrpcSubscribeStateResponse": {
+      "type": "object",
+      "properties": {
+        "state": {
+          "$ref": "#/definitions/lnrpcWalletState"
+        }
+      }
+    },
+    "lnrpcWalletState": {
+      "type": "string",
+      "enum": [
+        "NON_EXISTING",
+        "LOCKED",
+        "UNLOCKED",
+        "RPC_ACTIVE",
+        "SERVER_ACTIVE",
+        "WAITING_TO_START"
+      ],
+      "default": "NON_EXISTING",
+      "description": " - SERVER_ACTIVE: SERVER_ACTIVE means that the lnd server is ready to accept calls."
+    },
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "@type": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": {}
+    },
+    "rpcStatus": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    }
+  }
+}

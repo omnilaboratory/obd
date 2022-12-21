@@ -1,0 +1,12 @@
+network: regtest
+wallet:
+mtowceAw2yeftR1pPg15QcsDqsnSik7Spz
+2N6Q5ALzeJR8Tv5Bvn6LGRquuF57QDbqKwE
+
+create asset command
+omni_sendissuancefixed "mtowceAw2yeftR1pPg15QcsDqsnSik7Spz" 2 2 0 "t1" "" "ftoken" "baidu.com" "" 10000000000
+
+omni_listproperties:
+"propertyid": 2147483651,
+
+
