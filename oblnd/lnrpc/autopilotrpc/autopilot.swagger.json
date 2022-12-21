@@ -1,0 +1,245 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "autopilotrpc/autopilot.proto",
+    "version": "version not set"
+  },
+  "tags": [
+    {
+      "name": "Autopilot"
+    }
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/v2/autopilot/modify": {
+      "post": {
+        "summary": "ModifyStatus is used to modify the status of the autopilot agent, like\nenabling or disabling it.",
+        "operationId": "Autopilot_ModifyStatus",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/autopilotrpcModifyStatusResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/autopilotrpcModifyStatusRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Autopilot"
+        ]
+      }
+    },
+    "/v2/autopilot/scores": {
+      "get": {
+        "summary": "QueryScores queries all available autopilot heuristics, in addition to any\nactive combination of these heruristics, for the scores they would give to\nthe given nodes.",
+        "operationId": "Autopilot_QueryScores",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/autopilotrpcQueryScoresResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "pubkeys",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          },
+          {
+            "name": "ignore_local_state",
+            "description": "If set, we will ignore the local channel state when calculating scores.",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "Autopilot"
+        ]
+      },
+      "post": {
+        "summary": "SetScores attempts to set the scores used by the running autopilot agent,\nif the external scoring heuristic is enabled.",
+        "operationId": "Autopilot_SetScores",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/autopilotrpcSetScoresResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/autopilotrpcSetScoresRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Autopilot"
+        ]
+      }
+    },
+    "/v2/autopilot/status": {
+      "get": {
+        "summary": "Status returns whether the daemon's autopilot agent is active.",
+        "operationId": "Autopilot_Status",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/autopilotrpcStatusResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "Autopilot"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "QueryScoresResponseHeuristicResult": {
+      "type": "object",
+      "properties": {
+        "heuristic": {
+          "type": "string"
+        },
+        "scores": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "number",
+            "format": "double"
+          }
+        }
+      }
+    },
+    "autopilotrpcModifyStatusRequest": {
+      "type": "object",
+      "properties": {
+        "enable": {
+          "type": "boolean",
+          "description": "Whether the autopilot agent should be enabled or not."
+        }
+      }
+    },
+    "autopilotrpcModifyStatusResponse": {
+      "type": "object"
+    },
+    "autopilotrpcQueryScoresResponse": {
+      "type": "object",
+      "properties": {
+        "results": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/QueryScoresResponseHeuristicResult"
+          }
+        }
+      }
+    },
+    "autopilotrpcSetScoresRequest": {
+      "type": "object",
+      "properties": {
+        "heuristic": {
+          "type": "string",
+          "description": "The name of the heuristic to provide scores to."
+        },
+        "scores": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "number",
+            "format": "double"
+          },
+          "description": "A map from hex-encoded public keys to scores. Scores must be in the range\n[0.0, 1.0]."
+        }
+      }
+    },
+    "autopilotrpcSetScoresResponse": {
+      "type": "object"
+    },
+    "autopilotrpcStatusResponse": {
+      "type": "object",
+      "properties": {
+        "active": {
+          "type": "boolean",
+          "description": "Indicates whether the autopilot is active or not."
+        }
+      }
+    },
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "@type": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": {}
+    },
+    "rpcStatus": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    }
+  }
+}

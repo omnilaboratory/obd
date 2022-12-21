@@ -1,0 +1,114 @@
+version: '3.3'
+services:
+  omnicored:
+    image: ccr.ccs.tencentyun.com/omnicore/omnicored:0.0.3
+    container_name: omnicored
+    environment:
+      USERID: ${USERID:-1000}
+      GROUPID: ${GROUPID:-1000}
+    hostname: regnet.oblnd.top
+    command: >-
+      -server=1 -regtest=1
+      -debug=0 -zmqpubrawblock=tcp://0.0.0.0:28332
+      -zmqpubrawtx=tcp://0.0.0.0:28333 -zmqpubhashblock=tcp://0.0.0.0:28336
+      -txindex=1 -dnsseed=0 -upnp=0 -rpcallowip=0.0.0.0/0
+      -rpcport=18332 -rest -listen=1 -listenonion=0 -fallbackfee=0.0002
+    volumes:
+      - ./volumes/omnicored/:/home/bitcoin/.bitcoin
+    expose:
+      - '18332'
+      - '28332'
+      - '28333'
+    ports:
+      - '18332:18332'
+      - '28332:28332'
+      - '28333:28333'
+  alice:
+    image: ccr.ccs.tencentyun.com/omnicore/ob-lnd:${lnd-version:-0.1.8}
+    depends_on:
+      - omnicored
+    container_name: alice
+    environment:
+      USERID: ${USERID:-1000}
+      GROUPID: ${GROUPID:-1000}
+    hostname: alice
+    command: >-
+      lnd-debug --noseedbackup --trickledelay=5000 --alias=alice
+      --externalip=alice --tlsextradomain=alice --tlsextradomain=alice
+      --listen=0.0.0.0:9735 --rpclisten=0.0.0.0:10009 --restlisten=0.0.0.0:8080
+      --bitcoin.active --bitcoin.regtest --bitcoin.node=omnicoreproxy
+      --omnicoreproxy.rpchost=omnicored:18332 
+      --omnicoreproxy.zmqpubrawblock=tcp://omnicored:28332
+      --omnicoreproxy.zmqpubrawtx=tcp://omnicored:28333 
+      --enable-upfront-shutdown
+      --nobootstrap
+#      --debuglevel=trace
+    restart: "no"
+    volumes:
+      - ./volumes/lnd/alice:/home/lnd/.lnd
+    expose:
+      - '8080'
+      - '10009'
+      - '9735'
+    ports:
+      - '8081:8080'
+      - '10001:10009'
+      - '9735:9735'
+  bob:
+    image: ccr.ccs.tencentyun.com/omnicore/ob-lnd:${lnd-version:-0.1.8}
+    depends_on:
+      - omnicored
+      - alice
+    container_name: bob
+    environment:
+      USERID: ${USERID:-1000}
+      GROUPID: ${GROUPID:-1000}
+    hostname: bob
+    command: >-
+      lnd-debug --noseedbackup --trickledelay=5000 --alias=bob --externalip=bob
+      --tlsextradomain=bob --tlsextradomain=bob --listen=0.0.0.0:9735
+      --rpclisten=0.0.0.0:10009 --restlisten=0.0.0.0:8080 --bitcoin.active
+      --bitcoin.regtest --bitcoin.node=omnicoreproxy
+      --omnicoreproxy.rpchost=omnicored:18332 
+      --omnicoreproxy.zmqpubrawblock=tcp://omnicored:28332
+      --omnicoreproxy.zmqpubrawtx=tcp://omnicored:28333 --nobootstrap
+    restart: "no"
+    volumes:
+      - ./volumes/lnd/bob:/home/lnd/.lnd
+    expose:
+      - '8080'
+      - '10009'
+      - '9735'
+    ports:
+      - '8082:8080'
+      - '10002:10009'
+      - '9736:9735'
+  carl:
+    image: ccr.ccs.tencentyun.com/omnicore/ob-lnd:${lnd-version:-0.1.8}
+    depends_on:
+      - omnicored
+      - bob
+    container_name: carl
+    environment:
+      USERID: ${USERID:-1000}
+      GROUPID: ${GROUPID:-1000}
+    hostname: carl
+    command: >-
+      lnd-debug --noseedbackup --trickledelay=5000 --alias=carl --externalip=carl
+      --tlsextradomain=carl --tlsextradomain=carl --listen=0.0.0.0:9735
+      --rpclisten=0.0.0.0:10009 --restlisten=0.0.0.0:8080 --bitcoin.active
+      --bitcoin.regtest --bitcoin.node=omnicoreproxy
+      --omnicoreproxy.rpchost=omnicored:18332 
+      --omnicoreproxy.zmqpubrawblock=tcp://omnicored:28332.
+      --omnicoreproxy.zmqpubrawtx=tcp://omnicored:28333 --nobootstrap
+    restart: "no"
+    volumes:
+      - ./volumes/lnd/carl:/home/lnd/.lnd
+    expose:
+      - '8080'
+      - '10009'
+      - '9735'
+    ports:
+      - '8083:8080'
+      - '10003:10009'
+      - '9737:9735'
