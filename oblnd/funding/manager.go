@@ -397,7 +397,7 @@ type Config struct {
 	// party. Naturally a larger channel should require a higher CSV delay
 	// in order to give us more time to claim funds in the case of a
 	// contract breach.
-	RequiredRemoteDelay func(lnwire.UnitPrec8) uint16
+	RequiredRemoteDelay func(assetId uint32, chanAmt lnwire.UnitPrec8) uint16
 
 	// RequiredRemoteChanReserve is a function closure that, given the
 	// channel capacity and dust limit, will return an appropriate amount
@@ -1098,6 +1098,7 @@ func (f *Manager) advancePendingChannelState(
 			RemotePub:               ch.IdentityPub,
 			BtcCapacity:             ch.BtcCapacity,
 			AssetCapacity:           ch.AssetCapacity,
+			AssetId:                 ch.AssetID,
 			SettledBalance:          bal,
 			CloseType:               channeldb.FundingCanceled,
 			RemoteCurrentRevocation: ch.RemoteCurrentRevocation,
@@ -1480,7 +1481,7 @@ func (f *Manager) handleFundingOpen(peer lnpeer.Peer,
 
 	// Generate our required constraints for the remote party, using the
 	// values provided by the channel acceptor if they are non-zero.
-	remoteCsvDelay := f.cfg.RequiredRemoteDelay(amt)
+	remoteCsvDelay := f.cfg.RequiredRemoteDelay(msg.AssetId, amt)
 	if acceptorResp.CSVDelay != 0 {
 		remoteCsvDelay = acceptorResp.CSVDelay
 	}
@@ -3484,7 +3485,7 @@ func (f *Manager) handleInitFundingMsg(msg *InitFundingMsg) {
 	// we'll use the RequiredRemoteDelay closure to compute the delay we
 	// require given the total amount of funds within the channel.
 	if remoteCsvDelay == 0 {
-		remoteCsvDelay = f.cfg.RequiredRemoteDelay(amt)
+		remoteCsvDelay = f.cfg.RequiredRemoteDelay(msg.AssetId, amt)
 	}
 
 	// If no minimum HTLC value was specified, use the default one.

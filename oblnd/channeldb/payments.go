@@ -542,6 +542,8 @@ type PaymentsQuery struct {
 	 */
 	IsQueryAsset bool
 	AssetId      uint32
+	StartTime    int64
+	EndTime      int64
 }
 
 // PaymentsResponse contains the result of a query to the payments database.
@@ -624,6 +626,12 @@ func (d *DB) QueryPayments(query PaymentsQuery) (PaymentsResponse, error) {
 				return false, nil
 			}
 
+			if query.StartTime > 0 && query.StartTime > payment.Info.CreationTime.Unix() {
+				return false, nil
+			}
+			if query.EndTime > 0 && query.EndTime < payment.Info.CreationTime.Unix() {
+				return false, nil
+			}
 			// At this point, we've exhausted the offset, so we'll
 			// begin collecting invoices found within the range.
 			resp.Payments = append(resp.Payments, payment)

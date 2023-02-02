@@ -9,6 +9,7 @@ import (
 	"github.com/btcsuite/btcutil"
 	"github.com/lightningnetwork/lnd/input"
 	"github.com/lightningnetwork/lnd/lnwallet/chainfee"
+	"github.com/lightningnetwork/lnd/lnwire"
 )
 
 // ErrInsufficientFunds is a type matching the error interface which is
@@ -103,7 +104,10 @@ func selectInputsByAddress(amt btcutil.Amount, ownerAddress btcutil.Address, coi
 // calculateFees returns for the specified utxos and fee rate two fee
 // estimates, one calculated using a change output and one without. The weight
 // added to the estimator from a change output is for a P2WKH output.
-func calculateFees(utxos []Coin, feeRate chainfee.SatPerKWeight) (btcutil.Amount,
+/* obd udpate wxf
+add assetId parameter,  when assetId>lnwire.BtcAssetId, a extra opreturn output will add, and need more fee
+*/
+func calculateFees(assetId uint32, utxos []Coin, feeRate chainfee.SatPerKWeight) (btcutil.Amount,
 	btcutil.Amount, error) {
 
 	var weightEstimate input.TxWeightEstimator
@@ -135,9 +139,10 @@ func calculateFees(utxos []Coin, feeRate chainfee.SatPerKWeight) (btcutil.Amount
 	//weightEstimate.AddP2WSHOutput()
 	weightEstimate.AddP2SHOutput()
 
-	//add asset opreturn  size
-	weightEstimate.AddOpreturnSize()
-
+	if assetId > lnwire.BtcAssetId {
+		//add asset opreturn  size
+		weightEstimate.AddOpreturnSize()
+	}
 
 	// Estimate the fee required for a transaction without a change
 	// output.
@@ -174,7 +179,7 @@ func sanityCheckFee(totalOut, fee btcutil.Amount) error {
 // change output to fund amt satoshis, adhering to the specified fee rate. The
 // specified fee rate should be expressed in sat/kw for coin selection to
 // function properly.
-func CoinSelect(feeRate chainfee.SatPerKWeight, amt, dustLimit btcutil.Amount,
+func CoinSelect(assetId uint32, feeRate chainfee.SatPerKWeight, amt, dustLimit btcutil.Amount,
 	coins []Coin) ([]Coin, btcutil.Amount, error) {
 
 	amtNeeded := amt
@@ -188,7 +193,7 @@ func CoinSelect(feeRate chainfee.SatPerKWeight, amt, dustLimit btcutil.Amount,
 
 		// Obtain fee estimates both with and without using a change
 		// output.
-		requiredFeeNoChange, requiredFeeWithChange, err := calculateFees(
+		requiredFeeNoChange, requiredFeeWithChange, err := calculateFees(assetId,
 			selectedUtxos, feeRate,
 		)
 		if err != nil {
@@ -244,8 +249,9 @@ func CoinSelect(feeRate chainfee.SatPerKWeight, amt, dustLimit btcutil.Amount,
 
 /*ob add wxf
 * for support send coin only from special address
- */
-func CoinSelectByAddress(feeRate chainfee.SatPerKWeight, amt, dustLimit btcutil.Amount, fromAddress btcutil.Address,
+ assetId parameter:  when assetId>lnwire.BtcAssetId, a extra opreturn output will add, and need more fee
+*/
+func CoinSelectByAddress(assetId uint32, feeRate chainfee.SatPerKWeight, amt, dustLimit btcutil.Amount, fromAddress btcutil.Address,
 	coins []Coin) ([]Coin, btcutil.Amount, error) {
 
 	amtNeeded := amt
@@ -259,7 +265,7 @@ func CoinSelectByAddress(feeRate chainfee.SatPerKWeight, amt, dustLimit btcutil.
 
 		// Obtain fee estimates both with and without using a change
 		// output.
-		requiredFeeNoChange, requiredFeeWithChange, err := calculateFees(
+		requiredFeeNoChange, requiredFeeWithChange, err := calculateFees(assetId,
 			selectedUtxos, feeRate,
 		)
 		if err != nil {
@@ -316,7 +322,7 @@ func CoinSelectByAddress(feeRate chainfee.SatPerKWeight, amt, dustLimit btcutil.
 // CoinSelectSubtractFees attempts to select coins such that we'll spend up to
 // amt in total after fees, adhering to the specified fee rate. The selected
 // coins, the final output and change values are returned.
-func CoinSelectSubtractFees(feeRate chainfee.SatPerKWeight, amt,
+func CoinSelectSubtractFees(assetId uint32, feeRate chainfee.SatPerKWeight, amt,
 	dustLimit btcutil.Amount, coins []Coin) ([]Coin, btcutil.Amount,
 	btcutil.Amount, error) {
 
@@ -329,7 +335,7 @@ func CoinSelectSubtractFees(feeRate chainfee.SatPerKWeight, amt,
 
 	// Obtain fee estimates both with and without using a change
 	// output.
-	requiredFeeNoChange, requiredFeeWithChange, err := calculateFees(
+	requiredFeeNoChange, requiredFeeWithChange, err := calculateFees(assetId,
 		selectedUtxos, feeRate)
 	if err != nil {
 		return nil, 0, 0, err

@@ -9,6 +9,7 @@ import (
 	"os"
 	"strings"
 	"sync/atomic"
+	"time"
 
 	flags "github.com/jessevdk/go-flags"
 	"github.com/lightningnetwork/lnd"
@@ -115,6 +116,8 @@ func Start(extraArgs string, rpcReady Callback) {
 			} else {
 				fmt.Fprintln(os.Stderr, err)
 			}
+			shutdownInterceptor.RequestShutdown()
+			time.Sleep(100 * time.Millisecond)
 			rpcReady.OnError(err)
 			return
 		}

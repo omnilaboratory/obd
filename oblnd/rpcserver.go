@@ -426,6 +426,10 @@ func MainRPCServerPermissions() map[string][]bakery.Op {
 			Entity: "onchain",
 			Action: "read",
 		}},
+		"/lnrpc.Lightning/OB_EstimateFee": {{
+			Entity: "onchain",
+			Action: "read",
+		}},
 		"/lnrpc.Lightning/ChannelBalance": {{
 			Entity: "offchain",
 			Action: "read",
@@ -1275,11 +1279,11 @@ func (r *rpcServer) sendCoinsFromAddresOnChain(fromAddress, toAddress btcutil.Ad
 	label string) (*chainhash.Hash, error) {
 	coinSource := lnwallet.NewCoinSource(r.server.cc.Wallet)
 	coins, err := coinSource.ListCoins(minConfs, 100000)
-	selectedCoins, changeAmt, err := chanfunding.CoinSelectByAddress(feeRate, amt, 300, fromAddress, coins)
+	selectedCoins, changeAmt, err := chanfunding.CoinSelectByAddress(assetId, feeRate, amt, 300, fromAddress, coins)
 	if err != nil {
 		return nil, err
 	}
-	tx, err := r.server.cc.Wallet.CreateSimpleTxForSelectedCoins(toAddress, selectedCoins, amt, changeAmt, assetAmount, assetId)
+	tx, err := r.server.cc.Wallet.CreateSimpleTxForSelectedCoins(toAddress, selectedCoins, amt, changeAmt, assetAmount, assetId, false)
 	if err != nil {
 		return nil, err
 	}
@@ -1399,6 +1403,158 @@ func (r *rpcServer) EstimateFee(ctx context.Context,
 	}
 
 	rpcsLog.Debugf("[estimatefee] fee estimate for conf target %d: %v",
+		target, resp)
+
+	return resp, nil
+}
+
+/* obd update wxf
+ */
+// OB_EstimateFee handles a request for estimating the fee for sending a
+// omni transaction spending to  specified outputs .
+func (r *rpcServer) OB_EstimateFee(ctx context.Context,
+	in *lnrpc.ObEstimateFeeRequest) (*lnrpc.EstimateFeeResponse, error) {
+
+	if in.AssetId > lnwire.BtcAssetId { //asset transfer
+		if in.AssetAmount == 0 {
+			return nil, fmt.Errorf("asset_amount argument missing")
+		}
+		if in.Amount == 0 {
+			in.Amount = 546
+		}
+	} else if in.AssetId == lnwire.BtcAssetId { //for btc
+		if in.Amount == 0 {
+			return nil, fmt.Errorf("amt argument missing")
+		}
+		if in.AssetAmount > 0 {
+			return nil, fmt.Errorf("btc transfer should not include asset_amount, or miss asset_id arg")
+		}
+	} else {
+		return nil, fmt.Errorf("err asset_id ")
+	}
+
+	//check asset balance for in.AssetAmount
+	//in.Amount for satoshis will check when select utxo.
+	if in.AssetId > lnwire.BtcAssetId {
+		enoughAsset := false
+		res, err := r.OB_AssetsBalanceByAddress(ctx, &lnrpc.AssetsBalanceByAddressRequest{Address: in.From})
+		if err != nil {
+			return nil, err
+		}
+		for _, item := range res.List {
+			if uint32(item.Propertyid) == in.AssetId && item.Balance >= in.AssetAmount {
+				enoughAsset = true
+			}
+		}
+		if !enoughAsset {
+			return nil, fmt.Errorf("insufficient asset balance for address %v assetId %v", in.From, in.AssetId)
+		}
+	}
+
+	// Query the fee estimator for the fee rate for the given confirmation
+	// target.
+	target := in.TargetConf
+	feePerKw, err := sweep.DetermineFeePerKw(
+		r.server.cc.FeeEstimator, sweep.FeePreference{
+			ConfTarget: uint32(target),
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	// Then, we'll extract the minimum number of confirmations that each
+	// output we use to fund the transaction should satisfy.
+	minConfs, err := lnrpc.ExtractMinConfs(in.MinConfs, in.SpendUnconfirmed)
+	if err != nil {
+		return nil, err
+	}
+
+	rpcsLog.Infof("[Ob_EstimateFee] addr=%v, amt=%v, sat/kw=%v, min_confs=%v, ",
+		in.Addr, btcutil.Amount(in.Amount), int64(feePerKw), minConfs,
+	)
+
+	// Decode the address receiving the coins, we need to check whether the
+	// address is valid for this network.
+	targetAddr, err := btcutil.DecodeAddress(
+		in.Addr, r.cfg.ActiveNetParams.Params,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	// Make the check on the decoded address according to the active network.
+	if !targetAddr.IsForNet(r.cfg.ActiveNetParams.Params) {
+		return nil, fmt.Errorf("address: %v is not valid for this "+
+			"network: %v", targetAddr.String(),
+			r.cfg.ActiveNetParams.Params.Name)
+	}
+
+	fromAddr, err := btcutil.DecodeAddress(
+		in.From, r.cfg.ActiveNetParams.Params,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if !fromAddr.IsForNet(r.cfg.ActiveNetParams.Params) {
+		return nil, fmt.Errorf("address: %v is not valid for this "+
+			"network: %v", fromAddr.String(),
+			r.cfg.ActiveNetParams.Params.Name)
+	}
+
+	// If the destination address parses to a valid pubkey, we assume the user
+	// accidentally tried to send funds to a bare pubkey address. This check is
+	// here to prevent unintended transfers.
+	decodedAddr, _ := hex.DecodeString(in.Addr)
+	_, err = btcec.ParsePubKey(decodedAddr, btcec.S256())
+	if err == nil {
+		return nil, fmt.Errorf("cannot send coins to pubkeys")
+	}
+
+	var tmpTx *wire.MsgTx
+	var totalInput int64
+	wallet := r.server.cc.Wallet
+	// We'll now construct out payment map, and use the wallet's
+	// coin selection synchronization method to ensure that no coin
+	// selection (funding, sweep alls, other sends) can proceed
+	// while we instruct the wallet to send this transaction.
+	err = wallet.WithCoinSelectLock(func() error {
+		coinSource := lnwallet.NewCoinSource(r.server.cc.Wallet)
+		coins, err := coinSource.ListCoins(minConfs, 100000)
+		selectedCoins, changeAmt, err := chanfunding.CoinSelectByAddress(in.AssetId, feePerKw, btcutil.Amount(in.Amount), 300, fromAddr, coins)
+		if err != nil {
+			return err
+		}
+		tx, err := r.server.cc.Wallet.CreateSimpleTxForSelectedCoins(targetAddr, selectedCoins, btcutil.Amount(in.Amount), changeAmt, omnicore.Amount(in.AssetAmount), in.AssetId, true)
+		if err != nil {
+			return err
+		}
+		tmpTx = tx
+		for _, coin := range selectedCoins {
+			totalInput += coin.Value
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// Use the created tx to calculate the total fee.
+	totalOutput := int64(0)
+	for _, out := range tmpTx.TxOut {
+		totalOutput += out.Value
+	}
+	totalFee := int64(totalInput) - totalOutput
+
+	resp := &lnrpc.EstimateFeeResponse{
+		FeeSat:      totalFee,
+		SatPerVbyte: uint64(feePerKw.FeePerKVByte() / 1000),
+
+		// Deprecated field.
+		FeerateSatPerByte: int64(feePerKw.FeePerKVByte() / 1000),
+	}
+
+	rpcsLog.Debugf("[ob_estimatefee] fee estimate for conf target %d: %v",
 		target, resp)
 
 	return resp, nil
@@ -2376,6 +2532,11 @@ out:
 		case fundingUpdate := <-updateChan:
 			rpcsLog.Tracef("[openchannel] sending update: %v",
 				fundingUpdate)
+			chanPending := fundingUpdate.GetChanPending()
+			if chanPending != nil {
+				sh, _ := chainhash.NewHash(chanPending.Txid)
+				chanPending.TxidStr = sh.String()
+			}
 			if err := updateStream.Send(fundingUpdate); err != nil {
 				return err
 			}
@@ -5916,6 +6077,8 @@ func (r *rpcServer) OB_ListInvoices(ctx context.Context,
 		Reversed:       req.Reversed,
 		AssetId:        req.AssetId,
 		IsQueryAsset:   req.IsQueryAsset,
+		StartTime:      int64(req.StartTime),
+		EndTime:        int64(req.EndTime),
 	}
 	invoiceSlice, err := r.server.miscDB.QueryInvoices(q)
 	if err != nil {
@@ -6714,6 +6877,8 @@ func (r *rpcServer) OB_ListPayments(ctx context.Context,
 		IncludeIncomplete: req.IncludeIncomplete,
 		AssetId:           req.AssetId,
 		IsQueryAsset:      req.IsQueryAsset,
+		StartTime:         int64(req.StartTime),
+		EndTime:           int64(req.EndTime),
 	}
 
 	// If the maximum number of payments wasn't specified, then we'll

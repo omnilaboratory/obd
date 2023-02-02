@@ -48,7 +48,7 @@ type Script struct {
 	SigScript []byte
 }
 func (s * Script)GetSigScript()([]byte,error){
-	if len(s.SigScript)==0{return nil,nil}
+	//if len(s.SigScript)==0{return nil,nil}
 	sBuild:=txscript.NewScriptBuilder()
 	for _, witness := range s.Witness {
 		if witness!=nil{

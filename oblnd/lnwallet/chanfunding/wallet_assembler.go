@@ -301,7 +301,7 @@ func (w *WalletAssembler) ProvisionChannel(r *Request) (Intent, error) {
 		// from our wallet.
 		case r.SubtractFees:
 			dustLimit := w.cfg.DustLimit
-			selectedCoins, localContributionAmt, changeAmt, err = CoinSelectSubtractFees(
+			selectedCoins, localContributionAmt, changeAmt, err = CoinSelectSubtractFees(r.AssetId,
 				r.FeeRate, r.LocalAmt, dustLimit, coins,
 			)
 			if err != nil {
@@ -313,7 +313,7 @@ func (w *WalletAssembler) ProvisionChannel(r *Request) (Intent, error) {
 		default:
 			dustLimit := w.cfg.DustLimit
 			localContributionAmt = r.LocalAmt
-			selectedCoins, changeAmt, err = CoinSelect(
+			selectedCoins, changeAmt, err = CoinSelect(r.AssetId,
 				r.FeeRate, r.LocalAmt, dustLimit, coins,
 			)
 			if err != nil {

@@ -162,10 +162,13 @@ func createTestPeer(notifier chainntnfs.ChainNotifier,
 	}
 	aliceCommitPoint := input.ComputeCommitmentPoint(aliceFirstRevoke[:])
 
+	/*obd update wxf
+	todo add ourShutdownScript, theirShutdownScript
+	*/
 	aliceCommitTx, bobCommitTx, err := lnwallet.CreateCommitmentTxns(
-		channelBal, channelBal,0,0, &aliceCfg, &bobCfg, aliceCommitPoint,
+		channelBal, channelBal, 0, 0, &aliceCfg, &bobCfg, aliceCommitPoint,
 		bobCommitPoint, *fundingTxIn, channeldb.SingleFunderTweaklessBit, lnwire.BtcAssetId,
-		isAliceInitiator, 0,
+		isAliceInitiator, 0, nil, nil,
 	)
 	if err != nil {
 		return nil, nil, nil, err

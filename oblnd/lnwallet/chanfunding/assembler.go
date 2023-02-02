@@ -51,6 +51,8 @@ type OutpointLocker interface {
 // governs how the final channel point will be provisioned by the target
 // Assembler.
 type Request struct {
+	AssetId uint32
+
 	// LocalAmt is the amount of coins we're placing into the funding
 	// output.
 	LocalAmt btcutil.Amount

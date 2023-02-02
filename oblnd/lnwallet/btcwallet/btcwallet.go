@@ -965,7 +965,7 @@ func (b *BtcWallet) CreateSimpleTx(outputs []*wire.TxOut,
 		b.cfg.CoinSelectionStrategy, dryRun,
 	)
 }
-func (b *BtcWallet) CreateSimpleTxForSelectedCoins(toAddress btcutil.Address, selectedCoins []chanfunding.Coin, amt, changeAmt btcutil.Amount, assetAmt omnicore.Amount, assetId uint32) (*wire.MsgTx, error) {
+func (b *BtcWallet) CreateSimpleTxForSelectedCoins(toAddress btcutil.Address, selectedCoins []chanfunding.Coin, amt, changeAmt btcutil.Amount, assetAmt omnicore.Amount, assetId uint32, dryrun bool) (*wire.MsgTx, error) {
 	var fundingTx = wire.NewMsgTx(2)
 
 	//todo lock selectedCoins
@@ -982,7 +982,6 @@ func (b *BtcWallet) CreateSimpleTxForSelectedCoins(toAddress btcutil.Address, se
 			PkScript: selectedCoins[0].PkScript,
 		}
 		fundingTx.AddTxOut(changeOutput)
-
 	}
 
 	//add tx.out
@@ -998,6 +997,9 @@ func (b *BtcWallet) CreateSimpleTxForSelectedCoins(toAddress btcutil.Address, se
 		if err := op.AddOpReturnToTx(fundingTx, pksAmt); err != nil {
 			return nil, err
 		}
+	}
+	if dryrun {
+		return fundingTx, err
 	}
 	err = b.SignTransaction(fundingTx)
 	if err != nil {

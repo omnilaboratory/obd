@@ -1530,6 +1530,20 @@
             "required": false,
             "type": "integer",
             "format": "int64"
+          },
+          {
+            "name": "start_time",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "uint64"
+          },
+          {
+            "name": "end_time",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "uint64"
           }
         ],
         "tags": [
@@ -1997,6 +2011,20 @@
             "required": false,
             "type": "integer",
             "format": "int64"
+          },
+          {
+            "name": "start_time",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "uint64"
+          },
+          {
+            "name": "end_time",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "uint64"
           }
         ],
         "tags": [
@@ -6159,6 +6187,9 @@
         "output_index": {
           "type": "integer",
           "format": "int64"
+        },
+        "txid_str": {
+          "type": "string"
         }
       }
     },

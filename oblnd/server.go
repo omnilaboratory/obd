@@ -6,6 +6,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
+	bitcoinCfg "github.com/btcsuite/btcd/chaincfg"
 	"image/color"
 	"math/big"
 	prand "math/rand"
@@ -1241,7 +1242,7 @@ func newServer(cfg *Config, listenAddrs []net.Addr,
 			}
 			return uint16(conf)
 		},
-		RequiredRemoteDelay: func(chanAmt lnwire.UnitPrec8) uint16 {
+		RequiredRemoteDelay: func(assetId uint32, chanAmt lnwire.UnitPrec8) uint16 {
 			// We scale the remote CSV delay (the time the
 			// remote have to claim funds in case of a unilateral
 			// close) linearly from minRemoteDelay blocks
@@ -1257,17 +1258,33 @@ func newServer(cfg *Config, listenAddrs []net.Addr,
 				return defaultDelay
 			}
 
+			/*
+				obd update wxf
+				add asset support,and set asset minRemoteDelay to 9 for test.
+			*/
+			maxAmount := uint64(0)
+			//for btc
+			maxAmount = uint64(MaxFundingAmount)
+			mDelay := minRemoteDelay
+			if assetId != lnwire.BtcAssetId {
+				maxAmount = uint64(5000 * 100000000)
+				if s.cfg.ActiveNetParams.Params == &bitcoinCfg.TestNet3Params || s.cfg.ActiveNetParams.Params == &bitcoinCfg.RegressionNetParams {
+					mDelay = 9
+				}
+			}
+
+			//
 			// If this is a wumbo channel, then we'll require the
 			// max value.
-			if chanAmt > lnwire.UnitPrec8(MaxFundingAmount) {
+			if chanAmt > lnwire.UnitPrec8(maxAmount) {
 				return maxRemoteDelay
 			}
 
 			// If not we scale according to channel size.
-			delay := uint16(btcutil.Amount(maxRemoteDelay) *
-				btcutil.Amount(chanAmt) / MaxFundingAmount)
-			if delay < minRemoteDelay {
-				delay = minRemoteDelay
+			delay := uint16(uint64(maxRemoteDelay) *
+				uint64(chanAmt) / uint64(maxAmount))
+			if delay < mDelay {
+				delay = mDelay
 			}
 			if delay > maxRemoteDelay {
 				delay = maxRemoteDelay
@@ -4360,9 +4377,12 @@ func newSweepPkScriptGen(
 		/*obd update wxf
 		todo check the sweep address usage*/
 	return func() ([]byte, error) {
-		sweepAddr, err := wallet.OB_NewAddress(
-			lnwallet.PubKey, false, lnwallet.DefaultAccountName,
-		)
+		//sweepAddr, err := wallet.OB_NewAddress(
+		//	lnwallet.PubKey, false, lnwallet.DefaultAccountName,
+		//)
+		/*obd update wxf
+		set sweepAddr to omni-wallete DefaultAddress*/
+		sweepAddr, err := wallet.OB_GetDefaultAddress()
 		if err != nil {
 			return nil, err
 		}

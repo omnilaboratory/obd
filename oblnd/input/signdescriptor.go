@@ -64,7 +64,9 @@ type SignDescriptor struct {
 	// Output is the target output which should be signed. The PkScript and
 	// Value fields within the output should be properly populated,
 	// otherwise an invalid signature may be generated.
-	Output *wire.TxOut
+	Output   *wire.TxOut
+	AssetId  uint32
+	AssetAmt int64
 
 	// HashType is the target sighash type that should be used when
 	// generating the final sighash, and signature.
@@ -131,6 +133,18 @@ func WriteSignDescriptor(w io.Writer, sd *SignDescriptor) error {
 	}
 
 	var scratch [4]byte
+
+	binary.BigEndian.PutUint32(scratch[:], uint32(sd.AssetId))
+	if _, err := w.Write(scratch[:]); err != nil {
+		return err
+	}
+
+	var scratch1 [8]byte
+	binary.BigEndian.PutUint64(scratch1[:], uint64(sd.AssetAmt))
+	if _, err := w.Write(scratch1[:]); err != nil {
+		return err
+	}
+
 	binary.BigEndian.PutUint32(scratch[:], uint32(sd.HashType))
 	if _, err := w.Write(scratch[:]); err != nil {
 		return err
@@ -218,6 +232,18 @@ func ReadSignDescriptor(r io.Reader, sd *SignDescriptor) error {
 		return err
 	}
 	sd.Output = txOut
+
+	var assetId [4]byte
+	if _, err := io.ReadFull(r, assetId[:]); err != nil {
+		return err
+	}
+	sd.AssetId = binary.BigEndian.Uint32(assetId[:])
+
+	var assetAmt [8]byte
+	if _, err := io.ReadFull(r, assetAmt[:]); err != nil {
+		return err
+	}
+	sd.AssetAmt = int64(binary.BigEndian.Uint64(assetAmt[:]))
 
 	var hashType [4]byte
 	if _, err := io.ReadFull(r, hashType[:]); err != nil {

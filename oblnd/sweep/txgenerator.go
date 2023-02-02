@@ -2,6 +2,9 @@ package sweep
 
 import (
 	"fmt"
+	"github.com/davecgh/go-spew/spew"
+	"github.com/lightningnetwork/lnd/lnwallet/omnicore/op"
+	"github.com/lightningnetwork/lnd/omnicore"
 	"sort"
 	"strings"
 
@@ -111,7 +114,7 @@ func generateInputPartitionings(sweepableInputs []txInput,
 		// with an even lower output value.
 		if !txInputs.enoughInput() {
 			// The change output is always a p2wpkh here.
-			dl := lnwallet.DustLimitForSize(input.P2WPKHSize)
+			dl := lnwallet.DustLimitForSize(input.P2PKHSize)
 			log.Debugf("Set value %v (r=%v, c=%v) below dust "+
 				"limit of %v", txInputs.totalOutput(),
 				txInputs.requiredOutput, txInputs.changeOutput,
@@ -164,6 +167,7 @@ func createSweepTx(inputs []input.Input, outputs []*wire.TxOut,
 	// since the input and output index must stay the same for the
 	// signatures to be valid.
 	for _, o := range inputs {
+		//todo check RequiredTxOut usage in omni-tx
 		if o.RequiredTxOut() == nil {
 			continue
 		}
@@ -232,6 +236,10 @@ func createSweepTx(inputs []input.Input, outputs []*wire.TxOut,
 	// is variable.
 	changeLimit := lnwallet.DustLimitForSize(len(changePkScript))
 
+	if inputs[0].SignDesc().AssetId > 0 {
+		/*obd add wxf add omni-asset tx support */
+		changeLimit = 0
+	}
 	// The txn will sweep the amount after fees to the pkscript generated
 	// above.
 	if changeAmt >= changeLimit {
@@ -242,6 +250,13 @@ func createSweepTx(inputs []input.Input, outputs []*wire.TxOut,
 	} else {
 		log.Infof("Change amt %v below dustlimit %v, not adding "+
 			"change output", changeAmt, changeLimit)
+	}
+
+	if inputs[0].SignDesc().AssetId > 0 {
+		/*obd add wxf add omni-asset tx support */
+		opks := op.NewPksAmounts(inputs[0].SignDesc().AssetId)
+		opks.Add(changePkScript, omnicore.Amount(inputs[0].SignDesc().AssetAmt))
+		op.AddOpReturnToTx(sweepTx, opks)
 	}
 
 	// We'll default to using the current block height as locktime, if none
@@ -302,12 +317,15 @@ func createSweepTx(inputs []input.Input, outputs []*wire.TxOut,
 
 	log.Infof("Creating sweep transaction %v for %v inputs (%s) "+
 		"using %v sat/kw, tx_weight=%v, tx_fee=%v, parents_count=%v, "+
-		"parents_fee=%v, parents_weight=%v",
+		"parents_fee=%v, parents_weight=%v %v",
 		sweepTx.TxHash(), len(inputs),
 		inputTypeSummary(inputs), int64(feePerKw),
 		estimator.weight(), txFee,
 		len(estimator.parents), estimator.parentsFee,
 		estimator.parentsWeight,
+		newLogClosure(func() string {
+			return spew.Sdump(sweepTx)
+		}),
 	)
 
 	return sweepTx, nil
@@ -339,6 +357,10 @@ func getWeightEstimate(inputs []input.Input, outputs []*wire.TxOut,
 	// fee will just be subtracted from this already dust output, and
 	// trimmed.
 	weightEstimate.addP2WKHOutput()
+
+	if inputs[0].SignDesc().AssetId > 0 {
+		weightEstimate.addOpreturnOutput()
+	}
 
 	// For each output, use its witness type to determine the estimate
 	// weight of its witness, and add it to the proper set of spendable

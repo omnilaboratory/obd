@@ -778,6 +778,7 @@ func (l *LightningWallet) handleFundingReserveRequest(req *InitFundingReserveMsg
 		// the fee rate passed in to perform coin selection.
 		var err error
 		fundingReq := &chanfunding.Request{
+			AssetId:      req.AssetId,
 			RemoteAmt:    req.RemoteFundingBtcAmt,
 			LocalAmt:     req.LocalFundingBtcAmt,
 			MinConfs:     req.MinConfs,
@@ -1288,8 +1289,8 @@ func CreateCommitmentTxns(localBalance, remoteBalance btcutil.Amount,
 	localAssetBalance, remoteAssetBalance omnicore.Amount,
 	ourChanCfg, theirChanCfg *channeldb.ChannelConfig,
 	localCommitPoint, remoteCommitPoint *btcec.PublicKey,
-	fundingTxIn wire.TxIn, chanType channeldb.ChannelType,assetId uint32, initiator bool,
-	leaseExpiry uint32) (*wire.MsgTx, *wire.MsgTx, error) {
+	fundingTxIn wire.TxIn, chanType channeldb.ChannelType, assetId uint32, initiator bool,
+	leaseExpiry uint32, ourShutdownScript, theirShutdownScript []byte) (*wire.MsgTx, *wire.MsgTx, error) {
 
 	localCommitmentKeys := DeriveCommitmentKeys(
 		localCommitPoint, true, chanType, ourChanCfg, theirChanCfg,
@@ -1298,13 +1299,13 @@ func CreateCommitmentTxns(localBalance, remoteBalance btcutil.Amount,
 		remoteCommitPoint, false, chanType, ourChanCfg, theirChanCfg,
 	)
 	/*
-	obd add wxf
+		obd add wxf
 	*/
 	ourOpAmounts :=op.NewPksAmounts(assetId)
 	theirOpAmounts :=op.NewPksAmounts(assetId)
 	ourCommitTx, err := CreateCommitTx(
 		chanType, fundingTxIn, localCommitmentKeys, ourChanCfg,
-		theirChanCfg, localBalance, remoteBalance,localAssetBalance, remoteAssetBalance, 0, initiator, leaseExpiry, ourOpAmounts,
+		theirChanCfg, localBalance, remoteBalance, localAssetBalance, remoteAssetBalance, 0, initiator, leaseExpiry, ourOpAmounts, theirShutdownScript,
 	)
 	if err != nil {
 		return nil, nil, err
@@ -1317,7 +1318,7 @@ func CreateCommitmentTxns(localBalance, remoteBalance btcutil.Amount,
 
 	theirCommitTx, err := CreateCommitTx(
 		chanType, fundingTxIn, remoteCommitmentKeys, theirChanCfg,
-		ourChanCfg, remoteBalance, localBalance, remoteAssetBalance, localAssetBalance,  0, !initiator, leaseExpiry, theirOpAmounts,
+		ourChanCfg, remoteBalance, localBalance, remoteAssetBalance, localAssetBalance, 0, !initiator, leaseExpiry, theirOpAmounts, ourShutdownScript,
 	)
 	if err != nil {
 		return nil, nil, err
@@ -1589,10 +1590,13 @@ func (l *LightningWallet) handleChanPointReady(req *continueContributionMsg) {
 		//asset mode: all the btcBalance belong to Initiator
 		if chanState.IsInitiator {
 			remoteBalance = lnwire.OmniGas
-			localBalance = chanState.BtcCapacity - remoteBalance
+			/*obd update wxf
+			exclucde CommitFee
+			*/
+			localBalance = chanState.BtcCapacity - remoteBalance - pendingReservation.partialState.LocalCommitment.CommitFee
 		} else {
 			localBalance = lnwire.OmniGas
-			remoteBalance = chanState.BtcCapacity - localBalance
+			remoteBalance = chanState.BtcCapacity - localBalance - pendingReservation.partialState.LocalCommitment.CommitFee
 		}
 	}
 
@@ -1615,7 +1619,7 @@ func (l *LightningWallet) handleChanPointReady(req *continueContributionMsg) {
 		ourContribution.FirstCommitmentPoint,
 		theirContribution.FirstCommitmentPoint, fundingTxIn,
 		pendingReservation.partialState.ChanType, pendingReservation.partialState.AssetID,
-		pendingReservation.partialState.IsInitiator, leaseExpiry,
+		pendingReservation.partialState.IsInitiator, leaseExpiry, ourContribution.UpfrontShutdown, theirContribution.UpfrontShutdown,
 	)
 	if err != nil {
 		req.err <- err
@@ -1990,10 +1994,13 @@ func (l *LightningWallet) handleSingleFunderSigs(req *addSingleFunderSigsMsg) {
 		//asset mode: all the btcBalance belong to Initiator
 		if chanState.IsInitiator {
 			remoteBalance = lnwire.OmniGas
-			localBalance = chanState.BtcCapacity - remoteBalance
+			/*obd update wxf
+			exclucde CommitFee
+			*/
+			localBalance = chanState.BtcCapacity - remoteBalance - pendingReservation.partialState.LocalCommitment.CommitFee
 		} else {
 			localBalance = lnwire.OmniGas
-			remoteBalance = chanState.BtcCapacity - localBalance
+			remoteBalance = chanState.BtcCapacity - localBalance - pendingReservation.partialState.LocalCommitment.CommitFee
 		}
 	}
 
@@ -2011,6 +2018,8 @@ func (l *LightningWallet) handleSingleFunderSigs(req *addSingleFunderSigsMsg) {
 		pendingReservation.theirContribution.FirstCommitmentPoint,
 		*fundingTxIn, pendingReservation.partialState.ChanType, pendingReservation.partialState.AssetID,
 		pendingReservation.partialState.IsInitiator, leaseExpiry,
+		pendingReservation.ourContribution.UpfrontShutdown,
+		pendingReservation.theirContribution.UpfrontShutdown,
 	)
 	if err != nil {
 		req.err <- err

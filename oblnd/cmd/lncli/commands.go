@@ -227,6 +227,101 @@ func estimateFees(ctx *cli.Context) error {
 	return nil
 }
 
+var obEstimateFeeCommand = cli.Command{
+	Name:      "ob_estimatefee",
+	Category:  "On-chain",
+	Usage:     "Get fee estimates for sending omni tx on-chain to  address.",
+	ArgsUsage: "send-json-string [--conf_target=N]",
+	Description: `
+	Get fee estimates for sending a transaction paying the specified amount to the passed address.
+	`,
+	Flags: []cli.Flag{
+		cli.StringFlag{
+			Name: "addr",
+			Usage: "the base58  encoded bitcoin address to send coins " +
+				"to on-chain",
+		},
+		cli.StringFlag{
+			Name: "from",
+			Usage: "the base58  encoded bitcoin address to send coins " +
+				"from on-chain",
+		},
+		cli.Int64Flag{
+			Name:  "amt",
+			Usage: "the number of bitcoin denominated in satoshis to send",
+		},
+		cli.Int64Flag{
+			Name:  "asset_amount",
+			Usage: "the number of asset denominated in omnicore.amount to send",
+		},
+		cli.Int64Flag{
+			Name:  "asset_id",
+			Usage: "the asset_id for which asset to send",
+		},
+		cli.Int64Flag{
+			Name: "conf_target",
+			Usage: "(optional) the number of blocks that the transaction *should* " +
+				"confirm in",
+		},
+	},
+	Action: actionDecorator(obEstimateFees),
+}
+
+func obEstimateFees(ctx *cli.Context) error {
+	ctxc := getContext()
+
+	client, cleanUp := getClient(ctx)
+	defer cleanUp()
+
+	addr := ctx.String("addr")
+	if addr == "" {
+		return fmt.Errorf("Address argument missing")
+	}
+	from := ctx.String("from")
+	if from == "" {
+		return fmt.Errorf("from argument missing")
+	}
+	asset_id := uint32(ctx.Int64("asset_id"))
+
+	var asset_amount, amt int64
+	if asset_id > lnwire.BtcAssetId { //asset
+		asset_amount = ctx.Int64("asset_amount")
+		if asset_amount == 0 {
+			return fmt.Errorf("asset_amount argument missing")
+		}
+		amt = ctx.Int64("amt")
+		if amt == 0 {
+			amt = 546
+		}
+	} else if asset_id == lnwire.BtcAssetId { //for btc
+		amt = ctx.Int64("amt")
+		if amt == 0 {
+			return fmt.Errorf("amt argument missing")
+		}
+		asset_amount = ctx.Int64("asset_amount")
+		if asset_amount > 0 {
+			return fmt.Errorf("btc transfer should not include asset_amount, or miss asset_id arg")
+		}
+	} else {
+		return fmt.Errorf("err asset_id ")
+	}
+
+	resp, err := client.OB_EstimateFee(ctxc, &lnrpc.ObEstimateFeeRequest{
+		Addr:        addr,
+		Amount:      amt,
+		From:        from,
+		AssetAmount: asset_amount,
+		AssetId:     asset_id,
+		TargetConf:  int32(ctx.Int64("conf_target")),
+	})
+	if err != nil {
+		return err
+	}
+
+	printRespJSON(resp)
+	return nil
+}
+
 var txLabelFlag = cli.StringFlag{
 	Name:  "label",
 	Usage: "(optional) a label for the transaction",

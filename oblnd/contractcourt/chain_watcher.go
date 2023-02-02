@@ -941,21 +941,22 @@ func (c *chainWatcher) dispatchCooperativeClose(commitSpend *chainntnfs.SpendDet
 	// database. We can do this as a cooperatively closed channel has all
 	// its outputs resolved after only one confirmation.
 	closeSummary := &channeldb.ChannelCloseSummary{
-		ChanPoint:               c.cfg.chanState.FundingOutpoint,
-		ChainHash:               c.cfg.chanState.ChainHash,
-		ClosingTXID:             *commitSpend.SpenderTxHash,
-		RemotePub:               c.cfg.chanState.IdentityPub,
-		BtcCapacity:                c.cfg.chanState.BtcCapacity,
-		AssetCapacity:                c.cfg.chanState.AssetCapacity,
-		CloseHeight:             uint32(commitSpend.SpendingHeight),
+		ChanPoint:     c.cfg.chanState.FundingOutpoint,
+		ChainHash:     c.cfg.chanState.ChainHash,
+		ClosingTXID:   *commitSpend.SpenderTxHash,
+		RemotePub:     c.cfg.chanState.IdentityPub,
+		BtcCapacity:   c.cfg.chanState.BtcCapacity,
+		AssetCapacity: c.cfg.chanState.AssetCapacity,
+		AssetId:       c.cfg.chanState.AssetID,
+		CloseHeight:   uint32(commitSpend.SpendingHeight),
 		/*
-		obd update wxf
-		todo check SettledBalance for asset
+			obd update wxf
+			todo check SettledBalance for asset
 		*/
-		SettledBalance:         lnwire.UnitPrec8(localAmt),
+		SettledBalance: lnwire.UnitPrec8(localAmt),
 		/*
-		obd update wxf
-		todo add SettledAssetBalance
+			obd update wxf
+			todo add SettledAssetBalance
 		*/
 		//SettledAssetBalance:          localAmt,
 		CloseType:               channeldb.CooperativeClose,
@@ -1021,8 +1022,9 @@ func (c *chainWatcher) dispatchLocalForceClose(
 		ChainHash:               chanSnapshot.ChainHash,
 		ClosingTXID:             forceClose.CloseTx.TxHash(),
 		RemotePub:               &chanSnapshot.RemoteIdentity,
-		BtcCapacity:                chanSnapshot.BtcCapacity,
-		AssetCapacity:                chanSnapshot.AssetCapacity,
+		BtcCapacity:             chanSnapshot.BtcCapacity,
+		AssetCapacity:           chanSnapshot.AssetCapacity,
+		AssetId:                 chanSnapshot.AssetID,
 		CloseType:               channeldb.LocalForceClose,
 		IsPending:               true,
 		ShortChanID:             c.cfg.chanState.ShortChanID(),
@@ -1185,16 +1187,17 @@ func (c *chainWatcher) dispatchContractBreach(spendEvent *chainntnfs.SpendDetail
 	todo check set SettledAssetBalance */
 	//settledBalance := chainSet.remoteCommit.LocalBtcBalance.ToSatoshis()
 	closeSummary := channeldb.ChannelCloseSummary{
-		ChanPoint:               c.cfg.chanState.FundingOutpoint,
-		ChainHash:               c.cfg.chanState.ChainHash,
-		ClosingTXID:             *spendEvent.SpenderTxHash,
-		CloseHeight:             spendHeight,
-		RemotePub:               c.cfg.chanState.IdentityPub,
-		BtcCapacity:                c.cfg.chanState.BtcCapacity,
+		ChanPoint:   c.cfg.chanState.FundingOutpoint,
+		ChainHash:   c.cfg.chanState.ChainHash,
+		ClosingTXID: *spendEvent.SpenderTxHash,
+		CloseHeight: spendHeight,
+		RemotePub:   c.cfg.chanState.IdentityPub,
+		BtcCapacity: c.cfg.chanState.BtcCapacity,
 		/*bod update wxf
 		todo check set SettledAssetBalance */
 		//SettledBtcBalance:          settledBalance,
-		AssetCapacity:                c.cfg.chanState.AssetCapacity,
+		AssetCapacity: c.cfg.chanState.AssetCapacity,
+		AssetId:       c.cfg.chanState.AssetID,
 		//SettledAssetBalance:          settledaBalance,
 		CloseType:               channeldb.BreachClose,
 		IsPending:               true,

@@ -3,6 +3,7 @@ package sweep
 import (
 	"errors"
 	"fmt"
+	"github.com/lightningnetwork/lnd/lnwire"
 	"math/rand"
 	"sort"
 	"sync"
@@ -462,10 +463,10 @@ func (s *UtxoSweeper) SweepInput(input input.Input,
 
 	absoluteTimeLock, _ := input.RequiredLockTime()
 	log.Infof("Sweep request received: out_point=%v, witness_type=%v, "+
-		"relative_time_lock=%v, absolute_time_lock=%v, amount=%v, "+
+		"relative_time_lock=%v, absolute_time_lock=%v, amount=%v, assetId=%v assetAmt=%v"+
 		"params=(%v)", input.OutPoint(), input.WitnessType(),
 		input.BlocksToMaturity(), absoluteTimeLock,
-		btcutil.Amount(input.SignDesc().Output.Value), params)
+		btcutil.Amount(input.SignDesc().Output.Value), input.SignDesc().AssetId, input.SignDesc().AssetAmt, params)
 
 	sweeperInput := &sweepInputMessage{
 		input:      input,
@@ -772,7 +773,31 @@ func (s *UtxoSweeper) sweepCluster(cluster inputCluster,
 
 		// Sweep selected inputs.
 		for _, inputs := range inputLists {
-			err := s.sweep(inputs, cluster.sweepFeeRate, currentHeight)
+			/*obd update wxf
+			add omni asset support:
+			omni-sweep-tx only support one asset input, so the asset-inputs should sweep one by one
+			*/
+			btcInputs := inputSet{}
+			assetInputs := inputSet{}
+			for _, input := range inputs {
+				if input.SignDesc().AssetId == lnwire.BtcAssetId {
+					btcInputs = append(btcInputs, input)
+				} else {
+					assetInputs = append(assetInputs, input)
+				}
+			}
+			for _, assetInput := range assetInputs {
+				err = s.sweep(append(inputSet{}, assetInput), cluster.sweepFeeRate, currentHeight)
+				if err != nil {
+					return fmt.Errorf("unable to sweep inputs: %v", err)
+				}
+			}
+			if len(btcInputs) > 0 {
+				err = s.sweep(btcInputs, cluster.sweepFeeRate, currentHeight)
+				if err != nil {
+					return err
+				}
+			}
 			if err != nil {
 				return fmt.Errorf("unable to sweep inputs: %v", err)
 			}

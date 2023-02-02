@@ -248,9 +248,11 @@ func CreateTestChannels(chanType channeldb.ChannelType) (
 	}
 	aliceCommitPoint := input.ComputeCommitmentPoint(aliceFirstRevoke[:])
 
+	/*obd update wxf
+	todo add ourShutdownScript, theirShutdownScript */
 	aliceCommitTx, bobCommitTx, err := CreateCommitmentTxns(
-		channelBtcBal, channelBtcBal,channelAssetCapacity, 0, &aliceCfg, &bobCfg, aliceCommitPoint,
-		bobCommitPoint, *fundingTxIn, chanType, testAssetId, isAliceInitiator, 0,
+		channelBtcBal, channelBtcBal, channelAssetCapacity, 0, &aliceCfg, &bobCfg, aliceCommitPoint,
+		bobCommitPoint, *fundingTxIn, chanType, testAssetId, isAliceInitiator, 0, nil, nil,
 	)
 	if err != nil {
 		return nil, nil, nil, err

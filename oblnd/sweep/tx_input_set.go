@@ -139,7 +139,9 @@ func newTxInputSet(wallet Wallet, feePerKW chainfee.SatPerKWeight,
 func (t *txInputSet) enoughInput() bool {
 	// If we have a change output above dust, then we certainly have enough
 	// inputs to the transaction.
-	if t.changeOutput >= lnwallet.DustLimitForSize(input.P2WPKHSize) {
+	/*obd update wxf
+	omni use P2PKHSize,not P2WPKHSize*/
+	if t.changeOutput >= lnwallet.DustLimitForSize(input.P2PKHSize) {
 		return true
 	}
 
@@ -182,6 +184,7 @@ func (t *txInputSet) addToState(inp input.Input, constraints addConstraints) *tx
 		// Fetch the dust limit for this output.
 		dustLimit := lnwallet.DustLimitForSize(len(reqOut.PkScript))
 		if btcutil.Amount(reqOut.Value) < dustLimit {
+			log.Debugf("addToState dust check %v < %v", btcutil.Amount(reqOut.Value) < dustLimit)
 			return nil
 		}
 	}
@@ -208,7 +211,7 @@ func (t *txInputSet) addToState(inp input.Input, constraints addConstraints) *tx
 	// Calculate the yield of this input from the change in total tx output
 	// value.
 	inputYield := s.totalOutput() - t.totalOutput()
-
+	log.Debugf("addToState param constraints %v, inputYield %v, value %v ,fee %v", constraints, inputYield, value, fee)
 	switch constraints {
 
 	// Don't sweep inputs that cost us more to sweep than they give us.

@@ -35,6 +35,7 @@
 ```shell
     --neutrino.connect="$BTC_HOST_ADDRESS"
     --omnicoreproxy.rpchost="$OMNI_HOST_ADDRESS_PORT"
+    --neutrino.feeurl=https://nodes.lightning.computer/fees/v1/btc-fee-estimates.json #only mainnet
 ```
 #### 现部署有的每种网络类下的节点地址
 每种网络类型下，我们不会把所有的节点模式全部部署一份．以文档为准
@@ -46,21 +47,28 @@
     *  ~~国外用：国内国外regtest-node是独立的节点，无法使用相同的boostrap-dns-node, $OMNI_HOST_ADDRESS_PORT=regnet.oblnd.top  $OMNI_HOST_ADDRESS_PORT=regnet.oblnd.top:18332~~  
       * ~~水龙头：http://swagger.cn.oblnd.top:9090/?surl=surl=http://faucet.cn.oblnd.top:9090/openapiv2/foo.swagger.json~~ 
       * ~~预创建token-propertyid: 2147483651~~
+  * neutrino
+    * 国内用：$BTC_HOST_ADDRESS=43.138.107.248  $OMNI_HOST_ADDRESS_PORT=43.138.107.248:18332  水龙头：不变，同omnicoreproxy
+    * neutrino.db 下载列表"https://cache.oblnd.top/neutrino-regtest/";　，按需下载相应的文件，下载时相的文件时，url要加日期参数,日期格式任意，如下载neutrino.db文件“https://cache.oblnd.top/neutrino-regtest/neutrino.db?date=2022-12-22” , 在regtest时，每两小时会生成一次下载数据，如果想获得稍新点的数据，url参数date再加上“小时并除以2”, 如2022-12-22 15点时，使用"date=2022-12-22-7"; gz扩展名为相应文件的gzip压缩版．下载后存放目录“${LNDIR}/data/chain/bitcoin/regtest/”
+    
 * testnet 出块时间2-18分钟不等
   * neutrino
-    * 国内用：$BTC_HOST_ADDRESS=192.144.199.67  $OMNI_HOST_ADDRESS_PORT=192.144.199.67:18332  
+    * 国内用：$BTC_HOST_ADDRESS=192.144.199.67  $OMNI_HOST_ADDRESS_PORT=192.144.199.67:18332 
       * token水龙头：http://43.138.107.248:9090/swaggerTool/?surl=http://192.144.199.67:8090/openapiv2/foo.swagger.json 
       * 预创建token-propertyid: 2147485160 token-owner:mvd6r2KRoaMVr7Y9mDe8pDxe5a5iZLJHN9
     * 国外用：$BTC_HOST_ADDRESS=testnet.oblnd.top  $OMNI_HOST_ADDRESS_PORT=192.144.199.67:18332
       * token水龙头：http://43.138.107.248:9090/swaggerTool/?surl=http://192.144.199.67:8090/openapiv2/foo.swagger.json
       * 预创建token-propertyid: 2147485160 token-owner:mvd6r2KRoaMVr7Y9mDe8pDxe5a5iZLJHN9
     * btc-testnet水龙头: 可以google搜索＂btc　testnet　faucet＂查找到更多的水龙头，可用的不多；测试了一个可用的https://testnet-faucet.com/btc-testnet/　，每次只能发5000-10000 satoshi
-    * neutrino.db 下载列表https://cache.oblnd.top/neutrino-testnet/　，按需下载相应的文件，下载时相的文件时，url要加日期参数,日期格式任意，如下载neutrino.db文件“https://cache.oblnd.top/neutrino-testnet/neutrino.db?date=2022-12-22”; gz扩展名为相应文件的gzip压缩版．
+    * neutrino.db 下载列表"https://cache.oblnd.top/neutrino-testnet/";　，按需下载相应的文件，下载时相的文件时，url要加日期参数,日期格式任意，如下载neutrino.db文件“https://cache.oblnd.top/neutrino-testnet/neutrino.db?date=2022-12-22” ;下载数据每天8点生成一次， gz扩展名为相应文件的gzip压缩版．下载后存放目录“${LNDIR}/data/chain/bitcoin/testnet/”
 * mainnet 出块时间10分钟不等
 　 * neutrino
   待部部署
  
-
+### 服务端节点
+  * regtest: 0386790984cda19a179486bf45f7a1d7dc58964605b928e3d36cd7806ce3d31cdb@otest:9735
+  * testnet: 025767c2a772bb48f04117625c2da759d55d3e287c101602452c5228c975111594@192.144.199.67:9735
+  * mainnet: 暂无
 
 ### 公共参数
 * --lnddir #lnd数据库目录

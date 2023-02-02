@@ -282,7 +282,7 @@ type WalletController interface {
 	SendOutputs(outputs []*wire.TxOut, feeRate chainfee.SatPerKWeight,
 		minConfs int32, label string) (*wire.MsgTx, error)
 
-	CreateSimpleTxForSelectedCoins(toAddress btcutil.Address, selectedCoins []chanfunding.Coin, amt, changeAmt btcutil.Amount, assetAmt omnicore.Amount, assetId uint32) (*wire.MsgTx, error)
+	CreateSimpleTxForSelectedCoins(toAddress btcutil.Address, selectedCoins []chanfunding.Coin, amt, changeAmt btcutil.Amount, assetAmt omnicore.Amount, assetId uint32, dryrun bool) (*wire.MsgTx, error)
 
 	// CreateSimpleTx creates a Bitcoin transaction paying to the specified
 	// outputs. The transaction is not broadcasted to the network. In the

@@ -77,6 +77,10 @@ func (w *weightEstimator) addP2WKHOutput() {
 	w.estimator.AddP2WKHOutput()
 }
 
+func (w *weightEstimator) addOpreturnOutput() {
+	w.estimator.AddOpreturnSize()
+}
+
 // addOutput updates the weight estimate to account for the known
 // output given.
 func (w *weightEstimator) addOutput(txOut *wire.TxOut) {

@@ -332,6 +332,7 @@ func main() {
 		changePasswordCommand,
 		newAddressCommand,
 		estimateFeeCommand,
+		obEstimateFeeCommand,
 		sendManyCommand,
 		sendCoinsCommand,
 		sendCoinsFromCommand,

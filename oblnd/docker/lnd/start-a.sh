@@ -41,7 +41,7 @@ set_default() {
 # Set default variables if needed.
 RPCUSER=$(set_default "$RPCUSER" "omniwallet")
 RPCPASS=$(set_default "$RPCPASS" "cB3]iL2@eZ1?cB2?")
-DEBUG=$(set_default "$DEBUG" "debug")
+DEBUG=$(set_default "$DEBUG" "info")
 NETWORK=$(set_default "$NETWORK" "regtest")
 CHAIN=$(set_default "$CHAIN" "bitcoin")
 #BACKEND="btcd"
@@ -73,6 +73,7 @@ exec ./lnd-debug \
     --debuglevel="$DEBUG" \
     --$BACKEND.zmqpubrawblock=tcp://43.138.107.248:28332 \
     --$BACKEND.zmqpubrawtx=tcp://43.138.107.248:28333 \
+      --nobootstrap \
     "$@"
 
 # ./lncli-debug --rpcserver=localhost:10010 --lnddir=~/apps/oblnd -n testnet

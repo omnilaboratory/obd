@@ -11,6 +11,7 @@ import (
 	"github.com/lightningnetwork/lnd/lnwire"
 	"github.com/lightningnetwork/lnd/omnicore"
 	"log"
+	"sort"
 )
 
 // maximum 7 receivers
@@ -185,27 +186,27 @@ type pksAmount struct{
 }
 //collection pkScirpt and assetAmount
 type PksAmounts struct{
-	assetID uint32
+	AssetID    uint32
 	pksAmounts []*pksAmount
 }
 func NewPksAmounts(assetId uint32) *PksAmounts{
-	return &PksAmounts{assetID: assetId}
+	return &PksAmounts{AssetID: assetId}
 }
 func (p *PksAmounts)Len()int {
 	return len(p.pksAmounts)
 }
 func (p *PksAmounts)Add(pks []byte, amount omnicore.Amount){
-	if p.assetID==0 || p.assetID==lnwire.BtcAssetId {
+	if p.AssetID == 0 || p.AssetID == lnwire.BtcAssetId {
 		return
 		panic(fmt.Errorf("miss assetId"))
 	}
-	if amount==0{
+	if amount == 0 {
 		return
 	}
 	p.pksAmounts=append(p.pksAmounts,&pksAmount{pks,amount})
 }
 func AddOpReturnToTx(tx *wire.MsgTx ,p *PksAmounts  )error{
-	if p.assetID==0 || p.assetID==lnwire.BtcAssetId{
+	if p.AssetID == 0 || p.AssetID == lnwire.BtcAssetId {
 		return nil
 		return fmt.Errorf("miss assetId")
 	}
@@ -223,14 +224,27 @@ func AddOpReturnToTx(tx *wire.MsgTx ,p *PksAmounts  )error{
 		}
 		opOutPuts=append(opOutPuts,&Output{uint8(assetOutIndex)+1,uint64(pa.amount)})
 	}
-	txOUt, err := GetOpReturnOut(p.assetID, opOutPuts)
+	sort.Sort(OutPuts(opOutPuts))
+	txOUt, err := GetOpReturnOut(p.AssetID, opOutPuts)
 	//PrintWithDecode(txOUt.PkScript)
 	if err != nil {
-		return  err
+		return err
 	}
 	outs := tx.TxOut
 	tx.TxOut = append([]*wire.TxOut{txOUt}, outs...)
 	return nil
+}
+
+type OutPuts []*Output
+
+func (h OutPuts) Len() int {
+	return len(h)
+}
+func (arr OutPuts) Less(i, j int) bool {
+	return arr[i].Index < arr[j].Index
+}
+func (arr OutPuts) Swap(i, j int) {
+	arr[i], arr[j] = arr[j], arr[i]
 }
 
 // Address can be empty "" when constructs payload

@@ -56,7 +56,7 @@ func (w *WalletController) RecordAddress(address string) (err error) {
 	return nil
 }
 
-func (w *WalletController) CreateSimpleTxForSelectedCoins(toAddress btcutil.Address, selectedCoins []chanfunding.Coin, amt, changeAmt btcutil.Amount, assetAmt omnicore.Amount, assetId uint32) (*wire.MsgTx, error) {
+func (w *WalletController) CreateSimpleTxForSelectedCoins(toAddress btcutil.Address, selectedCoins []chanfunding.Coin, amt, changeAmt btcutil.Amount, assetAmt omnicore.Amount, assetId uint32, dryrun bool) (*wire.MsgTx, error) {
 	return nil, nil
 }
 

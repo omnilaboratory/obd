@@ -74,6 +74,9 @@ type LightningClient interface {
 	//map type doesn't appear in the REST API documentation because of a bug in
 	//the grpc-gateway library.
 	EstimateFee(ctx context.Context, in *EstimateFeeRequest, opts ...grpc.CallOption) (*EstimateFeeResponse, error)
+	//obd update wxf
+	//Estimate Fee for omni sned2many tx
+	OB_EstimateFee(ctx context.Context, in *ObEstimateFeeRequest, opts ...grpc.CallOption) (*EstimateFeeResponse, error)
 	// lncli: `sendcoins`
 	//SendCoins executes a request to send coins to a particular address. Unlike
 	//SendMany, this RPC call only allows creating a single output at a time. If
@@ -565,6 +568,15 @@ func (c *lightningClient) GetTransactions(ctx context.Context, in *GetTransactio
 func (c *lightningClient) EstimateFee(ctx context.Context, in *EstimateFeeRequest, opts ...grpc.CallOption) (*EstimateFeeResponse, error) {
 	out := new(EstimateFeeResponse)
 	err := c.cc.Invoke(ctx, "/lnrpc.Lightning/EstimateFee", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *lightningClient) OB_EstimateFee(ctx context.Context, in *ObEstimateFeeRequest, opts ...grpc.CallOption) (*EstimateFeeResponse, error) {
+	out := new(EstimateFeeResponse)
+	err := c.cc.Invoke(ctx, "/lnrpc.Lightning/OB_EstimateFee", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1482,6 +1494,9 @@ type LightningServer interface {
 	//map type doesn't appear in the REST API documentation because of a bug in
 	//the grpc-gateway library.
 	EstimateFee(context.Context, *EstimateFeeRequest) (*EstimateFeeResponse, error)
+	//obd update wxf
+	//Estimate Fee for omni sned2many tx
+	OB_EstimateFee(context.Context, *ObEstimateFeeRequest) (*EstimateFeeResponse, error)
 	// lncli: `sendcoins`
 	//SendCoins executes a request to send coins to a particular address. Unlike
 	//SendMany, this RPC call only allows creating a single output at a time. If
@@ -1897,6 +1912,9 @@ func (UnimplementedLightningServer) GetTransactions(context.Context, *GetTransac
 }
 func (UnimplementedLightningServer) EstimateFee(context.Context, *EstimateFeeRequest) (*EstimateFeeResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method EstimateFee not implemented")
+}
+func (UnimplementedLightningServer) OB_EstimateFee(context.Context, *ObEstimateFeeRequest) (*EstimateFeeResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method OB_EstimateFee not implemented")
 }
 func (UnimplementedLightningServer) SendCoins(context.Context, *SendCoinsRequest) (*SendCoinsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SendCoins not implemented")
@@ -2327,6 +2345,24 @@ func _Lightning_EstimateFee_Handler(srv interface{}, ctx context.Context, dec fu
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(LightningServer).EstimateFee(ctx, req.(*EstimateFeeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Lightning_OB_EstimateFee_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ObEstimateFeeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LightningServer).OB_EstimateFee(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/lnrpc.Lightning/OB_EstimateFee",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LightningServer).OB_EstimateFee(ctx, req.(*ObEstimateFeeRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -3564,6 +3600,10 @@ var Lightning_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "EstimateFee",
 			Handler:    _Lightning_EstimateFee_Handler,
+		},
+		{
+			MethodName: "OB_EstimateFee",
+			Handler:    _Lightning_OB_EstimateFee_Handler,
 		},
 		{
 			MethodName: "SendCoins",

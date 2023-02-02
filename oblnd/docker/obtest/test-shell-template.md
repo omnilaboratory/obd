@@ -199,6 +199,7 @@ export a_pubkey="024f1adf8eab75f576e7499e702654f07b1b29c9ea0aca33b8a54695e859f7b
 export a_url="$a_pubkey@alice:9735"
 export b_pubkey=$(./b-cli.sh getinfo |jq -r .identity_pubkey)
 export b_url="$b_pubkey@bob:9735"
+echo $b_url
 
 ```
 

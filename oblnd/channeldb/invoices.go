@@ -1276,6 +1276,8 @@ type InvoiceQuery struct {
 	 */
 	IsQueryAsset bool
 	AssetId      uint32
+	StartTime    int64
+	EndTime      int64
 }
 
 // InvoiceSlice is the response to a invoice query. It includes the original
@@ -1353,6 +1355,14 @@ func (d *DB) QueryInvoices(q InvoiceQuery) (InvoiceSlice, error) {
 			if !q.IsQueryAsset && invoice.AssetId != lnwire.BtcAssetId {
 				return false, nil
 			}
+
+			if q.StartTime > 0 && q.StartTime > invoice.CreationDate.Unix() {
+				return false, nil
+			}
+			if q.EndTime > 0 && q.EndTime < invoice.CreationDate.Unix() {
+				return false, nil
+			}
+
 			// At this point, we've exhausted the offset, so we'll
 			// begin collecting invoices found within the range.
 			resp.Invoices = append(resp.Invoices, invoice)

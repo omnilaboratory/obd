@@ -307,7 +307,7 @@ ios: vendor mobile-rpc
 android:
 	@$(call print, "Building Android library ($(ANDROID_BUILD)).")
 	mkdir -p $(ANDROID_BUILD_DIR)
-	$(GOMOBILE_BIN) bind -target=android -tags="mobile routerrpc $(DEV_TAGS) autopilotrpc" $(LDFLAGS) -v -o $(ANDROID_BUILD) ./mobile
+	$(GOMOBILE_BIN) bind -target=android -tags="mobile invoicesrpc routerrpc $(DEV_TAGS) autopilotrpc" $(LDFLAGS) -v -o $(ANDROID_BUILD) ./mobile
 
 mobile: ios android
 

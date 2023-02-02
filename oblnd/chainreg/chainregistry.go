@@ -140,7 +140,8 @@ const (
 
 	// DefaultBitcoinStaticFeePerKW is the fee rate of 50 sat/vbyte
 	// expressed in sat/kw.
-	DefaultBitcoinStaticFeePerKW = chainfee.SatPerKWeight(12500)
+	//DefaultBitcoinStaticFeePerKW = chainfee.SatPerKWeight(12500)
+	DefaultBitcoinStaticFeePerKW = chainfee.SatPerKWeight(500)
 
 	// DefaultBitcoinStaticMinRelayFeeRate is the min relay fee used for
 	// static estimators.
@@ -482,7 +483,8 @@ func NewPartialChainControl(cfg *Config) (*PartialChainControl, func(), error) {
 			// if we're using bitcoind as a backend, then we can
 			// use live fee estimates, rather than a statically
 			// coded value.
-			fallBackFeeRate := chainfee.SatPerKVByte(25 * 1000)
+			//fallBackFeeRate := chainfee.SatPerKVByte(25 * 1000)
+			fallBackFeeRate := chainfee.SatPerKVByte(2000)
 			cc.FeeEstimator, err = chainfee.NewBitcoindEstimator(
 				*rpcConfig, bitcoindMode.EstimateMode,
 				fallBackFeeRate.FeePerKWeight(),

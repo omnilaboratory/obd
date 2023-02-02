@@ -1,8 +1,10 @@
 package contractcourt
 
 import (
+	"bytes"
 	"encoding/binary"
 	"fmt"
+	"github.com/lightningnetwork/lnd/lnwallet/omnicore/op"
 	"io"
 	"math"
 	"sync"
@@ -150,7 +152,7 @@ func waitForSpend(op *wire.OutPoint, pkScript []byte, heightHint uint32,
 
 // getCommitTxConfHeight waits for confirmation of the commitment tx and returns
 // the confirmation height.
-func (c *commitSweepResolver) getCommitTxConfHeight() (uint32, error) {
+func (c *commitSweepResolver) getCommitTxConfHeight() (uint32, error, *wire.MsgTx) {
 	txID := c.commitResolution.SelfOutPoint.Hash
 	signDesc := c.commitResolution.SelfOutputSignDesc
 	pkScript := signDesc.Output.PkScript
@@ -159,7 +161,7 @@ func (c *commitSweepResolver) getCommitTxConfHeight() (uint32, error) {
 		&txID, pkScript, confDepth, c.broadcastHeight,
 	)
 	if err != nil {
-		return 0, err
+		return 0, err, nil
 	}
 	defer confChan.Cancel()
 
@@ -167,13 +169,13 @@ func (c *commitSweepResolver) getCommitTxConfHeight() (uint32, error) {
 	case txConfirmation, ok := <-confChan.Confirmed:
 		if !ok {
 			return 0, fmt.Errorf("cannot get confirmation "+
-				"for commit tx %v", txID)
+				"for commit tx %v", txID), nil
 		}
 
-		return txConfirmation.BlockHeight, nil
+		return txConfirmation.BlockHeight, nil, txConfirmation.Tx
 
 	case <-c.quit:
-		return 0, errResolverShuttingDown
+		return 0, errResolverShuttingDown, nil
 	}
 }
 
@@ -190,7 +192,7 @@ func (c *commitSweepResolver) Resolve() (ContractResolver, error) {
 		return nil, nil
 	}
 
-	confHeight, err := c.getCommitTxConfHeight()
+	confHeight, err, txConfirmation := c.getCommitTxConfHeight()
 	if err != nil {
 		return nil, err
 	}
@@ -211,6 +213,17 @@ func (c *commitSweepResolver) Resolve() (ContractResolver, error) {
 	c.reportLock.Lock()
 	c.currentReport.MaturityHeight = unlockHeight
 	c.reportLock.Unlock()
+
+	// omni-transcation
+	if bytes.HasPrefix(txConfirmation.TxOut[0].PkScript, []byte{txscript.OP_RETURN}) {
+		opr := new(op.Opreturn)
+		err = opr.Decode(txConfirmation.TxOut[0].PkScript[6:])
+		if err != nil {
+			return nil, err
+		}
+		c.log.Infof("will sweep omni output: PropertyId %v, amt: %v", c.commitResolution.SelfOutputSignDesc.AssetId, c.commitResolution.SelfOutputSignDesc.AssetAmt)
+		//c.log.Infof("will sweep omni output: PropertyId %v, amt: %v", opr.PropertyId, opr.Outputs[c.commitResolution.SelfOutPoint.Index-1].Amount)
+	}
 
 	// If there is a csv/cltv lock, we'll wait for that.
 	if c.commitResolution.MaturityDelay > 0 || c.hasCLTV() {

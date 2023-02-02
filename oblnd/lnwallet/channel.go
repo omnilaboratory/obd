@@ -2447,37 +2447,43 @@ func NewBreachRetribution(chanState *channeldb.OpenChannel, stateNum uint64,
 	// Compute the balances in satoshis.
 	ourAmt := revokedSnapshot.LocalBtcBalance.ToSatoshis()
 	theirAmt := revokedSnapshot.RemoteBtcBalance.ToSatoshis()
+	ourAssetAmt := revokedSnapshot.LocalAssetBalance
+	theirAssetAmt := revokedSnapshot.RemoteAssetBalance
 
 	/*obd updte wxf
 	todo check asset*/
 	// If our balance exceeds the remote party's dust limit, instantiate
 	// the sign descriptor for our output.
 	//if ourAmt >= chanState.RemoteChanCfg.DustLimit {
-		ourSignDesc = &input.SignDescriptor{
-			SingleTweak:   keyRing.LocalCommitKeyTweak,
-			KeyDesc:       chanState.LocalChanCfg.PaymentBasePoint,
-			WitnessScript: ourScript.WitnessScript,
-			Output: &wire.TxOut{
-				PkScript: ourScript.PkScript,
-				Value:    int64(ourAmt),
-			},
-			HashType: txscript.SigHashAll,
-		}
+	ourSignDesc = &input.SignDescriptor{
+		SingleTweak:   keyRing.LocalCommitKeyTweak,
+		KeyDesc:       chanState.LocalChanCfg.PaymentBasePoint,
+		WitnessScript: ourScript.WitnessScript,
+		Output: &wire.TxOut{
+			PkScript: ourScript.PkScript,
+			Value:    int64(ourAmt),
+		},
+		AssetId:  chanState.AssetID,
+		AssetAmt: int64(ourAssetAmt),
+		HashType: txscript.SigHashAll,
+	}
 	//}
 
 	// Similarly, if their balance exceeds the remote party's dust limit,
 	// assemble the sign descriptor for their output, which we can sweep.
 	//if theirAmt >= chanState.RemoteChanCfg.DustLimit {
-		theirSignDesc = &input.SignDescriptor{
-			KeyDesc:       chanState.LocalChanCfg.RevocationBasePoint,
-			DoubleTweak:   commitmentSecret,
-			WitnessScript: theirScript.WitnessScript,
-			Output: &wire.TxOut{
-				PkScript: theirScript.PkScript,
-				Value:    int64(theirAmt),
-			},
-			HashType: txscript.SigHashAll,
-		}
+	theirSignDesc = &input.SignDescriptor{
+		KeyDesc:       chanState.LocalChanCfg.RevocationBasePoint,
+		DoubleTweak:   commitmentSecret,
+		WitnessScript: theirScript.WitnessScript,
+		Output: &wire.TxOut{
+			PkScript: theirScript.PkScript,
+			Value:    int64(theirAmt),
+		},
+		AssetId:  chanState.AssetID,
+		AssetAmt: int64(theirAssetAmt),
+		HashType: txscript.SigHashAll,
+	}
 	//}
 
 	// With the commitment outputs located, we'll now generate all the
@@ -2530,6 +2536,8 @@ func NewBreachRetribution(chanState *channeldb.OpenChannel, stateNum uint64,
 					PkScript: htlcPkScript,
 					Value:    int64(htlc.BtcAmt.ToSatoshis()),
 				},
+				AssetId:  htlc.AssetId,
+				AssetAmt: int64(htlc.AssetAmt),
 				HashType: txscript.SigHashAll,
 			},
 			OutPoint: wire.OutPoint{
@@ -5922,17 +5930,18 @@ func NewUnilateralCloseSummary(chanState *channeldb.OpenChannel, signer input.Si
 	}
 
 	closeSummary := channeldb.ChannelCloseSummary{
-		ChanPoint:               chanState.FundingOutpoint,
-		ChainHash:               chanState.ChainHash,
-		ClosingTXID:             *commitSpend.SpenderTxHash,
-		CloseHeight:             uint32(commitSpend.SpendingHeight),
-		RemotePub:               chanState.IdentityPub,
-		BtcCapacity:                chanState.BtcCapacity,
+		ChanPoint:   chanState.FundingOutpoint,
+		ChainHash:   chanState.ChainHash,
+		ClosingTXID: *commitSpend.SpenderTxHash,
+		CloseHeight: uint32(commitSpend.SpendingHeight),
+		RemotePub:   chanState.IdentityPub,
+		BtcCapacity: chanState.BtcCapacity,
 		/*obd update wxf
 		todo check SettledBalance for asset
 		*/
-		SettledBalance:          lnwire.UnitPrec8(localBalance),
-		AssetCapacity:                chanState.AssetCapacity,
+		SettledBalance: lnwire.UnitPrec8(localBalance),
+		AssetCapacity:  chanState.AssetCapacity,
+		AssetId:        chanState.AssetID,
 		//SettledAssetBalance:          btcutil.Amount(localBalance),
 		CloseType:               channeldb.RemoteForceClose,
 		IsPending:               true,
@@ -6125,6 +6134,8 @@ func newOutgoingHtlcResolution(signer input.Signer,
 					Value:    int64(htlc.BtcAmt.ToSatoshis()),
 				},
 				HashType: txscript.SigHashAll,
+				AssetId:  htlc.AssetId,
+				AssetAmt: int64(htlc.AssetAmt),
 			},
 			CsvDelay: HtlcSecondLevelInputSequence(chanType),
 		}, nil
@@ -6218,6 +6229,8 @@ func newOutgoingHtlcResolution(signer input.Signer,
 				Value:    int64(secondLevelOutputAmt),
 			},
 			HashType: txscript.SigHashAll,
+			AssetId:  htlc.AssetId,
+			AssetAmt: int64(htlc.AssetAmt),
 		},
 	}, nil
 }
@@ -6267,6 +6280,8 @@ func newIncomingHtlcResolution(signer input.Signer,
 					PkScript: htlcScriptHash,
 					Value:    int64(htlc.BtcAmt.ToSatoshis()),
 				},
+				AssetId:  htlc.AssetId,
+				AssetAmt: int64(htlc.AssetAmt),
 				HashType: txscript.SigHashAll,
 			},
 			CsvDelay: HtlcSecondLevelInputSequence(chanType),
@@ -6297,7 +6312,9 @@ func newIncomingHtlcResolution(signer input.Signer,
 		Output:        txOut,
 		HashType:      txscript.SigHashAll,
 		//SigHashes:     txscript.NewTxSigHashes(successTx),
-		InputIndex:    0,
+		InputIndex: 0,
+		AssetId:    htlc.AssetId,
+		AssetAmt:   int64(htlc.AssetAmt),
 	}
 
 	htlcSig, err := btcec.ParseDERSignature(htlc.Signature, btcec.S256())
@@ -6355,6 +6372,8 @@ func newIncomingHtlcResolution(signer input.Signer,
 				Value:    int64(secondLevelOutputAmt),
 			},
 			HashType: txscript.SigHashAll,
+			AssetId:  htlc.AssetId,
+			AssetAmt: int64(htlc.AssetAmt),
 		},
 	}, nil
 }
@@ -6627,6 +6646,8 @@ func NewLocalForceCloseSummary(chanState *channeldb.OpenChannel,
 					Value:    localBalance,
 				},
 				HashType: txscript.SigHashAll,
+				AssetId:  chanState.AssetID,
+				AssetAmt: int64(chanState.LocalCommitment.LocalAssetBalance),
 			},
 			MaturityDelay: csvTimeout,
 		}
@@ -6707,14 +6728,14 @@ func (lc *LightningChannel) CreateCloseProposal(proposedFee btcutil.Amount,
 	/* obd update wxf
 	add asset
 	*/
-	amts:=op.NewPksAmounts(lc.channelState.AssetID)
+	amts := op.NewPksAmounts(lc.channelState.AssetID)
 	closeTx := CreateCooperativeCloseTx(amts,
 		fundingTxIn(lc.channelState), lc.channelState.LocalChanCfg.DustLimit,
 		lc.channelState.RemoteChanCfg.DustLimit, ourBalance, theirBalance,
 		ourAssetBalance, theirAssetBalance,
 		localDeliveryScript, remoteDeliveryScript,
 	)
-	op.AddOpReturnToTx(closeTx,amts)
+	op.AddOpReturnToTx(closeTx, amts)
 
 	// Ensure that the transaction doesn't explicitly violate any
 	// consensus rules such as being too big, or having any value with a
@@ -6780,16 +6801,16 @@ func (lc *LightningChannel) CompleteCooperativeClose(
 	/* obd update wxf
 	add asset
 	*/
-	amts:=op.NewPksAmounts(lc.channelState.AssetID)
+	amts := op.NewPksAmounts(lc.channelState.AssetID)
 	// Create the transaction used to return the current settled balance
 	// on this active channel back to both parties. In this current model,
 	// the initiator pays full fees for the cooperative close transaction.
 	closeTx := CreateCooperativeCloseTx(amts,
 		fundingTxIn(lc.channelState), lc.channelState.LocalChanCfg.DustLimit,
-		lc.channelState.RemoteChanCfg.DustLimit, ourBalance, theirBalance,ourAssetBalance,theirAssetBalance,
+		lc.channelState.RemoteChanCfg.DustLimit, ourBalance, theirBalance, ourAssetBalance, theirAssetBalance,
 		localDeliveryScript, remoteDeliveryScript,
 	)
-	op.AddOpReturnToTx(closeTx,amts)
+	op.AddOpReturnToTx(closeTx, amts)
 
 	// Ensure that the transaction doesn't explicitly validate any
 	// consensus rules such as being too big, or having any value with a

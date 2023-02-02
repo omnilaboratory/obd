@@ -600,25 +600,41 @@ func (cb *CommitmentBuilder) createUnsignedCommitmentTx(ourBtcBalance,
 			theirBtcBalance = 0
 			if theirAssetBalance > 0 {
 				theirBtcBalance = lnwire.NewMSatFromSatoshis(lnwire.OmniGas)
+				/*obd update wxf
+				if !isOurs==true , theirBtcBalance will locked in rsmc-out,
+				 when sweep the rsmc-out, theirBtcBalance must over sweepTx-commitFee,
+				 in my bitocind-regtest-node, the sweepTx-commitFee is 5537
+				*/
+				//if !isOurs {
+				//	theirBtcBalance = lnwire.NewMSatFromSatoshis(lnwire.OmniGas + 5537 + 100)
+				//}
 			}
 			ourBtcBalance = lnwire.NewMSatFromSatoshis(cb.chanState.BtcCapacity)
 			ourBtcBalance -= theirBtcBalance
 			ourBtcBalance -= commitFeeMSat
 			ourBtcBalance -= lnwire.NewMSatFromSatoshis(lnwire.OmniGas * 3 * btcutil.Amount(numHTLCs))
 			if ourBtcBalance < 0 {
-				ourBtcBalance=0
+				ourBtcBalance = 0
 			}
-		}else{
-			ourBtcBalance=0
-			if ourAssetBalance>0{
-				ourBtcBalance=lnwire.NewMSatFromSatoshis(lnwire.OmniGas)
+		} else {
+			ourBtcBalance = 0
+			if ourAssetBalance > 0 {
+				ourBtcBalance = lnwire.NewMSatFromSatoshis(lnwire.OmniGas)
+				/*obd update wxf
+				if isOurs==true , ourBtcBalance will locked in rsmc-out,
+				 when sweep the rsmc-out, ourBtcBalance must over sweepTx-commitFee
+				 in my bitocind-regtest-node, the sweepTx-commitFee is 5537
+				*/
+				//if isOurs {
+				//	ourBtcBalance = lnwire.NewMSatFromSatoshis(lnwire.OmniGas + 5537 + 100)
+				//}
 			}
-			theirBtcBalance=lnwire.NewMSatFromSatoshis(cb.chanState.BtcCapacity)
-			theirBtcBalance-=ourBtcBalance
-			theirBtcBalance-=commitFeeMSat
-			theirBtcBalance-=lnwire.NewMSatFromSatoshis(lnwire.OmniGas*3* btcutil.Amount(numHTLCs))
-			if theirBtcBalance<0{
-				theirBtcBalance=0
+			theirBtcBalance = lnwire.NewMSatFromSatoshis(cb.chanState.BtcCapacity)
+			theirBtcBalance -= ourBtcBalance
+			theirBtcBalance -= commitFeeMSat
+			theirBtcBalance -= lnwire.NewMSatFromSatoshis(lnwire.OmniGas * 3 * btcutil.Amount(numHTLCs))
+			if theirBtcBalance < 0 {
+				theirBtcBalance = 0
 			}
 		}
 	}else {
@@ -665,7 +681,7 @@ func (cb *CommitmentBuilder) createUnsignedCommitmentTx(ourBtcBalance,
 			ourBtcBalance.ToSatoshis(), theirBtcBalance.ToSatoshis(),
 			ourAssetBalance, theirAssetBalance,
 			numHTLCs, cb.chanState.IsInitiator, leaseExpiry,
-			opAmounts,
+			opAmounts, cb.chanState.RemoteShutdownScript,
 		)
 	} else {
 		commitTx, err = CreateCommitTx(
@@ -674,7 +690,7 @@ func (cb *CommitmentBuilder) createUnsignedCommitmentTx(ourBtcBalance,
 			theirBtcBalance.ToSatoshis(), ourBtcBalance.ToSatoshis(),
 			theirAssetBalance, ourAssetBalance,
 			numHTLCs, !cb.chanState.IsInitiator, leaseExpiry,
-			opAmounts,
+			opAmounts, cb.chanState.LocalShutdownScript,
 		)
 	}
 	if err != nil {
@@ -790,7 +806,7 @@ func CreateCommitTx(chanType channeldb.ChannelType,
 	btcAmountToLocal, btcAmountToRemote btcutil.Amount,
 	assetAmountToLocal, assetAmountToRemote omnicore.Amount,
 	numHTLCs int64, initiator bool, leaseExpiry uint32,
-	opAmounts *op.PksAmounts) (*wire.MsgTx, error) {
+	opAmounts *op.PksAmounts, remoteShutdownScript []byte) (*wire.MsgTx, error) {
 
 	// First, we create the script for the delayed "pay-to-self" output.
 	// This output has 2 main redemption clauses: either we can redeem the
@@ -805,10 +821,19 @@ func CreateCommitTx(chanType channeldb.ChannelType,
 		return nil, err
 	}
 
+	/*bod update wxf
+	direct pay to remote ShutdownScript, will save lot of sweep-fee
+	*/
+	toRemoteScript := &ScriptInfo{
+		WitnessScript: remoteShutdownScript,
+		PkScript:      remoteShutdownScript,
+	}
+
 	// Next, we create the script paying to the remote.
-	toRemoteScript, _, err := CommitScriptToRemote(
-		chanType, initiator, keyRing.ToRemoteKey, leaseExpiry,
-	)
+	//toRemoteScript, _, err := CommitScriptToRemote(
+	//	chanType, initiator, keyRing.ToRemoteKey, leaseExpiry,
+	//)
+
 	if err != nil {
 		return nil, err
 	}
