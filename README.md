@@ -42,12 +42,24 @@ We compiled and deployed images for your testing:
 
 Now we can:  
 
-#### Issue tokens, Build obd network, and Lightning pay tokens
+#### Mint tokens  
+Using omnicore to issue tokens with fixed amount or manageable supply:  
 
-[test-shell-template.md](https://github.com/omnilaboratory/lnd/blob/obd/docker/obtest/test-shell-template.md) instructs how to start with command line tool, including: 
+For example, use [`omni_sendissuancefixed`](https://github.com/OmniLayer/omnicore/blob/master/src/omnicore/doc/rpc-api.md#omni_sendissuancefixed) to issue `1000000` `Quantum Miner` tokens on the Bitcoin mainchain: 
+```
+$ omnicore-cli "omni_sendissuancefixed" \
+    "3Ck2kEGLJtZw9ENj2tameMCtS3HB7uRar3" 2 1 0 "Companies" "Bitcoin Mining" \
+    "Quantum Miner" "" "" "1000000"
+```
+
+Please visit [https://github.com/OmniLayer/omnicore/blob/master/src/omnicore/doc/rpc-api.md](https://github.com/OmniLayer/omnicore/blob/master/src/omnicore/doc/rpc-api.md) to learn how to use omnicore to manage tokens on-chain.  
+ 
+
+#### Build obd network, and Lightning pay tokens
+
+[test-shell-template.md](https://github.com/omnilaboratory/lnd/blob/obd/docker/obtest/test-shell-template.md) instructs how to start with command line tool to interact with obd, including: 
 * [build a network with three nodes(Alice, Bob, Carol)](https://github.com/omnilaboratory/lnd/blob/obd/docker/obtest/test-shell-template.md#startup) 
 * [generate address](https://github.com/omnilaboratory/lnd/blob/obd/docker/obtest/test-shell-template.md#newaddress)
-* [issue assets using omnicore](https://github.com/omnilaboratory/lnd/blob/obd/docker/obtest/test-shell-template.md#faucet)
 * [fund each node by assets](https://github.com/omnilaboratory/lnd/blob/obd/docker/obtest/test-shell-template.md#faucet)  
 * [open channels](https://github.com/omnilaboratory/lnd/blob/obd/docker/obtest/test-shell-template.md#openchannel) 
 * [create invoices](https://github.com/omnilaboratory/lnd/blob/obd/docker/obtest/test-shell-template.md#addinvoice) 
