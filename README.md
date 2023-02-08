@@ -132,13 +132,13 @@ On each network, not all 3 backends are deployed. We currently maintain the foll
     * Asia：  
       `$omni_host_adress_port`=43.138.107.248   
       `$omni_host_adress_port`=43.138.107.248:18332   
-      faucet：http://43.138.107.248:9090/swaggerTool/?surl=http://43.138.107.248:8090/openapiv2/foo.swagger.json](http://43.138.107.248:9090/swaggerTool/?surl=http://43.138.107.248:8090/openapiv2/foo.swagger.json)  
+      faucet：[http://43.138.107.248:9090/swaggerTool/?surl=http://43.138.107.248:8090/openapiv2/foo.swagger.json](http://43.138.107.248:9090/swaggerTool/?surl=http://43.138.107.248:8090/openapiv2/foo.swagger.json)  
 
   * neutrino
     * Asia：  
       `$omni_host_adress_port`=43.138.107.248   
       `$omni_host_adress_port`=43.138.107.248:18332   
-      faucet：http://43.138.107.248:9090/swaggerTool/?surl=http://43.138.107.248:8090/openapiv2/foo.swagger.json](http://43.138.107.248:9090/swaggerTool/?surl=http://43.138.107.248:8090/openapiv2/foo.swagger.json)  
+      faucet：[http://43.138.107.248:9090/swaggerTool/?surl=http://43.138.107.248:8090/openapiv2/foo.swagger.json](http://43.138.107.248:9090/swaggerTool/?surl=http://43.138.107.248:8090/openapiv2/foo.swagger.json)  
     * neutrino.db downloading list: https://cache.oblnd.top/neutrino-regtest/  
       When downloading neutrino.db, add date to url to get correct file. For example: https://cache.oblnd.top/neutrino-regtest/neutrino.db?date=2022-12-22 
     * Put the downloaded database file under `${LNDIR}/data/chain/bitcoin/regtest/`  
@@ -171,7 +171,7 @@ On each network, not all 3 backends are deployed. We currently maintain the foll
 　to be done. 
 
 
-#### Liquidity nodes
+## Liquidity nodes
 Liquidity nodes offer token/BTC inbound/outbound liquidity to users' nodes, especially for OBWallet mobile nodes.  
 * regtest: 0386790984cda19a179486bf45f7a1d7dc58964605b928e3d36cd7806ce3d31cdb@otest:9735  
 * testnet: 025767c2a772bb48f04117625c2da759d55d3e287c101602452c5228c975111594@192.144.199.67:9735  
