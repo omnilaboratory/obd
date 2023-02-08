@@ -20,7 +20,7 @@ To know how obd works, jump to the [OmniBOLT - Architecture](https://omnilaborat
 
 The latest features and ETA is here: [OmniBOLT - Features and Roadmap](https://omnilaboratory.github.io/obd/#/features).  
 
-## Quick Start:
+## Quick Start on Regtest:
 
 Users can get quickly started with graphic or command line tools:  
 
@@ -67,9 +67,9 @@ Please visit [https://github.com/OmniLayer/omnicore/blob/master/src/omnicore/doc
 
 The testing asset id is `--asset_id = 2147483651`.  
 
-To issue assets on the Bitcoin/Omnilayer mainnet, you should deploy an omnicore full node and execute the cli to issue. For non-developers, we recommend you to visit the official [https://www.omniwallet.org/](https://www.omniwallet.org/) (https://github.com/OmniLayer/omniwallet) for easier and quicker managing your assets.  
+To issue assets on the Bitcoin/Omnilayer mainnet, you should deploy an omnicore full node and execute the cli to mint. For non-developers, we recommend you to visit the official [https://www.omniwallet.org/](https://www.omniwallet.org/) (https://github.com/OmniLayer/omniwallet) for easier and quicker managing your assets.  
 
-#### Backend and Faucet(on Regtest)
+## Backend and Faucet(Regtest, Testnet)
 
 The [omnicore proxy](https://github.com/omnilaboratory/omnicore-proxy) offers the backend public anonymous omni/bitcoin services for obd nodes.  
 It is specified in the parameter `omnicoreproxy.rpchost` when an OBD node starts. For example, as in the `docker/lnd/start-a.sh, docker/obtest/docker-compose.yml`, the `regnet.oblnd.top:18332` is where the proxy deployed:  
@@ -101,52 +101,83 @@ The network is specified by param: `--bitcoin.xxxxxx`:  　
 ```
 
 The backend is specified by: `--bitcoin.node=[bitcoind|omnicoreproxy|neutrino|]`:  
-(Currently, we only support these 3 modes, each has different connection type and certification way.)  
+(Currently, we only support these 3 modes, each has different connection type and certification method.)  
 * bitcoind
 ```shell
-  --bitcoind.rpchost="$btc_host_adress_port"
-  --bitcoind.rpcuser"="$RPCUSER"
-  --bitcoind.rpcpass"="$RPCPASS" 
-  --bitcoind.zmqpubrawblock=tcp://"$btc_host_adress":28332 
-  --bitcoind.zmqpubrawtx=tcp://"$btc_host_adress":28333
+  --bitcoind.rpchost="$BTC_HOST_ADDRESS_PORT"
+  --bitcoind.rpcuser="$RPCUSER"
+  --bitcoind.rpcpass="$RPCPASS" 
+  --bitcoind.zmqpubrawblock=tcp://"$BTC_HOST_ADDRESS":28332 
+  --bitcoind.zmqpubrawtx=tcp://"$BTC_HOST_ADDRESS":28333
 ```
 * omnicoreproxy
 ```shell
-    --omnicoreproxy.rpchost="$omni_host_adress_port" 
-    --omnicoreproxy.zmqpubrawblock=tcp://"$omni_host_adress_port":28332  
-    --omnicoreproxy.zmqpubrawtx=tcp://"$omni_host_adress_port":28333
+    --omnicoreproxy.rpchost="$OMNI_HOST_ADDRESS_PORT" 
+    --omnicoreproxy.zmqpubrawblock=tcp://"$OMNI_HOST_ADDRESS_PORT":28332 
+    --omnicoreproxy.zmqpubrawtx=tcp://"$OMNI_HOST_ADDRESS_PORT":28333
 ```
 
 * neutrino
 ```shell
-    --neutrino.connect="$btc_host_adress"
-    --omnicoreproxy.rpchost="$omni_host_adress_port"
+    --neutrino.connect="$BTC_HOST_ADDRESS"
+    --omnicoreproxy.rpchost="$OMNI_HOST_ADDRESS_PORT"
+    --neutrino.feeurl=https://nodes.lightning.computer/fees/v1/btc-fee-estimates.json #only mainnet
 ```  
 
 #### Depolyed Backends
-On each network, not all 3 backends are deployed. We currently maintain the following backends for the community:  
-* regtest 
+On each network, not all 3 backends are deployed. We currently maintain the following backends for the community:   
+
+* regtest: ~3 blocks per 2 minutes.
   * omnicoreproxy
     * Asia：  
       `$omni_host_adress_port`=43.138.107.248   
       `$omni_host_adress_port`=43.138.107.248:18332   
-      faucet：[http://43.138.107.248:9090/swaggerTool/?surl=http://43.138.107.248:8090/openapiv2/foo.swagger.json](http://43.138.107.248:9090/swaggerTool/?surl=http://43.138.107.248:8090/openapiv2/foo.swagger.json)  
+      faucet：http://43.138.107.248:9090/swaggerTool/?surl=http://43.138.107.248:8090/openapiv2/foo.swagger.json](http://43.138.107.248:9090/swaggerTool/?surl=http://43.138.107.248:8090/openapiv2/foo.swagger.json)  
+
+  * neutrino
+    * Asia：  
+      `$omni_host_adress_port`=43.138.107.248   
+      `$omni_host_adress_port`=43.138.107.248:18332   
+      faucet：http://43.138.107.248:9090/swaggerTool/?surl=http://43.138.107.248:8090/openapiv2/foo.swagger.json](http://43.138.107.248:9090/swaggerTool/?surl=http://43.138.107.248:8090/openapiv2/foo.swagger.json)  
+    * neutrino.db downloading list: https://cache.oblnd.top/neutrino-regtest/  
+      When downloading neutrino.db, add date to url to get correct file. For example: https://cache.oblnd.top/neutrino-regtest/neutrino.db?date=2022-12-22 
+    * Put the downloaded database file under `${LNDIR}/data/chain/bitcoin/regtest/`  
     
-    * Other countries and regions：   
-      `$omni_host_adress_port`=regnet.oblnd.top   
-      `$omni_host_adress_port`=regnet.oblnd.top:18332   
-      faucet：[http://swagger.cn.oblnd.top:9090/?surl=surl=http://faucet.cn.oblnd.top:9090/openapiv2/foo.swagger.json](http://swagger.cn.oblnd.top:9090/?surl=surl=http://faucet.cn.oblnd.top:9090/openapiv2/foo.swagger.json)  
-    
-* testnet 
+* testnet  ~1 blocks per 2 to 18 minutes.
   * neutrino
     * Asia：
-      `$btc_host_adress`=192.144.199.67  
-      `$omni_host_adress_port`=192.144.199.67:18332   
-      faucet: to be done 
-    * Other countries and regions：to be done.
- 
+      `$BTC_HOST_ADDRESS`=192.144.199.67  
+      `$OMNI_HOST_ADDRESS_PORT`=192.144.199.67:18332  
+      token faucet: [http://43.138.107.248:9090/swaggerTool/?surl=http://192.144.199.67:8090/openapiv2/foo.swagger.json](http://43.138.107.248:9090/swaggerTool/?surl=http://192.144.199.67:8090/openapiv2/foo.swagger.json)  
+      token-property id: 2147485160   
+      token-owner: mvd6r2KRoaMVr7Y9mDe8pDxe5a5iZLJHN9  
+      
+    * Other countries and regions:  
+      `$BTC_HOST_ADDRESS`=testnet.oblnd.top  
+      `$OMNI_HOST_ADDRESS_PORT`=192.144.199.67:18332  
+      token faucet: [http://43.138.107.248:9090/swaggerTool/?surl=http://192.144.199.67:8090/openapiv2/foo.swagger.json](http://43.138.107.248:9090/swaggerTool/?surl=http://192.144.199.67:8090/openapiv2/foo.swagger.json)  
+      token-property id: 2147485160      
+      token-owner: mvd6r2KRoaMVr7Y9mDe8pDxe5a5iZLJHN9  
+
+    * btc-testnet faucet: https://testnet-faucet.com/btc-testnet/  
+    * neutrino.db downloading list: https://cache.oblnd.top/neutrino-testnet/    
+      When downloading neutrino.db, add date to url to get correct file. For example: https://cache.oblnd.top/neutrino-testnet/neutrino.db?date=2022-12-22
+    * We generate database file at 8:00 UTC+8 every day.   
+    * Put the downloaded database file under `${LNDIR}/data/chain/bitcoin/testnet/`  
+      
+    
+      
 * mainnet
 　to be done. 
+
+
+#### Liquidity nodes
+Liquidity nodes offer token/BTC inbound/outbound liquidity to users' nodes, especially for OBWallet mobile nodes.  
+* regtest: 0386790984cda19a179486bf45f7a1d7dc58964605b928e3d36cd7806ce3d31cdb@otest:9735  
+* testnet: 025767c2a772bb48f04117625c2da759d55d3e287c101602452c5228c975111594@192.144.199.67:9735  
+* mainnet: TO BE ADDED  
+
+
 
 ## Community
 
