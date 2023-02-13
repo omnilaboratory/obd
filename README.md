@@ -128,6 +128,7 @@ The backend is specified by: `--bitcoin.node=[bitcoind|omnicoreproxy|neutrino|]`
 On each network, not all 3 backends are deployed. We currently maintain the following backends for the community:   
 
 * regtest: ~3 blocks per 2 minutes.
+```
   * omnicoreproxy
     * Asia：  
       `$omni_host_adress_port`=43.138.107.248   
@@ -142,8 +143,10 @@ On each network, not all 3 backends are deployed. We currently maintain the foll
     * neutrino.db downloading list: https://cache.oblnd.top/neutrino-regtest/  
       When downloading neutrino.db, add date to url to get correct file. For example: https://cache.oblnd.top/neutrino-regtest/neutrino.db?date=2022-12-22 
     * Put the downloaded database file under `${LNDIR}/data/chain/bitcoin/regtest/`  
-    
-* testnet  ~1 blocks per 2 to 18 minutes.
+```
+
+* testnet  ~1 blocks per 2 to 18 minutes.  
+```
   * neutrino
     * Asia：
       `$BTC_HOST_ADDRESS`=192.144.199.67  
@@ -164,7 +167,7 @@ On each network, not all 3 backends are deployed. We currently maintain the foll
       When downloading neutrino.db, add date to url to get correct file. For example: https://cache.oblnd.top/neutrino-testnet/neutrino.db?date=2022-12-22
     * We generate database file at 8:00 UTC+8 every day.   
     * Put the downloaded database file under `${LNDIR}/data/chain/bitcoin/testnet/`  
-      
+```        
     
       
 * mainnet
