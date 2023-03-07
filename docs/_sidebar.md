@@ -10,6 +10,7 @@
 
 - gRPC Mobile Service
     - [gRPC API](grpc-api.md)  
+    - [addInvoice](api/addinvoice.md)  
 
 - GUI Playground
     - [5 minutes to get started](GUI-tool.md) 
