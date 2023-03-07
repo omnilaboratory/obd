@@ -3,7 +3,8 @@
 中文用注释符号注释掉。创建一个收款Invoice 
 -->  
 
-Create an Invoice and add it to the local database. The key of K-V store is the preimage of the hash locker which has to be unique:  
+Create an Invoice and add it to the local database. The key of the local K-V store is the preimage of the hash locker which has to be unique:  
+
 1. Any duplicated invoices are rejected.
 2. An invoice must identify an asset ID.  
 
