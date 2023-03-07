@@ -8,14 +8,15 @@
     - [FAQ](FAQ.md)
     - [Bug Bounty Program](bug-bounty-program.md)
 
+- gRPC Mobile Service
+    - [gRPC API](grpc-api.md)  
+
 - GUI Playground
     - [5 minutes to get started](GUI-tool.md) 
     - [create account and channel](gui-account-channel.md)
     - [fund the channel](gui-fund-channel.md)
     - [pay invoice](gui-pay-invoice.md)
 
-- gRPC Service
-    - [gRPC API](grpc-api.md)  
 
 - JS SDK
     - [Basic JS API](js-sdk.md) 
