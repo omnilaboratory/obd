@@ -1,7 +1,4 @@
-## addInvoice
-<!-- 
-中文用注释符号注释掉。创建一个收款Invoice 
--->  
+## subscribeState  
 
 SubscribeState subscribes to the state of the wallet. The current wallet state will always be delivered immediately.
 

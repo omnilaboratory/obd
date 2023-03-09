@@ -1,7 +1,4 @@
-## addInvoice
-<!-- 
-中文用注释符号注释掉。创建一个收款Invoice 
--->  
+## verifyChanBackup
 
 VerifyChanBackup allows a caller to verify the integrity of a channel backup snapshot. This method will accept either a packed Single or a packed Multi. Specifying both will result in an error.
 

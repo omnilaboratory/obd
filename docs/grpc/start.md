@@ -1,7 +1,4 @@
-## addInvoice
-<!-- 
-中文用注释符号注释掉。创建一个收款Invoice 
--->  
+## start 
 
 Start is used to start the local wallet and node after entering the app. 
 

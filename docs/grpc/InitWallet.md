@@ -1,7 +1,4 @@
-## addInvoice
-<!-- 
-中文用注释符号注释掉。创建一个收款Invoice 
--->  
+## initWallet
 
 InitWallet is used when lnd is starting up for the first time to fully initialize the daemon and its internal wallet. At the very least a wallet password must be provided. This will be used to encrypt sensitive material on disk.
 In the case of a recovery scenario, the user can also specify their aezeed mnemonic and passphrase. If set, then the daemon will use this prior state to initialize its internal wallet.

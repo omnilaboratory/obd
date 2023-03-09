@@ -1,7 +1,4 @@
-## addInvoice
-<!-- 
-中文用注释符号注释掉。创建一个收款Invoice 
--->  
+## restoreChannelBackups 
 
 RestoreChannelBackups accepts a set of singular channel backups, or a single encrypted multi-chan backup and attempts to recover any funds remaining within the channel. If we are able to unpack the backup, then the new channel will be shown under listchannels, as well as pending channels.
 

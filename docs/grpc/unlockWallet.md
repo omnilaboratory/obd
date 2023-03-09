@@ -1,7 +1,4 @@
-## addInvoice
-<!-- 
-中文用注释符号注释掉。创建一个收款Invoice 
--->  
+## unlockWallet
 
 UnlockWallet is used at startup of lnd to provide a password to unlock the wallet database.
 

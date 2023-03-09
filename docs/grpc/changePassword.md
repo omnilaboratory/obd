@@ -1,7 +1,4 @@
-## addInvoice
-<!-- 
-中文用注释符号注释掉。创建一个收款Invoice 
--->  
+## changePassword
 
 ChangePassword changes the password of the encrypted wallet. This will automatically unlock the wallet database if successful.
 
