@@ -9,7 +9,7 @@ This request has no parameters.
 | Field		         |	gRPC Type		|	   Description  |
 | -------- 	       |	---------   |    ---------    |  
 | single_chan_backups|	ChannelBackups	    |The set of new channels that have been added since the last channel backup snapshot was requested.|  
-| multi_chan_backup  |	MultiChanBackup	|A multi-channel backup that covers all open channels currently known to lnd.|
+| multi_chan_backup  |	MultiChanBackup	|A multi-channel backup that covers all open channels currently known to obd(lnd,oblnd).|
 **ChannelBackup**
 | Field		         |	gRPC Type		|	   Description  |
 | -------- 	       |	---------   |    ---------    |  
