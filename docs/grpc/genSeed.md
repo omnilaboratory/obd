@@ -1,7 +1,4 @@
 ## genSeed
-<!-- 
-中文用注释符号注释掉。创建一个收款Invoice 
--->  
 
 GenSeed is the first method that should be used to instantiate a new lnd instance. This method allows a caller to generate a new aezeed cipher seed given an optional passphrase. If provided, the passphrase will be necessary to decrypt the cipherseed to expose the internal wallet seed.
 
