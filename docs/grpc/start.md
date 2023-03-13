@@ -2,16 +2,16 @@
 
 Start is used to start the local wallet and node after entering the app. 
 
-#### Arguments:
+## Arguments:
 | Field		   |	gRPC Type		|	   Description  |
 | -------- 	 |	---------   |    ---------    |  
 | params	     |	string		  |	      Node startup related parameters.|
 
 
-#### Response:
+## Response:
 This response has no parameters.
 
-#### Example:
+## Example:
 
 <!--
 java code example

@@ -2,8 +2,15 @@
 
 The gRPC service is a service offered in exclusive mode, which means the user must run an obd node locally, and he alone can access the node. The obd node supports both assets and BTC, and the service of BTC is provided by lnd (based on lnd's codebase).
 
+Please note that because OmniBOLT's internal structure of transactions is different from that of lnd, **NOT ALL** lnd interfaces can be supported. We list the supported interfaces in the subsequent sections of this chapter, please pay attention to the difference between obd interfaces parameters and lnd interfaces parameters. Lnd interfaces not listed are not compatible and tested, please use with caution.
+
+Obd focuses on the implementation for mobile devices, so each interface gives an example of java code(android), which is convenient for readers to refer to.
+
 For exclusive and non-custodial modes, please refer to the [Architecture section](https://omnilaboratory.github.io/obd/#/Architecture).
 
+## Obdmobile
+
+`Obdmobile` is the instance of an obd node on mobile, which is exported from the compiled binary file(`.aar` file for android) from the source code under `obd/oblnd`. All interfaces are exposed via `Obdmobile`, for example: `Obdmobile.OB_AddInvoice(...)`.  
 
 ## mapping of asset related interfaces
 
@@ -11,7 +18,7 @@ For exclusive and non-custodial modes, please refer to the [Architecture section
 
 The new asset-related gRPC interfaces of an obd node are listed here, and other common/bitcoin interfaces are provided by the original code of lnd. 
 
-**obd Interface**: the asset-related gRPC interface.  
+**obd Interface**: the asset-related gRPC interface, starting with `OB_`.  
 **sub-service**: the service it belongs to.  
 **Argument added**: the newly added arguments.  
 **bitcoin-only lnd interface**: the doc link of the original lnd interface. 
@@ -22,8 +29,8 @@ The new asset-related gRPC interfaces of an obd node are listed here, and other 
 
 | obd interface	    |	sub service		        		|	Argument added	    |   Request/Response    |  bitcoin-only lnd interface   |  
 | -------- 	        |	-----------------------		|	-------------------	|  -------------------	|  -------------------	        |   
-| AddInvoice                	|	Lightning(lnrpc)		    | asset_id: uint32, <br> amount: omniAmount    | Request, Response | [https://api.lightning.community/#addinvoice](https://api.lightning.community/#addinvoice)      |
-| ChannelBalance              |	Lightning(lnrpc)       |	asset_id: uint32          | Request           | [https://api.lightning.community/#channelbalance ](https://api.lightning.community/#channelbalance)   |
-| OpenChannel 	              |	Lightning(lnrpc)		    |	 asset_id: uint32, <br> push_asset_sat:  int64(or omniAmount), local_funding_asset_amount:  int64(or omniAmount)          | Request           | [https://api.lightning.community/#openchannel](https://api.lightning.community/#openchannel)  |
-| NewAddress 	                |	Lightning(lnrpc)		    |	 type: AddressType, <br> accoun: string         | Request           | [https://api.lightning.community/#newaddress](https://api.lightning.community/#newaddress)  |
-| Sendpaymentv2 	            |	Router(lnrpc/routerrpc)		      |	asset_id : uint32, <br> asset_amt : int64(or omniAmount)            | Request,Response          | [https://api.lightning.community/#sendpaymentv2](https://api.lightning.community/#sendpaymentv2) |
+| OB_AddInvoice                	|	Lightning(lnrpc)		    | asset_id: uint32, <br> amount: omniAmount    | Request, Response | [https://api.lightning.community/#addinvoice](https://api.lightning.community/#addinvoice)      |
+| OB_ChannelBalance              |	Lightning(lnrpc)       |	asset_id: uint32          | Request           | [https://api.lightning.community/#channelbalance ](https://api.lightning.community/#channelbalance)   |
+| OB_OpenChannel 	              |	Lightning(lnrpc)		    |	 asset_id: uint32, <br> push_asset_sat:  int64(or omniAmount), local_funding_asset_amount:  int64(or omniAmount)          | Request           | [https://api.lightning.community/#openchannel](https://api.lightning.community/#openchannel)  |
+| OB_NewAddress 	                |	Lightning(lnrpc)		    |	 type: AddressType, <br> accoun: string         | Request           | [https://api.lightning.community/#newaddress](https://api.lightning.community/#newaddress)  |
+| OB_Sendpaymentv2 	            |	Router(lnrpc/routerrpc)		      |	asset_id : uint32, <br> asset_amt : int64(or omniAmount)            | Request,Response          | [https://api.lightning.community/#sendpaymentv2](https://api.lightning.community/#sendpaymentv2) |

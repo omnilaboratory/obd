@@ -1,11 +1,11 @@
 ## subscribeChannelBackups
 SubscribeChannelBackups allows a client to sub-subscribe to the most up to date information concerning the state of all channel backups. Each time a new channel is added, we return the new set of channels, along with a multi-chan backup containing the backup info for all channels. Each time a channel is closed, we send a new update, which contains new new chan back ups, but the updated set of encrypted multi-chan backups with the closed channel(s) removed.
 
-#### Arguments:
+## Arguments:
 This request has no parameters.
 
 
-#### Response:
+## Response:
 | Field		         |	gRPC Type		|	   Description  |
 | -------- 	       |	---------   |    ---------    |  
 | single_chan_backups|	ChannelBackups	    |The set of new channels that have been added since the last channel backup snapshot was requested.|  
@@ -31,7 +31,7 @@ This request has no parameters.
 | chan_point|	ChannelPoint    |Identifies the channel that this backup belongs to.|
 | multi_chan_backup|	bytes    |A single encrypted blob containing all the static channel backups of the channel listed above. This can be stored as a single file or blob, and safely be replaced with any prior/future versions. When using REST, this field must be encoded as base64.|
 
-#### Example:
+## Example:
 
 <!--
 java code example

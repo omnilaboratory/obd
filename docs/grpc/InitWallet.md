@@ -4,7 +4,7 @@ InitWallet is used when obd(lnd,oblnd) is starting up for the first time to full
 In the case of a recovery scenario, the user can also specify their aezeed mnemonic and passphrase. If set, then the daemon will use this prior state to initialize its internal wallet.
 Alternatively, this can be used along with the GenSeed RPC to obtain a seed, then present it to the user. Once it has been verified by the user, the seed can be fed into this RPC in order to commit the new wallet. 
 
-#### Arguments:
+## Arguments:
 | Field		   |	gRPC Type		|	   Description  |
 | -------- 	 |	---------   |    ---------    |  
 | wallet_password	     |	bytes		  |	      wallet_password is the passphrase that should be used to encrypt the wallet. This MUST be at least 8 chars in length. After creation, this password is required to unlock the daemon. When using REST, this field must be encoded as base64.|  
@@ -68,13 +68,14 @@ Alternatively, this can be used along with the GenSeed RPC to obtain a seed, the
 | purpose|	int      |Purpose is the first number in the derivation path, must be either 49, 84 or 1017.|
 | coin_type|	int    |Coin type is the second number in the derivation path, this is always 0 for purposes 49 and 84. It only needs to be set to 1 for purpose 1017 on testnet or regtest.|
 | account|	int   |Account is the third number in the derivation path. For purposes 49 and 84 at least the default account (index 0) needs to be created but optional additional accounts are allowed. For purpose 1017 there needs to be exactly one account for each of the key families defined in keychain/derivation.go (currently indices 0 to 9)/<account>'), where account is the key family as defined in keychain/derivation.go (currently indices 0 to 9).|
-| xpub|	string    |The extended public key at depth 3 for the given account.|
-#### Response:
+| xpub|	string    |The extended public key at depth 3 for the given account.|  
+    
+## Response:
 | Field		         |	gRPC Type		|	   Description  |
 | -------- 	         |	---------       |    ---------      |  
 | admin_macaroon     |	bytes	        |The binary serialized admin macaroon that can be used to access the daemon after creating the wallet. If the stateless_init parameter was set to true, this is the ONLY copy of the macaroon and MUST be stored safely by the caller. Otherwise a copy of this macaroon is also persisted on disk by the daemon, together with other macaroon files.|
 
-#### Example:
+## Example:
 
 <!--
 java code example

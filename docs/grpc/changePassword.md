@@ -2,7 +2,7 @@
 
 ChangePassword changes the password of the encrypted wallet. This will automatically unlock the wallet database if successful.
 
-#### Arguments:
+## Arguments:
 | Field		   |	gRPC Type		|	   Description  |
 | -------- 	 |	---------   |    ---------    |  
 | current_password	     |	bytes		  |current_password should be the current valid passphrase used to unlock the daemon. When using REST, this field must be encoded as base64.|
@@ -10,12 +10,12 @@ ChangePassword changes the password of the encrypted wallet. This will automatic
 | stateless_init	     |	bool		  |stateless_init is an optional argument instructing the daemon NOT to create any *.macaroon files in its file system.|
 | new_macaroon_root_key	     |	bool		  |new_macaroon_root_key is an optional argument instructing the daemon to rotate the macaroon root key when set to true. This will invalidate all previously generated macaroons.|
 
-#### Response:
+## Response:
 | Field		         |	gRPC Type		|	   Description  |
 | -------- 	       |	---------   |    ---------    |  
 | admin_macaroon|	bytes	    |The binary serialized admin macaroon that can be used to access the daemon after creating the wallet. If the stateless_init parameter was set to true, this is the ONLY copy of the macaroon and MUST be stored safely by the caller. Otherwise a copy of this macaroon is also persisted on disk by the daemon, together with other macaroon files.|
 
-#### Example:
+## Example:
 
 <!--
 java code example

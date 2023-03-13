@@ -2,7 +2,7 @@
 
 RestoreChannelBackups accepts a set of singular channel backups, or a single encrypted multi-chan backup and attempts to recover any funds remaining within the channel. If we are able to unpack the backup, then the new channel will be shown under listchannels, as well as pending channels.
 
-#### Arguments:
+## Arguments:
 | Field		         |	gRPC Type		|	   Description  |
 | -------- 	       |	---------   |    ---------    |  
 | chan_backups|	ChannelBackups	    |The set of new channels that have been added since the last channel backup snapshot was requested.|  
@@ -26,12 +26,13 @@ RestoreChannelBackups accepts a set of singular channel backups, or a single enc
 | Field		         |	gRPC Type		|	   Description  |
 | -------- 	       |	---------   |    ---------    |  
 | chan_point|	ChannelPoint    |Identifies the channel that this backup belongs to.|
-| multi_chan_backup|	bytes    |A single encrypted blob containing all the static channel backups of the channel listed above. This can be stored as a single file or blob, and safely be replaced with any prior/future versions. When using REST, this field must be encoded as base64.|
-#### Response:
+| multi_chan_backup|	bytes    |A single encrypted blob containing all the static channel backups of the channel listed above. This can be stored as a single file or blob, and safely be replaced with any prior/future versions. When using REST, this field must be encoded as base64.|  
+
+
+## Response:
 This request has no parameters.
 
-
-#### Example:
+## Example:
 
 <!--
 java code example

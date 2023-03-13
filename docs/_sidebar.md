@@ -10,7 +10,18 @@
 
 - gRPC Mobile Service
     - [gRPC API](grpc-api.md)  
+    - [start](grpc/start.md)
+    - [InitWallet](grpc/InitWallet.md)
+    - [unlockWallet](grpc/unlockWallet.md)
     - [addInvoice](grpc/addInvoice.md)  
+    - [changePassword](grpc/changePassword.md)
+    - [genSeed](grpc/genSeed.md)
+    - [newAddress](grpc/newAddress.md)
+    - [restoreChannelBackups](grpc/restoreChannelBackups.md)
+    - [subscribeChannelBackups](grpc/subscribeChannelBackups.md)
+    - [subscribeState](grpc/subscribeState.md)
+    - [verifyChanBackup](grpc/verifyChanBackup.md)
+ 
 
 - GUI Playground
     - [5 minutes to get started](GUI-tool.md) 
