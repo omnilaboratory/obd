@@ -4,7 +4,7 @@ InitWallet is used when obd(lnd,oblnd) is starting up for the first time to full
 In the case of a recovery scenario, the user can also specify their aezeed mnemonic and passphrase. If set, then the daemon will use this prior state to initialize its internal wallet.
 Alternatively, this can be used along with the GenSeed RPC to obtain a seed, then present it to the user. Once it has been verified by the user, the seed can be fed into this RPC in order to commit the new wallet. 
 
-#### Arguments:
+## Arguments:
 | Field		   |	gRPC Type		|	   Description  |
 | -------- 	 |	---------   |    ---------    |  
 | wallet_password	     |	bytes		  |	      wallet_password is the passphrase that should be used to encrypt the wallet. This MUST be at least 8 chars in length. After creation, this password is required to unlock the daemon. When using REST, this field must be encoded as base64.|  
@@ -60,7 +60,7 @@ Alternatively, this can be used along with the GenSeed RPC to obtain a seed, the
 | -------- 	       |	---------   |    ---------    |  
 | admin_macaroon|	bytes	    |The binary serialized admin macaroon that can be used to access the daemon after creating the wallet. If the stateless_init parameter was set to true, this is the ONLY copy of the macaroon and MUST be stored safely by the caller. Otherwise a copy of this macaroon is also persisted on disk by the daemon, together with other macaroon files.|
 
-#### Example:
+## Example:
 
 <!--
 java code example
