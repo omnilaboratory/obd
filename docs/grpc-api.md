@@ -2,9 +2,9 @@
 
 The gRPC service is a service offered in exclusive mode, which means the user must run an obd node locally, and he alone can access the node. The obd node supports both assets and BTC, and the service of BTC is provided by lnd (based on lnd's codebase).
 
-Please note that because OmniBOLT's internal structure of transactions is different from that of lnd, **NOT ALL** lnd interfaces can be supported. We list the supported interfaces in the subsequent sections of this chapter, please pay attention to the difference between obd interfaces parameters and lnd interfaces parameters. Lnd interfaces not listed are not compatible and tested, please use with caution.
+Please note that because OmniBOLT's internal structure of transactions is different from that of lnd, **NOT ALL** lnd interfaces can be supported. We list the supported interfaces in the subsequent sections of this chapter, please pay attention to the difference between obd interfaces parameters and lnd interfaces parameters. Lnd interfaces not listed are not compatible or tested, please use with caution.
 
-Obd focuses on the implementation for mobile devices, so each interface gives an example of java code(android), which is convenient for readers to refer to.
+Obd focuses on running on mobile devices and provides node and wallet services for mobile apps, so each interface gives an example of java code (android) calling obd interface for readers' reference.  
 
 For exclusive and non-custodial modes, please refer to the [Architecture section](https://omnilaboratory.github.io/obd/#/Architecture).
 
