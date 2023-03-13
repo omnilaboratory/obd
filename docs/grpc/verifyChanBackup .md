@@ -2,11 +2,11 @@
 
 VerifyChanBackup allows a caller to verify the integrity of a channel backup snapshot. This method will accept either a packed Single or a packed Multi. Specifying both will result in an error.
 
-#### Arguments:
+## Arguments:
 This request has no parameters.
 
 
-#### Response:
+## Response:
 | Field		         |	gRPC Type		|	   Description  |
 | -------- 	       |	---------   |    ---------    |  
 | chan_backups|	ChannelBackups	    |The set of new channels that have been added since the last channel backup snapshot was requested.|  
@@ -32,7 +32,7 @@ This request has no parameters.
 | chan_point|	ChannelPoint    |Identifies the channel that this backup belongs to.|
 | multi_chan_backup|	bytes    |A single encrypted blob containing all the static channel backups of the channel listed above. This can be stored as a single file or blob, and safely be replaced with any prior/future versions. When using REST, this field must be encoded as base64.|
 
-#### Example:
+## Example:
 
 <!--
 java code example
