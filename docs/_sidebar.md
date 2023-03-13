@@ -12,7 +12,7 @@
     - [gRPC API](grpc-api.md)  
     - [start](grpc/start.md)
     - [InitWallet](grpc/InitWallet.md)
-    - [unlockWallet.md](grpc/unlockWallet.md.md)
+    - [unlockWallet](grpc/unlockWallet.md)
     - [addInvoice](grpc/addInvoice.md)  
     - [changePassword](grpc/changePassword.md)
     - [genSeed](grpc/genSeed.md)
