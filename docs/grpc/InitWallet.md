@@ -71,7 +71,7 @@ Alternatively, this can be used along with the GenSeed RPC to obtain a seed, the
 | xpub|	string    |The extended public key at depth 3 for the given account.|
 #### Response:
 | Field		         |	gRPC Type		|	   Description  |
-| -------- 	         |	---------       |    ---------    |  
+| -------- 	         |	---------       |    ---------      |  
 | admin_macaroon     |	bytes	        |The binary serialized admin macaroon that can be used to access the daemon after creating the wallet. If the stateless_init parameter was set to true, this is the ONLY copy of the macaroon and MUST be stored safely by the caller. Otherwise a copy of this macaroon is also persisted on disk by the daemon, together with other macaroon files.|
 
 #### Example:
@@ -81,7 +81,14 @@ java code example
 -->
 
 ```java
-String[] seedList = [ability, raw, sell, crumble, little, tattoo, trim, trap, amused, canvas, duty, youth, fashion, tone, notice, chair, seek, truck, grief, require, lend, senior, fame, loyal];
+String[] seedList = ["ability", "raw", "sell", 
+                    "crumble", "little", "tattoo", 
+                    "trim", "trap", "amused", 
+                    "canvas", "duty", "youth", 
+                    "fashion", "tone", "notice", 
+                    "chair", "seek", "truck", 
+                    "grief", "require", "lend", 
+                    "senior", "fame", "loyal"];
 String password = "12345678";
 Walletunlocker.InitWalletRequest.Builder initWalletRequestBuilder = Walletunlocker.InitWalletRequest.newBuilder();
 List newSeedList = initWalletRequestBuilder.getCipherSeedMnemonicList();
@@ -95,6 +102,9 @@ Walletunlocker.InitWalletRequest initWalletRequest = initWalletRequestBuilder.bu
 Obdmobile.initWallet(initWalletRequest.toByteArray(), new Callback() {
     @Override
     public void onError(Exception e) {
+        if (e.getMessage().contains("wallet already exists")){
+            
+        }
         e.printStackTrace();
     }
     @Override

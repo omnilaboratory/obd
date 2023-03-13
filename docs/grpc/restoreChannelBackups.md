@@ -38,11 +38,12 @@ java code example
 -->
 
 ```java
-LightningOuterClass.MultiChanBackup multiChanBackup =  chanBackupSnapshot.getMultiChanBackup();
-LightningOuterClass.RestoreChanBackupRequest restoreChanBackupRequest = LightningOuterClass.RestoreChanBackupRequest.newBuilder()
+LightningOuterClass.MultiChanBackup multiChanBackup 
+    =  chanBackupSnapshot.getMultiChanBackup();
+LightningOuterClass.RestoreChanBackupRequest restoreChanBackupRequest 
+    = LightningOuterClass.RestoreChanBackupRequest.newBuilder()
         .setMultiChanBackup(multiChanBackup.getMultiChanBackup())
         .build();
-Log.e(TAG, "multi Channel restoreChanBackupRequest Str" + String.valueOf(restoreChanBackupRequest));
 Obdmobile.restoreChannelBackups(restoreChanBackupRequest.toByteArray(), new Callback() {
     @Override
     public void onError(Exception e) {

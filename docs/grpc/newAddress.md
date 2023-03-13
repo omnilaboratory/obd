@@ -20,6 +20,8 @@ java code example
 -->
 
 ```java
+LightningOuterClass.NewAddressRequest newAddressRequest 
+    = LightningOuterClass.NewAddressRequest.newBuilder().setTypeValue(2).build();
 Obdmobile.oB_NewAddress(newAddressRequest.toByteArray(), new Callback() {
     @Override
     public void onError(Exception e) {
@@ -31,7 +33,8 @@ Obdmobile.oB_NewAddress(newAddressRequest.toByteArray(), new Callback() {
             return;
         }
         try {
-            LightningOuterClass.NewAddressResponse newAddressResponse = LightningOuterClass.NewAddressResponse.parseFrom(bytes);
+            LightningOuterClass.NewAddressResponse newAddressResponse 
+                = LightningOuterClass.NewAddressResponse.parseFrom(bytes);
             String address = newAddressResponse.getAddress();
         } catch (InvalidProtocolBufferException e) {
             e.printStackTrace();

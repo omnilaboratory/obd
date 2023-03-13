@@ -42,10 +42,12 @@ java code example
 Obdmobile.verifyChanBackup(chanBackupSnapshot.toByteArray(), new Callback() {
     @Override
     public void onError(Exception e) {
-        if(e.getMessage().equals("rpc error: code = Unknown desc = invalid single channel backup: chacha20poly1305: message authentication failed")){
+        if(e.getMessage().contains("rpc error: code = Unknown desc = invalid single channel backup: chacha20poly1305: message authentication failed")){
 
-        }else if(e.getMessage().trim().equals("rpc error: code = Unknown desc = only one Single is accepted at a time")){
-        }else if(e.getMessage().equals("rpc error: code = Unknown desc = invalid multi channel backup: chacha20poly1305: message authentication failed")){}else{
+        }else if(e.getMessage().trim().contains("rpc error: code = Unknown desc = only one Single is accepted at a time")){
+
+        }else if(e.getMessage().contains("rpc error: code = Unknown desc = invalid multi channel backup: chacha20poly1305: message authentication failed")){}else{
+            
         }
         e.printStackTrace();
     }

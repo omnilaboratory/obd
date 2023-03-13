@@ -42,7 +42,6 @@ public void backupChannelToFile(Context context) {
     Obdmobile.subscribeChannelBackups(null, new RecvStream() {
         @Override
         public void onError(Exception e) {
-            Log.e(TAG,e.getMessage());
             e.printStackTrace();
         }
 

@@ -47,7 +47,10 @@ java code example
 
 ```java
 String password = "12345678"
-Walletunlocker.UnlockWalletRequest unlockWalletRequest = Walletunlocker.UnlockWalletRequest.newBuilder().setWalletPassword(ByteString.copyFromUtf8(password )).build();
+Walletunlocker.UnlockWalletRequest unlockWalletRequest 
+    = Walletunlocker.UnlockWalletRequest.newBuilder()
+    .setWalletPassword(ByteString.copyFromUtf8(password ))
+    .build();
     Obdmobile.unlockWallet(unlockWalletRequest.toByteArray(), new Callback() {
         @Override
         public void onError(Exception e) {

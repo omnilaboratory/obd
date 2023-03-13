@@ -26,7 +26,8 @@ java code example
 -->
 
 ```java
-Stateservice.SubscribeStateRequest subscribeStateRequest = Stateservice.SubscribeStateRequest.newBuilder().build();
+Stateservice.SubscribeStateRequest subscribeStateRequest 
+    = Stateservice.SubscribeStateRequest.newBuilder().build();
 Obdmobile.subscribeState(subscribeStateRequest.toByteArray(),new RecvStream(){
     @Override
     public void onError(Exception e) {
@@ -40,7 +41,8 @@ Obdmobile.subscribeState(subscribeStateRequest.toByteArray(),new RecvStream(){
             return;
         }
         try {
-            Stateservice.SubscribeStateResponse subscribeStateResponse = Stateservice.SubscribeStateResponse.parseFrom(bytes);
+            Stateservice.SubscribeStateResponse subscribeStateResponse 
+                = Stateservice.SubscribeStateResponse.parseFrom(bytes);
             int walletState = subscribeStateResponse.getStateValue();
         } catch (InvalidProtocolBufferException e) {
             e.printStackTrace();

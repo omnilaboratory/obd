@@ -18,7 +18,8 @@ java code example
 -->
 
 ```java
-String params = "--lnddir=" +             "/storage/emulated/0/Android/data/com.omni.wallet/cache/data/chain/bitcoin/testnet/" +
+String params = "--lnddir=" +            
+         "/storage/emulated/0/Android/data/com.omni.wallet/cache/data/chain/bitcoin/testnet/" +
         "--trickledelay=5000 --debuglevel=debug --alias=alice\n" +
         "--autopilot.active --maxpendingchannels=100 " +
         "--bitcoin.active --bitcoin.testnet --bitcoin.node=neutrino " +
@@ -30,9 +31,12 @@ String params = "--lnddir=" +             "/storage/emulated/0/Android/data/com.
 Obdmobile.start(params , new Callback() {
     @Override
     public void onError(Exception e) {
-        if (e.getMessage().equals("lnd already started")) {
-        } else if (e.getMessage().equals("unable to start server: unable to unpack single backups: chacha20poly1305: message authentication failed")) {
+        if (e.getMessage().contains("lnd already started")) {
 
+        } else if (e.getMessage().contains("unable to start server: unable to unpack single backups: chacha20poly1305: message authentication failed")) {
+
+        } else if(e.getMessage().contains("error creating wallet config: unable to initialize neutrino backend: unable to create neutrino database: cannot allocate memory")){
+                    
         }
     }
 
