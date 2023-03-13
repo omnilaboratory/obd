@@ -17,48 +17,62 @@ Alternatively, this can be used along with the GenSeed RPC to obtain a seed, the
 | extended_master_key_birthday_timestamp      |  int                |   extended_master_key_birthday_timestamp is the optional unix timestamp in seconds to use as the wallet's birthday when using an extended master key to restore the wallet. obd(lnd,oblnd) will only start scanning for funds in blocks that are after the birthday which can speed up the process significantly. If the birthday is not known, this should be left at its default value of 0 in which case obd(lnd,oblnd) will start scanning from the first SegWit block (481824 on mainnet).|
 | watch_only      |  WatchOnly                |   watchonly is the third option of initializing a wallet: by importing account xpubs only and therefore creating a watch-only wallet that does not contain any private keys. That means the wallet won't be able to sign for any of the keys and _needs to be run with a remote signer that has the corresponding private keys and can serve signing RPC requests.|
 | macaroon_root_key      |  bytes                |   macaroon_root_key is an optional 32 byte macaroon root key that can be provided when initializing the wallet rather than letting obd(lnd,oblnd) generate one on its own.|
+
 **ChanBackupSnapshot**
+
 | Field		         |	gRPC Type		|	   Description  |
 | -------- 	       |	---------   |    ---------    |  
 | single_chan_backups|	ChannelBackups	    |The set of new channels that have been added since the last channel backup snapshot was requested.|  
 | multi_chan_backup  |	MultiChanBackup	|A multi-channel backup that covers all open channels currently known to obd(lnd,oblnd).|
+
 **ChannelBackup**
+
 | Field		         |	gRPC Type		|	   Description  |
 | -------- 	       |	---------   |    ---------    |  
 | chan_point|	ChannelPoint	    |Identifies the channel that this backup belongs to.|  
 | chan_backup  |	bytes	|Is an encrypted single-chan backup. this can be passed to RestoreChannelBackups, or the WalletUnlocker Init and Unlock methods in order to trigger the recovery protocol. When using REST, this field must be encoded as base64.|
+
 **ChannelBackups**
+
 | Field		         |	gRPC Type		|	   Description  |
 | -------- 	       |	---------   |    ---------    |  
 | chan_backups|	ChannelBackup[]	    |A set of single-chan static channel backups.|
+
 **ChannelPoint**
+
 | Field		         |	gRPC Type		|	   Description  |
 | -------- 	       |	---------   |    ---------    |  
 | funding_txid_bytes|	string    |Txid of the funding transaction. When using REST, this field must be encoded as base64.|
 | funding_txid_str|	bytes    |Hex-encoded string representing the byte-reversed hash of the funding transaction.|
 | output_index|	int    |The index of the output of the funding transaction|
+
 **MultiChanBackup**
+
 | Field		         |	gRPC Type		|	   Description  |
 | -------- 	       |	---------   |    ---------    |  
 | chan_point|	ChannelPoint    |Identifies the channel that this backup belongs to.|
 | multi_chan_backup|	bytes    |A single encrypted blob containing all the static channel backups of the channel listed above. This can be stored as a single file or blob, and safely be replaced with any prior/future versions. When using REST, this field must be encoded as base64.|
+
 **WatchOnly**
+
 | Field		         |	gRPC Type		|	   Description  |
 | -------- 	       |	---------   |    ---------    |  
 | master_key_birthday_timestamp|	int    |The unix timestamp in seconds of when the master key was created. obd(lnd,oblnd) will only start scanning for funds in blocks that are after the birthday which can speed up the process significantly. If the birthday is not known, this should be left at its default value of 0 in which case obd(lnd,oblnd) will start scanning from the first SegWit block (481824 on mainnet).|
 | master_key_fingerprint|	bytes    |The fingerprint of the root key (also known as the key with derivation path m/) from which the account public keys were derived from. This may be required by some hardware wallets for proper identification and signing. The bytes must be in big-endian order.|
 | accounts|	WatchOnlyAccount[]    |The list of accounts to import. There must be an account for all of obd(lnd,oblnd)'s main key scopes: BIP49/BIP84 (m/49'/0'/0', m/84'/0'/0', note that the coin type is always 0, even for testnet/regtest) and obd(lnd,oblnd)'s internal key scope (m/1017'/<coin_type>'/<account>'), where account is the key family as defined in keychain/derivation.go (currently indices 0 to 9).|
+    
 **WatchOnlyAccount**
+    
 | Field		         |	gRPC Type		|	   Description  |
-| -------- 	       |	---------   |    ---------    |  
-| purpose|	int    |Purpose is the first number in the derivation path, must be either 49, 84 or 1017.|
+| -------- 	         |	---------       |    ---------    |  
+| purpose|	int      |Purpose is the first number in the derivation path, must be either 49, 84 or 1017.|
 | coin_type|	int    |Coin type is the second number in the derivation path, this is always 0 for purposes 49 and 84. It only needs to be set to 1 for purpose 1017 on testnet or regtest.|
 | account|	int   |Account is the third number in the derivation path. For purposes 49 and 84 at least the default account (index 0) needs to be created but optional additional accounts are allowed. For purpose 1017 there needs to be exactly one account for each of the key families defined in keychain/derivation.go (currently indices 0 to 9)/<account>'), where account is the key family as defined in keychain/derivation.go (currently indices 0 to 9).|
 | xpub|	string    |The extended public key at depth 3 for the given account.|
 #### Response:
 | Field		         |	gRPC Type		|	   Description  |
-| -------- 	       |	---------   |    ---------    |  
-| admin_macaroon|	bytes	    |The binary serialized admin macaroon that can be used to access the daemon after creating the wallet. If the stateless_init parameter was set to true, this is the ONLY copy of the macaroon and MUST be stored safely by the caller. Otherwise a copy of this macaroon is also persisted on disk by the daemon, together with other macaroon files.|
+| -------- 	         |	---------       |    ---------    |  
+| admin_macaroon     |	bytes	        |The binary serialized admin macaroon that can be used to access the daemon after creating the wallet. If the stateless_init parameter was set to true, this is the ONLY copy of the macaroon and MUST be stored safely by the caller. Otherwise a copy of this macaroon is also persisted on disk by the daemon, together with other macaroon files.|
 
 #### Example:
 
@@ -67,6 +81,7 @@ java code example
 -->
 
 ```java
+String[] seedList = [ability, raw, sell, crumble, little, tattoo, trim, trap, amused, canvas, duty, youth, fashion, tone, notice, chair, seek, truck, grief, require, lend, senior, fame, loyal];
 String password = "12345678";
 Walletunlocker.InitWalletRequest.Builder initWalletRequestBuilder = Walletunlocker.InitWalletRequest.newBuilder();
 List newSeedList = initWalletRequestBuilder.getCipherSeedMnemonicList();
