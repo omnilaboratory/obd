@@ -10,7 +10,7 @@ For exclusive and non-custodial modes, please refer to the [Architecture section
 
 ## Obdmobile
 
-Obdmobile is the instance of the obd node on mobile, which is exported from the compiled binary file from the source of `obd/oblnd`. All interfaces are exposed via Obdmobile, for example: `Obdmobile.OB_AddInvoice`.  
+Obdmobile is the instance of the obd node on mobile, which is exported from the compiled binary file(`.aar` file for android) from the source code under `obd/oblnd`. All interfaces are exposed via Obdmobile, for example: `Obdmobile.OB_AddInvoice`.  
 
 ## mapping of asset related interfaces
 
