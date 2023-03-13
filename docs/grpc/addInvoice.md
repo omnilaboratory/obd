@@ -8,7 +8,7 @@ Create an Invoice and add it to the local database. The key of the local K-V sto
 1. Any duplicated invoices are rejected.
 2. An invoice must identify an asset ID.  
 
-## Arguments:
+#### Arguments:
 | Field		   |	gRPC Type		|	   Description  |
 | -------- 	 |	---------   |    ---------    |  
 | memo	     |	string		  |	                |  
@@ -17,7 +17,7 @@ Create an Invoice and add it to the local database. The key of the local K-V sto
 | r_preimage |	bytes       |                 | 
 
 
-## Response:
+#### Response:
 | Field		         |	gRPC Type		|	   Description  |
 | -------- 	       |	---------   |    ---------    |  
 | r_hash	         |	bytes		    |	                |  
@@ -25,7 +25,7 @@ Create an Invoice and add it to the local database. The key of the local K-V sto
 | add_index        |	uint64      |                 | 
 | payment_addr     |	bytes       |                 | 
 
-## Example:
+#### Example:
 
 <!--
 java code example
