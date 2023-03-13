@@ -4,20 +4,20 @@ GenSeed is the first method that should be used to instantiate a new obd(lnd,obl
 
 Once the cipherseed is obtained and verified by the user, the InitWallet method should be used to commit the newly generated seed, and create the wallet 
 
-#### Arguments:
+## Arguments:
 | Field		   |	gRPC Type		|	   Description  |
 | -------- 	 |	---------   |    ---------    |  
 | aezeed_passphrase	     |	bytes		  |	      aezeed_passphrase is an optional user provided passphrase that will be used to encrypt the generated aezeed cipher seed. When using REST, this field must be encoded as base64.|  
 | seed_entropy   |	bytes		  |       seed_entropy is an optional 16-bytes generated via CSPRNG. If not specified, then a fresh set of randomness will be used to create the seed. When using REST, this field must be encoded as base64.          | 
 
 
-#### Response:
+## Response:
 | Field		         |	gRPC Type		|	   Description  |
 | -------- 	       |	---------   |    ---------    |  
 | cipher_seed_mnemonic|	string[]	    |cipher_seed_mnemonic is a 24-word mnemonic that encodes a prior aezeed cipher seed obtained by the user. This field is optional, as if not provided, then the daemon will generate a new cipher seed for the user. Otherwise, then the daemon will attempt to recover the wallet state linked to this cipher seed.|  
 | enciphered_seed  |	string		  |enciphered_seed are the raw aezeed cipher seed bytes. This is the raw cipher text before run through our mnemonic encoding scheme.|
 
-#### Example:
+## Example:
 
 <!--
 java code example
