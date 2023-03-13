@@ -1,19 +1,19 @@
-## newAddress
+## OB_NewAddress
 
-NewAddress is used to generate a new address.
+OB_NewAddress is used to generate a new address.
 
-#### Arguments:
+## Arguments:
 | Field		   |	gRPC Type		|	   Description  |
 | -------- 	 |	---------   |    ---------    |  
 | type_value	     |	int		  |	      The type of address to generate.|
 
 
-#### Response:
+## Response:
 | Field		         |	gRPC Type		|	   Description    |
 | -------- 	         |	---------       |      ---------      |  
 | address            |	string	        |The address generated.|  
 
-#### Example:
+## Example:
 
 <!--
 java code example
