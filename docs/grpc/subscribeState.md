@@ -2,11 +2,11 @@
 
 SubscribeState subscribes to the state of the wallet. The current wallet state will always be delivered immediately.
 
-#### Arguments:
+## Arguments:
 This request has no parameters.         | 
 
 
-#### Response:
+## Response:
 | Field		         |	gRPC Type		|	   Description  |
 | -------- 	         |	---------       |      ---------    |  
 | state              |	WalletState	    |A set of single-chan static channel backups.|
@@ -18,8 +18,9 @@ This request has no parameters.         |
 | UNLOCKED           |	2	            |UNLOCKED means that the wallet was unlocked successfully, but RPC server isn't ready.|
 | RPC_ACTIVE         |	3	            |RPC_ACTIVE means that the obd(lnd,oblnd) server is active but not fully ready for calls.|
 | SERVER_ACTIVE      |	4	            |SERVER_ACTIVE means that the obd(lnd,oblnd) server is ready to accept calls.|
-| WAITING_TO_START   |	255	            |WAITING_TO_START means that node is waiting to become the leader in a cluster and is not started yet.|
-#### Example:
+| WAITING_TO_START   |	255	            |WAITING_TO_START means that node is waiting to become the leader in a cluster and is not started yet.|  
+
+## Example:
 
 <!--
 java code example
