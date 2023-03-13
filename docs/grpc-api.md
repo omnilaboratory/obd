@@ -4,7 +4,7 @@ The gRPC service is a service offered in exclusive mode, which means the user mu
 
 Please note that because OmniBOLT's internal structure of transactions is different from that of lnd, **NOT ALL** lnd interfaces can be supported. We list the supported interfaces in the subsequent sections of this chapter, please pay attention to the difference between obd interfaces parameters and lnd interfaces parameters. Lnd interfaces not listed are not compatible and tested, please use with caution.
 
-Obd focuses on the implementation of the mobile devices, so each interface gives an example of java code(android), which is convenient for readers to refer to.
+Obd focuses on the implementation for mobile devices, so each interface gives an example of java code(android), which is convenient for readers to refer to.
 
 For exclusive and non-custodial modes, please refer to the [Architecture section](https://omnilaboratory.github.io/obd/#/Architecture).
 
