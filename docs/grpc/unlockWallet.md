@@ -4,15 +4,15 @@ UnlockWallet is used at startup of obd(lnd,oblnd) to provide a password to unloc
 
 ## Arguments:
 | Field		   |	gRPC Type		|	   Description  |
-| -------- 	 |	---------   |    ---------    |  
+| -------- 	   |	---------       |    ---------      |  
 | wallet_password	     |	bytes		  |wallet_password should be the current valid passphrase for the daemon. This will be required to decrypt on-disk material that the daemon requires to function properly. When using REST, this field must be encoded as base64.|
 | recovery_window	     |	int		  |recovery_window is an optional argument specifying the address lookahead when restoring a wallet seed. The recovery window applies to each individual branch of the BIP44 derivation paths. Supplying a recovery window of zero indicates that no addresses should be recovered, such after the first initialization of the wallet.|
 | channel_backups	     |	ChanBackupSnapshot		  |channel_backups is an optional argument that allows clients to recover the settled funds within a set of channels. This should be populated if the user was unable to close out all channels and sweep funds before partial or total data loss occurred. If specified, then after on-chain recovery of funds, obd(lnd,oblnd) begin to carry out the data loss recovery protocol in order to recover the funds in each channel from a remote force closed transaction.|
-| stateless_init	     |	bool		  |stateless_init is an optional argument instructing the daemon NOT to create any *.macaroon files in its file system.|  
+| stateless_init	     |	bool		  |stateless_init is an optional argument instructing the daemon NOT to create any *.macaroon* files in its file system.|  
 
 **ChanBackupSnapshot**
-| Field		         |	gRPC Type		|	   Description  |
-| -------- 	       |	---------   |    ---------    |  
+| Field		         |	gRPC Type		|    Description  |
+| -------- 	         |	---------       |    ---------    |  
 | single_chan_backups|	ChannelBackups	    |The set of new channels that have been added since the last channel backup snapshot was requested.|  
 | multi_chan_backup  |	MultiChanBackup	|A multi-channel backup that covers all open channels currently known to obd(lnd,oblnd).|
 **ChannelBackup**
