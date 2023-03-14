@@ -12,18 +12,18 @@ This request has no parameters.
 | commit_hash            |	string	        |The SHA1 commit hash that the daemon is compiled with.|
 | identity_pubkey            |	string	        |The identity pubkey of the current node.|
 | alias            |	string	        |If applicable, the alias of the current node, e.g. "bob"|
-| color            |	string	        |The color of the current node in hex code format|
-| num_pending_channels            |	uint32	        |Number of pending channels|
-| num_active_channels            |	uint32	        |Number of active channels|
-| num_inactive_channels            |	uint32	        |Number of inactive channels|
-| num_peers            |	uint32	        |Number of peers|
-| block_height            |	uint32	        |The node's current view of the height of the best block|
-| block_hash            |	string	        |The node's current view of the hash of the best block|
-| best_header_timestamp            |	int64	        |Timestamp of the block best known to the wallet|
-| synced_to_chain            |	bool	        |Whether the wallet's view is synced to the main chain|
+| color            |	string	        |The color of the current node in hex code format.|
+| num_pending_channels            |	uint32	        |Number of pending channels.|
+| num_active_channels            |	uint32	        |Number of active channels.|
+| num_inactive_channels            |	uint32	        |Number of inactive channels.|
+| num_peers            |	uint32	        |Number of peers.|
+| block_height            |	uint32	        |The node's current view of the height of the best block.|
+| block_hash            |	string	        |The node's current view of the hash of the best block.|
+| best_header_timestamp            |	int64	        |Timestamp of the block best known to the wallet.|
+| synced_to_chain            |	bool	        |Whether the wallet's view is synced to the main chain.|
 | synced_to_graph            |	bool	        |Whether we consider ourselves synced with the public channel graph.|
-| testnet            |	bool	        |Whether the current node is connected to testnet. This field is deprecated and the network field should be used instead|
-| chains            |	Chain[]	        |A list of active chains the node is connected to|
+| testnet            |	bool	        |Whether the current node is connected to testnet. This field is deprecated and the network field should be used instead.|
+| chains            |	Chain[]	        |A list of active chains the node is connected to.|
 | uris            |	string[]	        |The URIs of the current node.|
 | features            |	FeaturesEntry[]	        |Features that our node has advertised in our init message, node announcements and invoices.|
 | require_htlc_interceptor            |	bool	        |Indicates whether the HTLC interceptor API is in always-on mode.|
@@ -32,8 +32,8 @@ This request has no parameters.
 **Chain**
 | Field		            |	gRPC Type		    |	 Description  |
 | -------- 	            |	---------           |    ---------    |  
-| chain   |	string	    |    The blockchain the node is on (eg bitcoin, litecoin)|  
-| network     |	string	    |    The network the node is on (eg regtest, testnet, mainnet)|
+| chain   |	string	    |    The blockchain the node is on (eg bitcoin, litecoin).|  
+| network     |	string	    |    The network the node is on (eg regtest, testnet, mainnet).|
 
 **FeaturesEntry**
 | Field		            |	gRPC Type		    |	 Description  |
