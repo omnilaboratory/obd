@@ -24,7 +24,7 @@ java code example
 
 ```java
 LightningOuterClass.AssetsBalanceByAddressRequest asyncAssetsBalanceRequest = LightningOuterClass.AssetsBalanceByAddressRequest.newBuilder()
-        .setAddress(User.getInstance().getWalletAddress(mContext))
+        .setAddress("moR475qgPtKpb3znbuevyGK5zNbsEfCBmD")
         .build();
 Obdmobile.oB_AssetsBalanceByAddress(asyncAssetsBalanceRequest.toByteArray(), new Callback() {
     @Override

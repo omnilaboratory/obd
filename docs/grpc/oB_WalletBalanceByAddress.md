@@ -17,12 +17,14 @@ oB_WalletBalanceByAddress returns total unspent outputs(confirmed and unconfirme
 | account_balance            |	AccountBalanceEntryp[]	        |A mapping of each wallet account's name to its balance.|
 
 **AccountBalanceEntry**
+
 | Field		            |	gRPC Type		    |	 Description  |
 | -------- 	            |	---------           |    ---------    |  
 | key   |	string	    |    |  
 | value     |	WalletAccountBalance	    |    |
 
 **WalletAccountBalance**
+
 | Field		            |	gRPC Type		    |	 Description  |
 | -------- 	            |	---------           |    ---------    |  
 | confirmed_balance   |	int64	    |  The confirmed balance of the account (with >= 1 confirmations).|  

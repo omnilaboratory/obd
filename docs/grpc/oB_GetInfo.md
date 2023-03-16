@@ -30,18 +30,21 @@ This request has no parameters.
 | store_final_htlc_resolutions            |	bool	        |Indicates whether final htlc resolutions are stored on disk.|
 
 **Chain**
+
 | Field		            |	gRPC Type		    |	 Description  |
 | -------- 	            |	---------           |    ---------    |  
 | chain   |	string	    |    The blockchain the node is on (eg bitcoin, litecoin).|  
 | network     |	string	    |    The network the node is on (eg regtest, testnet, mainnet).|
 
 **FeaturesEntry**
+
 | Field		            |	gRPC Type		    |	 Description  |
 | -------- 	            |	---------           |    ---------    |  
 | key   |	uint32	    |    |  
 | value     |	Feature	    |    |
 
 **Feature**
+
 | Field		            |	gRPC Type		    |	 Description  |
 | -------- 	            |	---------           |    ---------    |  
 | name   |	string	    |    |  
