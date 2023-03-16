@@ -1,6 +1,6 @@
-## oB_GetInfo
+## OB_GetInfo
 
-oB_GetInfo returns general information concerning the lightning node including it's identity pubkey, alias, the chains it is connected to, and information concerning the number of open+pending channels.
+OB_GetInfo returns general information concerning the lightning node including it's identity pubkey, alias, the chains it is connected to, and information concerning the number of open+pending channels.
 
 ## Arguments:
 This request has no parameters.
