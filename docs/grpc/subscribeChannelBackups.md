@@ -6,10 +6,10 @@ This request has no parameters.
 
 
 ## Response:
-| Field		         |	gRPC Type		|	   Description  |
-| -------- 	       |	---------   |    ---------    |  
-| single_chan_backups|	ChannelBackups	    |The set of new channels that have been added since the last channel backup snapshot was requested.|  
-| multi_chan_backup  |	MultiChanBackup	|A multi-channel backup that covers all open channels currently known to obd(lnd,oblnd).|
+| Field		              |	gRPC Type		      |	  Description   |
+| -------- 	            |	---------         |    ---------    |  
+| single_chan_backups   |	ChannelBackups	  |   The set of new channels that have been added since the last channel backup snapshot was requested.|  
+| multi_chan_backup     |	MultiChanBackup	  |   A multi-channel backup that covers all open channels currently known to obd(lnd,oblnd).|
 **ChannelBackup**
 | Field		         |	gRPC Type		|	   Description  |
 | -------- 	       |	---------   |    ---------    |  
@@ -42,7 +42,6 @@ public void backupChannelToFile(Context context) {
     Obdmobile.subscribeChannelBackups(null, new RecvStream() {
         @Override
         public void onError(Exception e) {
-            Log.e(TAG,e.getMessage());
             e.printStackTrace();
         }
 
@@ -65,7 +64,7 @@ public void backupChannelToFile(Context context) {
 ```
 
 <!--
-下面放例子的返回结果 
+The response for the example
 -->
 response:
 ```

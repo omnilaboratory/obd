@@ -3,9 +3,9 @@
 OB_NewAddress is used to generate a new address.
 
 ## Arguments:
-| Field		   |	gRPC Type		|	   Description  |
-| -------- 	 |	---------   |    ---------    |  
-| type_value	     |	int		  |	      The type of address to generate.|
+| Field		    |	gRPC Type	|	 Description  |
+| -------- 	    |	---------   |    ---------    |  
+| type_value	|	int		    |	 The type of address to generate.|
 
 
 ## Response:
@@ -20,6 +20,8 @@ java code example
 -->
 
 ```java
+LightningOuterClass.NewAddressRequest newAddressRequest 
+    = LightningOuterClass.NewAddressRequest.newBuilder().setTypeValue(2).build();
 Obdmobile.oB_NewAddress(newAddressRequest.toByteArray(), new Callback() {
     @Override
     public void onError(Exception e) {
@@ -31,7 +33,8 @@ Obdmobile.oB_NewAddress(newAddressRequest.toByteArray(), new Callback() {
             return;
         }
         try {
-            LightningOuterClass.NewAddressResponse newAddressResponse = LightningOuterClass.NewAddressResponse.parseFrom(bytes);
+            LightningOuterClass.NewAddressResponse newAddressResponse 
+                = LightningOuterClass.NewAddressResponse.parseFrom(bytes);
             String address = newAddressResponse.getAddress();
         } catch (InvalidProtocolBufferException e) {
             e.printStackTrace();
@@ -41,7 +44,7 @@ Obdmobile.oB_NewAddress(newAddressRequest.toByteArray(), new Callback() {
 ```
 
 <!--
-下面放例子的返回结果 
+The response for the example
 -->
 response:
 ```
