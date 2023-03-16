@@ -1,6 +1,6 @@
-## oB_AssetsBalanceByAddress
+## OB_AssetsBalanceByAddress
 
-oB_AssetsBalanceByAddress returns a list of all token balances for a given address.
+OB_AssetsBalanceByAddress returns a list of all token balances for a given address.
 
 ## Arguments:
 | Field		   |	gRPC Type		|	 Description  |
