@@ -1,6 +1,6 @@
-## oB_WalletBalanceByAddress
+## OB_WalletBalanceByAddress
 
-oB_WalletBalanceByAddress returns total unspent outputs(confirmed and unconfirmed), all confirmed unspent outputs and all unconfirmed unspent outputs under control of the wallet.
+OB_WalletBalanceByAddress returns total unspent outputs(confirmed and unconfirmed), all confirmed unspent outputs and all unconfirmed unspent outputs under control of the wallet.
 
 ## Arguments:
 | Field		   |	gRPC Type		|	 Description  |
