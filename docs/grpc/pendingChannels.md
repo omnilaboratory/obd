@@ -53,7 +53,8 @@ The response for the example
 response:
 ```
 {
-    PendingOpenChannels[
+ PendingOpenChannels[
+       {
         channel {
         asset_capacity: 0
         asset_id: -2147482136
@@ -73,8 +74,10 @@ response:
         commit_fee: 562
         commit_weight: 860
         fee_per_kw: 500
+       }
     ]
     WaitingCloseChannels[
+       {
         channel {
         asset_capacity: 100000
         asset_id: -2147482136
@@ -100,6 +103,7 @@ response:
         remote_txid: "5d0636a05e8d2b4e6fc83c303df5661e5fd8376a46851c560b1a39cd72b5e31c"
         }
         limbo_balance: 50000
-    ]
+       } 
+    ]   
 }
 ```
