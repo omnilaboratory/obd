@@ -5,7 +5,7 @@ OB_GetOmniTransaction is used for getting detailed information about an Omni tra
 ## Arguments:
 | Field		            |	gRPC Type		    |	 Description  |
 | -------- 	            |	---------           |    ---------    |  
-| txid   |	string	    |the hash of the transaction to lookup.|
+| txid   |	string	    |The hash of the transaction to lookup.|
 
 ## Response:
 | Field		            |	gRPC Type		    |	 Description  |
