@@ -1,12 +1,6 @@
 ## OB_AddInvoice
-<!-- 
-中文用注释符号注释掉。创建一个收款Invoice 
--->  
 
-Create an Invoice and add it to the local database. The key of the local K-V store is the preimage of the hash locker which has to be unique:  
-
-1. Any duplicated invoices are rejected.
-2. An invoice must identify an asset ID.  
+OB_AddInvoice attempts to add a new invoice to the invoice database. Any duplicated invoices are rejected, therefore all invoices must have a unique payment preimage.
 
 ## Arguments:
 | Field		   |	gRPC Type		|	   Description  |
@@ -15,7 +9,6 @@ Create an Invoice and add it to the local database. The key of the local K-V sto
 | asset_id   |	uint32		  |                 |  
 | amount     |	omniAmount  |                 | 
 | r_preimage |	bytes       |                 | 
-
 
 ## Response:
 | Field		         |	gRPC Type		|	   Description  |

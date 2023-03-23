@@ -1,10 +1,11 @@
-## ListPayments
+## OB_ListPayments
 
-ListPayments returns a list of all outgoing payments.
+OB_ListPayments returns a list of all outgoing payments.
 
 ## Arguments:
 | Field		            |	gRPC Type		    |	 Description  |
-| -------- 	            |	---------           |    ---------    |  
+| -------- 	            |	---------           |    ---------    |
+| asset_id   |	uint64	    |The ID of an asset.|
 | include_incomplete   |	bool	    |If true, then return payments that have not yet fully completed. This means that pending payments, as well as failed payments will show up if this field is set to true. This flag doesn't change the meaning of the indices, which are tied to individual payments.|
 | index_offset   |	uint64	    |The index of a payment that will be used as either the start or end of a query to determine which payments should be returned in the response. The index_offset is exclusive. In the case of a zero index_offset, the query will start with the oldest payment when paginating forwards, or will end with the most recent payment when paginating backwards.|
 | max_payments   |	uint64	    |The maximal number of payments returned in the response to this query.|
@@ -12,7 +13,6 @@ ListPayments returns a list of all outgoing payments.
 | count_total_payments   |	bool	    |If set, all payments (complete and incomplete, independent of the max_payments parameter) will be counted. Note that setting this to true will increase the run time of the call significantly on systems that have a lot of payments, as all of them have to be iterated through to be counted.|
 | creation_date_start   |	uint64	    |If set, returns all invoices with a creation date greater than or equal to it. Measured in seconds since the unix epoch.|
 | creation_date_end   |	uint64	    |If set, returns all invoices with a creation date less than or equal to it. Measured in seconds since the unix epoch.|
-| asset_id   |	uint64	    |The ID of an asset.|
 
 ## Response:
 | Field		            |	gRPC Type		    |	 Description  |
@@ -222,6 +222,7 @@ Obdmobile.oB_ListPayments(paymentsRequest.toByteArray(), new Callback() {
         }
         try {
             LightningOuterClass.ListPaymentsResponse resp = LightningOuterClass.ListPaymentsResponse.parseFrom(bytes);
+            List paymentsList =  resp.getPaymentsList();
         } catch (InvalidProtocolBufferException e) {
             e.printStackTrace();
         }
