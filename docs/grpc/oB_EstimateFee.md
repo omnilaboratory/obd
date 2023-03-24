@@ -1,23 +1,18 @@
-## EstimateFee
+## OB_EstimateFee
 
-EstimateFee asks the chain backend to estimate the fee rate and total fees for a transaction that pays to multiple specified outputs.
+OB_EstimateFee asks the chain backend to estimate the fee rate and total fees for a transaction that pays to multiple specified outputs.
 
 When using REST, the AddrToAmount map type can be set by appending &AddrToAmount[<address>]=<amount_to_send> to the URL. Unfortunately this map type doesn't appear in the REST API documentation because of a bug in the grpc-gateway library.
 
 ## Arguments:
 | Field		            |	gRPC Type		    |	 Description  |
 | -------- 	            |	---------           |    ---------    |
-| AddrToAmount   |	AddrToAmountEntry[]	    |The map from addresses to amounts for the transaction.|
+| asset_id   |	uint64	    |The ID of an asset.|
+| addr   |	String	    |The address to send coins to.|
+| from   |	String	    |The address to send coins from.|
 | target_conf   |	int32	    |The target number of blocks that this transaction should be confirmed by.|
-| min_confs   |	int32	    |The minimum number of confirmations each one of your outputs used for the transaction must satisfy.|
-| spend_unconfirmed   |	bool	    |Whether unconfirmed outputs should be used as inputs for the transaction.|
-
-**AddrToAmountEntry**
-
-| Field		            |	gRPC Type		    |	 Description  |
-| -------- 	            |	---------           |    ---------    |  
-| key   |	string	    | |
-| value   |	int64	    | |
+| amount   |	int64	    |The amount in satoshis to send.|
+| asset_amount   |	int64	    |The asset amount in satoshis to send.|
 
 ## Response:
 | Field		            |	gRPC Type		    |	 Description  |
@@ -33,14 +28,27 @@ java code example
 -->
 
 ```java
-LightningOuterClass.EstimateFeeRequest asyncEstimateFeeRequest = LightningOuterClass.EstimateFeeRequest.newBuilder()
-                .putAddrToAmount("moR475qgPtKpb3znbuevyGK5zNbsEfCBmD", 100000000)
-                .setTargetConf(1)
-                .build();
-Obdmobile.estimateFee(asyncEstimateFeeRequest.toByteArray(), new Callback() {
+LightningOuterClass.ObEstimateFeeRequest asyncEstimateFeeRequest;
+if (assetId == 0) {
+    asyncEstimateFeeRequest = LightningOuterClass.ObEstimateFeeRequest.newBuilder()
+            .setAddr("mrJRHs3LkvtSnpAWHHr8fB8N5k3HxNEwKQ")
+            .setFrom("moR475qgPtKpb3znbuevyGK5zNbsEfCBmD")
+            .setAmount(100000000)
+            .setTargetConf(1)
+            .build();
+} else {
+    asyncEstimateFeeRequest = LightningOuterClass.ObEstimateFeeRequest.newBuilder()
+            .setAssetId((int) 2147485160)
+            .setAddr("mrJRHs3LkvtSnpAWHHr8fB8N5k3HxNEwKQ")
+            .setFrom("moR475qgPtKpb3znbuevyGK5zNbsEfCBmD")
+            .setAssetAmount(100000000)
+            .setTargetConf(1)
+            .build();
+        }
+Obdmobile.oB_EstimateFee(asyncEstimateFeeRequest.toByteArray(), new Callback() {
     @Override
     public void onError(Exception e) {
-        e.printStackTrace();
+
     }
 
     @Override

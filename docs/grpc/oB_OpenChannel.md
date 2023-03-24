@@ -48,6 +48,47 @@ OB_OpenChannel attempts to open a singly funded channel specified in the request
 | ANCHORS     |	3	    |A channel that uses a commitment format that has anchor outputs on the commitments, allowing fee bumping after a force close transaction has been broadcast.|
 | SCRIPT_ENFORCED_LEASE     |	4	    |A channel that uses a commitment type that builds upon the anchors commitment format, but in addition requires a CLTV clause to spend outputs paying to the channel initiator. This is intended for use on leased channels to guarantee that the channel initiator has no incentives to close a leased channel before its maturity date.|
 
+**ChanPointShim**
+
+| Field		            |	gRPC Type		    |	 Description  |
+| -------- 	            |	---------           |    ---------    |  
+| amt   |	int64	    |The size of the pre-crafted output to be used as the channel point for this channel funding.|
+| chan_point   |	ChannelPoint		    |The target channel point to refrence in created commitment transactions.|
+| local_key   |	KeyDescriptor		    |Our local key to use when creating the multi-sig output.|
+| remote_key   |	bytes		    |The key of the remote party to use when creating the multi-sig output.|
+| pending_chan_id   |	bytes		    |If non-zero, then this will be used as the pending channel ID on the wire protocol to initate the funding request. This is an optional field, and should only be set if the responder is already expecting a specific pending channel ID.|
+| thaw_height   |	uint32		    |This uint32 indicates if this channel is to be considered 'frozen'. A frozen channel does not allow a cooperative channel close by the initiator. The thaw_height is the height that this restriction stops applying to the channel. The height can be interpreted in two ways: as a relative height if the value is less than 500,000, or as an absolute height otherwise.|
+
+**PsbtShim**
+
+| Field		            |	gRPC Type		    |	 Description  |
+| -------- 	            |	---------           |    ---------    |  
+| pending_chan_id   |	bytes	    |A unique identifier of 32 random bytes that will be used as the pending channel ID to identify the PSBT state machine when interacting with it and on the wire protocol to initiate the funding request.|
+| base_psbt   |	bytes	    |An optional base PSBT the new channel output will be added to. If this is non-empty, it must be a binary serialized PSBT.|
+| no_publish   |	bool	    |If a channel should be part of a batch (multiple channel openings in one transaction), it can be dangerous if the whole batch transaction is published too early before all channel opening negotiations are completed. This flag prevents this particular channel from broadcasting the transaction after the negotiation with the remote peer. In a batch of channel openings this flag should be set to true for every channel but the very last.|
+
+**ChannelPoint**
+
+| Field		            |	gRPC Type		    |	 Description  |
+| -------- 	            |	---------           |    ---------    |  
+| funding_txid_bytes   |	bytes	    |Txid of the funding transaction. When using REST, this field must be encoded as base64.|
+| funding_txid_str   |	string	    |Hex-encoded string representing the byte-reversed hash of the funding transaction.|
+| output_index   |	uint32	    |The index of the output of the funding transaction.|
+
+**KeyDescriptor**
+
+| Field		            |	gRPC Type		    |	 Description  |
+| -------- 	            |	---------           |    ---------    |  
+| raw_key_bytes   |	bytes	    |The raw bytes of the key being identified.|
+| key_loc   |	KeyLocator	    |The key locator that identifies which key to use for signing.|
+
+**KeyLocator**
+
+| Field		            |	gRPC Type		    |	 Description  |
+| -------- 	            |	---------           |    ---------    |  
+| key_family   |	int32	    |The family of key being identified.|
+| key_index   |	int32	    |The precise index of the key being identified.|
+
 ## Response:
 | Field		            |	gRPC Type		    |	 Description  |
 | -------- 	            |	---------           |    ---------    |  
@@ -55,6 +96,35 @@ OB_OpenChannel attempts to open a singly funded channel specified in the request
 | chan_open     |	ChannelOpenUpdate	    |Signals that the channel's funding transaction has now reached the required number of confirmations on chain and can be used.|
 | psbt_fund     |	ReadyForPsbtFunding	    |Signals that the funding process has been suspended and the construction of a PSBT that funds the channel PK script is now required.|
 | pending_chan_id     |	bytes		    |The pending channel ID of the created channel. This value may be used to further the funding flow manually via the FundingStateStep method.|
+
+**PendingUpdate**
+
+| Field		            |	gRPC Type		    |	 Description  |
+| -------- 	            |	---------           |    ---------    |  
+| txid   |	bytes	    | |
+| output_index   |	uint32	    | |
+
+**ChannelOpenUpdate**
+
+| Field		            |	gRPC Type		    |	 Description  |
+| -------- 	            |	---------           |    ---------    |  
+| channel_point   |	ChannelPoint	    | |
+
+**ReadyForPsbtFunding**
+
+| Field		            |	gRPC Type		    |	 Description  |
+| -------- 	            |	---------           |    ---------    |  
+| funding_address   |	string	    |The P2WSH address of the channel funding multisig address that the below specified amount in satoshis needs to be sent to.|
+| funding_amount   |	int64	    |The exact amount in satoshis that needs to be sent to the above address to fund the pending channel.|
+| psbt   |	bytes	    |A raw PSBT that contains the pending channel output. If a base PSBT was provided in the PsbtShim, this is the base PSBT with one additional output. If no base PSBT was specified, this is an otherwise empty PSBT with exactly one output.|
+
+**ChannelPoint**
+
+| Field		            |	gRPC Type		    |	 Description  |
+| -------- 	            |	---------           |    ---------    |  
+| funding_txid_bytes   |	bytes	    |Txid of the funding transaction. When using REST, this field must be encoded as base64.|
+| funding_txid_str   |	string	    |Hex-encoded string representing the byte-reversed hash of the funding transaction.|
+| output_index   |	uint32	    |The index of the output of the funding transaction.|
 
 ## Example:
 
@@ -121,6 +191,11 @@ The response for the example
 response:
 ```
 {
-
+    chan_pending {
+      output_index: 1
+      txid: "\3326\236M\312\017j\377\236\356\224\v\034\244\321\027\312\226\346\320,t\266Jp\025\333a\311P\272^"
+      txid_str: "5eba50c961db15704ab6742cd0e696ca17d1a41c0b94ee9eff6a0fca4d9e36da"
+    }
+    pending_chan_id: "e\021\223\000\214\241G\237\205\031\370*\000\343\0054H\252\261b\022\215\375\256B\234\033\0358\266\243d"
 }
 ```

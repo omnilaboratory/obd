@@ -80,6 +80,7 @@ OB_ListInvoices returns a list of all the invoices currently stored within the d
 | expiry_height   |	int32	    |Block height at which this htlc expires.|
 | state   |	InvoiceHTLCState	    |Current state the htlc is in.|
 | custom_records   |	CustomRecordsEntry[]		    |The total amount of the mpp payment in msat.|
+| mpp_total_amt_msat   |	uint64		    |The total amount of the mpp payment in msat.|
 | amp   |	AMP		    |Details relevant to AMP HTLCs, only populated if this is an AMP HTLC.|
 
 **FeaturesEntry**
