@@ -23,7 +23,7 @@ When using REST, the AddrToAmount map type can be set by appending &AddrToAmount
 | Field		            |	gRPC Type		    |	 Description  |
 | -------- 	            |	---------           |    ---------    |  
 | fee_sat     |	int64	    |The total fee in satoshis.|
-| feerate_sat_per_byte     |	int64	    |TDeprecated, use sat_per_vbyte. The fee rate in satoshi/vbyte.|
+| feerate_sat_per_byte     |	int64	    |Deprecated, use sat_per_vbyte. The fee rate in satoshi/vbyte.|
 | sat_per_vbyte     |	uint64	    |The fee rate in satoshi/vbyte.|
 
 ## Example:

@@ -1,46 +1,107 @@
-## OB_ListPayments
+## RouterOB_SendPaymentV2
 
-OB_ListPayments returns a list of all outgoing payments.
+RouterOB_SendPaymentV2 attempts to route a payment described by the passed PaymentRequest to the final destination. The call returns a stream of payment updates.
 
 ## Arguments:
-| Field		            |	gRPC Type		    |	 Description  |
-| -------- 	            |	---------           |    ---------    |
+| Field		   |	gRPC Type		|	   Description  |
+| -------- 	 |	---------   |    ---------    |
 | asset_id   |	uint64	    |The ID of an asset.|
-| include_incomplete   |	bool	    |If true, then return payments that have not yet fully completed. This means that pending payments, as well as failed payments will show up if this field is set to true. This flag doesn't change the meaning of the indices, which are tied to individual payments.|
-| index_offset   |	uint64	    |The index of a payment that will be used as either the start or end of a query to determine which payments should be returned in the response. The index_offset is exclusive. In the case of a zero index_offset, the query will start with the oldest payment when paginating forwards, or will end with the most recent payment when paginating backwards.|
-| max_payments   |	uint64	    |The maximal number of payments returned in the response to this query.|
-| reversed   |	bool	    |If set, the payments returned will result from seeking backwards from the specified index offset. This can be used to paginate backwards. The order of the returned payments is always oldest first (ascending index order).|
-| count_total_payments   |	bool	    |If set, all payments (complete and incomplete, independent of the max_payments parameter) will be counted. Note that setting this to true will increase the run time of the call significantly on systems that have a lot of payments, as all of them have to be iterated through to be counted.|
-| creation_date_start   |	uint64	    |If set, returns all invoices with a creation date greater than or equal to it. Measured in seconds since the unix epoch.|
-| creation_date_end   |	uint64	    |If set, returns all invoices with a creation date less than or equal to it. Measured in seconds since the unix epoch.|
+| dest   |	bytes	    |The identity pubkey of the payment recipient.|
+| amt   |	int64	    |Number of satoshis to send. The fields amt and amt_msat are mutually exclusive.|
+| amt_msat   |	int64	    |Number of millisatoshis to send. The fields amt and amt_msat are mutually exclusive.|
+| payment_hash   |	bytes	    |The hash to use within the payment's HTLC|
+| final_cltv_delta   |	int32	    |The CLTV delta from the current height that should be used to set the timelock for the final hop.|
+| payment_addr   |	bytes	    |An optional payment addr to be included within the last hop of the route.|
+| payment_request   |	string	    |A bare-bones invoice for a payment within the Lightning Network. With the details of the invoice, the sender has all the data necessary to send a payment to the recipient. The amount in the payment request may be zero. In that case it is required to set the amt field as well. If no payment request is specified, the following fields are required: dest, amt and payment_hash.|
+| timeout_seconds   |	int32	    |An upper limit on the amount of time we should spend when attempting to fulfill the payment. This is expressed in seconds. If we cannot make a successful payment within this time frame, an error will be returned. This field must be non-zero.|
+| fee_limit_sat   |	int64	    |The maximum number of satoshis that will be paid as a fee of the payment. If this field is left to the default value of 0, only zero-fee routes will be considered. This usually means single hop routes connecting directly to the destination. To send the payment without a fee limit, use max int here. The fields fee_limit_sat and fee_limit_msat are mutually exclusive.|
+| fee_limit_msat   |	int64	    |The maximum number of millisatoshis that will be paid as a fee of the payment. If this field is left to the default value of 0, only zero-fee routes will be considered. This usually means single hop routes connecting directly to the destination. To send the payment without a fee limit, use max int here. The fields fee_limit_sat and fee_limit_msat are mutually exclusive.|
+| outgoing_chan_id   |	uint64	    |Deprecated, use outgoing_chan_ids. The channel id of the channel that must be taken to the first hop. If zero, any channel may be used (unless outgoing_chan_ids are set).|
+| outgoing_chan_ids   |	uint64[]	    |The channel ids of the channels are allowed for the first hop. If empty, any channel may be used.|
+| last_hop_pubkey   |	bytes	    |The pubkey of the last hop of the route. If empty, any hop may be used.|
+| cltv_limit   |	int32	    |An optional maximum total time lock for the route. This should not exceed lnd's `--max-cltv-expiry` setting. If zero, then the value of `--max-cltv-expiry` is enforced.|
+| route_hints   |	RouteHint[]	    |Optional route hints to reach the destination through private channels.|
+| dest_custom_records   |	DestCustomRecordsEntry[]	    |An optional field that can be used to pass an arbitrary set of TLV records to a peer which understands the new records. This can be used to pass application specific data during the payment attempt. Record types are required to be in the custom range >= 65536. When using REST, the values must be encoded as base64.|
+| allow_self_payment   |	bool	    |If set, circular payments to self are permitted.|
+| dest_features   |	FeatureBit[]	    |Features assumed to be supported by the final node. All transitive feature dependencies must also be set properly. For a given feature bit pair, either optional or remote may be set, but not both. If this field is nil or empty, the router will try to load destination features from the graph as a fallback.|
+| max_parts   |	uint32	    |The maximum number of partial payments that may be use to complete the full amount.|
+| no_inflight_updates   |	bool	    |If set, only the final payment update is streamed back. Intermediate updates that show which htlcs are still in flight are suppressed.|
+| max_shard_size_msat   |	uint64	    |The largest payment split that should be attempted when making a payment if splitting is necessary. Setting this value will effectively cause lnd to split more aggressively, vs only when it thinks it needs to. Note that this value is in milli-satoshis.|
+| amp   |	bool	    |If set, an AMP-payment will be attempted.|
+| time_pref   |	double	    |The time preference for this payment. Set to -1 to optimize for fees only, to 1 to optimize for reliability only or a value inbetween for a mix.
+
+**RouteHint**
+
+| Field		            |	gRPC Type		    |	 Description  |
+| -------- 	            |	---------           |    ---------    |  
+| hop_hints   |	HopHint[]	    |A list of hop hints that when chained together can assist in reaching a specific destination.|
+
+**DestCustomRecordsEntry**
+
+| Field		            |	gRPC Type		    |	 Description  |
+| -------- 	            |	---------           |    ---------    |  
+| key   |	uint64		    | |
+| value   |	bytes	    | |
+
+**FeatureBit**
+
+| Name		            |	Number		    |	 Description  |
+| -------- 	            |	---------           |    ---------    |  
+| DATALOSS_PROTECT_REQ   |	0	    | |  
+| DATALOSS_PROTECT_OPT     |	1	    | |
+| INITIAL_ROUING_SYNC     |	3	    | |
+| UPFRONT_SHUTDOWN_SCRIPT_REQ     |	4	    | |
+| UPFRONT_SHUTDOWN_SCRIPT_OPT     |	5	    | |
+| GOSSIP_QUERIES_REQ     |	6	    | |
+| GOSSIP_QUERIES_OPT     |	7	    | |
+| TLV_ONION_REQ     |	8	    | |
+| TLV_ONION_OPT     |	9	    | |
+| EXT_GOSSIP_QUERIES_REQ     |	10	    | |
+| EXT_GOSSIP_QUERIES_OPT     |	11	    | |
+| STATIC_REMOTE_KEY_REQ     |	12	    | |
+| STATIC_REMOTE_KEY_OPT     |	13	    | |
+| PAYMENT_ADDR_REQ     |	14	    | |
+| PAYMENT_ADDR_OPT     |	15	    | |
+| MPP_REQ     |	16	    | |
+| MPP_OPT     |	17	    | |
+| WUMBO_CHANNELS_REQ     |	18	    | |
+| WUMBO_CHANNELS_OPT     |	19	    | |
+| ANCHORS_REQ     |	20	    | |
+| ANCHORS_OPT     |	21	    | |
+| ANCHORS_ZERO_FEE_HTLC_REQ     |	22	    | |
+| ANCHORS_ZERO_FEE_HTLC_OPT     |	23	    | |
+| AMP_REQ     |	30	    | |
+| AMP_OPT     |	31	    | |
+
+**HopHint**
+
+| Field		            |	gRPC Type		    |	 Description  |
+| -------- 	            |	---------           |    ---------    |  
+| node_id   |	string	    |The public key of the node at the start of the channel.|
+| chan_id   |	uint64	    |The unique identifier of the channel.|
+| fee_base_msat   |	uint32	    |The base fee of the channel denominated in millisatoshis.|
+| fee_proportional_millionths   |	uint32	    |The fee rate of the channel for sending one satoshi across it denominated in millionths of a satoshi.|
+| cltv_expiry_delta   |	uint32	    |The time-lock delta of the channel.|
 
 ## Response:
 | Field		            |	gRPC Type		    |	 Description  |
 | -------- 	            |	---------           |    ---------    |  
-| payments     |	Payment[]	    |The list of payments.|
-| first_index_offset     |	uint64	    |The index of the first item in the set of returned payments. This can be used as the index_offset to continue seeking backwards in the next request.|
-| last_index_offset     |	uint64	    |The index of the last item in the set of returned payments. This can be used as the index_offset to continue seeking forwards in the next request.|
-| total_num_payments     |	uint64	    |Will only be set if count_total_payments in the request was set. Represents the total number of payments (complete and incomplete, independent of the number of payments requested in the query) currently present in the payments database.|
-
-**Payment**
-
-| Field		            |	gRPC Type		    |	 Description  |
-| -------- 	            |	---------           |    ---------    |  
-| payment_hash   |	string	    |The payment hash.|  
-| value     |	int64	    |Deprecated, use value_sat or value_msat.|
-| creation_date     |	int64	    |Deprecated, use creation_time_ns.|
-| fee     |	int64	    |Deprecated, use fee_sat or fee_msat.|
-| payment_preimage     |	string	    |The payment preimage.|
-| value_sat     |	int64	    |The value of the payment in satoshis.|
-| value_msat     |	int64	    |The value of the payment in milli-satoshis.|
-| payment_request     |	string	    |The optional payment request being fulfilled.|
-| status     |	PaymentStatus	    |The status of the payment.|
-| fee_sat     |	int64	    |The fee paid for this payment in satoshis.|
-| fee_msat     |	int64	    |The fee paid for this payment in milli-satoshis.|
-| creation_time_ns     |	int64	    |The time in UNIX nanoseconds at which the payment was created.|
-| htlcs     |	HTLCAttempt[]	    |The HTLCs made in attempt to settle the payment.|
-| payment_index     |	uint64	    |The creation index of this payment. Each payment can be uniquely identified by this index, which may not strictly increment by 1 for payments made in older versions of lnd.|
-| failure_reason     |	PaymentFailureReason	    | |
+| asset_id   |	uint64	    |The ID of an asset.|
+| payment_hash   |	string	    |The payment hash.|
+| value   |	int64	    |Deprecated, use value_sat or value_msat.|
+| creation_date   |	int64	    |Deprecated, use creation_time_ns.|
+| fee   |	int64	    |Deprecated, use fee_sat or fee_msat.|
+| payment_preimage   |	string	    |The payment preimage.|
+| value_sat   |	int64	    |The value of the payment in satoshis.|
+| value_msat   |	int64	    |The value of the payment in milli-satoshis.|
+| payment_request   |	string	    |The optional payment request being fulfilled.|
+| status   |	PaymentStatus	    |The status of the payment.|
+| fee_sat   |	int64	    |The fee paid for this payment in satoshis.|
+| fee_msat   |	int64	    |The fee paid for this payment in milli-satoshis.|
+| creation_time_ns   |	int64	    |The time in UNIX nanoseconds at which the payment was created.|
+| htlcs   |		HTLCAttempt[]	    |The HTLCs made in attempt to settle the payment.|
+| payment_index   |		uint64	    |The creation index of this payment. Each payment can be uniquely identified by this index, which may not strictly increment by 1 for payments made in older versions of obd.|
+| failure_reason   |		PaymentFailureReason	    | |
 
 **PaymentStatus**
 
@@ -204,15 +265,19 @@ java code example
 -->
 
 ```java
-LightningOuterClass.ListPaymentsRequest paymentsRequest = LightningOuterClass.ListPaymentsRequest.newBuilder()
-                    .setAssetId((int) 2147485160)
-                    .setIsQueryAsset(false)
-                    .setIncludeIncomplete(false)
-                    .setStartTime(Long.parseLong(1677600000))
-                    .build();
-Obdmobile.oB_ListPayments(paymentsRequest.toByteArray(), new Callback() {
+RouterOuterClass.SendPaymentRequest sendPaymentRequest = RouterOuterClass.SendPaymentRequest.newBuilder()
+            .setAssetId((int) 2147485160)
+            .setPaymentRequest("obto2147485160:11pjp6a0wpp5jzzalddsjjmfvkgp7l5rhvw2qqgqg8awddypfcafrcksrlz3z48qdq2dpsksctgvycqzpgxqyz5vq3q8zqqqp0gsp5lkvghy5rqguw9zj0djytpwh5wthhgfskas8dpcht4vnkxgn4axss9qyyssqd7c0xwc5q7tswf8x9q7h27jmmghr4hxk56vgu3t8guyktsp7rnksu4g6n8y4c4rvww8z59fa0p7l2m4ypszrwg8us93lwfl2f22hx5gpq0cugx")
+            .setFeeLimitMsat(calculateAbsoluteFeeLimit(100000000))
+            .setTimeoutSeconds(30)
+            .setMaxParts(1)
+            .build();
+Obdmobile.routerOB_SendPaymentV2(sendPaymentRequest.toByteArray(), new RecvStream() {
     @Override
     public void onError(Exception e) {
+        if (e.getMessage().equals("EOF")) {
+            return;
+        }
         e.printStackTrace();
     }
 
@@ -222,13 +287,32 @@ Obdmobile.oB_ListPayments(paymentsRequest.toByteArray(), new Callback() {
             return;
         }
         try {
-            LightningOuterClass.ListPaymentsResponse resp = LightningOuterClass.ListPaymentsResponse.parseFrom(bytes);
-            List paymentsList =  resp.getPaymentsList();
+            LightningOuterClass.Payment resp = LightningOuterClass.Payment.parseFrom(bytes);                                                 
         } catch (InvalidProtocolBufferException e) {
             e.printStackTrace();
         }
     }
 });
+
+public static long calculateAbsoluteFeeLimit(long amountSatToSend) {
+    long absFee;
+    if (amountSatToSend <= RefConstants.LN_PAYMENT_FEE_THRESHOLD) {
+        absFee = (long) (Math.sqrt(amountSatToSend));
+    } else {
+        absFee = (long) (getRelativeSettingsFeeLimit() * amountSatToSend);
+    }
+    return Math.max(absFee, 3L);
+}
+
+public static float getRelativeSettingsFeeLimit() {
+    String lightning_feeLimit = "3%";
+    String feePercent = lightning_feeLimit.replace("%", "");
+    float feeMultiplier = 1f;
+    if (!feePercent.equals("None")) {
+        feeMultiplier = Integer.parseInt(feePercent) / 100f;
+    }
+    return feeMultiplier;
+}
 ```
 
 <!--
@@ -237,49 +321,45 @@ The response for the example
 response:
 ```
 {
-    total_num_payments: 5
-    first_index_offset: 2003
-    last_index_offset: 7003
-    payments {
-      asset_id: 0
-      creation_date: 1678789720
-      creation_time_ns: 1678789720353394336
-      fee_msat: 0
-      htlcs {
-        attempt_id: 2005
-        attempt_time_ns: 1678789720374191680
-        preimage: "\215\1771\260Mnu\t\273u\314\v\367\005\322`\364e\273i\302\031\310\2351\300A\201-\031?\301"
-        resolve_time_ns: 1678789720559565638
-        route {
-          hops {
-            amt_to_forward: 0
-            amt_to_forward_msat: 2000000
-            chan_capacity: 0
-            chan_id: 2665559233359052800
-            expiry: 2424396
-            fee: 0
-            fee_msat: 0
-            mpp_record {
-              payment_addr: "<1\211o]C\314\353(\245ml\346\266\244L\353\266\2266=j\205D\355\323Z\316\022\252BN"
-              total_amt_msat: 2000000
-            }
-            pub_key: "025af4448f55bf1e6de1ae0486d4d103427c4e559a62ed7f8035bb1ed1af734f61"
-            tlv_payload: true
+    asset_id: 2147485160
+    creation_date: 1679726415
+    creation_time_ns: 1679726415995149194
+    fee_msat: 0
+    htlcs {
+      attempt_id: 17002
+      attempt_time_ns: 1679726416015893725
+      preimage: "\333\240\322\200\341\361\310dP\336[63\217\205\201.\200\240\025\027e<\000t\021\016\255+\353*\362"
+      resolve_time_ns: 1679726416217377267
+      route {
+        asset_id: -2147482136
+        hops {
+          amt_to_forward: 0
+          amt_to_forward_msat: 100000000
+          chan_capacity: 0
+          chan_id: 2666867652199055361
+          expiry: 2425824
+          fee: 0
+          fee_msat: 0
+          mpp_record {
+            payment_addr: "!_\300\276\353\326\347B\'\0169\257\2238\025\254\241\211\2413\177>\271\177\275\2453\261\267\306\257\375"
+            total_amt_msat: 100000000
           }
-          total_amt_msat: 2000000
-          total_fees_msat: 0
-          total_time_lock: 2424396
+          pub_key: "025af4448f55bf1e6de1ae0486d4d103427c4e559a62ed7f8035bb1ed1af734f61"
+          tlv_payload: true
         }
-        status: SUCCEEDED
-        status_value: 1
+        total_amt_msat: 100000000
+        total_fees_msat: 0
+        total_time_lock: 2425824
       }
-      payment_hash: "3c9bf1c44929557d4d931d18a64a2aaaff4253a867c0632dd0e711385ed9e0ee"
-      payment_index: 2006
-      payment_preimage: "8d7f31b04d6e7509bb75cc0bf705d260f465bb69c219c89d31c041812d193fc1"
-      payment_request: "obto0:20u1pjpqnrlpp58jdlr3zf992h6nvnr5v2vj324tl5y5agvlqxxtwsuugnshkeurhqdqqcqzpgxqyz5vq3qpqsp58sccjm6ag0xwk299d4kwdd4yfn4md93k844g238d6ddvuy42gf8q9qyyssq350xgr0qj4etdhx4rj22hdx0vpwjq4gczu8c29z3xpvxjps97svhcpmd3tpzty8nrd662270a92p0qqrmtzq38spx9l4rgd70tm2vkgq9jtz37"
       status: SUCCEEDED
-      status_value: 2
-      value_msat: 2000000
+      status_value: 1
     }
+    payment_hash: "41908fbdeccc2682718cde46bfb627f544bc9a3843457243cf6d4e8194b6928f"
+    payment_index: 17003
+    payment_preimage: "dba0d280e1f1c86450de5b36338f85812e80a01517653c0074110ead2beb2af2"
+    payment_request: "obto2147485160:11pjpayczpp5gxggl00vesngyuvvmertld3874ztex3cgdzhys70d48gr99kj28sdqqcqzpgxqyz5vq3q8zqqqp0gsp5y90up0ht6mn5yfcw8xhexwq44jscngfn0ultjlaa55emrd7x4l7s9qyyssqxlde4r7fnj7wttc8f2470pn0cmnev6dnjww44pm3709m97nh0tl354ry0ef3kw232ml6q7w06n4sqn8t0m0dudt5c08kg8uj858edzqpvmvrrg"
+    status: SUCCEEDED
+    status_value: 2
+    value_msat: 100000000
 }
 ```

@@ -1,78 +1,24 @@
-## OB_ListPayments
+## RouterSendToRouteV2
 
-OB_ListPayments returns a list of all outgoing payments.
+RouterSendToRouteV2 attempts to make a payment via the specified route. This method differs from SendPayment in that it allows users to specify a full route manually. This can be used for things like rebalancing, and atomic swaps.
 
 ## Arguments:
-| Field		            |	gRPC Type		    |	 Description  |
-| -------- 	            |	---------           |    ---------    |
-| asset_id   |	uint64	    |The ID of an asset.|
-| include_incomplete   |	bool	    |If true, then return payments that have not yet fully completed. This means that pending payments, as well as failed payments will show up if this field is set to true. This flag doesn't change the meaning of the indices, which are tied to individual payments.|
-| index_offset   |	uint64	    |The index of a payment that will be used as either the start or end of a query to determine which payments should be returned in the response. The index_offset is exclusive. In the case of a zero index_offset, the query will start with the oldest payment when paginating forwards, or will end with the most recent payment when paginating backwards.|
-| max_payments   |	uint64	    |The maximal number of payments returned in the response to this query.|
-| reversed   |	bool	    |If set, the payments returned will result from seeking backwards from the specified index offset. This can be used to paginate backwards. The order of the returned payments is always oldest first (ascending index order).|
-| count_total_payments   |	bool	    |If set, all payments (complete and incomplete, independent of the max_payments parameter) will be counted. Note that setting this to true will increase the run time of the call significantly on systems that have a lot of payments, as all of them have to be iterated through to be counted.|
-| creation_date_start   |	uint64	    |If set, returns all invoices with a creation date greater than or equal to it. Measured in seconds since the unix epoch.|
-| creation_date_end   |	uint64	    |If set, returns all invoices with a creation date less than or equal to it. Measured in seconds since the unix epoch.|
+| Field		   |	gRPC Type		|	   Description  |
+| -------- 	 |	---------   |    ---------    |
+| payment_hash   |	bytes	    |The payment hash to use for the HTLC.|
+| route   |	Route	    |Route that should be used to attempt to complete the payment.|
+| skip_temp_err   |	bool	    |Whether the payment should be marked as failed when a temporary error is returned from the given route. Set it to true so the payment won't be failed unless a terminal error is occurred, such as payment timeout, no routes, incorrect payment details, or insufficient funds.|
 
 ## Response:
 | Field		            |	gRPC Type		    |	 Description  |
 | -------- 	            |	---------           |    ---------    |  
-| payments     |	Payment[]	    |The list of payments.|
-| first_index_offset     |	uint64	    |The index of the first item in the set of returned payments. This can be used as the index_offset to continue seeking backwards in the next request.|
-| last_index_offset     |	uint64	    |The index of the last item in the set of returned payments. This can be used as the index_offset to continue seeking forwards in the next request.|
-| total_num_payments     |	uint64	    |Will only be set if count_total_payments in the request was set. Represents the total number of payments (complete and incomplete, independent of the number of payments requested in the query) currently present in the payments database.|
-
-**Payment**
-
-| Field		            |	gRPC Type		    |	 Description  |
-| -------- 	            |	---------           |    ---------    |  
-| payment_hash   |	string	    |The payment hash.|  
-| value     |	int64	    |Deprecated, use value_sat or value_msat.|
-| creation_date     |	int64	    |Deprecated, use creation_time_ns.|
-| fee     |	int64	    |Deprecated, use fee_sat or fee_msat.|
-| payment_preimage     |	string	    |The payment preimage.|
-| value_sat     |	int64	    |The value of the payment in satoshis.|
-| value_msat     |	int64	    |The value of the payment in milli-satoshis.|
-| payment_request     |	string	    |The optional payment request being fulfilled.|
-| status     |	PaymentStatus	    |The status of the payment.|
-| fee_sat     |	int64	    |The fee paid for this payment in satoshis.|
-| fee_msat     |	int64	    |The fee paid for this payment in milli-satoshis.|
-| creation_time_ns     |	int64	    |The time in UNIX nanoseconds at which the payment was created.|
-| htlcs     |	HTLCAttempt[]	    |The HTLCs made in attempt to settle the payment.|
-| payment_index     |	uint64	    |The creation index of this payment. Each payment can be uniquely identified by this index, which may not strictly increment by 1 for payments made in older versions of lnd.|
-| failure_reason     |	PaymentFailureReason	    | |
-
-**PaymentStatus**
-
-| Name		            |	Number		    |	 Description  |
-| -------- 	            |	---------           |    ---------    |  
-| UNKNOWN   |	0	    | |  
-| IN_FLIGHT     |	1	    | |
-| SUCCEEDED     |	2	    | |
-| FAILED     |	3	    | |
-
-**HTLCAttempt**
-
-| Field		            |	gRPC Type		    |	 Description  |
-| -------- 	            |	---------           |    ---------    |  
-| attempt_id   |	uint64	    |The unique ID that is used for this attempt.|
-| status   |	HTLCStatus	    |The status of the HTLC.|
-| route   |	Route	    |The route taken by this HTLC.|
-| attempt_time_ns   |	int64	    |The time in UNIX nanoseconds at which this HTLC was sent.|
-| resolve_time_ns   |	int64	    |The time in UNIX nanoseconds at which this HTLC was settled or failed. This value will not be set if the HTLC is still IN_FLIGHT.|
-| failure   |	Failure	    |Detailed htlc failure info.|
-| preimage   |	bytes	    |The preimage that was used to settle the HTLC.|
-
-**PaymentFailureReason**
-
-| Name		            |	Number		    |	 Description  |
-| -------- 	            |	---------           |    ---------    |  
-| FAILURE_REASON_NONE   |	0	    |Payment isn't failed (yet).|
-| FAILURE_REASON_TIMEOUT   |	1	    |There are more routes to try, but the payment timeout was exceeded.|
-| FAILURE_REASON_NO_ROUTE   |	2	    |All possible routes were tried and failed permanently. Or were no routes to the destination at all.|
-| FAILURE_REASON_ERROR   |	3	    |A non-recoverable error has occured.|
-| FAILURE_REASON_INCORRECT_PAYMENT_DETAILS   |	4	    |Payment details incorrect (unknown hash, invalid amt or invalid final cltv delta).|
-| FAILURE_REASON_INSUFFICIENT_BALANCE   |	5	    |Insufficient local balance.|
+| attempt_id     |	uint64	    |The unique ID that is used for this attempt.|
+| status     |		HTLCStatus		    |The status of the HTLC.|
+| route     |		Route		    |The route taken by this HTLC.|
+| attempt_time_ns     |		int64		    |The time in UNIX nanoseconds at which this HTLC was sent.|
+| resolve_time_ns     |		int64		    |The time in UNIX nanoseconds at which this HTLC was settled or failed. This value will not be set if the HTLC is still IN_FLIGHT.|
+| failure     |		Failure		    |Detailed htlc failure info.|
+| preimage     |		bytes		    |The preimage that was used to settle the HTLC.|
 
 **HTLCStatus**
 
@@ -204,26 +150,41 @@ java code example
 -->
 
 ```java
-LightningOuterClass.ListPaymentsRequest paymentsRequest = LightningOuterClass.ListPaymentsRequest.newBuilder()
-                    .setAssetId((int) 2147485160)
-                    .setIsQueryAsset(false)
-                    .setIncludeIncomplete(false)
-                    .setStartTime(Long.parseLong(1677600000))
-                    .build();
-Obdmobile.oB_ListPayments(paymentsRequest.toByteArray(), new Callback() {
+LightningOuterClass.Route route = {
+        asset_id: -2147482136
+        hops {
+          amt_to_forward: 0
+          amt_to_forward_msat: 100000000
+          chan_capacity: 0
+          chan_id: 2666867652199055361
+          expiry: 2425823
+          fee: 0
+          fee_msat: 0
+          mpp_record {
+            payment_addr: "!_\300\276\353\326\347B\'\0169\257\2238\025\254\241\211\2413\177>\271\177\275\2453\261\267\306\257\375"
+            total_amt_msat: 100000000
+          }
+          pub_key: "025af4448f55bf1e6de1ae0486d4d103427c4e559a62ed7f8035bb1ed1af734f61"
+          tlv_payload: true
+        }
+        total_amt_msat: 100000000
+        total_fees_msat: 0
+        total_time_lock: 2425823
+      }
+RouterOuterClass.SendToRouteRequest sendToRouteRequest = RouterOuterClass.SendToRouteRequest.newBuilder()
+            .setPaymentHash(byteStringFromHex("fd4c4943bf84694847960d8b7c50f37a23d6e77196fec0b5aab69cba969f453f"))
+            .setRoute(route)
+            .build();
+Obdmobile.routerSendToRouteV2(sendToRouteRequest.toByteArray(), new Callback() {
     @Override
     public void onError(Exception e) {
-        e.printStackTrace();
+        e.printStackTrace();                
     }
 
     @Override
     public void onResponse(byte[] bytes) {
-        if (bytes == null) {
-            return;
-        }
         try {
-            LightningOuterClass.ListPaymentsResponse resp = LightningOuterClass.ListPaymentsResponse.parseFrom(bytes);
-            List paymentsList =  resp.getPaymentsList();
+            LightningOuterClass.HTLCAttempt htlcAttempt = LightningOuterClass.HTLCAttempt.parseFrom(bytes);
         } catch (InvalidProtocolBufferException e) {
             e.printStackTrace();
         }
@@ -237,49 +198,39 @@ The response for the example
 response:
 ```
 {
-    total_num_payments: 5
-    first_index_offset: 2003
-    last_index_offset: 7003
-    payments {
-      asset_id: 0
-      creation_date: 1678789720
-      creation_time_ns: 1678789720353394336
-      fee_msat: 0
-      htlcs {
-        attempt_id: 2005
-        attempt_time_ns: 1678789720374191680
-        preimage: "\215\1771\260Mnu\t\273u\314\v\367\005\322`\364e\273i\302\031\310\2351\300A\201-\031?\301"
-        resolve_time_ns: 1678789720559565638
-        route {
-          hops {
-            amt_to_forward: 0
-            amt_to_forward_msat: 2000000
-            chan_capacity: 0
-            chan_id: 2665559233359052800
-            expiry: 2424396
-            fee: 0
-            fee_msat: 0
-            mpp_record {
-              payment_addr: "<1\211o]C\314\353(\245ml\346\266\244L\353\266\2266=j\205D\355\323Z\316\022\252BN"
-              total_amt_msat: 2000000
-            }
-            pub_key: "025af4448f55bf1e6de1ae0486d4d103427c4e559a62ed7f8035bb1ed1af734f61"
-            tlv_payload: true
-          }
-          total_amt_msat: 2000000
-          total_fees_msat: 0
-          total_time_lock: 2424396
-        }
-        status: SUCCEEDED
-        status_value: 1
-      }
-      payment_hash: "3c9bf1c44929557d4d931d18a64a2aaaff4253a867c0632dd0e711385ed9e0ee"
-      payment_index: 2006
-      payment_preimage: "8d7f31b04d6e7509bb75cc0bf705d260f465bb69c219c89d31c041812d193fc1"
-      payment_request: "obto0:20u1pjpqnrlpp58jdlr3zf992h6nvnr5v2vj324tl5y5agvlqxxtwsuugnshkeurhqdqqcqzpgxqyz5vq3qpqsp58sccjm6ag0xwk299d4kwdd4yfn4md93k844g238d6ddvuy42gf8q9qyyssq350xgr0qj4etdhx4rj22hdx0vpwjq4gczu8c29z3xpvxjps97svhcpmd3tpzty8nrd662270a92p0qqrmtzq38spx9l4rgd70tm2vkgq9jtz37"
-      status: SUCCEEDED
-      status_value: 2
-      value_msat: 2000000
+    attempt_id: 18001
+    attempt_time_ns: 1679731626595208560
+    failure {
+      code: INCORRECT_OR_UNKNOWN_PAYMENT_DETAILS
+      code_value: 1
+      failure_source_index: 1
+      height: 2425788
+      htlc_msat: 0
     }
+    resolve_time_ns: 1679731626829642362
+    route {
+      asset_id: -2147482136
+      hops {
+        amt_to_forward: 0
+        amt_to_forward_msat: 100000000
+        chan_capacity: 0
+        chan_id: 2666867652199055361
+        expiry: 2425831
+        fee: 0
+        fee_msat: 0
+        mpp_record {
+          payment_addr: "r\212|H\\\276\004\306\307u\355?\262?C\006,\356\334B\fK8\210\224\331\214\r\000\246\2347"
+          total_amt_msat: 100000000
+        }
+        pub_key: "025af4448f55bf1e6de1ae0486d4d103427c4e559a62ed7f8035bb1ed1af734f61"
+        tlv_payload: true
+      }
+      total_amt_msat: 100000000
+      total_fees_msat: 0
+      total_time_lock: 2425831
+    }
+    status: FAILED
+    status_value: 2
 }
 ```
+
