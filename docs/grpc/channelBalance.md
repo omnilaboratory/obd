@@ -18,6 +18,7 @@ This request has no parameters.
 | pending_open_remote_balance            |	Amount	        |Sum of channels pending remote balances.|
 
 **Amount**
+
 | Field		            |	gRPC Type		    |	 Description  |
 | -------- 	            |	---------           |    ---------    |  
 | sat   |	uint64	    |    Value denominated in satoshis.|  
