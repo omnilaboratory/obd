@@ -27,21 +27,24 @@ This request has no parameters.
 | uris            |	string[]	        |The URIs of the current node.|
 | features            |	FeaturesEntry[]	        |Features that our node has advertised in our init message, node announcements and invoices.|
 | require_htlc_interceptor            |	bool	        |Indicates whether the HTLC interceptor API is in always-on mode.|
-| store_final_htlc_resolutions            |	bool	        |Indicates whether final htlc resolutions are stored on disk.|
+| store_final_htlc_resolutions            |	bool	        |Indicates whether final htlc resolutions are stored on disk.|  
 
 **Chain**
+
 | Field		            |	gRPC Type		    |	 Description  |
 | -------- 	            |	---------           |    ---------    |  
 | chain   |	string	    |    The blockchain the node is on (eg bitcoin, litecoin).|  
 | network     |	string	    |    The network the node is on (eg regtest, testnet, mainnet).|
 
 **FeaturesEntry**
+
 | Field		            |	gRPC Type		    |	 Description  |
 | -------- 	            |	---------           |    ---------    |  
 | key   |	uint32	    |    |  
 | value     |	Feature	    |    |
 
 **Feature**
+
 | Field		            |	gRPC Type		    |	 Description  |
 | -------- 	            |	---------           |    ---------    |  
 | name   |	string	    |    |  
