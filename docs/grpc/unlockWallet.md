@@ -2,7 +2,7 @@
 
 UnlockWallet is used at startup of obd(lnd,oblnd) to provide a password to unlock the wallet database.
 
-## Arguments:
+## Arguments:  
 | Field		             |	gRPC Type		    |	 Description  |
 | -------- 	             |	---------           |    ---------    |  
 | wallet_password	     |	bytes		        |    wallet_password should be the current valid passphrase for the daemon. This will be required to decrypt on-disk material that the daemon requires to function properly. When using REST, this field must be encoded as base64.|
@@ -44,7 +44,6 @@ UnlockWallet is used at startup of obd(lnd,oblnd) to provide a password to unloc
 | -------- 	         |	---------       |    ---------    |  
 | chan_point         |	ChannelPoint    |    Identifies the channel that this backup belongs to.|
 | multi_chan_backup  |	bytes           |    A single encrypted blob containing all the static channel backups of the channel listed above. This can be stored as a single file or blob, and safely be replaced with any prior/future versions. When using REST, this field must be encoded as base64.|
-
 
 ## Response:
 This response has no parameters.
