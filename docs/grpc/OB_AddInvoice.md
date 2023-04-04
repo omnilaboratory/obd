@@ -1,6 +1,9 @@
 ## OB_AddInvoice
 
-OB_AddInvoice attempts to add a new invoice to the invoice database. Any duplicated invoices are rejected, therefore all invoices must have a unique payment preimage.
+OB_AddInvoice attempts to add a new invoice to the invoice database.   
+
+1. Any duplicated invoices are rejected.
+2. An invoice must identify an asset ID.  
 
 ## Arguments:
 | Field		   |	gRPC Type		|	   Description  |
