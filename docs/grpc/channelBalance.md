@@ -3,7 +3,9 @@
 ChannelBalance returns a report on the total funds(Bitcoin/Satoshi ) across all open channels, categorized in local/remote, pending local/remote and unsettled local/remote balances.
 
 ## Arguments:
-This request has no parameters.
+| Field		         |	gRPC Type		|	   Description    |
+| -------- 	         |	---------       |      ---------      |  
+| asset_id   |	uint64	    |The ID of an asset.|
 
 ## Response:
 | Field		         |	gRPC Type		|	   Description    |
@@ -32,7 +34,7 @@ java code example
 
 ```java
 LightningOuterClass.ChannelBalanceRequest channelBalanceRequest = LightningOuterClass.ChannelBalanceRequest.newBuilder()
-        .setAssetId((int) propertyid)
+        .setAssetId((int) 2147485160)
         .build();
 Obdmobile.channelBalance(channelBalanceRequest.toByteArray(), new Callback() {
     @Override
