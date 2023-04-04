@@ -16,12 +16,15 @@
     - [addInvoice](grpc/addInvoice.md)  
     - [changePassword](grpc/changePassword.md)
     - [genSeed](grpc/genSeed.md)
-    - [newAddress](grpc/newAddress.md)
+    - [OB_NewAddress](grpc/OB_newAddress.md)
+    - [OB_AssetsBalanceByAddress](grpc/OB_AssetsBalanceByAddress.md)
+    - [OB_GetInfo](grpc/OB_GetInfo.md)
+    - [OB_WalletBalanceByAddress](grpc/OB_WalletBalanceByAddress.md) 
+    - [channelBalance](grpc/channelBalance.md) 
     - [restoreChannelBackups](grpc/restoreChannelBackups.md)
     - [subscribeChannelBackups](grpc/subscribeChannelBackups.md)
     - [subscribeState](grpc/subscribeState.md)
     - [verifyChanBackup](grpc/verifyChanBackup.md)
- 
 
 - GUI Playground(**archived**)
     - [5 minutes to get started](GUI-tool.md) 

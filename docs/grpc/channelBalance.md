@@ -1,6 +1,6 @@
 ## ChannelBalance
 
-ChannelBalance returns a report on the total funds across all open channels, categorized in local/remote, pending local/remote and unsettled local/remote balances.
+ChannelBalance returns a report on the total funds(Bitcoin/Satoshi ) across all open channels, categorized in local/remote, pending local/remote and unsettled local/remote balances.
 
 ## Arguments:
 | Field		         |	gRPC Type		|	   Description    |
@@ -20,6 +20,7 @@ ChannelBalance returns a report on the total funds across all open channels, cat
 | pending_open_remote_balance            |	Amount	        |Sum of channels pending remote balances.|
 
 **Amount**
+
 | Field		            |	gRPC Type		    |	 Description  |
 | -------- 	            |	---------           |    ---------    |  
 | sat   |	uint64	    |    Value denominated in satoshis.|  
