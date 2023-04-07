@@ -25,7 +25,8 @@ OB_ListPayments returns a list of all outgoing payments.
 **Payment**
 
 | Field		            |	gRPC Type		    |	 Description  |
-| -------- 	            |	---------           |    ---------    |  
+| -------- 	            |	---------           |    ---------    |
+| asset_id   |	uint64	    |The ID of an asset.|
 | payment_hash   |	string	    |The payment hash.|  
 | value     |	int64	    |Deprecated, use value_sat or value_msat.|
 | creation_date     |	int64	    |Deprecated, use creation_time_ns.|

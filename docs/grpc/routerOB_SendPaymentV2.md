@@ -7,7 +7,7 @@ RouterOB_SendPaymentV2 attempts to route a payment described by the passed Payme
 | -------- 	 |	---------   |    ---------    |
 | asset_id   |	uint64	    |The ID of an asset.|
 | dest   |	bytes	    |The identity pubkey of the payment recipient.|
-| amt   |	int64	    |Number of satoshis to send. The fields amt and amt_msat are mutually exclusive.|
+| asset_amt   |	int64	    |Number of omniAmount to send. this field is only for asset transfer.|
 | amt_msat   |	int64	    |Number of millisatoshis to send. The fields amt and amt_msat are mutually exclusive.|
 | payment_hash   |	bytes	    |The hash to use within the payment's HTLC|
 | final_cltv_delta   |	int32	    |The CLTV delta from the current height that should be used to set the timelock for the final hop.|

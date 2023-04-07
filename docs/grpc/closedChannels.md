@@ -20,12 +20,14 @@ ClosedChannels returns a description of all the closed channels that this node w
 **ChannelCloseSummary**
 | Field		            |	gRPC Type		    |	 Description  |
 | -------- 	            |	---------           |    ---------    |  
+| asset_id   |	uint64	    |The ID of an asset.|
 | channel_point     |	string	    |The outpoint (txid:index) of the funding transaction.|
 | chan_id     |	uint64	    |The unique channel ID for the channel.|
 | chain_hash     |	string	    |The hash of the genesis block that this channel resides within.|
 | closing_tx_hash     |	string	    |The txid of the transaction which ultimately closed this channel.|
 | remote_pubkey     |	string	    |Public key of the remote peer that we formerly had a channel with.|
-| capacity     |	int64	    |Total capacity of the channel.|
+| asset_capacity     |	int64	    |The total amount of asset funds held in this channel.|
+| btc_capacity     |	int64	    |The total amount of btc funds held in this channel.|
 | close_height     |	uint32	    |Height at which the funding transaction was spent.|
 | settled_balance     |	int64	    |Settled balance at the time of channel closure.|
 | time_locked_balance     |	int64	    |The sum of all the time-locked outputs at the time of channel closure.|
