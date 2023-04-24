@@ -21,6 +21,7 @@
     - [OB_ListInvoices](grpc/OB_ListInvoices.md)
     - [OB_ListPayments](grpc/OB_ListPayments.md)
     - [OB_OpenChannel](grpc/OB_OpenChannel.md)
+    - [OB_SafeBox_CloseChannel](grpc/OB_SafeBox_CloseChannel.md) 
     - [OB_SendCoinsFrom](grpc/OB_SendCoinsFrom.md)
     - [OB_SetDefaultAddress](grpc/OB_SetDefaultAddress.md)
     - [OB_WalletBalanceByAddress](grpc/OB_WalletBalanceByAddress.md) 
