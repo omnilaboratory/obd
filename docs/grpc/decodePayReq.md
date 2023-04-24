@@ -9,7 +9,10 @@ DecodePayReq takes an encoded payment request string and attempts to decode it, 
 
 ## Response:
 | Field		            |	gRPC Type		    |	 Description  |
-| -------- 	            |	---------           |    ---------    |  
+| -------- 	            |	---------           |    ---------    |
+| asset_id   |	uint64	    |The ID of an asset.|
+| amount   |	int64	    | |
+| amt_msat   |	int64	    | |
 | destination     |	string	    | |
 | payment_hash     |	string	    | |
 | num_satoshis     |	int64	    | |

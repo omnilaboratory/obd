@@ -19,14 +19,18 @@ ListChannels returns a description of all the open channels that this node is a 
 **Channel**
 
 | Field		            |	gRPC Type		    |	 Description  |
-| -------- 	            |	---------           |    ---------    |  
+| -------- 	            |	---------           |    ---------    |
+| asset_id   |	uint64	    |The ID of an asset.|
 | active   |	bool	    |Whether this channel is active or not.|  
 | remote_pubkey     |	string	    |The identity pubkey of the remote node.|
 | channel_point     |	string	    |The outpoint (txid:index) of the funding transaction. With this value, Bob will be able to generate a signature for Alice's version of the commitment transaction.|
 | chan_id     |	uint64	    |The unique channel ID for the channel. The first 3 bytes are the block height, the next 3 the index within the block, and the last 2 bytes are the output index for the channel.|
-| capacity     |	int64	    |The total amount of funds held in this channel.|
+| asset_capacity     |	int64	    |The total amount of asset funds held in this channel.|
+| btc_capacity     |	int64	    |The total amount of btc funds held in this channel.|
 | local_balance     |	int64	    |This node's current balance in this channel.|
 | remote_balance     |	int64	    |The counterparty's current balance in this channel.|
+| local_asset_balance     |	int64	    |This node's current asset balance in this channel.|
+| remote_asset_balance     |	int64	    |The counterparty's current asset balance in this channel.|
 | commit_fee     |	int64	    |The amount calculated to be paid in fees for the current set of commitment transactions. The fee amount is persisted with the channel in order to allow the fee amount to be removed and recalculated with each channel state update, including updates that happen after a system restart.|
 | commit_weight     |	int64	    |The weight of the commitment transaction.|
 | fee_per_kw     |	int64	    |The required number of satoshis per kilo-weight that the requester will pay at all times, for both the funding transaction and commitment transaction. This value can later be updated once the channel is open.|

@@ -23,7 +23,8 @@ OB_ListInvoices returns a list of all the invoices currently stored within the d
 **Invoice**
 
 | Field		            |	gRPC Type		    |	 Description  |
-| -------- 	            |	---------           |    ---------    |  
+| -------- 	            |	---------           |    ---------    |
+| asset_id   |	uint64	    |The ID of an asset.|
 | memo   |	string	    |An optional memo to attach along with the invoice. Used for record keeping purposes for the invoice's creator, and will also be set in the description field of the encoded payment request if the description_hash field is not being used.|
 | r_preimage   |	bytes	    |The hex-encoded preimage (32 byte) which will allow settling an incoming HTLC payable to this preimage. When using REST, this field must be encoded as base64.|
 | r_hash   |	bytes	    |The hash of the preimage. When using REST, this field must be encoded as base64. Note: Output only, don't specify for creating an invoice.|
