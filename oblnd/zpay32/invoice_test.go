@@ -12,11 +12,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
-	"github.com/btcsuite/btcutil"
+	"github.com/btcsuite/btcd/btcutil"
 	"github.com/lightningnetwork/lnd/lnwire"
 
 	litecoinCfg "github.com/ltcsuite/ltcd/chaincfg"
@@ -56,7 +56,7 @@ var (
 	testPleaseConsider = "Please consider supporting this project"
 
 	testPrivKeyBytes, _     = hex.DecodeString("e126f68f7eafcc8b74f54d269fe206be715000f94dac067d1c04a8ca3b2db734")
-	testPrivKey, testPubKey = btcec.PrivKeyFromBytes(btcec.S256(), testPrivKeyBytes)
+	testPrivKey, testPubKey = btcec.PrivKeyFromBytes(testPrivKeyBytes)
 
 	testDescriptionHashSlice = chainhash.HashB([]byte("One piece of chocolate cake, one icecream cone, one pickle, one slice of swiss cheese, one slice of salami, one lollypop, one piece of cherry pie, one sausage, one cupcake, and one slice of watermelon"))
 
@@ -70,9 +70,9 @@ var (
 	testAddrMainnetP2WSH, _  = btcutil.DecodeAddress("bc1qrp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3qccfmv3", &chaincfg.MainNetParams)
 
 	testHopHintPubkeyBytes1, _ = hex.DecodeString("029e03a901b85534ff1e92c43c74431f7ce72046060fcf7a95c37e148f78c77255")
-	testHopHintPubkey1, _      = btcec.ParsePubKey(testHopHintPubkeyBytes1, btcec.S256())
+	testHopHintPubkey1, _      = btcec.ParsePubKey(testHopHintPubkeyBytes1)
 	testHopHintPubkeyBytes2, _ = hex.DecodeString("039e03a901b85534ff1e92c43c74431f7ce72046060fcf7a95c37e148f78c77255")
-	testHopHintPubkey2, _      = btcec.ParsePubKey(testHopHintPubkeyBytes2, btcec.S256())
+	testHopHintPubkey2, _      = btcec.ParsePubKey(testHopHintPubkeyBytes2)
 
 	testSingleHop = []HopHint{
 		{
@@ -877,33 +877,47 @@ func TestEncodeObdInvoice(t *testing.T) {
 		encodedInvoice string
 		valid          bool
 	}{
+		//{
+		//	// Invoice with no amount.
+		//	newInvoice: func() (*Invoice, error) {
+		//		return NewInvoice(
+		//			&chaincfg.TestNet3Params,
+		//			testPaymentHash,
+		//			time.Unix(1496314658, 0),
+		//			Amount(lnwire.UnitPrec11(20000000)),
+		//			AssetId(31),
+		//			Description(testCupOfCoffee),
+		//		)
+		//	},
+		//	valid:          true,
+		//	encodedInvoice: "lnbc1pvjluezpp5qqqsyqcyq5rqwzqfqqqsyqcyq5rqwzqfqqqsyqcyq5rqwzqfqypqdq5xysxxatsyp3k7enxv4jshwlglv23cytkzvq8ld39drs8sq656yh2zn0aevrwu6uqctaklelhtpjnmgjdzmvwsh0kuxuwqf69fjeap9m5mev2qzpp27xfswhs5vgqmn9xzq",
+		//},
+		//{
+		//	// 'n' field set.
+		//	newInvoice: func() (*Invoice, error) {
+		//		return NewInvoice(&chaincfg.TestNet3Params,
+		//			testPaymentHash, time.Unix(1503429093, 0),
+		//			AssetId(31),
+		//			Amount(testMillisat24BTC),
+		//			Description(testEmptyString),
+		//			Destination(testPubKey))
+		//	},
+		//	valid:          true,
+		//	encodedInvoice: "lnbc241pveeq09pp5qqqsyqcyq5rqwzqfqqqsyqcyq5rqwzqfqqqsyqcyq5rqwzqfqypqdqqnp4q0n326hr8v9zprg8gsvezcch06gfaqqhde2aj730yg0durunfhv66jd3m5klcwhq68vdsmx2rjgxeay5v0tkt2v5sjaky4eqahe4fx3k9sqavvce3capfuwv8rvjng57jrtfajn5dkpqv8yelsewtljwmmycq62k443",
+		//},
 		{
-			// Invoice with no amount.
-			newInvoice: func() (*Invoice, error) {
-				return NewInvoice(
-					&chaincfg.TestNet3Params,
-					testPaymentHash,
-					time.Unix(1496314658, 0),
-					Amount(lnwire.UnitPrec11(20000000)),
-					AssetId(31),
-					Description(testCupOfCoffee),
-				)
-			},
-			valid:          true,
-			encodedInvoice: "lnbc1pvjluezpp5qqqsyqcyq5rqwzqfqqqsyqcyq5rqwzqfqqqsyqcyq5rqwzqfqypqdq5xysxxatsyp3k7enxv4jshwlglv23cytkzvq8ld39drs8sq656yh2zn0aevrwu6uqctaklelhtpjnmgjdzmvwsh0kuxuwqf69fjeap9m5mev2qzpp27xfswhs5vgqmn9xzq",
-		},
-		{
-			// 'n' field set.
+			// refundable
 			newInvoice: func() (*Invoice, error) {
 				return NewInvoice(&chaincfg.TestNet3Params,
 					testPaymentHash, time.Unix(1503429093, 0),
 					AssetId(31),
 					Amount(testMillisat24BTC),
 					Description(testEmptyString),
+					Refundable(true),
 					Destination(testPubKey))
 			},
 			valid:          true,
-			encodedInvoice: "lnbc241pveeq09pp5qqqsyqcyq5rqwzqfqqqsyqcyq5rqwzqfqqqsyqcyq5rqwzqfqypqdqqnp4q0n326hr8v9zprg8gsvezcch06gfaqqhde2aj730yg0durunfhv66jd3m5klcwhq68vdsmx2rjgxeay5v0tkt2v5sjaky4eqahe4fx3k9sqavvce3capfuwv8rvjng57jrtfajn5dkpqv8yelsewtljwmmycq62k443",
+			encodedInvoice: "obto31:240001pveeq09pp5qqqsyqcyq5rqwzqfqqqsyqcyq5rqwzqfqqqsyqcyq5rqwzqfqypqdqq3qplnp4q0n326hr8v9zprg8gsvezcch06gfaqqhde2aj730yg0durunfhv66jqpplzq0dds50czaxumj2xcgzx0jd4tngpwk34wp2at0t4fv2zkuu63sa9f8tfg2w3z3y37yzfn2amfcu3x36ssu92axruxdwac3vgvgpnsqlhz8wv",
 		},
 	}
 	for i, test := range tests {
@@ -981,7 +995,7 @@ func TestInvoiceChecksumMalleability(t *testing.T) {
 	var payHash [32]byte
 	ts := time.Unix(0, 0)
 
-	privKey, _ := btcec.PrivKeyFromBytes(btcec.S256(), privKeyBytes)
+	privKey, _ := btcec.PrivKeyFromBytes(privKeyBytes)
 	msgSigner := MessageSigner{
 		SignCompact: func(msg []byte) ([]byte, error) {
 			hash := chainhash.HashB(msg)

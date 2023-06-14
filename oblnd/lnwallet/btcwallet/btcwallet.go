@@ -14,13 +14,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/btcsuite/btcd/btcec/v2"
+	"github.com/btcsuite/btcd/btcutil"
+	"github.com/btcsuite/btcd/btcutil/hdkeychain"
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/txscript"
 	"github.com/btcsuite/btcd/wire"
-	"github.com/btcsuite/btcutil"
-	"github.com/btcsuite/btcutil/hdkeychain"
 	"github.com/btcsuite/btcwallet/chain"
 	"github.com/btcsuite/btcwallet/waddrmgr"
 	"github.com/btcsuite/btcwallet/wallet"
@@ -480,21 +480,25 @@ func (b *BtcWallet) ConfirmedBalanceByAddress(confs int32,
 // based on its name/address type.
 func (b *BtcWallet) keyScopeForAccountAddr(accountName string,
 	addrType lnwallet.AddressType) (waddrmgr.KeyScope, uint32, error) {
-	if addrType != lnwallet.PubKey {
-		return waddrmgr.KeyScope{}, 0,
-			fmt.Errorf("keyScopeForAccountAddr err :omni only support PubKeyHash")
-	}
+	/*obd update wxf
+	nft will use witeness address*/
+	//if addrType != lnwallet.PubKey {
+	//	return waddrmgr.KeyScope{}, 0,
+	//		fmt.Errorf("keyScopeForAccountAddr err :omni only support PubKeyHash")
+	//}
 	// Map the requested address type to its key scope.
 	var addrKeyScope waddrmgr.KeyScope
 	switch addrType {
 	/* obd update wxf
-		omni disabled witeness*/
-	//case lnwallet.WitnessPubKey:
-	//	addrKeyScope = waddrmgr.KeyScopeBIP0084
+	omni disabled witeness*/
+	case lnwallet.WitnessPubKey:
+		addrKeyScope = waddrmgr.KeyScopeBIP0084
 	//case lnwallet.NestedWitnessPubKey:
 	//	addrKeyScope = waddrmgr.KeyScopeBIP0049Plus
 	case lnwallet.PubKey:
 		addrKeyScope = waddrmgr.KeyScopeBIP0044
+	case lnwallet.TaprootPubkey:
+		addrKeyScope = waddrmgr.KeyScopeBIP0086
 	default:
 		return waddrmgr.KeyScope{}, 0,
 			fmt.Errorf("unknown address type")
@@ -519,7 +523,13 @@ func (b *BtcWallet) keyScopeForAccountAddr(accountName string,
 
 	return keyScope, account, nil
 }
-
+func (b *BtcWallet) OB_DumpPrivkey(address string) (string, error) {
+	addr, err := btcutil.DecodeAddress(address, b.netParams)
+	if err != nil {
+		return "", err
+	}
+	return b.wallet.DumpWIFPrivateKey(addr)
+}
 // NewAddress returns the next external or internal address for the wallet
 // dictated by the value of the `change` parameter. If change is true, then an
 // internal address will be returned, otherwise an external address should be
@@ -992,9 +1002,14 @@ func (b *BtcWallet) CreateSimpleTxForSelectedCoins(toAddress btcutil.Address, se
 	txout := wire.NewTxOut(int64(amt), payToScirpt)
 	fundingTx.AddTxOut(txout)
 	if assetId > lnwire.BtcAssetId {
-		pksAmt := op.NewPksAmounts(assetId)
-		pksAmt.Add(txout.PkScript, assetAmt)
-		if err := op.AddOpReturnToTx(fundingTx, pksAmt); err != nil {
+		//pksAmt := op.NewPksAmounts(assetId)
+		//pksAmt.Add(txout.PkScript, assetAmt)
+		//if err := op.AddOpReturnToTx(fundingTx, pksAmt); err != nil {
+		//	return nil, err
+		//}
+		opr := &op.OpreturnSimple{PropertyId: assetId, Amount: uint64(assetAmt)}
+		err := opr.AddOpReturnToTx(fundingTx)
+		if err != nil {
 			return nil, err
 		}
 	}
@@ -1043,19 +1058,40 @@ func (b *BtcWallet) UnlockOutpoint(o wire.OutPoint) {
 //
 // NOTE: This method requires the global coin selection lock to be held.
 func (b *BtcWallet) LeaseOutput(id wtxmgr.LockID, op wire.OutPoint,
-	duration time.Duration) (time.Time, error) {
+	duration time.Duration) (time.Time, []byte, btcutil.Amount, error) {
 
 	// Make sure we don't attempt to double lock an output that's been
 	// locked by the in-memory implementation.
 	if b.wallet.LockedOutpoint(op) {
-		return time.Time{}, wtxmgr.ErrOutputAlreadyLocked
+		return time.Time{}, nil, 0, wtxmgr.ErrOutputAlreadyLocked
 	}
 
-	return b.wallet.LeaseOutput(id, op, duration)
+	lockedUntil, err := b.wallet.LeaseOutput(id, op, duration)
+	if err != nil {
+		return time.Time{}, nil, 0, err
+	}
+
+	// Get the pkScript and value for this lock from the list of all leased
+	// outputs.
+	allLeases, err := b.wallet.ListLeasedOutputs()
+	if err != nil {
+		return time.Time{}, nil, 0, err
+	}
+
+	for _, lease := range allLeases {
+		if lease.Outpoint == op {
+			return lockedUntil, lease.PkScript,
+				btcutil.Amount(lease.Value), nil
+		}
+	}
+
+	// We MUST find the leased output in the loop above, otherwise something
+	// is seriously wrong.
+	return time.Time{}, nil, 0, wtxmgr.ErrUnknownOutput
 }
 
 // ListLeasedOutputs returns a list of all currently locked outputs.
-func (b *BtcWallet) ListLeasedOutputs() ([]*wtxmgr.LockedOutput, error) {
+func (b *BtcWallet) ListLeasedOutputs() ([]*base.ListLeasedOutputResult, error) {
 	return b.wallet.ListLeasedOutputs()
 }
 
@@ -1102,7 +1138,7 @@ func (b *BtcWallet) ListUnspentWitnessDisabled(minConfs, maxConfs int32,
 
 		addressType := lnwallet.UnknownAddressType
 		if txscript.IsPayToWitnessPubKeyHash(pkScript) {
-			addressType = lnwallet.WitnessPubKeyDisabled
+			addressType = lnwallet.WitnessPubKey
 		} else if txscript.IsPayToScriptHash(pkScript) {
 			// TODO(roasbeef): This assumes all p2sh outputs returned by the
 			// wallet are nested p2pkh. We can't check the redeem script because
@@ -1110,7 +1146,7 @@ func (b *BtcWallet) ListUnspentWitnessDisabled(minConfs, maxConfs int32,
 			addressType = lnwallet.NestedWitnessPubKey
 		}
 
-		if addressType == lnwallet.WitnessPubKeyDisabled ||
+		if addressType == lnwallet.WitnessPubKey ||
 			addressType == lnwallet.NestedWitnessPubKey {
 
 			txid, err := chainhash.NewHashFromStr(output.TxID)

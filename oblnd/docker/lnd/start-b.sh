@@ -67,7 +67,7 @@ exec ./lnd-debug \
     "--$BACKEND.rpcpass"="$RPCPASS" \
     "--rpclisten=$HOSTNAME:10009" \
     "--rpclisten=localhost:10009" \
-    --listen=0.0.0.0:9735 \
+    --listen=0.0.0.0:9736 \
     "--restlisten=0.0.0.0:8080" \
     --debuglevel="$DEBUG" \
     --bitcoind.zmqpubrawblock=tcp://43.138.107.248:28332 \

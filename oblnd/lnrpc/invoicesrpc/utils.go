@@ -4,7 +4,7 @@ import (
 	"encoding/hex"
 	"fmt"
 
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/lightningnetwork/lnd/channeldb"
 	"github.com/lightningnetwork/lnd/lnrpc"
@@ -53,6 +53,10 @@ func CreateRPCInvoice(invoice *channeldb.Invoice,
 	var rHash []byte
 	if decoded.PaymentHash != nil {
 		rHash = decoded.PaymentHash[:]
+	}
+	var refundable bool
+	if decoded.Refundable != nil {
+		refundable = *decoded.Refundable
 	}
 
 	var descHash []byte
@@ -155,7 +159,7 @@ func CreateRPCInvoice(invoice *channeldb.Invoice,
 		RHash:           rHash,
 		//Value:           int64(satAmt),
 		ValueMsat:       int64(invoice.Terms.Value),
-		AssetId: invoice.AssetId,
+		AssetId:         invoice.AssetId,
 		CreationDate:    invoice.CreationDate.Unix(),
 		SettleDate:      settleDate,
 		Settled:         isSettled,
@@ -169,14 +173,16 @@ func CreateRPCInvoice(invoice *channeldb.Invoice,
 		Private:         len(routeHints) > 0,
 		SettleIndex:     invoice.SettleIndex,
 		//AmtPaidSat:      int64(satAmtPaid),
-		AmtPaidMsat:     int64(invoice.AmtPaid),
+		AmtPaidMsat: int64(invoice.AmtPaid),
 		//AmtPaid:         int64(invoice.AmtPaid),
-		State:           state,
-		Htlcs:           rpcHtlcs,
-		Features:        CreateRPCFeatures(invoice.Terms.Features),
-		IsKeysend:       len(invoice.PaymentRequest) == 0 && !isAmp,
-		PaymentAddr:     invoice.Terms.PaymentAddr[:],
-		IsAmp:           isAmp,
+		State:       state,
+		Htlcs:       rpcHtlcs,
+		Features:    CreateRPCFeatures(invoice.Terms.Features),
+		IsKeysend:   len(invoice.PaymentRequest) == 0 && !isAmp,
+		PaymentAddr: invoice.Terms.PaymentAddr[:],
+		PayerAddr:   invoice.Terms.PayerAddr,
+		Refundable:  refundable,
+		IsAmp:       isAmp,
 	}
 
 	rpcInvoice.AmpInvoiceState = make(map[string]*lnrpc.AMPInvoiceState)
@@ -279,7 +285,7 @@ func CreateZpay32HopHints(routeHints []*lnrpc.RouteHint) ([][]zpay32.HopHint, er
 			if err != nil {
 				return nil, err
 			}
-			p, err := btcec.ParsePubKey(pubKeyBytes, btcec.S256())
+			p, err := btcec.ParsePubKey(pubKeyBytes)
 			if err != nil {
 				return nil, err
 			}

@@ -116,9 +116,9 @@ $(GOFUZZ_DEP_BIN):
 # ============
 
 build:
-	@$(call print, "Building debug lnd and lncli.")
-	$(GOBUILD) -tags="$(DEV_TAGS)" -o lnd-debug $(DEV_LDFLAGS) $(PKG)/cmd/lnd
-	$(GOBUILD) -tags="$(DEV_TAGS)" -o lncli-debug $(DEV_LDFLAGS) $(PKG)/cmd/lncli
+	@$(call print, "Building debug lnd and lncli. $(GOARCH)")
+	$(GOBUILD) -tags="$(DEV_TAGS)" -o bin/lnd-debug_$(GOARCH) $(DEV_LDFLAGS) $(PKG)/cmd/lnd
+	$(GOBUILD) -tags="$(DEV_TAGS)" -o bin/lncli-debug_$(GOARCH) $(DEV_LDFLAGS) $(PKG)/cmd/lncli
 
 build-itest:
 	@$(call print, "Building itest btcd and lnd.")

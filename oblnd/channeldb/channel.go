@@ -12,11 +12,12 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/btcsuite/btcd/btcec/v2"
+	"github.com/btcsuite/btcd/btcutil"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
-	"github.com/btcsuite/btcutil"
 	"github.com/lightningnetwork/lnd/input"
 	"github.com/lightningnetwork/lnd/keychain"
 	"github.com/lightningnetwork/lnd/kvdb"
@@ -199,6 +200,8 @@ const (
 	// A tlv type definition used to serialize and deserialize a KeyLocator
 	// from the database.
 	keyLocType tlv.Type = 1
+
+	CreateTimeType tlv.Type = 2
 )
 
 // indexStatus is an enum-like type that describes what state the
@@ -787,6 +790,8 @@ type OpenChannel struct {
 	// TODO(roasbeef): just need to store local and remote HTLC's?
 
 	sync.RWMutex
+	/*bod update wxf*/
+	CreateTime uint32
 }
 
 // ShortChanID returns the current ShortChannelID of this channel.
@@ -1435,6 +1440,9 @@ func (c *OpenChannel) clearChanStatus(status ChannelStatus) error {
 func putOpenChannel(chanBucket kvdb.RwBucket, channel *OpenChannel) error {
 	// First, we'll write out all the relatively static fields, that are
 	// decided upon initial channel creation.
+	if channel.CreateTime == 0 {
+		channel.CreateTime = uint32(time.Now().Unix())
+	}
 	if err := putChanInfo(chanBucket, channel); err != nil {
 		return fmt.Errorf("unable to store chan info: %v", err)
 	}
@@ -3442,8 +3450,10 @@ func putChanInfo(chanBucket kvdb.RwBucket, channel *OpenChannel) error {
 	keyLocRecord := MakeKeyLocRecord(
 		keyLocType, &channel.RevocationKeyLocator,
 	)
-
-	tlvStream, err := tlv.NewStream(keyLocRecord)
+	createTImeLocRecord := tlv.MakeStaticRecord(
+		CreateTimeType, &channel.CreateTime, 4, tlv.EUint32, tlv.DUint32,
+	)
+	tlvStream, err := tlv.NewStream(keyLocRecord, createTImeLocRecord)
 	if err != nil {
 		return err
 	}
@@ -3607,7 +3617,7 @@ func fetchChanInfo(chanBucket kvdb.RBucket, channel *OpenChannel) error {
 		&channel.chanStatus, &channel.FundingBroadcastHeight,
 		&channel.NumConfsRequired, &channel.ChannelFlags,
 		&channel.IdentityPub, &channel.BtcCapacity, &channel.AssetCapacity, &channel.AssetID, &channel.TotalMSatSent,
-		&channel.TotalMSatReceived,&channel.TotalAssetSent, &channel.TotalAssetReceived,
+		&channel.TotalMSatReceived, &channel.TotalAssetSent, &channel.TotalAssetReceived,
 	); err != nil {
 		return err
 	}
@@ -3643,7 +3653,10 @@ func fetchChanInfo(chanBucket kvdb.RBucket, channel *OpenChannel) error {
 	}
 
 	keyLocRecord := MakeKeyLocRecord(keyLocType, &channel.RevocationKeyLocator)
-	tlvStream, err := tlv.NewStream(keyLocRecord)
+	createTImeLocRecord := tlv.MakeStaticRecord(
+		CreateTimeType, &channel.CreateTime, 4, tlv.EUint32, tlv.DUint32,
+	)
+	tlvStream, err := tlv.NewStream(keyLocRecord, createTImeLocRecord)
 	if err != nil {
 		return err
 	}
@@ -3651,7 +3664,6 @@ func fetchChanInfo(chanBucket kvdb.RBucket, channel *OpenChannel) error {
 	if err := tlvStream.Decode(r); err != nil {
 		return err
 	}
-
 	channel.Packager = NewChannelPackager(channel.ShortChannelID)
 
 	// Finally, read the optional shutdown scripts.

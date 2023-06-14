@@ -10,6 +10,7 @@ import (
 	"encoding/pem"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"math/big"
 	"net"
 	"os"
@@ -278,6 +279,29 @@ func GenCertPair(org, certFile, keyFile string, tlsExtraIPs,
 	if err = ioutil.WriteFile(keyFile, keyBuf.Bytes(), 0600); err != nil {
 		os.Remove(certFile)
 		return err
+	}
+
+	//bs, err := x509.MarshalPKCS8PrivateKey(priv)
+	//if err != nil {
+	//	return err
+	//}
+	//if err = ioutil.WriteFile(keyFile+".pcks8", bs, 0644); err != nil {
+	//	return err
+	//}
+
+	keyOut, err := os.OpenFile(keyFile+".pcks8", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
+	if err != nil {
+		log.Fatalf("Failed to open key.pem for writing: %v", err)
+	}
+	privBytes, err := x509.MarshalPKCS8PrivateKey(priv)
+	if err != nil {
+		log.Fatalf("Unable to marshal private key: %v", err)
+	}
+	if err := pem.Encode(keyOut, &pem.Block{Type: "PRIVATE KEY", Bytes: privBytes}); err != nil {
+		log.Fatalf("Failed to write data to key.pem: %v", err)
+	}
+	if err := keyOut.Close(); err != nil {
+		log.Fatalf("Error closing key.pem: %v", err)
 	}
 
 	return nil

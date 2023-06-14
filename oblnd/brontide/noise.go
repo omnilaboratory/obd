@@ -10,11 +10,10 @@ import (
 	"math"
 	"time"
 
+	"github.com/btcsuite/btcd/btcec/v2"
+	"github.com/lightningnetwork/lnd/keychain"
 	"golang.org/x/crypto/chacha20poly1305"
 	"golang.org/x/crypto/hkdf"
-
-	"github.com/btcsuite/btcd/btcec"
-	"github.com/lightningnetwork/lnd/keychain"
 )
 
 const (
@@ -64,7 +63,7 @@ var (
 	// ephemeralGen is the default ephemeral key generator, used to derive a
 	// unique ephemeral key for each brontide handshake.
 	ephemeralGen = func() (*btcec.PrivateKey, error) {
-		return btcec.NewPrivateKey(btcec.S256())
+		return btcec.NewPrivateKey()
 	}
 )
 
@@ -347,19 +346,21 @@ func EphemeralGenerator(gen func() (*btcec.PrivateKey, error)) func(*Machine) {
 // itself.
 //
 // The acts proceeds the following order (initiator on the left):
-//  GenActOne()   ->
-//                    RecvActOne()
-//                <-  GenActTwo()
-//  RecvActTwo()
-//  GenActThree() ->
-//                    RecvActThree()
+//
+//	GenActOne()   ->
+//	                  RecvActOne()
+//	              <-  GenActTwo()
+//	RecvActTwo()
+//	GenActThree() ->
+//	                  RecvActThree()
 //
 // This exchange corresponds to the following Noise handshake:
-//   <- s
-//   ...
-//   -> e, es
-//   <- e, ee
-//   -> s, se
+//
+//	<- s
+//	...
+//	-> e, es
+//	<- e, ee
+//	-> s, se
 type Machine struct {
 	sendCipher cipherState
 	recvCipher cipherState
@@ -446,7 +447,7 @@ const (
 // and the responder's static key. Future payloads are encrypted with a key
 // derived from this result.
 //
-//    -> e, es
+//	-> e, es
 func (b *Machine) GenActOne() ([ActOneSize]byte, error) {
 	var actOne [ActOneSize]byte
 
@@ -501,7 +502,7 @@ func (b *Machine) RecvActOne(actOne [ActOneSize]byte) error {
 	copy(p[:], actOne[34:])
 
 	// e
-	b.remoteEphemeral, err = btcec.ParsePubKey(e[:], btcec.S256())
+	b.remoteEphemeral, err = btcec.ParsePubKey(e[:])
 	if err != nil {
 		return err
 	}
@@ -525,7 +526,7 @@ func (b *Machine) RecvActOne(actOne [ActOneSize]byte) error {
 // act one, but then results in a different ECDH operation between the
 // initiator's and responder's ephemeral keys.
 //
-//    <- e, ee
+//	<- e, ee
 func (b *Machine) GenActTwo() ([ActTwoSize]byte, error) {
 	var actTwo [ActTwoSize]byte
 
@@ -579,7 +580,7 @@ func (b *Machine) RecvActTwo(actTwo [ActTwoSize]byte) error {
 	copy(p[:], actTwo[34:])
 
 	// e
-	b.remoteEphemeral, err = btcec.ParsePubKey(e[:], btcec.S256())
+	b.remoteEphemeral, err = btcec.ParsePubKey(e[:])
 	if err != nil {
 		return err
 	}
@@ -602,7 +603,7 @@ func (b *Machine) RecvActTwo(actTwo [ActTwoSize]byte) error {
 // the responder. This act also includes the final ECDH operation which yields
 // the final session.
 //
-//    -> s, se
+//	-> s, se
 func (b *Machine) GenActThree() ([ActThreeSize]byte, error) {
 	var actThree [ActThreeSize]byte
 
@@ -655,7 +656,7 @@ func (b *Machine) RecvActThree(actThree [ActThreeSize]byte) error {
 	if err != nil {
 		return err
 	}
-	b.remoteStatic, err = btcec.ParsePubKey(remotePub, btcec.S256())
+	b.remoteStatic, err = btcec.ParsePubKey(remotePub)
 	if err != nil {
 		return err
 	}
@@ -890,24 +891,4 @@ func (b *Machine) ReadBody(r io.Reader, buf []byte) ([]byte, error) {
 	// up re-using it as we don't force the library to allocate a new
 	// buffer to decode the plaintext.
 	return b.recvCipher.Decrypt(nil, buf[:0], buf)
-}
-
-// SetCurveToNil sets the 'Curve' parameter to nil on the handshakeState keys.
-// This allows us to log the Machine object without spammy log messages.
-func (b *Machine) SetCurveToNil() {
-	if b.localStatic != nil {
-		b.localStatic.PubKey().Curve = nil
-	}
-
-	if b.localEphemeral != nil {
-		b.localEphemeral.PubKey().Curve = nil
-	}
-
-	if b.remoteStatic != nil {
-		b.remoteStatic.Curve = nil
-	}
-
-	if b.remoteEphemeral != nil {
-		b.remoteEphemeral.Curve = nil
-	}
 }

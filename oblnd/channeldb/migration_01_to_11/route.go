@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/btcsuite/btcd/btcec/v2"
 	sphinx "github.com/lightningnetwork/lightning-onion"
 	lnwire "github.com/lightningnetwork/lnd/channeldb/migration/lnwire21"
 	"github.com/lightningnetwork/lnd/record"
@@ -247,7 +247,7 @@ func (r *Route) ToSphinxPath() (*sphinx.PaymentPath, error) {
 	// by the sphinx package.
 	for i, hop := range r.Hops {
 		pub, err := btcec.ParsePubKey(
-			hop.PubKeyBytes[:], btcec.S256(),
+			hop.PubKeyBytes[:],
 		)
 		if err != nil {
 			return nil, err

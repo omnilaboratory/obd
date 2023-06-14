@@ -24,6 +24,7 @@ type invoiceUpdateCtx struct {
 	customRecords        record.CustomSet
 	mpp                  *record.MPP
 	amp                  *record.AMP
+	payerAddress         []byte
 }
 
 // invoiceRef returns an identifier that can be used to lookup or update the

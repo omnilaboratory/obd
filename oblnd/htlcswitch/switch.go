@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/btcsuite/btcd/wire"
-	"github.com/btcsuite/btcutil"
+	"github.com/btcsuite/btcd/btcutil"
 	"github.com/davecgh/go-spew/spew"
 	"github.com/lightningnetwork/lnd/chainntnfs"
 	"github.com/lightningnetwork/lnd/channeldb"
@@ -96,6 +96,7 @@ type ChanClose struct {
 	// peer should execute.
 	CloseType contractcourt.ChannelCloseType
 
+	ObSimpleSend bool
 	// ChanPoint represent the id of the channel which should be closed.
 	ChanPoint *wire.OutPoint
 
@@ -1537,7 +1538,7 @@ func (s *Switch) teardownCircuit(pkt *htlcPacket) error {
 func (s *Switch) CloseLink(chanPoint *wire.OutPoint,
 	closeType contractcourt.ChannelCloseType,
 	targetFeePerKw chainfee.SatPerKWeight,
-	deliveryScript lnwire.DeliveryAddress) (chan interface{}, chan error) {
+	deliveryScript lnwire.DeliveryAddress, simpleSend bool) (chan interface{}, chan error) {
 
 	// TODO(roasbeef) abstract out the close updates.
 	updateChan := make(chan interface{}, 2)
@@ -1545,6 +1546,7 @@ func (s *Switch) CloseLink(chanPoint *wire.OutPoint,
 
 	command := &ChanClose{
 		CloseType:      closeType,
+		ObSimpleSend:   simpleSend,
 		ChanPoint:      chanPoint,
 		Updates:        updateChan,
 		TargetFeePerKw: targetFeePerKw,

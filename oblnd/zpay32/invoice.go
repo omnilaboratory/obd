@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/btcsuite/btcd/chaincfg"
-	"github.com/btcsuite/btcutil"
+	"github.com/btcsuite/btcd/btcutil"
 	"github.com/lightningnetwork/lnd/lnwire"
 )
 
@@ -74,7 +74,8 @@ const (
 	// probing the recipient.
 	fieldTypeS = 16
 	//assetId
-	fieldTypeA = 17
+	fieldTypeA          = 17
+	fieldTypeRefundable = 18
 
 	// maxInvoiceLength is the maximum total length an invoice can have.
 	// This is chosen to be the maximum number of bytes that can fit into a
@@ -186,6 +187,11 @@ type Invoice struct {
 	// Features represents an optional field used to signal optional or
 	// required support for features by the receiver.
 	Features *lnwire.FeatureVector
+
+	/*
+		obd update; used for cloud server invoice
+	*/
+	Refundable *bool
 }
 
 // Amount is a functional option that allows callers of NewInvoice to set the
@@ -195,11 +201,17 @@ func Amount(milliSat lnwire.UnitPrec11) func(*Invoice) {
 		i.MilliSat = &milliSat
 	}
 }
+
 // Amount is a functional option that allows callers of NewInvoice to set the
 // amount in millisatoshis that the Invoice should encode.
 func AssetId(assetId uint32) func(*Invoice) {
 	return func(i *Invoice) {
 		i.AssetId = &assetId
+	}
+}
+func Refundable(refundable bool) func(*Invoice) {
+	return func(i *Invoice) {
+		i.Refundable = &refundable
 	}
 }
 

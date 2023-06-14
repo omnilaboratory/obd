@@ -5,7 +5,8 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/btcsuite/btcd/btcec/v2"
+	"github.com/btcsuite/btcd/btcec/v2/ecdsa"
 )
 
 func TestSignatureSerializeDeserialize(t *testing.T) {
@@ -13,7 +14,7 @@ func TestSignatureSerializeDeserialize(t *testing.T) {
 
 	// Local-scoped closure to serialize and deserialize a Signature and
 	// check for errors as well as check if the results are correct.
-	signatureSerializeDeserialize := func(e btcec.Signature) error {
+	signatureSerializeDeserialize := func(e ecdsa.Signature) error {
 		sig, err := NewSigFromSignature(&e)
 		if err != nil {
 			return err
@@ -35,7 +36,7 @@ func TestSignatureSerializeDeserialize(t *testing.T) {
 		return nil
 	}
 
-	sig := btcec.Signature{}
+	sig := ecdsa.Signature{}
 
 	// Check R = N-1, S = 128.
 	sig.R = big.NewInt(1) // Allocate a big.Int before we call .Sub.

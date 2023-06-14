@@ -14,10 +14,10 @@ import (
 	"net"
 	"os"
 
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
-	"github.com/btcsuite/btcutil"
+	"github.com/btcsuite/btcd/btcutil"
 	"github.com/lightningnetwork/lnd/channeldb"
 	"github.com/lightningnetwork/lnd/input"
 	"github.com/lightningnetwork/lnd/keychain"
@@ -112,8 +112,8 @@ var (
 		lnwire.BtcAssetId is for btc transfer test
 		31 is for some omni asset transfer test
 	*/
-	testAssetId = uint32(lnwire.BtcAssetId)
-	//testAssetId = uint32(31)
+	//testAssetId = uint32(lnwire.BtcAssetId)
+	testAssetId = uint32(31)
 )
 
 // CreateTestChannels creates to fully populated channels to be used within
@@ -160,14 +160,14 @@ func CreateTestChannels(chanType channeldb.ChannelType) (
 		copy(key[:], testWalletPrivKey[:])
 		key[0] ^= byte(i + 1)
 
-		aliceKey, _ := btcec.PrivKeyFromBytes(btcec.S256(), key)
+		aliceKey, _ := btcec.PrivKeyFromBytes(key)
 		aliceKeys = append(aliceKeys, aliceKey)
 
 		key = make([]byte, len(bobsPrivKey))
 		copy(key[:], bobsPrivKey)
 		key[0] ^= byte(i + 1)
 
-		bobKey, _ := btcec.PrivKeyFromBytes(btcec.S256(), key)
+		bobKey, _ := btcec.PrivKeyFromBytes(key)
 		bobKeys = append(bobKeys, bobKey)
 	}
 
@@ -295,48 +295,48 @@ func CreateTestChannels(chanType channeldb.ChannelType) (
 	bobBalance := lnwire.NewMSatFromSatoshis(channelBtcBal)
 
 	aliceLocalCommit := channeldb.ChannelCommitment{
-		CommitHeight:  0,
-		LocalBtcBalance:  aliceBalance,
-		RemoteBtcBalance: bobBalance,
-		LocalAssetBalance:  channelAssetCapacity,
-		RemoteAssetBalance: 0,
-		CommitFee:     commitFee,
-		FeePerKw:      btcutil.Amount(feePerKw),
-		CommitTx:      aliceCommitTx,
-		CommitSig:     testSigBytes,
+		CommitHeight:       0,
+		LocalBtcBalance:    aliceBalance,
+		RemoteBtcBalance:   bobBalance,
+		LocalAssetBalance:  channelAssetCapacity / 2,
+		RemoteAssetBalance: channelAssetCapacity / 2,
+		CommitFee:          commitFee,
+		FeePerKw:           btcutil.Amount(feePerKw),
+		CommitTx:           aliceCommitTx,
+		CommitSig:          testSigBytes,
 	}
 	aliceRemoteCommit := channeldb.ChannelCommitment{
-		CommitHeight:  0,
-		LocalBtcBalance:  aliceBalance,
-		RemoteBtcBalance: bobBalance,
-		LocalAssetBalance:  channelAssetCapacity,
-		RemoteAssetBalance: 0,
-		CommitFee:     commitFee,
-		FeePerKw:      btcutil.Amount(feePerKw),
-		CommitTx:      bobCommitTx,
-		CommitSig:     testSigBytes,
+		CommitHeight:       0,
+		LocalBtcBalance:    aliceBalance,
+		RemoteBtcBalance:   bobBalance,
+		LocalAssetBalance:  channelAssetCapacity / 2,
+		RemoteAssetBalance: channelAssetCapacity / 2,
+		CommitFee:          commitFee,
+		FeePerKw:           btcutil.Amount(feePerKw),
+		CommitTx:           bobCommitTx,
+		CommitSig:          testSigBytes,
 	}
 	bobLocalCommit := channeldb.ChannelCommitment{
-		CommitHeight:  0,
-		LocalBtcBalance:  bobBalance,
-		RemoteBtcBalance: aliceBalance,
-		LocalAssetBalance:  0,
-		RemoteAssetBalance: channelAssetCapacity,
-		CommitFee:     commitFee,
-		FeePerKw:      btcutil.Amount(feePerKw),
-		CommitTx:      bobCommitTx,
-		CommitSig:     testSigBytes,
+		CommitHeight:       0,
+		LocalBtcBalance:    bobBalance,
+		RemoteBtcBalance:   aliceBalance,
+		LocalAssetBalance:  channelAssetCapacity / 2,
+		RemoteAssetBalance: channelAssetCapacity / 2,
+		CommitFee:          commitFee,
+		FeePerKw:           btcutil.Amount(feePerKw),
+		CommitTx:           bobCommitTx,
+		CommitSig:          testSigBytes,
 	}
 	bobRemoteCommit := channeldb.ChannelCommitment{
-		CommitHeight:  0,
-		LocalBtcBalance:  bobBalance,
-		RemoteBtcBalance: aliceBalance,
-		LocalAssetBalance:  0,
-		RemoteAssetBalance: channelAssetCapacity,
-		CommitFee:     commitFee,
-		FeePerKw:      btcutil.Amount(feePerKw),
-		CommitTx:      aliceCommitTx,
-		CommitSig:     testSigBytes,
+		CommitHeight:       0,
+		LocalBtcBalance:    bobBalance,
+		RemoteBtcBalance:   aliceBalance,
+		LocalAssetBalance:  channelAssetCapacity / 2,
+		RemoteAssetBalance: channelAssetCapacity / 2,
+		CommitFee:          commitFee,
+		FeePerKw:           btcutil.Amount(feePerKw),
+		CommitTx:           aliceCommitTx,
+		CommitSig:          testSigBytes,
 	}
 
 	var chanIDBytes [8]byte
@@ -490,7 +490,7 @@ func pubkeyFromHex(keyHex string) (*btcec.PublicKey, error) {
 	if err != nil {
 		return nil, err
 	}
-	return btcec.ParsePubKey(bytes, btcec.S256())
+	return btcec.ParsePubKey(bytes)
 }
 
 // privkeyFromHex parses a Bitcoin private key from a hex encoded string.
@@ -499,7 +499,7 @@ func privkeyFromHex(keyHex string) (*btcec.PrivateKey, error) {
 	if err != nil {
 		return nil, err
 	}
-	key, _ := btcec.PrivKeyFromBytes(btcec.S256(), bytes)
+	key, _ := btcec.PrivKeyFromBytes(bytes)
 	return key, nil
 
 }

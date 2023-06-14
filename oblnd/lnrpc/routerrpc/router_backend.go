@@ -9,7 +9,7 @@ import (
 	math "math"
 	"time"
 
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/lightningnetwork/lnd/channeldb"
@@ -570,6 +570,8 @@ func (r *RouterBackend) extractIntentFromSendRequest(
 	//}
 
 	payIntent := &routing.LightningPayment{}
+	payIntent.HaveHodlInvoice = rpcPayReq.HaveHodlInvoice
+	payIntent.PopulateAsInvoice = rpcPayReq.PopulateAsInvoice
 
 	// Pass along restrictions on the outgoing channels that may be used.
 	payIntent.OutgoingChannelIDs = rpcPayReq.OutgoingChanIds
@@ -723,7 +725,9 @@ func (r *RouterBackend) extractIntentFromSendRequest(
 			payIntent.Amount = *payReq.MilliSat
 		}
 		payIntent.AssetId = *payReq.AssetId
-
+		if payReq.Refundable != nil {
+			payIntent.Refundable = *payReq.Refundable
+		}
 		if !payReq.Features.HasFeature(lnwire.MPPOptional) &&
 			!payReq.Features.HasFeature(lnwire.AMPOptional) {
 
@@ -948,7 +952,7 @@ func unmarshallHopHint(rpcHint *lnrpc.HopHint) (zpay32.HopHint, error) {
 		return zpay32.HopHint{}, err
 	}
 
-	pubkey, err := btcec.ParsePubKey(pubBytes, btcec.S256())
+	pubkey, err := btcec.ParsePubKey(pubBytes)
 	if err != nil {
 		return zpay32.HopHint{}, err
 	}

@@ -5,10 +5,10 @@ import (
 	crand "crypto/rand"
 	"crypto/sha256"
 	"encoding/binary"
+	"encoding/hex"
 	"fmt"
 	"github.com/lightningnetwork/lnd/omnicore"
 	"io/ioutil"
-	"math/big"
 	"net"
 	"os"
 	"runtime"
@@ -17,10 +17,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/btcsuite/btcd/btcec/v2"
+	"github.com/btcsuite/btcd/btcec/v2/ecdsa"
+	"github.com/btcsuite/btcd/btcutil"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
-	"github.com/btcsuite/btcutil"
 	"github.com/go-errors/errors"
 	sphinx "github.com/lightningnetwork/lightning-onion"
 	"github.com/lightningnetwork/lnd/channeldb"
@@ -46,16 +47,15 @@ var (
 	bobPrivKey   = []byte("bob priv key")
 	carolPrivKey = []byte("carol priv key")
 
-	testSig = &btcec.Signature{
-		R: new(big.Int),
-		S: new(big.Int),
-	}
-	wireSig, _ = lnwire.NewSigFromSignature(testSig)
+	testRBytes, _ = hex.DecodeString("8ce2bc69281ce27da07e6683571319d18e949ddfa2965fb6caa1bf0314f882d7")
+	testSBytes, _ = hex.DecodeString("299105481d63e0f4bc2a88121167221b6700d72a0ead154c03be696a292d24ae")
+	testRScalar   = new(btcec.ModNScalar)
+	testSScalar   = new(btcec.ModNScalar)
+	_             = testRScalar.SetByteSlice(testRBytes)
+	_             = testSScalar.SetByteSlice(testSBytes)
+	testSig       = ecdsa.NewSignature(testRScalar, testSScalar)
 
-	_, _ = testSig.R.SetString("6372440660162918006277497454296753625158993"+
-		"5445068131219452686511677818569431", 10)
-	_, _ = testSig.S.SetString("1880105606924982582529128710493133386286603"+
-		"3135609736119018462340006816851118", 10)
+	wireSig, _ = lnwire.NewSigFromSignature(testSig)
 
 	testBatchTimeout = 50 * time.Millisecond
 )
@@ -130,23 +130,23 @@ func createTestChannel(alicePrivKey, bobPrivKey []byte,
 	chanID lnwire.ShortChannelID,assetId uint32) (*testLightningChannel,
 	*testLightningChannel, func(), error) {
 
-	aliceKeyPriv, aliceKeyPub := btcec.PrivKeyFromBytes(btcec.S256(), alicePrivKey)
-	bobKeyPriv, bobKeyPub := btcec.PrivKeyFromBytes(btcec.S256(), bobPrivKey)
+	aliceKeyPriv, aliceKeyPub := btcec.PrivKeyFromBytes(alicePrivKey)
+	bobKeyPriv, bobKeyPub := btcec.PrivKeyFromBytes(bobPrivKey)
 
-	channelCapacity:=lnwire.UnitPrec8(aliceAssetAmount+ bobAssetAmount)
-	if assetId==lnwire.BtcAssetId{
-		channelCapacity=lnwire.UnitPrec8(aliceAmount + bobAmount)
+	channelCapacity := lnwire.UnitPrec8(aliceAssetAmount + bobAssetAmount)
+	if assetId == lnwire.BtcAssetId {
+		channelCapacity = lnwire.UnitPrec8(aliceAmount + bobAmount)
 	}
 	csvTimeoutAlice := uint32(5)
 	csvTimeoutBob := uint32(4)
 	isAliceInitiator := true
 
-	maxAmt:=lnwire.UnitPrec11(channelCapacity)
-	if assetId==lnwire.BtcAssetId{
-		maxAmt=lnwire.UnitPrec11(channelCapacity.ToMsat())
+	maxAmt := lnwire.UnitPrec11(channelCapacity)
+	if assetId == lnwire.BtcAssetId {
+		maxAmt = lnwire.UnitPrec11(channelCapacity.ToMsat())
 	}
 	aliceConstraints := &channeldb.ChannelConstraints{
-		DustLimit: (btcutil.Amount(200)),
+		DustLimit:        (btcutil.Amount(200)),
 		MaxPendingAmount: maxAmt,
 		ChanReserve:      lnwire.UnitPrec8(aliceReserve),
 		MinHTLC:          0,

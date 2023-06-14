@@ -9,10 +9,10 @@ import (
 	"sync"
 
 	"github.com/btcsuite/btcd/blockchain"
+	"github.com/btcsuite/btcd/btcutil"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/txscript"
 	"github.com/btcsuite/btcd/wire"
-	"github.com/btcsuite/btcutil"
 	"github.com/davecgh/go-spew/spew"
 
 	"github.com/lightningnetwork/lnd/chainntnfs"
@@ -1443,7 +1443,11 @@ func (b *BreachArbiter) sweepSpendableOutputsTxn(txWeight int64,
 
 	// Create a sighash cache to improve the performance of hashing and
 	// signing SigHashAll inputs.
-	hashCache := txscript.NewTxSigHashes(txn)
+	prevOutputFetcher, err := input.MultiPrevOutFetcher(inputs)
+	if err != nil {
+		return nil, err
+	}
+	hashCache := txscript.NewTxSigHashes(txn, prevOutputFetcher)
 
 	// Create a closure that encapsulates the process of initializing a
 	// particular output's witness generation function, computing the

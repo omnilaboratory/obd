@@ -21,7 +21,7 @@ import (
 	"time"
 
 	"github.com/btcsuite/btcd/chaincfg"
-	"github.com/btcsuite/btcutil"
+	"github.com/btcsuite/btcd/btcutil"
 	flags "github.com/jessevdk/go-flags"
 	"github.com/lightninglabs/neutrino"
 	"github.com/lightningnetwork/lnd/autopilot"
@@ -296,11 +296,13 @@ type Config struct {
 
 	FeeURL string `long:"feeurl" description:"Optional URL for external fee estimation. If no URL is specified, the method for fee estimation will depend on the chosen backend and network. Must be set for neutrino on mainnet."`
 
-	Bitcoin            *lncfg.Chain    `group:"Bitcoin" namespace:"bitcoin"`
-	BtcdMode           *lncfg.Btcd     `group:"btcd" namespace:"btcd"`
-	BitcoindMode       *lncfg.Bitcoind `group:"bitcoind" namespace:"bitcoind"`
-	OmnicoinproxydMode *lncfg.Bitcoind `group:"omnicoreproxy" namespace:"omnicoreproxy"`
-	NeutrinoMode       *lncfg.Neutrino `group:"neutrino" namespace:"neutrino"`
+	Bitcoin             *lncfg.Chain    `group:"Bitcoin" namespace:"bitcoin"`
+	BtcdMode            *lncfg.Btcd     `group:"btcd" namespace:"btcd"`
+	BitcoindMode        *lncfg.Bitcoind `group:"bitcoind" namespace:"bitcoind"`
+	DisableRegist2Proxy bool            `long:"disable-regist" description:"if set, luckPackage will not work"`
+	SpayUrl             string          `long:"spay-url" description:"it's a server url for luckPackage and agency fund; if not set， agency fund and luckPackage will not work"`
+	OmnicoinproxydMode  *lncfg.Bitcoind `group:"omnicoreproxy" namespace:"omnicoreproxy"`
+	NeutrinoMode        *lncfg.Neutrino `group:"neutrino" namespace:"neutrino"`
 
 	Litecoin      *lncfg.Chain    `group:"Litecoin" namespace:"litecoin"`
 	LtcdMode      *lncfg.Btcd     `group:"ltcd" namespace:"ltcd"`

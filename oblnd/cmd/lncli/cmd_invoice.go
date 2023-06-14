@@ -77,6 +77,10 @@ var addInvoiceCommand = cli.Command{
 			Usage: "creates an AMP invoice. If true, preimage " +
 				"should not be set.",
 		},
+		cli.BoolFlag{
+			Name:  "refundable",
+			Usage: "refundable used for cloud server's invoice .",
+		},
 	},
 	Action: actionDecorator(addInvoice),
 }
@@ -152,17 +156,18 @@ func addInvoice(ctx *cli.Context) error {
 	}
 
 	invoice := &lnrpc.Invoice{
-		Memo:            ctx.String("memo"),
-		RPreimage:       preimage,
+		Memo:      ctx.String("memo"),
+		RPreimage: preimage,
 		//Value:           amt,
-		AssetId: assetId,
+		AssetId:         assetId,
 		ValueMsat:       amtMsat,
-		Amount: amount,
+		Amount:          amount,
 		DescriptionHash: descHash,
 		FallbackAddr:    ctx.String("fallback_addr"),
 		Expiry:          ctx.Int64("expiry"),
 		Private:         ctx.Bool("private"),
 		IsAmp:           ctx.Bool("amp"),
+		Refundable:      ctx.Bool("refundable"),
 	}
 
 	resp, err := client.OB_AddInvoice(ctxc, invoice)
@@ -172,6 +177,44 @@ func addInvoice(ctx *cli.Context) error {
 
 	printRespJSON(resp)
 
+	return nil
+}
+
+var subcribeInvoiceCommand = cli.Command{
+	Name:     "subcribeinvoice",
+	Category: "Invoices",
+	Usage:    "subcribeinvoice",
+	Flags: []cli.Flag{
+		cli.Uint64Flag{
+			Name: "add_index",
+			Usage: "If specified (non-zero), then we'll first start by sending out\n" +
+				"    notifications for all added indexes with an add_index greater than this\n" +
+				"    value. This allows callers to catch up on any events they missed while they\n" +
+				"    weren't connected to the streaming RPC",
+		},
+		cli.Uint64Flag{
+			Name:  "settle_index",
+			Usage: "If specified (non-zero), then we'll first start by sending out\n    notifications for all settled indexes with an settle_index greater than\n    this value. This allows callers to catch up on any events they missed while\n    they weren't connected to the streaming RPC",
+		},
+	},
+	Action: actionDecorator(subcribeInvoice),
+}
+
+func subcribeInvoice(ctx *cli.Context) error {
+	ctxc := getContext()
+	client, cleanUp := getClient(ctx)
+	defer cleanUp()
+	res, err := client.SubscribeInvoices(ctxc, &lnrpc.InvoiceSubscription{SettleIndex: ctx.Uint64("settle_index"), AddIndex: ctx.Uint64("add_index")})
+	if err != nil {
+		return err
+	}
+	for true {
+		recv, err := res.Recv()
+		if err != nil {
+			return err
+		}
+		printRespJSON(recv)
+	}
 	return nil
 }
 
@@ -269,6 +312,10 @@ var listInvoicesCommand = cli.Command{
 			Usage: "if set, invoices succeeding the " +
 				"index_offset will be returned",
 		},
+		cli.Int64Flag{
+			Name:  "asset_id",
+			Usage: "",
+		},
 	},
 	Action: actionDecorator(listInvoices),
 }
@@ -279,10 +326,14 @@ func listInvoices(ctx *cli.Context) error {
 	defer cleanUp()
 
 	req := &lnrpc.ListInvoiceRequest{
+		AssetId:        uint32(ctx.Int64("asset_id")),
 		PendingOnly:    ctx.Bool("pending_only"),
 		IndexOffset:    ctx.Uint64("index_offset"),
 		NumMaxInvoices: ctx.Uint64("max_invoices"),
 		Reversed:       !ctx.Bool("paginate-forwards"),
+	}
+	if req.AssetId > 0 {
+		req.IsQueryAsset = true
 	}
 
 	invoices, err := client.OB_ListInvoices(ctxc, req)

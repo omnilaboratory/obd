@@ -62,13 +62,14 @@ exec ./lnd-debug \
     --maxpendingchannels=100 \
     --noseedbackup \
     "--lnddir=~/apps/oblnd" \
+    --alias=local_a \
     "--$CHAIN.active" \
     "--$CHAIN.$NETWORK" \
     "--$CHAIN.node"="$BACKEND" \
     "--$BACKEND.rpchost"="43.138.107.248:18332" \
     "--rpclisten=$HOSTNAME:10010" \
     "--rpclisten=localhost:10010" \
-    --listen=0.0.0.0:9736 \
+    --listen=0.0.0.0:9735 \
     "--restlisten=0.0.0.0:18080" \
     --debuglevel="$DEBUG" \
     --$BACKEND.zmqpubrawblock=tcp://43.138.107.248:28332 \

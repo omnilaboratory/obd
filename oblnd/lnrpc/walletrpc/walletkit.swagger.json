@@ -697,7 +697,9 @@
         "NESTED_PUBKEY_HASH_Disabled",
         "PUBKEY",
         "UNUSED_WITNESS_PUBKEY_HASH",
-        "UNUSED_NESTED_PUBKEY_HASH"
+        "UNUSED_NESTED_PUBKEY_HASH",
+        "NFT_WITNESS_PUBKEY_HASH",
+        "TAPROOT_PUBKEY"
       ],
       "default": "WITNESS_PUBKEY_HASH_Disabled",
       "description": "- `p2wkh`: Pay to witness key hash (`WITNESS_PUBKEY_HASH` = 0)\n- `np2wkh`: Pay to nested witness key hash (`NESTED_PUBKEY_HASH` = 1)\n\n - WITNESS_PUBKEY_HASH_Disabled: obd update wxf\nobd disabled WITNESS",
@@ -1496,6 +1498,16 @@
           "type": "string",
           "format": "uint64",
           "description": "The absolute expiration of the output lease represented as a unix timestamp."
+        },
+        "pk_script": {
+          "type": "string",
+          "format": "byte",
+          "description": "The public key script of the leased output."
+        },
+        "value": {
+          "type": "string",
+          "format": "uint64",
+          "description": "The value of the leased output in satoshis."
         }
       }
     },

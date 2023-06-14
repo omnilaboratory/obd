@@ -62,12 +62,20 @@
     * btc-testnet水龙头: 可以google搜索＂btc　testnet　faucet＂查找到更多的水龙头，可用的不多；测试了一个可用的https://testnet-faucet.com/btc-testnet/　，每次只能发5000-10000 satoshi
     * neutrino.db 下载列表"https://cache.oblnd.top/neutrino-testnet/";　，按需下载相应的文件，下载时相的文件时，url要加日期参数,日期格式任意，如下载neutrino.db文件“https://cache.oblnd.top/neutrino-testnet/neutrino.db?date=2022-12-22” ;下载数据每天8点生成一次， gz扩展名为相应文件的gzip压缩版．下载后存放目录“${LNDIR}/data/chain/bitcoin/testnet/”
 * mainnet 出块时间10分钟不等
-　 * neutrino
-  待部部署
+  * $BTC_HOST_ADDRESS　使用zap的neutrino_url；或不填，下载neutrino.db时，同时下载peer.json,加速neutrino启动，这样会使用公共网络的btc节点. 　
+  * $OMNI_HOST_ADDRESS_PORT=54.187.22.125:18332
+  * testnet使用的是proxy-server的 getinfo获取最新块号；在omni-mainnet时，getinfo接口非常慢，需要１０－２０秒，可能是getinfo 实时统计omni-trans数量引起的，约有2000万omni-trans．获取最新块号功能,可像zap一样使用第三方服务接口,来优化.
+  * 添加主网特有参数：　--neutrino.feeurl=https://nodes.lightning.computer/fees/v1/btc-fee-estimates.json
+  * 无水龙头功能，　swagger可用于查余额，查asset功能．　　http://43.138.107.248:9090/swaggerTool/?surl=http://54.187.22.125:8090/openapiv2/foo.swagger.json
+  * 中心节点　03cd43d4ae622cff751564a093d9ba4d347a29cffadac9bddbf5d698646411c23e@54.187.22.125
+  * 主网不能使用Closechannel只能用Ob_SafeBox_CloseChannel 这个合作关闭channel功能．　不支持forceclose；所以recover wallet时，forceclose不能用
  
 ### 服务端节点
+配制文件：https://cache.oblnd.top/app.cfg
+
   * regtest: 0386790984cda19a179486bf45f7a1d7dc58964605b928e3d36cd7806ce3d31cdb@otest:9735
-  * testnet: 025767c2a772bb48f04117625c2da759d55d3e287c101602452c5228c975111594@192.144.199.67:9735
+  * testnet: 025af4448f55bf1e6de1ae0486d4d103427c4e559a62ed7f8035bb1ed1af734f61@192.144.199.67:9735　omnicoreproxy.rpchost=192.144.199.67:18332 spay_url=192.144.199.67:38332
+  * testnet: 03f74cfc7a7b47d17760b9d122fdb554675f47d4453624fa5acd688072684f18ba@110.40.210.253:9736  omnicoreproxy.rpchost=192.144.199.67:18332 spay_url=110.40.210.253:38332
   * mainnet: 暂无
 
 ### 公共参数
@@ -77,7 +85,11 @@
 * --debuglevel=info/debug/trace #用于调试目的，打印不同级别的log，trace最详细，info是默认。
 * --alias=alice #节点别名
 * --autopilot.active ＃自动驾驶功能，要加上
+* --accept-keysend #接收keysend支付，要加上。
+* --spay-url代收款红包服务url
 * --maxpendingchannels=100 ＃pending正在建立，正在建立的通道的数量．
 * --enable-upfront-shutdown #关闭通道时把coin返默认钱包地址，要加上
 * --nobootstrap #可选：禁用启动时使用dns自动发现连接到公共节点
+* --norest #可选：禁用grpc对应的rest接口
+
 

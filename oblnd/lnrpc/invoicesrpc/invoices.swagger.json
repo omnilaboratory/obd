@@ -553,6 +553,10 @@
           "format": "byte",
           "description": "The payment address of this invoice. This value will be used in MPP\npayments, and also for newer invoices that always require the MPP payload\nfor added end-to-end security."
         },
+        "payer_addr": {
+          "type": "string",
+          "format": "byte"
+        },
         "is_amp": {
           "type": "boolean",
           "description": "Signals whether or not this is an AMP invoice."
@@ -564,6 +568,10 @@
           },
           "description": "Maps a 32-byte hex-encoded set ID to the sub-invoice AMP state for the\ngiven set ID. This field is always populated for AMP invoices, and can be\nused along side LookupInvoice to obtain the HTLC information related to a\ngiven sub-invoice.",
           "title": "[EXPERIMENTAL]:"
+        },
+        "refundable": {
+          "type": "boolean",
+          "title": "obd update wxf\nused for cloud serverInvoice"
         }
       }
     },

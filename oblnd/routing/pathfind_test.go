@@ -18,10 +18,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
-	"github.com/btcsuite/btcutil"
+	"github.com/btcsuite/btcd/btcutil"
 	"github.com/lightningnetwork/lnd/channeldb"
 	"github.com/lightningnetwork/lnd/htlcswitch"
 	"github.com/lightningnetwork/lnd/kvdb"
@@ -88,7 +88,7 @@ var (
 )
 
 var (
-	testSig = &btcec.Signature{
+	testSig = &ecdsa.Signature{
 		R: new(big.Int),
 		S: new(big.Int),
 	}
@@ -1239,7 +1239,7 @@ func runPathFindingWithAdditionalEdges(t *testing.T, assetId uint32, useCache bo
 	if err != nil {
 		t.Fatalf("unable to decode public key: %v", err)
 	}
-	dogePubKey, err := btcec.ParsePubKey(dogePubKeyBytes, btcec.S256())
+	dogePubKey, err := btcec.ParsePubKey(dogePubKeyBytes)
 	if err != nil {
 		t.Fatalf("unable to parse public key from bytes: %v", err)
 	}

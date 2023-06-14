@@ -14,14 +14,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/btcsuite/btcd/btcjson"
+	"github.com/btcsuite/btcd/btcutil"
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/integration/rpctest"
 	"github.com/btcsuite/btcd/txscript"
 	"github.com/btcsuite/btcd/wire"
-	"github.com/btcsuite/btcutil"
 	"github.com/btcsuite/btcwallet/chain"
 	"github.com/btcsuite/btcwallet/walletdb"
 	"github.com/lightninglabs/neutrino"
@@ -42,7 +42,7 @@ var (
 // randPubKeyHashScript generates a P2PKH script that pays to the public key of
 // a randomly-generated private key.
 func randPubKeyHashScript() ([]byte, *btcec.PrivateKey, error) {
-	privKey, err := btcec.NewPrivateKey(btcec.S256())
+	privKey, err := btcec.NewPrivateKey()
 	if err != nil {
 		return nil, nil, err
 	}
@@ -235,13 +235,15 @@ func NewBitcoindBackend(t *testing.T, minerAddr string,
 
 	host := fmt.Sprintf("127.0.0.1:%d", rpcPort)
 	conn, err := chain.NewBitcoindConn(&chain.BitcoindConfig{
-		ChainParams:     NetParams,
-		Host:            host,
-		User:            "weks",
-		Pass:            "weks",
-		ZMQBlockHost:    zmqBlockHost,
-		ZMQTxHost:       zmqTxHost,
-		ZMQReadDeadline: 5 * time.Second,
+		ChainParams: NetParams,
+		Host:        host,
+		User:        "weks",
+		Pass:        "weks",
+		ZMQConfig: &chain.ZMQConfig{
+			ZMQBlockHost:    zmqBlockHost,
+			ZMQTxHost:       zmqTxHost,
+			ZMQReadDeadline: 5 * time.Second,
+		},
 		// Fields only required for pruned nodes, not needed for these
 		// tests.
 		Dialer:             nil,

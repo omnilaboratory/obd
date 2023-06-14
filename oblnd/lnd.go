@@ -6,20 +6,28 @@ package lnd
 
 import (
 	"context"
+	"crypto/sha256"
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"github.com/btcsuite/btcd/btcec/v2/ecdsa"
+	"github.com/lightningnetwork/lnd/lnrpc/routerrpc"
+	"github.com/lightningnetwork/lnd/lnwire"
+	toolrpc "github.com/lightningnetwork/lnd/omnicore/proxy"
+	"google.golang.org/protobuf/types/known/emptypb"
 	"io/ioutil"
+	"log"
 	"net"
 	"net/http"
 	_ "net/http/pprof" // Blank import to set up profiling HTTP handlers.
 	"os"
 	"runtime/pprof"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/btcsuite/btcutil"
+	"github.com/btcsuite/btcd/btcutil"
 	proxy "github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"golang.org/x/crypto/acme/autocert"
 	"google.golang.org/grpc"
@@ -541,6 +549,39 @@ func Main(cfg *Config, lisCfg ListenerCfg, implCfg *ImplementationCfg,
 		return mkErr("unable to start RPC server: %v", err)
 	}
 	defer rpcServer.Stop()
+	for _, subServer := range rpcServer.subServers {
+		if subServer.Name() == "RouterRPC" {
+			log.Println("add RouterRPC to server.invoices")
+			rserver := subServer.(*routerrpc.Server)
+			server.invoices.SendPayment = func(assetId uint32, invoiceAmt int64, dest, rhash, paymentAddress []byte) error {
+				req := &routerrpc.SendPaymentRequest{
+					AssetId:           assetId,
+					DestCustomRecords: make(map[uint64][]byte),
+					PaymentHash:       rhash,
+					PaymentAddr:       paymentAddress,
+					HaveHodlInvoice:   true,
+				}
+				req.AmtMsat = invoiceAmt
+				if assetId != lnwire.BtcAssetId {
+					req.AssetAmt = invoiceAmt
+				}
+				req.Dest = dest
+
+				// Calculate fee limit based on the determined amount.
+				feeLimit := int64(defaultRoutingFeeLimitForAmount(invoiceAmt))
+				req.FeeLimitMsat = feeLimit
+
+				req.NoInflightUpdates = true
+				req.TimeoutSeconds = 5
+
+				_, err := rserver.OB_SendPaymentSync(req)
+				if err != nil {
+					return errors.New(fmt.Sprintf("err pay asinvoice with status %v", err))
+				}
+				return nil
+			}
+		}
+	}
 
 	// We transition the RPC state to Active, as the RPC server is up.
 	interceptorChain.SetRPCActive()
@@ -612,6 +653,89 @@ func Main(cfg *Config, lisCfg ListenerCfg, implCfg *ImplementationCfg,
 		}
 		defer tower.Stop()
 	}
+
+	//regist tls key to proxy
+	go func() {
+		if cfg.DisableRegist2Proxy {
+			log.Println("RegistTlsKey is Disabled")
+			return
+		}
+		if cfg.SpayUrl == "" {
+			log.Println("SpayUrl is not set")
+			return
+		}
+		certData, _, err := cert.LoadCert(
+			cfg.TLSCertPath, cfg.TLSKeyPath,
+		)
+		if err != nil {
+			log.Println("err LoadCert tls cert " + err.Error())
+			return
+		}
+		tlsCfg := &tls.Config{Certificates: []tls.Certificate{certData}}
+		tlsCfg.InsecureSkipVerify = true
+
+		now := time.Now().Truncate(time.Minute * 5)
+		hashTxt := strconv.Itoa(int(now.Unix()))
+		s256 := sha256.New()
+		s256.Write([]byte(hashTxt))
+		useNodeKey := idKeyDesc.PubKey.SerializeCompressed()
+		s256.Write(useNodeKey)
+		hash := s256.Sum(nil)
+
+		priKey, err := activeChainControl.KeyRing.DerivePrivKey(idKeyDesc)
+		if err != nil {
+			log.Printf("regist tls key error , err deriving node key: %v", err)
+			return
+		}
+		sig := ecdsa.Sign(priKey, hash)
+		//if err != nil {
+		//	log.Printf("regist tls key error , err Sign: %v", err)
+		//	return
+		//}
+
+		conn, err := grpc.DialContext(context.TODO(), cfg.SpayUrl,
+			grpc.WithTransportCredentials(credentials.NewTLS(tlsCfg)),
+		)
+		if err != nil {
+			log.Println("err connect omni proxy server" + err.Error())
+		}
+
+		luckClient := toolrpc.NewLuckPkApiClient(conn)
+		registTlsKeyReq := &toolrpc.RegistTlsKeyReq{Sig: sig.Serialize(), UserNodeKey: useNodeKey, Alias: cfg.Alias}
+	RETRY:
+		_, err = luckClient.RegistTlsKey(context.TODO(), registTlsKeyReq)
+		if err != nil {
+			log.Println(errors.New("err  regist tls cert " + err.Error()))
+			time.Sleep(10 * time.Second)
+			goto RETRY
+		} else {
+			log.Println("done regist tls cert ok")
+		}
+
+		//connect to omni-proxy, can receive luckPackage, use Substitute-pay function
+		for {
+			hstream, err := luckClient.HeartBeat(context.TODO())
+			if err == nil {
+				for {
+					time.Sleep(15 * time.Second)
+					err = hstream.Send(&emptypb.Empty{})
+					if err != nil {
+						log.Println("Send HeartBeat err", err)
+						if hstream != nil {
+							hstream.CloseSend()
+						}
+						break
+					}
+				}
+			} else {
+				log.Println("new HeartBeat err", err)
+				if hstream != nil {
+					hstream.CloseSend()
+				}
+			}
+			time.Sleep(15 * time.Second)
+		}
+	}()
 
 	// Wait for shutdown signal from either a graceful server stop or from
 	// the interrupt handler.
@@ -1039,3 +1163,18 @@ func startRestProxy(cfg *Config, rpcServer *rpcServer, restDialOpts []grpc.DialO
 
 	return shutdown, nil
 }
+func defaultRoutingFeeLimitForAmount(a int64) int64 {
+	// Allow 100% fees up to a certain amount to accommodate for base fees.
+	if a <= RoutingFee100PercentUpTo {
+		return a
+	}
+
+	// Everything larger than the cut-off amount will get a default fee
+	// percentage.
+	return a * DefaultRoutingFeePercentage / 100
+}
+
+const (
+	RoutingFee100PercentUpTo          = 1000000
+	DefaultRoutingFeePercentage int64 = 5
+)

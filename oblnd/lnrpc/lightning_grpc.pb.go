@@ -105,6 +105,7 @@ type LightningClient interface {
 	// lncli: `newaddress`
 	//NewAddress creates a new address under control of the local wallet.
 	OB_NewAddress(ctx context.Context, in *NewAddressRequest, opts ...grpc.CallOption) (*NewAddressResponse, error)
+	OB_DumpPrivkey(ctx context.Context, in *DumpPrivkeyRequest, opts ...grpc.CallOption) (*DumpPrivkeyResponse, error)
 	// lncli: `signmessage`
 	//SignMessage signs a message with this node's private key. The returned
 	//signature string is `zbase32` encoded and pubkey recoverable, meaning that
@@ -213,6 +214,8 @@ type LightningClient interface {
 	//closure transaction is confirmed, or a manual fee rate. If neither are
 	//specified, then a default lax, block confirmation target is used.
 	CloseChannel(ctx context.Context, in *CloseChannelRequest, opts ...grpc.CallOption) (Lightning_CloseChannelClient, error)
+	// CooperativeClose with omni-simeplesend for mainnet
+	Ob_SafeBox_CloseChannel(ctx context.Context, in *CloseChannelRequest, opts ...grpc.CallOption) (Lightning_Ob_SafeBox_CloseChannelClient, error)
 	// lncli: `abandonchannel`
 	//AbandonChannel removes all channel state from the database except for a
 	//close summary. This method can be used to get rid of permanently unusable
@@ -660,6 +663,15 @@ func (c *lightningClient) OB_NewAddress(ctx context.Context, in *NewAddressReque
 	return out, nil
 }
 
+func (c *lightningClient) OB_DumpPrivkey(ctx context.Context, in *DumpPrivkeyRequest, opts ...grpc.CallOption) (*DumpPrivkeyResponse, error) {
+	out := new(DumpPrivkeyResponse)
+	err := c.cc.Invoke(ctx, "/lnrpc.Lightning/OB_DumpPrivkey", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *lightningClient) SignMessage(ctx context.Context, in *SignMessageRequest, opts ...grpc.CallOption) (*SignMessageResponse, error) {
 	out := new(SignMessageResponse)
 	err := c.cc.Invoke(ctx, "/lnrpc.Lightning/SignMessage", in, out, opts...)
@@ -936,6 +948,38 @@ func (x *lightningCloseChannelClient) Recv() (*CloseStatusUpdate, error) {
 	return m, nil
 }
 
+func (c *lightningClient) Ob_SafeBox_CloseChannel(ctx context.Context, in *CloseChannelRequest, opts ...grpc.CallOption) (Lightning_Ob_SafeBox_CloseChannelClient, error) {
+	stream, err := c.cc.NewStream(ctx, &Lightning_ServiceDesc.Streams[6], "/lnrpc.Lightning/Ob_SafeBox_CloseChannel", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &lightningOb_SafeBox_CloseChannelClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type Lightning_Ob_SafeBox_CloseChannelClient interface {
+	Recv() (*CloseStatusUpdate, error)
+	grpc.ClientStream
+}
+
+type lightningOb_SafeBox_CloseChannelClient struct {
+	grpc.ClientStream
+}
+
+func (x *lightningOb_SafeBox_CloseChannelClient) Recv() (*CloseStatusUpdate, error) {
+	m := new(CloseStatusUpdate)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 func (c *lightningClient) AbandonChannel(ctx context.Context, in *AbandonChannelRequest, opts ...grpc.CallOption) (*AbandonChannelResponse, error) {
 	out := new(AbandonChannelResponse)
 	err := c.cc.Invoke(ctx, "/lnrpc.Lightning/AbandonChannel", in, out, opts...)
@@ -947,7 +991,7 @@ func (c *lightningClient) AbandonChannel(ctx context.Context, in *AbandonChannel
 
 // Deprecated: Do not use.
 func (c *lightningClient) SendPayment(ctx context.Context, opts ...grpc.CallOption) (Lightning_SendPaymentClient, error) {
-	stream, err := c.cc.NewStream(ctx, &Lightning_ServiceDesc.Streams[6], "/lnrpc.Lightning/SendPayment", opts...)
+	stream, err := c.cc.NewStream(ctx, &Lightning_ServiceDesc.Streams[7], "/lnrpc.Lightning/SendPayment", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -988,7 +1032,7 @@ func (c *lightningClient) SendPaymentSync(ctx context.Context, in *SendRequest, 
 
 // Deprecated: Do not use.
 func (c *lightningClient) SendToRoute(ctx context.Context, opts ...grpc.CallOption) (Lightning_SendToRouteClient, error) {
-	stream, err := c.cc.NewStream(ctx, &Lightning_ServiceDesc.Streams[7], "/lnrpc.Lightning/SendToRoute", opts...)
+	stream, err := c.cc.NewStream(ctx, &Lightning_ServiceDesc.Streams[8], "/lnrpc.Lightning/SendToRoute", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1055,7 +1099,7 @@ func (c *lightningClient) LookupInvoice(ctx context.Context, in *PaymentHash, op
 }
 
 func (c *lightningClient) SubscribeInvoices(ctx context.Context, in *InvoiceSubscription, opts ...grpc.CallOption) (Lightning_SubscribeInvoicesClient, error) {
-	stream, err := c.cc.NewStream(ctx, &Lightning_ServiceDesc.Streams[8], "/lnrpc.Lightning/SubscribeInvoices", opts...)
+	stream, err := c.cc.NewStream(ctx, &Lightning_ServiceDesc.Streams[9], "/lnrpc.Lightning/SubscribeInvoices", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1186,7 +1230,7 @@ func (c *lightningClient) StopDaemon(ctx context.Context, in *StopRequest, opts 
 }
 
 func (c *lightningClient) SubscribeChannelGraph(ctx context.Context, in *GraphTopologySubscription, opts ...grpc.CallOption) (Lightning_SubscribeChannelGraphClient, error) {
-	stream, err := c.cc.NewStream(ctx, &Lightning_ServiceDesc.Streams[9], "/lnrpc.Lightning/SubscribeChannelGraph", opts...)
+	stream, err := c.cc.NewStream(ctx, &Lightning_ServiceDesc.Streams[10], "/lnrpc.Lightning/SubscribeChannelGraph", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1290,7 +1334,7 @@ func (c *lightningClient) RestoreChannelBackups(ctx context.Context, in *Restore
 }
 
 func (c *lightningClient) SubscribeChannelBackups(ctx context.Context, in *ChannelBackupSubscription, opts ...grpc.CallOption) (Lightning_SubscribeChannelBackupsClient, error) {
-	stream, err := c.cc.NewStream(ctx, &Lightning_ServiceDesc.Streams[10], "/lnrpc.Lightning/SubscribeChannelBackups", opts...)
+	stream, err := c.cc.NewStream(ctx, &Lightning_ServiceDesc.Streams[11], "/lnrpc.Lightning/SubscribeChannelBackups", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1367,7 +1411,7 @@ func (c *lightningClient) CheckMacaroonPermissions(ctx context.Context, in *Chec
 }
 
 func (c *lightningClient) RegisterRPCMiddleware(ctx context.Context, opts ...grpc.CallOption) (Lightning_RegisterRPCMiddlewareClient, error) {
-	stream, err := c.cc.NewStream(ctx, &Lightning_ServiceDesc.Streams[11], "/lnrpc.Lightning/RegisterRPCMiddleware", opts...)
+	stream, err := c.cc.NewStream(ctx, &Lightning_ServiceDesc.Streams[12], "/lnrpc.Lightning/RegisterRPCMiddleware", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1407,7 +1451,7 @@ func (c *lightningClient) SendCustomMessage(ctx context.Context, in *SendCustomM
 }
 
 func (c *lightningClient) SubscribeCustomMessages(ctx context.Context, in *SubscribeCustomMessagesRequest, opts ...grpc.CallOption) (Lightning_SubscribeCustomMessagesClient, error) {
-	stream, err := c.cc.NewStream(ctx, &Lightning_ServiceDesc.Streams[12], "/lnrpc.Lightning/SubscribeCustomMessages", opts...)
+	stream, err := c.cc.NewStream(ctx, &Lightning_ServiceDesc.Streams[13], "/lnrpc.Lightning/SubscribeCustomMessages", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1525,6 +1569,7 @@ type LightningServer interface {
 	// lncli: `newaddress`
 	//NewAddress creates a new address under control of the local wallet.
 	OB_NewAddress(context.Context, *NewAddressRequest) (*NewAddressResponse, error)
+	OB_DumpPrivkey(context.Context, *DumpPrivkeyRequest) (*DumpPrivkeyResponse, error)
 	// lncli: `signmessage`
 	//SignMessage signs a message with this node's private key. The returned
 	//signature string is `zbase32` encoded and pubkey recoverable, meaning that
@@ -1633,6 +1678,8 @@ type LightningServer interface {
 	//closure transaction is confirmed, or a manual fee rate. If neither are
 	//specified, then a default lax, block confirmation target is used.
 	CloseChannel(*CloseChannelRequest, Lightning_CloseChannelServer) error
+	// CooperativeClose with omni-simeplesend for mainnet
+	Ob_SafeBox_CloseChannel(*CloseChannelRequest, Lightning_Ob_SafeBox_CloseChannelServer) error
 	// lncli: `abandonchannel`
 	//AbandonChannel removes all channel state from the database except for a
 	//close summary. This method can be used to get rid of permanently unusable
@@ -1934,6 +1981,9 @@ func (UnimplementedLightningServer) SendMany(context.Context, *SendManyRequest) 
 func (UnimplementedLightningServer) OB_NewAddress(context.Context, *NewAddressRequest) (*NewAddressResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method OB_NewAddress not implemented")
 }
+func (UnimplementedLightningServer) OB_DumpPrivkey(context.Context, *DumpPrivkeyRequest) (*DumpPrivkeyResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method OB_DumpPrivkey not implemented")
+}
 func (UnimplementedLightningServer) SignMessage(context.Context, *SignMessageRequest) (*SignMessageResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SignMessage not implemented")
 }
@@ -1987,6 +2037,9 @@ func (UnimplementedLightningServer) ChannelAcceptor(Lightning_ChannelAcceptorSer
 }
 func (UnimplementedLightningServer) CloseChannel(*CloseChannelRequest, Lightning_CloseChannelServer) error {
 	return status.Errorf(codes.Unimplemented, "method CloseChannel not implemented")
+}
+func (UnimplementedLightningServer) Ob_SafeBox_CloseChannel(*CloseChannelRequest, Lightning_Ob_SafeBox_CloseChannelServer) error {
+	return status.Errorf(codes.Unimplemented, "method Ob_SafeBox_CloseChannel not implemented")
 }
 func (UnimplementedLightningServer) AbandonChannel(context.Context, *AbandonChannelRequest) (*AbandonChannelResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AbandonChannel not implemented")
@@ -2478,6 +2531,24 @@ func _Lightning_OB_NewAddress_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Lightning_OB_DumpPrivkey_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DumpPrivkeyRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LightningServer).OB_DumpPrivkey(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/lnrpc.Lightning/OB_DumpPrivkey",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LightningServer).OB_DumpPrivkey(ctx, req.(*DumpPrivkeyRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Lightning_SignMessage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(SignMessageRequest)
 	if err := dec(in); err != nil {
@@ -2819,6 +2890,27 @@ type lightningCloseChannelServer struct {
 }
 
 func (x *lightningCloseChannelServer) Send(m *CloseStatusUpdate) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func _Lightning_Ob_SafeBox_CloseChannel_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(CloseChannelRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(LightningServer).Ob_SafeBox_CloseChannel(m, &lightningOb_SafeBox_CloseChannelServer{stream})
+}
+
+type Lightning_Ob_SafeBox_CloseChannelServer interface {
+	Send(*CloseStatusUpdate) error
+	grpc.ServerStream
+}
+
+type lightningOb_SafeBox_CloseChannelServer struct {
+	grpc.ServerStream
+}
+
+func (x *lightningOb_SafeBox_CloseChannelServer) Send(m *CloseStatusUpdate) error {
 	return x.ServerStream.SendMsg(m)
 }
 
@@ -3626,6 +3718,10 @@ var Lightning_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Lightning_OB_NewAddress_Handler,
 		},
 		{
+			MethodName: "OB_DumpPrivkey",
+			Handler:    _Lightning_OB_DumpPrivkey_Handler,
+		},
+		{
 			MethodName: "SignMessage",
 			Handler:    _Lightning_SignMessage_Handler,
 		},
@@ -3832,6 +3928,11 @@ var Lightning_ServiceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "CloseChannel",
 			Handler:       _Lightning_CloseChannel_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "Ob_SafeBox_CloseChannel",
+			Handler:       _Lightning_Ob_SafeBox_CloseChannel_Handler,
 			ServerStreams: true,
 		},
 		{

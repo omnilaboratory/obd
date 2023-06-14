@@ -4,7 +4,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/btcsuite/btcd/btcec/v2"
+	"github.com/btcsuite/btcd/btcec/v2/ecdsa"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/txscript"
 	"github.com/btcsuite/btcd/wire"
@@ -86,7 +87,7 @@ func (s *SingleSigner) SignOutputRaw(tx *wire.MsgTx,
 		return nil, err
 	}
 
-	return btcec.ParseDERSignature(sig[:len(sig)-1], btcec.S256())
+	return ecdsa.ParseDERSignature(sig[:len(sig)-1])
 }
 
 func (s *SingleSigner) SignTransaction(tx *wire.MsgTx) error{
@@ -140,7 +141,7 @@ func (s *SingleSigner) ComputeInputScript(tx *wire.MsgTx,
 // SignMessage takes a public key and a message and only signs the message
 // with the stored private key if the public key matches the private key.
 func (s *SingleSigner) SignMessage(keyLoc keychain.KeyLocator,
-	msg []byte, doubleHash bool) (*btcec.Signature, error) {
+	msg []byte, doubleHash bool) (*ecdsa.Signature, error) {
 
 	mockKeyLoc := s.KeyLoc
 	if s.KeyLoc.IsEmpty() {
@@ -157,10 +158,10 @@ func (s *SingleSigner) SignMessage(keyLoc keychain.KeyLocator,
 	} else {
 		digest = chainhash.HashB(msg)
 	}
-	sign, err := s.Privkey.Sign(digest)
-	if err != nil {
-		return nil, fmt.Errorf("can't sign the message: %v", err)
-	}
+	sign := ecdsa.Sign(s.Privkey, digest)
+	//if err != nil {
+	//	return nil, fmt.Errorf("can't sign the message: %v", err)
+	//}
 
 	return sign, nil
 }

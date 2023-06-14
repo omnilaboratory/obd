@@ -976,14 +976,14 @@ func waitForWalletPassword(cfg *Config,
 		// seed. If it's greater than the current key derivation
 		// version, then we'll return an error as we don't understand
 		// this.
-		const latestVersion = keychain.KeyDerivationVersion
+		const latestVersion = keychain.CurrentKeyDerivationVersion
 		if cipherSeed != nil &&
 			cipherSeed.InternalVersion != latestVersion {
 
 			return nil, fmt.Errorf("invalid internal "+
 				"seed version %v, current version is %v",
 				cipherSeed.InternalVersion,
-				keychain.KeyDerivationVersion)
+				keychain.CurrentKeyDerivationVersion)
 		}
 
 		loader, err := btcwallet.NewWalletLoader(

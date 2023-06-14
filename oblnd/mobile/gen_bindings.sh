@@ -46,13 +46,14 @@ opts="package_name=$pkg,target_package=$target_pkg,listeners=$listeners,mem_rpc=
 for file in $PROTOS; do
   echo "Generating mobile protos from ${file}"
 
-  protoc -I/usr/local/include -I. \
-         --plugin=protoc-gen-custom=$falafel\
-         --custom_out=./build \
-         --custom_opt="$opts" \
-         --proto_path=../lnrpc \
-         --java_out=./build/java \
-         "${file}"
+#  protoc -I/usr/local/include -I. \
+#         --plugin=protoc-gen-custom=$falafel\
+#         --custom_out=./build \
+#         --custom_opt="$opts" \
+#         --proto_path=../lnrpc \
+#         --java_out=./build/java \
+#         "${file}"
+  cp -a ../lnrpc/${file} ./build/java/
 done
 
 # If prefix=1 is specified, prefix the generated methods with subserver name.
@@ -76,14 +77,14 @@ do
 
     echo "Generating mobile protos from ${file}, with build tag ${tag}"
 
-    protoc -I/usr/local/include -I. \
-           -I../lnrpc \
-           --plugin=protoc-gen-custom=$falafel \
-           --custom_out=./build \
-           --custom_opt="$opts" \
-           --proto_path=${DIRECTORY} \
-           --java_out=./build/java \
-           ${file}
+#    protoc -I/usr/local/include -I. \
+#           -I../lnrpc \
+#           --plugin=protoc-gen-custom=$falafel \
+#           --custom_out=./build \
+#           --custom_opt="$opts" \
+#           --proto_path=${DIRECTORY} \
+#           --java_out=./build/java \
+#           ${file}
     cp -a ../lnrpc/${file} ./build/java/
 done
 

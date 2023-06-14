@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"fmt"
 
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/davecgh/go-spew/spew"
 	"github.com/go-errors/errors"
@@ -31,7 +31,7 @@ func ValidateChannelAnn(a *lnwire.ChannelAnnouncement) error {
 	if err != nil {
 		return err
 	}
-	bitcoinKey1, err := btcec.ParsePubKey(a.BitcoinKey1[:], btcec.S256())
+	bitcoinKey1, err := btcec.ParsePubKey(a.BitcoinKey1[:])
 	if err != nil {
 		return err
 	}
@@ -46,7 +46,7 @@ func ValidateChannelAnn(a *lnwire.ChannelAnnouncement) error {
 	if err != nil {
 		return err
 	}
-	bitcoinKey2, err := btcec.ParsePubKey(a.BitcoinKey2[:], btcec.S256())
+	bitcoinKey2, err := btcec.ParsePubKey(a.BitcoinKey2[:])
 	if err != nil {
 		return err
 	}
@@ -60,7 +60,7 @@ func ValidateChannelAnn(a *lnwire.ChannelAnnouncement) error {
 	if err != nil {
 		return err
 	}
-	nodeKey1, err := btcec.ParsePubKey(a.NodeID1[:], btcec.S256())
+	nodeKey1, err := btcec.ParsePubKey(a.NodeID1[:])
 	if err != nil {
 		return err
 	}
@@ -72,7 +72,7 @@ func ValidateChannelAnn(a *lnwire.ChannelAnnouncement) error {
 	if err != nil {
 		return err
 	}
-	nodeKey2, err := btcec.ParsePubKey(a.NodeID2[:], btcec.S256())
+	nodeKey2, err := btcec.ParsePubKey(a.NodeID2[:])
 	if err != nil {
 		return err
 	}
@@ -99,7 +99,7 @@ func ValidateNodeAnn(a *lnwire.NodeAnnouncement) error {
 	if err != nil {
 		return err
 	}
-	nodeKey, err := btcec.ParsePubKey(a.NodeID[:], btcec.S256())
+	nodeKey, err := btcec.ParsePubKey(a.NodeID[:])
 	if err != nil {
 		return err
 	}

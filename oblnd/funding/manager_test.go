@@ -18,11 +18,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
-	"github.com/btcsuite/btcutil"
+	"github.com/btcsuite/btcd/btcutil"
 	"github.com/lightningnetwork/lnd/chainntnfs"
 	"github.com/lightningnetwork/lnd/chainreg"
 	"github.com/lightningnetwork/lnd/chanacceptor"
@@ -104,7 +104,7 @@ var (
 		Address:     bobTCPAddr,
 	}
 
-	testSig = &btcec.Signature{
+	testSig = &ecdsa.Signature{
 		R: new(big.Int),
 		S: new(big.Int),
 	}
@@ -363,7 +363,7 @@ func createTestFundingManager(t *testing.T, privKey *btcec.PrivateKey,
 		Notifier:     chainNotifier,
 		FeeEstimator: estimator,
 		SignMessage: func(_ keychain.KeyLocator,
-			_ []byte, _ bool) (*btcec.Signature, error) {
+			_ []byte, _ bool) (*ecdsa.Signature, error) {
 
 			return testSig, nil
 		},
@@ -517,7 +517,7 @@ func recreateAliceFundingManager(t *testing.T, alice *testNode) {
 		Notifier:     oldCfg.Notifier,
 		FeeEstimator: oldCfg.FeeEstimator,
 		SignMessage: func(_ keychain.KeyLocator,
-			_ []byte, _ bool) (*btcec.Signature, error) {
+			_ []byte, _ bool) (*ecdsa.Signature, error) {
 
 			return testSig, nil
 		},

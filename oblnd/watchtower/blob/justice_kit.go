@@ -10,7 +10,7 @@ import (
 
 	"golang.org/x/crypto/chacha20poly1305"
 
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/btcsuite/btcd/txscript"
 	"github.com/lightningnetwork/lnd/input"
 	"github.com/lightningnetwork/lnd/lnwire"
@@ -154,14 +154,14 @@ type JusticeKit struct {
 // commitment to-local output.
 func (b *JusticeKit) CommitToLocalWitnessScript() ([]byte, error) {
 	revocationPubKey, err := btcec.ParsePubKey(
-		b.RevocationPubKey[:], btcec.S256(),
+		b.RevocationPubKey[:],
 	)
 	if err != nil {
 		return nil, err
 	}
 
 	localDelayedPubKey, err := btcec.ParsePubKey(
-		b.LocalDelayPubKey[:], btcec.S256(),
+		b.LocalDelayPubKey[:],
 	)
 	if err != nil {
 		return nil, err
@@ -208,7 +208,7 @@ func (b *JusticeKit) CommitToRemoteWitnessScript() ([]byte, error) {
 	// output containing a CSV delay of 1.
 	if b.BlobType.IsAnchorChannel() {
 		pk, err := btcec.ParsePubKey(
-			b.CommitToRemotePubKey[:], btcec.S256(),
+			b.CommitToRemotePubKey[:],
 		)
 		if err != nil {
 			return nil, err

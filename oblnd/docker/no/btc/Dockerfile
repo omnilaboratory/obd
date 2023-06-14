@@ -15,8 +15,19 @@ COPY bin/bitcoin-cli /usr/bin/
 COPY bitcoin.conf /root/.bitcoin/bitcoin.conf
 
 # p2p
+#mainnet
+EXPOSE 8333/tcp
+# testnet
+EXPOSE 18333/tcp
+#regtest
 EXPOSE 18444/tcp
+
 # rpc
+#mainet
+EXPOSE 8332/tcp
+#testnet
+EXPOSE 18332/tcp
+#regtest
 EXPOSE 18443/tcp
 
 ENTRYPOINT ["bitcoind", "-printtoconsole"]

@@ -73,11 +73,44 @@ func listasset(ctx *cli.Context) error {
 	return nil
 }
 
+var dumpPrivkeyCommand = cli.Command{
+	Name:        "dumpkey",
+	Usage:       "dumpkey",
+	Description: `Reveals the private key corresponding to ‘address’.`,
+	Action:      actionDecorator(dumpPrivkey),
+	Flags: []cli.Flag{
+		cli.StringFlag{
+			Name:  "address",
+			Usage: "",
+		},
+	},
+}
+
+func dumpPrivkey(ctx *cli.Context) error {
+	address := ctx.String("address")
+	ctxc := getContext()
+	client, cleanUp := getClient(ctx)
+	defer cleanUp()
+	res, err := client.OB_DumpPrivkey(ctxc, &lnrpc.DumpPrivkeyRequest{Address: address})
+	if err != nil {
+		return fmt.Errorf("unable DumpPrivkey from address: %v %v", address, err)
+	}
+	printRespJSON(res)
+	return nil
+}
+
 var listAddressCommand = cli.Command{
 	Name:        "listaddress",
 	Usage:       "list all pubkey address on omni-wallet",
 	Description: ``,
 	Action:      actionDecorator(listaddress),
+	Flags: []cli.Flag{
+		cli.StringFlag{
+			Name:  "type",
+			Usage: "p2wkh p2tr",
+			Value: "p2kh",
+		},
+	},
 }
 
 func listaddress(ctx *cli.Context) error {
@@ -85,7 +118,15 @@ func listaddress(ctx *cli.Context) error {
 	client, cleanUp := getClient(ctx)
 	defer cleanUp()
 
-	items, err := client.OB_ListAddresses(ctxc, &lnrpc.ListAddressesRequest{})
+	typeStr := ctx.String("type")
+	atype := lnrpc.AddressType_PUBKEY
+	switch typeStr {
+	case "p2wkh":
+		atype = lnrpc.AddressType_NFT_WITNESS_PUBKEY_HASH
+	case "p2tr":
+		atype = lnrpc.AddressType_TAPROOT_PUBKEY
+	}
+	items, err := client.OB_ListAddresses(ctxc, &lnrpc.ListAddressesRequest{AddressType: atype})
 	if err != nil {
 		return fmt.Errorf("unable ListAddresses from lnd: %v", err)
 	}

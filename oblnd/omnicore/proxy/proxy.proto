@@ -1,0 +1,17 @@
+syntax = "proto3";
+package toolrpc;
+option go_package = "om-rpc-tool/toolrpc";
+import "google/protobuf/empty.proto";
+
+message RegistTlsKeyReq{
+  bytes user_node_key = 1;
+  bytes sig = 2;
+  string alias=3;
+}
+
+service luckPkApi{
+  rpc RegistTlsKey(RegistTlsKeyReq)returns(google.protobuf.Empty) {
+  }
+  rpc HeartBeat(stream google.protobuf.Empty)returns(google.protobuf.Empty) {
+  }
+}

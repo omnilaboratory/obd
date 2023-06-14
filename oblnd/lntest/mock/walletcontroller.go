@@ -2,18 +2,19 @@ package mock
 
 import (
 	"encoding/hex"
+	"github.com/btcsuite/btcwallet/wallet"
 	"github.com/lightningnetwork/lnd/lnwallet/chanfunding"
 	"github.com/lightningnetwork/lnd/omnicore"
 	"sync/atomic"
 	"time"
 
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/btcsuite/btcd/btcec/v2"
+	"github.com/btcsuite/btcd/btcutil"
+	"github.com/btcsuite/btcd/btcutil/hdkeychain"
+	"github.com/btcsuite/btcd/btcutil/psbt"
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
-	"github.com/btcsuite/btcutil"
-	"github.com/btcsuite/btcutil/hdkeychain"
-	"github.com/btcsuite/btcutil/psbt"
 	"github.com/btcsuite/btcwallet/waddrmgr"
 	"github.com/btcsuite/btcwallet/wallet/txauthor"
 	"github.com/btcsuite/btcwallet/wtxmgr"
@@ -40,6 +41,9 @@ func (w *WalletController) BackEnd() string {
 	return "mock"
 }
 
+func (w *WalletController) OB_DumpPrivkey(address string) (string, error) {
+	return "", nil
+}
 func (w *WalletController) OB_ListAddresses(addrType lnwallet.AddressType, accountName string) (items []string, err error) {
 	return nil, nil
 }
@@ -202,10 +206,9 @@ func (w *WalletController) LockOutpoint(o wire.OutPoint) {}
 func (w *WalletController) UnlockOutpoint(o wire.OutPoint) {}
 
 // LeaseOutput returns the current time and a nil error.
-func (w *WalletController) LeaseOutput(wtxmgr.LockID, wire.OutPoint,
-	time.Duration) (time.Time, error) {
+func (w *WalletController) LeaseOutput(id wtxmgr.LockID, op wire.OutPoint, duration time.Duration) (time.Time, []byte, btcutil.Amount, error) {
 
-	return time.Now(), nil
+	return time.Now(), nil, 0, nil
 }
 
 // ReleaseOutput currently does nothing.
@@ -213,7 +216,7 @@ func (w *WalletController) ReleaseOutput(wtxmgr.LockID, wire.OutPoint) error {
 	return nil
 }
 
-func (w *WalletController) ListLeasedOutputs() ([]*wtxmgr.LockedOutput, error) {
+func (w *WalletController) ListLeasedOutputs() ([]*wallet.ListLeasedOutputResult, error) {
 	return nil, nil
 }
 

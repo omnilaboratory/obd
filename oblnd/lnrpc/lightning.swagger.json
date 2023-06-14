@@ -791,6 +791,12 @@
             "type": "boolean"
           },
           {
+            "name": "ob_simple_send",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
             "name": "target_conf",
             "description": "The target number of blocks that the closure transaction should be\nconfirmed by.",
             "in": "query",
@@ -1892,7 +1898,9 @@
               "NESTED_PUBKEY_HASH_Disabled",
               "PUBKEY",
               "UNUSED_WITNESS_PUBKEY_HASH",
-              "UNUSED_NESTED_PUBKEY_HASH"
+              "UNUSED_NESTED_PUBKEY_HASH",
+              "NFT_WITNESS_PUBKEY_HASH",
+              "TAPROOT_PUBKEY"
             ],
             "default": "WITNESS_PUBKEY_HASH_Disabled"
           },
@@ -2854,6 +2862,10 @@
           "type": "integer",
           "format": "int64"
         },
+        "create_time": {
+          "type": "integer",
+          "format": "int64"
+        },
         "local_balance": {
           "type": "string",
           "format": "int64"
@@ -3047,7 +3059,9 @@
         "NESTED_PUBKEY_HASH_Disabled",
         "PUBKEY",
         "UNUSED_WITNESS_PUBKEY_HASH",
-        "UNUSED_NESTED_PUBKEY_HASH"
+        "UNUSED_NESTED_PUBKEY_HASH",
+        "NFT_WITNESS_PUBKEY_HASH",
+        "TAPROOT_PUBKEY"
       ],
       "default": "WITNESS_PUBKEY_HASH_Disabled",
       "description": "- `p2wkh`: Pay to witness key hash (`WITNESS_PUBKEY_HASH` = 0)\n- `np2wkh`: Pay to nested witness key hash (`NESTED_PUBKEY_HASH` = 1)\n\n - WITNESS_PUBKEY_HASH_Disabled: obd update wxf\nobd disabled WITNESS",
@@ -3473,6 +3487,10 @@
           "type": "integer",
           "format": "int64"
         },
+        "create_time": {
+          "type": "integer",
+          "format": "int64"
+        },
         "commit_fee": {
           "type": "string",
           "format": "int64",
@@ -3502,6 +3520,16 @@
           "type": "string",
           "format": "int64",
           "description": "The total number of satoshis we've received within this channel."
+        },
+        "total_asset_received": {
+          "type": "string",
+          "format": "int64",
+          "description": "The total number of omni-unit we've received within this channel."
+        },
+        "total_asset_sent": {
+          "type": "string",
+          "format": "int64",
+          "description": "The total number of omni-unit we've sent within this channel."
         },
         "num_updates": {
           "type": "string",
@@ -3978,7 +4006,8 @@
           "$ref": "#/definitions/lnrpcChannelPoint"
         },
         "pending_open_channel": {
-          "$ref": "#/definitions/lnrpcPendingUpdate"
+          "$ref": "#/definitions/lnrpcChannel",
+          "title": "PendingUpdate pending_open_channel = 6;"
         },
         "fully_resolved_channel": {
           "$ref": "#/definitions/lnrpcChannelPoint"
@@ -4287,6 +4316,14 @@
     },
     "lnrpcDisconnectPeerResponse": {
       "type": "object"
+    },
+    "lnrpcDumpPrivkeyResponse": {
+      "type": "object",
+      "properties": {
+        "key_wif": {
+          "type": "string"
+        }
+      }
     },
     "lnrpcEdgeLocator": {
       "type": "object",
@@ -4748,6 +4785,10 @@
           "type": "string",
           "title": "obd upadte wxf:\ndns srv key. used in dns srv record"
         },
+        "coin_address": {
+          "type": "string",
+          "title": "obd wallet default address"
+        },
         "alias": {
           "type": "string",
           "title": "If applicable, the alias of the current node, e.g. \"bob\""
@@ -5183,6 +5224,10 @@
           "format": "byte",
           "description": "The payment address of this invoice. This value will be used in MPP\npayments, and also for newer invoices that always require the MPP payload\nfor added end-to-end security."
         },
+        "payer_addr": {
+          "type": "string",
+          "format": "byte"
+        },
         "is_amp": {
           "type": "boolean",
           "description": "Signals whether or not this is an AMP invoice."
@@ -5194,6 +5239,10 @@
           },
           "description": "Maps a 32-byte hex-encoded set ID to the sub-invoice AMP state for the\ngiven set ID. This field is always populated for AMP invoices, and can be\nused along side LookupInvoice to obtain the HTLC information related to a\ngiven sub-invoice.",
           "title": "[EXPERIMENTAL]:"
+        },
+        "refundable": {
+          "type": "boolean",
+          "title": "obd update wxf\nused for cloud serverInvoice"
         }
       }
     },

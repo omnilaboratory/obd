@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/btcsuite/btcd/btcutil"
+	"github.com/btcsuite/btcd/btcutil/bech32"
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
-	"github.com/btcsuite/btcutil"
-	"github.com/btcsuite/btcutil/bech32"
 	"github.com/lightningnetwork/lnd/lnwire"
 )
 /*
@@ -291,6 +291,13 @@ func writeTaggedFields(bufferBase32 *bytes.Buffer, invoice *Invoice) error {
 		}
 
 		err = writeTaggedField(bufferBase32, fieldTypeN, pubKeyBase32)
+		if err != nil {
+			return err
+		}
+	}
+
+	if invoice.Refundable != nil && *invoice.Refundable {
+		err := writeTaggedField(bufferBase32, fieldTypeRefundable, []byte{1})
 		if err != nil {
 			return err
 		}

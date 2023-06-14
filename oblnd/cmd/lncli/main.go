@@ -12,7 +12,7 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/btcsuite/btcutil"
+	"github.com/btcsuite/btcd/btcutil"
 	"github.com/lightningnetwork/lnd/build"
 	"github.com/lightningnetwork/lnd/lncfg"
 	"github.com/lightningnetwork/lnd/lnrpc"
@@ -354,11 +354,13 @@ func main() {
 		getRecoveryInfoCommand,
 		pendingChannelsCommand,
 		sendPaymentCommand,
+		sendASCommand,
 		payInvoiceCommand,
 		sendToRouteCommand,
 		addInvoiceCommand,
 		lookupInvoiceCommand,
 		listInvoicesCommand,
+		subcribeInvoiceCommand,
 		listChannelsCommand,
 		closedChannelsCommand,
 		listPaymentsCommand,
@@ -391,6 +393,7 @@ func main() {
 		versionCommand,
 		listAssetCommand,
 		listAddressCommand,
+		dumpPrivkeyCommand,
 		listRecAddressCommand,
 		setDefaultAddressCommand,
 		profileSubCommand,

@@ -540,6 +540,31 @@ func RegisterLightningJSONCallbacks(registry map[string]func(ctx context.Context
 		callback(string(respBytes), nil)
 	}
 
+	registry["lnrpc.Lightning.OB_DumpPrivkey"] = func(ctx context.Context,
+		conn *grpc.ClientConn, reqJSON string, callback func(string, error)) {
+
+		req := &DumpPrivkeyRequest{}
+		err := marshaler.Unmarshal([]byte(reqJSON), req)
+		if err != nil {
+			callback("", err)
+			return
+		}
+
+		client := NewLightningClient(conn)
+		resp, err := client.OB_DumpPrivkey(ctx, req)
+		if err != nil {
+			callback("", err)
+			return
+		}
+
+		respBytes, err := marshaler.Marshal(resp)
+		if err != nil {
+			callback("", err)
+			return
+		}
+		callback(string(respBytes), nil)
+	}
+
 	registry["lnrpc.Lightning.SignMessage"] = func(ctx context.Context,
 		conn *grpc.ClientConn, reqJSON string, callback func(string, error)) {
 
@@ -1003,6 +1028,48 @@ func RegisterLightningJSONCallbacks(registry map[string]func(ctx context.Context
 
 		client := NewLightningClient(conn)
 		stream, err := client.CloseChannel(ctx, req)
+		if err != nil {
+			callback("", err)
+			return
+		}
+
+		go func() {
+			for {
+				select {
+				case <-stream.Context().Done():
+					callback("", stream.Context().Err())
+					return
+				default:
+				}
+
+				resp, err := stream.Recv()
+				if err != nil {
+					callback("", err)
+					return
+				}
+
+				respBytes, err := marshaler.Marshal(resp)
+				if err != nil {
+					callback("", err)
+					return
+				}
+				callback(string(respBytes), nil)
+			}
+		}()
+	}
+
+	registry["lnrpc.Lightning.Ob_SafeBox_CloseChannel"] = func(ctx context.Context,
+		conn *grpc.ClientConn, reqJSON string, callback func(string, error)) {
+
+		req := &CloseChannelRequest{}
+		err := marshaler.Unmarshal([]byte(reqJSON), req)
+		if err != nil {
+			callback("", err)
+			return
+		}
+
+		client := NewLightningClient(conn)
+		stream, err := client.Ob_SafeBox_CloseChannel(ctx, req)
 		if err != nil {
 			callback("", err)
 			return

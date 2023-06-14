@@ -3,6 +3,8 @@ package invoices
 import (
 	"errors"
 	"fmt"
+	"github.com/golang/protobuf/proto"
+	"github.com/lightningnetwork/lnd/lnrpc"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -134,6 +136,9 @@ type InvoiceRegistry struct {
 
 	wg   sync.WaitGroup
 	quit chan struct{}
+
+	//RouterServer routerrpc.RouterServer
+	SendPayment func(assetId uint32, amt int64, dest, rhash, paymentAddress []byte) error
 }
 
 // NewRegistry creates a new invoice registry. The invoice registry
@@ -820,9 +825,11 @@ func (i *InvoiceRegistry) processKeySend(ctx invoiceUpdateCtx) error {
 
 	// Create placeholder invoice.
 	invoice := &channeldb.Invoice{
+		AssetId:      ctx.assetId,
 		CreationDate: i.cfg.Clock.Now(),
 		Terms: channeldb.ContractTerm{
 			FinalCltvDelta:  finalCltvDelta,
+			AssetId:         ctx.assetId,
 			Value:           amt,
 			PaymentPreimage: &preimage,
 			PaymentAddr:     payAddr,
@@ -843,6 +850,97 @@ func (i *InvoiceRegistry) processKeySend(ctx invoiceUpdateCtx) error {
 	}
 
 	return nil
+}
+
+// processAtomicSwap just-in-time inserts an invoice if this htlc have  Atomic-Swap invoice　data
+func (i *InvoiceRegistry) processAtomicSwap(ctx invoiceUpdateCtx) error {
+	// Retrieve AtomicSwap record if present.
+	asData, ok := ctx.customRecords[record.ASType]
+	if !ok {
+		return nil
+	}
+	asInvoice := new(lnrpc.ASInvoice)
+	err := proto.Unmarshal(asData, asInvoice)
+	if err != nil {
+		return err
+	}
+
+	// Cancel htlc is preimage is invalid.
+	//preimage, err := lntypes.MakePreimage(preimageSlice)
+	//if err != nil {
+	//	return err
+	//}
+	//if preimage.Hash() != ctx.hash {
+	//	return fmt.Errorf("invalid keysend preimage %v for hash %v",
+	//		preimage, ctx.hash)
+	//}
+
+	// Only allow keysend for non-mpp payments.
+	if ctx.mpp != nil {
+		return errors.New("no mpp keysend supported")
+	}
+
+	// Create an invoice for the htlc amount.
+	amt := ctx.amtPaid
+
+	// Set tlv optional feature vector on the invoice. Otherwise we wouldn't
+	// be able to pay to it with keysend.
+	rawFeatures := lnwire.NewRawFeatureVector(
+		lnwire.TLVOnionPayloadOptional,
+	)
+	features := lnwire.NewFeatureVector(rawFeatures, lnwire.Features)
+
+	// Use the minimum block delta that we require for settling htlcs.
+	finalCltvDelta := i.cfg.FinalCltvRejectDelta
+
+	// Pre-check expiry here to prevent inserting an invoice that will not
+	// be settled.
+	if ctx.expiry < uint32(ctx.currentHeight+finalCltvDelta) {
+		return errors.New("final expiry too soon")
+	}
+
+	// The invoice database indexes all invoices by payment address, however
+	// legacy keysend payment do not have one. In order to avoid a new
+	// payment type on-disk wrt. to indexing, we'll continue to insert a
+	// blank payment address which is special cased in the insertion logic
+	// to not be indexed. In the future, once AMP is merged, this should be
+	// replaced by generating a random payment address on the behalf of the
+	// sender.
+	payAddr := channeldb.BlankPayAddr
+
+	// Create placeholder invoice.
+	invoice := &channeldb.Invoice{
+		AssetId:      ctx.assetId,
+		CreationDate: i.cfg.Clock.Now(),
+		Terms: channeldb.ContractTerm{
+			FinalCltvDelta: finalCltvDelta,
+			AssetId:        ctx.assetId,
+			Value:          amt,
+			//PaymentPreimage: &preimage,
+			PaymentAddr: payAddr,
+			Features:    features,
+		},
+	}
+
+	invoice.HodlInvoice = true
+	//if i.cfg.KeysendHoldTime != 0 {
+	//	invoice.HodlInvoice = true
+	//	invoice.Terms.Expiry = i.cfg.KeysendHoldTime
+	//}
+
+	// Insert invoice into database. Ignore duplicates, because this
+	// may be a replay.
+	_, err = i.AddInvoice(invoice, ctx.hash)
+	if err != nil && err != channeldb.ErrDuplicateInvoice {
+		return err
+	}
+
+	go func() {
+		//check and pay asInvoice
+		log.Tracef("processAtomicSwap SendPayment %#v", *asInvoice)
+		err = i.SendPayment(asInvoice.AssetId, asInvoice.Amt, asInvoice.Dest, asInvoice.PaymentHash, asInvoice.PaymentAddr)
+	}()
+	return err
 }
 
 // processAMP just-in-time inserts an invoice if this htlc is a keysend
@@ -970,6 +1068,18 @@ func (i *InvoiceRegistry) NotifyExitHopHtlc(rHash lntypes.Hash,
 			), nil
 		}
 	}
+	err := i.processAtomicSwap(ctx)
+	if err != nil {
+		ctx.log(fmt.Sprintf("AtomicSwap error: %v", err))
+		return NewFailResolution(
+			circuitKey, currentHeight, ResultAtomicSwapError,
+		), nil
+	}
+
+	payerAddres := ctx.customRecords[record.PayerAddressType]
+	if len(payerAddres) > 0 {
+		ctx.payerAddress = payerAddres
+	}
 
 	// Execute locked notify exit hop logic.
 	i.Lock()
@@ -1030,7 +1140,9 @@ func (i *InvoiceRegistry) notifyExitHopHtlcLocked(
 			if err != nil {
 				return nil, err
 			}
-
+			if updateDesc != nil && len(ctx.payerAddress) > 0 {
+				updateDesc.PayerAddress = ctx.payerAddress
+			}
 			// Only send an update if the invoice state was changed.
 			updateSubscribers = updateDesc != nil &&
 				updateDesc.State != nil

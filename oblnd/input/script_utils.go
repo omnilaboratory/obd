@@ -4,14 +4,12 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"fmt"
-	"math/big"
 
-	"golang.org/x/crypto/ripemd160"
-
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/btcsuite/btcd/btcec/v2"
+	"github.com/btcsuite/btcd/btcutil"
 	"github.com/btcsuite/btcd/txscript"
 	"github.com/btcsuite/btcd/wire"
-	"github.com/btcsuite/btcutil"
+	"golang.org/x/crypto/ripemd160"
 )
 
 var (
@@ -36,10 +34,10 @@ type Signature interface {
 
 // WitnessScriptHash generates a pay-to-witness-script-hash public key script
 // paying to a version 0 witness program paying to the passed redeem script.
-/*obd update wxf
-obd should never use p2wsh*/
 func WitnessScriptHashDisabled(witnessScript []byte) ([]byte, error) {
-	bldr := txscript.NewScriptBuilder()
+	bldr := txscript.NewScriptBuilder(
+		txscript.WithScriptAllocSize(P2WSHSize),
+	)
 
 	bldr.AddOp(txscript.OP_0)
 	scriptHash := sha256.Sum256(witnessScript)
@@ -50,10 +48,10 @@ func WitnessScriptHashDisabled(witnessScript []byte) ([]byte, error) {
 // WitnessPubKeyHash generates a pay-to-witness-pubkey-hash public key script
 // paying to a version 0 witness program containing the passed serialized
 // public key.
-/*obd update wxf
-obd should never use p2wpkh*/
 func WitnessPubKeyHashDisabled(pubkey []byte) ([]byte, error) {
-	bldr := txscript.NewScriptBuilder()
+	bldr := txscript.NewScriptBuilder(
+		txscript.WithScriptAllocSize(P2WPKHSize),
+	)
 
 	bldr.AddOp(txscript.OP_0)
 	pkhash := btcutil.Hash160(pubkey)
@@ -64,7 +62,9 @@ func WitnessPubKeyHashDisabled(pubkey []byte) ([]byte, error) {
 // GenerateP2SH generates a pay-to-script-hash public key script paying to the
 // passed redeem script.
 func GenerateP2SH(script []byte) ([]byte, error) {
-	bldr := txscript.NewScriptBuilder()
+	bldr := txscript.NewScriptBuilder(
+		txscript.WithScriptAllocSize(NestedP2WPKHSize),
+	)
 
 	bldr.AddOp(txscript.OP_HASH160)
 	scripthash := btcutil.Hash160(script)
@@ -76,7 +76,9 @@ func GenerateP2SH(script []byte) ([]byte, error) {
 // GenerateP2PKH generates a pay-to-public-key-hash public key script paying to
 // the passed serialized public key.
 func GenerateP2PKH(pubkey []byte) ([]byte, error) {
-	bldr := txscript.NewScriptBuilder()
+	bldr := txscript.NewScriptBuilder(
+		txscript.WithScriptAllocSize(P2PKHSize),
+	)
 
 	bldr.AddOp(txscript.OP_DUP)
 	bldr.AddOp(txscript.OP_HASH160)
@@ -102,7 +104,8 @@ func GenerateUnknownWitness() ([]byte, error) {
 // pubkeys.
 func GenMultiSigScript(aPub, bPub []byte) ([]byte, error) {
 	if len(aPub) != 33 || len(bPub) != 33 {
-		return nil, fmt.Errorf("pubkey size error: compressed pubkeys only")
+		return nil, fmt.Errorf("pubkey size error: compressed " +
+			"pubkeys only")
 	}
 
 	// Swap to sort pubkeys if needed. Keys are sorted in lexicographical
@@ -113,7 +116,9 @@ func GenMultiSigScript(aPub, bPub []byte) ([]byte, error) {
 		aPub, bPub = bPub, aPub
 	}
 
-	bldr := txscript.NewScriptBuilder()
+	bldr := txscript.NewScriptBuilder(txscript.WithScriptAllocSize(
+		MultiSigSize,
+	))
 	bldr.AddOp(txscript.OP_2)
 	bldr.AddData(aPub) // Add both pubkeys (sorted).
 	bldr.AddData(bPub)
@@ -181,7 +186,7 @@ func SpendMultiSig(witnessScript, pubA []byte, sigA Signature,
 	return witness
 }
 func SpendMultiSigWithoutW(witnessScript, pubA []byte, sigA Signature,
-	pubB []byte, sigB Signature) ([]byte,error) {
+	pubB []byte, sigB Signature) ([]byte, error) {
 
 	builder := txscript.NewScriptBuilder()
 	builder.AddOp(txscript.OP_FALSE)
@@ -200,7 +205,6 @@ func SpendMultiSigWithoutW(witnessScript, pubA []byte, sigA Signature,
 	builder.AddData(witnessScript)
 	return builder.Script()
 }
-
 
 // FindScriptOutputIndex finds the index of the public key script output
 // matching 'script'. Additionally, a boolean is returned indicating if a
@@ -235,41 +239,47 @@ func Ripemd160H(d []byte) []byte {
 // output payment for the sender's version of the commitment transaction. The
 // possible script paths from this output include:
 //
-//    * The sender timing out the HTLC using the second level HTLC timeout
-//      transaction.
-//    * The receiver of the HTLC claiming the output on-chain with the payment
-//      preimage.
-//    * The receiver of the HTLC sweeping all the funds in the case that a
-//      revoked commitment transaction bearing this HTLC was broadcast.
+//   - The sender timing out the HTLC using the second level HTLC timeout
+//     transaction.
+//   - The receiver of the HTLC claiming the output on-chain with the payment
+//     preimage.
+//   - The receiver of the HTLC sweeping all the funds in the case that a
+//     revoked commitment transaction bearing this HTLC was broadcast.
 //
 // If confirmedSpend=true, a 1 OP_CSV check will be added to the non-revocation
 // cases, to allow sweeping only after confirmation.
 //
 // Possible Input Scripts:
-//    SENDR: <0> <sendr sig>  <recvr sig> <0> (spend using HTLC timeout transaction)
-//    RECVR: <recvr sig>  <preimage>
-//    REVOK: <revoke sig> <revoke key>
-//     * receiver revoke
 //
-// OP_DUP OP_HASH160 <revocation key hash160> OP_EQUAL
-// OP_IF
-//     OP_CHECKSIG
-// OP_ELSE
-//     <recv htlc key>
-//     OP_SWAP OP_SIZE 32 OP_EQUAL
-//     OP_NOTIF
-//         OP_DROP 2 OP_SWAP <sender htlc key> 2 OP_CHECKMULTISIG
-//     OP_ELSE
-//         OP_HASH160 <ripemd160(payment hash)> OP_EQUALVERIFY
-//         OP_CHECKSIG
-//     OP_ENDIF
-//     [1 OP_CHECKSEQUENCEVERIFY OP_DROP] <- if allowing confirmed spend only.
-// OP_ENDIF
+//	SENDR: <0> <sendr sig>  <recvr sig> <0> (spend using HTLC timeout transaction)
+//	RECVR: <recvr sig>  <preimage>
+//	REVOK: <revoke sig> <revoke key>
+//	 * receiver revoke
+//
+// Offered HTLC Output Script:
+//
+//	 OP_DUP OP_HASH160 <revocation key hash160> OP_EQUAL
+//	 OP_IF
+//		OP_CHECKSIG
+//	 OP_ELSE
+//		<recv htlc key>
+//		OP_SWAP OP_SIZE 32 OP_EQUAL
+//		OP_NOTIF
+//		    OP_DROP 2 OP_SWAP <sender htlc key> 2 OP_CHECKMULTISIG
+//		OP_ELSE
+//		    OP_HASH160 <ripemd160(payment hash)> OP_EQUALVERIFY
+//		    OP_CHECKSIG
+//		OP_ENDIF
+//		[1 OP_CHECKSEQUENCEVERIFY OP_DROP] <- if allowing confirmed
+//		spend only.
+//	 OP_ENDIF
 func SenderHTLCScript(senderHtlcKey, receiverHtlcKey,
 	revocationKey *btcec.PublicKey, paymentHash []byte,
 	confirmedSpend bool) ([]byte, error) {
 
-	builder := txscript.NewScriptBuilder()
+	builder := txscript.NewScriptBuilder(txscript.WithScriptAllocSize(
+		OfferedHtlcScriptSizeConfirmed,
+	))
 
 	// The opening operations are used to determine if this is the receiver
 	// of the HTLC attempting to sweep all the funds due to a contract
@@ -358,7 +368,7 @@ func SenderHTLCScript(senderHtlcKey, receiverHtlcKey,
 // HTLC to claim the output with knowledge of the revocation private key in the
 // scenario that the sender of the HTLC broadcasts a previously revoked
 // commitment transaction. A valid spend requires knowledge of the private key
-// that corresponds to their revocation base point and also the private key fro
+// that corresponds to their revocation base point and also the private key from
 // the per commitment point, and a valid signature under the combined public
 // key.
 func SenderHtlcSpendRevokeWithKey(signer Signer, signDesc *SignDescriptor,
@@ -412,6 +422,7 @@ func IsHtlcSpendRevoke(txIn *wire.TxIn, signDesc *SignDescriptor) (
 
 	if len(txIn.Witness) == 3 &&
 		bytes.Equal(txIn.Witness[1], revokeKey.SerializeCompressed()) {
+
 		return true, nil
 	}
 
@@ -473,42 +484,47 @@ func SenderHtlcSpendTimeout(receiverSig Signature,
 // ReceiverHTLCScript constructs the public key script for an incoming HTLC
 // output payment for the receiver's version of the commitment transaction. The
 // possible execution paths from this script include:
-//   * The receiver of the HTLC uses its second level HTLC transaction to
+//   - The receiver of the HTLC uses its second level HTLC transaction to
 //     advance the state of the HTLC into the delay+claim state.
-//   * The sender of the HTLC sweeps all the funds of the HTLC as a breached
+//   - The sender of the HTLC sweeps all the funds of the HTLC as a breached
 //     commitment was broadcast.
-//   * The sender of the HTLC sweeps the HTLC on-chain after the timeout period
+//   - The sender of the HTLC sweeps the HTLC on-chain after the timeout period
 //     of the HTLC has passed.
 //
 // If confirmedSpend=true, a 1 OP_CSV check will be added to the non-revocation
 // cases, to allow sweeping only after confirmation.
 //
 // Possible Input Scripts:
-//    RECVR: <0> <sender sig> <recvr sig> <preimage> (spend using HTLC success transaction)
-//    REVOK: <sig> <key>
-//    SENDR: <sig> 0
 //
+//	RECVR: <0> <sender sig> <recvr sig> <preimage> (spend using HTLC success transaction)
+//	REVOK: <sig> <key>
+//	SENDR: <sig> 0
 //
-// OP_DUP OP_HASH160 <revocation key hash160> OP_EQUAL
-// OP_IF
-//     OP_CHECKSIG
-// OP_ELSE
-//     <sendr htlc key>
-//     OP_SWAP OP_SIZE 32 OP_EQUAL
-//     OP_IF
-//         OP_HASH160 <ripemd160(payment hash)> OP_EQUALVERIFY
-//         2 OP_SWAP <recvr htlc key> 2 OP_CHECKMULTISIG
-//     OP_ELSE
-//         OP_DROP <cltv expiry> OP_CHECKLOCKTIMEVERIFY OP_DROP
-//         OP_CHECKSIG
-//     OP_ENDIF
-//     [1 OP_CHECKSEQUENCEVERIFY OP_DROP] <- if allowing confirmed spend only.
-// OP_ENDIF
+// Received HTLC Output Script:
+//
+//	 OP_DUP OP_HASH160 <revocation key hash160> OP_EQUAL
+//	 OP_IF
+//	 	OP_CHECKSIG
+//	 OP_ELSE
+//		<sendr htlc key>
+//		OP_SWAP OP_SIZE 32 OP_EQUAL
+//		OP_IF
+//		    OP_HASH160 <ripemd160(payment hash)> OP_EQUALVERIFY
+//		    2 OP_SWAP <recvr htlc key> 2 OP_CHECKMULTISIG
+//		OP_ELSE
+//		    OP_DROP <cltv expiry> OP_CHECKLOCKTIMEVERIFY OP_DROP
+//		    OP_CHECKSIG
+//		OP_ENDIF
+//		[1 OP_CHECKSEQUENCEVERIFY OP_DROP] <- if allowing confirmed
+//		spend only.
+//	 OP_ENDIF
 func ReceiverHTLCScript(cltvExpiry uint32, senderHtlcKey,
 	receiverHtlcKey, revocationKey *btcec.PublicKey,
 	paymentHash []byte, confirmedSpend bool) ([]byte, error) {
 
-	builder := txscript.NewScriptBuilder()
+	builder := txscript.NewScriptBuilder(txscript.WithScriptAllocSize(
+		AcceptedHtlcScriptSizeConfirmed,
+	))
 
 	// The opening operations are used to determine if this is the sender
 	// of the HTLC attempting to sweep all the funds due to a contract
@@ -745,30 +761,35 @@ func ReceiverHtlcSpendTimeout(signer Signer, signDesc *SignDescriptor,
 // spent in a particular way, and to a particular output.
 //
 // Possible Input Scripts:
-//  * To revoke an HTLC output that has been transitioned to the claim+delay
-//    state:
-//    * <revoke sig> 1
 //
-//  * To claim and HTLC output, either with a pre-image or due to a timeout:
-//    * <delay sig> 0
+//   - To revoke an HTLC output that has been transitioned to the claim+delay
+//     state:
+//     <revoke sig> 1
 //
-// OP_IF
-//     <revoke key>
-// OP_ELSE
-//     <delay in blocks>
-//     OP_CHECKSEQUENCEVERIFY
-//     OP_DROP
-//     <delay key>
-// OP_ENDIF
-// OP_CHECKSIG
+//   - To claim and HTLC output, either with a pre-image or due to a timeout:
+//     <delay sig> 0
+//
+// Output Script:
+//
+//	 OP_IF
+//		<revoke key>
+//	 OP_ELSE
+//		<delay in blocks>
+//		OP_CHECKSEQUENCEVERIFY
+//		OP_DROP
+//		<delay key>
+//	 OP_ENDIF
+//	 OP_CHECKSIG
 //
 // TODO(roasbeef): possible renames for second-level
-//  * transition?
-//  * covenant output
+//   - transition?
+//   - covenant output
 func SecondLevelHtlcScript(revocationKey, delayKey *btcec.PublicKey,
 	csvDelay uint32) ([]byte, error) {
 
-	builder := txscript.NewScriptBuilder()
+	builder := txscript.NewScriptBuilder(txscript.WithScriptAllocSize(
+		ToLocalScriptSize,
+	))
 
 	// If this is the revocation clause for this script is to be executed,
 	// the spender will push a 1, forcing us to hit the true clause of this
@@ -811,29 +832,34 @@ func SecondLevelHtlcScript(revocationKey, delayKey *btcec.PublicKey,
 // spent in a particular way, and to a particular output.
 //
 // Possible Input Scripts:
-//  * To revoke an HTLC output that has been transitioned to the claim+delay
-//    state:
-//    * <revoke sig> 1
 //
-//  * To claim an HTLC output, either with a pre-image or due to a timeout:
-//    * <delay sig> 0
+//   - To revoke an HTLC output that has been transitioned to the claim+delay
+//     state:
+//     <revoke sig> 1
 //
-// OP_IF
-//     <revoke key>
-// OP_ELSE
-//     <lease maturity in blocks>
-//     OP_CHECKLOCKTIMEVERIFY
-//     OP_DROP
-//     <delay in blocks>
-//     OP_CHECKSEQUENCEVERIFY
-//     OP_DROP
-//     <delay key>
-// OP_ENDIF
-// OP_CHECKSIG
+//   - To claim an HTLC output, either with a pre-image or due to a timeout:
+//     <delay sig> 0
+//
+// Output Script:
+//
+//	 OP_IF
+//		<revoke key>
+//	 OP_ELSE
+//		<lease maturity in blocks>
+//		OP_CHECKLOCKTIMEVERIFY
+//		OP_DROP
+//		<delay in blocks>
+//		OP_CHECKSEQUENCEVERIFY
+//		OP_DROP
+//		<delay key>
+//	 OP_ENDIF
+//	 OP_CHECKSIG.
 func LeaseSecondLevelHtlcScript(revocationKey, delayKey *btcec.PublicKey,
 	csvDelay, cltvExpiry uint32) ([]byte, error) {
 
-	builder := txscript.NewScriptBuilder()
+	builder := txscript.NewScriptBuilder(txscript.WithScriptAllocSize(
+		ToLocalScriptSize + LeaseWitnessScriptSizeOverhead,
+	))
 
 	// If this is the revocation clause for this script is to be executed,
 	// the spender will push a 1, forcing us to hit the true clause of this
@@ -894,7 +920,7 @@ func HtlcSpendSuccess(signer Signer, signDesc *SignDescriptor,
 
 	// As we mutated the transaction, we'll re-calculate the sighashes for
 	// this instance.
-	//signDesc.SigHashes = txscript.NewTxSigHashes(sweepTx)
+	//signDesc.SigHashes = NewTxSigHashesV0Only(sweepTx)
 
 	// With the proper sequence and version set, we'll now sign the timeout
 	// transaction using the passed signed descriptor. In order to generate
@@ -975,7 +1001,7 @@ func HtlcSecondLevelSpend(signer Signer, signDesc *SignDescriptor,
 // LockTimeToSequence converts the passed relative locktime to a sequence
 // number in accordance to BIP-68.
 // See: https://github.com/bitcoin/bips/blob/master/bip-0068.mediawiki
-//  * (Compatibility)
+//   - (Compatibility)
 func LockTimeToSequence(isSeconds bool, locktime uint32) uint32 {
 	if !isSeconds {
 		// The locktime is to be expressed in confirmations.
@@ -995,17 +1021,19 @@ func LockTimeToSequence(isSeconds bool, locktime uint32) uint32 {
 // can claim all the settled funds in the channel, plus the unsettled funds.
 //
 // Possible Input Scripts:
-//     REVOKE:     <sig> 1
-//     SENDRSWEEP: <sig> <emptyvector>
+//
+//	REVOKE:     <sig> 1
+//	SENDRSWEEP: <sig> <emptyvector>
 //
 // Output Script:
-//     OP_IF
-//         <revokeKey>
-//     OP_ELSE
-//         <numRelativeBlocks> OP_CHECKSEQUENCEVERIFY OP_DROP
-//         <timeKey>
-//     OP_ENDIF
-//     OP_CHECKSIG
+//
+//	OP_IF
+//	    <revokeKey>
+//	OP_ELSE
+//	    <numRelativeBlocks> OP_CHECKSEQUENCEVERIFY OP_DROP
+//	    <timeKey>
+//	OP_ENDIF
+//	OP_CHECKSIG
 func CommitScriptToSelf(csvTimeout uint32, selfKey, revokeKey *btcec.PublicKey) ([]byte, error) {
 	// This script is spendable under two conditions: either the
 	// 'csvTimeout' has passed and we can redeem our funds, or they can
@@ -1014,7 +1042,9 @@ func CommitScriptToSelf(csvTimeout uint32, selfKey, revokeKey *btcec.PublicKey) 
 	// have divulged the revocation hash, allowing them to homomorphically
 	// derive the proper private key which corresponds to the revoke public
 	// key.
-	builder := txscript.NewScriptBuilder()
+	builder := txscript.NewScriptBuilder(txscript.WithScriptAllocSize(
+		ToLocalScriptSize,
+	))
 
 	builder.AddOp(txscript.OP_IF)
 
@@ -1046,18 +1076,20 @@ func CommitScriptToSelf(csvTimeout uint32, selfKey, revokeKey *btcec.PublicKey) 
 // can claim all the settled funds in the channel, plus the unsettled funds.
 //
 // Possible Input Scripts:
-//     REVOKE:     <sig> 1
-//     SENDRSWEEP: <sig> <emptyvector>
+//
+//	REVOKE:     <sig> 1
+//	SENDRSWEEP: <sig> <emptyvector>
 //
 // Output Script:
-//     OP_IF
-//         <revokeKey>
-//     OP_ELSE
-//         <absoluteLeaseExpiry> OP_CHECKLOCKTIMEVERIFY OP_DROP
-//         <numRelativeBlocks> OP_CHECKSEQUENCEVERIFY OP_DROP
-//         <timeKey>
-//     OP_ENDIF
-//     OP_CHECKSIG
+//
+//	OP_IF
+//	    <revokeKey>
+//	OP_ELSE
+//	    <absoluteLeaseExpiry> OP_CHECKLOCKTIMEVERIFY OP_DROP
+//	    <numRelativeBlocks> OP_CHECKSEQUENCEVERIFY OP_DROP
+//	    <timeKey>
+//	OP_ENDIF
+//	OP_CHECKSIG
 func LeaseCommitScriptToSelf(selfKey, revokeKey *btcec.PublicKey,
 	csvTimeout, leaseExpiry uint32) ([]byte, error) {
 
@@ -1068,7 +1100,9 @@ func LeaseCommitScriptToSelf(selfKey, revokeKey *btcec.PublicKey,
 	// have divulged the revocation hash, allowing them to homomorphically
 	// derive the proper private key which corresponds to the revoke public
 	// key.
-	builder := txscript.NewScriptBuilder()
+	builder := txscript.NewScriptBuilder(txscript.WithScriptAllocSize(
+		ToLocalScriptSize + LeaseWitnessScriptSizeOverhead,
+	))
 
 	builder.AddOp(txscript.OP_IF)
 
@@ -1213,7 +1247,9 @@ func CommitSpendNoDelay(signer Signer, signDesc *SignDescriptor,
 // p2wkh output spendable immediately, requiring no contestation period.
 func CommitScriptUnencumbered(key *btcec.PublicKey) ([]byte, error) {
 	// This script goes to the "other" party, and is spendable immediately.
-	builder := txscript.NewScriptBuilder()
+	builder := txscript.NewScriptBuilder(txscript.WithScriptAllocSize(
+		P2WPKHSize,
+	))
 	builder.AddOp(txscript.OP_0)
 	builder.AddData(btcutil.Hash160(key.SerializeCompressed()))
 
@@ -1225,13 +1261,17 @@ func CommitScriptUnencumbered(key *btcec.PublicKey) ([]byte, error) {
 // transaction. The money can only be spend after one confirmation.
 //
 // Possible Input Scripts:
-//     SWEEP: <sig>
+//
+//	SWEEP: <sig>
 //
 // Output Script:
+//
 //	<key> OP_CHECKSIGVERIFY
 //	1 OP_CHECKSEQUENCEVERIFY
 func CommitScriptToRemoteConfirmed(key *btcec.PublicKey) ([]byte, error) {
-	builder := txscript.NewScriptBuilder()
+	builder := txscript.NewScriptBuilder(txscript.WithScriptAllocSize(
+		ToRemoteConfirmedScriptSize,
+	))
 
 	// Only the given key can spend the output.
 	builder.AddData(key.SerializeCompressed())
@@ -1249,16 +1289,18 @@ func CommitScriptToRemoteConfirmed(key *btcec.PublicKey) ([]byte, error) {
 // transaction. The money can only be spend after one confirmation.
 //
 // Possible Input Scripts:
-//     SWEEP: <sig>
+//
+//	SWEEP: <sig>
 //
 // Output Script:
-//	<key> OP_CHECKSIGVERIFY
-//      <lease maturity in blocks> OP_CHECKLOCKTIMEVERIFY OP_DROP
-//	1 OP_CHECKSEQUENCEVERIFY
+//
+//		<key> OP_CHECKSIGVERIFY
+//	     <lease maturity in blocks> OP_CHECKLOCKTIMEVERIFY OP_DROP
+//		1 OP_CHECKSEQUENCEVERIFY
 func LeaseCommitScriptToRemoteConfirmed(key *btcec.PublicKey,
 	leaseExpiry uint32) ([]byte, error) {
 
-	builder := txscript.NewScriptBuilder()
+	builder := txscript.NewScriptBuilder(txscript.WithScriptAllocSize(45))
 
 	// Only the given key can spend the output.
 	builder.AddData(key.SerializeCompressed())
@@ -1309,16 +1351,20 @@ func CommitSpendToRemoteConfirmed(signer Signer, signDesc *SignDescriptor,
 // the given key immediately, or by anyone after 16 confirmations.
 //
 // Possible Input Scripts:
-//    By owner:				<sig>
-//    By anyone (after 16 conf):	<emptyvector>
+//
+//	By owner:				<sig>
+//	By anyone (after 16 conf):	<emptyvector>
 //
 // Output Script:
+//
 //	<funding_pubkey> OP_CHECKSIG OP_IFDUP
 //	OP_NOTIF
 //	  OP_16 OP_CSV
 //	OP_ENDIF
 func CommitScriptAnchor(key *btcec.PublicKey) ([]byte, error) {
-	builder := txscript.NewScriptBuilder()
+	builder := txscript.NewScriptBuilder(txscript.WithScriptAllocSize(
+		AnchorScriptSize,
+	))
 
 	// Spend immediately with key.
 	builder.AddData(key.SerializeCompressed())
@@ -1379,7 +1425,7 @@ func CommitSpendAnchorAnyone(script []byte) (wire.TxWitness, error) {
 // the pay/delay base point. The end end results is that the basePoint is
 // tweaked as follows:
 //
-//   * key = basePoint + sha256(commitPoint || basePoint)*G
+//   - key = basePoint + sha256(commitPoint || basePoint)*G
 func SingleTweakBytes(commitPoint, basePoint *btcec.PublicKey) []byte {
 	h := sha256.New()
 	h.Write(commitPoint.SerializeCompressed())
@@ -1394,15 +1440,15 @@ func SingleTweakBytes(commitPoint, basePoint *btcec.PublicKey) []byte {
 // The opposite applies for when tweaking remote keys. Precisely, the following
 // operation is used to "tweak" public keys:
 //
-//   tweakPub := basePoint + sha256(commitPoint || basePoint) * G
-//            := G*k + sha256(commitPoint || basePoint)*G
-//            := G*(k + sha256(commitPoint || basePoint))
+//	tweakPub := basePoint + sha256(commitPoint || basePoint) * G
+//	         := G*k + sha256(commitPoint || basePoint)*G
+//	         := G*(k + sha256(commitPoint || basePoint))
 //
 // Therefore, if a party possess the value k, the private key of the base
 // point, then they are able to derive the proper private key for the
 // revokeKey by computing:
 //
-//   revokePriv := k + sha256(commitPoint || basePoint) mod N
+//	revokePriv := k + sha256(commitPoint || basePoint) mod N
 //
 // Where N is the order of the sub-group.
 //
@@ -1421,17 +1467,22 @@ func TweakPubKey(basePoint, commitPoint *btcec.PublicKey) *btcec.PublicKey {
 
 // TweakPubKeyWithTweak is the exact same as the TweakPubKey function, however
 // it accepts the raw tweak bytes directly rather than the commitment point.
-func TweakPubKeyWithTweak(pubKey *btcec.PublicKey, tweakBytes []byte) *btcec.PublicKey {
-	curve := btcec.S256()
-	tweakX, tweakY := curve.ScalarBaseMult(tweakBytes)
+func TweakPubKeyWithTweak(pubKey *btcec.PublicKey,
+	tweakBytes []byte) *btcec.PublicKey {
 
-	// TODO(roasbeef): check that both passed on curve?
-	x, y := curve.Add(pubKey.X, pubKey.Y, tweakX, tweakY)
-	return &btcec.PublicKey{
-		X:     x,
-		Y:     y,
-		Curve: curve,
-	}
+	var (
+		pubKeyJacobian btcec.JacobianPoint
+		tweakJacobian  btcec.JacobianPoint
+		resultJacobian btcec.JacobianPoint
+	)
+	tweakKey, _ := btcec.PrivKeyFromBytes(tweakBytes)
+	btcec.ScalarBaseMultNonConst(&tweakKey.Key, &tweakJacobian)
+
+	pubKey.AsJacobian(&pubKeyJacobian)
+	btcec.AddNonConst(&pubKeyJacobian, &tweakJacobian, &resultJacobian)
+
+	resultJacobian.ToAffine()
+	return btcec.NewPublicKey(&resultJacobian.X, &resultJacobian.Y)
 }
 
 // TweakPrivKey tweaks the private key of a public base point given a per
@@ -1441,18 +1492,19 @@ func TweakPubKeyWithTweak(pubKey *btcec.PublicKey, tweakBytes []byte) *btcec.Pub
 // revoked state. Precisely, the following operation is used to derive a
 // tweaked private key:
 //
-//  * tweakPriv := basePriv + sha256(commitment || basePub) mod N
+//   - tweakPriv := basePriv + sha256(commitment || basePub) mod N
 //
 // Where N is the order of the sub-group.
-func TweakPrivKey(basePriv *btcec.PrivateKey, commitTweak []byte) *btcec.PrivateKey {
+func TweakPrivKey(basePriv *btcec.PrivateKey,
+	commitTweak []byte) *btcec.PrivateKey {
+
 	// tweakInt := sha256(commitPoint || basePub)
-	tweakInt := new(big.Int).SetBytes(commitTweak)
+	tweakScalar := new(btcec.ModNScalar)
+	tweakScalar.SetByteSlice(commitTweak)
 
-	tweakInt = tweakInt.Add(tweakInt, basePriv.D)
-	tweakInt = tweakInt.Mod(tweakInt, btcec.S256().N)
+	tweakScalar.Add(&basePriv.Key)
 
-	tweakPriv, _ := btcec.PrivKeyFromBytes(btcec.S256(), tweakInt.Bytes())
-	return tweakPriv
+	return &btcec.PrivateKey{Key: *tweakScalar}
 }
 
 // DeriveRevocationPubkey derives the revocation public key given the
@@ -1461,48 +1513,66 @@ func TweakPrivKey(basePriv *btcec.PrivateKey, commitTweak []byte) *btcec.Private
 // revoked commitment transaction, then if the other party knows the revocation
 // preimage, then they'll be able to derive the corresponding private key to
 // this private key by exploiting the homomorphism in the elliptic curve group:
-//    * https://en.wikipedia.org/wiki/Group_homomorphism#Homomorphisms_of_abelian_groups
+//   - https://en.wikipedia.org/wiki/Group_homomorphism#Homomorphisms_of_abelian_groups
 //
 // The derivation is performed as follows:
 //
-//   revokeKey := revokeBase * sha256(revocationBase || commitPoint) +
-//                commitPoint * sha256(commitPoint || revocationBase)
+//	revokeKey := revokeBase * sha256(revocationBase || commitPoint) +
+//	             commitPoint * sha256(commitPoint || revocationBase)
 //
-//             := G*(revokeBasePriv * sha256(revocationBase || commitPoint)) +
-//                G*(commitSecret * sha256(commitPoint || revocationBase))
+//	          := G*(revokeBasePriv * sha256(revocationBase || commitPoint)) +
+//	             G*(commitSecret * sha256(commitPoint || revocationBase))
 //
-//             := G*(revokeBasePriv * sha256(revocationBase || commitPoint) +
-//                   commitSecret * sha256(commitPoint || revocationBase))
+//	          := G*(revokeBasePriv * sha256(revocationBase || commitPoint) +
+//	                commitSecret * sha256(commitPoint || revocationBase))
 //
 // Therefore, once we divulge the revocation secret, the remote peer is able to
 // compute the proper private key for the revokeKey by computing:
 //
-//   revokePriv := (revokeBasePriv * sha256(revocationBase || commitPoint)) +
-//                 (commitSecret * sha256(commitPoint || revocationBase)) mod N
+//	revokePriv := (revokeBasePriv * sha256(revocationBase || commitPoint)) +
+//	              (commitSecret * sha256(commitPoint || revocationBase)) mod N
 //
 // Where N is the order of the sub-group.
-func DeriveRevocationPubkey(revokeBase, commitPoint *btcec.PublicKey) *btcec.PublicKey {
+func DeriveRevocationPubkey(revokeBase,
+	commitPoint *btcec.PublicKey) *btcec.PublicKey {
 
 	// R = revokeBase * sha256(revocationBase || commitPoint)
 	revokeTweakBytes := SingleTweakBytes(revokeBase, commitPoint)
-	rX, rY := btcec.S256().ScalarMult(revokeBase.X, revokeBase.Y,
-		revokeTweakBytes)
+	revokeTweakScalar := new(btcec.ModNScalar)
+	revokeTweakScalar.SetByteSlice(revokeTweakBytes)
+
+	var (
+		revokeBaseJacobian btcec.JacobianPoint
+		rJacobian          btcec.JacobianPoint
+	)
+	revokeBase.AsJacobian(&revokeBaseJacobian)
+	btcec.ScalarMultNonConst(
+		revokeTweakScalar, &revokeBaseJacobian, &rJacobian,
+	)
 
 	// C = commitPoint * sha256(commitPoint || revocationBase)
 	commitTweakBytes := SingleTweakBytes(commitPoint, revokeBase)
-	cX, cY := btcec.S256().ScalarMult(commitPoint.X, commitPoint.Y,
-		commitTweakBytes)
+	commitTweakScalar := new(btcec.ModNScalar)
+	commitTweakScalar.SetByteSlice(commitTweakBytes)
+
+	var (
+		commitPointJacobian btcec.JacobianPoint
+		cJacobian           btcec.JacobianPoint
+	)
+	commitPoint.AsJacobian(&commitPointJacobian)
+	btcec.ScalarMultNonConst(
+		commitTweakScalar, &commitPointJacobian, &cJacobian,
+	)
 
 	// Now that we have the revocation point, we add this to their commitment
 	// public key in order to obtain the revocation public key.
 	//
 	// P = R + C
-	revX, revY := btcec.S256().Add(rX, rY, cX, cY)
-	return &btcec.PublicKey{
-		X:     revX,
-		Y:     revY,
-		Curve: btcec.S256(),
-	}
+	var resultJacobian btcec.JacobianPoint
+	btcec.AddNonConst(&rJacobian, &cJacobian, &resultJacobian)
+
+	resultJacobian.ToAffine()
+	return btcec.NewPublicKey(&resultJacobian.X, &resultJacobian.Y)
 }
 
 // DeriveRevocationPrivKey derives the revocation private key given a node's
@@ -1512,22 +1582,27 @@ func DeriveRevocationPubkey(revokeBase, commitPoint *btcec.PublicKey) *btcec.Pub
 // a previously revoked commitment transaction.
 //
 // The private key is derived as follows:
-//   revokePriv := (revokeBasePriv * sha256(revocationBase || commitPoint)) +
-//                 (commitSecret * sha256(commitPoint || revocationBase)) mod N
+//
+//	revokePriv := (revokeBasePriv * sha256(revocationBase || commitPoint)) +
+//	              (commitSecret * sha256(commitPoint || revocationBase)) mod N
 //
 // Where N is the order of the sub-group.
 func DeriveRevocationPrivKey(revokeBasePriv *btcec.PrivateKey,
 	commitSecret *btcec.PrivateKey) *btcec.PrivateKey {
 
 	// r = sha256(revokeBasePub || commitPoint)
-	revokeTweakBytes := SingleTweakBytes(revokeBasePriv.PubKey(),
-		commitSecret.PubKey())
-	revokeTweakInt := new(big.Int).SetBytes(revokeTweakBytes)
+	revokeTweakBytes := SingleTweakBytes(
+		revokeBasePriv.PubKey(), commitSecret.PubKey(),
+	)
+	revokeTweakScalar := new(btcec.ModNScalar)
+	revokeTweakScalar.SetByteSlice(revokeTweakBytes)
 
 	// c = sha256(commitPoint || revokeBasePub)
-	commitTweakBytes := SingleTweakBytes(commitSecret.PubKey(),
-		revokeBasePriv.PubKey())
-	commitTweakInt := new(big.Int).SetBytes(commitTweakBytes)
+	commitTweakBytes := SingleTweakBytes(
+		commitSecret.PubKey(), revokeBasePriv.PubKey(),
+	)
+	commitTweakScalar := new(btcec.ModNScalar)
+	commitTweakScalar.SetByteSlice(commitTweakBytes)
 
 	// Finally to derive the revocation secret key we'll perform the
 	// following operation:
@@ -1538,14 +1613,12 @@ func DeriveRevocationPrivKey(revokeBasePriv *btcec.PrivateKey,
 	//  P = (G*a)*b + (G*c)*d
 	//  P = G*(a*b) + G*(c*d)
 	//  P = G*(a*b + c*d)
-	revokeHalfPriv := revokeTweakInt.Mul(revokeTweakInt, revokeBasePriv.D)
-	commitHalfPriv := commitTweakInt.Mul(commitTweakInt, commitSecret.D)
+	revokeHalfPriv := revokeTweakScalar.Mul(&revokeBasePriv.Key)
+	commitHalfPriv := commitTweakScalar.Mul(&commitSecret.Key)
 
-	revocationPriv := revokeHalfPriv.Add(revokeHalfPriv, commitHalfPriv)
-	revocationPriv = revocationPriv.Mod(revocationPriv, btcec.S256().N)
+	revocationPriv := revokeHalfPriv.Add(commitHalfPriv)
 
-	priv, _ := btcec.PrivKeyFromBytes(btcec.S256(), revocationPriv.Bytes())
-	return priv
+	return &btcec.PrivateKey{Key: *revocationPriv}
 }
 
 // ComputeCommitmentPoint generates a commitment point given a commitment
@@ -1553,11 +1626,6 @@ func DeriveRevocationPrivKey(revokeBasePriv *btcec.PrivateKey,
 // the key-ring and also to used as a tweak to derive new public+private keys
 // for the state.
 func ComputeCommitmentPoint(commitSecret []byte) *btcec.PublicKey {
-	x, y := btcec.S256().ScalarBaseMult(commitSecret)
-
-	return &btcec.PublicKey{
-		X:     x,
-		Y:     y,
-		Curve: btcec.S256(),
-	}
+	_, pubKey := btcec.PrivKeyFromBytes(commitSecret)
+	return pubKey
 }

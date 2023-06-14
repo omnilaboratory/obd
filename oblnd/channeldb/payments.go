@@ -228,7 +228,8 @@ type PaymentCreationInfo struct {
 	CreationTime time.Time
 
 	// PaymentRequest is the full payment request, if any.
-	PaymentRequest []byte
+	PaymentRequest  []byte
+	HaveHodlInvoice bool
 }
 
 // htlcBucketKey creates a composite key from prefix and id where the result is
@@ -1038,6 +1039,14 @@ func serializePaymentCreationInfo(w io.Writer, c *PaymentCreationInfo) error {
 		return err
 	}
 
+	byteBool := byte(0)
+	if c.HaveHodlInvoice {
+		byteBool = byte(1)
+	}
+	if _, err := w.Write([]byte{byteBool}); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -1081,6 +1090,10 @@ func deserializePaymentCreationInfo(r io.Reader) (*PaymentCreationInfo, error) {
 	}
 	c.PaymentRequest = payReq
 
+	bs, _ := io.ReadAll(r)
+	if len(bs) > 0 {
+		c.HaveHodlInvoice = (bs[0] > 0)
+	}
 	return c, nil
 }
 

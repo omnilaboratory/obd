@@ -1,1 +1,1 @@
-./lncli-debug --rpcserver=localhost:10010 --lnddir=~/apps/oblnd-nuo-testnet -n testnet "$@"
+./bin/lncli-debug --rpcserver=localhost:10010 --lnddir=~/apps/oblnd-nuo-testnet -n testnet "$@"

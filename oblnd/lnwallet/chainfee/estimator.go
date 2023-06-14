@@ -12,8 +12,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/btcsuite/btcd/btcutil"
 	"github.com/btcsuite/btcd/rpcclient"
-	"github.com/btcsuite/btcutil"
 )
 
 const (
@@ -611,16 +611,23 @@ func (w *WebAPIEstimator) EstimateFeePerKW(numBlocks uint32) (
 	// returned. We will log the error and return the fall back fee rate
 	// instead.
 	if err != nil {
+		/*obd update wxf
+		set high fee if WebAPIEstimator fail */
+		feePerKb = 20000
 		log.Errorf("unable to query estimator: %v", err)
 	}
 
 	// If the result is too low, then we'll clamp it to our current fee
 	// floor.
 	satPerKw := SatPerKVByte(feePerKb).FeePerKWeight()
-	if satPerKw < FeePerKwFloor {
-		satPerKw = FeePerKwFloor
+	/*obd update wxf
+	FeePerKwFloor is too small for mainnet .it will gen very small fee tx,and the tx will never confirm */
+	//if satPerKw < FeePerKwFloor {
+	//	satPerKw = FeePerKwFloor
+	//}
+	if satPerKw < 2530 {
+		satPerKw = 2530
 	}
-
 	log.Debugf("Web API returning %v sat/kw for conf target of %v",
 		int64(satPerKw), numBlocks)
 

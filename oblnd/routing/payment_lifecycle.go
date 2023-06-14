@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/davecgh/go-spew/spew"
 	sphinx "github.com/lightningnetwork/lightning-onion"
 	"github.com/lightningnetwork/lnd/channeldb"
@@ -22,18 +22,19 @@ var errShardHandlerExiting = fmt.Errorf("shard handler exiting")
 // paymentLifecycle holds all information about the current state of a payment
 // needed to resume if from any point.
 type paymentLifecycle struct {
-	router        *ChannelRouter
+	router *ChannelRouter
 	/*obd update wxf*/
 	//totalAmount   lnwire.MilliSatoshi
 	//feeLimit      lnwire.MilliSatoshi
-	totalAmount   lnwire.UnitPrec11
-	feeLimit      lnwire.UnitPrec11
-	AssetId uint32
-	identifier    lntypes.Hash
-	paySession    PaymentSession
-	shardTracker  shards.ShardTracker
-	timeoutChan   <-chan time.Time
-	currentHeight int32
+	totalAmount     lnwire.UnitPrec11
+	feeLimit        lnwire.UnitPrec11
+	AssetId         uint32
+	identifier      lntypes.Hash
+	HaveHodlInvoice bool
+	paySession      PaymentSession
+	shardTracker    shards.ShardTracker
+	timeoutChan     <-chan time.Time
+	currentHeight   int32
 }
 
 // payemntState holds a number of key insights learned from a given MPPayment
@@ -196,6 +197,10 @@ lifecycle:
 			// the preimage and route.
 			for _, a := range payment.HTLCs {
 				if a.Settle != nil {
+					if p.HaveHodlInvoice {
+						err = p.router.cfg.Invoices.SettleHodlInvoice(a.Settle.Preimage)
+						log.Debugf("Payment %v SettleHodlInvoice res:", p.identifier, err)
+					}
 					return a.Settle.Preimage, &a.Route, nil
 				}
 			}
@@ -895,7 +900,7 @@ func (p *shardHandler) handleFailureMessage(rt *route.Route,
 	// implementation. Therefore return an error.
 	errVertex := rt.Hops[errorSourceIdx-1].PubKeyBytes
 	errSource, err := btcec.ParsePubKey(
-		errVertex[:], btcec.S256(),
+		errVertex[:],
 	)
 	if err != nil {
 		log.Errorf("Cannot parse pubkey: idx=%v, pubkey=%v",

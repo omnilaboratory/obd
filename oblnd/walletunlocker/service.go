@@ -8,8 +8,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/btcsuite/btcd/btcutil/hdkeychain"
 	"github.com/btcsuite/btcd/chaincfg"
-	"github.com/btcsuite/btcutil/hdkeychain"
 	"github.com/btcsuite/btcwallet/waddrmgr"
 	"github.com/btcsuite/btcwallet/wallet"
 	"github.com/lightningnetwork/lnd/aezeed"
@@ -309,7 +309,7 @@ func (u *UnlockerService) GenSeed(_ context.Context,
 	// instance.
 	//
 	cipherSeed, err := aezeed.New(
-		keychain.KeyDerivationVersion, &entropy, time.Now().Add(45*time.Hour),
+		keychain.CurrentKeyDerivationVersion, &entropy, time.Now().Add(45*time.Hour),
 	)
 	if err != nil {
 		return nil, err

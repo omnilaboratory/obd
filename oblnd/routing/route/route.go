@@ -11,7 +11,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/btcsuite/btcd/btcec/v2"
 	sphinx "github.com/lightningnetwork/lightning-onion"
 	"github.com/lightningnetwork/lnd/record"
 	"github.com/lightningnetwork/lnd/tlv"
@@ -416,7 +416,7 @@ func (r *Route) ToSphinxPath() (*sphinx.PaymentPath, error) {
 	// by the sphinx package.
 	for i, hop := range r.Hops {
 		pub, err := btcec.ParsePubKey(
-			hop.PubKeyBytes[:], btcec.S256(),
+			hop.PubKeyBytes[:],
 		)
 		if err != nil {
 			return nil, err
@@ -490,8 +490,8 @@ func (r *Route) String() string {
 		if i > 0 {
 			b.WriteString(" -> ")
 		}
-		b.WriteString(fmt.Sprintf("%v (%v)",
-			strconv.FormatUint(hop.ChannelID, 10),
+		b.WriteString(fmt.Sprintf("channelid: %v asset_id: %v amt(%v)",
+			strconv.FormatUint(hop.ChannelID, 10), r.AssetId,
 			amt,
 		))
 		amt = hop.AmtToForward

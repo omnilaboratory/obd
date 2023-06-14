@@ -13,8 +13,8 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/btcsuite/btcd/btcec"
-	"github.com/btcsuite/btcutil"
+	"github.com/btcsuite/btcd/btcec/v2"
+	"github.com/btcsuite/btcd/btcutil"
 	"github.com/lightningnetwork/lnd/lnwire"
 	"github.com/lightningnetwork/lnd/tor"
 	"github.com/stretchr/testify/mock"
@@ -25,7 +25,7 @@ const deliveryAddressMaxSize = 34
 const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 var (
-	testSig = &btcec.Signature{
+	testSig = &ecdsa.Signature{
 		R: new(big.Int),
 		S: new(big.Int),
 	}

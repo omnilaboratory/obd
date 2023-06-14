@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	bitcoinCfg "github.com/btcsuite/btcd/chaincfg"
+	"github.com/lightningnetwork/lnd/aliasmgr"
 	"image/color"
 	"math/big"
 	prand "math/rand"
@@ -18,12 +19,13 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/btcsuite/btcd/btcec/v2"
+	"github.com/btcsuite/btcd/btcec/v2/ecdsa"
+	"github.com/btcsuite/btcd/btcutil"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/connmgr"
 	"github.com/btcsuite/btcd/txscript"
 	"github.com/btcsuite/btcd/wire"
-	"github.com/btcsuite/btcutil"
 	"github.com/go-errors/errors"
 	sphinx "github.com/lightningnetwork/lightning-onion"
 	"github.com/lightningnetwork/lnd/autopilot"
@@ -250,6 +252,8 @@ type server struct {
 	// channel DB that haven't been separated out yet.
 	miscDB *channeldb.DB
 
+	aliasMgr *aliasmgr.Manager
+
 	htlcSwitch *htlcswitch.Switch
 
 	interceptableSwitch *htlcswitch.InterceptableSwitch
@@ -469,6 +473,20 @@ func noiseDial(idKey keychain.SingleKeyECDH,
 	}
 }
 
+// signAliasUpdate takes a ChannelUpdate and returns the signature. This is
+// used for option_scid_alias channels where the ChannelUpdate to be sent back
+// may differ from what is on disk.
+func (s *server) signAliasUpdate(u *lnwire.ChannelUpdate) (*ecdsa.Signature,
+	error) {
+
+	data, err := u.DataToSign()
+	if err != nil {
+		return nil, err
+	}
+
+	return s.cc.MsgSigner.SignMessage(s.identityKeyLoc, data, true)
+}
+
 // newServer creates a new instance of the server which is to listen using the
 // passed listener address.
 func newServer(cfg *Config, listenAddrs []net.Addr,
@@ -625,6 +643,11 @@ func newServer(cfg *Config, listenAddrs []net.Addr,
 
 	thresholdSats := btcutil.Amount(cfg.DustThreshold)
 	thresholdMSats := lnwire.NewMSatFromSatoshis(thresholdSats)
+
+	s.aliasMgr, err = aliasmgr.NewManager(dbs.ChanStateDB)
+	if err != nil {
+		return nil, err
+	}
 
 	s.htlcSwitch, err = htlcswitch.New(htlcswitch.Config{
 		DB:                   dbs.ChanStateDB,
@@ -901,6 +924,8 @@ func newServer(cfg *Config, listenAddrs []net.Addr,
 		ChainView:           cc.ChainView,
 		Notifier:            cc.ChainNotifier,
 		Payer:               s.htlcSwitch,
+		Invoices:            s.invoices,
+		NodeKey:             nodeKeyECDH,
 		Control:             s.controlTower,
 		MissionControl:      s.missionControl,
 		SessionSource:       paymentSessionSource,
@@ -929,14 +954,15 @@ func newServer(cfg *Config, listenAddrs []net.Addr,
 	}
 
 	s.authGossiper = discovery.New(discovery.Config{
-		Router:            s.chanRouter,
-		Notifier:          s.cc.ChainNotifier,
-		ChainHash:         *s.cfg.ActiveNetParams.GenesisHash,
-		Broadcast:         s.BroadcastMessage,
-		ChanSeries:        chanSeries,
-		NotifyWhenOnline:  s.NotifyWhenOnline,
-		NotifyWhenOffline: s.NotifyWhenOffline,
-		SelfNodeAnnouncement: func(refresh bool) (lnwire.NodeAnnouncement, error) {
+		Router:                s.chanRouter,
+		Notifier:              s.cc.ChainNotifier,
+		ChainHash:             *s.cfg.ActiveNetParams.GenesisHash,
+		Broadcast:             s.BroadcastMessage,
+		ChanSeries:            chanSeries,
+		NotifyWhenOnline:      s.NotifyWhenOnline,
+		NotifyWhenOffline:     s.NotifyWhenOffline,
+		FetchSelfAnnouncement: s.getNodeAnnouncement,
+		UpdateSelfAnnouncement: func(refresh bool) (lnwire.NodeAnnouncement, error) {
 			return s.genNodeAnnouncement(refresh)
 		},
 		ProofMatureDelta:        0,
@@ -955,6 +981,11 @@ func newServer(cfg *Config, listenAddrs []net.Addr,
 		PinnedSyncers:           cfg.Gossip.PinnedSyncers,
 		MaxChannelUpdateBurst:   cfg.Gossip.MaxChannelUpdateBurst,
 		ChannelUpdateInterval:   cfg.Gossip.ChannelUpdateInterval,
+		IsAlias:                 aliasmgr.IsAlias,
+		SignAliasUpdate:         s.signAliasUpdate,
+		FindBaseByAlias:         s.aliasMgr.FindBaseSCID,
+		GetAlias:                s.aliasMgr.GetPeerAlias,
+		FindChannel:             s.findChannel,
 	}, nodeKeyDesc)
 
 	s.localChanMgr = &localchans.Manager{
@@ -1020,7 +1051,7 @@ func newServer(cfg *Config, listenAddrs []net.Addr,
 		// Instruct the switch to close the channel.  Provide no close out
 		// delivery script or target fee per kw because user input is not
 		// available when the remote peer closes the channel.
-		s.htlcSwitch.CloseLink(chanPoint, closureType, 0, nil)
+		s.htlcSwitch.CloseLink(chanPoint, closureType, 0, nil, false)
 	}
 
 	// We will use the following channel to reliably hand off contract
@@ -2729,6 +2760,34 @@ func (s *server) createNewHiddenService() error {
 	}
 
 	return nil
+}
+
+// findChannel finds a channel given a public key and ChannelID. It is an
+// optimization that is quicker than seeking for a channel given only the
+// ChannelID.
+func (s *server) findChannel(node *btcec.PublicKey, chanID lnwire.ChannelID) (
+	*channeldb.OpenChannel, error) {
+
+	nodeChans, err := s.chanStateDB.FetchOpenChannels(node)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, channel := range nodeChans {
+		if chanID.IsChanPoint(&channel.FundingOutpoint) {
+			return channel, nil
+		}
+	}
+
+	return nil, fmt.Errorf("unable to find channel")
+}
+
+// getNodeAnnouncement fetches the current, fully signed node announcement.
+func (s *server) getNodeAnnouncement() lnwire.NodeAnnouncement {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	return *s.currentNodeAnn
 }
 
 // genNodeAnnouncement generates and returns the current fully signed node

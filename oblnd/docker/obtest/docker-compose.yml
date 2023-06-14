@@ -24,7 +24,7 @@ services:
       - '28332:28332'
       - '28333:28333'
   alice:
-    image: ccr.ccs.tencentyun.com/omnicore/ob-lnd:${lnd-version:-0.1.11}
+    image: ccr.ccs.tencentyun.com/omnicore/ob-lnd:${lnd-version:-0.1.12}
     depends_on:
       - omnicored
     container_name: alice
@@ -32,17 +32,19 @@ services:
       USERID: ${USERID:-1000}
       GROUPID: ${GROUPID:-1000}
     hostname: alice
+#   --spay-url="dockerhost:38332"
     command: >-
       lnd-debug --noseedbackup --trickledelay=5000 --alias=alice
       --externalip=alice --tlsextradomain=alice --tlsextradomain=alice
       --listen=0.0.0.0:9735 --rpclisten=0.0.0.0:10009 --restlisten=0.0.0.0:8080
       --bitcoin.active --bitcoin.regtest --bitcoin.node=omnicoreproxy
-      --omnicoreproxy.rpchost=omnicored:18332 
+      --omnicoreproxy.rpchost=omnicored:18332
       --omnicoreproxy.zmqpubrawblock=tcp://omnicored:28332
       --omnicoreproxy.zmqpubrawtx=tcp://omnicored:28333 
       --enable-upfront-shutdown
       --nobootstrap
-      --debuglevel=debug
+      --debuglevel=debug   --accept-keysend #--disable-regist
+      --maxpendingchannels=10
     restart: "no"
     volumes:
       - ./volumes/lnd/alice:/home/lnd/.lnd
@@ -54,8 +56,10 @@ services:
       - '8081:8080'
       - '10001:10009'
       - '9735:9735'
+    extra_hosts:
+      - "dockerhost:host-gateway"
   bob:
-    image: ccr.ccs.tencentyun.com/omnicore/ob-lnd:${lnd-version:-0.1.11}
+    image: ccr.ccs.tencentyun.com/omnicore/ob-lnd:${lnd-version:-0.1.12}
     depends_on:
       - omnicored
       - alice
@@ -74,7 +78,11 @@ services:
       --omnicoreproxy.zmqpubrawtx=tcp://omnicored:28333 
       --enable-upfront-shutdown
       --nobootstrap
-      --debuglevel=debug
+      --debuglevel=debug --accept-keysend
+      --maxpendingchannels=10
+      --chan-enable-timeout=10s
+      --chan-status-sample-interval=5s
+      --chan-disable-timeout=20s
     restart: "no"
     volumes:
       - ./volumes/lnd/bob:/home/lnd/.lnd
@@ -86,32 +94,37 @@ services:
       - '8082:8080'
       - '10002:10009'
       - '9736:9735'
-#  carl:
-#    image: ccr.ccs.tencentyun.com/omnicore/ob-lnd:${lnd-version:-0.1.11}
-#    depends_on:
-#      - omnicored
-#      - bob
-#    container_name: carl
-#    environment:
-#      USERID: ${USERID:-1000}
-#      GROUPID: ${GROUPID:-1000}
-#    hostname: carl
-#    command: >-
-#      lnd-debug --noseedbackup --trickledelay=5000 --alias=carl --externalip=carl
-#      --tlsextradomain=carl --tlsextradomain=carl --listen=0.0.0.0:9735
-#      --rpclisten=0.0.0.0:10009 --restlisten=0.0.0.0:8080 --bitcoin.active
-#      --bitcoin.regtest --bitcoin.node=omnicoreproxy
-#      --omnicoreproxy.rpchost=omnicored:18332
-#      --omnicoreproxy.zmqpubrawblock=tcp://omnicored:28332.
-#      --omnicoreproxy.zmqpubrawtx=tcp://omnicored:28333 --nobootstrap
-#    restart: "no"
-#    volumes:
-#      - ./volumes/lnd/carl:/home/lnd/.lnd
-#    expose:
-#      - '8080'
-#      - '10009'
-#      - '9735'
-#    ports:
-#      - '8083:8080'
-#      - '10003:10009'
-#      - '9737:9735'
+    extra_hosts:
+      - "dockerhost:host-gateway"
+  carl:
+    image: ccr.ccs.tencentyun.com/omnicore/ob-lnd:${lnd-version:-0.1.12}
+    depends_on:
+      - omnicored
+      - bob
+    container_name: carl
+    environment:
+      USERID: ${USERID:-1000}
+      GROUPID: ${GROUPID:-1000}
+    hostname: carl
+    command: >-
+      lnd-debug --noseedbackup --trickledelay=5000 --alias=carl --externalip=carl
+      --tlsextradomain=carl --tlsextradomain=carl --listen=0.0.0.0:9735
+      --rpclisten=0.0.0.0:10009 --restlisten=0.0.0.0:8080 --bitcoin.active
+      --bitcoin.regtest --bitcoin.node=omnicoreproxy
+      --omnicoreproxy.rpchost=omnicored:18332
+      --omnicoreproxy.zmqpubrawblock=tcp://omnicored:28332
+      --omnicoreproxy.zmqpubrawtx=tcp://omnicored:28333 
+      --enable-upfront-shutdown
+      --nobootstrap
+      --debuglevel=debug --disable-regist  --accept-keysend
+    restart: "no"
+    volumes:
+      - ./volumes/lnd/carl:/home/lnd/.lnd
+    expose:
+      - '8080'
+      - '10009'
+      - '9735'
+    ports:
+      - '8083:8080'
+      - '10003:10009'
+      - '9737:9735'

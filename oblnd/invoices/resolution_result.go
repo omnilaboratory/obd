@@ -120,6 +120,8 @@ const (
 	// ResultAmpReconstruction is returned when the derived child
 	// hash/preimage pairs were invalid for at least one HTLC in the set.
 	ResultAmpReconstruction
+
+	ResultAtomicSwapError
 )
 
 // String returns a string representation of the result.
@@ -188,6 +190,9 @@ func (f FailResolutionResult) FailureString() string {
 
 	case ResultAmpReconstruction:
 		return "amp reconstruction failed"
+
+	case ResultAtomicSwapError:
+		return "invalid Atomic Swap parameters"
 
 	default:
 		return "unknown failure resolution result"

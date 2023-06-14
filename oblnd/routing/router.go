@@ -4,13 +4,17 @@ import (
 	"bytes"
 	goErrors "errors"
 	"fmt"
+	"github.com/golang/protobuf/proto"
+	"github.com/lightningnetwork/lnd/invoices"
+	"github.com/lightningnetwork/lnd/keychain"
+	"github.com/lightningnetwork/lnd/lnrpc"
 	"runtime"
 	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
 
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/davecgh/go-spew/spew"
 	"github.com/go-errors/errors"
@@ -293,7 +297,9 @@ type Config struct {
 	// Payer is an instance of a PaymentAttemptDispatcher and is used by
 	// the router to send payment attempts onto the network, and receive
 	// their results.
-	Payer PaymentAttemptDispatcher
+	Payer    PaymentAttemptDispatcher
+	Invoices *invoices.InvoiceRegistry
+	NodeKey  *keychain.PubKeyECDH
 
 	// Control keeps track of the status of ongoing payments, ensuring we
 	// can properly resume them across restarts.
@@ -665,7 +671,7 @@ func (r *ChannelRouter) Start() error {
 			// be tried.
 			_, _, err := r.sendPayment(payment.Info.AssetId,
 				payment.Info.Value, 0,
-				payment.Info.PaymentIdentifier, 0, paySession,
+				payment.Info.PaymentIdentifier, 0, payment.Info.HaveHodlInvoice, paySession,
 				shardTracker,
 			)
 			if err != nil {
@@ -1817,7 +1823,7 @@ func generateNewSessionKey() (*btcec.PrivateKey, error) {
 	// any replay.
 	//
 	// TODO(roasbeef): add more sources of randomness?
-	return btcec.NewPrivateKey(btcec.S256())
+	return btcec.NewPrivateKey()
 }
 
 // generateSphinxPacket generates then encodes a sphinx packet which encodes
@@ -1841,7 +1847,7 @@ func generateSphinxPacket(rt *route.Route, paymentHash []byte,
 			path := make([]sphinx.OnionHop, sphinxPath.TrueRouteLength())
 			for i := range path {
 				hopCopy := sphinxPath[i]
-				hopCopy.NodePub.Curve = nil
+				//hopCopy.NodePub.Curve = nil
 				path[i] = hopCopy
 			}
 			return spew.Sdump(path)
@@ -1871,7 +1877,7 @@ func generateSphinxPacket(rt *route.Route, paymentHash []byte,
 			// internal curve here in order to keep the logs from
 			// getting noisy.
 			key := *sphinxPacket.EphemeralKey
-			key.Curve = nil
+			//key.Curve = nil
 			packetCopy := *sphinxPacket
 			packetCopy.EphemeralKey = &key
 			return spew.Sdump(packetCopy)
@@ -1895,8 +1901,11 @@ type LightningPayment struct {
 	//Amount lnwire.MilliSatoshi
 
 	/*obd update wxf*/
-	Amount lnwire.UnitPrec11
-	AssetId uint32
+	Amount            lnwire.UnitPrec11
+	AssetId           uint32
+	HaveHodlInvoice   bool
+	PopulateAsInvoice bool
+	Refundable        bool
 
 	// FeeLimit is the maximum fee in millisatoshis that the payment should
 	// accept when sending it through the network. The payment will fail
@@ -2047,13 +2056,34 @@ func (r *ChannelRouter) SendPayment(payment *LightningPayment) ([32]byte,
 	// for the existing attempt.
 	return r.sendPayment(payment.AssetId,
 		payment.Amount, payment.FeeLimit, payment.Identifier(),
-		payment.PayAttemptTimeout, paySession, shardTracker,
+		payment.PayAttemptTimeout, payment.HaveHodlInvoice, paySession, shardTracker,
 	)
 }
 
 // SendPaymentAsync is the non-blocking version of SendPayment. The payment
 // result needs to be retrieved via the control tower.
 func (r *ChannelRouter) SendPaymentAsync(payment *LightningPayment) error {
+	if payment.PopulateAsInvoice {
+		invoice, err := r.cfg.Invoices.LookupInvoice(*payment.paymentHash)
+		if err != nil {
+			return err
+		}
+		asInvoice := &lnrpc.ASInvoice{
+			AssetId:     invoice.AssetId,
+			Amt:         int64(invoice.Terms.Value),
+			PaymentAddr: invoice.Terms.PaymentAddr[:],
+			PaymentHash: payment.paymentHash[:],
+			Dest:        r.selfNode.PubKeyBytes[:],
+		}
+		bs, err := proto.Marshal(asInvoice)
+		if err != nil {
+			return err
+		}
+		payment.DestCustomRecords[record.ASType] = bs
+	}
+	if payment.Refundable {
+		payment.DestCustomRecords[record.PayerAddressType] = r.cfg.NodeKey.PubKey().SerializeCompressed()
+	}
 	paySession, shardTracker, err := r.preparePayment(payment)
 	if err != nil {
 		return err
@@ -2070,7 +2100,7 @@ func (r *ChannelRouter) SendPaymentAsync(payment *LightningPayment) error {
 
 		_, _, err := r.sendPayment(payment.AssetId,
 			payment.Amount, payment.FeeLimit, payment.Identifier(),
-			payment.PayAttemptTimeout, paySession, shardTracker,
+			payment.PayAttemptTimeout, payment.HaveHodlInvoice, paySession, shardTracker,
 		)
 		if err != nil {
 			log.Errorf("Payment %x failed: %v",
@@ -2092,7 +2122,7 @@ func spewPayment(payment *LightningPayment) logClosure {
 			var hopHints []zpay32.HopHint
 			for _, hopHint := range routeHint {
 				h := hopHint.Copy()
-				h.NodeID.Curve = nil
+				//h.NodeID.Curve = nil
 				hopHints = append(hopHints, h)
 			}
 			routeHints = append(routeHints, hopHints)
@@ -2123,9 +2153,10 @@ func (r *ChannelRouter) preparePayment(payment *LightningPayment) (
 	info := &channeldb.PaymentCreationInfo{
 		PaymentIdentifier: payment.Identifier(),
 		Value:             payment.Amount,
-		AssetId: 		   payment.AssetId,
+		AssetId:           payment.AssetId,
 		CreationTime:      r.cfg.Clock.Now(),
 		PaymentRequest:    payment.PaymentRequest,
+		HaveHodlInvoice:   payment.HaveHodlInvoice,
 	}
 
 	// Create a new ShardTracker that we'll use during the life cycle of
@@ -2320,7 +2351,7 @@ func (r *ChannelRouter) SendToRoute(htlcHash lntypes.Hash, rt *route.Route) (
 // the ControlTower.
 func (r *ChannelRouter) sendPayment(
 	assetId uint32, totalAmt, feeLimit lnwire.UnitPrec11, identifier lntypes.Hash,
-	timeout time.Duration, paySession PaymentSession,
+	timeout time.Duration, haveHodlInvoice bool, paySession PaymentSession,
 	shardTracker shards.ShardTracker) ([32]byte, *route.Route, error) {
 
 	/*obd update wxf*/
@@ -2338,14 +2369,15 @@ func (r *ChannelRouter) sendPayment(
 	// Now set up a paymentLifecycle struct with these params, such that we
 	// can resume the payment from the current state.
 	p := &paymentLifecycle{
-		router:        r,
-		AssetId: assetId,
-		totalAmount:   totalAmt,
-		feeLimit:      feeLimit,
-		identifier:    identifier,
-		paySession:    paySession,
-		shardTracker:  shardTracker,
-		currentHeight: currentHeight,
+		router:          r,
+		AssetId:         assetId,
+		totalAmount:     totalAmt,
+		feeLimit:        feeLimit,
+		identifier:      identifier,
+		HaveHodlInvoice: haveHodlInvoice,
+		paySession:      paySession,
+		shardTracker:    shardTracker,
+		currentHeight:   currentHeight,
 	}
 
 	// If a timeout is specified, create a timeout channel. If no timeout is
@@ -2354,9 +2386,16 @@ func (r *ChannelRouter) sendPayment(
 	if timeout != 0 {
 		p.timeoutChan = time.After(timeout)
 	}
-
-	return p.resumePayment()
-
+	if haveHodlInvoice {
+		img, rut, err := p.resumePayment()
+		if err != nil {
+			log.Infof("CancelInvoice in sendPayment for err: %v ,identifier %v,", err, identifier)
+			r.cfg.Invoices.CancelInvoice(identifier)
+		}
+		return img, rut, err
+	} else {
+		return p.resumePayment()
+	}
 }
 
 // extractChannelUpdate examines the error and extracts the channel update.

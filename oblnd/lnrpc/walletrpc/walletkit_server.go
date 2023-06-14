@@ -9,18 +9,19 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	base "github.com/btcsuite/btcwallet/wallet"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"time"
 
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/btcsuite/btcd/btcec/v2"
+	"github.com/btcsuite/btcd/btcutil"
+	"github.com/btcsuite/btcd/btcutil/hdkeychain"
+	"github.com/btcsuite/btcd/btcutil/psbt"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/txscript"
 	"github.com/btcsuite/btcd/wire"
-	"github.com/btcsuite/btcutil"
-	"github.com/btcsuite/btcutil/hdkeychain"
-	"github.com/btcsuite/btcutil/psbt"
 	"github.com/btcsuite/btcwallet/waddrmgr"
 	"github.com/btcsuite/btcwallet/wtxmgr"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
@@ -409,7 +410,7 @@ func (w *WalletKit) LeaseOutput(ctx context.Context,
 	// other concurrent processes attempting to lease the same UTXO.
 	var expiration time.Time
 	err = w.cfg.CoinSelectionLocker.WithCoinSelectLock(func() error {
-		expiration, err = w.cfg.Wallet.LeaseOutput(
+		expiration, _, _, err = w.cfg.Wallet.LeaseOutput(
 			lockID, *op, duration,
 		)
 		return err
@@ -999,7 +1000,7 @@ func (w *WalletKit) FundPsbt(_ context.Context,
 		err         error
 		packet      *psbt.Packet
 		feeSatPerKW chainfee.SatPerKWeight
-		locks       []*wtxmgr.LockedOutput
+		locks       []*base.ListLeasedOutputResult
 		rawPsbt     bytes.Buffer
 	)
 
@@ -1185,17 +1186,17 @@ func (w *WalletKit) FundPsbt(_ context.Context,
 }
 
 // marshallLeases converts the lock leases to the RPC format.
-func marshallLeases(locks []*wtxmgr.LockedOutput) []*UtxoLease {
+func marshallLeases(locks []*base.ListLeasedOutputResult) []*UtxoLease {
 	rpcLocks := make([]*UtxoLease, len(locks))
 	for idx, lock := range locks {
+		lock := lock
+
 		rpcLocks[idx] = &UtxoLease{
-			Id: lock.LockID[:],
-			Outpoint: &lnrpc.OutPoint{
-				TxidBytes:   lock.Outpoint.Hash[:],
-				TxidStr:     lock.Outpoint.Hash.String(),
-				OutputIndex: lock.Outpoint.Index,
-			},
+			Id:         lock.LockID[:],
+			Outpoint:   lnrpc.MarshalOutPoint(&lock.Outpoint),
 			Expiration: uint64(lock.Expiration.Unix()),
+			PkScript:   lock.PkScript,
+			Value:      uint64(lock.Value),
 		}
 	}
 
@@ -1542,7 +1543,7 @@ func (w *WalletKit) ImportAccount(ctx context.Context,
 func (w *WalletKit) ImportPublicKey(ctx context.Context,
 	req *ImportPublicKeyRequest) (*ImportPublicKeyResponse, error) {
 
-	pubKey, err := btcec.ParsePubKey(req.PublicKey, btcec.S256())
+	pubKey, err := btcec.ParsePubKey(req.PublicKey)
 	if err != nil {
 		return nil, err
 	}

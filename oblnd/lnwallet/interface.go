@@ -3,17 +3,19 @@ package lnwallet
 import (
 	"errors"
 	"fmt"
+	base "github.com/btcsuite/btcwallet/wallet"
 	"github.com/lightningnetwork/lnd/lnwallet/chanfunding"
 	"github.com/lightningnetwork/lnd/omnicore"
 	"sync"
 	"time"
 
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/btcsuite/btcd/btcec/v2"
+	"github.com/btcsuite/btcd/btcec/v2/ecdsa"
+	"github.com/btcsuite/btcd/btcutil"
+	"github.com/btcsuite/btcd/btcutil/hdkeychain"
+	"github.com/btcsuite/btcd/btcutil/psbt"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
-	"github.com/btcsuite/btcutil"
-	"github.com/btcsuite/btcutil/hdkeychain"
-	"github.com/btcsuite/btcutil/psbt"
 	"github.com/btcsuite/btcwallet/waddrmgr"
 	"github.com/btcsuite/btcwallet/wallet/txauthor"
 	"github.com/btcsuite/btcwallet/wtxmgr"
@@ -38,7 +40,7 @@ const (
 
 	/*omni not support  Witness*/
 	// WitnessPubKey represents a p2wkh address.
-	WitnessPubKeyDisabled
+	WitnessPubKey
 
 	// NestedWitnessPubKey represents a p2sh output which is itself a
 	// nested p2wkh output.
@@ -47,6 +49,9 @@ const (
 	/*obd update wxf*/
 	// PubKey represents a p2kh address.
 	PubKey
+
+	// TaprootPubkey represents a p2tr key path spending address.
+	TaprootPubkey
 )
 
 var (
@@ -211,6 +216,7 @@ type WalletController interface {
 	*  obd wallet need  all address in the wallet
 	 */
 	OB_ListAddresses(addrType AddressType, account string) ([]string, error)
+	OB_DumpPrivkey(address string) (string, error)
 
 	/* obd update wxf
 	*  obd wallet: when user invoke newadress command ,the pubkey address should record.
@@ -356,7 +362,8 @@ type WalletController interface {
 	//
 	// NOTE: This method requires the global coin selection lock to be held.
 	LeaseOutput(id wtxmgr.LockID, op wire.OutPoint,
-		duration time.Duration) (time.Time, error)
+		duration time.Duration) (time.Time, []byte, btcutil.Amount,
+		error)
 
 	// ReleaseOutput unlocks an output, allowing it to be available for coin
 	// selection if it remains unspent. The ID should match the one used to
@@ -366,7 +373,7 @@ type WalletController interface {
 	ReleaseOutput(id wtxmgr.LockID, op wire.OutPoint) error
 
 	// ListLeasedOutputs returns a list of all currently locked outputs.
-	ListLeasedOutputs() ([]*wtxmgr.LockedOutput, error)
+	ListLeasedOutputs() ([]*base.ListLeasedOutputResult, error)
 
 	// PublishTransaction performs cursory validation (dust checks, etc),
 	// then finally broadcasts the passed transaction to the Bitcoin network.
@@ -506,7 +513,7 @@ type MessageSigner interface {
 	// be found, then an error will be returned. The actual digest signed is
 	// the single or double SHA-256 of the passed message.
 	SignMessage(keyLoc keychain.KeyLocator, msg []byte,
-		doubleHash bool) (*btcec.Signature, error)
+		doubleHash bool) (*ecdsa.Signature, error)
 }
 
 // WalletDriver represents a "driver" for a particular concrete

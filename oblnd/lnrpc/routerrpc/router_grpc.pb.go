@@ -28,6 +28,7 @@ type RouterClient interface {
 	//PaymentRequest to the final destination. The call returns a stream of
 	//payment updates.
 	OB_SendPaymentV2(ctx context.Context, in *SendPaymentRequest, opts ...grpc.CallOption) (Router_OB_SendPaymentV2Client, error)
+	OB_SendAtomicSwap(ctx context.Context, in *SendAtomicSwapRequest, opts ...grpc.CallOption) (Router_OB_SendAtomicSwapClient, error)
 	//
 	//TrackPaymentV2 returns an update stream for the payment identified by the
 	//payment hash.
@@ -150,8 +151,40 @@ func (x *routerOB_SendPaymentV2Client) Recv() (*lnrpc.Payment, error) {
 	return m, nil
 }
 
+func (c *routerClient) OB_SendAtomicSwap(ctx context.Context, in *SendAtomicSwapRequest, opts ...grpc.CallOption) (Router_OB_SendAtomicSwapClient, error) {
+	stream, err := c.cc.NewStream(ctx, &Router_ServiceDesc.Streams[1], "/routerrpc.Router/OB_SendAtomicSwap", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &routerOB_SendAtomicSwapClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type Router_OB_SendAtomicSwapClient interface {
+	Recv() (*lnrpc.Payment, error)
+	grpc.ClientStream
+}
+
+type routerOB_SendAtomicSwapClient struct {
+	grpc.ClientStream
+}
+
+func (x *routerOB_SendAtomicSwapClient) Recv() (*lnrpc.Payment, error) {
+	m := new(lnrpc.Payment)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 func (c *routerClient) OB_TrackPaymentV2(ctx context.Context, in *TrackPaymentRequest, opts ...grpc.CallOption) (Router_OB_TrackPaymentV2Client, error) {
-	stream, err := c.cc.NewStream(ctx, &Router_ServiceDesc.Streams[1], "/routerrpc.Router/OB_TrackPaymentV2", opts...)
+	stream, err := c.cc.NewStream(ctx, &Router_ServiceDesc.Streams[2], "/routerrpc.Router/OB_TrackPaymentV2", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -274,7 +307,7 @@ func (c *routerClient) BuildRoute(ctx context.Context, in *BuildRouteRequest, op
 }
 
 func (c *routerClient) SubscribeHtlcEvents(ctx context.Context, in *SubscribeHtlcEventsRequest, opts ...grpc.CallOption) (Router_SubscribeHtlcEventsClient, error) {
-	stream, err := c.cc.NewStream(ctx, &Router_ServiceDesc.Streams[2], "/routerrpc.Router/SubscribeHtlcEvents", opts...)
+	stream, err := c.cc.NewStream(ctx, &Router_ServiceDesc.Streams[3], "/routerrpc.Router/SubscribeHtlcEvents", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -307,7 +340,7 @@ func (x *routerSubscribeHtlcEventsClient) Recv() (*HtlcEvent, error) {
 
 // Deprecated: Do not use.
 func (c *routerClient) SendPayment(ctx context.Context, in *SendPaymentRequest, opts ...grpc.CallOption) (Router_SendPaymentClient, error) {
-	stream, err := c.cc.NewStream(ctx, &Router_ServiceDesc.Streams[3], "/routerrpc.Router/SendPayment", opts...)
+	stream, err := c.cc.NewStream(ctx, &Router_ServiceDesc.Streams[4], "/routerrpc.Router/SendPayment", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -340,7 +373,7 @@ func (x *routerSendPaymentClient) Recv() (*PaymentStatus, error) {
 
 // Deprecated: Do not use.
 func (c *routerClient) TrackPayment(ctx context.Context, in *TrackPaymentRequest, opts ...grpc.CallOption) (Router_TrackPaymentClient, error) {
-	stream, err := c.cc.NewStream(ctx, &Router_ServiceDesc.Streams[4], "/routerrpc.Router/TrackPayment", opts...)
+	stream, err := c.cc.NewStream(ctx, &Router_ServiceDesc.Streams[5], "/routerrpc.Router/TrackPayment", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -372,7 +405,7 @@ func (x *routerTrackPaymentClient) Recv() (*PaymentStatus, error) {
 }
 
 func (c *routerClient) HtlcInterceptor(ctx context.Context, opts ...grpc.CallOption) (Router_HtlcInterceptorClient, error) {
-	stream, err := c.cc.NewStream(ctx, &Router_ServiceDesc.Streams[5], "/routerrpc.Router/HtlcInterceptor", opts...)
+	stream, err := c.cc.NewStream(ctx, &Router_ServiceDesc.Streams[6], "/routerrpc.Router/HtlcInterceptor", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -420,6 +453,7 @@ type RouterServer interface {
 	//PaymentRequest to the final destination. The call returns a stream of
 	//payment updates.
 	OB_SendPaymentV2(*SendPaymentRequest, Router_OB_SendPaymentV2Server) error
+	OB_SendAtomicSwap(*SendAtomicSwapRequest, Router_OB_SendAtomicSwapServer) error
 	//
 	//TrackPaymentV2 returns an update stream for the payment identified by the
 	//payment hash.
@@ -510,6 +544,9 @@ type UnimplementedRouterServer struct {
 func (UnimplementedRouterServer) OB_SendPaymentV2(*SendPaymentRequest, Router_OB_SendPaymentV2Server) error {
 	return status.Errorf(codes.Unimplemented, "method OB_SendPaymentV2 not implemented")
 }
+func (UnimplementedRouterServer) OB_SendAtomicSwap(*SendAtomicSwapRequest, Router_OB_SendAtomicSwapServer) error {
+	return status.Errorf(codes.Unimplemented, "method OB_SendAtomicSwap not implemented")
+}
 func (UnimplementedRouterServer) OB_TrackPaymentV2(*TrackPaymentRequest, Router_OB_TrackPaymentV2Server) error {
 	return status.Errorf(codes.Unimplemented, "method OB_TrackPaymentV2 not implemented")
 }
@@ -589,6 +626,27 @@ type routerOB_SendPaymentV2Server struct {
 }
 
 func (x *routerOB_SendPaymentV2Server) Send(m *lnrpc.Payment) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func _Router_OB_SendAtomicSwap_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(SendAtomicSwapRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(RouterServer).OB_SendAtomicSwap(m, &routerOB_SendAtomicSwapServer{stream})
+}
+
+type Router_OB_SendAtomicSwapServer interface {
+	Send(*lnrpc.Payment) error
+	grpc.ServerStream
+}
+
+type routerOB_SendAtomicSwapServer struct {
+	grpc.ServerStream
+}
+
+func (x *routerOB_SendAtomicSwapServer) Send(m *lnrpc.Payment) error {
 	return x.ServerStream.SendMsg(m)
 }
 
@@ -956,6 +1014,11 @@ var Router_ServiceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "OB_SendPaymentV2",
 			Handler:       _Router_OB_SendPaymentV2_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "OB_SendAtomicSwap",
+			Handler:       _Router_OB_SendAtomicSwap_Handler,
 			ServerStreams: true,
 		},
 		{

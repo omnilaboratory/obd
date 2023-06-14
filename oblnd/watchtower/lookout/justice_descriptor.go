@@ -4,11 +4,11 @@ import (
 	"errors"
 
 	"github.com/btcsuite/btcd/blockchain"
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/btcsuite/btcd/btcec/v2"
+	"github.com/btcsuite/btcd/btcutil"
+	"github.com/btcsuite/btcd/btcutil/txsort"
 	"github.com/btcsuite/btcd/txscript"
 	"github.com/btcsuite/btcd/wire"
-	"github.com/btcsuite/btcutil"
-	"github.com/btcsuite/btcutil/txsort"
 	"github.com/lightningnetwork/lnd/input"
 	"github.com/lightningnetwork/lnd/watchtower/blob"
 	"github.com/lightningnetwork/lnd/watchtower/wtdb"
@@ -138,7 +138,7 @@ func (p *JusticeDescriptor) commitToRemoteInput() (*breachedInput, error) {
 	} else {
 		// Since the to-remote witness script should just be a regular p2wkh
 		// output, we'll parse it to retrieve the public key.
-		toRemotePubKey, err := btcec.ParsePubKey(toRemoteScript, btcec.S256())
+		toRemotePubKey, err := btcec.ParsePubKey(toRemoteScript)
 		if err != nil {
 			return nil, err
 		}
@@ -249,7 +249,9 @@ func (p *JusticeDescriptor) assembleJusticeTxn(txWeight int64,
 		vm, err := txscript.NewEngine(
 			input.txOut.PkScript, justiceTxn, i,
 			txscript.StandardVerifyFlags,
-			nil, nil, input.txOut.Value,
+			nil, nil, input.txOut.Value, txscript.NewCannedPrevOutputFetcher(
+				input.txOut.PkScript, input.txOut.Value,
+			),
 		)
 		if err != nil {
 			return nil, err

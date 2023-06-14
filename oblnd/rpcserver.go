@@ -7,12 +7,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/btcsuite/btcutil/bech32"
+	"github.com/btcsuite/btcd/btcutil/bech32"
 	"github.com/lightningnetwork/lnd/omnicore"
 	"io"
+	"io/ioutil"
 	"log"
 	"math"
 	"net/http"
+	"net/url"
 	"runtime"
 	"sort"
 	"strconv"
@@ -22,13 +24,14 @@ import (
 	"time"
 
 	"github.com/btcsuite/btcd/blockchain"
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/btcsuite/btcd/btcec/v2"
+	"github.com/btcsuite/btcd/btcec/v2/ecdsa"
+	"github.com/btcsuite/btcd/btcutil"
+	"github.com/btcsuite/btcd/btcutil/psbt"
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/txscript"
 	"github.com/btcsuite/btcd/wire"
-	"github.com/btcsuite/btcutil"
-	"github.com/btcsuite/btcutil/psbt"
 	"github.com/btcsuite/btcwallet/waddrmgr"
 	"github.com/btcsuite/btcwallet/wallet/txauthor"
 	"github.com/davecgh/go-spew/spew"
@@ -322,6 +325,10 @@ func MainRPCServerPermissions() map[string][]bakery.Op {
 			Entity: "address",
 			Action: "write",
 		}},
+		"/lnrpc.Lightning/OB_DumpPrivkey": {{
+			Entity: "address",
+			Action: "write",
+		}},
 		"/lnrpc.Lightning/SignMessage": {{
 			Entity: "message",
 			Action: "write",
@@ -360,6 +367,13 @@ func MainRPCServerPermissions() map[string][]bakery.Op {
 			Action: "write",
 		}},
 		"/lnrpc.Lightning/CloseChannel": {{
+			Entity: "onchain",
+			Action: "write",
+		}, {
+			Entity: "offchain",
+			Action: "write",
+		}},
+		"/lnrpc.Lightning/Ob_SafeBox_CloseChannel": {{
 			Entity: "onchain",
 			Action: "write",
 		}, {
@@ -1156,7 +1170,7 @@ func (r *rpcServer) OB_SendCoinsFrom(ctx context.Context,
 			in.Amount = 546
 		}
 	} else if in.AssetId == lnwire.BtcAssetId { //for btc
-		if in.Amount == 0 {
+		if in.Amount == 0 && in.InscriptionId == "" {
 			return nil, fmt.Errorf("amt argument missing")
 		}
 		if in.AssetAmount > 0 {
@@ -1200,8 +1214,8 @@ func (r *rpcServer) OB_SendCoinsFrom(ctx context.Context,
 		return nil, err
 	}
 
-	rpcsLog.Infof("[SendCoinsFrom] addr=%v, amt=%v, sat/kw=%v, min_confs=%v, ",
-		in.Addr, btcutil.Amount(in.Amount), int64(feePerKw), minConfs,
+	rpcsLog.Infof("[SendCoinsFrom] addr=%v, amt=%v, sat/kw=%v, min_confs=%v,  InscriptionId=%v ",
+		in.Addr, btcutil.Amount(in.Amount), int64(feePerKw), minConfs, in.InscriptionId,
 	)
 
 	// Decode the address receiving the coins, we need to check whether the
@@ -1236,7 +1250,7 @@ func (r *rpcServer) OB_SendCoinsFrom(ctx context.Context,
 	// accidentally tried to send funds to a bare pubkey address. This check is
 	// here to prevent unintended transfers.
 	decodedAddr, _ := hex.DecodeString(in.Addr)
-	_, err = btcec.ParsePubKey(decodedAddr, btcec.S256())
+	_, err = btcec.ParsePubKey(decodedAddr)
 	if err == nil {
 		return nil, fmt.Errorf("cannot send coins to pubkeys")
 	}
@@ -1256,7 +1270,8 @@ func (r *rpcServer) OB_SendCoinsFrom(ctx context.Context,
 	// while we instruct the wallet to send this transaction.
 	err = wallet.WithCoinSelectLock(func() error {
 		newTXID, err := r.sendCoinsFromAddresOnChain(
-			fromAddr, targetAddr, btcutil.Amount(in.Amount), omnicore.Amount(in.AssetAmount), feePerKw, minConfs, in.AssetId, label,
+			fromAddr, targetAddr, btcutil.Amount(in.Amount), omnicore.Amount(in.AssetAmount),
+			feePerKw, minConfs, in.AssetId, label, in.InscriptionId,
 		)
 		if err != nil {
 			return err
@@ -1274,14 +1289,95 @@ func (r *rpcServer) OB_SendCoinsFrom(ctx context.Context,
 
 	return &lnrpc.SendCoinsResponse{Txid: txid.String()}, nil
 }
+func (r *rpcServer) getInscriptionUtxo(inscriptionId string) (chanfunding.Coin, error) {
+	if inscriptionId == "" {
+		return chanfunding.Coin{}, nil
+	}
+	ordiIndexServer := "https://unisat.io/api"
+	if r.cfg != nil && r.cfg.ActiveNetParams == chainreg.BitcoinTestNetParams {
+		ordiIndexServer = "https://unisat.io/testnet/api"
+	}
+
+	vs := url.Values{}
+	vs.Add("inscriptionId", inscriptionId)
+	query := vs.Encode()
+	furl := ordiIndexServer + "/v3/inscription/utxo?" + query
+
+	req, err := http.NewRequest("GET", furl, nil)
+	if err != nil {
+		return chanfunding.Coin{}, err
+	}
+	req.Header.Add("X-Client", "UniSat Wallet")
+	req.Header.Add("X-Version", "1.1.19")
+	req.Header.Add("Content-Type", "application/json;charset=utf-8")
+	req.Header.Add("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36")
+
+	res, err := http.DefaultClient.Do(req)
+
+	if err != nil {
+		return chanfunding.Coin{}, err
+	}
+	resstr := []byte{}
+	if res.Body != nil {
+		resstr, _ = ioutil.ReadAll(res.Body)
+	}
+	if res.StatusCode != 200 || res.Body == nil {
+		errMsg := fmt.Sprint("unisat api err,StatusCode: %v, body:%v", res.StatusCode, string(resstr))
+		return chanfunding.Coin{}, errors.New(errMsg)
+	}
+
+	nftUtxo := new(inscriptionUtxo)
+	err = json.Unmarshal(resstr, nftUtxo)
+	if err != nil {
+		return chanfunding.Coin{}, err
+	}
+	if nftUtxo.Status == "0" {
+		return chanfunding.Coin{}, errors.New(nftUtxo.Message)
+	}
+	hash, err := chainhash.NewHashFromStr(nftUtxo.Result.TxId)
+	if err != nil {
+		return chanfunding.Coin{}, err
+	}
+	coin := chanfunding.Coin{
+		TxOut:    wire.TxOut{Value: nftUtxo.Result.Satoshis, PkScript: nftUtxo.Result.ScriptPk},
+		OutPoint: wire.OutPoint{Index: nftUtxo.Result.OutputIndex, Hash: *hash},
+	}
+	return coin, nil
+}
+
+type inscriptionUtxo struct {
+	//FAILED = '0', SUCCESS='1'
+	Status  string `json:"status"`
+	Message string `json:"message"`
+	Result  struct {
+		TxId        string `json:"txId"`
+		OutputIndex uint32 `json:"outputIndex"`
+		Satoshis    int64  `json:"satoshis"`
+		ScriptPk    []byte `json:"scriptPk"`
+	} `json:"result"`
+}
 
 func (r *rpcServer) sendCoinsFromAddresOnChain(fromAddress, toAddress btcutil.Address, amt btcutil.Amount, assetAmount omnicore.Amount, feeRate chainfee.SatPerKWeight, minConfs int32, assetId uint32,
-	label string) (*chainhash.Hash, error) {
+	label, inscriptionId string) (*chainhash.Hash, error) {
 	coinSource := lnwallet.NewCoinSource(r.server.cc.Wallet)
 	coins, err := coinSource.ListCoins(minConfs, 100000)
-	selectedCoins, changeAmt, err := chanfunding.CoinSelectByAddress(assetId, feeRate, amt, 300, fromAddress, coins)
 	if err != nil {
 		return nil, err
+	}
+	var nftCoin chanfunding.Coin
+	if inscriptionId != "" {
+		nftCoin, err = r.getInscriptionUtxo(inscriptionId)
+	}
+	if err != nil {
+		return nil, err
+	}
+	selectedCoins, changeAmt, err := chanfunding.CoinSelectByAddress(assetId, feeRate, amt, 546, fromAddress, coins, nftCoin)
+	if err != nil {
+		return nil, err
+	}
+
+	if inscriptionId != "" {
+		amt = btcutil.Amount(nftCoin.Value)
 	}
 	tx, err := r.server.cc.Wallet.CreateSimpleTxForSelectedCoins(toAddress, selectedCoins, amt, changeAmt, assetAmount, assetId, false)
 	if err != nil {
@@ -1423,7 +1519,7 @@ func (r *rpcServer) OB_EstimateFee(ctx context.Context,
 			in.Amount = 546
 		}
 	} else if in.AssetId == lnwire.BtcAssetId { //for btc
-		if in.Amount == 0 {
+		if in.Amount == 0 && in.InscriptionId == "" {
 			return nil, fmt.Errorf("amt argument missing")
 		}
 		if in.AssetAmount > 0 {
@@ -1506,7 +1602,7 @@ func (r *rpcServer) OB_EstimateFee(ctx context.Context,
 	// accidentally tried to send funds to a bare pubkey address. This check is
 	// here to prevent unintended transfers.
 	decodedAddr, _ := hex.DecodeString(in.Addr)
-	_, err = btcec.ParsePubKey(decodedAddr, btcec.S256())
+	_, err = btcec.ParsePubKey(decodedAddr)
 	if err == nil {
 		return nil, fmt.Errorf("cannot send coins to pubkeys")
 	}
@@ -1521,7 +1617,14 @@ func (r *rpcServer) OB_EstimateFee(ctx context.Context,
 	err = wallet.WithCoinSelectLock(func() error {
 		coinSource := lnwallet.NewCoinSource(r.server.cc.Wallet)
 		coins, err := coinSource.ListCoins(minConfs, 100000)
-		selectedCoins, changeAmt, err := chanfunding.CoinSelectByAddress(in.AssetId, feePerKw, btcutil.Amount(in.Amount), 300, fromAddr, coins)
+		if err != nil {
+			return err
+		}
+		nftCoin, err := r.getInscriptionUtxo(in.InscriptionId)
+		if err != nil {
+			return err
+		}
+		selectedCoins, changeAmt, err := chanfunding.CoinSelectByAddress(in.AssetId, feePerKw, btcutil.Amount(in.Amount), 546, fromAddr, coins, nftCoin)
 		if err != nil {
 			return err
 		}
@@ -1606,7 +1709,7 @@ func (r *rpcServer) SendCoins(ctx context.Context,
 	// accidentally tried to send funds to a bare pubkey address. This check is
 	// here to prevent unintended transfers.
 	decodedAddr, _ := hex.DecodeString(in.Addr)
-	_, err = btcec.ParsePubKey(decodedAddr, btcec.S256())
+	_, err = btcec.ParsePubKey(decodedAddr)
 	if err == nil {
 		return nil, fmt.Errorf("cannot send coins to pubkeys")
 	}
@@ -1835,13 +1938,18 @@ func (r *rpcServer) OB_ListAddresses(ctx context.Context, in *lnrpc.ListAddresse
 	//if in.Account != "" {
 	//	account = in.Account
 	//}
-	//in.AddressType = lnrpc.AddressType_PUBKEY
-	//
+
 	//if in.AddressType != lnrpc.AddressType_PUBKEY {
 	//	return nil, errors.New("NewAddress err, omni only support Pkh-address")
 	//}
-
-	items, err := r.server.cc.Wallet.OB_ListAddresses(lnwallet.PubKey, lnwallet.DefaultAccountName)
+	atype := lnwallet.PubKey
+	switch in.AddressType {
+	case lnrpc.AddressType_NFT_WITNESS_PUBKEY_HASH:
+		atype = lnwallet.WitnessPubKey
+	case lnrpc.AddressType_TAPROOT_PUBKEY:
+		atype = lnwallet.TaprootPubkey
+	}
+	items, err := r.server.cc.Wallet.OB_ListAddresses(atype, lnwallet.DefaultAccountName)
 	return &lnrpc.ListAddressesResponse{Items: items}, err
 }
 
@@ -1857,6 +1965,13 @@ func (r *rpcServer) OB_ListRecAddress(ctx context.Context, in *lnrpc.ListRecAddr
 func (r *rpcServer) OB_SetDefaultAddress(ctx context.Context, in *lnrpc.SetDefaultAddressRequest) (*lnrpc.SetDefaultAddressResponse, error) {
 	err := r.server.cc.Wallet.OB_SetDefaultAddress(in.Address)
 	return &lnrpc.SetDefaultAddressResponse{}, err
+}
+func (r *rpcServer) OB_DumpPrivkey(ctx context.Context, in *lnrpc.DumpPrivkeyRequest) (*lnrpc.DumpPrivkeyResponse, error) {
+	privkey, err := r.server.cc.Wallet.OB_DumpPrivkey(in.Address)
+	if err != nil {
+		return nil, err
+	}
+	return &lnrpc.DumpPrivkeyResponse{KeyWif: privkey}, err
 }
 
 // NewAddress creates a new address under control of the local wallet.
@@ -1875,10 +1990,14 @@ func (r *rpcServer) OB_NewAddress(ctx context.Context,
 		addr btcutil.Address
 		err  error
 	)
-	if in.Type != lnrpc.AddressType_PUBKEY {
-		return nil, errors.New("NewAddress err, omni only support Pkh-address")
+	atype := lnwallet.PubKey
+	switch in.Type {
+	case lnrpc.AddressType_NFT_WITNESS_PUBKEY_HASH:
+		atype = lnwallet.WitnessPubKey
+	case lnrpc.AddressType_TAPROOT_PUBKEY:
+		atype = lnwallet.TaprootPubkey
 	}
-	addr, err = r.server.cc.Wallet.OB_NewAddress(lnwallet.PubKey, false, account)
+	addr, err = r.server.cc.Wallet.OB_NewAddress(atype, false, account)
 	if err != nil {
 		return nil, err
 	}
@@ -1981,7 +2100,7 @@ func (r *rpcServer) VerifyMessage(ctx context.Context,
 	digest := chainhash.DoubleHashB(in.Msg)
 
 	// RecoverCompact both recovers the pubkey and validates the signature.
-	pubKey, _, err := btcec.RecoverCompact(btcec.S256(), sig, digest)
+	pubKey, _, err := ecdsa.RecoverCompact(sig, digest)
 	if err != nil {
 		return &lnrpc.VerifyMessageResponse{Valid: false}, nil
 	}
@@ -2024,7 +2143,7 @@ func (r *rpcServer) ConnectPeer(ctx context.Context,
 	if err != nil {
 		return nil, err
 	}
-	pubKey, err := btcec.ParsePubKey(pubkeyHex, btcec.S256())
+	pubKey, err := btcec.ParsePubKey(pubkeyHex)
 	if err != nil {
 		return nil, err
 	}
@@ -2093,7 +2212,7 @@ func (r *rpcServer) DisconnectPeer(ctx context.Context,
 	if err != nil {
 		return nil, fmt.Errorf("unable to decode pubkey bytes: %v", err)
 	}
-	peerPubKey, err := btcec.ParsePubKey(pubKeyBytes, btcec.S256())
+	peerPubKey, err := btcec.ParsePubKey(pubKeyBytes)
 	if err != nil {
 		return nil, fmt.Errorf("unable to parse pubkey: %v", err)
 	}
@@ -2161,7 +2280,7 @@ func newFundingShimAssembler(chanPointShim *lnrpc.ChanPointShim, initiator bool,
 	// Next we'll parse out the remote party's funding key, as well as our
 	// full key descriptor.
 	remoteKey, err := btcec.ParsePubKey(
-		chanPointShim.RemoteKey, btcec.S256(),
+		chanPointShim.RemoteKey,
 	)
 	if err != nil {
 		return nil, err
@@ -2169,7 +2288,7 @@ func newFundingShimAssembler(chanPointShim *lnrpc.ChanPointShim, initiator bool,
 
 	shimKeyDesc := chanPointShim.LocalKey
 	localKey, err := btcec.ParsePubKey(
-		shimKeyDesc.RawKeyBytes, btcec.S256(),
+		shimKeyDesc.RawKeyBytes,
 	)
 	if err != nil {
 		return nil, err
@@ -2308,6 +2427,18 @@ func (r *rpcServer) parseOpenChannelReq(in *lnrpc.OpenChannelRequest,
 		return nil, fmt.Errorf("amount pushed to remote peer for "+
 			"initial state must be below the local funding amount: remote %v ,local %v", remoteInitialAssetBalance, localFundingAssetAmt)
 	}
+	if in.AssetId > lnwire.BtcAssetId {
+		//todo check asset balance
+		coinAddress, err := r.server.cc.Wallet.OB_GetDefaultAddress()
+		if err != nil {
+			return nil, err
+		}
+
+		ok, err := r.AssetsBalanceCheck(context.TODO(), in.AssetId, int64(localFundingAssetAmt+remoteInitialAssetBalance), coinAddress.String())
+		if !ok {
+			return nil, err
+		}
+	}
 
 	// Ensure that the user doesn't exceed the current soft-limit for
 	// channel size. If the funding amount is above the soft-limit, then
@@ -2355,7 +2486,7 @@ func (r *rpcServer) parseOpenChannelReq(in *lnrpc.OpenChannelRequest,
 	// Parse the raw bytes of the node key into a pubkey object so we can
 	// easily manipulate it.
 	case len(in.NodePubkey) > 0:
-		nodePubKey, err = btcec.ParsePubKey(in.NodePubkey, btcec.S256())
+		nodePubKey, err = btcec.ParsePubKey(in.NodePubkey)
 		if err != nil {
 			return nil, err
 		}
@@ -2369,7 +2500,7 @@ func (r *rpcServer) parseOpenChannelReq(in *lnrpc.OpenChannelRequest,
 			return nil, err
 		}
 
-		nodePubKey, err = btcec.ParsePubKey(keyBytes, btcec.S256())
+		nodePubKey, err = btcec.ParsePubKey(keyBytes)
 		if err != nil {
 			return nil, err
 		}
@@ -2692,7 +2823,12 @@ func (r *rpcServer) BatchOpenChannel(ctx context.Context,
 		PendingChannels: rpcPoints,
 	}, nil
 }
-
+func (r *rpcServer) Ob_SafeBox_CloseChannel(in *lnrpc.CloseChannelRequest,
+	updateStream lnrpc.Lightning_Ob_SafeBox_CloseChannelServer) error {
+	in.Force = false
+	in.ObSimpleSend = true
+	return r.CloseChannel(in, updateStream)
+}
 // CloseChannel attempts to close an active channel identified by its channel
 // point. The actions of this method can additionally be augmented to attempt
 // a force close after a timeout period in the case of an inactive peer.
@@ -2899,9 +3035,11 @@ func (r *rpcServer) CloseChannel(in *lnrpc.CloseChannelRequest,
 
 		updateChan, errChan = r.server.htlcSwitch.CloseLink(
 			chanPoint, contractcourt.CloseRegular, feeRate,
-			deliveryScript,
+			deliveryScript, in.ObSimpleSend,
 		)
 	}
+	timeout := time.NewTimer(12 * time.Second)
+	defer timeout.Stop()
 out:
 	for {
 		select {
@@ -2936,6 +3074,10 @@ out:
 			}
 		case <-r.quit:
 			return nil
+		case <-timeout.C:
+			rpcsLog.Errorf("[closechannel] timeout "+
+				"ChannelPoint(%v): %v", chanPoint)
+			return err
 		}
 	}
 
@@ -3221,10 +3363,16 @@ func (r *rpcServer) OB_GetInfo(_ context.Context,
 	)
 	b32Str, _ := bech32.Encode("ln", nodeBytes)
 
+	coinAddress, _ := r.server.cc.Wallet.OB_GetDefaultAddress()
+	coinAddressStr := ""
+	if coinAddress != nil {
+		coinAddressStr = coinAddress.String()
+	}
 	// TODO(roasbeef): add synced height n stuff
 	return &lnrpc.GetInfoResponse{
 		IdentityPubkey:      encodedIDPub,
 		PubkeyBech32:        b32Str,
+		CoinAddress:         coinAddressStr,
 		NumPendingChannels:  nPendingChannels,
 		NumActiveChannels:   activeChannels,
 		NumInactiveChannels: inactiveChannels,
@@ -3567,6 +3715,28 @@ func (r *rpcServer) OB_GetAssetInfo(ctx context.Context, in *lnrpc.GetAssetInfoR
 	return assetRes, nil
 }
 
+func (r *rpcServer) AssetsBalanceCheck(ctx context.Context, assetId uint32, amt int64, address string) (bool, error) {
+	enoughAsset := false
+	if assetId > lnwire.BtcAssetId {
+		res, err := r.OB_AssetsBalanceByAddress(ctx, &lnrpc.AssetsBalanceByAddressRequest{Address: address})
+		if err != nil {
+			rpcsLog.Debug("OB_AssetsBalanceByAddress err", err)
+			return false, err
+		}
+		for _, item := range res.List {
+			if uint32(item.Propertyid) == assetId && item.Balance >= amt {
+				enoughAsset = true
+			}
+		}
+		if !enoughAsset {
+			err = fmt.Errorf("insufficient asset balance for address %v assetId %v", address, assetId)
+			rpcsLog.Info(err.Error())
+			return false, err
+		}
+	}
+	return enoughAsset, nil
+}
+
 // obd update wxf
 // get all asset balance  by address
 //omni_getallbalancesforaddress
@@ -3873,6 +4043,7 @@ func (r *rpcServer) fetchPendingOpenChannels() (pendingOpenChannels, error) {
 				ChannelPoint:         pendingChan.FundingOutpoint.String(),
 				BtcCapacity:          int64(pendingChan.BtcCapacity),
 				AssetId:              pendingChan.AssetID,
+				CreateTime:           pendingChan.CreateTime,
 				LocalBalance:         int64(localCommitment.GetLocalBalance(pendingChan.AssetID)),
 				RemoteBalance:        int64(localCommitment.GetRemoteBalance(pendingChan.AssetID)),
 				LocalChanReserveSat:  int64(pendingChan.LocalChanCfg.ChanReserve),
@@ -4151,6 +4322,7 @@ func (r *rpcServer) fetchWaitingCloseChannels() (waitingCloseChannels,
 			RemoteNodePub:         hex.EncodeToString(pub),
 			ChannelPoint:          chanPoint.String(),
 			AssetId:               waitingClose.AssetID,
+			CreateTime:            waitingClose.CreateTime,
 			BtcCapacity:           int64(waitingClose.BtcCapacity),
 			AssetCapacity:         int64(waitingClose.AssetCapacity),
 			LocalBalance:          int64(waitingClose.LocalCommitment.GetLocalBalance(waitingClose.AssetID)),
@@ -4682,6 +4854,9 @@ func createRPCOpenChannel(r *rpcServer, graph *channeldb.ChannelGraph,
 		FeePerKw:              int64(localCommit.FeePerKw),
 		TotalSatoshisSent:     int64(dbChannel.TotalMSatSent.ToSatoshis()),
 		TotalSatoshisReceived: int64(dbChannel.TotalMSatReceived.ToSatoshis()),
+		TotalAssetSent:        int64(dbChannel.TotalAssetSent),
+		TotalAssetReceived:    int64(dbChannel.TotalAssetReceived),
+		CreateTime:            dbChannel.CreateTime,
 		NumUpdates:            localCommit.CommitHeight,
 		PendingHtlcs:          make([]*lnrpc.HTLC, len(localCommit.Htlcs)),
 		Initiator:             dbChannel.IsInitiator,
@@ -5074,13 +5249,20 @@ func (r *rpcServer) SubscribeChannelEvents(req *lnrpc.ChannelEventSubscription,
 			var update *lnrpc.ChannelEventUpdate
 			switch event := e.(type) {
 			case channelnotifier.PendingOpenChannelEvent:
+				channel, err := createRPCOpenChannel(r, graph,
+					event.PendingChannel, true)
+				if err != nil {
+					return err
+				}
+
 				update = &lnrpc.ChannelEventUpdate{
 					Type: lnrpc.ChannelEventUpdate_PENDING_OPEN_CHANNEL,
 					Channel: &lnrpc.ChannelEventUpdate_PendingOpenChannel{
-						PendingOpenChannel: &lnrpc.PendingUpdate{
-							Txid:        event.ChannelPoint.Hash[:],
-							OutputIndex: event.ChannelPoint.Index,
-						},
+						//PendingOpenChannel: &lnrpc.PendingUpdate{
+						//	Txid:        event.ChannelPoint.Hash[:],
+						//	OutputIndex: event.ChannelPoint.Index,
+						//},
+						PendingOpenChannel: channel,
 					},
 				}
 			case channelnotifier.OpenChannelEvent:
@@ -5977,6 +6159,7 @@ func (r *rpcServer) OB_AddInvoice(ctx context.Context,
 		Private:         invoice.Private,
 		RouteHints:      routeHints,
 		Amp:             invoice.IsAmp,
+		Refundable:      invoice.Refundable,
 	}
 
 	if invoice.RPreimage != nil {

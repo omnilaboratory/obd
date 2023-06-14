@@ -59,17 +59,19 @@ usage example
 the omnicored-docker will not mine block automation; if you want  some blocks confirm, exec ./mine.sh manually.
 available commands
 ```shell
-./om-cli.sh  send_coin.sh alice_address #send_coin to alice , will send 1 btc and  100Asset to  alice, the assetId 2147483651
+./om-cli.sh  send_coin.sh alice_address #send_coin to alice , will send 1 btc and  100Asset to  alice, the assetId is 2147483651
 ./mine.sh  mine 3 blocks
 ```
 
 ## faucet
-as an **option** you can modify docker-compose.yml to use online omnicoreporxy for regtest
-* omnicoreporxy is public prxoy omnicore-backand ,it can be access anonymous.
-* faucet-swager-api: https://swagger.oblnd.top/?surl=https://faucet.oblnd.top/openapiv2/foo.swagger.json
-* omnicoreporxy-server wallet addre ms5u6Wmc8xF8wFBo9w5HFouFNAmnWzkVa6 have enough test-coin to send you.
-* omnicoreporxy have pre-created an asset which id is 2147483651;
-*  the SendCoin api  every invoke will send you 1btc and 100 asset.
+
+This faucet on Regtest is for **team internal use only**.  You may use omnicore to build your own faucet. The omnicore proxy is for the public.  
+* omnicoreporxy is a public proxy omnicore-backend, it can be accessed anonymously.  
+* faucet-swager-api: https://swagger.oblnd.top/?surl=https://faucet.oblnd.top/openapiv2/foo.swagger.json    
+* omnicoreporxy-server wallet addre ms5u6Wmc8xF8wFBo9w5HFouFNAmnWzkVa6 have enough test-coin to send you.  
+* omnicoreporxy has pre-created an asset whose id is 2147483651.   
+* the SendCoin will send you 1btc and 100 assets.    
+
 ```shell
 #send test coin form curl
 export assetId=2147483651

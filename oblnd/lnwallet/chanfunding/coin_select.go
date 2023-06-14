@@ -2,11 +2,10 @@ package chanfunding
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"github.com/btcsuite/btcd/txscript"
 	"github.com/btcsuite/btcd/wire"
-	"github.com/btcsuite/btcutil"
+	"github.com/btcsuite/btcd/btcutil"
 	"github.com/lightningnetwork/lnd/input"
 	"github.com/lightningnetwork/lnd/lnwallet/chainfee"
 	"github.com/lightningnetwork/lnd/lnwire"
@@ -81,15 +80,19 @@ func selectInputs(amt btcutil.Amount, coins []Coin) (btcutil.Amount, []Coin, err
 /*ob add wxf
 * for support send coin only from special address
  */
-func selectInputsByAddress(amt btcutil.Amount, ownerAddress btcutil.Address, coins []Coin) (btcutil.Amount, []Coin, error) {
+func selectInputsByAddress(amt btcutil.Amount, ownerAddress btcutil.Address, coins []Coin, feeRate chainfee.SatPerKWeight) (btcutil.Amount, []Coin, error) {
 	payToScript, err := txscript.PayToAddrScript(ownerAddress)
 	if err != nil {
 		return 0, nil, err
 	}
 	coinSelected := []Coin{}
 	satSelected := btcutil.Amount(0)
+	minInput := int64(feeRate.FeePerKVByte().FeeForVSize(149))
 	for _, coin := range coins {
 		if bytes.Equal(coin.PkScript, payToScript) {
+			if coin.Value < minInput {
+				continue
+			}
 			satSelected += btcutil.Amount(coin.Value)
 			coinSelected = append(coinSelected, coin)
 			if satSelected >= amt {
@@ -114,23 +117,22 @@ func calculateFees(assetId uint32, utxos []Coin, feeRate chainfee.SatPerKWeight)
 	for _, utxo := range utxos {
 		/*obd update wxf
 		omni only support PubKeyHashTy */
-		//switch {
-		//
-		//case txscript.IsPayToWitnessPubKeyHash(utxo.PkScript):
-		//	weightEstimate.AddP2WKHInput()
-		//
-		//case txscript.IsPayToScriptHash(utxo.PkScript):
-		//	weightEstimate.AddNestedP2WKHInput()
-		//
-		//default:
-		//	return 0, 0, &errUnsupportedInput{utxo.PkScript}
-		//}
+		switch {
+		case txscript.IsPayToWitnessPubKeyHash(utxo.PkScript):
+			weightEstimate.AddP2WKHInput()
 
-		sClass:=txscript.GetScriptClass(utxo.PkScript)
-		if sClass!=txscript.PubKeyHashTy{
-			return 0,0,errors.New("calculateFees err, omni only support PubKeyHashTy")
+		case txscript.IsPayToScriptHash(utxo.PkScript):
+			weightEstimate.AddNestedP2WKHInput()
+
+		default:
+			sClass := txscript.GetScriptClass(utxo.PkScript)
+			if sClass == txscript.PubKeyHashTy {
+				weightEstimate.AddP2PKHInput()
+			} else {
+				//return 0,0,errors.New("calculateFees err, omni only support PubKeyHashTy")
+				return 0, 0, &errUnsupportedInput{utxo.PkScript}
+			}
 		}
-		weightEstimate.AddP2PKHInput()
 	}
 
 	/*obd update wxf
@@ -252,17 +254,24 @@ func CoinSelect(assetId uint32, feeRate chainfee.SatPerKWeight, amt, dustLimit b
  assetId parameter:  when assetId>lnwire.BtcAssetId, a extra opreturn output will add, and need more fee
 */
 func CoinSelectByAddress(assetId uint32, feeRate chainfee.SatPerKWeight, amt, dustLimit btcutil.Amount, fromAddress btcutil.Address,
-	coins []Coin) ([]Coin, btcutil.Amount, error) {
+	coins []Coin, nftCoin Coin) ([]Coin, btcutil.Amount, error) {
 
 	amtNeeded := amt
+	var forNft bool
+	if len(nftCoin.PkScript) > 0 {
+		amtNeeded = 546
+		forNft = true
+	}
 	for {
 		// First perform an initial round of coin selection to estimate
 		// the required fee.
-		totalSat, selectedUtxos, err := selectInputsByAddress(amtNeeded, fromAddress, coins)
+		totalSat, selectedUtxos, err := selectInputsByAddress(amtNeeded, fromAddress, coins, feeRate)
 		if err != nil {
 			return nil, 0, err
 		}
-
+		if forNft {
+			selectedUtxos = append(selectedUtxos, nftCoin)
+		}
 		// Obtain fee estimates both with and without using a change
 		// output.
 		requiredFeeNoChange, requiredFeeWithChange, err := calculateFees(assetId,
@@ -306,6 +315,11 @@ func CoinSelectByAddress(assetId uint32, feeRate chainfee.SatPerKWeight, amt, du
 		if changeAmt < dustLimit {
 			changeAmt = 0
 		}
+		//skip  dust output, only for p2pkh
+		//minOuput := int64(feeRate.FeePerKVByte().FeeForVSize(149))
+		//if int64(changeAmt) < minOuput {
+		//	changeAmt = 0
+		//}
 
 		// Sanity check the resulting output values to make sure we
 		// don't burn a great part to fees.

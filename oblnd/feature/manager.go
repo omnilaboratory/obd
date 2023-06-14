@@ -43,6 +43,8 @@ func NewManager(cfg Config) (*Manager, error) {
 	return newManager(cfg, defaultSetDesc)
 }
 
+
+
 // newManager creates a new feature Manager, applying any custom modifications
 // to its feature sets before returning. This method accepts the setDesc as its
 // own parameter so that it can be unit tested.

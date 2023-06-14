@@ -4,8 +4,11 @@ import (
 	"crypto/sha256"
 	"fmt"
 
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/btcsuite/btcd/btcec/v2"
+	"github.com/btcsuite/btcd/btcec/v2/ecdsa"
+	"github.com/btcsuite/btcd/btcec/v2/schnorr"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
+	"github.com/btcsuite/btcd/txscript"
 	"github.com/btcsuite/btcwallet/waddrmgr"
 	"github.com/btcsuite/btcwallet/wallet"
 	"github.com/btcsuite/btcwallet/walletdb"
@@ -380,7 +383,7 @@ func (b *BtcWalletKeyRing) DerivePrivKey(keyDesc KeyDescriptor) (
 // k is our private key, and P is the public key, we perform the following
 // operation:
 //
-//  sx := k*P s := sha256(sx.SerializeCompressed())
+//	sx := k*P s := sha256(sx.SerializeCompressed())
 //
 // NOTE: This is part of the keychain.ECDHRing interface.
 func (b *BtcWalletKeyRing) ECDH(keyDesc KeyDescriptor,
@@ -391,12 +394,16 @@ func (b *BtcWalletKeyRing) ECDH(keyDesc KeyDescriptor,
 		return [32]byte{}, err
 	}
 
-	s := &btcec.PublicKey{}
-	x, y := btcec.S256().ScalarMult(pub.X, pub.Y, privKey.D.Bytes())
-	s.X = x
-	s.Y = y
+	var (
+		pubJacobian btcec.JacobianPoint
+		s           btcec.JacobianPoint
+	)
+	pub.AsJacobian(&pubJacobian)
 
-	h := sha256.Sum256(s.SerializeCompressed())
+	btcec.ScalarMultNonConst(&privKey.Key, &pubJacobian, &s)
+	s.ToAffine()
+	sPubKey := btcec.NewPublicKey(&s.X, &s.Y)
+	h := sha256.Sum256(sPubKey.SerializeCompressed())
 
 	return h, nil
 }
@@ -406,7 +413,7 @@ func (b *BtcWalletKeyRing) ECDH(keyDesc KeyDescriptor,
 //
 // NOTE: This is part of the keychain.MessageSignerRing interface.
 func (b *BtcWalletKeyRing) SignMessage(keyLoc KeyLocator,
-	msg []byte, doubleHash bool) (*btcec.Signature, error) {
+	msg []byte, doubleHash bool) (*ecdsa.Signature, error) {
 
 	privKey, err := b.DerivePrivKey(KeyDescriptor{
 		KeyLocator: keyLoc,
@@ -421,7 +428,7 @@ func (b *BtcWalletKeyRing) SignMessage(keyLoc KeyLocator,
 	} else {
 		digest = chainhash.HashB(msg)
 	}
-	return privKey.Sign(digest)
+	return ecdsa.Sign(privKey, digest), nil
 }
 
 // SignMessageCompact signs the given message, single or double SHA256 hashing
@@ -445,5 +452,35 @@ func (b *BtcWalletKeyRing) SignMessageCompact(keyLoc KeyLocator,
 	} else {
 		digest = chainhash.HashB(msg)
 	}
-	return btcec.SignCompact(btcec.S256(), privKey, digest, true)
+	return ecdsa.SignCompact(privKey, digest, true)
+}
+
+// SignMessageSchnorr uses the Schnorr signature algorithm to sign the given
+// message, single or double SHA256 hashing it first, with the private key
+// described in the key locator and the optional tweak applied to the private
+// key.
+//
+// NOTE: This is part of the keychain.MessageSignerRing interface.
+func (b *BtcWalletKeyRing) SignMessageSchnorr(keyLoc KeyLocator,
+	msg []byte, doubleHash bool, taprootTweak []byte) (*schnorr.Signature,
+	error) {
+
+	privKey, err := b.DerivePrivKey(KeyDescriptor{
+		KeyLocator: keyLoc,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if len(taprootTweak) > 0 {
+		privKey = txscript.TweakTaprootPrivKey(*privKey, taprootTweak)
+	}
+
+	var digest []byte
+	if doubleHash {
+		digest = chainhash.DoubleHashB(msg)
+	} else {
+		digest = chainhash.HashB(msg)
+	}
+	return schnorr.Sign(privKey, digest)
 }

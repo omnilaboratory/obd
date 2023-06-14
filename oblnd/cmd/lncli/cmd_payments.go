@@ -14,7 +14,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/btcsuite/btcutil"
+	"github.com/btcsuite/btcd/btcutil"
 	"github.com/jedib0t/go-pretty/table"
 	"github.com/jedib0t/go-pretty/text"
 	"github.com/lightninglabs/protobuf-hex-display/jsonpb"
@@ -141,6 +141,38 @@ func paymentFlags() []cli.Flag {
 		dataFlag, inflightUpdatesFlag, maxPartsFlag, jsonFlag,
 		maxShardSizeSatFlag, maxShardSizeMsatFlag, ampFlag,
 	}
+}
+
+var sendASCommand = cli.Command{
+	Name:     "sendas",
+	Category: "Payments",
+	Usage:    "Send a aspayment over lightning.",
+	Description: `
+	Send a aspayment over Lightning. One can either specify the full
+	parameters of the payment, or just use a payment request which encodes
+	all the payment details.
+	`,
+	ArgsUsage: "asset_id dest amt payment_hash final_cltv_delta pay_addr | --pay_req=[payment request]",
+	Flags: append([]cli.Flag{inflightUpdatesFlag, jsonFlag},
+		cli.StringFlag{
+			Name: "dest, d",
+			Usage: "the compressed identity pubkey of the " +
+				"payment recipient",
+		},
+		cli.Int64Flag{
+			Name:  "asset_id",
+			Usage: "",
+		},
+		cli.Int64Flag{
+			Name:  "amt, a",
+			Usage: "number of min-unit to send ,for btc is MilliSatoshi (1/1.0e11 btc) ,for asset is omnicore.Amount (1/1.0e8 asset)",
+		},
+		cli.StringFlag{
+			Name:  "payment_hash, r",
+			Usage: "the hash to use within the payment's HTLC",
+		},
+	),
+	Action: sendas,
 }
 
 var sendPaymentCommand = cli.Command{
@@ -581,6 +613,80 @@ func sendPaymentRequest(ctx *cli.Context,
 	req.NoInflightUpdates = !ctx.Bool(inflightUpdatesFlag.Name) && printJSON
 
 	stream, err := routerClient.OB_SendPaymentV2(ctxc, req)
+	if err != nil {
+		return err
+	}
+
+	finalState, err := printLivePayment(
+		ctxc, stream, client, printJSON,
+	)
+	if err != nil {
+		return err
+	}
+
+	// If we get a payment error back, we pass an error up
+	// to main which eventually calls fatal() and returns
+	// with a non-zero exit code.
+	if finalState.Status != lnrpc.Payment_SUCCEEDED {
+		return errors.New(finalState.Status.String())
+	}
+
+	return nil
+}
+
+func sendas(ctx *cli.Context) error {
+	// Show command help if no arguments provided
+	if ctx.NArg() == 0 && ctx.NumFlags() == 0 {
+		_ = cli.ShowCommandHelp(ctx, "sendas")
+		return nil
+	}
+	assetId := uint32(ctx.Int64("asset_id"))
+
+	amount := ctx.Int64("amt")
+	amtMsat := int64(0)
+	assetAmt := int64(0)
+	if assetId == lnwire.BtcAssetId {
+		amtMsat = amount
+	} else {
+		assetAmt = amount
+	}
+
+	req := &routerrpc.SendAtomicSwapRequest{
+		AssetId: assetId,
+		//Amt:               ctx.Int64("amt"),
+		AmtMsat:  amtMsat,
+		AssetAmt: assetAmt,
+	}
+
+	//return sendPaymentRequest(ctx, req)
+	destNode, err := hex.DecodeString(ctx.String("dest"))
+	if err != nil {
+		return err
+	}
+	if len(destNode) != 33 {
+		return fmt.Errorf("dest node pubkey must be exactly 33 bytes, is "+
+			"instead: %v", len(destNode))
+	}
+	req.Dest = destNode
+
+	rHash, err := hex.DecodeString(ctx.String("payment_hash"))
+	if err != nil {
+		return err
+	}
+	if len(rHash) != 32 {
+		return fmt.Errorf("payment hash must be exactly 32 "+
+			"bytes, is instead %v", len(rHash))
+	}
+	req.Rhash = rHash
+
+	printJSON := ctx.Bool(jsonFlag.Name)
+
+	ctxc := getContext()
+	conn := getClientConn(ctx, false)
+	defer conn.Close()
+	client := lnrpc.NewLightningClient(conn)
+	routerClient := routerrpc.NewRouterClient(conn)
+	stream, err := routerClient.OB_SendAtomicSwap(ctxc, req)
 	if err != nil {
 		return err
 	}
@@ -1213,6 +1319,10 @@ var listPaymentsCommand = cli.Command{
 				"index_offset will be returned, allowing " +
 				"forwards pagination",
 		},
+		cli.Int64Flag{
+			Name:  "asset_id",
+			Usage: "",
+		},
 	},
 	Action: actionDecorator(listPayments),
 }
@@ -1223,12 +1333,16 @@ func listPayments(ctx *cli.Context) error {
 	defer cleanUp()
 
 	req := &lnrpc.ListPaymentsRequest{
+		AssetId:           uint32(ctx.Int64("asset_id")),
 		IncludeIncomplete: ctx.Bool("include_incomplete"),
 		IndexOffset:       uint64(ctx.Uint("index_offset")),
 		MaxPayments:       uint64(ctx.Uint("max_payments")),
 		Reversed:          !ctx.Bool("paginate_forwards"),
 	}
 
+	if req.AssetId > 0 {
+		req.IsQueryAsset = true
+	}
 	payments, err := client.OB_ListPayments(ctxc, req)
 	if err != nil {
 		return err

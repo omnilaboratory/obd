@@ -194,7 +194,8 @@ const (
 	htlcHashType     tlv.Type = 21
 	htlcPreimageType tlv.Type = 23
 	/*obd add wxf*/
-	assetIdType  tlv.Type = 25
+	assetIdType      tlv.Type = 25
+	payerAddressType tlv.Type = 26
 
 	// A set of tlv type definitions used to serialize invoice bodiees.
 	//
@@ -455,6 +456,8 @@ type ContractTerm struct {
 	// PaymentAddr is a randomly generated value include in the MPP record
 	// by the sender to prevent probing of the receiver.
 	PaymentAddr [32]byte
+	/*obd update wxf, used for server invoice*/
+	PayerAddr []byte
 
 	// Features is the feature vectors advertised on the payment request.
 	Features *lnwire.FeatureVector
@@ -845,7 +848,8 @@ type InvoiceUpdateDesc struct {
 	// SetID is an optional set ID for AMP invoices that allows operations
 	// to be more efficient by ensuring we don't need to read out the
 	// entire HTLC set each timee an HTLC is to be cancelled.
-	SetID *SetID
+	SetID        *SetID
+	PayerAddress []byte
 }
 
 // InvoiceStateUpdateDesc describes an invoice-level state transition.
@@ -1012,11 +1016,14 @@ func (d *DB) AddInvoice(newInvoice *Invoice, paymentHash lntypes.Hash) (
 func (d *DB) InvoicesAddedSince(sinceAddIndex uint64) ([]Invoice, error) {
 	var newInvoices []Invoice
 
+	/*obd update wxf
+	If an index of zero was specified, will send out any old invoices
+	*/
 	// If an index of zero was specified, then in order to maintain
 	// backwards compat, we won't send out any new invoices.
-	if sinceAddIndex == 0 {
-		return newInvoices, nil
-	}
+	//if sinceAddIndex == 0 {
+	//	return newInvoices, nil
+	//}
 
 	var startIndex [8]byte
 	byteOrder.PutUint64(startIndex[:], sinceAddIndex)
@@ -1039,8 +1046,10 @@ func (d *DB) InvoicesAddedSince(sinceAddIndex uint64) ([]Invoice, error) {
 
 		// We'll seek to the starting index, then manually advance the
 		// cursor in order to skip the entry with the since add index.
-		invoiceCursor.Seek(startIndex[:])
-		addSeqNo, invoiceKey := invoiceCursor.Next()
+		addSeqNo, invoiceKey := invoiceCursor.Seek(startIndex[:])
+		if bytes.Compare(addSeqNo, startIndex[:]) == 0 {
+			addSeqNo, invoiceKey = invoiceCursor.Next()
+		}
 
 		for ; addSeqNo != nil && bytes.Compare(addSeqNo, startIndex[:]) > 0; addSeqNo, invoiceKey = invoiceCursor.Next() {
 
@@ -1471,11 +1480,14 @@ func (d *DB) UpdateInvoice(ref InvoiceRef, setIDHint *SetID,
 func (d *DB) InvoicesSettledSince(sinceSettleIndex uint64) ([]Invoice, error) {
 	var settledInvoices []Invoice
 
+	/*obd update wxf
+	If an index of zero was specified, will send out any old invoices
+	*/
 	// If an index of zero was specified, then in order to maintain
 	// backwards compat, we won't send out any new invoices.
-	if sinceSettleIndex == 0 {
-		return settledInvoices, nil
-	}
+	//if sinceSettleIndex == 0 {
+	//	return settledInvoices, nil
+	//}
 
 	var startIndex [8]byte
 	byteOrder.PutUint64(startIndex[:], sinceSettleIndex)
@@ -1498,8 +1510,10 @@ func (d *DB) InvoicesSettledSince(sinceSettleIndex uint64) ([]Invoice, error) {
 
 		// We'll seek to the starting index, then manually advance the
 		// cursor in order to skip the entry with the since add index.
-		invoiceCursor.Seek(startIndex[:])
-		seqNo, indexValue := invoiceCursor.Next()
+		seqNo, indexValue := invoiceCursor.Seek(startIndex[:])
+		if bytes.Compare(seqNo, startIndex[:]) == 0 {
+			seqNo, indexValue = invoiceCursor.Next()
+		}
 
 		for ; seqNo != nil && bytes.Compare(seqNo, startIndex[:]) > 0; seqNo, indexValue = invoiceCursor.Next() {
 
@@ -1683,6 +1697,7 @@ func serializeInvoice(w io.Writer, i *Invoice) error {
 			ampStateEncoder, ampStateDecoder,
 		),
 		tlv.MakePrimitiveRecord(assetIdType, &assetId),
+		tlv.MakePrimitiveRecord(payerAddressType, &i.Terms.PayerAddr),
 	)
 	if err != nil {
 		return err
@@ -2063,6 +2078,7 @@ func deserializeInvoice(r io.Reader) (Invoice, error) {
 			ampStateEncoder, ampStateDecoder,
 		),
 		tlv.MakePrimitiveRecord(assetIdType, &assetId),
+		tlv.MakePrimitiveRecord(payerAddressType, &i.Terms.PayerAddr),
 	)
 	if err != nil {
 		return i, err
@@ -2963,6 +2979,10 @@ func (d *DB) updateInvoice(hash *lntypes.Hash, refSetID *SetID, invoices,
 		}
 	}
 
+	if len(update.PayerAddress) > 0 {
+		invoice.Terms.PayerAddr = update.PayerAddress
+	}
+
 	// Reserialize and update invoice.
 	var buf bytes.Buffer
 	if err := serializeInvoice(&buf, &invoice); err != nil {
@@ -2982,7 +3002,6 @@ func (d *DB) updateInvoice(hash *lntypes.Hash, refSetID *SetID, invoices,
 			return nil, err
 		}
 	}
-
 	return &invoice, nil
 }
 

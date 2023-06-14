@@ -133,6 +133,11 @@ var newAddressCommand = cli.Command{
 			Usage: "(optional) the name of the account to " +
 				"generate a new address for",
 		},
+		cli.StringFlag{
+			Name:  "type",
+			Usage: "p2wkh p2tr",
+			Value: "p2kh",
+		},
 	},
 	Description: `
 	Generate a wallet new address. Address-types has to be one of:
@@ -169,8 +174,16 @@ func newAddress(ctx *cli.Context) error {
 	client, cleanUp := getClient(ctx)
 	defer cleanUp()
 
+	typeStr := ctx.String("type")
+	atype := lnrpc.AddressType_PUBKEY
+	switch typeStr {
+	case "p2wkh":
+		atype = lnrpc.AddressType_NFT_WITNESS_PUBKEY_HASH
+	case "p2tr":
+		atype = lnrpc.AddressType_TAPROOT_PUBKEY
+	}
 	addr, err := client.OB_NewAddress(ctxc, &lnrpc.NewAddressRequest{
-		Type:    lnrpc.AddressType_PUBKEY,
+		Type:    atype,
 		Account: ctx.String("account"),
 	})
 	if err != nil {
@@ -973,6 +986,10 @@ var closeChannelCommand = cli.Command{
 			Usage: "attempt an uncooperative closure",
 		},
 		cli.BoolFlag{
+			Name:  "simplesend",
+			Usage: "CooperativeClose with omni-simeplesend for mainnet",
+		},
+		cli.BoolFlag{
 			Name:  "block",
 			Usage: "block until the channel is closed",
 		},
@@ -1035,9 +1052,13 @@ func closeChannel(ctx *cli.Context) error {
 	req := &lnrpc.CloseChannelRequest{
 		ChannelPoint:    channelPoint,
 		Force:           ctx.Bool("force"),
+		ObSimpleSend:    ctx.Bool("simplesend"),
 		TargetConf:      int32(ctx.Int64("conf_target")),
 		SatPerVbyte:     ctx.Uint64(feeRateFlag),
 		DeliveryAddress: ctx.String("delivery_addr"),
+	}
+	if req.ObSimpleSend {
+		req.Force = false
 	}
 
 	// After parsing the request, we'll spin up a goroutine that will

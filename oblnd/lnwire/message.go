@@ -22,28 +22,30 @@ type MessageType uint16
 // The currently defined message types within this current version of the
 // Lightning protocol.
 const (
-	MsgInit                    MessageType = 1016
-	MsgError                               = 1017
-	MsgPing                                = 1018
-	MsgPong                                = 1019
-	MsgOpenChannel                         = 1032
-	MsgAcceptChannel                       = 1033
-	MsgFundingCreated                      = 1034
-	MsgFundingSigned                       = 1035
-	MsgFundingLocked                       = 1036
-	MsgShutdown                            = 1038
-	MsgClosingSigned                       = 1039
-	MsgUpdateAddHTLC                       = 1128
-	MsgUpdateFulfillHTLC                   = 1130
-	MsgUpdateFailHTLC                      = 1131
-	MsgCommitSig                           = 1132
-	MsgRevokeAndAck                        = 1133
-	MsgUpdateFee                           = 1134
-	MsgUpdateFailMalformedHTLC             = 1135
-	MsgChannelReestablish                  = 1136
-	MsgChannelAnnouncement                 = 1256
-	MsgNodeAnnouncement                    = 1257
-	MsgChannelUpdate                       = 1258
+	MsgInit                      MessageType = 1016
+	MsgError                                 = 1017
+	MsgPing                                  = 1018
+	MsgPong                                  = 1019
+	MsgOpenChannel                           = 1032
+	MsgAcceptChannel                         = 1033
+	MsgFundingCreated                        = 1034
+	MsgFundingSigned                         = 1035
+	MsgFundingLocked                         = 1036
+	MsgShutdown                              = 1038
+	MsgObShutdownSimpleSend                  = 10381
+	MsgClosingSigned                         = 1039
+	MsgObClosingSignedSimpleSend             = 10391
+	MsgUpdateAddHTLC                         = 1128
+	MsgUpdateFulfillHTLC                     = 1130
+	MsgUpdateFailHTLC                        = 1131
+	MsgCommitSig                             = 1132
+	MsgRevokeAndAck                          = 1133
+	MsgUpdateFee                             = 1134
+	MsgUpdateFailMalformedHTLC               = 1135
+	MsgChannelReestablish                    = 1136
+	MsgChannelAnnouncement                   = 1256
+	MsgNodeAnnouncement                      = 1257
+	MsgChannelUpdate                         = 1258
 	MsgAnnounceSignatures                  = 1259
 	MsgQueryShortChanIDs                   = 1261
 	MsgReplyShortChanIDsEnd                = 1262
@@ -90,8 +92,12 @@ func (t MessageType) String() string {
 		return "FundingLocked"
 	case MsgShutdown:
 		return "Shutdown"
+	case MsgObShutdownSimpleSend:
+		return "ObShutdownSimpleSend"
 	case MsgClosingSigned:
 		return "ClosingSigned"
+	case MsgObClosingSignedSimpleSend:
+		return "ObClosingSignedSimpleSend"
 	case MsgUpdateAddHTLC:
 		return "UpdateAddHTLC"
 	case MsgUpdateFailHTLC:
@@ -190,8 +196,12 @@ func makeEmptyMessage(msgType MessageType) (Message, error) {
 		msg = &FundingLocked{}
 	case MsgShutdown:
 		msg = &Shutdown{}
+	case MsgObShutdownSimpleSend:
+		msg = &ObShutdownSimpleSend{}
 	case MsgClosingSigned:
 		msg = &ClosingSigned{}
+	case MsgObClosingSignedSimpleSend:
+		msg = &ObClosingSignedSimpleSend{}
 	case MsgUpdateAddHTLC:
 		msg = &UpdateAddHTLC{}
 	case MsgUpdateFailHTLC:

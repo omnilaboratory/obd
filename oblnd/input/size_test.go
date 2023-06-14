@@ -5,12 +5,12 @@ import (
 	"testing"
 
 	"github.com/btcsuite/btcd/blockchain"
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/txscript"
 	"github.com/btcsuite/btcd/wire"
-	"github.com/btcsuite/btcutil"
+	"github.com/btcsuite/btcd/btcutil"
 	"github.com/stretchr/testify/require"
 
 	"github.com/lightningnetwork/lnd/channeldb"
@@ -43,7 +43,7 @@ var (
 		Y: &big.Int{},
 	}
 
-	testPrivkey, _ = btcec.PrivKeyFromBytes(btcec.S256(), make([]byte, 32))
+	testPrivkey, _ = btcec.PrivKeyFromBytes(make([]byte, 32))
 
 	testTx = wire.NewMsgTx(2)
 

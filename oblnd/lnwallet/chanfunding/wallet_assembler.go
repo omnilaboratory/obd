@@ -3,13 +3,14 @@ package chanfunding
 import (
 	"fmt"
 	"github.com/lightningnetwork/lnd/lnwallet/omnicore/op"
+	"github.com/lightningnetwork/lnd/lnwire"
 	"github.com/lightningnetwork/lnd/omnicore"
 	"math"
 
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/btcsuite/btcd/btcec/v2"
+	"github.com/btcsuite/btcd/btcutil"
+	"github.com/btcsuite/btcd/btcutil/txsort"
 	"github.com/btcsuite/btcd/wire"
-	"github.com/btcsuite/btcutil"
-	"github.com/btcsuite/btcutil/txsort"
 	"github.com/lightningnetwork/lnd/input"
 	"github.com/lightningnetwork/lnd/keychain"
 )
@@ -85,6 +86,23 @@ func (f *FullIntent) CompileFundingTx(extraInputs []*wire.TxIn,
 	for _, theirInput := range extraInputs {
 		fundingTx.AddTxIn(theirInput)
 	}
+
+	//obd update wxf
+	//update funding-output use omni-simpleSend
+	//with omni-simpleSend, the multiSig-funding-output must by the second output.
+	if assetId > lnwire.BtcAssetId {
+		opr := &op.OpreturnSimple{PropertyId: assetId, Amount: uint64(capAsset)}
+		err := opr.AddOpReturnToTx(fundingTx)
+		if err != nil {
+			return nil, err
+		}
+	}
+	_, fundingOutput, err := f.FundingOutput()
+	if err != nil {
+		return nil, err
+	}
+	fundingTx.AddTxOut(fundingOutput)
+
 	for _, ourChangeOutput := range f.ChangeOutputs {
 		fundingTx.AddTxOut(ourChangeOutput)
 	}
@@ -92,24 +110,11 @@ func (f *FullIntent) CompileFundingTx(extraInputs []*wire.TxIn,
 		fundingTx.AddTxOut(theirChangeOutput)
 	}
 
-	_, fundingOutput, err := f.FundingOutput()
-	if err != nil {
-		return nil, err
-	}
-
-	// Sort the transaction. Since both side agree to a canonical ordering,
-	// by sorting we no longer need to send the entire transaction. Only
-	// signatures will be exchanged.
-	fundingTx.AddTxOut(fundingOutput)
-	txsort.InPlaceSort(fundingTx)
-
-	/*obd update wxf
-	add omni_payload to FundingTx
-	*/
-	pksAmt:=op.NewPksAmounts(assetId)
-	pksAmt.Add(fundingOutput.PkScript,capAsset)
-	if err:=op.AddOpReturnToTx(fundingTx,pksAmt);err!=nil{
-		return nil,err
+	if assetId == lnwire.BtcAssetId {
+		// Sort the transaction. Since both side agree to a canonical ordering,
+		// by sorting we no longer need to send the entire transaction. Only
+		// signatures will be exchanged.
+		txsort.InPlaceSort(fundingTx)
 	}
 
 	// Now that the funding tx has been fully assembled, we'll locate the

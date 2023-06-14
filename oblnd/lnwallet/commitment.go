@@ -6,10 +6,10 @@ import (
 	"github.com/lightningnetwork/lnd/omnicore"
 
 	"github.com/btcsuite/btcd/blockchain"
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/btcsuite/btcd/txscript"
 	"github.com/btcsuite/btcd/wire"
-	"github.com/btcsuite/btcutil"
+	"github.com/btcsuite/btcd/btcutil"
 	"github.com/lightningnetwork/lnd/channeldb"
 	"github.com/lightningnetwork/lnd/input"
 	"github.com/lightningnetwork/lnd/lnwallet/chainfee"
@@ -599,15 +599,16 @@ func (cb *CommitmentBuilder) createUnsignedCommitmentTx(ourBtcBalance,
 		if cb.chanState.IsInitiator {
 			theirBtcBalance = 0
 			if theirAssetBalance > 0 {
-				theirBtcBalance = lnwire.NewMSatFromSatoshis(lnwire.OmniGas)
+				//theirBtcBalance = lnwire.NewMSatFromSatoshis(lnwire.OmniGas)
 				/*obd update wxf
 				if !isOurs==true , theirBtcBalance will locked in rsmc-out,
 				 when sweep the rsmc-out, theirBtcBalance must over sweepTx-commitFee,
-				 in my bitocind-regtest-node, the sweepTx-commitFee is 5537
+				 in my bitocind-regtest-node, the sweepTx-commitFee is about 1106
 				*/
-				//if !isOurs {
-				//	theirBtcBalance = lnwire.NewMSatFromSatoshis(lnwire.OmniGas + 5537 + 100)
-				//}
+				//if !isOurs {}
+				//theirBtcBalance should enough to for  sweepTx to sweep an rsmc
+				theirBtcBalance = lnwire.NewMSatFromSatoshis(lnwire.OmniGas + 1106 + 100)
+
 			}
 			ourBtcBalance = lnwire.NewMSatFromSatoshis(cb.chanState.BtcCapacity)
 			ourBtcBalance -= theirBtcBalance
@@ -619,15 +620,16 @@ func (cb *CommitmentBuilder) createUnsignedCommitmentTx(ourBtcBalance,
 		} else {
 			ourBtcBalance = 0
 			if ourAssetBalance > 0 {
-				ourBtcBalance = lnwire.NewMSatFromSatoshis(lnwire.OmniGas)
+				//ourBtcBalance = lnwire.NewMSatFromSatoshis(lnwire.OmniGas)
 				/*obd update wxf
 				if isOurs==true , ourBtcBalance will locked in rsmc-out,
 				 when sweep the rsmc-out, ourBtcBalance must over sweepTx-commitFee
-				 in my bitocind-regtest-node, the sweepTx-commitFee is 5537
+				 in my bitocind-regtest-node, the sweepTx-commitFee is 1106
 				*/
-				//if isOurs {
-				//	ourBtcBalance = lnwire.NewMSatFromSatoshis(lnwire.OmniGas + 5537 + 100)
-				//}
+				//if isOurs {}
+				//theirBtcBalance should enough to for  sweepTx to sweep an rsmc
+				ourBtcBalance = lnwire.NewMSatFromSatoshis(lnwire.OmniGas + 1106 + 100)
+
 			}
 			theirBtcBalance = lnwire.NewMSatFromSatoshis(cb.chanState.BtcCapacity)
 			theirBtcBalance -= ourBtcBalance
@@ -935,7 +937,8 @@ func CoopCloseBalance(chanType channeldb.ChannelType, isInitiator bool,
 	// Since the initiator's balance also is stored after subtracting the
 	// anchor values, add that back in case this was an anchor commitment.
 	if chanType.HasAnchors() {
-		initiatorDelta += 2 * anchorSize
+		//obd disable  anchor
+		//initiatorDelta += 2 * anchorSize
 	}
 
 	// The initiator will pay the full coop close fee, subtract that value

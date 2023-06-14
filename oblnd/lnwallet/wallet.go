@@ -5,7 +5,7 @@ import (
 	"crypto/sha256"
 	"errors"
 	"fmt"
-	"github.com/btcsuite/btcutil/txsort"
+	"github.com/btcsuite/btcd/btcutil/txsort"
 	"github.com/lightningnetwork/lnd/lnwallet/omnicore/op"
 	"github.com/lightningnetwork/lnd/omnicore"
 	"math"
@@ -14,13 +14,13 @@ import (
 	"sync/atomic"
 
 	"github.com/btcsuite/btcd/blockchain"
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/btcsuite/btcd/btcec/v2"
+	"github.com/btcsuite/btcd/btcutil"
+	"github.com/btcsuite/btcd/btcutil/psbt"
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/txscript"
 	"github.com/btcsuite/btcd/wire"
-	"github.com/btcsuite/btcutil"
-	"github.com/btcsuite/btcutil/psbt"
 	"github.com/davecgh/go-spew/spew"
 	"github.com/lightningnetwork/lnd/channeldb"
 	"github.com/lightningnetwork/lnd/input"
@@ -1021,7 +1021,10 @@ func (l *LightningWallet) CheckReservedValue(in []wire.OutPoint,
 	// Get all unspent coins in the wallet. We only care about those part of
 	// the wallet's default account as we know we can readily sign for those
 	// at any time.
-	witnessOutputs, err := l.ListUnspentWitnessFromDefaultAccount(
+	//witnessOutputs, err := l.ListUnspentWitnessFromDefaultAccount(
+	//	0, math.MaxInt32,
+	//)
+	witnessOutputs, err := l.ListUnspentP2pkhFromDefaultAccount(
 		0, math.MaxInt32,
 	)
 	if err != nil {
@@ -1581,30 +1584,39 @@ func (l *LightningWallet) handleChanPointReady(req *continueContributionMsg) {
 		PreviousOutPoint: chanPoint,
 	}
 
+	/*
+		obd add wxf
+	*/
+	localAssetBalance := chanState.LocalCommitment.LocalAssetBalance
+	remoteAssetBalance := chanState.LocalCommitment.RemoteAssetBalance
 	// With the funding tx complete, create both commitment transactions.
-	localBalance := pendingReservation.partialState.LocalCommitment.LocalBtcBalance.ToSatoshis()
-	remoteBalance := pendingReservation.partialState.LocalCommitment.RemoteBtcBalance.ToSatoshis()
+	localBalance := chanState.LocalCommitment.LocalBtcBalance.ToSatoshis()
+	remoteBalance := chanState.LocalCommitment.RemoteBtcBalance.ToSatoshis()
 
 	/*obd update wxf*/
 	if chanState.AssetID > lnwire.BtcAssetId {
 		//asset mode: all the btcBalance belong to Initiator
 		if chanState.IsInitiator {
-			remoteBalance = lnwire.OmniGas
+			if remoteAssetBalance > 0 {
+				remoteBalance = lnwire.OmniGas
+			}
 			/*obd update wxf
 			exclucde CommitFee
 			*/
 			localBalance = chanState.BtcCapacity - remoteBalance - pendingReservation.partialState.LocalCommitment.CommitFee
 		} else {
-			localBalance = lnwire.OmniGas
+			if localAssetBalance > 0 {
+				localBalance = lnwire.OmniGas
+			}
 			remoteBalance = chanState.BtcCapacity - localBalance - pendingReservation.partialState.LocalCommitment.CommitFee
 		}
+		chanState.LocalCommitment.LocalBtcBalance = lnwire.NewMSatFromSatoshis(localBalance)
+		chanState.LocalCommitment.RemoteBtcBalance = lnwire.NewMSatFromSatoshis(remoteBalance)
+		chanState.RemoteCommitment.LocalBtcBalance = lnwire.NewMSatFromSatoshis(localBalance)
+		chanState.RemoteCommitment.RemoteBtcBalance = lnwire.NewMSatFromSatoshis(remoteBalance)
+
 	}
 
-	/*
-	obd add wxf
-	*/
-	localAssetBalance := pendingReservation.partialState.LocalCommitment.LocalAssetBalance
-	remoteAssetBalance := pendingReservation.partialState.LocalCommitment.RemoteAssetBalance
 	var leaseExpiry uint32
 	if pendingReservation.partialState.ChanType.HasLeaseExpiration() {
 		leaseExpiry = pendingReservation.partialState.ThawHeight
@@ -1767,7 +1779,8 @@ func (l *LightningWallet) verifyFundingInputs(fundingTx *wire.MsgTx,
 	remoteInputScripts []*input.Script) error {
 
 	sigIndex := 0
-	fundingHashCache := txscript.NewTxSigHashes(fundingTx)
+	//fundingHashCache := txscript.NewTxSigHashes(fundingTx)
+	fundingHashCache := input.NewTxSigHashesV0Only(fundingTx)
 	inputScripts := remoteInputScripts
 	for i, txin := range fundingTx.TxIn {
 		if len(inputScripts) != 0 && len(txin.Witness) == 0 {
@@ -1804,6 +1817,9 @@ func (l *LightningWallet) verifyFundingInputs(fundingTx *wire.MsgTx,
 				output.PkScript, fundingTx, i,
 				txscript.StandardVerifyFlags, nil,
 				fundingHashCache, output.Value,
+				txscript.NewCannedPrevOutputFetcher(
+					output.PkScript, output.Value,
+				),
 			)
 			if err != nil {
 				return fmt.Errorf("cannot create script "+
@@ -1988,24 +2004,32 @@ func (l *LightningWallet) handleSingleFunderSigs(req *addSingleFunderSigsMsg) {
 	// remote node's commitment transactions.
 	localBalance := pendingReservation.partialState.LocalCommitment.LocalBtcBalance.ToSatoshis()
 	remoteBalance := pendingReservation.partialState.LocalCommitment.RemoteBtcBalance.ToSatoshis()
+	localAssetBalance := pendingReservation.partialState.LocalCommitment.LocalAssetBalance
+	remoteAssetBalance := pendingReservation.partialState.LocalCommitment.RemoteAssetBalance
 
 	/*obd update wxf*/
 	if chanState.AssetID > lnwire.BtcAssetId {
 		//asset mode: all the btcBalance belong to Initiator
 		if chanState.IsInitiator {
-			remoteBalance = lnwire.OmniGas
+			if remoteAssetBalance > 0 {
+				remoteBalance = lnwire.OmniGas
+			}
 			/*obd update wxf
 			exclucde CommitFee
 			*/
 			localBalance = chanState.BtcCapacity - remoteBalance - pendingReservation.partialState.LocalCommitment.CommitFee
 		} else {
-			localBalance = lnwire.OmniGas
+			if localAssetBalance > 0 {
+				localBalance = lnwire.OmniGas
+			}
 			remoteBalance = chanState.BtcCapacity - localBalance - pendingReservation.partialState.LocalCommitment.CommitFee
 		}
+		chanState.LocalCommitment.LocalBtcBalance = lnwire.NewMSatFromSatoshis(localBalance)
+		chanState.LocalCommitment.RemoteBtcBalance = lnwire.NewMSatFromSatoshis(remoteBalance)
+		chanState.RemoteCommitment.LocalBtcBalance = lnwire.NewMSatFromSatoshis(localBalance)
+		chanState.RemoteCommitment.RemoteBtcBalance = lnwire.NewMSatFromSatoshis(remoteBalance)
 	}
 
-	localAssetBalance := pendingReservation.partialState.LocalCommitment.LocalAssetBalance
-	remoteAssetBalance := pendingReservation.partialState.LocalCommitment.RemoteAssetBalance
 	var leaseExpiry uint32
 	if pendingReservation.partialState.ChanType.HasLeaseExpiration() {
 		leaseExpiry = pendingReservation.partialState.ThawHeight

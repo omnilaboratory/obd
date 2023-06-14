@@ -2,7 +2,7 @@ package lnwire
 
 import (
 	"fmt"
-	"github.com/btcsuite/btcutil"
+	"github.com/btcsuite/btcd/btcutil"
 	lnwire "github.com/lightningnetwork/lnd/channeldb/migration/lnwire21"
 )
 

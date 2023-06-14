@@ -16,7 +16,6 @@ import (
 
 // maximum 7 receivers
 var max_receivers int = 7
-
 type Opreturn struct {
 	Ver        uint16
 	TranType   uint16
@@ -26,6 +25,13 @@ type Opreturn struct {
 type Output struct {
 	Index  uint8
 	Amount uint64
+}
+
+type OpreturnSimple struct {
+	Ver        uint16
+	TranType   uint16
+	PropertyId uint32
+	Amount     uint64
 }
 
 // https://github.com/OmniLayer/omnicore/pull/1252
@@ -106,9 +112,8 @@ func (o *Opreturn) Decode(bs []byte) error {
 	}
 	return nil
 }
-func PrintWithDecode(opreutrn_bs []byte)  {
-	o:=new(Opreturn)
-	if err:=o.Decode(opreutrn_bs);err!=nil{
+func (o *Opreturn) PrintWithDecode(opreutrn_bs []byte) {
+	if err := o.Decode(opreutrn_bs); err != nil {
 		log.Println(err)
 	}
 	jsonOut, _ := json.MarshalIndent(o, "", "  ")
@@ -171,21 +176,64 @@ func GetOpReturnOut(assetID uint32,outs []*Output) (*wire.TxOut, error) {
 		return nil, err
 	}
 
-	opPks,err:=getOpPKs(w.Bytes())
+	opPks, err := getOpPKs(w.Bytes())
 	if err != nil {
-		return nil,err
+		return nil, err
 	}
 	return &wire.TxOut{Value: 0, PkScript: opPks}, nil
 }
+func (p *OpreturnSimple) Encode() ([]byte, error) {
+	if p.PropertyId == 0 {
+		return nil, fmt.Errorf("miss assetId")
+	}
+	w := bytes.NewBuffer([]byte{})
+	//ver
+	if err := lnwire.WriteUint16(w, 0); err != nil { //ver
+		return nil, err
+	}
+	//type
+	if err := lnwire.WriteUint16(w, 0); err != nil { //type
+		return nil, err
+	}
+	if err := lnwire.WriteUint32(w, p.PropertyId); err != nil {
+		return nil, err
+	}
+	if err := lnwire.WriteUint64(w, p.Amount); err != nil {
+		return nil, err
+	}
 
+	opPks, err := getOpPKs(w.Bytes())
+	return opPks, err
+}
 
-type pksAmount struct{
+func (op *OpreturnSimple) AddOpReturnToTx(tx *wire.MsgTx) error {
+	bs, err := op.Encode()
+	if err != nil {
+		return err
+	}
+	txOUt := &wire.TxOut{Value: 0, PkScript: bs}
+	outs := tx.TxOut
+	tx.TxOut = append([]*wire.TxOut{txOUt}, outs...)
+
+	return nil
+}
+func (o *OpreturnSimple) Decode(pkScirpt []byte) error {
+	bs := pkScirpt[6:]
+	reader := bytes.NewReader(bs)
+	if err := lnwire.ReadElements(reader, &o.Ver, &o.TranType, &o.PropertyId, &o.Amount); err != nil {
+		return err
+	}
+	return nil
+}
+
+type pksAmount struct {
 	//pkScirpt
-	pks []byte
+	pks    []byte
 	amount omnicore.Amount
 }
+
 //collection pkScirpt and assetAmount
-type PksAmounts struct{
+type PksAmounts struct {
 	AssetID    uint32
 	pksAmounts []*pksAmount
 }

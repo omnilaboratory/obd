@@ -14,9 +14,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/btcsuite/btcd/btcutil"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/rpcclient"
-	"github.com/btcsuite/btcutil"
 	"github.com/btcsuite/btcwallet/chain"
 	"github.com/lightninglabs/neutrino"
 	"github.com/lightningnetwork/lnd/blockcache"
@@ -436,13 +436,15 @@ func NewPartialChainControl(cfg *Config) (*PartialChainControl, func(), error) {
 		// Establish the connection to bitcoind and create the clients
 		// required for our relevant subsystems.
 		bitcoindConn, err := chain.NewBitcoindConn(&chain.BitcoindConfig{
-			ChainParams:        cfg.ActiveNetParams.Params,
-			Host:               bitcoindHost,
-			User:               bitcoindMode.RPCUser,
-			Pass:               bitcoindMode.RPCPass,
-			ZMQBlockHost:       bitcoindMode.ZMQPubRawBlock,
-			ZMQTxHost:          bitcoindMode.ZMQPubRawTx,
-			ZMQReadDeadline:    5 * time.Second,
+			ChainParams: cfg.ActiveNetParams.Params,
+			Host:        bitcoindHost,
+			User:        bitcoindMode.RPCUser,
+			Pass:        bitcoindMode.RPCPass,
+			ZMQConfig: &chain.ZMQConfig{
+				ZMQBlockHost:    bitcoindMode.ZMQPubRawBlock,
+				ZMQTxHost:       bitcoindMode.ZMQPubRawTx,
+				ZMQReadDeadline: 5 * time.Second,
+			},
 			Dialer:             cfg.Dialer,
 			PrunedModeMaxPeers: bitcoindMode.PrunedNodeMaxPeers,
 		})

@@ -15,6 +15,8 @@ service Router {
     payment updates.
     */
     rpc OB_SendPaymentV2 (SendPaymentRequest) returns (stream lnrpc.Payment);
+    rpc OB_SendAtomicSwap (SendAtomicSwapRequest)
+        returns (stream lnrpc.Payment);
 
     /*
     TrackPaymentV2 returns an update stream for the payment identified by the
@@ -141,6 +143,22 @@ service Router {
         returns (UpdateChanStatusResponse);
 }
 
+message SendAtomicSwapRequest {
+    // the keysend asset_id
+    uint32 asset_id = 1;
+    /*
+ Number of millisatoshis to send.
+ */
+    int64 amt_msat = 2;
+    // Number of omniAmount to send. this field is only for asset transfer,
+    // amt_msat only used for btc
+    int64 asset_amt = 3;
+
+    // invoice's rhash. payer use this invoice receive swapped token
+    bytes rhash = 4;
+    // dest, like keysend.dest
+    bytes dest = 5;
+}
 message SendPaymentRequest {
     // The identity pubkey of the payment recipient
     bytes dest = 1;
@@ -167,6 +185,10 @@ message SendPaymentRequest {
 
     // The hash to use within the payment's HTLC
     bytes payment_hash = 3;
+
+    //
+    bool haveHodlInvoice = 24;
+    bool populateAsInvoice = 25;
 
     /*
     The CLTV delta from the current height that should be used to set the

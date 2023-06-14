@@ -7,7 +7,7 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/davecgh/go-spew/spew"
 	"github.com/go-errors/errors"
@@ -334,7 +334,7 @@ func addToTopologyChange(graph *channeldb.ChannelGraph, update *TopologyChange,
 			Color:       EncodeHexColor(m.Color),
 			Features:    m.Features.Clone(),
 		}
-		nodeUpdate.IdentityKey.Curve = nil
+		//nodeUpdate.IdentityKey.Curve = nil
 
 		update.NodeUpdates = append(update.NodeUpdates, nodeUpdate)
 		return nil
@@ -375,12 +375,12 @@ func addToTopologyChange(graph *channeldb.ChannelGraph, update *TopologyChange,
 		}
 
 		edgeUpdate := &ChannelEdgeUpdate{
-			ChanID:          m.ChannelID,
-			ChanPoint:       edgeInfo.ChannelPoint,
-			TimeLockDelta:   m.TimeLockDelta,
-			Capacity:        edgeInfo.Capacity,
+			ChanID:        m.ChannelID,
+			ChanPoint:     edgeInfo.ChannelPoint,
+			TimeLockDelta: m.TimeLockDelta,
+			Capacity:      edgeInfo.Capacity,
 			/*obd update wxf*/
-			AssetId:        edgeInfo.AssetId,
+			AssetId:         edgeInfo.AssetId,
 			MinHTLC:         m.MinHTLC,
 			MaxHTLC:         m.MaxHTLC,
 			BaseFee:         m.FeeBaseMSat,
@@ -389,8 +389,8 @@ func addToTopologyChange(graph *channeldb.ChannelGraph, update *TopologyChange,
 			ConnectingNode:  cNode,
 			Disabled:        m.ChannelFlags&lnwire.ChanUpdateDisabled != 0,
 		}
-		edgeUpdate.AdvertisingNode.Curve = nil
-		edgeUpdate.ConnectingNode.Curve = nil
+		//edgeUpdate.AdvertisingNode.Curve = nil
+		//edgeUpdate.ConnectingNode.Curve = nil
 
 		// TODO(roasbeef): add bit to toggle
 		update.ChannelEdgeUpdates = append(update.ChannelEdgeUpdates,

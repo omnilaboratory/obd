@@ -10,7 +10,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/connmgr"
 	"github.com/btcsuite/btcd/txscript"
@@ -434,7 +434,8 @@ type Brontide struct {
 	// chanCloseMsgs is a channel that any message related to channel
 	// closures are sent over. This includes lnwire.Shutdown message as
 	// well as lnwire.ClosingSigned messages.
-	chanCloseMsgs chan *closeMsg
+	chanCloseMsgs             chan *closeMsg
+	obSimpleSendChanCloseMsgs chan *closeMsg
 
 	// remoteFeatures is the feature vector received from the peer during
 	// the connection handshake.
@@ -465,14 +466,15 @@ func NewBrontide(cfg Config) *Brontide {
 		activeChannels: make(map[lnwire.ChannelID]*lnwallet.LightningChannel),
 		newChannels:    make(chan *newChannelMsg, 1),
 
-		activeMsgStreams:   make(map[lnwire.ChannelID]*msgStream),
-		activeChanCloses:   make(map[lnwire.ChannelID]*chancloser.ChanCloser),
-		localCloseChanReqs: make(chan *htlcswitch.ChanClose),
-		linkFailures:       make(chan linkFailureReport),
-		chanCloseMsgs:      make(chan *closeMsg),
-		resentChanSyncMsg:  make(map[lnwire.ChannelID]struct{}),
-		queueQuit:          make(chan struct{}),
-		quit:               make(chan struct{}),
+		activeMsgStreams:          make(map[lnwire.ChannelID]*msgStream),
+		activeChanCloses:          make(map[lnwire.ChannelID]*chancloser.ChanCloser),
+		localCloseChanReqs:        make(chan *htlcswitch.ChanClose),
+		linkFailures:              make(chan linkFailureReport),
+		chanCloseMsgs:             make(chan *closeMsg),
+		obSimpleSendChanCloseMsgs: make(chan *closeMsg),
+		resentChanSyncMsg:         make(map[lnwire.ChannelID]struct{}),
+		queueQuit:                 make(chan struct{}),
+		quit:                      make(chan struct{}),
 	}
 
 	return p
@@ -1425,6 +1427,19 @@ out:
 				break out
 			}
 
+		case *lnwire.ObShutdownSimpleSend:
+			select {
+			case p.obSimpleSendChanCloseMsgs <- &closeMsg{msg.ChannelID, msg}:
+			case <-p.quit:
+				break out
+			}
+		case *lnwire.ObClosingSignedSimpleSend:
+			select {
+			case p.obSimpleSendChanCloseMsgs <- &closeMsg{msg.ChannelID, msg}:
+			case <-p.quit:
+				break out
+			}
+
 		case *lnwire.Error:
 			targetChan = msg.ChanID
 			isLinkUpdate = p.handleError(msg)
@@ -1760,30 +1775,30 @@ func (p *Brontide) logWireMessage(msg lnwire.Message, read bool) {
 			msgType, summary, preposition, p)
 	}))
 
-	switch m := msg.(type) {
-	case *lnwire.ChannelReestablish:
-		if m.LocalUnrevokedCommitPoint != nil {
-			m.LocalUnrevokedCommitPoint.Curve = nil
-		}
-	case *lnwire.RevokeAndAck:
-		m.NextRevocationKey.Curve = nil
-	case *lnwire.AcceptChannel:
-		m.FundingKey.Curve = nil
-		m.RevocationPoint.Curve = nil
-		m.PaymentPoint.Curve = nil
-		m.DelayedPaymentPoint.Curve = nil
-		m.HtlcPoint.Curve = nil
-		m.FirstCommitmentPoint.Curve = nil
-	case *lnwire.OpenChannel:
-		m.FundingKey.Curve = nil
-		m.RevocationPoint.Curve = nil
-		m.PaymentPoint.Curve = nil
-		m.DelayedPaymentPoint.Curve = nil
-		m.HtlcPoint.Curve = nil
-		m.FirstCommitmentPoint.Curve = nil
-	case *lnwire.FundingLocked:
-		m.NextPerCommitmentPoint.Curve = nil
-	}
+	//switch m := msg.(type) {
+	//case *lnwire.ChannelReestablish:
+	//	if m.LocalUnrevokedCommitPoint != nil {
+	//		m.LocalUnrevokedCommitPoint.Curve = nil
+	//	}
+	//case *lnwire.RevokeAndAck:
+	//	m.NextRevocationKey.Curve = nil
+	//case *lnwire.AcceptChannel:
+	//	m.FundingKey.Curve = nil
+	//	m.RevocationPoint.Curve = nil
+	//	m.PaymentPoint.Curve = nil
+	//	m.DelayedPaymentPoint.Curve = nil
+	//	m.HtlcPoint.Curve = nil
+	//	m.FirstCommitmentPoint.Curve = nil
+	//case *lnwire.OpenChannel:
+	//	m.FundingKey.Curve = nil
+	//	m.RevocationPoint.Curve = nil
+	//	m.PaymentPoint.Curve = nil
+	//	m.DelayedPaymentPoint.Curve = nil
+	//	m.HtlcPoint.Curve = nil
+	//	m.FirstCommitmentPoint.Curve = nil
+	//case *lnwire.FundingLocked:
+	//	m.NextPerCommitmentPoint.Curve = nil
+	//}
 
 	prefix := "readMessage from"
 	if !read {
@@ -2328,7 +2343,10 @@ out:
 		// message from the remote peer, we'll use this message to
 		// advance the chan closer state machine.
 		case closeMsg := <-p.chanCloseMsgs:
-			p.handleCloseMsg(closeMsg)
+			p.handleCloseMsg(closeMsg, false)
+
+		case closeMsg := <-p.obSimpleSendChanCloseMsgs:
+			p.handleCloseMsg(closeMsg, true)
 
 		// The channel reannounce delay has elapsed, broadcast the
 		// reenabled channel updates to the network. This should only
@@ -2632,7 +2650,13 @@ func (p *Brontide) handleLocalCloseReq(req *htlcswitch.ChanClose) {
 		// Finally, we'll initiate the channel shutdown within the
 		// chanCloser, and send the shutdown message to the remote
 		// party to kick things off.
-		shutdownMsg, err := chanCloser.ShutdownChan()
+		var shutMsg lnwire.Message
+		if !req.ObSimpleSend {
+			shutMsg, err = chanCloser.ShutdownChan()
+		} else {
+			shutMsg, err = chanCloser.ObSimpleSendShutdownChan()
+		}
+
 		if err != nil {
 			peerLog.Errorf(err.Error())
 			req.Err <- err
@@ -2643,8 +2667,7 @@ func (p *Brontide) handleLocalCloseReq(req *htlcswitch.ChanClose) {
 			channel.ResetState()
 			return
 		}
-
-		p.queueMsg(shutdownMsg, nil)
+		p.queueMsg(shutMsg, nil)
 
 	// A type of CloseBreach indicates that the counterparty has breached
 	// the channel therefore we need to clean up our local state.
@@ -3170,7 +3193,7 @@ func (p *Brontide) StartTime() time.Time {
 // handleCloseMsg is called when a new cooperative channel closure related
 // message is received from the remote peer. We'll use this message to advance
 // the chan closer state machine.
-func (p *Brontide) handleCloseMsg(msg *closeMsg) {
+func (p *Brontide) handleCloseMsg(msg *closeMsg, simpleSend bool) {
 	// We'll now fetch the matching closing state machine in order to continue,
 	// or finalize the channel closure process.
 	chanCloser, err := p.fetchActiveChanCloser(msg.cid)
@@ -3192,9 +3215,18 @@ func (p *Brontide) handleCloseMsg(msg *closeMsg) {
 
 	// Next, we'll process the next message using the target state machine.
 	// We'll either continue negotiation, or halt.
-	msgs, closeFin, err := chanCloser.ProcessCloseMsg(
-		msg.msg,
-	)
+	var msgs []lnwire.Message
+	var closeFin bool
+	if !simpleSend {
+		msgs, closeFin, err = chanCloser.ProcessCloseMsg(
+			msg.msg,
+		)
+	} else {
+		msgs, closeFin, err = chanCloser.OB_ProcessCloseMsg(
+			msg.msg,
+		)
+	}
+
 	if err != nil {
 		err := fmt.Errorf("unable to process close msg: %v", err)
 		peerLog.Error(err)

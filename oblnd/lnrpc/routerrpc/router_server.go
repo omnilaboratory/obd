@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/btcsuite/btcd/wire"
-	"github.com/btcsuite/btcutil"
+	"github.com/btcsuite/btcd/btcutil"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/lightningnetwork/lnd/channeldb"
 	"github.com/lightningnetwork/lnd/lnrpc"
@@ -58,6 +58,10 @@ var (
 	// macPermissions maps RPC calls to the permissions they require.
 	macPermissions = map[string][]bakery.Op{
 		"/routerrpc.Router/OB_SendPaymentV2": {{
+			Entity: "offchain",
+			Action: "write",
+		}},
+		"/routerrpc.Router/OB_SendAtomicSwap": {{
 			Entity: "offchain",
 			Action: "write",
 		}},
@@ -309,7 +313,9 @@ func (r *ServerShell) CreateSubServer(configRegistry lnrpc.SubServerConfigDispat
 // pre-image, along with the final route will be returned.
 func (s *Server) OB_SendPaymentV2(req *SendPaymentRequest,
 	stream Router_OB_SendPaymentV2Server) error {
-
+	if req.DestCustomRecords == nil {
+		req.DestCustomRecords = make(map[uint64][]byte)
+	}
 	payment, err := s.cfg.RouterBackend.extractIntentFromSendRequest(req)
 	if err != nil {
 		return err
@@ -336,6 +342,84 @@ func (s *Server) OB_SendPaymentV2(req *SendPaymentRequest,
 	}
 
 	return s.trackPayment(payment.Identifier(), stream, req.NoInflightUpdates)
+}
+func (s *Server) OB_SendAtomicSwap(in *SendAtomicSwapRequest,
+	stream Router_OB_SendAtomicSwapServer) error {
+
+	req := &SendPaymentRequest{
+		AssetId:           in.AssetId,
+		DestCustomRecords: make(map[uint64][]byte),
+		PaymentHash:       in.Rhash,
+		//PaymentAddr:       paymentAddress,
+		//HaveHodlInvoice:   true,
+		PopulateAsInvoice: true,
+	}
+	req.AmtMsat = in.AmtMsat
+	req.AssetAmt = in.AssetAmt
+	req.Dest = in.Dest
+	invoiceAmt := in.AssetAmt
+	if req.AssetId == lnwire.BtcAssetId {
+		invoiceAmt = in.AmtMsat
+	}
+	// Calculate fee limit based on the determined amount.
+	feeLimit := int64(defaultRoutingFeeLimitForAmount(invoiceAmt))
+	req.FeeLimitMsat = feeLimit
+
+	req.NoInflightUpdates = true
+	req.TimeoutSeconds = 5
+	payment, err := s.cfg.RouterBackend.extractIntentFromSendRequest(req)
+	if err != nil {
+		return err
+	}
+	err = s.cfg.Router.SendPaymentAsync(payment)
+	if err != nil {
+		// Transform user errors to grpc code.
+		if err == channeldb.ErrPaymentInFlight ||
+			err == channeldb.ErrAlreadyPaid {
+
+			log.Debugf("SendPayment async result for payment %x: %v",
+				payment.Identifier(), err)
+
+			return status.Error(
+				codes.AlreadyExists, err.Error(),
+			)
+		}
+
+		log.Errorf("SendPayment async error for payment %x: %v",
+			payment.Identifier(), err)
+
+		return err
+	}
+
+	return s.trackPayment(payment.Identifier(), stream, req.NoInflightUpdates)
+}
+
+func (s *Server) OB_SendPaymentSync(req *SendPaymentRequest) ([32]byte, error) {
+	payment, err := s.cfg.RouterBackend.extractIntentFromSendRequest(req)
+	if err != nil {
+		return [32]byte{}, err
+	}
+
+	preImage, _, err := s.cfg.Router.SendPayment(payment)
+	if err != nil {
+		// Transform user errors to grpc code.
+		if err == channeldb.ErrPaymentInFlight ||
+			err == channeldb.ErrAlreadyPaid {
+
+			log.Debugf("SendPayment sync result for payment %x: %v",
+				payment.Identifier(), err)
+
+			return [32]byte{}, status.Error(
+				codes.AlreadyExists, err.Error(),
+			)
+		}
+
+		log.Errorf("SendPayment sync error for payment %x: %v",
+			payment.Identifier(), err)
+
+		return [32]byte{}, err
+	}
+	return preImage, nil
 }
 
 // EstimateRouteFee allows callers to obtain a lower bound w.r.t how much it
@@ -942,3 +1026,18 @@ func (s *Server) UpdateChanStatus(ctx context.Context,
 	}
 	return &UpdateChanStatusResponse{}, nil
 }
+func defaultRoutingFeeLimitForAmount(a int64) int64 {
+	// Allow 100% fees up to a certain amount to accommodate for base fees.
+	if a <= RoutingFee100PercentUpTo {
+		return a
+	}
+
+	// Everything larger than the cut-off amount will get a default fee
+	// percentage.
+	return a * DefaultRoutingFeePercentage / 100
+}
+
+const (
+	RoutingFee100PercentUpTo          = 1000000
+	DefaultRoutingFeePercentage int64 = 5
+)
