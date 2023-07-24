@@ -14,8 +14,6 @@ This request has no parameters.
 | pending_force_closing_channels     |	ForceClosedChannel[]	    |Channels pending force closing.|
 | waiting_close_channels     |	WaitingCloseChannel[]	    |Channels waiting for closing tx to confirm.|
 
-**ClosedChannel**
-
 ## Example:
 
 <!--
@@ -58,6 +56,7 @@ response:
         channel {
         asset_capacity: 0
         asset_id: -2147482136
+        create_time: 1687795462
         btc_capacity: 20000
         channel_point: "3f6a515cfd28ebc48067ea341018c892cc67f725df2e9f42704a4782493341c0:1"
         commitment_type: ANCHORS
@@ -81,6 +80,7 @@ response:
         channel {
         asset_capacity: 100000
         asset_id: -2147482136
+        create_time: 1687795462
         btc_capacity: 20000
         chan_status_flags: "ChanStatusCoopBroadcasted|ChanStatusLocalCloseInitiator"
         channel_point: "088408eb1fb17e8f9b65f5ee56c0820dd7c412f0a5f276195b84c096d6c846ff:1"

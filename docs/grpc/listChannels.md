@@ -21,6 +21,7 @@ ListChannels returns a description of all the open channels that this node is a 
 | Field		            |	gRPC Type		    |	 Description  |
 | -------- 	            |	---------           |    ---------    |
 | asset_id   |	uint64	    |The ID of an asset.|
+| create_time   |	uint64	    |Creation time of the channel.|
 | active   |	bool	    |Whether this channel is active or not.|  
 | remote_pubkey     |	string	    |The identity pubkey of the remote node.|
 | channel_point     |	string	    |The outpoint (txid:index) of the funding transaction. With this value, Bob will be able to generate a signature for Alice's version of the commitment transaction.|
@@ -125,6 +126,7 @@ response:
 ```
 [
   {
+    create_time: 1687795462
     active: true
     asset_capacity: 0
     btc_capacity: 20000

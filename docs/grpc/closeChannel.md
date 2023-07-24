@@ -55,6 +55,7 @@ LightningOuterClass.ChannelPoint point = LightningOuterClass.ChannelPoint.newBui
                 .build();
 LightningOuterClass.CloseChannelRequest closeChannelRequest = LightningOuterClass.CloseChannelRequest.newBuilder()
         .setChannelPoint(point)
+        .setTargetConf(3)
         .build();
 Obdmobile.closeChannel(closeChannelRequest.toByteArray(), new RecvStream() {
     @Override
